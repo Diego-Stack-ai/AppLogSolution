@@ -141,17 +141,16 @@
             margin-top: 20px;
         }
 
-        /* Correzione scroll modal */
+        /* Layout del Modale */
         .modal-overlay {
-            align-items: flex-start !important; /* Allinea in alto per permettere lo scroll */
-            padding: 40px 16px;
+            padding: 20px 16px;
             overflow-y: auto !important;
         }
 
         .modal-content {
-            margin: 0 auto;
-            max-height: none !important;
-            height: auto !important;
+            margin: auto;
+            max-height: 90vh !important;
+            overflow-y: auto !important;
         }
 
         .edit-fab {
@@ -227,10 +226,12 @@
 <body>
     <nav class="glass-nav">
         <div class="nav-content">
-            <a href="dashboard.html" class="logout-btn" title="Indietro">
-                <span class="material-icons-round">arrow_back</span>
-            </a>
-            <div class="nav-title" style="flex: 1; margin-left: 12px;">Gestione Clienti</div>
+            <button id="dashboardBtn" class="logout-btn" title="Dashboard"
+                onclick="window.location.href='dashboard.html'"
+                style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
+                <span class="material-icons-round">dashboard</span>
+            </button>
+            <div class="nav-title" style="flex: 1;">Gestione Clienti</div>
             <a href="login.html" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
         </div>
     </nav>

@@ -4,11 +4,22 @@ const IMPOSTAZIONI_URL = GESTIONE_URL;
 const GOOGLE_SHEET_URL = GESTIONE_URL;
 
 // --- SINCRONIZZAZIONE DATI INIZIALE ---
-window.syncFromCloud = async function () {
+// Funzione di base che decide COME sincronizzare (Firebase o, in futuro, Apps Script)
+async function baseSyncFromCloud() {
     if (typeof window.syncFromFirebase === 'function') {
+        // Usa Firebase come sorgente principale se disponibile
         await window.syncFromFirebase();
     } else {
         try {
+            console.log("Sincronizzazione cloud legacy non configurata (nessun syncFromFirebase disponibile).");
+            // Qui in passato poteva esserci una chiamata a Google Apps Script (GOOGLE_SHEET_URL)
+            // Al momento non facciamo nulla per evitare errori ricorsivi.
+        } catch (e) {
+            console.error("Errore sincronizzazione cloud legacy:", e);
+        }
+    }
+}
+
 // Esegui sincronizzazione intelligente all'avvio
 async function smartSync() {
     const hasClienti = localStorage.getItem('lista_clienti');
@@ -18,20 +29,17 @@ async function smartSync() {
     // Se manca anche solo una delle liste fondamentali, sincronizza tutto
     if (!hasClienti || !hasAutisti || !hasMezzi) {
         console.log("Dati locali incompleti, avvio sincronizzazione da Cloud...");
-        await window.syncFromCloud();
+        await baseSyncFromCloud();
     } else {
         console.log("Dati (Clienti, Autisti, Mezzi) presenti localmente. Uso cache cloud.");
     }
 }
-smartSync();
-        } catch (e) {
-            console.error("Errore sincronizzazione cloud legacy:", e);
-        }
-    }
-}
+
+// Espone la smartSync come API globale per le altre parti dell'app
+window.syncFromCloud = smartSync;
 
 // Esegui sincronizzazione all'avvio
-syncFromCloud();
+smartSync();
 
 document.addEventListener('DOMContentLoaded', () => {
     // 0. Gestione Visibilità Pulsanti Dashboard/Admin

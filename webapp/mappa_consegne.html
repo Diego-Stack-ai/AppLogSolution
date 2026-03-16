@@ -63,10 +63,12 @@
 <body>
     <nav class="glass-nav">
         <div class="nav-content">
-            <a href="dashboard.html" class="logout-btn" title="Dashboard">
+            <button id="dashboardBtn" class="logout-btn" title="Dashboard"
+                onclick="window.location.href='dashboard.html'"
+                style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
                 <span class="material-icons-round">dashboard</span>
-            </a>
-            <div class="nav-title" style="flex: 1; margin-left: 12px;">Mappa Consegne</div>
+            </button>
+            <div class="nav-title" style="flex: 1;">Mappa Consegne</div>
             <div id="stats" style="font-size: 14px; font-weight: 600; color: var(--text-muted);">
                 Punti: <span id="pointCount">0</span>
             </div>

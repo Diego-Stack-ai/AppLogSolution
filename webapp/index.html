@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Solution</title>
+    <script>
+        // Semplice redirector basato sullo stato di login
+        const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        if (user.nome) {
+            const role = (user.ruolo || '').toLowerCase();
+            if (role === 'amministratore' || role === 'impiegata') {
+                window.location.href = 'dashboard.html';
+            } else {
+                window.location.href = 'inserimento.html';
+            }
+        } else {
+            window.location.href = 'login.html';
+        }
+    </script>
+</head>
+<body style="background: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; color: #64748b;">
+    <p>Reindirizzamento in corso...</p>
+</body>
+</html>
+

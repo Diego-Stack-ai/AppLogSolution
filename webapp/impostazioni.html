@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impostazioni - Log Solution</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="script.js"></script>
+    <script type="module" src="firebase-auth-sync.js"></script>
+    <style>
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: none;
+        }
+
+        .edit-btn {
+            color: #4f46e5;
+        }
+
+        .edit-btn:hover {
+            background: #eef2ff;
+            border-color: #c7d2fe;
+        }
+
+        .delete-btn {
+            color: #ef4444;
+        }
+
+        .delete-btn:hover {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+
+        .action-btn .btn-text {
+            display: inline;
+        }
+
+        @media (max-width: 480px) {
+            .action-btn .btn-text {
+                display: none;
+            }
+        }
+
+        .list-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+
+        .list-row:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05);
+            background: #ffffff;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="glass-nav">
+        <div class="nav-content">
+            <div class="logo" style="margin-right: 12px; transform: scale(0.8);">LS</div>
+            <div class="nav-title" style="flex: 1;">Impostazioni Sistema</div>
+            <button id="dashboardBtn" class="logout-btn" title="Dashboard"
+                onclick="window.location.href='dashboard.html'"
+                style="border:none; background:none; cursor:pointer; margin-right:8px; display:none;">
+                <span class="material-icons-round">dashboard</span>
+            </button>
+            <a href="login.html" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
+        </div>
+    </nav>
+
+    <main class="main-container">
+        <div class="glass-panel form-card">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+                <a href="visualizzazione.html" class="btn-primary"
+                    style="width: auto; padding: 10px 20px; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-icons-round">visibility</span>
+                    Visualizza Turni Inseriti
+                </a>
+            </div>
+
+            <!-- Sezione Gestione Targhe -->
+            <div id="toggleMezziBtn"
+                style="display: flex; justify-content: space-between; align-items: center; margin: 32px 0 0 0; cursor: pointer; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <h3 class="section-title" style="margin: 0;">Gestione Targhe e Mezzi</h3>
+                <span class="material-icons-round" id="toggleMezziIcon"
+                    style="color: var(--primary); transition: transform 0.3s ease;">expand_more</span>
+            </div>
+
+            <div id="mezziContent" style="display: none; padding-top: 20px;">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label for="targaInput">Targa *</label>
+                        <input type="text" id="targaInput" placeholder="es. AA000BB" style="text-transform: uppercase;">
+                    </div>
+                    <div class="input-group">
+                        <label for="modelloInput">Nome / Modello Vettura (Opzionale)</label>
+                        <input type="text" id="modelloInput" placeholder="es. Fiat Ducato">
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:12px; margin-top:16px;">
+                    <button type="button" id="btnSalvaMezzo" class="btn-primary" style="flex:1;">Salva Mezzo</button>
+                    <button type="button" id="btnAnnullaMezzo" class="btn-primary"
+                        style="flex:1; background:#f1f5f9; color:#334155; box-shadow:none; display:none;">Annulla</button>
+                </div>
+
+                <h3 class="section-title" style="margin-top: 48px;">Mezzi Esistenti</h3>
+                <div id="listaMezzi" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Popolato da JS -->
+                </div>
+            </div>
+
+            <!-- Sezione Gestione Autisti -->
+            <div id="toggleAutistiBtn"
+                style="display: flex; justify-content: space-between; align-items: center; margin: 32px 0 0 0; cursor: pointer; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <h3 class="section-title" style="margin: 0;">Gestione Credenziali Autisti</h3>
+                <span class="material-icons-round" id="toggleAutistiIcon"
+                    style="color: var(--primary); transition: transform 0.3s ease;">expand_more</span>
+            </div>
+
+            <div id="autistiContent" style="display: none; padding-top: 20px;">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label for="driverNomeInput">Nome e Cognome *</label>
+                        <input type="text" id="driverNomeInput" placeholder="es. Mario Rossi">
+                    </div>
+                    <div class="input-group">
+                        <label for="driverPassInput">Password Accesso *</label>
+                        <input type="text" id="driverPassInput" placeholder="Scegli una password">
+                    </div>
+                    <div class="input-group">
+                        <label for="driverRuoloInput">Ruolo *</label>
+                        <select id="driverRuoloInput">
+                            <option value="autista">Autista</option>
+                            <option value="amministrativo">Amministrativo</option>
+                            <option id="optAdmin" value="amministratore">Amministratore</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-grid" style="margin-top: 16px;">
+                    <div class="input-group">
+                        <label for="driverTurnoInput">Tipo Turno *</label>
+                        <select id="driverTurnoInput">
+                            <option value="giornata">In Giornata</option>
+                            <option value="notturno">Notturno</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-grid" id="adminExtraFields" style="display:none; margin-top: 16px;">
+                    <div class="input-group" style="grid-column: 1 / -1;">
+                        <label for="driverEmailInput">Email di Recupero (Solo per Amministratori)</label>
+                        <input type="email" id="driverEmailInput" placeholder="es. la-tua-email@esempio.com">
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="input-group" id="elevazioneGroup"
+                        style="display:none; flex-direction:row; align-items:center; gap:10px; grid-column: 1 / -1;">
+                        <input type="checkbox" id="driverElevazione" style="width:20px; height:20px; cursor:pointer;">
+                        <label for="driverElevazione"
+                            style="margin:0; cursor:pointer; color: var(--primary); font-weight:600;">Consenti ad
+                            Amministrativo di diventare Amministratore</label>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:12px; margin-top:16px;">
+                    <button type="button" id="btnSalvaAutista" class="btn-primary" style="flex:1;">Salva
+                        Autista</button>
+                    <button type="button" id="btnAnnullaAutista" class="btn-primary"
+                        style="flex:1; background:#f1f5f9; color:#334155; box-shadow:none; display:none;">Annulla</button>
+                </div>
+
+                <h3 class="section-title" style="margin-top: 48px;">Autisti Registrati</h3>
+                <div id="listaAutisti" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Popolato da JS -->
+                </div>
+            </div>
+
+            <!-- Guida Operativa Gestione Autisti -->
+            <div
+                style="margin-top: 48px; padding: 24px; background: #f0f9ff; border-radius: 16px; border: 1px solid #bae6fd;">
+                <h3 style="color: #0369a1; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                    <span class="material-icons-round">info</span> Guida Rapida Gestione Utenti
+                </h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <div>
+                        <h4 style="color: #0c4a6e; margin-bottom: 8px; font-size: 14px;">RUOLI E PERMESSI</h4>
+                        <ul style="padding-left: 20px; color: #075985; font-size: 13px; line-height: 1.6;">
+                            <li><b>Autista:</b> Può solo inserire i propri turni.</li>
+                            <li><b>Amministrativo:</b> Vede i riepiloghi e gestisce autisti/mezzi.</li>
+                            <li><b>Amministratore:</b> Accesso totale a tutte le impostazioni.</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color: #0c4a6e; margin-bottom: 8px; font-size: 14px;">TIPI DI TURNO</h4>
+                        <ul style="padding-left: 20px; color: #075985; font-size: 13px; line-height: 1.6;">
+                            <li><b>In Giornata:</b> La data è bloccata su "oggi".</li>
+                            <li><b>Notturno:</b> Permette di scegliere la data di inizio del turno.</li>
+                        </ul>
+                    </div>
+                    <div style="grid-column: 1 / -1;">
+                        <h4 style="color: #0c4a6e; margin-bottom: 4px; font-size: 14px;">NOTR SULL'ELEVAZIONE (Solo per
+                            Amministrativi)</h4>
+                        <p style="color: #075985; font-size: 13px; line-height: 1.6; margin: 0;">
+                            L'opzione <b>"Elevazione"</b> permette a un utente Amministrativo di diventare autonomamente
+                            un Amministratore tramite un pulsante speciale nelle sue impostazioni personali.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const DEFAULT_MEZZI = [
+                { targa: 'FJ638LN', modello: '' }, { targa: 'FD788RT', modello: '' },
+                { targa: 'GB969FN', modello: '' }, { targa: 'GF929KT', modello: '' },
+                { targa: 'EK832AW', modello: '' }, { targa: 'EN201DB', modello: '' },
+                { targa: 'EN364DB', modello: '' }, { targa: 'DS224AD', modello: '' },
+                { targa: 'DS423SNF', modello: '' }, { targa: 'N481YL', modello: '' },
+                { targa: 'EN155RJ', modello: '' }, { targa: 'FF809PM', modello: '' },
+                { targa: 'FL142GN', modello: '' }, { targa: 'GH876XK', modello: '' },
+                { targa: 'GH877XK', modello: '' }, { targa: 'GH878XK', modello: '' },
+                { targa: 'GJ328KZ', modello: '' }, { targa: 'HB712NN', modello: '' },
+                { targa: 'HB713NN', modello: '' }
+            ];
+
+            let mezziStr = localStorage.getItem('lista_mezzi');
+            let mezzi = mezziStr ? JSON.parse(mezziStr) : DEFAULT_MEZZI;
+            if (!mezziStr) localStorage.setItem('lista_mezzi', JSON.stringify(mezzi));
+
+            const targaInput = document.getElementById('targaInput');
+            const modelloInput = document.getElementById('modelloInput');
+            const btnSalva = document.getElementById('btnSalvaMezzo');
+            const btnAnnulla = document.getElementById('btnAnnullaMezzo');
+            const listaDiv = document.getElementById('listaMezzi');
+            const toggleBtn = document.getElementById('toggleMezziBtn');
+            const contentDiv = document.getElementById('mezziContent');
+            const iconSpan = document.getElementById('toggleMezziIcon');
+
+            toggleBtn.addEventListener('click', () => {
+                if (contentDiv.style.display === 'none') {
+                    contentDiv.style.display = 'block';
+                    iconSpan.style.transform = 'rotate(180deg)';
+                } else {
+                    contentDiv.style.display = 'none';
+                    iconSpan.style.transform = 'rotate(0deg)';
+                }
+            });
+
+            let editIndex = -1;
+
+            window.renderLista = function () {
+                // Ricarica dati aggiornati dal localStorage
+                const currentMezziStr = localStorage.getItem('lista_mezzi');
+                const currentMezzi = currentMezziStr ? JSON.parse(currentMezziStr) : DEFAULT_MEZZI;
+
+                listaDiv.innerHTML = '';
+                currentMezzi.forEach((m, idx) => {
+                    const r = document.createElement('div');
+                    r.className = 'list-row';
+                    r.style.marginBottom = '8px';
+                    const title = m.modello ? `${m.targa} - <span style="font-weight:400; color:#64748b;">${m.modello}</span>` : m.targa;
+                    r.innerHTML = `
+                        <div style="font-weight:600; color:#334155;">${title}</div>
+                        <div style="display:flex; gap:8px;">
+                            <button onclick="editMezzo(${idx})" class="action-btn edit-btn" title="Modifica">
+                                <span class="material-icons-round" style="font-size:20px;">edit</span>
+                                <span class="btn-text">Modifica</span>
+                            </button>
+                            <button onclick="deleteMezzo(${idx})" class="action-btn delete-btn" title="Elimina">
+                                <span class="material-icons-round" style="font-size:20px;">delete</span>
+                                <span class="btn-text">Elimina</span>
+                            </button>
+                        </div>
+                    `;
+                    listaDiv.appendChild(r);
+                });
+            }
+
+            window.editMezzo = function (idx) {
+                editIndex = idx;
+                targaInput.value = mezzi[idx].targa;
+                modelloInput.value = mezzi[idx].modello;
+                btnSalva.textContent = "Aggiorna Mezzo";
+                btnAnnulla.style.display = "block";
+                targaInput.focus();
+            };
+
+            window.deleteMezzo = async function (idx) {
+                const m = mezzi[idx];
+                if (confirm('Eliminare ' + m.targa + '?')) {
+                    try {
+                        if (window.deleteFromFirebase && m.id) {
+                            await window.deleteFromFirebase("mezzi", m.id);
+                        }
+                        mezzi.splice(idx, 1);
+                        localStorage.setItem('lista_mezzi', JSON.stringify(mezzi));
+                        renderLista();
+                        alert("Mezzo eliminato dal Cloud!");
+                    } catch (e) {
+                        alert("Errore eliminazione: " + e.message);
+                    }
+                }
+            };
+
+            btnAnnulla.onclick = () => {
+                editIndex = -1;
+                targaInput.value = '';
+                modelloInput.value = '';
+                btnSalvaMezzo.textContent = "Salva Mezzo";
+                btnAnnulla.style.display = "none";
+            };
+
+            btnSalvaMezzo.onclick = async () => {
+                const targa = targaInput.value.trim().toUpperCase();
+                const modello = modelloInput.value.trim();
+                if (!targa) return alert("Inserire la targa");
+
+                btnSalvaMezzo.disabled = true;
+                btnSalvaMezzo.textContent = "Salvataggio Cloud...";
+
+                const mezzoData = { targa: targa, modello: modello };
+                const id = editIndex >= 0 ? mezzi[editIndex].id : null;
+
+                try {
+                    if (window.updateMezzo) {
+                        await window.updateMezzo(id, mezzoData);
+                    }
+                    
+                    alert("Mezzo salvato correttamente su Firebase!");
+                    
+                    await window.syncFromCloud(); // Ricarica tutto da Firebase
+                    btnAnnulla.onclick();
+                    renderLista();
+                } catch (err) {
+                    alert("Errore durante il salvataggio: " + err.message);
+                } finally {
+                    btnSalvaMezzo.disabled = false;
+                    btnSalvaMezzo.textContent = editIndex >= 0 ? "Aggiorna Mezzo" : "Salva Mezzo";
+                }
+            };
+
+            // --- GESTIONE AUTISTI ---
+            const driverNomeInput = document.getElementById('driverNomeInput');
+            const driverPassInput = document.getElementById('driverPassInput');
+            const driverRuoloInput = document.getElementById('driverRuoloInput');
+            const driverTurnoInput = document.getElementById('driverTurnoInput');
+            const driverEmailInput = document.getElementById('driverEmailInput');
+            const adminExtraFields = document.getElementById('adminExtraFields');
+            const btnSalvaAutista = document.getElementById('btnSalvaAutista');
+            const btnAnnullaAutista = document.getElementById('btnAnnullaAutista');
+            const listaAutistiDiv = document.getElementById('listaAutisti');
+            const toggleAutistiBtn = document.getElementById('toggleAutistiBtn');
+            const autistiContent = document.getElementById('autistiContent');
+            const toggleAutistiIcon = document.getElementById('toggleAutistiIcon');
+
+            let autisti = JSON.parse(localStorage.getItem('lista_autisti') || '[]');
+            let editIndexAutista = -1;
+
+            // Verifica permessi utente corrente
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const isAdmin = currentUser.ruolo === 'amministratore';
+            const isAmministrativo = currentUser.ruolo === 'amministrativo';
+            const canSelfElevate = currentUser.canElevate === true;
+
+            // Filtra subito il select dei ruoli se amministrativo
+            if (isAmministrativo) {
+                const optAdmin = document.getElementById('optAdmin');
+                if (optAdmin) optAdmin.style.display = 'none';
+            }
+
+            toggleAutistiBtn.addEventListener('click', () => {
+                if (autistiContent.style.display === 'none') {
+                    autistiContent.style.display = 'block';
+                    toggleAutistiIcon.style.transform = 'rotate(180deg)';
+                } else {
+                    autistiContent.style.display = 'none';
+                    toggleAutistiIcon.style.transform = 'rotate(0deg)';
+                }
+            });
+
+            window.renderAutisti = function () {
+                // Ricarica dati aggiornati dal localStorage
+                const currentAutisti = JSON.parse(localStorage.getItem('lista_autisti') || '[]');
+
+                listaAutistiDiv.innerHTML = '';
+                if (currentAutisti.length === 0) {
+                    listaAutistiDiv.innerHTML = '<p style="text-align:center; color:#64748b; font-size:14px;">Nessun utista registrato.</p>';
+                }
+                currentAutisti.forEach((a, idx) => {
+                    // SE l'utente loggato è Amministrativo, NON mostrare gli account Amministratore
+                    if (isAmministrativo && a.ruolo === 'amministratore') return;
+
+                    const r = document.createElement('div');
+                    r.className = 'list-row';
+                    r.style.marginBottom = '8px';
+                    const elevationBadge = a.canElevate ? '<span style="font-size:10px; color:#10b981; margin-left:5px;">(Elevabile)</span>' : '';
+                    const turnoBadge = `<span style="font-size:11px; font-weight:400; background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:10px; margin-left:8px;">${a.tipoTurno === 'notturno' ? 'NOTTURNO' : 'GIORNATA'}</span>`;
+                    r.innerHTML = `
+                        <div style="flex: 1;">
+                            <div style="font-weight:600; color:#334155;">${a.nome} ${elevationBadge} ${turnoBadge} <span style="font-size:11px; font-weight:400; background:#e2e8f0; padding:2px 8px; border-radius:10px; margin-left:8px; text-transform:uppercase;">${a.ruolo}</span></div>
+                            <div style="font-size:12px; color:#64748b;">Pass: ${a.password}</div>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <button onclick="editAutista(${idx})" class="action-btn edit-btn" title="Modifica">
+                                <span class="material-icons-round" style="font-size:20px;">edit</span>
+                                <span class="btn-text">Modifica</span>
+                            </button>
+                            <button onclick="deleteAutista(${idx})" class="action-btn delete-btn" title="Elimina">
+                                <span class="material-icons-round" style="font-size:20px;">delete</span>
+                                <span class="btn-text">Elimina</span>
+                            </button>
+                        </div>
+                    `;
+                    listaAutistiDiv.appendChild(r);
+                });
+            }
+
+            const driverElevazione = document.getElementById('driverElevazione');
+            const elevazioneGroup = document.getElementById('elevazioneGroup');
+
+            // Mostra/Nascondi il flag elevazione e campi admin solo per Admin
+            driverRuoloInput.addEventListener('change', () => {
+                const role = driverRuoloInput.value;
+                if (isAdmin && role === 'amministrativo') {
+                    elevazioneGroup.style.display = 'flex';
+                } else {
+                    elevazioneGroup.style.display = 'none';
+                }
+
+                if (role === 'amministratore') {
+                    adminExtraFields.style.display = 'grid';
+                } else {
+                    adminExtraFields.style.display = 'none';
+                }
+            });
+
+            window.editAutista = function (idx) {
+                editIndexAutista = idx;
+                const targetUser = autisti[idx];
+                driverNomeInput.value = targetUser.nome;
+                driverPassInput.value = targetUser.password;
+                driverRuoloInput.value = targetUser.ruolo || 'autista';
+                driverTurnoInput.value = targetUser.tipoTurno || 'giornata';
+                driverEmailInput.value = targetUser.email || '';
+                driverElevazione.checked = targetUser.canElevate || false;
+
+                // Mostra campi extra se admin
+                if (driverRuoloInput.value === 'amministratore') {
+                    adminExtraFields.style.display = 'grid';
+                } else {
+                    adminExtraFields.style.display = 'none';
+                }
+
+                // Logica speciale: se sono amministrativo con canElevate e sto modificando ME STESSO
+                if (isAmministrativo && canSelfElevate && targetUser.nome === currentUser.nome) {
+                    const optAdmin = document.getElementById('optAdmin');
+                    if (optAdmin) optAdmin.style.display = 'block';
+                }
+
+                if (isAdmin && driverRuoloInput.value === 'amministrativo') {
+                    elevazioneGroup.style.display = 'flex';
+                } else {
+                    elevazioneGroup.style.display = 'none';
+                }
+
+                btnSalvaAutista.textContent = "Aggiorna Utente";
+                btnAnnullaAutista.style.display = "block";
+                driverNomeInput.focus();
+            };
+
+            window.deleteAutista = async function (idx) {
+                const a = autisti[idx];
+                if (confirm('Eliminare ' + a.nome + '?')) {
+                    try {
+                        if (window.deleteFromFirebase && a.id) {
+                            await window.deleteFromFirebase("users", a.id);
+                        }
+                        autisti.splice(idx, 1);
+                        localStorage.setItem('lista_autisti', JSON.stringify(autisti));
+                        renderAutisti();
+                        alert("Utente eliminato dal Cloud!");
+                    } catch (e) {
+                        alert("Errore eliminazione: " + e.message);
+                    }
+                }
+            };
+
+            btnAnnullaAutista.onclick = () => {
+                editIndexAutista = -1;
+                driverNomeInput.value = '';
+                driverPassInput.value = '';
+                btnSalvaAutista.textContent = "Salva Autista";
+                btnAnnullaAutista.style.display = "none";
+            };
+
+            btnSalvaAutista.onclick = async () => {
+                const n = driverNomeInput.value.trim();
+                const p = driverPassInput.value.trim();
+                const r = driverRuoloInput.value;
+                const t = driverTurnoInput.value;
+                const e = driverElevazione.checked;
+                const m = driverEmailInput.value.trim();
+                if (!n || !p) {
+                    alert("Nome e Password sono obbligatori");
+                    return;
+                }
+
+                btnSalvaAutista.disabled = true;
+                btnSalvaAutista.textContent = "Salvataggio Cloud...";
+
+                const userData = { 
+                    nome: n, 
+                    password: p, 
+                    ruolo: r, 
+                    tipoTurno: t, 
+                    canElevate: e, 
+                    email: m 
+                };
+                const id = editIndexAutista >= 0 ? autisti[editIndexAutista].id : null;
+
+                try {
+                    if (window.updateUser) {
+                        await window.updateUser(id, userData);
+                    }
+
+                    alert("Utente salvato correttamente su Firebase!");
+                    await window.syncFromCloud();
+
+                    if (n === currentUser.nome) {
+                        localStorage.setItem('currentUser', JSON.stringify({ ...currentUser, ...userData }));
+                        location.reload();
+                    }
+                    
+                    btnAnnullaAutista.onclick();
+                    renderAutisti();
+                } catch (err) {
+                    alert("Errore durante il salvataggio: " + err.message);
+                } finally {
+                    btnSalvaAutista.disabled = false;
+                    btnSalvaAutista.textContent = editIndexAutista >= 0 ? "Aggiorna Utente" : "Salva Autista";
+                }
+            };
+
+            window.renderAutisti();
+            window.renderLista();
+        });
+    </script>
+</body>
+
+</html>
+

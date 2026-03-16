@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizzazione Dati - Log Solution</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        .filter-section {
+            display: flex;
+            gap: 16px;
+            align-items: flex-end;
+            margin-bottom: 32px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .data-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+
+        .data-card:hover {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            border-color: var(--primary);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+        }
+
+        .data-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .data-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .data-value {
+            font-size: 14px;
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        .status-badge {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        #emptyState {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 5px solid var(--bg-color);
+            border-bottom-color: var(--primary);
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .filter-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="glass-nav">
+        <div class="nav-content">
+            <div class="nav-title" style="flex: 1;">Riepilogo Turni Inseriti</div>
+            <button id="dashboardBtn" class="logout-btn" title="Dashboard"
+                onclick="window.location.href='dashboard.html'"
+                style="border:none; background:none; cursor:pointer; margin-right:8px; display:none;">
+                <span class="material-icons-round">dashboard</span>
+            </button>
+            <a href="login.html" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
+        </div>
+    </nav>
+
+    <main class="main-container">
+        <div class="filter-section">
+            <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                <label>Filtra per Autista</label>
+                <select id="filterAutista">
+                    <option value="tutti">Tutti gli autisti</option>
+                </select>
+            </div>
+            <button id="btnRefresh" class="btn-primary"
+                style="width: auto; padding: 12px 24px; display: flex; align-items: center; gap: 8px;">
+                <span class="material-icons-round">refresh</span>
+                Aggiorna Dati
+            </button>
+        </div>
+
+        <div id="loadingState" style="display: none; text-align: center; padding: 40px;">
+            <span class="loader"></span>
+            <p style="margin-top: 16px;">Caricamento dati dal Foglio Google...</p>
+        </div>
+
+        <div id="listaDati">
+            <!-- Popolato da JS -->
+        </div>
+
+        <div id="emptyState" style="display: none;">
+            <span class="material-icons-round"
+                style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">inventory_2</span>
+            <p>Nessun turno trovato per i criteri selezionati.</p>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+    <script type="module" src="firebase-auth-sync.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const filterAutista = document.getElementById('filterAutista');
+            const btnRefresh = document.getElementById('btnRefresh');
+            const listaDati = document.getElementById('listaDati');
+            const loadingState = document.getElementById('loadingState');
+            const emptyState = document.getElementById('emptyState');
+
+            let allRecords = [];
+
+            // Popola Dropdown Autisti dal localStorage
+            const autisti = JSON.parse(localStorage.getItem('lista_autisti') || '[]');
+            autisti.forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.nome;
+                opt.textContent = a.nome;
+                filterAutista.appendChild(opt);
+            });
+
+            async function fetchData() {
+                if (!GOOGLE_SHEET_URL) {
+                    alert("URL Google Sheets non configurato!");
+                    return;
+                }
+
+                loadingState.style.display = 'block';
+                listaDati.innerHTML = '';
+                emptyState.style.display = 'none';
+
+                try {
+                    // Chiamata GET allo script di Google
+                    const response = await fetch(GOOGLE_SHEET_URL + "?action=read");
+                    const data = await response.json();
+
+                    if (data && data.status === 'OK') {
+                        allRecords = data.records;
+                        renderData();
+                    } else {
+                        const errorMsg = data ? (data.message || JSON.stringify(data)) : 'Risposta vuota dal server';
+                        console.error('Errore dati:', errorMsg);
+                        listaDati.innerHTML = `<p style="color:red; text-align:center;">Errore caricamento: ${errorMsg}</p>`;
+                    }
+                } catch (error) {
+                    console.error('Errore fetch:', error);
+                    listaDati.innerHTML = '<p style="color:red; text-align:center;">Errore nel caricamento. Assicurati che il Google Apps Script sia distribuito correttamente con accesso a "Chiunque".</p>';
+                } finally {
+                    loadingState.style.display = 'none';
+                }
+            }
+
+            function renderData() {
+                const selectedAutista = filterAutista.value;
+                const filtered = allRecords.filter(r => {
+                    const matchAutista = selectedAutista === 'tutti' || r.autista === selectedAutista;
+                    return matchAutista;
+                });
+
+                listaDati.innerHTML = '';
+                if (filtered.length === 0) {
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                // Ordina per data decrescente (i più recenti prima)
+                filtered.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+                filtered.forEach(r => {
+                    const card = document.createElement('div');
+                    card.className = 'data-card';
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <div>
+                                <span style="font-weight: 700; color: var(--primary); font-size: 16px;">${formatData(r.data)}</span>
+                                <span style="margin-left: 12px; color: var(--text-muted); font-size: 13px;">${r.autista}</span>
+                            </div>
+                            <span class="status-badge badge-success">${r.automezzo}</span>
+                        </div>
+                        <div class="card-grid">
+                            <div class="data-item">
+                                <span class="data-label">Cliente</span>
+                                <span class="data-value">${(r.cliente || '-').toUpperCase()}</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-label">Km Percorsi</span>
+                                <span class="data-value">${r.delta_km} km</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-label">Ore Totali</span>
+                                <span class="data-value">${r.ore_totali}h</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-label">Carburante</span>
+                                <span class="data-value">${r.litri ? r.litri + 'L' : '-'}</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-label">Importo</span>
+                                <span class="data-value">${r.importo ? r.importo + '€' : '-'}</span>
+                            </div>
+                        </div>
+                        ${r.nota ? `
+                            <div style="margin-top: 16px; padding-top: 12px; border-top: 1px dashed #e2e8f0;">
+                                <span class="data-label">Note</span>
+                                <p style="font-size: 13px; color: #475569; margin-top: 4px;">${r.nota}</p>
+                            </div>
+                        ` : ''}
+                    `;
+                    listaDati.appendChild(card);
+                });
+            }
+
+            function formatData(dataStr) {
+                if (!dataStr) return '-';
+                const d = new Date(dataStr);
+                return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            }
+
+            filterAutista.addEventListener('change', renderData);
+            btnRefresh.addEventListener('click', fetchData);
+
+            // Caricamento iniziale
+            fetchData();
+        });
+    </script>
+</body>
+
+</html>
+

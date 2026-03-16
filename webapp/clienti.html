@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Clienti - Log Solution</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="script.js"></script>
+    <script type="module" src="firebase-auth-sync.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        .search-bar-container {
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input-wrapper .material-icons-round {
+            position: absolute;
+            left: 16px;
+            color: var(--text-muted);
+        }
+
+        .search-input-wrapper input {
+            padding-left: 48px;
+            height: 54px;
+            font-size: 16px;
+            border-radius: 16px;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+
+        .client-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .client-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .client-card:hover {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+        }
+
+        .client-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .client-info h3 {
+            margin: 0 0 4px 0;
+            font-size: 18px;
+        }
+
+        .client-info p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-primary { background: #eef2ff; color: #4f46e5; }
+        .badge-secondary { background: #f1f5f9; color: #64748b; }
+
+        .client-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .detail-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .detail-value {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .actions-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        #resultsCount {
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .empty-results {
+            text-align: center;
+            padding: 48px;
+            color: var(--text-muted);
+        }
+
+        .modal-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            text-align: left;
+            margin-top: 20px;
+        }
+
+        /* Correzione scroll modal */
+        .modal-overlay {
+            align-items: flex-start !important; /* Allinea in alto per permettere lo scroll */
+            padding: 40px 16px;
+            overflow-y: auto !important;
+        }
+
+        .modal-content {
+            margin: 0 auto;
+            max-height: none !important;
+            height: auto !important;
+        }
+
+        .edit-fab {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: auto;
+        }
+
+        .edit-fab:hover {
+            transform: scale(1.1);
+            background: var(--primary-hover);
+        }
+
+        .delete-fab {
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: 8px;
+        }
+
+        .delete-fab:hover {
+            transform: scale(1.1);
+            background: #fecaca;
+        }
+
+        #editMap {
+            height: 250px;
+            width: 100%;
+            border-radius: 12px;
+            margin-top: 10px;
+            border: 1px solid var(--border);
+            z-index: 1;
+        }
+
+        .map-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            grid-column: 1 / -1;
+        }
+
+        .geo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .geo-ok { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .geo-missing { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    </style>
+</head>
+<body>
+    <nav class="glass-nav">
+        <div class="nav-content">
+            <a href="dashboard.html" class="logout-btn" title="Indietro">
+                <span class="material-icons-round">arrow_back</span>
+            </a>
+            <div class="nav-title" style="flex: 1; margin-left: 12px;">Gestione Clienti</div>
+            <a href="login.html" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
+        </div>
+    </nav>
+
+    <main class="main-container">
+        <div class="search-bar-container">
+            <div class="search-input-wrapper">
+                <span class="material-icons-round">search</span>
+                <input type="text" id="custSearch" placeholder="Cerca per nome, codice, città o indirizzo..." autocomplete="off">
+            </div>
+        </div>
+
+        <div id="resultsCount">Verifica connessione al database...</div>
+        
+        <div id="loadingIndicator" style="display:none; text-align: center; padding: 40px;">
+            <div class="loader"></div>
+            <p style="margin-top: 15px;">Caricamento clienti in corso...</p>
+        </div>
+
+        <div id="custContainer" class="client-list">
+            <!-- Risultati della ricerca -->
+        </div>
+    <!-- Modal Modifica Cliente -->
+    <div id="editCustModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px;">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <span class="material-icons-round" style="color: var(--primary);">edit</span>
+                Modifica Cliente
+            </h3>
+            
+            <form id="editCustForm" class="modal-body">
+                <input type="hidden" id="editId">
+                <div class="input-group" style="grid-column: 1 / -1;">
+                    <label>Nome Destinatario *</label>
+                    <input type="text" id="editNome" required>
+                </div>
+                <div class="input-group">
+                    <label>Cod. Frutta</label>
+                    <input type="text" id="editCodFrutta">
+                </div>
+                <div class="input-group">
+                    <label>Cod. Latte</label>
+                    <input type="text" id="editCodLatte">
+                </div>
+                <div class="input-group" style="grid-column: 1 / -1;">
+                    <label>Indirizzo *</label>
+                    <input type="text" id="editIndirizzo" required>
+                </div>
+                <div class="input-group">
+                    <label>Città *</label>
+                    <input type="text" id="editCitta" required>
+                </div>
+                <div class="input-group">
+                    <label>Provincia *</label>
+                    <input type="text" id="editProv" maxlength="2">
+                </div>
+                <div class="input-group">
+                    <label>Orario Min</label>
+                    <input type="text" id="editOrarioMin" placeholder="08:00">
+                </div>
+                <div class="input-group">
+                    <label>Orario Max</label>
+                    <input type="text" id="editOrarioMax" placeholder="10:00">
+                </div>
+                <div class="input-group" style="grid-column: 1 / -1;">
+                    <label>Email</label>
+                    <input type="email" id="editEmail">
+                </div>
+
+                <div class="map-section" style="grid-column: 1 / -1; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Posizione sulla mappa</label>
+                    <div id="editMap"></div>
+                    <div class="map-controls">
+                        <button type="button" onclick="getCurrentLocation()" class="btn-primary" style="background: #10b981; font-size: 13px; width: auto; padding: 8px 16px;">
+                            <span class="material-icons-round" style="font-size: 18px;">my_location</span>
+                            Usa mia posizione
+                        </button>
+                        <div style="flex: 1; display: flex; gap: 10px;">
+                            <input type="text" id="editLat" placeholder="Latitudine" style="font-size: 12px; padding: 8px;" readonly>
+                            <input type="text" id="editLng" placeholder="Longitudine" style="font-size: 12px; padding: 8px;" readonly>
+                        </div>
+                    </div>
+                    <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+                        Muovi il cursore sulla mappa per affinare la posizione esatta della consegna.
+                    </p>
+                </div>
+
+                <div style="grid-column: 1 / -1; display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn-primary" style="flex: 2;">Salva Modifiche</button>
+                    <button type="button" onclick="closeEditModal()" class="btn-primary" style="flex: 1; background: #f1f5f9; color: #64748b; box-shadow: none;">Annulla</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('custSearch');
+            const container = document.getElementById('custContainer');
+            const countEl = document.getElementById('resultsCount');
+
+            // Verifica permessi
+            const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const role = (user.ruolo || '').toLowerCase();
+            if (role !== 'amministratore' && role !== 'impiegata') {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            function renderClienti(query = '') {
+                const clienti = JSON.parse(localStorage.getItem('lista_clienti') || '[]');
+                let filtered = clienti;
+
+                if (query.length >= 2) {
+                    filtered = clienti.filter(c => 
+                        (c.nome || '').toLowerCase().includes(query) || 
+                        (c.citta || '').toLowerCase().includes(query) ||
+                        (c.indirizzo || '').toLowerCase().includes(query) ||
+                        (c.codiceLatte || '').toLowerCase().includes(query) ||
+                        (c.codiceFrutta || '').toLowerCase().includes(query)
+                    );
+                }
+
+                countEl.textContent = query.length >= 2 
+                    ? `Trovati ${filtered.length} risultati su ${clienti.length} clienti.`
+                    : `Visualizzando tutti i ${clienti.length} clienti in archivio.`;
+
+                if (filtered.length === 0) {
+                    container.innerHTML = '<div class="empty-results">Nessun cliente trovato con questi criteri.</div>';
+                    return;
+                }
+
+                // Ordina per nome
+                filtered.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+
+                container.innerHTML = filtered.map((c, index) => `
+                    <div class="client-card" id="card-${c.id || index}">
+                        <div class="client-header">
+                            <div class="client-info">
+                                <h3>${c.nome || 'N/A'}</h3>
+                                <p>
+                                    <a href="${c.lat && c.lng ? `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}` : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((c.indirizzo || '') + ' ' + (c.citta || '') + ' ' + (c.provincia || ''))}`}" 
+                                       target="_blank" 
+                                       class="address-link" 
+                                       style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 4px;">
+                                        <span class="material-icons-round" style="font-size: 16px; color: var(--primary);">location_on</span> 
+                                        <span>${c.indirizzo || ''}${c.citta ? ', ' + (c.cap || '') + ' ' + c.citta : ''}${c.provincia ? ' (' + c.provincia + ')' : ''}</span>
+                                    </a>
+                                </p>
+                                ${c.lat && c.lng 
+                                    ? `<div class="geo-badge geo-ok"><span class="material-icons-round" style="font-size:12px;">check_circle</span> Posizione Salvata (${parseFloat(c.lat).toFixed(4)}, ${parseFloat(c.lng).toFixed(4)})</div>`
+                                    : `<div class="geo-badge geo-missing"><span class="material-icons-round" style="font-size:12px;">help_outline</span> Posizione da Geolocalizzare</div>`
+                                }
+                            </div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                                <div style="display: flex; gap: 4px;">
+                                    <span class="badge" style="background: #fdf2f2; color: #991b1b; border: 1px solid #fee2e2; font-size: 10px;">Cod. Frutta: <b>${c.codiceFrutta || '-'}</b></span>
+                                    <span class="badge" style="background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; font-size: 10px;">Cod. Latte: <b>${c.codiceLatte || '-'}</b></span>
+                                </div>
+                                <span class="badge badge-secondary">${c.tipologiaGrado || '-'}</span>
+                                <button onclick="openEditModal('${c.id || index}')" class="edit-fab" title="Modifica">
+                                    <span class="material-icons-round" style="font-size: 18px;">edit</span>
+                                </button>
+                                <button onclick="deleteCust('${c.id || index}')" class="delete-fab" title="Elimina">
+                                    <span class="material-icons-round" style="font-size: 18px;">delete</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="client-details-grid">
+                            <div class="detail-item">
+                                <span class="detail-label">Orario Consegna</span>
+                                <span class="detail-value">${(c.orarioMin || 'N.D.') + ' - ' + (c.orarioMax || 'N.D.')}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Tipologia</span>
+                                <span class="detail-value">${c.tipologiaConsegna || '-'}</span>
+                            </div>
+                            <div class="detail-item" style="grid-column: 1 / -1;">
+                                <span class="detail-label">Email</span>
+                                <span class="detail-value">${c.email || '-'}</span>
+                            </div>
+                            <div class="detail-item" style="grid-column: 1 / -1;">
+                                <span class="detail-label">Sito Web</span>
+                                <span class="detail-value">
+                                    ${c.homePage && c.homePage !== '' ? `<a href="${c.homePage.startsWith('http') ? c.homePage : 'https://' + c.homePage}" target="_blank" style="color: var(--primary);">${c.homePage}</a>` : '-'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Caricamento iniziale intelligente
+            async function init() {
+                const clientiLocali = JSON.parse(localStorage.getItem('lista_clienti') || '[]');
+                
+                if (clientiLocali.length === 0) {
+                    const loading = document.getElementById('loadingIndicator');
+                    if (loading) loading.style.display = 'block';
+                    
+                    if (window.syncFromCloud) {
+                        countEl.textContent = "Database locale vuoto. Scaricamento dati da Cloud...";
+                        await window.syncFromCloud();
+                    }
+                    if (loading) loading.style.display = 'none';
+                } else {
+                    console.log("Uso dati cache per " + clientiLocali.length + " clienti.");
+                }
+                
+                renderClienti();
+            }
+            init();
+
+            searchInput.addEventListener('input', () => {
+                const query = searchInput.value.trim().toLowerCase();
+                renderClienti(query);
+            });
+
+            // LOGICA MODAL MODIFICA
+            const modal = document.getElementById('editCustModal');
+            const editForm = document.getElementById('editCustForm');
+
+            window.openEditModal = (id) => {
+                const clienti = JSON.parse(localStorage.getItem('lista_clienti') || '[]');
+                // Se non abbiamo ID reale, usiamo l'indice o cerchiamo per nome (temporaneo finché Firebase non è attivo)
+                const c = clienti.find((item, index) => (item.id === id || index.toString() === id));
+                
+                if (!c) return alert("Errore: Cliente non trovato");
+
+                document.getElementById('editId').value = id;
+                document.getElementById('editNome').value = c.nome || '';
+                document.getElementById('editCodFrutta').value = c.codiceFrutta || '';
+                document.getElementById('editCodLatte').value = c.codiceLatte || '';
+                document.getElementById('editIndirizzo').value = c.indirizzo || '';
+                document.getElementById('editCitta').value = c.citta || '';
+                document.getElementById('editProv').value = c.provincia || '';
+                document.getElementById('editOrarioMin').value = c.orarioMin || '';
+                document.getElementById('editOrarioMax').value = c.orarioMax || '';
+                document.getElementById('editEmail').value = c.email || '';
+                document.getElementById('editLat').value = c.lat || '';
+                document.getElementById('editLng').value = c.lng || '';
+
+                modal.classList.add('active');
+                
+                // Inizializza mappa
+                setTimeout(() => initEditMap(c.lat, c.lng), 300);
+            };
+
+            let editMap, editMarker;
+            function initEditMap(lat, lng) {
+                const defaultLat = lat ? parseFloat(lat) : 45.4064; // Padova default
+                const defaultLng = lng ? parseFloat(lng) : 11.8768;
+
+                if (editMap) {
+                    editMap.remove();
+                }
+
+                // Definiamo i due tipi di mappa
+                const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                });
+                
+                const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Tiles &copy; Esri'
+                });
+                
+                const labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Labels &copy; Esri'
+                });
+
+                const hybrid = L.layerGroup([satellite, labels]);
+
+                const topo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Tiles &copy; Esri &mdash; Punti di Interesse, Scuole, Negozi'
+                });
+
+                // Inizializziamo con la vista IBRIDA (Satellite + Nomi) come predefinita
+                editMap = L.map('editMap', {
+                    center: [defaultLat, defaultLng],
+                    zoom: lat ? 18 : 10,
+                    layers: [hybrid]
+                });
+
+                const baseMaps = {
+                    "Satellite (con nomi)": hybrid,
+                    "Mappa Stradale (Dettagliata)": topo,
+                    "Mappa Semplice": osm
+                };
+                L.control.layers(baseMaps).addTo(editMap);
+
+                editMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(editMap);
+                
+                editMarker.on('dragend', function(e) {
+                    const pos = editMarker.getLatLng();
+                    document.getElementById('editLat').value = pos.lat.toFixed(6);
+                    document.getElementById('editLng').value = pos.lng.toFixed(6);
+                });
+
+                editMap.on('click', function(e) {
+                    editMarker.setLatLng(e.latlng);
+                    document.getElementById('editLat').value = e.latlng.lat.toFixed(6);
+                    document.getElementById('editLng').value = e.latlng.lng.toFixed(6);
+                });
+            }
+
+            window.getCurrentLocation = () => {
+                if (!navigator.geolocation) return alert("Geolocalizzazione non supportata");
+                
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    document.getElementById('editLat').value = lat.toFixed(6);
+                    document.getElementById('editLng').value = lng.toFixed(6);
+                    
+                    if (editMap) {
+                        editMap.setView([lat, lng], 16);
+                        editMarker.setLatLng([lat, lng]);
+                    }
+                }, (err) => {
+                    alert("Impossibile ottenere la posizione: " + err.message);
+                });
+            };
+
+            window.closeEditModal = () => {
+                modal.classList.remove('active');
+            };
+
+            editForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('editId').value;
+                const clienti = JSON.parse(localStorage.getItem('lista_clienti') || '[]');
+                const idx = clienti.findIndex((item, index) => (item.id === id || index.toString() === id));
+
+                if (idx !== -1) {
+                    const updatedData = {
+                        ...clienti[idx],
+                        nome: document.getElementById('editNome').value,
+                        codiceFrutta: document.getElementById('editCodFrutta').value,
+                        codiceLatte: document.getElementById('editCodLatte').value,
+                        indirizzo: document.getElementById('editIndirizzo').value,
+                        citta: document.getElementById('editCitta').value,
+                        provincia: document.getElementById('editProv').value,
+                        orarioMin: document.getElementById('editOrarioMin').value,
+                        orarioMax: document.getElementById('editOrarioMax').value,
+                        email: document.getElementById('editEmail').value,
+                        lat: document.getElementById('editLat').value,
+                        lng: document.getElementById('editLng').value
+                    };
+
+                    try {
+                        const submitBtn = e.target.querySelector('button[type="submit"]');
+                        const originalText = submitBtn.textContent;
+                        submitBtn.textContent = "Salvataggio...";
+                        submitBtn.disabled = true;
+
+                        // Salvataggio su Firebase
+                        if (window.updateCustomer && updatedData.id) {
+                            await window.updateCustomer(updatedData.id, updatedData);
+                        }
+
+                        // Aggiornamento locale
+                        clienti[idx] = updatedData;
+                        localStorage.setItem('lista_clienti', JSON.stringify(clienti));
+                        
+                        alert("Modifiche salvate con successo su Cloud!");
+                        
+                        closeEditModal();
+                        renderClienti(searchInput.value.trim().toLowerCase());
+                    } catch (err) {
+                        alert("Errore durante il salvataggio: " + err.message);
+                    } finally {
+                        const submitBtn = e.target.querySelector('button[type="submit"]');
+                        submitBtn.textContent = "Salva Modifiche";
+                        submitBtn.disabled = false;
+                    }
+                }
+            });
+
+            window.deleteCust = async (id) => {
+                const clienti = JSON.parse(localStorage.getItem('lista_clienti') || '[]');
+                const idx = clienti.findIndex((item, index) => (item.id === id || index.toString() === id));
+                if (idx === -1) return;
+
+                if (confirm('Sei sicuro di voler eliminare il cliente "' + clienti[idx].nome + '"?')) {
+                    try {
+                        if (window.deleteFromFirebase && clienti[idx].id) {
+                            await window.deleteFromFirebase("customers", clienti[idx].id);
+                        }
+                        clienti.splice(idx, 1);
+                        localStorage.setItem('lista_clienti', JSON.stringify(clienti));
+                        alert("Cliente eliminato con successo!");
+                        renderClienti(searchInput.value.trim().toLowerCase());
+                    } catch (e) {
+                        alert("Errore durante l'eliminazione: " + e.message);
+                    }
+                }
+            };
+        });
+    </script>
+</body>
+</html>
+

@@ -5,13 +5,21 @@ const GOOGLE_SHEET_URL = GESTIONE_URL;
 
 // --- GESTIONE VERSIONE E FORZATURA REFRESH ---
 (function checkVersion() {
+    // 1. Registrazione Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Service Worker registrato con successo:', reg.scope))
+                .catch(err => console.error('Errore registrazione Service Worker:', err));
+        });
+    }
+
     const localVersion = localStorage.getItem('app_version');
     if (localVersion !== APP_VERSION) {
         console.log(`Nuova versione rilevata (da ${localVersion || 'N/A'} a ${APP_VERSION}). Aggiornamento cache...`);
         localStorage.setItem('app_version', APP_VERSION);
         
-        // Pulizia selettiva della cache locale per forzare riscaricamento dati
-        // Manteniamo solo il login
+        // Pulizia selettiva della cache locale
         const currentUser = localStorage.getItem('currentUser');
         const bioUser = localStorage.getItem('biometric_linked_user');
         

@@ -1,7 +1,30 @@
+const APP_VERSION = "1.1";
 const GESTIONE_URL = "https://script.google.com/macros/s/AKfycbyPS-eF42oyNCzAlwu4n6mOcMKZYvBlkyuVfKgLFi6wmPSM77FjvdjwhBVaqE2frT6LVg/exec";
 const IMPOSTAZIONI_URL = GESTIONE_URL;
-// Per compatibilità con le pagine esistenti, definiamo GOOGLE_SHEET_URL come quello di GESTIONE
 const GOOGLE_SHEET_URL = GESTIONE_URL;
+
+// --- GESTIONE VERSIONE E FORZATURA REFRESH ---
+(function checkVersion() {
+    const localVersion = localStorage.getItem('app_version');
+    if (localVersion !== APP_VERSION) {
+        console.log(`Nuova versione rilevata (da ${localVersion || 'N/A'} a ${APP_VERSION}). Aggiornamento cache...`);
+        localStorage.setItem('app_version', APP_VERSION);
+        
+        // Pulizia selettiva della cache locale per forzare riscaricamento dati
+        // Manteniamo solo il login
+        const currentUser = localStorage.getItem('currentUser');
+        const bioUser = localStorage.getItem('biometric_linked_user');
+        
+        localStorage.clear();
+        
+        if (currentUser) localStorage.setItem('currentUser', currentUser);
+        if (bioUser) localStorage.setItem('biometric_linked_user', bioUser);
+        localStorage.setItem('app_version', APP_VERSION);
+        
+        // Forza ricaricamento bypassando cache
+        window.location.reload(true);
+    }
+})();
 
 // --- SINCRONIZZAZIONE DATI INIZIALE ---
 // Funzione di base che decide COME sincronizzare (Firebase o, in futuro, Apps Script)

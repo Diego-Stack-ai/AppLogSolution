@@ -172,14 +172,19 @@
 
             let allRecords = [];
 
-            // Popola Dropdown Autisti dal localStorage
-            const autisti = JSON.parse(localStorage.getItem('lista_autisti') || '[]');
-            autisti.forEach(a => {
-                const opt = document.createElement('option');
-                opt.value = a.nome;
-                opt.textContent = a.nome;
-                filterAutista.appendChild(opt);
-            });
+            window.renderAutistiDropdown = function() {
+                const autisti = JSON.parse(localStorage.getItem('lista_autisti') || '[]');
+                const currentVal = filterAutista.value;
+                filterAutista.innerHTML = '<option value="tutti">Tutti gli autisti</option>';
+                autisti.forEach(a => {
+                    const opt = document.createElement('option');
+                    opt.value = a.nome;
+                    opt.textContent = a.nome;
+                    filterAutista.appendChild(opt);
+                });
+                filterAutista.value = currentVal;
+            }
+            renderAutistiDropdown();
 
             async function fetchData() {
                 if (!GOOGLE_SHEET_URL) {

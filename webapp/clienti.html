@@ -141,17 +141,7 @@
             margin-top: 20px;
         }
 
-        /* Layout del Modale */
-        .modal-overlay {
-            padding: 20px 16px;
-            overflow-y: auto !important;
-        }
 
-        .modal-content {
-            margin: auto;
-            max-height: 90vh !important;
-            overflow-y: auto !important;
-        }
 
         .edit-fab {
             background: var(--primary);
@@ -256,7 +246,7 @@
         </div>
     <!-- Modal Modifica Cliente -->
     <div id="editCustModal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content">
             <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
                 <span class="material-icons-round" style="color: var(--primary);">edit</span>
                 Modifica Cliente
@@ -342,21 +332,23 @@
                 return;
             }
 
-            function renderClienti(query = '') {
+            window.renderClienti = function(query = '') {
+                const searchInput = document.getElementById('custSearch');
+                const q = query || (searchInput ? searchInput.value.trim().toLowerCase() : '');
                 const clienti = JSON.parse(localStorage.getItem('lista_clienti') || '[]');
                 let filtered = clienti;
 
-                if (query.length >= 2) {
+                if (q.length >= 2) {
                     filtered = clienti.filter(c => 
-                        (c.nome || '').toLowerCase().includes(query) || 
-                        (c.citta || '').toLowerCase().includes(query) ||
-                        (c.indirizzo || '').toLowerCase().includes(query) ||
-                        (c.codiceLatte || '').toLowerCase().includes(query) ||
-                        (c.codiceFrutta || '').toLowerCase().includes(query)
+                        (c.nome || '').toLowerCase().includes(q) || 
+                        (c.citta || '').toLowerCase().includes(q) ||
+                        (c.indirizzo || '').toLowerCase().includes(q) ||
+                        (c.codiceLatte || '').toLowerCase().includes(q) ||
+                        (c.codiceFrutta || '').toLowerCase().includes(q)
                     );
                 }
 
-                countEl.textContent = query.length >= 2 
+                countEl.textContent = q.length >= 2 
                     ? `Trovati ${filtered.length} risultati su ${clienti.length} clienti.`
                     : `Visualizzando tutti i ${clienti.length} clienti in archivio.`;
 
@@ -425,23 +417,8 @@
                 `).join('');
             }
 
-            // Caricamento iniziale intelligente
+            // Caricamento iniziale
             async function init() {
-                const clientiLocali = JSON.parse(localStorage.getItem('lista_clienti') || '[]');
-                
-                if (clientiLocali.length === 0) {
-                    const loading = document.getElementById('loadingIndicator');
-                    if (loading) loading.style.display = 'block';
-                    
-                    if (window.syncFromCloud) {
-                        countEl.textContent = "Database locale vuoto. Scaricamento dati da Cloud...";
-                        await window.syncFromCloud();
-                    }
-                    if (loading) loading.style.display = 'none';
-                } else {
-                    console.log("Uso dati cache per " + clientiLocali.length + " clienti.");
-                }
-                
                 renderClienti();
             }
             init();

@@ -1,48 +1,60 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-window.syncFromFirebase = async function () {
-    try {
-        console.log("Sincronizzazione da Firebase...");
+// Inizializzazione Listener Realtime
+function startRealtimeSync() {
+    console.log("Attivazione sincronizzazione realtime...");
 
-        // Sincronizza Autisti (Users)
-        const userSnapshot = await getDocs(collection(db, "users"));
-        const autisti = [];
-        userSnapshot.forEach((d) => {
-            autisti.push({ id: d.id, ...d.data() });
-        });
-        localStorage.setItem('lista_autisti', JSON.stringify(autisti));
-
-        // Sincronizza Mezzi
-        const mezziSnapshot = await getDocs(collection(db, "mezzi"));
-        const mezzi = [];
-        mezziSnapshot.forEach((d) => {
-            mezzi.push({ id: d.id, ...d.data() });
-        });
-        localStorage.setItem('lista_mezzi', JSON.stringify(mezzi));
-
-        // Sincronizza Clienti (Destinazioni)
-        console.log("Sincronizzazione clienti...");
-        const custSnapshot = await getDocs(collection(db, "customers"));
+    // Listener per Clienti (customers)
+    onSnapshot(collection(db, "customers"), (snapshot) => {
         const clienti = [];
-        custSnapshot.forEach((d) => {
+        snapshot.forEach((d) => {
             clienti.push({ id: d.id, ...d.data() });
         });
         localStorage.setItem('lista_clienti', JSON.stringify(clienti));
+        console.log("Clienti aggiornati realtime:", clienti.length);
+        
+        // Refresh UI se la funzione esiste nella pagina corrente
+        if (typeof window.renderClienti === 'function') window.renderClienti();
+    });
 
-        console.log("Dati sincronizzati da Firebase!");
+    // Listener per Autisti (users)
+    onSnapshot(collection(db, "users"), (snapshot) => {
+        const autisti = [];
+        snapshot.forEach((d) => {
+            autisti.push({ id: d.id, ...d.data() });
+        });
+        localStorage.setItem('lista_autisti', JSON.stringify(autisti));
+        console.log("Autisti aggiornati realtime:", autisti.length);
+        
+        if (typeof window.renderAutisti === 'function') window.renderAutisti();
+        if (typeof window.renderAutistiDropdown === 'function') window.renderAutistiDropdown();
+    });
 
-        // Trigger rendering se necessario
-        if (typeof renderAutisti === 'function') renderAutisti();
-        if (typeof renderLista === 'function') renderLista();
+    // Listener per Mezzi (mezzi)
+    onSnapshot(collection(db, "mezzi"), (snapshot) => {
+        const mezzi = [];
+        snapshot.forEach((d) => {
+            mezzi.push({ id: d.id, ...d.data() });
+        });
+        localStorage.setItem('lista_mezzi', JSON.stringify(mezzi));
+        console.log("Mezzi aggiornati realtime:", mezzi.length);
+        
+        if (typeof window.renderLista === 'function') window.renderLista();
+        if (typeof window.renderMezziInserimento === 'function') window.renderMezziInserimento();
+    });
+}
 
-    } catch (e) {
-        console.error("Errore sincronizzazione Firebase:", e);
-    }
+// Avvia i listener immediatamente
+startRealtimeSync();
+
+// Manteniamo le funzioni per compatibilità retroattiva se richiamate manualmente
+window.syncFromFirebase = async function () {
+    console.log("Sincronizzazione manuale non più necessaria (realtime attivo)");
 }
 
 // Funzione di salvataggio remoto per i clienti

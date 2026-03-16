@@ -132,17 +132,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (autistaNomeEl) autistaNomeEl.value = sessionNome;
 
         // Popolamento Automezzi
-        const automezzoSelect = document.getElementById('automezzo');
-        if (automezzoSelect) {
+        window.renderMezziInserimento = function() {
+            if (!automezzoSelect) return;
+            const currentVal = automezzoSelect.value;
             const DEFAULT_MEZZI = [{ targa: 'FJ638LN' }, { targa: 'FD788RT' }, { targa: 'GB969FN' }, { targa: 'GF929KT' }];
             const mezzi = JSON.parse(localStorage.getItem('lista_mezzi') || JSON.stringify(DEFAULT_MEZZI));
+            
+            automezzoSelect.innerHTML = '<option value="">Seleziona targa...</option>';
             mezzi.forEach(m => {
                 const opt = document.createElement('option');
                 opt.value = m.targa;
                 opt.textContent = m.modello ? `${m.targa} - ${m.modello}` : m.targa;
                 automezzoSelect.appendChild(opt);
             });
+            automezzoSelect.value = currentVal;
         }
+        renderMezziInserimento();
 
         // --- CUSTOM TIME HELPERS ---
         function getTimeValue(id) {

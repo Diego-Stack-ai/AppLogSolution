@@ -218,7 +218,7 @@
                             </div>
                         </div>
                     </div>
-                    <button type="button" id="btnStartTrip" class="btn-wizard btn-start" style="display:none;" onclick="handleStartTrip()">
+                    <button type="button" id="btnStartTrip" class="btn-wizard btn-start" style="display:none;">
                         <span class="material-icons-round">play_arrow</span>
                         Inizia Viaggio
                     </button>
@@ -416,28 +416,8 @@
     <script type="module" src="firebase-auth-sync.js?v=1.13"></script>
     <script type="module" src="trip-tracker.js?v=1.13"></script>
     <script>
-        // Aggancio pulsante Inizia Viaggio al tracker
-        async function handleStartTrip() {
-            const kmPartenza = document.getElementById('kmPartenza')?.value;
-            const targa      = document.getElementById('automezzo')?.value;
-            if (!kmPartenza || !targa) {
-                alert('Inserisci Km Partenza e Targa prima di iniziare il viaggio.');
-                return;
-            }
-            const btn = document.getElementById('btnStartTrip');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="material-icons-round">hourglass_empty</span> Avvio...';
-            const tripId = await window.startTrip(kmPartenza, targa);
-            if (tripId) {
-                btn.innerHTML = '<span class="material-icons-round">gps_fixed</span> Tracking Attivo';
-                btn.style.background = '#0f766e';
-            } else {
-                btn.disabled = false;
-                btn.innerHTML = '<span class="material-icons-round">play_arrow</span> Inizia Viaggio';
-            }
-        }
-
         // Al salvataggio finale, chiudi il viaggio su Firestore
+
         document.addEventListener('DOMContentLoaded', () => {
             const btnConfirm = document.getElementById('btnConfirmSend');
             if (btnConfirm) {

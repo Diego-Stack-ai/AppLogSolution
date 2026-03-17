@@ -382,10 +382,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (btnStartTrip) {
             btnStartTrip.onclick = async () => {
-                // Salvataggio immediato al Cloud al CLICK di Inizia Viaggio
+                // Avvio Tracking su Firestore
+                const kmPartenza = document.getElementById('kmPartenza')?.value || 0;
+                const targa      = document.getElementById('automezzo')?.value || '';
+                
                 const originalContent = btnStartTrip.innerHTML;
-                btnStartTrip.innerHTML = '<span class="material-icons-round">sync</span> Invio...';
+                btnStartTrip.innerHTML = '<span class="material-icons-round">hourglass_empty</span> Avvio...';
                 btnStartTrip.disabled = true;
+
+                if (window.startTrip) {
+                    await window.startTrip(kmPartenza, targa);
+                    // Il banner verrà mostrato nativamente dal trip-tracker
+                }
 
                 const dataVal = document.getElementById('data').value;
                 if (!dataVal || dataVal === "") {
@@ -399,9 +407,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     action: "save_turn",
                     data: dataVal,
                     autista: sessionNome,
-                    automezzo: document.getElementById('automezzo').value,
+                    automezzo: targa,
                     cliente: document.getElementById('clienteSearch')?.value || '',
-                    km_partenza: document.getElementById('kmPartenza').value,
+                    km_partenza: kmPartenza,
                     mattina_inizio: getTimeValue('mattinaInizio'),
                     status: "INIZIATO",
                     timestamp: new Date().toLocaleString()
@@ -417,7 +425,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log("Invio inizio turno (ignore CORS)");
                 }
 
-                btnStartTrip.innerHTML = originalContent;
+                // Lasciamo il bottone a schermo, ma magari mostriamo un feedback verde se vuoi 
+                // In questo caso, passiamo semplicemente allo step 2
+                btnStartTrip.innerHTML = '<span class="material-icons-round">gps_fixed</span> Tracking Attivo';
                 btnStartTrip.disabled = false;
                 nextStep(2);
             };

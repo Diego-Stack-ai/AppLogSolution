@@ -238,17 +238,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Popola Ore (00-23)
         document.querySelectorAll('.hour-select').forEach(select => {
             const id = select.id;
-            // Aggiungiamo opzioni speciali in testa
-            if (id === 'mattinaInizioHH') {
-                const opt = document.createElement('option');
-                opt.value = "SOLO_POM"; opt.textContent = "Solo Pomeriggio";
-                select.appendChild(opt);
-            }
-            if (id === 'pomeriggioFineHH') {
-                const opt = document.createElement('option');
-                opt.value = "SOLO_MAT"; opt.textContent = "Solo Mattina";
-                select.appendChild(opt);
-            }
 
             for (let i = 0; i < 24; i++) {
                 const opt = document.createElement('option');
@@ -257,18 +246,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 opt.textContent = val;
                 select.appendChild(opt);
             }
-
-            // Listener per forzare minuti a 00 se selezionata opzione speciale
-            select.addEventListener('change', () => {
-                const baseId = id.replace('HH', '');
-                const mEl = document.getElementById(baseId + 'MM');
-                if ((select.value === "SOLO_POM" || select.value === "SOLO_MAT") && mEl) {
-                    mEl.value = "00";
-                    mEl.disabled = true;
-                } else if (mEl) {
-                    mEl.disabled = false;
-                }
-            });
         });
 
         // --- LOGICA WIZARD ---
@@ -467,25 +444,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let totalM = 0;
 
-            // Logica Calcolo con Eccezioni "Solo Mattina/Pomeriggio"
-            const isSoloPom = (mI === 'SOLO_POM:00');
-            const isSoloMat = (pF === 'SOLO_MAT:00');
+            // Calcolo standard a intervalli
+            if (mI && mF) totalM += diffMin(mI, mF);
+            if (pI && pF) totalM += diffMin(pI, pF);
 
-            if (isSoloPom) {
-                // Calcola solo pomeriggio
-                if (pI && pF && pF !== 'SOLO_MAT:00') totalM = diffMin(pI, pF);
-            } else if (isSoloMat) {
-                // Calcola solo mattina
-                if (mI && mF && mI !== 'SOLO_POM:00') totalM = diffMin(mI, mF);
-            } else {
-                // Calcolo standard a intervalli
-                if (mI && mF) totalM += diffMin(mI, mF);
-                if (pI && pF) totalM += diffMin(pI, pF);
-
-                // Caso turno unico (senza pause centrali)
-                if (mI && pF && !mF && !pI) {
-                    totalM = diffMin(mI, pF);
-                }
+            // Caso turno unico (senza pause centrali)
+            if (mI && pF && !mF && !pI) {
+                totalM = diffMin(mI, pF);
             }
 
             if (totalM > 0) {
@@ -547,15 +512,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const isSoloPom = (mI === 'SOLO_POM:00');
-            const isSoloMat = (pF === 'SOLO_MAT:00');
+            const mI = getTimeValue('mattinaInizio');
+            const pI = getTimeValue('pomeriggioInizio');
 
-            if (!isSoloPom && !isSoloMat) {
-                // Regola della coppia: se inserisci uno, devi inserire l'altro (solo se non è un turno unico o speciale)
-                if ((mF && !pI) || (!mF && pI)) {
-                    alert("Errore: Se inserisci una pausa (Mattina Fine o Pomeriggio Inizio), devi compilarle entrambe.");
-                    return;
-                }
+            // Regola della coppia: se inserisci uno, devi inserire l'altro (solo se non è un turno unico o speciale)
+            if ((mF && !pI) || (!mF && pI)) {
+                alert("Errore: Se inserisci una pausa (Mattina Fine o Pomeriggio Inizio), devi compilarle entrambe.");
+                return;
             }
 
             if (!pF) {

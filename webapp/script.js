@@ -103,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Popolamento Automezzi
         window.renderMezziInserimento = function() {
+            const automezzoSelect = document.getElementById('automezzo');
             if (!automezzoSelect) return;
             const currentVal = automezzoSelect.value;
             const DEFAULT_MEZZI = [{ targa: 'FJ638LN' }, { targa: 'FD788RT' }, { targa: 'GB969FN' }, { targa: 'GF929KT' }];
@@ -380,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.reload();
         };
 
-        const step1Inputs = ['data', 'automezzo', 'clienteId', 'kmPartenza', 'mattinaInizio'];
+        const step1Inputs = ['data', 'automezzo', 'clienteSearch', 'kmPartenza', 'mattinaInizio'];
         step1Inputs.forEach(id => {
             if (id === 'mattinaInizio') {
                 document.getElementById(id + 'HH')?.addEventListener('change', checkStep1);
@@ -422,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     data: dataVal,
                     autista: sessionNome,
                     automezzo: document.getElementById('automezzo').value,
-                    cliente: document.getElementById('cliente').value,
+                    cliente: document.getElementById('clienteSearch')?.value || '',
                     km_partenza: document.getElementById('kmPartenza').value,
                     mattina_inizio: getTimeValue('mattinaInizio'),
                     status: "INIZIATO",
@@ -576,7 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 data: dataInput.value,
                 autista: sessionNome,
                 automezzo: document.getElementById('automezzo').value,
-                cliente: document.getElementById('cliente').value,
+                cliente: document.getElementById('clienteSearch')?.value || '',
                 km_partenza: document.getElementById('kmPartenza').value,
                 km_arrivo: document.getElementById('kmArrivo').value,
                 delta_km: document.getElementById('deltaKm').value,

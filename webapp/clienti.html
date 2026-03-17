@@ -6,10 +6,20 @@
     <title>Gestione Clienti - Log Solution</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    
+    <!-- PWA & Mobile Optimization -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="LogSolution">
+    <link rel="apple-touch-icon" href="img/logo.png">
+    <meta name="theme-color" content="#4f46e5">
+
     <script src="script.js"></script>
     <script type="module" src="firebase-auth-sync.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDLnhP2Q4bz2ubYwcMLiD3-qq4c220eVKw&libraries=places&language=it"></script>
     <style>
         .search-bar-container {
             margin-bottom: 32px;
@@ -211,13 +221,37 @@
         }
         .geo-ok { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
         .geo-missing { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Google Autocomplete Customization */
+        .pac-container {
+            border-radius: 12px;
+            margin-top: 8px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
+            font-family: inherit;
+            z-index: 10000 !important;
+        }
+        .pac-item {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        .pac-item-query {
+            font-size: 14px;
+            color: var(--text-dark);
+        }
     </style>
 </head>
 <body>
     <nav class="glass-nav">
         <div class="nav-content">
+            <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
             <button id="dashboardBtn" class="logout-btn" title="Dashboard"
-                onclick="window.location.href='dashboard.html'"
+                onclick="window.navigateWithState('dashboard.html')"
                 style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
                 <span class="material-icons-round">dashboard</span>
             </button>
@@ -227,11 +261,15 @@
     </nav>
 
     <main class="main-container">
-        <div class="search-bar-container">
-            <div class="search-input-wrapper">
+        <div class="search-bar-container" style="display: flex; gap: 10px; align-items: center;">
+            <div class="search-input-wrapper" style="flex: 1;">
                 <span class="material-icons-round">search</span>
                 <input type="text" id="custSearch" placeholder="Cerca per nome, codice, città o indirizzo..." autocomplete="off">
             </div>
+            <button onclick="window.openAddModal()" class="btn-primary" style="width: auto; height: 50px; padding: 0 20px; border-radius: 15px; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                <span class="material-icons-round">person_add</span>
+                Nuovo Cliente
+            </button>
         </div>
 
         <div id="resultsCount">Verifica connessione al database...</div>
@@ -248,8 +286,8 @@
     <div id="editCustModal" class="modal-overlay">
         <div class="modal-content">
             <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-                <span class="material-icons-round" style="color: var(--primary);">edit</span>
-                Modifica Cliente
+                <span class="material-icons-round" style="color: var(--primary);" id="modalIcon">edit</span>
+                <span id="modalTitle">Modifica Cliente</span>
             </h3>
             
             <form id="editCustForm" class="modal-body">
@@ -268,15 +306,15 @@
                 </div>
                 <div class="input-group" style="grid-column: 1 / -1;">
                     <label>Indirizzo *</label>
-                    <input type="text" id="editIndirizzo" required>
+                    <input type="text" id="editIndirizzo" placeholder="Via, Piazza, Corso..." required>
                 </div>
                 <div class="input-group">
                     <label>Città *</label>
-                    <input type="text" id="editCitta" required>
+                    <input type="text" id="editCitta" placeholder="Comune" required>
                 </div>
                 <div class="input-group">
                     <label>Provincia *</label>
-                    <input type="text" id="editProv" maxlength="2">
+                    <input type="text" id="editProv" maxlength="2" placeholder="Prov.">
                 </div>
                 <div class="input-group">
                     <label>Orario Min</label>
@@ -292,19 +330,36 @@
                 </div>
 
                 <div class="map-section" style="grid-column: 1 / -1; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Posizione sulla mappa</label>
-                    <div id="editMap"></div>
-                    <div class="map-controls">
-                        <button type="button" onclick="getCurrentLocation()" class="btn-primary" style="background: #10b981; font-size: 13px; width: auto; padding: 8px 16px;">
-                            <span class="material-icons-round" style="font-size: 18px;">my_location</span>
-                            Usa mia posizione
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label style="display: block; margin-bottom: 6px; font-weight: 700; color: var(--primary);">Cerca indirizzo (Google Search)</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="quickMapSearch" placeholder="Cerca via, città o attività..." style="flex: 1; border-radius: 12px;">
+                                <button type="button" class="btn-primary" style="width: auto; padding: 0 16px; background: #4f46e5; height: 45px; pointer-events: none; opacity: 0.7;">
+                                    <span class="material-icons-round">search</span>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" onclick="getCurrentLocation()" class="btn-primary" title="Usa mia posizione GPS" style="background: #10b981; width: 45px; height: 45px; padding: 0; border-radius: 12px;">
+                            <span class="material-icons-round">my_location</span>
                         </button>
-                        <div style="flex: 1; display: flex; gap: 10px;">
-                            <input type="text" id="editLat" placeholder="Latitudine" style="font-size: 12px; padding: 8px;" readonly>
-                            <input type="text" id="editLng" placeholder="Longitudine" style="font-size: 12px; padding: 8px;" readonly>
+                    </div>
+
+                    <div id="editMap" style="height: 350px;"></div>
+                    
+                    <div class="map-controls" style="margin-top: 15px; background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <div style="display: flex; gap: 15px; width: 100%;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 10px; color: #64748b; font-weight: 700; text-transform: uppercase;">Latitudine</label>
+                                <input type="text" id="editLat" placeholder="Lat" style="border: none; background: transparent; padding: 0; font-weight: 600; color: #334155; width: 100%;" readonly>
+                            </div>
+                            <div style="flex: 1; border-left: 1px solid #e2e8f0; padding-left: 15px;">
+                                <label style="font-size: 10px; color: #64748b; font-weight: 700; text-transform: uppercase;">Longitudine</label>
+                                <input type="text" id="editLng" placeholder="Lng" style="border: none; background: transparent; padding: 0; font-weight: 600; color: #334155; width: 100%;" readonly>
+                            </div>
                         </div>
                     </div>
-                    <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+                    <p style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">
                         Muovi il cursore sulla mappa per affinare la posizione esatta della consegna.
                     </p>
                 </div>
@@ -318,27 +373,15 @@
     </div>
 </main>
 
-    <footer style="text-align: center; padding: 20px 24px 40px; color: var(--text-muted); font-size: 13px;">
-        Log Solution &copy; 2026 - Versione 1.1
-    </footer>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const searchInput = document.getElementById('custSearch');
             const container = document.getElementById('custContainer');
             const countEl = document.getElementById('resultsCount');
 
-            // Verifica permessi
-            const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-            const role = (user.ruolo || '').toLowerCase();
-            if (role !== 'amministratore' && role !== 'impiegata') {
-                window.location.href = 'login.html';
-                return;
-            }
-
             window.renderClienti = function(query = '') {
-                const searchInput = document.getElementById('custSearch');
                 const q = query || (searchInput ? searchInput.value.trim().toLowerCase() : '');
-                const clienti = JSON.parse(localStorage.getItem('lista_clienti') || '[]');
+                const clienti = window.appData.lista_clienti || [];
                 let filtered = clienti;
 
                 if (q.length >= 2) {
@@ -435,9 +478,23 @@
             const modal = document.getElementById('editCustModal');
             const editForm = document.getElementById('editCustForm');
 
+            window.openAddModal = () => {
+                document.getElementById('modalTitle').textContent = "Aggiungi Nuovo Cliente";
+                document.getElementById('modalIcon').textContent = "person_add";
+                document.getElementById('editId').value = "";
+                editForm.reset();
+                document.getElementById('editLat').value = "";
+                document.getElementById('editLng').value = "";
+                
+                modal.classList.add('active');
+                setTimeout(() => initEditMap(null, null), 300);
+            };
+
             window.openEditModal = (id) => {
-                const clienti = JSON.parse(localStorage.getItem('lista_clienti') || '[]');
-                // Se non abbiamo ID reale, usiamo l'indice o cerchiamo per nome (temporaneo finché Firebase non è attivo)
+                document.getElementById('modalTitle').textContent = "Modifica Cliente";
+                document.getElementById('modalIcon').textContent = "edit";
+                
+                const clienti = window.appData.lista_clienti || [];
                 const c = clienti.find((item, index) => (item.id === id || index.toString() === id));
                 
                 if (!c) return alert("Errore: Cliente non trovato");
@@ -463,43 +520,52 @@
 
             let editMap, editMarker;
             function initEditMap(lat, lng) {
-                const defaultLat = lat ? parseFloat(lat) : 45.4064; // Padova default
+                const defaultLat = lat ? parseFloat(lat) : 45.4064; 
                 const defaultLng = lng ? parseFloat(lng) : 11.8768;
 
                 if (editMap) {
                     editMap.remove();
                 }
 
-                // Definiamo i due tipi di mappa
+                // LAYER GOOGLE MAPS
+                // Hybrid: Satellite + Streets + Labels
+                const googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                    maxZoom: 20,
+                    subdomains:['mt0','mt1','mt2','mt3'],
+                    attribution: '© Google Maps'
+                });
+
+                // Street: Roadmap classic
+                const googleRoad = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                    maxZoom: 20,
+                    subdomains:['mt0','mt1','mt2','mt3'],
+                    attribution: '© Google Maps'
+                });
+
+                // Satellite: Image only
+                const googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                    maxZoom: 20,
+                    subdomains:['mt0','mt1','mt2','mt3'],
+                    attribution: '© Google Maps'
+                });
+
+                // OpenStreetMap (Fallback)
                 const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap'
                 });
-                
-                const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: 'Tiles &copy; Esri'
-                });
-                
-                const labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: 'Labels &copy; Esri'
-                });
 
-                const hybrid = L.layerGroup([satellite, labels]);
-
-                const topo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: 'Tiles &copy; Esri &mdash; Punti di Interesse, Scuole, Negozi'
-                });
-
-                // Inizializziamo con la vista IBRIDA (Satellite + Nomi) come predefinita
+                // Inizializziamo con Google Hybrid (Satellite + Nomi)
                 editMap = L.map('editMap', {
                     center: [defaultLat, defaultLng],
                     zoom: lat ? 18 : 10,
-                    layers: [hybrid]
+                    layers: [googleHybrid]
                 });
 
                 const baseMaps = {
-                    "Satellite (con nomi)": hybrid,
-                    "Mappa Stradale (Dettagliata)": topo,
-                    "Mappa Semplice": osm
+                    "Satellite + Strade": googleHybrid,
+                    "Mappa Stradale": googleRoad,
+                    "Solo Satellite": googleSat,
+                    "OpenStreetMap": osm
                 };
                 L.control.layers(baseMaps).addTo(editMap);
 
@@ -516,11 +582,109 @@
                     document.getElementById('editLat').value = e.latlng.lat.toFixed(6);
                     document.getElementById('editLng').value = e.latlng.lng.toFixed(6);
                 });
+
+                // Pre-compila barra ricerca mappa se c'è un indirizzo
+                const addr = document.getElementById('editIndirizzo').value;
+                const city = document.getElementById('editCitta').value;
+                const prov = document.getElementById('editProv').value;
+                
+                if (addr && city) {
+                    const fullAddr = `${addr}, ${city}${prov ? ', ' + prov : ''}`;
+                    document.getElementById('quickMapSearch').value = fullAddr;
+                    
+                    // AUTOMATISMO: Se non abbiamo coordinate salvate, cerchiamo subito l'indirizzo
+                    if (!lat || !lng || lat === "" || lng === "") {
+                        console.log("Auto-searching address because coordinates are missing...");
+                        setTimeout(() => {
+                            const query = document.getElementById('quickMapSearch').value.trim();
+                            if (query.length > 3 && window.autoGeocodeAddress) window.autoGeocodeAddress(query);
+                        }, 100); 
+                    }
+                }
             }
+
+            // --- SISTEMA DI RICERCA PROFESSIONALE (GOOGLE MAPS AUTOCOMPLETE) ---
+            let autocomplete;
+            const mapSearchInput = document.getElementById('quickMapSearch');
+
+            function initAutocomplete() {
+                // Configura l'autocomplete di Google
+                autocomplete = new google.maps.places.Autocomplete(mapSearchInput, {
+                    componentRestrictions: { country: "it" },
+                    fields: ["address_components", "geometry", "name"],
+                    types: ["address"]
+                });
+
+                // Evento selezione suggerimento
+                autocomplete.addListener("place_changed", () => {
+                    const place = autocomplete.getPlace();
+
+                    if (!place.geometry || !place.geometry.location) {
+                        alert("Indirizzo non trovato, verifica o usa la mappa manualmente");
+                        return;
+                    }
+
+                    // 1. Aggiorna campi coordinate
+                    const lat = place.geometry.location.lat();
+                    const lng = place.geometry.location.lng();
+                    document.getElementById('editLat').value = lat.toFixed(6);
+                    document.getElementById('editLng').value = lng.toFixed(6);
+
+                    // 2. Parsa componenti indirizzo
+                    let streetNumber = "";
+                    let route = "";
+                    let city = "";
+                    let province = "";
+
+                    for (const component of place.address_components) {
+                        const types = component.types;
+                        if (types.includes("street_number")) streetNumber = component.long_name;
+                        if (types.includes("route")) route = component.long_name;
+                        if (types.includes("locality")) city = component.long_name;
+                        if (types.includes("administrative_area_level_2")) province = component.short_name;
+                    }
+
+                    document.getElementById('editIndirizzo').value = `${route} ${streetNumber}`.trim();
+                    document.getElementById('editCitta').value = city;
+                    document.getElementById('editProv').value = province;
+
+                    // 3. Aggiorna Mappa Leaflet
+                    if (editMap) {
+                        editMap.setView([lat, lng], 18);
+                        if (editMarker) editMarker.setLatLng([lat, lng]);
+                    }
+                });
+            }
+
+            // Inizializza al caricamento
+            initAutocomplete();
+
+            // Sostituzione della vecchia logica di auto-ricerca (Geocoding manuale se necessario)
+            window.autoGeocodeAddress = async (query) => {
+                const geocoder = new google.maps.Geocoder();
+                geocoder.geocode({ address: query, componentRestrictions: { country: 'it' } }, (results, status) => {
+                    if (status === "OK" && results[0]) {
+                        const loc = results[0].geometry.location;
+                        const lat = loc.lat();
+                        const lng = loc.lng();
+                        
+                        document.getElementById('editLat').value = lat.toFixed(6);
+                        document.getElementById('editLng').value = lng.toFixed(6);
+                        
+                        if (editMap) {
+                            editMap.setView([lat, lng], 18);
+                            if (editMarker) editMarker.setLatLng([lat, lng]);
+                        }
+                    }
+                });
+            };
 
             window.getCurrentLocation = () => {
                 if (!navigator.geolocation) return alert("Geolocalizzazione non supportata");
                 
+                const confirmLoc = confirm("Attenzione: vuoi sovrascrivere la posizione del cliente con la tua posizione attuale?");
+                if (!confirmLoc) return;
+
                 navigator.geolocation.getCurrentPosition((pos) => {
                     const lat = pos.coords.latitude;
                     const lng = pos.coords.longitude;
@@ -528,7 +692,7 @@
                     document.getElementById('editLng').value = lng.toFixed(6);
                     
                     if (editMap) {
-                        editMap.setView([lat, lng], 16);
+                        editMap.setView([lat, lng], 18);
                         editMarker.setLatLng([lat, lng]);
                     }
                 }, (err) => {
@@ -540,59 +704,61 @@
                 modal.classList.remove('active');
             };
 
+            // Rimosso automatismo vecchio (sovrascritto dal nuovo sistema professionale)
+
             editForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const id = document.getElementById('editId').value;
-                const clienti = JSON.parse(localStorage.getItem('lista_clienti') || '[]');
-                const idx = clienti.findIndex((item, index) => (item.id === id || index.toString() === id));
+                const isNew = !id;
+                const clienti = window.appData.lista_clienti || [];
+                const idx = isNew ? -1 : clienti.findIndex((item, index) => (item.id === id || index.toString() === id));
 
-                if (idx !== -1) {
-                    const updatedData = {
-                        ...clienti[idx],
-                        nome: document.getElementById('editNome').value,
-                        codiceFrutta: document.getElementById('editCodFrutta').value,
-                        codiceLatte: document.getElementById('editCodLatte').value,
-                        indirizzo: document.getElementById('editIndirizzo').value,
-                        citta: document.getElementById('editCitta').value,
-                        provincia: document.getElementById('editProv').value,
-                        orarioMin: document.getElementById('editOrarioMin').value,
-                        orarioMax: document.getElementById('editOrarioMax').value,
-                        email: document.getElementById('editEmail').value,
-                        lat: document.getElementById('editLat').value,
-                        lng: document.getElementById('editLng').value
-                    };
+                const updatedData = {
+                    nome: document.getElementById('editNome').value,
+                    codiceFrutta: document.getElementById('editCodFrutta').value,
+                    codiceLatte: document.getElementById('editCodLatte').value,
+                    indirizzo: document.getElementById('editIndirizzo').value,
+                    citta: document.getElementById('editCitta').value,
+                    provincia: document.getElementById('editProv').value,
+                    orarioMin: document.getElementById('editOrarioMin').value,
+                    orarioMax: document.getElementById('editOrarioMax').value,
+                    email: document.getElementById('editEmail').value,
+                    lat: document.getElementById('editLat').value,
+                    lng: document.getElementById('editLng').value
+                };
 
-                    try {
-                        const submitBtn = e.target.querySelector('button[type="submit"]');
-                        const originalText = submitBtn.textContent;
-                        submitBtn.textContent = "Salvataggio...";
-                        submitBtn.disabled = true;
+                if (!isNew && idx !== -1) {
+                    updatedData.id = clienti[idx].id;
+                }
 
-                        // Salvataggio su Firebase
-                        if (window.updateCustomer && updatedData.id) {
-                            await window.updateCustomer(updatedData.id, updatedData);
-                        }
+                try {
+                    const submitBtn = e.target.querySelector('button[type="submit"]');
+                    const originalText = submitBtn.textContent;
+                    submitBtn.textContent = "Salvataggio...";
+                    submitBtn.disabled = true;
 
-                        // Aggiornamento locale
-                        clienti[idx] = updatedData;
-                        localStorage.setItem('lista_clienti', JSON.stringify(clienti));
-                        
-                        alert("Modifiche salvate con successo su Cloud!");
-                        
-                        closeEditModal();
-                        renderClienti(searchInput.value.trim().toLowerCase());
-                    } catch (err) {
-                        alert("Errore durante il salvataggio: " + err.message);
-                    } finally {
-                        const submitBtn = e.target.querySelector('button[type="submit"]');
-                        submitBtn.textContent = "Salva Modifiche";
-                        submitBtn.disabled = false;
+                    // Salvataggio su Firebase
+                    if (isNew) {
+                        if (window.addCustomer) await window.addCustomer(updatedData);
+                    } else {
+                        if (window.updateCustomer && updatedData.id) await window.updateCustomer(updatedData.id, updatedData);
                     }
+                    
+                    alert(isNew ? "Nuovo cliente aggiunto con successo!" : "Modifiche salvate con successo!");
+                    
+                    closeEditModal();
+                    renderClienti(searchInput.value.trim().toLowerCase());
+                } catch (err) {
+                    alert("Errore durante il salvataggio: " + err.message);
+                } finally {
+                    const submitBtn = e.target.querySelector('button[type="submit"]');
+                    submitBtn.textContent = "Salva Modifiche";
+                    submitBtn.disabled = false;
                 }
             });
 
             window.deleteCust = async (id) => {
-                const clienti = JSON.parse(localStorage.getItem('lista_clienti') || '[]');
+                const clienti = window.appData.lista_clienti || [];
                 const idx = clienti.findIndex((item, index) => (item.id === id || index.toString() === id));
                 if (idx === -1) return;
 
@@ -602,7 +768,7 @@
                             await window.deleteFromFirebase("customers", clienti[idx].id);
                         }
                         clienti.splice(idx, 1);
-                        localStorage.setItem('lista_clienti', JSON.stringify(clienti));
+                        window.appData.lista_clienti = clienti;
                         alert("Cliente eliminato con successo!");
                         renderClienti(searchInput.value.trim().toLowerCase());
                     } catch (e) {

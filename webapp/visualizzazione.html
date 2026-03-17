@@ -7,6 +7,14 @@
     <title>Visualizzazione Dati - Log Solution</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    
+    <!-- PWA & Mobile Optimization -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="LogSolution">
+    <link rel="apple-touch-icon" href="img/logo.png">
+    <meta name="theme-color" content="#4f46e5">
     <style>
         .filter-section {
             display: flex;
@@ -116,78 +124,77 @@
     </style>
 </head>
 
-<body>
-    <nav class="glass-nav">
-        <div class="nav-content">
-            <button id="dashboardBtn" class="logout-btn" title="Dashboard"
-                onclick="window.location.href='dashboard.html'"
-                style="border:none; background:none; cursor:pointer; margin-right:8px; display:none;">
-                <span class="material-icons-round">dashboard</span>
-            </button>
-            <div class="nav-title" style="flex: 1;">Riepilogo Turni Inseriti</div>
-            <a href="login.html" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
-        </div>
-    </nav>
 
-    <main class="main-container">
-        <div class="filter-section">
-            <div class="input-group" style="flex: 1; margin-bottom: 0;">
-                <label>Filtra per Autista</label>
-                <select id="filterAutista">
-                    <option value="tutti">Tutti gli autisti</option>
-                </select>
-            </div>
-            <button id="btnRefresh" class="btn-primary"
-                style="width: auto; padding: 12px 24px; display: flex; align-items: center; gap: 8px;">
-                <span class="material-icons-round">refresh</span>
-                Aggiorna Dati
-            </button>
-        </div>
-
-        <div id="loadingState" style="display: none; text-align: center; padding: 40px;">
-            <span class="loader"></span>
-            <p style="margin-top: 16px;">Caricamento dati dal Foglio Google...</p>
-        </div>
-
-        <div id="listaDati">
-            <!-- Popolato da JS -->
-        </div>
-
-        <div id="emptyState" style="display: none;">
-            <span class="material-icons-round"
-                style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">inventory_2</span>
-            <p>Nessun turno trovato per i criteri selezionati.</p>
-        </div>
-    </main>
-
-    <footer style="text-align: center; padding: 20px 24px 40px; color: var(--text-muted); font-size: 13px;">
-        Log Solution &copy; 2026 - Versione 1.1
-    </footer>
     <script src="script.js"></script>
     <script type="module" src="firebase-auth-sync.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const filterAutista = document.getElementById('filterAutista');
-            const btnRefresh = document.getElementById('btnRefresh');
-            const listaDati = document.getElementById('listaDati');
-            const loadingState = document.getElementById('loadingState');
-            const emptyState = document.getElementById('emptyState');
+</body>
+<nav class="glass-nav">
+    <div class="nav-content">
+        <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
+        <button id="dashboardBtn" class="logout-btn" title="Dashboard"
+            onclick="window.navigateWithState('dashboard.html')"
+            style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
+            <span class="material-icons-round">dashboard</span>
+        </button>
+        <div class="nav-title" style="flex: 1;">Riepilogo Turni Inseriti</div>
+        <a href="login.html" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
+    </div>
+</nav>
 
-            let allRecords = [];
+<main class="main-container">
+    <div class="filter-section">
+        <div class="input-group" style="flex: 1; margin-bottom: 0;">
+            <label>Filtra per Autista</label>
+            <select id="filterAutista">
+                <option value="tutti">Tutti gli autisti</option>
+            </select>
+        </div>
+        <button id="btnRefresh" class="btn-primary"
+            style="width: auto; padding: 12px 24px; display: flex; align-items: center; gap: 8px;">
+            <span class="material-icons-round">refresh</span>
+            Aggiorna Dati
+        </button>
+    </div>
 
-            window.renderAutistiDropdown = function() {
-                const autisti = JSON.parse(localStorage.getItem('lista_autisti') || '[]');
-                const currentVal = filterAutista.value;
-                filterAutista.innerHTML = '<option value="tutti">Tutti gli autisti</option>';
-                autisti.forEach(a => {
-                    const opt = document.createElement('option');
-                    opt.value = a.nome;
-                    opt.textContent = a.nome;
-                    filterAutista.appendChild(opt);
-                });
-                filterAutista.value = currentVal;
-            }
-            renderAutistiDropdown();
+    <div id="loadingState" style="display: none; text-align: center; padding: 40px;">
+        <span class="loader"></span>
+        <p style="margin-top: 16px;">Caricamento dati dal Foglio Google...</p>
+    </div>
+
+    <div id="listaDati">
+        <!-- Popolato da JS -->
+    </div>
+
+    <div id="emptyState" style="display: none;">
+        <span class="material-icons-round"
+            style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">inventory_2</span>
+        <p>Nessun turno trovato per i criteri selezionati.</p>
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const filterAutista = document.getElementById('filterAutista');
+        const btnRefresh = document.getElementById('btnRefresh');
+        const listaDati = document.getElementById('listaDati');
+        const loadingState = document.getElementById('loadingState');
+        const emptyState = document.getElementById('emptyState');
+
+        let allRecords = [];
+
+        window.renderAutistiDropdown = function() {
+            const autisti = window.appData.lista_autisti || [];
+            const currentVal = filterAutista.value;
+            filterAutista.innerHTML = '<option value="tutti">Tutti gli autisti</option>';
+            autisti.forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.nome;
+                opt.textContent = a.nome;
+                filterAutista.appendChild(opt);
+            });
+            filterAutista.value = currentVal;
+        }
+        renderAutistiDropdown();
 
             async function fetchData() {
                 if (!GOOGLE_SHEET_URL) {

@@ -7,6 +7,13 @@
     <title>Inserimento Presenze - Log Solution</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <!-- PWA & Mobile Optimization -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="LogSolution">
+    <link rel="apple-touch-icon" href="img/logo.png">
+    <meta name="theme-color" content="#4f46e5">
 </head>
 
 <style>
@@ -118,10 +125,11 @@
     <nav class="glass-nav">
         <div class="nav-content">
             <button id="dashboardBtn" class="logout-btn" title="Dashboard"
-                onclick="window.location.href='dashboard.html'"
-                style="border:none; background:none; cursor:pointer; margin-right:8px; display:none;">
+                onclick="window.navigateWithState('dashboard.html')"
+                style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
                 <span class="material-icons-round">dashboard</span>
             </button>
+            <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
             <div class="nav-title" style="flex: 1;">Registrazione Turno</div>
             <a href="login.html" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
         </div>
@@ -404,12 +412,8 @@
         </div>
     </div>
 
-    <footer style="text-align: center; padding: 20px 24px 40px; color: var(--text-muted); font-size: 13px;">
-        Log Solution &copy; 2026 - Versione 1.1
-    </footer>
     <script src="script.js"></script>
     <script type="module" src="firebase-auth-sync.js"></script>
 </body>
 
 </html>
-

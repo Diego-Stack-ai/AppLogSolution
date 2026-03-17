@@ -1,4 +1,4 @@
-const CACHE_NAME = 'log-solution-v1.1';
+const CACHE_NAME = 'log-solution-v1.8';
 const ASSETS = [
     './',
     './index.html',
@@ -13,21 +13,24 @@ const ASSETS = [
     './script.js',
     './firebase-auth-sync.js',
     './firebase-config.js',
+    './manifest.json',
+    './img/logo.png',
     'https://fonts.googleapis.com/icon?family=Material+Icons+Round'
 ];
 
-// Installazione: Cache degli asset
+// 1. Installazione: Cache degli asset statici
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('Service Worker: Caching assets...');
+            console.log('Service Worker: Caching assets v1.8 (Force Refresh)...');
             return cache.addAll(ASSETS);
         })
     );
+    // Forza il Service Worker a diventare attivo immediatamente
     self.skipWaiting();
 });
 
-// Attivazione: Pulizia vecchie cache
+// 2. Attivazione: Pulizia delle vecchie cache
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
@@ -41,19 +44,56 @@ self.addEventListener('activate', (event) => {
             );
         })
     );
+    // Assicura che il SW controlli subito tutti i client aperti
     return self.clients.claim();
 });
 
-// Fetch: Network-First (preferiamo i dati freschi, ma usiamo la cache se offline)
+// 3. Gestione Messaggi: Salto dell'attesa se richiesto
+self.addEventListener('message', (event) => {
+    if (event.data === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+});
+
+// 4. Fetch: Strategie differenziate tra Asset e Dati
 self.addEventListener('fetch', (event) => {
-    // Escludiamo le chiamate alle API (Google Sheets / Firebase) dal caching del SW
-    if (event.request.url.includes('google.com') || event.request.url.includes('firebase')) {
+    // Gestiamo solo le richieste GET (POST/PUT/DELETE non possono essere messe in cache)
+    if (event.request.method !== 'GET') return;
+    
+    const url = event.request.url;
+
+    // ESCLUSIONE TOTALE: Firebase, Google APIs e chiamate a dati dinamici (JSON)
+    if (url.includes('google.com') || url.includes('firebase') || url.includes('firestore') || url.endsWith('.json')) {
+        return; // Lascia che la richiesta vada normalmente al network
+    }
+
+    // Strategia per HTML (Principalmente Pagine): Network-First
+    if (event.request.mode === 'navigate' || url.endsWith('.html')) {
+        event.respondWith(
+            fetch(event.request)
+                .then((response) => {
+                    // Se la risposta è valida, aggiorniamo la cache
+                    const copy = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+                    return response;
+                })
+                .catch(() => caches.match(event.request))
+        );
         return;
     }
 
+    // Strategia per Asset Statici (CSS, JS, Fonts): Cache-First
     event.respondWith(
-        fetch(event.request).catch(() => {
-            return caches.match(event.request);
+        caches.match(event.request).then((cachedResponse) => {
+            if (cachedResponse) {
+                return cachedResponse;
+            }
+            return fetch(event.request).then((response) => {
+                // Mettiamo in cache nuovi asset scoperti (es. icone caricate dinamicamente)
+                const copy = response.clone();
+                caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+                return response;
+            });
         })
     );
 });

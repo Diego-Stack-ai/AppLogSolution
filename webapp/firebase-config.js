@@ -5,7 +5,7 @@
 // un sistema di build che sostituisce questi placeholder.
 
 export const firebaseConfig = {
-  apiKey: "REPLACE_WITH_YOUR_FIREBASE_API_KEY",
+  apiKey: "AIzaSyDLnhP2Q4bz2ubYwcMLiD3-qq4c220eVKw",
   authDomain: "log-solution-60007.firebaseapp.com",
   projectId: "log-solution-60007",
   storageBucket: "log-solution-60007.appspot.com",

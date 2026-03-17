@@ -5,176 +5,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Log Solution</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=1.8">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+    <!-- PWA & Mobile Optimization -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="LogSolution">
+    <link rel="apple-touch-icon" href="img/logo.png">
+    <meta name="theme-color" content="#4f46e5">
 </head>
 
 <body class="center-content">
     <div class="glass-panel login-card">
         <div class="login-header">
-            <div class="logo">LS</div>
+            <img src="img/logo.png" alt="Log Solution" style="width: 120px; height: auto; margin-bottom: 20px;">
             <h1>Gestione Viaggi</h1>
         </div>
 
         <form id="loginForm">
             <div class="input-group">
-                <label>Nome e Cognome / Username</label>
-                <input type="text" id="username" placeholder="Inserisci il tuo nome" required>
+                <label>Email di Accesso</label>
+                <input type="text" id="username" placeholder="esempio@logsolution.app" autocomplete="username" 
+                    autocapitalize="none" autocorrect="off" required>
             </div>
 
             <div class="input-group">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <label>Password</label>
-                    <a href="#" id="recoveryLink" onclick="openRecovery()"
-                        style="display:none; font-size:12px; color:var(--primary); text-decoration:none;">Dimenticata?</a>
+                <label>Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required>
+                    <span class="password-toggle" onclick="window.togglePasswordVisibility()">
+                        <span class="material-icons-round" id="toggleIcon">visibility</span>
+                    </span>
                 </div>
-                <input type="password" id="password" placeholder="••••••••" required>
             </div>
 
             <button type="submit" class="btn-primary">Accedi ora</button>
-
-            <!-- Accesso Biometrico -->
-            <button type="button" id="biometricBtn" class="btn-primary"
-                style="margin-top: 12px; background: #f1f5f9; color: var(--primary); display: none; align-items: center; justify-content: center; gap: 8px; box-shadow: none; border: 1px solid #e2e8f0;">
-                <span class="material-icons-round">face</span>
-                Accesso Rapido FaceID
-            </button>
         </form>
     </div>
 
-    <!-- Modal Recupero Credenziali -->
-    <div id="recoveryModal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 450px; text-align: left;">
-            <h3 style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
-                <span class="material-icons-round" style="color: var(--primary);">lock_reset</span>
-                Recupero Credenziali
-            </h3>
-            <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;">Inserisci il tuo Username e
-                l'Email di Recupero configurata per reimpostare la password.</p>
+    <p style="margin-top: 20px; font-size: 12px; color: var(--text-muted); opacity: 0.7; text-align: center; width: 100%;">
+        App v1.8 &copy; 2026 Log Solution Team
+    </p>
 
-            <div id="step1">
-                <div class="input-group">
-                    <label>Il tuo Username *</label>
-                    <input type="text" id="recoveryUser" placeholder="es. Diego">
-                </div>
-                <div class="input-group">
-                    <label>Email di Recupero *</label>
-                    <input type="email" id="recoveryEmail" placeholder="es. la-tua-email@esempio.com">
-                </div>
-
-                <button type="button" onclick="verifyRecovery()" class="btn-primary">Verifica Identità</button>
-            </div>
-
-            <div id="step2" style="display:none;">
-                <div class="input-group">
-                    <label>Nuova Password *</label>
-                    <input type="password" id="newPassword" placeholder="Scegli una nuova password">
-                </div>
-                <button type="button" onclick="resetPassword()" class="btn-primary" style="margin-top: 20px;">Aggiorna
-                    Password</button>
-            </div>
-
-            <button onclick="closeRecovery()"
-                style="margin-top: 16px; width: 100%; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px;">Annulla</button>
-        </div>
-    </div>
-
-    <!-- Modal Attivazione Biometrica -->
-    <div id="biometricActiveModal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 400px; text-align: center;">
-            <span class="material-icons-round"
-                style="font-size: 48px; color: var(--primary); margin-bottom: 16px;">fingerprint</span>
-            <h3 style="margin-bottom: 8px;">Attiva Face ID / Touch ID</h3>
-            <p style="font-size: 14px; margin-bottom: 24px; color: var(--text-muted);">Vuoi usare il riconoscimento del
-                volto o l'impronta per accedere più velocemente la prossima volta?</p>
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button type="button" onclick="setupBiometrics()" class="btn-primary">Sì, attiva ora</button>
-                <button type="button" onclick="closeBiometricModal()" class="btn-primary"
-                    style="background: #f1f5f9; color: #64748b; box-shadow: none;">Magari più tardi</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Script locale indipendente -->
-    <footer style="text-align: center; padding: 20px 24px 40px; color: var(--text-muted); font-size: 13px;">
-        Log Solution &copy; 2026 - Versione 1.1
-    </footer>
-    <script src="script.js"></script>
-    <script type="module" src="firebase-auth-sync.js"></script>
-    <script>
-        const recoveryModal = document.getElementById('recoveryModal');
-        const step1 = document.getElementById('step1');
-        const step2 = document.getElementById('step2');
-        const recoveryEmailHint = document.getElementById('recoveryEmailHint');
-        const maskedEmail = document.getElementById('maskedEmail');
-
-        const recoveryLink = document.getElementById('recoveryLink');
-        const usernameInput = document.getElementById('username');
-
-        // Mostra "Dimenticata?" solo per gli Amministratori
-        usernameInput.addEventListener('input', () => {
-            const user = usernameInput.value.trim().toLowerCase();
-            const autisti = JSON.parse(localStorage.getItem('lista_autisti') || '[]');
-            const found = autisti.find(a => a.nome.toLowerCase() === user && a.ruolo === 'amministratore');
-
-            if (found) {
-                recoveryLink.style.display = 'block';
-            } else {
-                recoveryLink.style.display = 'none';
-            }
-        });
-
-        let userToReset = null;
-
-        window.openRecovery = () => {
-            recoveryModal.classList.add('active');
-            step1.style.display = 'block';
-            step2.style.display = 'none';
-        };
-
-        window.closeRecovery = () => {
-            recoveryModal.classList.remove('active');
-        };
-
-        window.verifyRecovery = () => {
-            const user = document.getElementById('recoveryUser').value.trim();
-            const email = document.getElementById('recoveryEmail').value.trim().toLowerCase();
-
-            const autisti = JSON.parse(localStorage.getItem('lista_autisti') || '[]');
-            const found = autisti.find(a => a.nome.toLowerCase() === user.toLowerCase());
-
-            if (!found) {
-                alert("Utente non trovato.");
-                return;
-            }
-
-            if (!found.email || found.email.toLowerCase() !== email) {
-                alert("L'email inserita non corrisponde a quella configurata per questo utente.");
-                return;
-            }
-
-            // Tutto OK
-            userToReset = found;
-            step1.style.display = 'none';
-            step2.style.display = 'block';
-        };
-
-        window.resetPassword = () => {
-            const newPass = document.getElementById('newPassword').value.trim();
-            if (!newPass) return alert("Inserisci la nuova password");
-
-            const autisti = JSON.parse(localStorage.getItem('lista_autisti') || '[]');
-            const index = autisti.findIndex(a => a.nome === userToReset.nome);
-
-            if (index !== -1) {
-                autisti[index].password = newPass;
-                localStorage.setItem('lista_autisti', JSON.stringify(autisti));
-                alert("Password aggiornata con successo! Ora puoi accedere.");
-                closeRecovery();
-            }
-        };
-    </script>
+    <script src="script.js?v=1.8"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.8"></script>
 </body>
-
 </html>
 

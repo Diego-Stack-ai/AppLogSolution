@@ -6,6 +6,15 @@
     <title>Dashboard - Log Solution</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    
+    <!-- PWA & Mobile Optimization -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="LogSolution">
+    <link rel="apple-touch-icon" href="img/logo.png">
+    <meta name="theme-color" content="#4f46e5">
+
     <script src="script.js"></script>
     <script type="module" src="firebase-auth-sync.js"></script>
     <style>
@@ -94,9 +103,9 @@
 <body>
     <nav class="glass-nav">
         <div class="nav-content">
-            <div class="logo">LS</div>
-            <div class="nav-title" style="flex: 1; margin-left: 12px;">Pannello di Controllo</div>
-            <a href="login.html" class="logout-link">
+            <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
+            <div class="nav-title" style="flex: 1; margin-left: 4px;">Pannello di Controllo</div>
+            <a href="login.html" class="logout-link logout-btn" title="Esci">
                 <span class="material-icons-round">logout</span>
                 Logout
             </a>
@@ -111,7 +120,7 @@
 
         <div class="dashboard-grid">
             <!-- Gestione Clienti -->
-            <a href="clienti.html" class="nav-card">
+            <a href="javascript:void(0)" onclick="window.navigateWithState('clienti.html')" class="nav-card">
                 <div class="icon-circle">
                     <span class="material-icons-round" style="font-size: 32px;">business</span>
                 </div>
@@ -120,7 +129,7 @@
             </a>
 
             <!-- Visualizzazione Turni -->
-            <a href="visualizzazione.html" class="nav-card">
+            <a href="javascript:void(0)" onclick="window.navigateWithState('visualizzazione.html')" class="nav-card">
                 <div class="icon-circle">
                     <span class="material-icons-round" style="font-size: 32px;">visibility</span>
                 </div>
@@ -129,7 +138,7 @@
             </a>
 
             <!-- Inserimento Turno -->
-            <a href="inserimento.html" class="nav-card">
+            <a href="javascript:void(0)" onclick="window.navigateWithState('inserimento.html')" class="nav-card">
                 <div class="icon-circle">
                     <span class="material-icons-round" style="font-size: 32px;">add_road</span>
                 </div>
@@ -138,7 +147,7 @@
             </a>
 
             <!-- Mappa Consegne -->
-            <a href="mappa_consegne.html" class="nav-card">
+            <a href="javascript:void(0)" onclick="window.navigateWithState('mappa_consegne.html')" class="nav-card">
                 <div class="icon-circle">
                     <span class="material-icons-round" style="font-size: 32px;">map</span>
                 </div>
@@ -147,7 +156,7 @@
             </a>
 
             <!-- Impostazioni -->
-            <a href="impostazioni.html" class="nav-card">
+            <a href="javascript:void(0)" onclick="window.navigateWithState('impostazioni.html')" class="nav-card">
                 <div class="icon-circle">
                     <span class="material-icons-round" style="font-size: 32px;">settings</span>
                 </div>
@@ -157,25 +166,13 @@
         </div>
     </main>
 
-    <footer style="text-align: center; padding: 20px 24px 40px; color: var(--text-muted); font-size: 13px;">
-        Log Solution &copy; 2026 - Versione 1.1
-    </footer>
 
-    <script>
+
         document.addEventListener('DOMContentLoaded', () => {
-            const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-            if (user.nome) {
+            // Fallback se i dati sono già pronti
+            const user = window.appData.currentUser;
+            if (user && user.nome) {
                 document.getElementById('userGreeting').textContent = user.nome;
-            }
-            
-            // Redirect if not logged in or wrong role
-            const role = (user.ruolo || '').toLowerCase();
-            if (!user.nome || (role !== 'amministratore' && role !== 'impiegata')) {
-                if (role === 'autista') {
-                    window.location.href = 'inserimento.html';
-                } else {
-                    window.location.href = 'login.html';
-                }
             }
         });
     </script>

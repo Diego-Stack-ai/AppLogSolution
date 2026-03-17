@@ -3,27 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log Solution</title>
-    <script>
-        // Semplice redirector basato sullo stato di login
-        const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        if (user.nome) {
-            const role = (user.ruolo || '').toLowerCase();
-            if (role === 'amministratore' || role === 'impiegata') {
-                window.location.href = 'dashboard.html';
-            } else {
-                window.location.href = 'inserimento.html';
-            }
-        } else {
-            window.location.href = 'login.html';
-        }
-    </script>
+    <title>Benvenuto - Log Solution</title>
+    <link rel="stylesheet" href="styles.css?v=1.8">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    
+    <!-- PWA & Mobile Optimization -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="LogSolution">
+    <link rel="apple-touch-icon" href="img/logo.png">
+    <meta name="theme-color" content="#4f46e5">
 </head>
-<body style="background: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; color: #64748b;">
-    <p>Reindirizzamento in corso...</p>
-    <footer style="text-align: center; padding: 20px 24px 40px; color: var(--text-muted); font-size: 13px; position: fixed; bottom: 0; width: 100%;">
-        Log Solution &copy; 2026 - Versione 1.1
-    </footer>
+<body class="landing-page" data-page="landing">
+    <!-- Questa classe hide-nav verrà gestita dallo script o via CSS se data-page="landing" -->
+    
+    <div class="app-brand animate-fade-in">
+        <img src="img/logo.png" alt="Log Solution" style="width: 150px; height: auto; margin-bottom: 10px;">
+        <h1 class="app-name" style="display: none;">Log Solution</h1>
+        <p style="margin-top: 5px; font-weight: 500;">Semplifica ogni consegna</p>
+    </div>
+
+    <div class="glass-panel" style="width: 100%; max-width: 400px; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px;">
+        <h2 style="font-size: 20px; margin-bottom: 0;">Inizia la giornata</h2>
+        <p>Effettua l'accesso per visualizzare i tuoi turni o gestire il catalogo clienti.</p>
+        
+        <a href="login.html" class="btn-primary" style="text-decoration: none; text-align: center;">
+            Entra nell'App
+        </a>
+
+        <div style="border-top: 1px solid var(--border); padding-top: 20px; display: flex; justify-content: center; gap: 24px;">
+            <div style="text-align: center;">
+                <span class="material-icons-round" style="color: var(--primary); font-size: 24px;">speed</span>
+                <p style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Rapido</p>
+            </div>
+            <div style="text-align: center;">
+                <span class="material-icons-round" style="color: var(--primary); font-size: 24px;">map</span>
+                <p style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Mappe</p>
+            </div>
+            <div style="text-align: center;">
+                <span class="material-icons-round" style="color: var(--primary); font-size: 24px;">security</span>
+                <p style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Sicuro</p>
+            </div>
+        </div>
+    </div>
+
+    <p style="position: absolute; bottom: 24px; font-size: 12px; color: var(--text-muted); opacity: 0.7;">
+        App v1.8 &copy; 2026 Log Solution Team
+    </p>
+
+    <script src="script.js?v=1.8"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.8"></script>
 </body>
 </html>
-

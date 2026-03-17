@@ -1,68 +1,240 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, doc, getDoc, updateDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, browserLocalPersistence, setPersistence, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
-// Inizializzazione Listener Realtime
-function startRealtimeSync() {
-    console.log("Attivazione sincronizzazione realtime...");
+// ABILITAZIONE PERSISTENZA SESSIONE (localStorage)
+setPersistence(auth, browserLocalPersistence)
+    .catch((error) => console.error("Errore persistenza:", error));
+
+// Inizializzazione dati in memoria (Global State)
+window.appData = window.appData || {
+    lista_clienti: [],
+    lista_autisti: [],
+    lista_mezzi: [],
+    currentUser: {}
+};
+
+// --- GESTIONE EMERGENZA (DEBUG) ---
+window.forcePasswordResetDebug = async (newPassword) => {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (!isLocal) {
+        console.warn("Funzione forcePasswordResetDebug disabilitata in produzione.");
+        return;
+    }
+    const user = auth.currentUser;
+    if (!user) {
+        alert("Nessun utente loggato per il reset.");
+        return;
+    }
+    try {
+        await updatePassword(user, newPassword);
+        console.log(`[DEBUG] Password aggiornata correttamente per ${user.email}`);
+        alert("Password aggiornata con successo via SDK Client.");
+    } catch (e) {
+        console.error("Errore reset debug:", e);
+        alert("Errore reset: " + e.message);
+    }
+};
+
+// --- GESTIONE AUTENTICAZIONE ---
+window.sendResetEmail = async (email) => {
+    if (!email) return alert("Email non valida.");
+    try {
+        await sendPasswordResetEmail(auth, email);
+        alert("Email di ripristino password inviata con successo a: " + email);
+    } catch (error) {
+        console.error("Errore invio email reset:", error);
+        alert("Errore nell'invio dell'email: " + error.message);
+    }
+};
+
+// --- GESTIONE LOGOUT GLOBALE ---
+let isLoggingOut = false;
+window.logoutFirebase = async () => {
+    console.log("Auth: Avvio procedura di logout...");
+    isLoggingOut = true;
+    try {
+        // Puliamo lo stato in memoria prima del logout
+        window.appData.currentUser = {};
+        
+        // Disconnessione da Firebase
+        await signOut(auth);
+        
+        console.log("Auth: Logout Firebase completato. Reindirizzamento...");
+        
+        // Reindirizzamento alla login pulendo l'URL da eventuali parametri
+        window.location.replace('login.html');
+        
+    } catch (error) {
+        console.error("Auth: Errore durante il logout:", error);
+        isLoggingOut = false;
+        // Fallback: forziamo il reindirizzamento
+        window.location.replace('login.html');
+    }
+};
+
+onAuthStateChanged(auth, async (user) => {
+    if (isLoggingOut) {
+        console.log("Auth Listener: Logout in corso, salto controlli.");
+        return;
+    }
+    const path = window.location.pathname;
+    const page = path.split('/').pop() || 'index.html';
+    
+    // Classificazione Pagine
+    const isPublicPage = page === 'login.html' || page === 'index.html' || page === '';
+    const isAdminOnlyPage = ['clienti.html', 'impostazioni.html', 'visualizzazione.html', 'mappa_consegne.html', 'dashboard.html'].includes(page);
+    const isAutistaOnlyPage = ['inserimento.html'].includes(page);
+
+    console.log(`Auth Listener: Utente = ${user ? user.uid : 'NULL'}, Pagina Corrente = ${page}`);
+
+    if (user) {
+        try {
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                // Normalizzazione ruolo (sempre minuscolo e senza spazi)
+                const role = (userData.ruolo || 'autista').toString().toLowerCase().trim();
+                window.appData.currentUser = { id: user.uid, email: user.email, ...userData, ruolo: role };
+                
+                console.log(`Auth: Profilo caricato [${userData.nome}], Ruolo: "${role}"`);
+                
+                // DEBUG BANNER - visibile solo in locale
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    const existing = document.getElementById('__debug_banner');
+                    if (!existing) {
+                        const banner = document.createElement('div');
+                        banner.id = '__debug_banner';
+                        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#1e40af;color:white;padding:8px 16px;font-size:13px;font-family:monospace;text-align:center;';
+                        banner.textContent = `🔐 Utente: ${user.email} | Ruolo: ${role} | Pagina: ${page}`;
+                        document.body.appendChild(banner);
+                        setTimeout(() => banner.remove(), 12000);
+                    }
+                }
+                
+                // Hook per aggiornamenti UI nelle pagine
+                if (typeof window.onUserProfileLoaded === 'function') {
+                    window.onUserProfileLoaded(window.appData.currentUser);
+                }
+
+                // Avviamo i listener ricaricando i permessi appropriati
+                startRealtimeSync(role === 'amministratore' || role === 'impiegata');
+
+                // --- LOGICA DI NAVIGAZIONE E PROTEZIONE ---
+                
+                // 1. Se loggato e su pagina pubblica -> Vai alla home corretta
+                if (isPublicPage) {
+                    const home = (role === 'amministratore' || role === 'impiegata') ? 'dashboard.html' : 'inserimento.html';
+                    console.log(`REDIRECT DEBUG: Pagina pubblica [${page}] -> Home corretta [${home}]`);
+                    window.location.replace(home);
+                    return;
+                }
+
+                // 2. Protezione pagine Admin (solo admin e impiegata)
+                if (isAdminOnlyPage && role === 'autista') {
+                    console.error(`REDIRECT DEBUG: Accesso negato a [${page}] per ruolo [autista]. Torno a inserimento.`);
+                    window.location.replace('inserimento.html');
+                    return;
+                }
+
+                // 3. Protezione pagine Autista (solo autista) - NB: Admin può entrare se serve
+                if (isAutistaOnlyPage && role === 'impiegata') {
+                     // Impiegata magari non deve vedere l'inserimento? 
+                     // Per ora la lasciamo entrare se va su inserimento.html, o la rimandiamo a dashboard?
+                     // L'utente dice "Amministrativo -> pagine autorizzate specifiche".
+                }
+
+            } else {
+                console.warn("Auth: Sessione attiva ma profilo Firestore mancante. Logout di sicurezza.");
+                await window.logoutFirebase();
+            }
+        } catch (err) {
+            console.error("Auth: Errore recupero profilo Firestore:", err);
+        }
+    } else {
+        // Nessun utente rilevato
+        window.appData.currentUser = {};
+        if (!isPublicPage) {
+            console.log(`REDIRECT DEBUG: Utente non loggato su pagina privata [${page}] -> Redirect a login.html`);
+            window.location.replace('login.html');
+        }
+    }
+});
+
+window.loginWithFirebase = async (email, password) => {
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        return userCredential.user;
+    } catch (error) {
+        console.error("Errore Login Firebase:", error.code, error.message);
+        throw error;
+    }
+};
+
+// Inizializzazione Listener Realtime (Condizionali ai permessi)
+let activeListeners = [];
+function startRealtimeSync(isAdmin) {
+    console.log(`Attivazione sincronizzazione realtime (Admin: ${isAdmin})...`);
+
+    // Pulizia listener precedenti se esistenti
+    activeListeners.forEach(unsub => unsub());
+    activeListeners = [];
 
     // Listener per Clienti (customers)
-    onSnapshot(collection(db, "customers"), (snapshot) => {
+    const unsubCustomers = onSnapshot(collection(db, "customers"), (snapshot) => {
         const clienti = [];
         snapshot.forEach((d) => {
             clienti.push({ id: d.id, ...d.data() });
         });
-        localStorage.setItem('lista_clienti', JSON.stringify(clienti));
-        console.log("Clienti aggiornati realtime:", clienti.length);
-        
-        // Refresh UI se la funzione esiste nella pagina corrente
+        window.appData.lista_clienti = clienti;
         if (typeof window.renderClienti === 'function') window.renderClienti();
     });
+    activeListeners.push(unsubCustomers);
 
-    // Listener per Autisti (users)
-    onSnapshot(collection(db, "users"), (snapshot) => {
-        const autisti = [];
-        snapshot.forEach((d) => {
-            autisti.push({ id: d.id, ...d.data() });
+    // Listener per Autisti/Utenti
+    // Se Admin scarica tutti, altrimenti NON scarica nulla (o solo se stesso, già fatto in Auth)
+    if (isAdmin) {
+        const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+            const autisti = [];
+            snapshot.forEach((d) => {
+                autisti.push({ id: d.id, ...d.data() });
+            });
+            window.appData.lista_autisti = autisti;
+            if (typeof window.renderAutisti === 'function') window.renderAutisti();
+            if (typeof window.renderAutistiDropdown === 'function') window.renderAutistiDropdown();
         });
-        localStorage.setItem('lista_autisti', JSON.stringify(autisti));
-        console.log("Autisti aggiornati realtime:", autisti.length);
-        
-        if (typeof window.renderAutisti === 'function') window.renderAutisti();
-        if (typeof window.renderAutistiDropdown === 'function') window.renderAutistiDropdown();
-    });
+        activeListeners.push(unsubUsers);
+    }
 
     // Listener per Mezzi (mezzi)
-    onSnapshot(collection(db, "mezzi"), (snapshot) => {
+    const unsubMezzi = onSnapshot(collection(db, "mezzi"), (snapshot) => {
         const mezzi = [];
         snapshot.forEach((d) => {
             mezzi.push({ id: d.id, ...d.data() });
         });
-        localStorage.setItem('lista_mezzi', JSON.stringify(mezzi));
-        console.log("Mezzi aggiornati realtime:", mezzi.length);
-        
+        window.appData.lista_mezzi = mezzi;
         if (typeof window.renderLista === 'function') window.renderLista();
         if (typeof window.renderMezziInserimento === 'function') window.renderMezziInserimento();
     });
+    activeListeners.push(unsubMezzi);
 }
 
-// Avvia i listener immediatamente
-startRealtimeSync();
-
-// Manteniamo le funzioni per compatibilità retroattiva se richiamate manualmente
-window.syncFromFirebase = async function () {
-    console.log("Sincronizzazione manuale non più necessaria (realtime attivo)");
-}
-
-// Funzione di salvataggio remoto per i clienti
+// Funzione di salvataggio/creazione remoto per i clienti
 window.updateCustomer = async function(id, data) {
     try {
-        const docRef = doc(db, "customers", id);
         const { id: _, ...updateData } = data;
-        await updateDoc(docRef, updateData);
+        if (id) {
+            const docRef = doc(db, "customers", id);
+            await updateDoc(docRef, updateData);
+        } else {
+            await addDoc(collection(db, "customers"), updateData);
+        }
         return true;
     } catch (e) {
         console.error("Errore salvataggio Cliente:", e);
@@ -70,7 +242,10 @@ window.updateCustomer = async function(id, data) {
     }
 }
 
-// Funzione di salvataggio/creazione per gli utenti
+// Alias per chiarezza
+window.addCustomer = (data) => window.updateCustomer(null, data);
+
+// Funzione di salvataggio/creazione per gli utenti (Solo per Admin)
 window.updateUser = async function(id, data) {
     try {
         const { id: _, ...updateData } = data;
@@ -78,7 +253,9 @@ window.updateUser = async function(id, data) {
             const docRef = doc(db, "users", id);
             await updateDoc(docRef, updateData);
         } else {
-            await addDoc(collection(db, "users"), updateData);
+            // Nota: La creazione di un nuovo utente Auth richiede Firebase Admin SDK o logic lato server (Cloud Functions)
+            // Qui aggiorniamo solo il profilo Firestore se l'UID esiste già
+            console.warn("La creazione di nuovi account richiede l'uso della console Firebase Auth o Cloud Functions.");
         }
         return true;
     } catch (e) {
@@ -91,12 +268,14 @@ window.updateUser = async function(id, data) {
 window.updateMezzo = async function(id, data) {
     try {
         const { id: _, ...updateData } = data;
-        if (id) {
-            const docRef = doc(db, "mezzi", id);
-            await updateDoc(docRef, updateData);
-        } else {
-            await addDoc(collection(db, "mezzi"), updateData);
+        const targetId = id || updateData.targa;
+        if (!targetId) {
+            throw new Error("Targa mancante.");
         }
+        
+        const docRef = doc(db, "mezzi", targetId);
+        // Usa setDoc con merge per aggiornare o creare usando la targa come ID
+        await setDoc(docRef, updateData, { merge: true });
         return true;
     } catch (e) {
         console.error("Errore salvataggio Mezzo:", e);
@@ -116,6 +295,4 @@ window.deleteFromFirebase = async function(collectionName, id) {
     }
 }
 
-// Attiva ufficialmente Firebase come fonte primaria
-window.syncFromCloud = window.syncFromFirebase;
 

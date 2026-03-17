@@ -1,59 +1,62 @@
-AppLogSolution
-==============
+# 🗂️ Documentazione Operativa - Gestione DDT e Viaggi
 
-Sistema per la gestione delle consegne (frutta/latte alle scuole) e la relativa app web di consultazione.
+## 1. Panoramica Generale
+L’obiettivo del sistema è gestire i DDT dei clienti, creare i giri di consegna ottimizzati e fornire agli autisti una mappa leggera dei punti da raggiungere.
 
-Struttura del progetto
-----------------------
+*   **Firebase**: Database operativo (clienti, mezzi, utenti, log viaggi).
+*   **Drive**: PDF DDT e mappe leggere per i viaggi.
+*   **Python**: Elaborazione DDT, creazione zone, mappe e PDF finali.
+*   **App**: Interfaccia per autisti: visualizza punti, registra chilometri/orari/GPS.
 
-- **backend**  
-  Configurazioni lato server (es. credenziali Firebase Admin, NON tracciate su Git).
+## 2. Flusso dei Dati
 
-- **dati**  
-  Script, dati sorgente e output relativi alle consegne. In particolare:
-  - `CONSEGNE/CONSEGNE_<data>/` – pipeline per una specifica data (PDF DDT divisi, script Python, file Excel, JSON, ecc.).
-  - `CONSEGNE/DDT-ORIGINALI/` – PDF originali dei DDT per frutta/latte.
-  - Altri file Excel/report di supporto (rientri, orari mancanti, aggiornamento articoli, ecc.).
+### 2.1 Inserimento dati operativi
+*   Gli autisti inseriscono inizio giro, chilometri, orari e cliente/giro tramite l’app.
+*   I dati vengono salvati in realtime su Firebase.
 
-- **docs**  
-  Documentazione del dominio CONSEGNE e dei flussi dati. Il file principale è:
-  - `Gestione CONSEGNE.md` – descrive struttura cartelle, pipeline di elaborazione e il file JSON unificato da usare come “API dati”.
+### 2.2 Elaborazione DDT e creazione viaggi (Python)
+*   Legge i PDF dei DDT originali da Drive.
+*   Suddivide ogni PDF in un PDF singolo per DDT.
+*   Legge il file Excel dei DDT non consegnati.
+*   Esegue il matching dei DDT con quelli vecchi non consegnati.
+*   Assegna i DDT alle zone di consegna.
+*   Genera le mappe dei viaggi, con punti colorati per zona (opzione: mappa unica con tutti i viaggi).
+*   Permette aggiustamenti manuali tramite menu in linea (spostare clienti tra viaggi).
+*   Genera PDF finali dei viaggi e mappe dei punti di consegna.
 
-- **webapp**  
-  App web front‑end (solo HTML/JS/CSS) che utilizza i dati prodotti dalla pipeline:
-  - Pagine principali: `index.html`, `login.html`, `dashboard.html`, `clienti.html`, `visualizzazione.html`, `impostazioni.html`, `inserimento.html`, `mappa_consegne.html`.
-  - Script: `firebase-config.js`, `firebase-auth-sync.js`, `script.js`.
-  - Stili: `styles.css`.
+### 2.3 Distribuzione delle mappe all’app
+*   Ogni viaggio ha una pagina HTML leggera con i punti da raggiungere.
+*   L’autista seleziona il viaggio → l’app carica la mappa corrispondente.
+*   L’app registra chilometri/orari/GPS in Firebase, senza rielaborare mappe o DDT.
 
-Prerequisiti
-------------
+## 3. Architettura dei Sistemi
+Il sistema è diviso in tre componenti principali:
+1.  **Backend Elaborazione (Python)**: Carico pesante, logica di business e generazione documenti.
+2.  **Database Realtime (Firebase)**: Stato sincronizzato tra tutti i dispositivi.
+3.  **App Mobile (HTML/JS/PWA)**: Interfaccia leggera per l'operatività sul campo.
 
-- Git installato.
-- Python (per eseguire la pipeline in `dati/CONSEGNE`, se necessario).
-- Un progetto Firebase configurato (le credenziali reali NON vanno tracciate nel repository).
+## 4. Dettagli Operativi
 
-Avvio rapido
-------------
+### 4.1 PDF e DDT
+*   PDF originali → suddivisi in PDF singoli per DDT.
+*   Ogni DDT ha un codice univoco.
+*   Python assegna i DDT alle zone e genera i viaggi.
+*   I DDT vecchi non consegnati vengono reinseriti nel viaggio corretto.
 
-1. **Clona il repository**
+### 4.2 Mappe
+*   Mappe leggere: solo punti di arrivo del viaggio.
+*   Visualizzazione nell’app rapida, senza rielaborazioni.
+*   Possibile distinguere zone con colori diversi.
+*   Opzione futura: spostamento manuale clienti tra viaggi.
 
-   ```bash
-   git clone https://github.com/Diego-Stack-ai/AppLogSolution.git
-   cd AppLogSolution
-   ```
+### 4.3 LocalStorage
+*   Attualmente presente nell’app, ma non serve per dati operativi.
+*   I dati reali sono in Firebase e Drive.
+*   Può essere usato solo per sessione utente o bozze temporanee.
 
-2. **Pipeline dati (opzionale, se devi rigenerare i dati consegne)**  
-   Vedi `docs/Gestione CONSEGNE.md` per i dettagli su:
-   - dove posizionare i PDF dei DDT,
-   - come lanciare gli script in `dati/CONSEGNE/CONSEGNE_<data>/`,
-   - come ottenere il file JSON unificato dei punti di consegna.
-
-3. **Avvio dell’app web**  
-   Apri `webapp/index.html` in un browser (o servi la cartella `webapp` con un semplice server statico) dopo aver configurato `firebase-config.js` con il tuo progetto Firebase.
-
-Note su sicurezza e segreti
----------------------------
-
-- I file di credenziali sensibili (es. `backend/config/log-solution-60007-firebase-adminsdk-*.json`) **non sono tracciati** da Git e non devono essere committati.
-- Per condividere la configurazione, utilizzare eventualmente file di esempio (es. `firebase-config.example.js`) senza chiavi reali.
-
+## 5. Vantaggi dell’architettura
+*   Separazione netta tra dati operativi (Firebase) e gestione documenti PDF/Mappe (Python + Drive).
+*   L’app rimane leggera e veloce, anche con molti DDT e viaggi.
+*   Python gestisce tutto il carico pesante di elaborazione.
+*   Facile aggiornare le mappe e i PDF senza influire sull’app.
+*   Eliminato rischio di disallineamento tra dispositivi, problemi di cache o LocalStorage.

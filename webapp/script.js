@@ -1,88 +1,60 @@
-const APP_VERSION = "1.1";
+const APP_VERSION = "1.8";
 const GESTIONE_URL = "https://script.google.com/macros/s/AKfycbyPS-eF42oyNCzAlwu4n6mOcMKZYvBlkyuVfKgLFi6wmPSM77FjvdjwhBVaqE2frT6LVg/exec";
 const IMPOSTAZIONI_URL = GESTIONE_URL;
 const GOOGLE_SHEET_URL = GESTIONE_URL;
 
-// --- GESTIONE VERSIONE E FORZATURA REFRESH ---
-(function checkVersion() {
-    // 1. Registrazione Service Worker
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('Service Worker registrato con successo:', reg.scope))
-                .catch(err => console.error('Errore registrazione Service Worker:', err));
-        });
-    }
+// --- GESTIONE DATI IN MEMORIA E URL (NO PERSISTENZA) ---
+window.appData = window.appData || {
+    lista_clienti: [],
+    lista_autisti: [],
+    lista_mezzi: [],
+    currentUser: {}
+};
 
-    const localVersion = localStorage.getItem('app_version');
-    if (localVersion !== APP_VERSION) {
-        console.log(`Nuova versione rilevata (da ${localVersion || 'N/A'} a ${APP_VERSION}). Aggiornamento cache...`);
-        localStorage.setItem('app_version', APP_VERSION);
-        
-        // Pulizia selettiva della cache locale
-        const currentUser = localStorage.getItem('currentUser');
-        const bioUser = localStorage.getItem('biometric_linked_user');
-        
-        localStorage.clear();
-        
-        if (currentUser) localStorage.setItem('currentUser', currentUser);
-        if (bioUser) localStorage.setItem('biometric_linked_user', bioUser);
-        localStorage.setItem('app_version', APP_VERSION);
-        
-        // Forza ricaricamento bypassando cache
-        window.location.reload(true);
-    }
-})();
+// La gestione della sessione è centralizzata in firebase-auth-sync.js via Auth State.
 
-// --- SINCRONIZZAZIONE DATI INIZIALE ---
-// Funzione di base che decide COME sincronizzare (Firebase o, in futuro, Apps Script)
+
+// Navigazione sicura iniettando lo stato nell'URL
+window.navigateWithState = function(page) {
+    window.location.href = page;
+};
+
+// Funzione mostrare/nascondere password
+window.togglePasswordVisibility = function() {
+    const passwordInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('toggleIcon');
+    console.log("Toggle password clicked. Current type:", passwordInput ? passwordInput.type : "null");
+    
+    if (!passwordInput || !toggleIcon) return;
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleIcon.textContent = 'visibility_off';
+    } else {
+        passwordInput.type = 'password';
+        toggleIcon.textContent = 'visibility';
+    }
+};
+
+// --- SINCRONIZZAZIONE DATI (FIREBASE -> MEMORY) ---
 async function baseSyncFromCloud() {
     if (typeof window.syncFromFirebase === 'function') {
-        // Usa Firebase come sorgente principale se disponibile
         await window.syncFromFirebase();
-    } else {
-        try {
-            console.log("Sincronizzazione cloud legacy non configurata (nessun syncFromFirebase disponibile).");
-            // Qui in passato poteva esserci una chiamata a Google Apps Script (GOOGLE_SHEET_URL)
-            // Al momento non facciamo nulla per evitare errori ricorsivi.
-        } catch (e) {
-            console.error("Errore sincronizzazione cloud legacy:", e);
-        }
     }
 }
 
-// Esegui sincronizzazione intelligente all'avvio
 async function smartSync() {
-    const hasClienti = localStorage.getItem('lista_clienti');
-    const hasAutisti = localStorage.getItem('lista_autisti');
-    const hasMezzi = localStorage.getItem('lista_mezzi');
-
-    // Se manca anche solo una delle liste fondamentali, sincronizza tutto
-    if (!hasClienti || !hasAutisti || !hasMezzi) {
-        console.log("Dati locali incompleti, avvio sincronizzazione da Cloud...");
-        await baseSyncFromCloud();
-    } else {
-        console.log("Dati (Clienti, Autisti, Mezzi) presenti localmente. Uso cache cloud.");
-    }
+    // Senza localStorage, sincronizziamo sempre col Cloud all'avvio della sessione
+    console.log("Inizializzazione dati in memoria...");
+    await baseSyncFromCloud();
 }
 
-// Espone la smartSync come API globale per le altre parti dell'app
+// Espone la smartSync come API globale
 window.syncFromCloud = smartSync;
-
-// Esegui sincronizzazione all'avvio
 smartSync();
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 0. Gestione Visibilità Pulsanti Dashboard/Admin
-    const lsSession = localStorage.getItem('currentUser');
-    if (lsSession) {
-        const sessionObj = JSON.parse(lsSession);
-        const role = (sessionObj.ruolo || '').toLowerCase();
-        if (role === 'amministratore' || role === 'impiegata') {
-            const dashBtn = document.getElementById('dashboardBtn');
-            if (dashBtn) dashBtn.style.display = 'flex';
-        }
-    }
+    // 0. Gestione Visibilità Pulsanti Dashboard/Admin spostata in onUserProfileLoaded globale sotto
 
     // 1. Gestione Login Autisti
     const loginForm = document.getElementById('loginForm');
@@ -91,63 +63,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (loginForm) {
         // Controllo supporto biometria e link esistente
-        const linkedUser = localStorage.getItem('biometric_linked_user');
-        if (linkedUser && biometricBtn) {
-            biometricBtn.style.display = 'flex';
-            biometricBtn.onclick = loginWithBiometrics;
-        }
-        const recoveryLink = document.getElementById('recoveryLink');
+        // Biometria rimossa per eliminare persistenza browser
+        const biometricBtn = document.getElementById('biometricBtn');
+        if (biometricBtn) biometricBtn.style.display = 'none';
         const usernameInput = document.getElementById('username');
-
-        if (usernameInput && recoveryLink) {
-            usernameInput.addEventListener('input', () => {
-                const user = usernameInput.value.trim().toLowerCase();
-                const autisti = JSON.parse(localStorage.getItem('lista_autisti') || '[]');
-                const found = autisti.find(a => a.nome.toLowerCase() === user && a.ruolo === 'amministratore');
-                recoveryLink.style.display = found ? 'block' : 'none';
-            });
-        }
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const rawUsername = document.getElementById('username').value.trim();
-            const passwordInput = document.getElementById('password').value.trim();
+            // Convertiamo in minuscolo per evitare errori di battitura/auto-maiuscole su mobile
+            const email = document.getElementById('username').value.trim().toLowerCase();
+            const password = document.getElementById('password').value.trim();
             const btn = loginForm.querySelector('.btn-primary');
 
-            // Prima del login, tentiamo una sync rapida (automaticamente userà Firebase se caricato)
-            await syncFromCloud();
+            btn.disabled = true;
+            btn.innerHTML = 'Accesso in corso...';
 
-            const autisti = JSON.parse(localStorage.getItem('lista_autisti') || '[]');
-            console.log("Tentativo login per:", rawUsername);
-
-            // Ricerca dell'utente
-            const autistaTrovato = autisti.find(a =>
-                a.nome.toLowerCase() === rawUsername.toLowerCase() ||
-                (rawUsername.toLowerCase().length > 3 && a.nome.toLowerCase().includes(rawUsername.toLowerCase()))
-            );
-
-            if (autistaTrovato && autistaTrovato.password === passwordInput) {
-                const userObj = {
-                    nome: autistaTrovato.nome,
-                    ruolo: autistaTrovato.ruolo || 'autista',
-                    tipoTurno: autistaTrovato.tipoTurno || 'giornata',
-                    canElevate: autistaTrovato.canElevate || false,
-                    email: autistaTrovato.email || ''
-                };
-                localStorage.setItem('currentUser', JSON.stringify(userObj));
-
-                btn.innerHTML = 'Accesso in corso...';
-                setTimeout(() => {
-                    // Dopo il login, se la biometria non è attiva, proponiamola
-                    if (!localStorage.getItem('biometric_linked_user')) {
-                        if (bioModal) bioModal.classList.add('active');
-                        else finalizeLogin(userObj);
-                    } else {
-                        finalizeLogin(userObj);
-                    }
-                }, 800);
-            } else {
-                alert("Credenziali non valide o utente non trovato.");
+            console.log("Inizio processo di login...");
+            try {
+                await window.loginWithFirebase(email, password);
+                console.log("Firebase Auth Successo. Caricamento profilo in corso tramite listener globale...");
+            } catch (err) {
+                console.error("Errore Login Form:", err);
+                alert("Errore Accesso: " + err.message);
+                btn.disabled = false;
+                btn.innerHTML = 'Accedi ora';
             }
         });
     }
@@ -157,17 +96,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (presenzeForm) {
         const autistaNomeEl = document.getElementById('autistaNome');
         let sessionNome = 'Sconosciuto';
-        const lsSession = localStorage.getItem('currentUser');
-        const sessionObj = lsSession ? JSON.parse(lsSession) : {};
-        sessionNome = sessionObj.nome || 'Sconosciuto';
-        if (autistaNomeEl) autistaNomeEl.value = sessionNome;
+        const sessionObj = window.appData.currentUser;
+        if (sessionObj && sessionObj.nome) {
+            if (autistaNomeEl) autistaNomeEl.value = sessionObj.nome;
+        }
 
         // Popolamento Automezzi
         window.renderMezziInserimento = function() {
             if (!automezzoSelect) return;
             const currentVal = automezzoSelect.value;
             const DEFAULT_MEZZI = [{ targa: 'FJ638LN' }, { targa: 'FD788RT' }, { targa: 'GB969FN' }, { targa: 'GF929KT' }];
-            const mezzi = JSON.parse(localStorage.getItem('lista_mezzi') || JSON.stringify(DEFAULT_MEZZI));
+            const mezzi = window.appData.lista_mezzi.length > 0 ? window.appData.lista_mezzi : DEFAULT_MEZZI;
             
             automezzoSelect.innerHTML = '<option value="">Seleziona targa...</option>';
             mezzi.forEach(m => {
@@ -206,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (clienteSearch) {
             clienteSearch.addEventListener('input', () => {
                 const query = clienteSearch.value.trim().toLowerCase();
-                const clienti = JSON.parse(localStorage.getItem('lista_clienti') || '[]');
+                const clienti = window.appData.lista_clienti;
                 
                 if (query.length < 2) {
                     clienteResults.classList.remove('active');
@@ -253,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function mostraDettagliCliente(id) {
-            const clienti = JSON.parse(localStorage.getItem('lista_clienti') || '[]');
+            const clienti = window.appData.lista_clienti || [];
             const c = clienti.find(item => (item.codiceFrutta + "_" + item.codiceLatte) === id);
             
             if (c && clienteDettagli) {
@@ -397,11 +336,13 @@ document.addEventListener('DOMContentLoaded', () => {
             ids.forEach(id => { const el = document.getElementById(id); if (el) draft.data[id] = el.value; });
             timeFields.forEach(id => { draft.data[id] = getTimeValue(id); });
 
-            localStorage.setItem(`draft_${sessionNome}`, JSON.stringify(draft));
+            // Bozze disabilitate per rimuovere persistenza browser
+            // window.appData.currentDraft = draft;
         }
 
         function loadDraft() {
-            const saved = localStorage.getItem(`draft_${sessionNome}`);
+            // Caricamento bozze rimosso
+            // const saved = window.appData.currentDraft;
             if (saved) {
                 const draft = JSON.parse(saved);
                 if (draft.step > 1 && draft.step < 5) recoveryTripModal.classList.add('active');
@@ -409,7 +350,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         window.resumeDraft = () => {
-            const saved = localStorage.getItem(`draft_${sessionNome}`);
+            // Caricamento bozze rimosso
+            // const saved = window.appData.currentDraft;
             if (saved) {
                 const draft = JSON.parse(saved);
                 Object.keys(draft.data).forEach(id => {
@@ -433,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         window.discardDraft = () => {
-            localStorage.removeItem(`draft_${sessionNome}`);
+            // Rimozione bozza disabilitata
             recoveryTripModal.classList.remove('active');
             window.location.reload();
         };
@@ -659,7 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify(payload)
                 });
 
-                localStorage.removeItem(`draft_${sessionNome}`);
+                // Bozze disabilitate
                 btn.innerHTML = 'Turno Inviato ✓';
                 btn.style.background = 'var(--success)';
                 setTimeout(() => {
@@ -670,7 +612,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 2500);
             } catch (err) {
                 console.error("Errore tecnico (CORS?), ma il dato potrebbe essere partito:", err);
-                localStorage.removeItem(`draft_${sessionNome}`);
+                // Bozze disabilitate
                 btn.innerHTML = 'Inviato ✓';
                 btn.style.background = 'var(--success)';
                 setTimeout(() => {
@@ -686,110 +628,114 @@ document.addEventListener('DOMContentLoaded', () => {
         loadDraft();
     }
 
-    // 3. Ruoli e Protezione
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    const userRole = currentUser.ruolo || 'autista';
-    const adminBtn = document.getElementById('adminSettingsBtn');
-    if (adminBtn) {
-        if (userRole === 'autista') adminBtn.style.display = 'none';
-        else adminBtn.onclick = () => window.location.href = 'impostazioni.html';
-    }
-    if (userRole === 'autista' && (window.location.pathname.includes('impostazioni.html') || window.location.pathname.includes('visualizzazione.html'))) {
-        window.location.href = 'inserimento.html';
-    }
+    // 3. Ruoli e Protezione Centralizzata in firebase-auth-sync.js
+    // Non aggiungere redirect qui per evitare race conditions con il caricamento del profilo.
+});
 
-    // --- FUNZIONI BIOMETRICHE ---
-    window.closeBiometricModal = () => {
-        if (bioModal) bioModal.classList.remove('active');
-        const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        finalizeLogin(user);
-    };
+// --- SERVICE WORKER REGISTRATION & UPDATE NOTIFICATION ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').then((reg) => {
+            console.log('Service Worker registrato con successo.');
 
-    window.setupBiometrics = async () => {
-        try {
-            // Generiamo un challenge fittizio (WebAuthn richiede un buffer)
-            const challenge = new Uint8Array(32);
-            window.crypto.getRandomValues(challenge);
-
-            const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-
-            const createCredentialOptions = {
-                publicKey: {
-                    challenge: challenge,
-                    rp: { name: "Log Solution" },
-                    user: {
-                        id: new Uint8Array(16), // ID univoco fittizio
-                        name: user.nome,
-                        displayName: user.nome
-                    },
-                    pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
-                    timeout: 60000,
-                    attestation: "direct"
-                }
-            };
-
-            await navigator.credentials.create(createCredentialOptions);
-
-            // Se arriviamo qui, l'utente ha confermato con FaceID/TouchID
-            localStorage.setItem('biometric_linked_user', user.nome);
-            alert("Face ID attivato con successo!");
-            closeBiometricModal();
-        } catch (err) {
-            console.error("Errore attivazione biometria:", err);
-            alert("Non è stato possibile attivare il Face ID su questo dispositivo.");
-            closeBiometricModal();
-        }
-    };
-
-    async function loginWithBiometrics() {
-        try {
-            const linkedUser = localStorage.getItem('biometric_linked_user');
-            if (!linkedUser) return;
-
-            const challenge = new Uint8Array(32);
-            window.crypto.getRandomValues(challenge);
-
-            const getCredentialOptions = {
-                publicKey: {
-                    challenge: challenge,
-                    timeout: 60000,
-                    userVerification: "required"
-                }
-            };
-
-            await navigator.credentials.get(getCredentialOptions);
-
-            // Successo! Cerchiamo l'utente e logghiamo
-            const autisti = JSON.parse(localStorage.getItem('lista_autisti') || '[]');
-            const found = autisti.find(a => a.nome === linkedUser);
-
-            if (found) {
-                const userObj = {
-                    nome: found.nome,
-                    ruolo: found.ruolo || 'autista',
-                    tipoTurno: found.tipoTurno || 'giornata',
-                    canElevate: found.canElevate || false
-                };
-                localStorage.setItem('currentUser', JSON.stringify(userObj));
-                finalizeLogin(userObj);
+            // Controllo se c'è già un aggiornamento in attesa (es. download completato in precedenza)
+            if (reg.waiting) {
+                showUpdateToast(reg);
             }
-        } catch (err) {
-            console.error("Errore login biometrico:", err);
-        }
-    }
 
-    function finalizeLogin(user) {
-        if (!user.nome) return;
-        const role = (user.ruolo || 'autista').toLowerCase();
-        
-        if (role === 'autista') {
-            window.location.href = 'inserimento.html';
-        } else if (role === 'amministratore' || role === 'impiegata') {
-            window.location.href = 'dashboard.html';
-        } else {
-            // Default fall-back
-            window.location.href = 'inserimento.html';
+            reg.addEventListener('updatefound', () => {
+                const newWorker = reg.installing;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // Nuovo contenuto disponibile!
+                        showUpdateToast(reg);
+                    }
+                });
+            });
+        }).catch((err) => {
+            console.error('Errore registrazione Service Worker:', err);
+        });
+    });
+
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        window.location.reload();
+        refreshing = true;
+    });
+}
+
+function showUpdateToast(reg) {
+    const toast = document.createElement('div');
+    toast.className = 'sw-update-toast';
+    toast.innerHTML = `
+        <div style="flex:1;">Nuova versione disponibile!</div>
+        <button class="btn-update" id="sw-update-btn">Aggiorna</button>
+    `;
+    document.body.appendChild(toast);
+
+    // Animazione entrata
+    setTimeout(() => toast.classList.add('show'), 100);
+
+    document.getElementById('sw-update-btn').onclick = () => {
+        if (reg.waiting) {
+            reg.waiting.postMessage('SKIP_WAITING');
+        }
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+    };
+}
+
+// --- GESTIONE LOGOUT GLOBALE ---
+// --- HOOK GLOBALE CARICAMENTO PROFILO ---
+// Questa funzione viene chiamata da firebase-auth-sync.js appena il profilo Firestore è pronto
+window.onUserProfileLoaded = function(user) {
+    console.log("Global Profile Hook:", user.nome, "[", user.ruolo, "]");
+    
+    // 1. Aggiorna saluto (se presente l'elemento)
+    const greetingEl = document.getElementById('userGreeting');
+    if (greetingEl && user.nome) greetingEl.textContent = user.nome;
+
+    // 2. Aggiorna nome autista nei form di inserimento
+    const autistaNomeEl = document.getElementById('autistaNome');
+    if (autistaNomeEl && user.nome) autistaNomeEl.value = user.nome;
+
+    // 3. Gestione visibilità pulsanti riservati
+    const role = (user.ruolo || 'autista').toLowerCase();
+    const dashBtn = document.getElementById('dashboardBtn');
+    if (dashBtn && (role === 'amministratore' || role === 'impiegata')) {
+        dashBtn.style.display = 'flex';
+    }
+};
+
+document.addEventListener('click', (e) => {
+    const logoutBtn = e.target.closest('.logout-btn[title="Esci"], .logout-link');
+    if (logoutBtn) {
+        e.preventDefault();
+        if (confirm("Sei sicuro di voler uscire?")) {
+            if (typeof window.logoutFirebase === 'function') {
+                window.logoutFirebase();
+            } else {
+                window.location.replace('login.html');
+            }
         }
     }
 });
 
+// --- GESTIONE VISIBILITÀ INTERFACCIA (LANDING VS APP) ---
+const handleInterfaceVisibility = () => {
+    const body = document.body;
+    // Rileva se siamo in landing o home tramite attributo data-page o URL
+    const currentPage = body.getAttribute('data-page') || 
+                       (window.location.pathname.endsWith('index.html') || window.location.pathname === '/' ? 'landing' : '');
+
+    if (currentPage === 'home' || currentPage === 'landing') {
+        body.classList.add('hide-nav');
+    } else {
+        body.classList.remove('hide-nav');
+    }
+};
+
+// Eseguiamo immediatamente e anche al caricamento per sicurezza
+handleInterfaceVisibility();
+document.addEventListener('DOMContentLoaded', handleInterfaceVisibility);

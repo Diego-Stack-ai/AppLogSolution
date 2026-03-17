@@ -6,6 +6,14 @@
     <title>Mappa Consegne - Log Solution</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    
+    <!-- PWA & Mobile Optimization -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="LogSolution">
+    <link rel="apple-touch-icon" href="img/logo.png">
+    <meta name="theme-color" content="#4f46e5">
     <script src="script.js"></script>
     <script type="module" src="firebase-auth-sync.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -60,35 +68,34 @@
     </style>
 </head>
 </head>
-<body>
-    <nav class="glass-nav">
-        <div class="nav-content">
-            <button id="dashboardBtn" class="logout-btn" title="Dashboard"
-                onclick="window.location.href='dashboard.html'"
-                style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
-                <span class="material-icons-round">dashboard</span>
-            </button>
-            <div class="nav-title" style="flex: 1;">Mappa Consegne</div>
-            <div id="stats" style="font-size: 14px; font-weight: 600; color: var(--text-muted);">
-                Punti: <span id="pointCount">0</span>
-            </div>
+
+</body>
+<nav class="glass-nav">
+    <div class="nav-content">
+        <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
+        <button id="dashboardBtn" class="logout-btn" title="Dashboard"
+            onclick="window.navigateWithState('dashboard.html')"
+            style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
+            <span class="material-icons-round">dashboard</span>
+        </button>
+        <div class="nav-title" style="flex: 1;">Mappa Consegne</div>
+        <div id="stats" style="font-size: 14px; font-weight: 600; color: var(--text-muted);">
+            Punti: <span id="pointCount">0</span>
         </div>
-    </nav>
+    </div>
+</nav>
 
-    <main class="main-container">
-        <div id="map"></div>
-    </main>
+<main class="main-container">
+    <div id="map"></div>
+</main>
 
-    <footer style="text-align: center; padding: 20px 24px 40px; color: var(--text-muted); font-size: 13px;">
-        Log Solution &copy; 2026 - Versione 1.1
-    </footer>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const pointCountEl = document.getElementById('pointCount');
-            const data = JSON.parse(localStorage.getItem('lista_clienti') || '[]');
-            
-            // Inizializza Mappa
-            const map = L.map('map').setView([45.4064, 11.8768], 9); // Centrato su Veneto
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const pointCountEl = document.getElementById('pointCount');
+        const data = window.appData.lista_clienti || [];
+        
+        // Inizializza Mappa
+        const map = L.map('map').setView([45.4064, 11.8768], 9); // Centrato su Veneto
 
             const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap'

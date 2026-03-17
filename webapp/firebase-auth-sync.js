@@ -119,8 +119,15 @@ onAuthStateChanged(auth, async (user) => {
                 }
                 
                 // Hook per aggiornamenti UI nelle pagine
+                // Chiamata immediata + retry dopo 300ms per sicurezza su mobile
                 if (typeof window.onUserProfileLoaded === 'function') {
                     window.onUserProfileLoaded(window.appData.currentUser);
+                    // Retry per dispositivi mobili dove il DOM potrebbe non essere ancora pronto
+                    setTimeout(() => {
+                        if (typeof window.onUserProfileLoaded === 'function') {
+                            window.onUserProfileLoaded(window.appData.currentUser);
+                        }
+                    }, 300);
                 }
 
                 // Avviamo i listener ricaricando i permessi appropriati

@@ -686,25 +686,43 @@ function showUpdateToast(reg) {
     };
 }
 
-// --- GESTIONE LOGOUT GLOBALE ---
 // --- HOOK GLOBALE CARICAMENTO PROFILO ---
-// Questa funzione viene chiamata da firebase-auth-sync.js appena il profilo Firestore è pronto
+// Chiamato da firebase-auth-sync.js appena il profilo Firestore è pronto.
+// Usa un delay minimo su mobile per attendere che il DOM sia completamente renderizzato.
 window.onUserProfileLoaded = function(user) {
-    console.log("Global Profile Hook:", user.nome, "[", user.ruolo, "]");
-    
-    // 1. Aggiorna saluto (se presente l'elemento)
-    const greetingEl = document.getElementById('userGreeting');
-    if (greetingEl && user.nome) greetingEl.textContent = user.nome;
+    console.log("Global Profile Hook: dati pronti per", user.nome, "[", user.ruolo, "]");
 
-    // 2. Aggiorna nome autista nei form di inserimento
-    const autistaNomeEl = document.getElementById('autistaNome');
-    if (autistaNomeEl && user.nome) autistaNomeEl.value = user.nome;
+    const applyProfileToUI = () => {
+        // 1. Aggiorna saluto utente (dashboard e pagine admin)
+        const greetingEl = document.getElementById('userGreeting');
+        if (greetingEl && user.nome) {
+            greetingEl.textContent = user.nome;
+            console.log("UI: userGreeting aggiornato con", user.nome);
+        }
 
-    // 3. Gestione visibilità pulsanti riservati
-    const role = (user.ruolo || 'autista').toLowerCase();
-    const dashBtn = document.getElementById('dashboardBtn');
-    if (dashBtn && (role === 'amministratore' || role === 'impiegata')) {
-        dashBtn.style.display = 'flex';
+        // 2. Aggiorna nome autista nel form inserimento
+        const autistaNomeEl = document.getElementById('autistaNome');
+        if (autistaNomeEl && user.nome) {
+            autistaNomeEl.value = user.nome;
+            console.log("UI: autistaNome aggiornato con", user.nome);
+        }
+
+        // 3. Mostra pulsante dashboard solo per admin/impiegata
+        const role = (user.ruolo || 'autista').toLowerCase();
+        const dashBtn = document.getElementById('dashboardBtn');
+        if (dashBtn) {
+            dashBtn.style.display = (role === 'amministratore' || role === 'impiegata') ? 'flex' : 'none';
+        }
+    };
+
+    // Se il DOM è già pronto eseguiamo subito, altrimenti aspettiamo
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        // Piccolo delay per sincronizzare il rendering su mobile (iOS/Android)
+        setTimeout(applyProfileToUI, 150);
+    } else {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(applyProfileToUI, 150);
+        });
     }
 };
 

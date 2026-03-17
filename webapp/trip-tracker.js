@@ -85,7 +85,7 @@ async function saveLog(kmCorrente) {
         const pos = await getCurrentPosition();
         const logData = {
             timestamp: serverTimestamp(),
-            km: kmCorrente !== undefined ? Number(kmCorrente) : null
+            km: (kmCorrente !== undefined && kmCorrente !== null && kmCorrente !== "") ? Number(kmCorrente) : null
         };
         if (pos) {
             logData.lat = pos.lat;
@@ -113,7 +113,7 @@ function startTracking() {
     // Poi ogni 3 minuti (180.000 ms)
     tripInterval = setInterval(async () => {
         const kmPartEl = document.getElementById('kmPartenza');
-        saveLog(kmPartEl?.value || null);
+        await saveLog(kmPartEl ? kmPartEl.value : null);
     }, 180000);
 
     console.log("Tracker: Tracking avviato (intervallo 3 min).");

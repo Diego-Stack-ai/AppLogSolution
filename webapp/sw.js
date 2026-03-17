@@ -1,4 +1,4 @@
-const CACHE_NAME = 'log-solution-v1.8';
+const CACHE_NAME = 'log-solution-v1.9';
 const ASSETS = [
     './',
     './index.html',
@@ -13,6 +13,7 @@ const ASSETS = [
     './script.js',
     './firebase-auth-sync.js',
     './firebase-config.js',
+    './trip-tracker.js',
     './manifest.json',
     './img/logo.png',
     'https://fonts.googleapis.com/icon?family=Material+Icons+Round'

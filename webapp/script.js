@@ -6,6 +6,11 @@
 
 const APP_VERSION = "1.30";
 
+// Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
+window.APP_VERSION = APP_VERSION;
+console.log(`[App] Log Solution PWA — versione ${APP_VERSION}`);
+
+
 // --- STATO GLOBALE ---
 window.appData = window.appData || {
     lista_clienti: [],
@@ -199,8 +204,11 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.serviceWorker.register('./sw.js').then(reg => {
             console.log('[SW] Registrato correttamente.');
 
-            // Notifica se c'è già un aggiornamento in attesa (es. riaperta dopo update)
+            // Se c'è già un SW in attesa (tab rimasto aperto durante aggiornamento)
+            // → invia subito SKIP_WAITING per forzare l'attivazione
             if (reg.waiting) {
+                console.log('[SW] SW in attesa trovato — invio SKIP_WAITING.');
+                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
                 showUpdateToast(reg);
             }
 
@@ -230,13 +238,28 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function showUpdateToast(reg) {
+    // Evita duplicati se il toast è già presente
+    if (document.getElementById('sw-update-toast')) return;
+
     const toast = document.createElement('div');
+    toast.id = 'sw-update-toast';
     toast.className = 'sw-update-toast show';
     toast.innerHTML = `
-        <div style="flex:1;">Nuova versione disponibile (v${APP_VERSION})</div>
-        <button class="btn-update" onclick="window.location.reload()">Aggiorna</button>
+        <div style="flex:1;">🆕 Nuova versione disponibile (v${APP_VERSION})</div>
+        <button class="btn-update" id="btn-sw-update">Aggiorna ora</button>
     `;
     document.body.appendChild(toast);
+
+    // Il pulsante invia SKIP_WAITING al SW in attesa, poi il controllerchange ricarica
+    document.getElementById('btn-sw-update').addEventListener('click', () => {
+        if (reg.waiting) {
+            console.log('[SW] Utente ha cliccato Aggiorna — invio SKIP_WAITING.');
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        } else {
+            // Fallback: nessun SW in attesa, ricarica direttamente
+            window.location.reload();
+        }
+    });
 }
 
 // --- AUTH HOOKS ---

@@ -53,10 +53,10 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// 3. Gestione Messaggi
+// 3. Gestione Messaggi: accetta SKIP_WAITING sia come stringa (legacy) sia come oggetto { type: 'SKIP_WAITING' }
 self.addEventListener('message', (event) => {
-    if (event.data === 'SKIP_WAITING') {
-        console.log('[SW] SKIP_WAITING ricevuto, aggiorno...');
+    if (event.data === 'SKIP_WAITING' || event.data?.type === 'SKIP_WAITING') {
+        console.log(`[SW v${CACHE_NAME}] SKIP_WAITING ricevuto — attivazione forzata.`);
         self.skipWaiting();
     }
 });

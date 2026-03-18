@@ -98,6 +98,13 @@
             color: #64748b;
         }
 
+        /* Animazione spinner per il pulsante Elimina durante l'attesa */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+
+
         .loader {
             width: 48px;
             height: 48px;
@@ -234,9 +241,14 @@
         </div>
     </main>
 
+        <!-- Script base: inizializza window.appData -->
+    <script src="script.js?v=1.30"></script>
+    <!-- Autenticazione Firebase: popola currentUser e chiama onUserProfileLoaded -->
+    <script type="module" src="firebase-auth-sync.js?v=1.30"></script>
+
     <script type="module">
-        import { getAllTrips, getTripLogs, deleteTrip } from "./firestore-service.js?v=1.27";
-        import { renderTripList } from "./ui-render.js?v=1.27";
+        import { getAllTrips, getTripLogs, deleteTrip } from "./firestore-service.js?v=1.30";
+        import { renderTripList, removeTripCard } from "./ui-render.js?v=1.30";
 
         const filterAutista = document.getElementById('filterAutista');
         const btnRefresh = document.getElementById('btnRefresh');
@@ -248,7 +260,7 @@
                 const autista = filterAutista.value;
                 const trips = await getAllTrips(autista);
                 
-                const userRole = (window.appData.currentUser.ruolo || 'autista').toLowerCase();
+                const userRole = (window.appData?.currentUser?.ruolo || 'autista').toLowerCase();
                 const isAdmin = userRole === 'amministratore' || userRole === 'impiegata';
                 
                 renderTripList(trips, 'listaDati', isAdmin);
@@ -341,14 +353,40 @@
             }, 300);
         };
 
-        window.confirmDeleteTrip = async (tripId) => {
-            if (!confirm("Sei sicuro di voler eliminare questo viaggio e i suoi log?")) return;
+        /**
+         * Elimina un viaggio da Firestore e rimuove la card dalla UI senza ricaricare la pagina.
+         * Accessibile solo ad amministratore e impiegata (il pulsante non viene renderizzato per altri ruoli).
+         *
+         * @param {string}      tripId  - ID del viaggio da eliminare
+         * @param {HTMLElement} btnEl   - Riferimento al pulsante cliccato (per feedback visivo)
+         */
+        window.confirmDeleteTrip = async (tripId, btnEl) => {
+            // Conferma di sicurezza prima di procedere
+            if (!confirm('Sei sicuro di voler eliminare questo viaggio e tutti i suoi log GPS?\nL\'operazione non è reversibile.')) return;
+
+            // Feedback visivo: spinner sul pulsante durante l'operazione
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.innerHTML = '<span class="material-icons-round" style="font-size:18px; animation:spin 1s linear infinite;">sync</span>';
+            }
+
             try {
+                // Elimina documento viaggio + sottocollezione logs su Firestore
                 await deleteTrip(tripId);
-                alert("Viaggio eliminato!");
-                loadData();
+                console.log(`[UI] Viaggio ${tripId} eliminato da Firestore.`);
+
+                // Rimuove la card dalla DOM con animazione (NON ricarica tutta la lista)
+                removeTripCard(tripId);
+
             } catch (e) {
-                alert("Errore: " + e.message);
+                console.error('[UI] Errore eliminazione viaggio:', e);
+                alert('Errore durante l\'eliminazione: ' + e.message);
+
+                // Ripristina il pulsante in caso di errore
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.innerHTML = '<span class="material-icons-round" style="font-size:20px;">delete_outline</span>';
+                }
             }
         };
 
@@ -361,7 +399,7 @@
         filterAutista.onchange = loadData;
 
         window.renderAutistiDropdown = function() {
-            const autisti = window.appData.lista_autisti || [];
+            const autisti = window.appData?.lista_autisti || [];
             const currentVal = filterAutista.value;
             filterAutista.innerHTML = '<option value="tutti">Tutti gli autisti</option>';
             autisti.forEach(a => {
@@ -374,9 +412,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-             if (window.appData.currentUser.id) loadData();
+             // Caricamento gestito da onUserProfileLoaded (firebase-auth-sync.js)
         });
     </script>
 </body>
-</html>html>
-
+</html>

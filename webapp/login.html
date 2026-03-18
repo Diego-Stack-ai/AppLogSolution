@@ -5,12 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.8">
+    <link rel="stylesheet" href="styles.css?v=1.26">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="LogSolution">
     <link rel="apple-touch-icon" href="img/logo.png">
@@ -25,6 +25,8 @@
         </div>
 
         <form id="loginForm">
+            <div id="authAlert" style="display:none; padding:12px; margin-bottom:20px; border-radius:12px; font-size:13px; text-align:center; font-weight:500; border:1px solid transparent;"></div>
+
             <div class="input-group">
                 <label>Email di Accesso</label>
                 <input type="text" id="username" placeholder="esempio@logsolution.app" autocomplete="username" 
@@ -43,13 +45,12 @@
 
             <button type="submit" class="btn-primary" style="margin-bottom: 12px;">Accedi ora</button>
             <p style="font-size: 11px; color: var(--text-muted); opacity: 0.8; text-align: center; margin: 0;">
-                App v1.11 &copy; 2026 Log Solution Team
-            </p>
+                Log Solution Team &copy; 2026
         </form>
     </div>
 
-    <script src="script.js?v=1.8"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.8"></script>
+    <script src="script.js?v=1.26"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.26"></script>
 </body>
 </html>
 

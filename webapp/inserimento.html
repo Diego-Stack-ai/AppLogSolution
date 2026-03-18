@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.13">
+    <link rel="stylesheet" href="styles.css?v=1.26">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="LogSolution">
     <link rel="apple-touch-icon" href="img/logo.png">
@@ -177,23 +177,23 @@
                             </select>
                         </div>
 
-                        <div class="input-group" style="position: relative;">
-                            <label for="clienteSearch">Cliente / Destinazione *</label>
-                            <div style="display: flex; gap: 8px;">
-                                <input type="text" id="clienteSearch" placeholder="Cerca scuola o città..." autocomplete="off">
-                                <input type="hidden" id="clienteId">
+                        <!-- Nuova Sezione Menu Dinamici (Cliente + Viaggio) -->
+                        <div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                            <div class="input-group">
+                                <label for="clienteSelect">Cliente / Progetto *</label>
+                                <select id="clienteSelect" required>
+                                    <option value="">Seleziona cliente</option>
+                                    <option value="Progetto scuole">Progetto scuole</option>
+                                    <option value="Gran Chef">Gran Chef</option>
+                                    <option value="Bauer">Bauer</option>
+                                    <option value="Cattel">Cattel</option>
+                                </select>
                             </div>
-                            <div id="clienteResults" class="search-results-dropdown"></div>
-                        </div>
-
-                        <!-- Dettagli Cliente -->
-                        <div id="clienteDettagli" class="glass-panel" style="display: none; padding: 15px; grid-column: 1 / -1; font-size: 14px; margin-top: -10px; background: rgba(79, 70, 229, 0.05); border: 1px dashed var(--primary);">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                                <div><strong>Indirizzo:</strong> <span id="detIndirizzo">-</span></div>
-                                <div><strong>Città:</strong> <span id="detCitta">-</span> (<span id="detProv">-</span>)</div>
-                                <div><strong>CAP:</strong> <span id="detCap">-</span></div>
-                                <div><strong>Email:</strong> <span id="detEmail">-</span></div>
-                                <div style="grid-column: 1 / -1;"><strong>Sito Web:</strong> <a id="detHome" href="#" target="_blank" style="color: var(--primary); text-decoration: underline;">Apri homepage</a></div>
+                            <div class="input-group">
+                                <label for="viaggioSelect">Viaggio *</label>
+                                <select id="viaggioSelect" required disabled>
+                                    <option value="">Seleziona viaggio</option>
+                                </select>
                             </div>
                         </div>
 
@@ -222,6 +222,7 @@
                         <span class="material-icons-round">play_arrow</span>
                         Inizia Viaggio
                     </button>
+                    <div id="trackingStatus" style="font-size:12px; color:#64748b; margin-top:8px; text-align:center; min-height:18px;"></div>
                 </div>
 
                 <!-- STEP 2: FINE MATTINA -->
@@ -412,25 +413,102 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.13"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.13"></script>
-    <script type="module" src="trip-tracker.js?v=1.13"></script>
-    <script>
-        // Al salvataggio finale, chiudi il viaggio su Firestore
+    <script src="script.js?v=1.27"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.27"></script>
+    <script type="module">
+        import { saveTrip } from "./firestore-service.js?v=1.27";
+        import "./gps-tracker.js?v=1.27";
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const btnConfirm = document.getElementById('btnConfirmSend');
-            if (btnConfirm) {
-                btnConfirm.addEventListener('click', async () => {
-                    const kmArrivo = document.getElementById('kmArrivo')?.value;
-                    const status = window.getTripStatus?.();
-                    if (status?.isActive && kmArrivo) {
-                        await window.endTrip(kmArrivo);
-                    }
-                });
+        const presenzeForm = document.getElementById('presenzeForm');
+        const btnStartTrip = document.getElementById('btnStartTrip');
+        const btnConfirmSend = document.getElementById('btnConfirmSend');
+
+        // Logic for Starting Trip
+        btnStartTrip.onclick = async () => {
+            const targa = document.getElementById('automezzo').value;
+            const kmPartenza = document.getElementById('kmPartenza').value;
+            
+            const tripData = {
+                data: document.getElementById('data').value,
+                autista: window.appData.currentUser.nome,
+                automezzo: targa,
+                cliente: document.getElementById('clienteSelect').value,
+                viaggio: document.getElementById('viaggioSelect').value,
+                kmPartenza: Number(kmPartenza),
+                mattinaInizio: window.getTimeValue('mattinaInizio'),
+                stato: "in corso"
+            };
+
+            try {
+                const tripId = await saveTrip(tripData);
+                sessionStorage.setItem('currentTripId', tripId);
+                
+                // Avvia Tracking GPS (Modulo gps-tracker.js)
+                if (window.startGPSTracking) {
+                    window.startGPSTracking(tripId, kmPartenza);
+                }
+
+                btnStartTrip.innerHTML = '<span class="material-icons-round">gps_fixed</span> Tracking Attivo';
+                btnStartTrip.disabled = true;
+                window.nextStep(2);
+            } catch (e) {
+                alert("Errore avvio viaggio: " + e.message);
             }
-        });
+        };
+
+        // Final Submission
+        btnConfirmSend.onclick = async () => {
+            const btn = presenzeForm.querySelector('.btn-save');
+            btn.innerHTML = 'Invio...'; btn.disabled = true;
+            window.closeConfirmModal();
+
+            const tripId = sessionStorage.getItem('currentTripId');
+            const kmArrivo = document.getElementById('kmArrivo').value;
+
+            const finalData = {
+                id: tripId,
+                data: document.getElementById('data').value,
+                autista: window.appData.currentUser.nome,
+                automezzo: document.getElementById('automezzo').value,
+                cliente: document.getElementById('clienteSelect').value,
+                viaggio: document.getElementById('viaggioSelect').value,
+                kmPartenza: Number(document.getElementById('kmPartenza').value),
+                kmArrivo: Number(kmArrivo),
+                delta_km: document.getElementById('deltaKm').value,
+                mattinaInizio: window.getTimeValue('mattinaInizio'),
+                mattinaFine: window.getTimeValue('mattinaFine'),
+                pomeriggioInizio: window.getTimeValue('pomeriggioInizio'),
+                pomeriggioFine: window.getTimeValue('pomeriggioFine'),
+                ore_ordinarie: document.getElementById('oreOrdinarie').value,
+                ore_straordinarie: document.getElementById('oreStraordinario').value,
+                ore_totali: document.getElementById('totaleOre').value,
+                importo: document.getElementById('importo').value,
+                litri: document.getElementById('litri').value,
+                nota: document.getElementById('nota').value,
+                stato: "concluso"
+            };
+
+            try {
+                // Ferma tracking
+                if (window.stopGPSTracking) window.stopGPSTracking();
+
+                // Salva su Firebase
+                await saveTrip(finalData);
+                
+                sessionStorage.removeItem('currentTripId');
+                sessionStorage.removeItem('currentDraft');
+
+                btn.innerHTML = 'Turno Inviato ✓';
+                btn.style.background = 'var(--success)';
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } catch (e) {
+                alert("Errore salvataggio: " + e.message);
+                btn.disabled = false;
+                btn.innerHTML = 'Salva e Invia Turno';
+            }
+        };
     </script>
 </body>
-
 </html>

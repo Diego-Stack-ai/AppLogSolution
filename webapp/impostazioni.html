@@ -5,12 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=1.26">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="LogSolution">
     <link rel="apple-touch-icon" href="img/logo.png">
@@ -34,11 +34,7 @@
     <div class="glass-panel form-card">
         <div
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
-            <a href="javascript:void(0)" onclick="window.navigateWithState('visualizzazione.html')" class="btn-primary"
-                style="width: auto; padding: 10px 20px; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px;">
-                <span class="material-icons-round">visibility</span>
-                Visualizza Turni Inseriti
-            </a>
+            <h2 style="margin: 0; color: var(--primary);">Gestione Sistema</h2>
         </div>
 
         <!-- Sezione Gestione Targhe -->
@@ -164,10 +160,6 @@
 
     </div>
 </main>
-
-<footer style="text-align: center; padding: 20px 24px 40px; color: var(--text-muted); font-size: 13px;">
-    Log Solution &copy; 2026 - Versione 1.1
-</footer>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -470,8 +462,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js"></script>
-    <script type="module" src="firebase-auth-sync.js"></script>
+    <script src="script.js?v=1.26"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.26"></script>
 </body>
 
 </html>

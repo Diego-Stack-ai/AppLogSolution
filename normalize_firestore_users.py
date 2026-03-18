@@ -88,6 +88,7 @@ def main():
         d = doc.to_dict()
         print(f"  - ID: {doc.id} | UID: {d.get('uid')} | Nome: {d.get('nome')} | Email: {d.get('email')} | Ruolo: {d.get('ruolo')}")
 
+
 if __name__ == "__main__":
     import sys
     import io

@@ -1,0 +1,68 @@
+In riga:1 car:350
++ ... es.css?v=1.8\>'; if ( -ne ) { 
+[System.IO.File]::WriteAllText(.FullNam ...
++                                             
+                     ~
+')' mancante nella chiamata al metodo.
+In riga:1 car:350
++ ... 1.8\>'; if ( -ne ) { 
+[System.IO.File]::WriteAllText(.FullName, , 
+[Sys ...
++                                             
+            ~~~~~~~~~
+Token '.FullName' imprevisto nell'espressione 
+o nell'istruzione.
+In riga:1 car:359
++ ... .8\>'; if ( -ne ) { 
+[System.IO.File]::WriteAllText(.FullName, , 
+[Syst ...
++                                             
+                    ~
+Argomento mancante nell'elenco di parametri.
+In riga:1 car:361
++ ... \>'; if ( -ne ) { 
+[System.IO.File]::WriteAllText(.FullName, , 
+[System ...
++                                             
+                    ~
+Argomento mancante nell'elenco di parametri.
+In riga:1 car:317
++ ... =  -replace 'styles\.css\>, 
+styles.css?v=1.8\>'; if ( -ne ) { [System ...
++                                             
+                    ~
+'}' di chiusura mancante nel blocco di 
+istruzioni o nella definizione del tipo.
+In riga:1 car:90
++ ... e\AppLogSolution\webapp\' -Filter 
+'*.html' | ForEach-Object {  = Get- ...
++                                             
+                    ~
+'}' di chiusura mancante nel blocco di 
+istruzioni o nella definizione del tipo.
+In riga:1 car:391
++ ... ile]::WriteAllText(.FullName, , 
+[System.Text.Encoding]::UTF8); Write- ...
++                                             
+                    ~
+Token ')' imprevisto nell'espressione o 
+nell'istruzione.
+In riga:1 car:425
++ ... ystem.Text.Encoding]::UTF8); Write-Host 
+'Updated: ' + .Name } else {  ...
++                                             
+                    ~
+Token '}' imprevisto nell'espressione o 
+nell'istruzione.
+In riga:1 car:469
++ ... ost 'Updated: ' + .Name } else { 
+Write-Host 'No change: ' + .Name } }
++                                             
+                            ~
+Token '}' imprevisto nell'espressione o 
+nell'istruzione.
+    + CategoryInfo          : ParserError: (: 
+   ) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingEndParen 
+   thesisInMethodCall
+ 

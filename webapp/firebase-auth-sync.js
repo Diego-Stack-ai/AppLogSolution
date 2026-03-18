@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, doc, getDoc, updateDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, browserLocalPersistence, setPersistence, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, browserLocalPersistence, setPersistence, updatePassword, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 const app = initializeApp(firebaseConfig);
@@ -38,6 +38,18 @@ window.forcePasswordResetDebug = async (newPassword) => {
     } catch (e) {
         console.error("Errore reset debug:", e);
         alert("Errore reset: " + e.message);
+    }
+};
+
+// --- FUNZIONI DI SERVIZIO AUTH ---
+window.sendVerificationEmail = async () => {
+    const user = auth.currentUser;
+    if (!user) return alert("Nessun utente loggato.");
+    try {
+        await sendEmailVerification(user);
+        alert("Email di verifica inviata correttamente.");
+    } catch (e) {
+        alert("Errore invio: " + e.message);
     }
 };
 
@@ -94,11 +106,45 @@ onAuthStateChanged(auth, async (user) => {
     console.log(`Auth Listener: Utente = ${user ? user.uid : 'NULL'}, Pagina Corrente = ${page}`);
 
     if (user) {
+        // --- 1. CONTROLLO EMAIL VERIFICATA ---
+        if (!user.emailVerified) {
+            console.warn("Auth: Email non verificata.");
+            if (!isPublicPage) {
+                await signOut(auth);
+                window.location.replace('login.html?status=verify_sent');
+            }
+            return;
+        }
+
         try {
             const userDoc = await getDoc(doc(db, "users", user.uid));
             
             if (userDoc.exists()) {
                 const userData = userDoc.data();
+
+                // --- 2. CONTROLLO CAMBIO PASSWORD FORZATO ---
+                if (userData.needsPasswordChange) {
+                    console.warn("Auth: Cambio password richiesto.");
+                    const newPassword = prompt("Primo Accesso: Inserisci la tua nuova password definitiva (min 6 caratteri):");
+                    if (newPassword && newPassword.length >= 6) {
+                        try {
+                            await updatePassword(user, newPassword);
+                            await updateDoc(doc(db, "users", user.uid), { needsPasswordChange: false });
+                            alert("Password aggiornata con successo! Benvenuto nel sistema.");
+                        } catch (e) {
+                            alert("Errore durante l'aggiornamento della password: " + e.message + "\nEffettua nuovamente il login.");
+                            await signOut(auth);
+                            window.location.replace('login.html');
+                            return;
+                        }
+                    } else {
+                        alert("Devi cambiare la password per poter accedere al sistema.");
+                        await signOut(auth);
+                        window.location.replace('login.html');
+                        return;
+                    }
+                }
+
                 // Normalizzazione ruolo (sempre minuscolo e senza spazi)
                 const role = (userData.ruolo || 'autista').toString().toLowerCase().trim();
                 window.appData.currentUser = { id: user.uid, email: user.email, ...userData, ruolo: role };

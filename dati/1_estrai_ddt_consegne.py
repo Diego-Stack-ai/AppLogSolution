@@ -218,28 +218,9 @@ def main():
     print("Cartelle di input pulite.\n")
 
 
-    # Ripristino e potenziamento automatismo: esegui l'intera catena
-    if c_f + c_l > 0:
-        import subprocess
-        scripts = [
-            ("2_crea_punti_consegna.py", "Generazione punti consegna..."),
-            ("3_crea_lista_unificata.py", "Unificazione punti e rientri..."),
-            ("4_crea_mappa_consegne.py", "Generazione mappe e app...")
-        ]
-        
-        for script_name, msg in scripts:
-            prog = BASE_DIR / script_name
-            if prog.exists():
-                print(f"{msg}")
-                r = subprocess.run([sys.executable, str(prog), data_consegna], cwd=BASE_DIR)
-                if r.returncode != 0:
-                    print(f"Errore durante l'esecuzione di {script_name}. Interruzione catena.\n")
-                    break
-            else:
-                print(f"Script {script_name} non trovato. Salto passaggio.\n")
-        
-        print("\n=== ELABORAZIONE COMPLETA ===\n")
+    print("\n--- Estrazione completata ---\n")
 
 
 if __name__ == "__main__":
     main()
+

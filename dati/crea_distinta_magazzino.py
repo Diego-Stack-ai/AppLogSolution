@@ -93,6 +93,7 @@ CODICE_MAP = {
 ARTICOLI_NOTI = frozenset({
     "ME-T-DI-V0-NA", "PE-T-DI-L3-NA", "10-GEL", "10-FLYER", "10-MANIFESTO", "LT-DL-02-LC", "LT-ES-04-LS",
     "LT-ESL-IN-LB", "LT-AQ-04-LV", "YO-BI-MN-04-LB", "YO-DL-02-LC", "AP-SU-PC", "FO-DI-PV-04-LB",
+    "CA-Z-BI-L3-NA", "FO-DI-GP-01-NI", "FVNS-03-GADGET", "KI-S-BI-L3-NA",
 })
 # Unita aggiunte di recente: segnalate in distinta per attenzione magazziniere
 UNITA_NUOVE = frozenset({"Collo"})  # Fette/Fetta ora considerate unità standard
@@ -105,6 +106,8 @@ CONSOLIDAMENTO = {
     "YO-BI-MN-04-LB": ("Cartoni", "Cluster", 10),
     "YO-DL-02-LC": ("Cartoni", "Porzioni", 6),
     "AP-SU-PC": ("Cartoni", "Porzioni", 24),
+    "FO-DI-GP-01-NI": ("Colli", "Buste", 16),
+    "FO-DI-PV-04-LB": ("Colli", "Fette", 20),
 }
 
 
@@ -128,7 +131,7 @@ def _estrai_data_e_territori(pdf_paths: list[Path]) -> tuple[str | None, set[str
 
 
 # Unita riconosciute nelle quantita (include minuscole per DDT con formato variabile)
-UNITA_QTY = r"(Confezioni|Confezione|confezioni|confezione|Colli|Collo|colli|collo|Brick|brick|Fardelli|Fardello|fardelli|fardello|Bottiglie|Bottiglia|bottiglie|bottiglia|Cartoni|Cartone|cartoni|cartone|Cluster|cluster|Porzioni|Porzione|porzioni|porzione|Fascette|Fascetta|fascette|fascetta|Manifesti|Manifesto|manifesti|manifesto|Fette|Fetta|fette|fetta|pz)"
+UNITA_QTY = r"(Confezioni|Confezione|confezioni|confezione|Colli|Collo|colli|collo|Brick|brick|Fardelli|Fardello|fardelli|fardello|Bottiglie|Bottiglia|bottiglie|bottiglia|Cartoni|Cartone|cartoni|cartone|Cluster|cluster|Porzioni|Porzione|porzioni|porzione|Fascette|Fascetta|fascette|fascetta|Manifesti|Manifesto|manifesti|manifesto|Fette|Fetta|fette|fetta|Buste|Busta|buste|busta|pz)"
 
 # Confezionamento: X Porzioni/Bottiglie/Cluster/Fetta / Unit
 CONF_PATTERN = r"[\d,\.]+\s*(?:Porzioni?|Bottiglie?|Cluster|Fetta?)\s*/\s*\w+"
@@ -233,8 +236,8 @@ def _estrai_articoli_da_pagina(lines: list[str], tipo: str) -> list[dict]:
             continue
 
         codice_raw = code_m.group(1).strip()
-        # Completa FVNS-03- -> FVNS-03-POSTER
-        if codice_raw == "FVNS-03-" or codice_raw.startswith("FVNS-"):
+        # Completa FVNS-03- -> FVNS-03-POSTER (se non ha già un suffisso come GADGET)
+        if codice_raw == "FVNS-03-":
             codice_raw = "FVNS-03-POSTER"
 
         # Normalizza
@@ -297,11 +300,21 @@ def _raccogli_articoli_da_pdf(pdf_paths: list[Path], tipo: str) -> list[dict]:
 def _normalizza_unita(u: str) -> str:
     """Normalizza varianti plurali (Collo->Colli, Fetta->Fette, Bottiglia->Bottiglie, etc.)."""
     u = u.strip().lower()
-    mapping = {"bottiglia": "Bottiglie", "bottiglie": "Bottiglie", "fardello": "Fardelli", "fardelli": "Fardelli",
-               "cartone": "Cartoni", "cartoni": "Cartoni", "cluster": "Cluster", "porzione": "Porzioni",
-               "porzioni": "Porzioni", "collo": "Colli", "colli": "Colli", "fetta": "Fette", "fette": "Fette", "brick": "Brick",
-               "confezione": "Confezioni", "confezioni": "Confezioni", "manifesto": "Manifesti",
-               "manifesti": "Manifesti", "fascetta": "Fascette", "fascette": "Fascette", "pz": "pz", "confezioni": "Confezioni"}
+    mapping = {
+        "bottiglia": "Bottiglie", "bottiglie": "Bottiglie",
+        "fardello": "Fardelli", "fardelli": "Fardelli",
+        "cartone": "Cartoni", "cartoni": "Cartoni",
+        "cluster": "Cluster",
+        "porzione": "Porzioni", "porzioni": "Porzioni",
+        "collo": "Colli", "colli": "Colli",
+        "fetta": "Fette", "fette": "Fette",
+        "brick": "Brick",
+        "confezione": "Confezioni", "confezioni": "Confezioni",
+        "manifesto": "Manifesti", "manifesti": "Manifesti",
+        "fascetta": "Fascette", "fascettes": "Fascette",
+        "busta": "Buste", "buste": "Buste",
+        "pz": "pz"
+    }
     return mapping.get(u, u.title() if u else u)
 
 
@@ -342,7 +355,7 @@ def _estrai_articoli_da_tabella(page) -> list[dict] | None:
                 break
         if not codice_raw:
             continue
-        if codice_raw == "FVNS-03-" or (codice_raw.startswith("FVNS-") and "POSTER" not in codice_raw):
+        if codice_raw == "FVNS-03-":
             codice_raw = "FVNS-03-POSTER"
         codice, _ = CODICE_MAP.get(codice_raw, (codice_raw, ""))
 
@@ -417,8 +430,11 @@ def _consolida_quantita(codice: str, lista_qty: list[tuple[int, str]]) -> tuple[
     tot_princ += extra_princ
 
     # Nomi per display (singolare italiano)
-    _sing = {"Fardelli": "Fardello", "Bottiglie": "Bottiglia", "Cartoni": "Cartone", "Porzioni": "Porzione",
-             "Cluster": "Cluster"}
+    _sing = {
+        "Fardelli": "Fardello", "Bottiglie": "Bottiglia", 
+        "Cartoni": "Cartone", "Porzioni": "Porzione",
+        "Cluster": "Cluster", "Colli": "Collo", "Buste": "Busta"
+    }
     nm_princ = _sing.get(unit_princ, unit_princ) if tot_princ == 1 else unit_princ
     nm_second = _sing.get(unit_second, unit_second) if resto_second == 1 else unit_second
 

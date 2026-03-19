@@ -80,8 +80,8 @@ PROVINCIA_RE = re.compile(r'\(([A-Z]{2})\)')
 # A=Codice Frutta, B=Codice Latte, C-N=Indirizzo unico (A chi va, Tipologia, Indirizzo, CAP, Città, Provincia, ... Orario min, Orario max)
 COL_CODICE_FRUTTA = 1   # A
 COL_CODICE_LATTE = 2    # B
-COL_ORARIO_MIN = 13     # M
-COL_ORARIO_MAX = 14     # N
+COL_ORARIO_MIN = 11     # K
+COL_ORARIO_MAX = 12     # L
 ORARIO_MAX_DEFAULT = "14:00"  # chiusura scuole se H10 non presente
 
 # Codice DDT -> (codice distinta, descrizione distinta)
@@ -93,6 +93,7 @@ CODICE_MAP = {
 ARTICOLI_NOTI = frozenset({
     "ME-T-DI-V0-NA", "PE-T-DI-L3-NA", "10-GEL", "10-FLYER", "10-MANIFESTO", "LT-DL-02-LC", "LT-ES-04-LS",
     "LT-ESL-IN-LB", "LT-AQ-04-LV", "YO-BI-MN-04-LB", "YO-DL-02-LC", "AP-SU-PC", "FO-DI-PV-04-LB",
+    "CA-Z-BI-L3-NA", "FO-DI-GP-01-NI", "FVNS-03-GADGET", "KI-S-BI-L3-NA",
 })
 # Unita aggiunte di recente: segnalate in distinta per attenzione magazziniere
 UNITA_NUOVE = frozenset({"Collo"})  # Fette/Fetta ora considerate unità standard
@@ -105,6 +106,8 @@ CONSOLIDAMENTO = {
     "YO-BI-MN-04-LB": ("Cartoni", "Cluster", 10),
     "YO-DL-02-LC": ("Cartoni", "Porzioni", 6),
     "AP-SU-PC": ("Cartoni", "Porzioni", 24),
+    "FO-DI-GP-01-NI": ("Colli", "Buste", 16),
+    "FO-DI-PV-04-LB": ("Colli", "Fette", 20),
 }
 
 
@@ -127,11 +130,29 @@ def _estrai_data_e_territori(pdf_paths: list[Path]) -> tuple[str | None, set[str
     return data_ddt, territori
 
 
-# Unita riconosciute nelle quantita (include singolari: Collo=Colli, Fetta=Fette)
-UNITA_QTY = r"(Confezioni|Confezione|Colli|Collo|Brick|Fardelli|Fardello|Bottiglie|Bottiglia|Cartoni|Cartone|Cluster|Porzioni|Porzione|Fascette|Fascetta|Manifesti|Manifesto|Fette|Fetta|pz)"
+# Unita riconosciute nelle quantita (include minuscole per DDT con formato variabile)
+UNITA_QTY = r"(Confezioni|Confezione|confezioni|confezione|Colli|Collo|colli|collo|Brick|brick|Fardelli|Fardello|fardelli|fardello|Bottiglie|Bottiglia|bottiglie|bottiglia|Cartoni|Cartone|cartoni|cartone|Cluster|cluster|Porzioni|Porzione|porzioni|porzione|Fascette|Fascetta|fascette|fascetta|Manifesti|Manifesto|manifesti|manifesto|Fette|Fetta|fette|fetta|Buste|Busta|buste|busta|pz)"
 
 # Confezionamento: X Porzioni/Bottiglie/Cluster/Fetta / Unit
 CONF_PATTERN = r"[\d,\.]+\s*(?:Porzioni?|Bottiglie?|Cluster|Fetta?)\s*/\s*\w+"
+
+SCAD_RE = re.compile(r"Scad\.\s*min\.\s*(\d{2}/\d{2}/\d{4})", re.I)
+
+
+def _parse_quantita_da_cella(cell) -> list[tuple[int, str]]:
+    """
+    Estrae lista (qty, unita) da cella quantità (Col 3).
+    Es: "1 Brick" -> [(1, "Brick")]; "2 Fardelli\\ne 8 Bottiglie" -> [(2, "Fardelli"), (8, "Bottiglie")]
+    """
+    if not cell or not str(cell).strip():
+        return []
+    text = str(cell).replace("\n", " ").replace("  ", " ")
+    quantita = []
+    for m in re.finditer(r"(?:^|e\s+)(\d+)\s+(" + UNITA_QTY + r")", text, re.I):
+        quantita.append((int(m.group(1)), _normalizza_unita(m.group(2))))
+    if not quantita and re.search(r"^(\d+)\s*$", text.strip()):
+        quantita.append((int(text.strip()), "pz"))
+    return quantita
 
 
 def _parse_riga_prodotto(line: str, next_lines: list[str], codice: str) -> dict | None:
@@ -215,8 +236,8 @@ def _estrai_articoli_da_pagina(lines: list[str], tipo: str) -> list[dict]:
             continue
 
         codice_raw = code_m.group(1).strip()
-        # Completa FVNS-03- -> FVNS-03-POSTER
-        if codice_raw == "FVNS-03-" or codice_raw.startswith("FVNS-"):
+        # Completa FVNS-03- -> FVNS-03-POSTER (se non ha già un suffisso come GADGET)
+        if codice_raw == "FVNS-03-":
             codice_raw = "FVNS-03-POSTER"
 
         # Normalizza
@@ -262,27 +283,113 @@ def _estrai_articoli_da_pagina(lines: list[str], tipo: str) -> list[dict]:
 
 
 def _raccogli_articoli_da_pdf(pdf_paths: list[Path], tipo: str) -> list[dict]:
-    """Raccoglie tutti gli articoli da una lista di PDF."""
+    """Raccoglie tutti gli articoli da una lista di PDF. Prova prima extract_tables(), poi fallback a extract_text()."""
     tutti = []
     for pdf_path in pdf_paths:
         with pdfplumber.open(pdf_path) as pdf:
             for page in pdf.pages:
-                text = page.extract_text() or ""
-                lines = text.split("\n")
-                arts = _estrai_articoli_da_pagina(lines, tipo)
-                tutti.extend(arts)
+                arts = _estrai_articoli_da_tabella(page)
+                if arts is None:
+                    text = page.extract_text() or ""
+                    lines = text.split("\n")
+                    arts = _estrai_articoli_da_pagina(lines, tipo)
+                tutti.extend(arts or [])
     return tutti
 
 
 def _normalizza_unita(u: str) -> str:
     """Normalizza varianti plurali (Collo->Colli, Fetta->Fette, Bottiglia->Bottiglie, etc.)."""
     u = u.strip().lower()
-    mapping = {"bottiglia": "Bottiglie", "bottiglie": "Bottiglie", "fardello": "Fardelli", "fardelli": "Fardelli",
-               "cartone": "Cartoni", "cartoni": "Cartoni", "cluster": "Cluster", "porzione": "Porzioni",
-               "porzioni": "Porzioni", "collo": "Colli", "colli": "Colli", "fetta": "Fette", "fette": "Fette", "brick": "Brick",
-               "confezione": "Confezioni", "confezioni": "Confezioni", "manifesto": "Manifesti",
-               "manifesti": "Manifesti", "fascetta": "Fascette", "fascette": "Fascette", "pz": "pz", "confezioni": "Confezioni"}
+    mapping = {
+        "bottiglia": "Bottiglie", "bottiglie": "Bottiglie",
+        "fardello": "Fardelli", "fardelli": "Fardelli",
+        "cartone": "Cartoni", "cartoni": "Cartoni",
+        "cluster": "Cluster",
+        "porzione": "Porzioni", "porzioni": "Porzioni",
+        "collo": "Colli", "colli": "Colli",
+        "fetta": "Fette", "fette": "Fette",
+        "brick": "Brick",
+        "confezione": "Confezioni", "confezioni": "Confezioni",
+        "manifesto": "Manifesti", "manifesti": "Manifesti",
+        "fascetta": "Fascette", "fascettes": "Fascette",
+        "busta": "Buste", "buste": "Buste",
+        "pz": "pz"
+    }
     return mapping.get(u, u.title() if u else u)
+
+
+def _estrai_articoli_da_tabella(page) -> list[dict] | None:
+    """
+    Estrae articoli usando extract_tables(). Colonne separate = descrizione e confezionamento puliti.
+    Ritorna lista articoli o None se tabella non trovata.
+    """
+    tables = page.extract_tables()
+    if not tables:
+        return None
+    tab_articoli = None
+    for t in tables:
+        if not t or len(t) < 2:
+            continue
+        header = " ".join(str(c or "") for c in (t[0] or []))
+        if "Cod. Articolo" in header or "Cod. Articolo" in str(t[0]):
+            tab_articoli = t
+            break
+    if not tab_articoli:
+        return None
+
+    articoli = []
+    for row in tab_articoli[1:]:
+        if not row or len(row) < 4:
+            continue
+        cell0 = str(row[0] or "").strip()
+        if not cell0:
+            continue
+
+        codice_raw = None
+        for linea in cell0.split("\n"):
+            linea = linea.strip()
+            if linea.startswith("Codice:"):
+                continue
+            if re.match(r"^[A-Z0-9]{2,}-[A-Z0-9\-]+", linea):
+                codice_raw = re.match(r"^([A-Z0-9]{2,}-[A-Z0-9\-]+)", linea).group(1).strip()
+                break
+        if not codice_raw:
+            continue
+        if codice_raw == "FVNS-03-":
+            codice_raw = "FVNS-03-POSTER"
+        codice, _ = CODICE_MAP.get(codice_raw, (codice_raw, ""))
+
+        try:
+            kg_val = str(row[2] or "0").replace(",", ".").strip()
+            kg = Decimal(kg_val) if kg_val else Decimal("0")
+        except Exception:
+            kg = Decimal("0")
+
+        cell3 = row[3] if len(row) > 3 else ""
+        quantita = _parse_quantita_da_cella(cell3)
+        if not quantita and codice == "10-GEL":
+            porz = str(row[4] or "") if len(row) > 4 else ""
+            if porz.isdigit():
+                quantita = [(int(porz), "pz")]
+        if not quantita:
+            continue
+
+        cell1 = str(row[1] or "").strip()
+        scad_match = SCAD_RE.search(cell1)
+        scadenza = scad_match.group(1) if scad_match else ""
+        descrizione = cell1 if cell1 else codice
+
+        confezionamento = str(row[5] or "").strip() if len(row) > 5 else ""
+
+        articoli.append({
+            "codice": codice,
+            "descrizione": descrizione,
+            "scadenza": scadenza,
+            "kg": kg,
+            "quantita": quantita,
+            "confezionamento": confezionamento,
+        })
+    return articoli if articoli else None
 
 
 def _consolida_quantita(codice: str, lista_qty: list[tuple[int, str]]) -> tuple[list[tuple[int, str]], str]:
@@ -323,8 +430,11 @@ def _consolida_quantita(codice: str, lista_qty: list[tuple[int, str]]) -> tuple[
     tot_princ += extra_princ
 
     # Nomi per display (singolare italiano)
-    _sing = {"Fardelli": "Fardello", "Bottiglie": "Bottiglia", "Cartoni": "Cartone", "Porzioni": "Porzione",
-             "Cluster": "Cluster"}
+    _sing = {
+        "Fardelli": "Fardello", "Bottiglie": "Bottiglia", 
+        "Cartoni": "Cartone", "Porzioni": "Porzione",
+        "Cluster": "Cluster", "Colli": "Collo", "Buste": "Busta"
+    }
     nm_princ = _sing.get(unit_princ, unit_princ) if tot_princ == 1 else unit_princ
     nm_second = _sing.get(unit_second, unit_second) if resto_second == 1 else unit_second
 
@@ -383,7 +493,7 @@ def _aggrega_articoli(articoli: list[dict]) -> list[dict]:
     return risultato
 
 
-NOTA_FORNITORI = "Latte Busche: BL - VE - Latterie Soligo: PD - TV - Latterie Vicentine: VI"
+NOTA_FORNITORI = "Latte Busche: BL - VE       Latterie Soligo: PD - TV       Latterie Vicentine: VI"
 
 
 def _genera_pdf(articoli: list[dict], data_ddt: str, num_distinta: str, zone_suffix: str, zone_nums: list[str], output_path: Path, causali_province: dict[str, list[str]] | None = None, rientri_territorio: list[str] | None = None):
@@ -432,10 +542,20 @@ def _genera_pdf(articoli: list[dict], data_ddt: str, num_distinta: str, zone_suf
     for a in articoli:
         desc = _xml_escape(str(a["descrizione"]))
         conf = _xml_escape(str(a["confezionamento"]).replace("\n", "<br/>"))
+        qty = str(a["quantita"] or "")
+        if qty:
+            qty_formatted = re.sub(r"^(\d+ \S+) (\d+ \S+)$", r"\1<br/>\2", qty)
+            if "<br/>" in qty_formatted:
+                parts = [_xml_escape(p) for p in qty_formatted.split("<br/>")]
+                qty_cell = Paragraph("<br/>".join(parts), style_cell)
+            else:
+                qty_cell = qty
+        else:
+            qty_cell = qty
         rows.append([
             a["codice"],
             Paragraph(desc, style_cell),
-            a["quantita"],
+            qty_cell,
             Paragraph(conf, style_cell),
         ])
         kg_totali += a["kg"]
@@ -492,20 +612,26 @@ def _genera_pdf(articoli: list[dict], data_ddt: str, num_distinta: str, zone_suf
             ))
         elements.append(Spacer(1, 6))
 
-    # Nota fornitori (in fondo a ogni distinta)
-    elements.append(Spacer(1, 8))
-    elements.append(Paragraph(NOTA_FORNITORI, ParagraphStyle(name="NotaFornitori", fontSize=8, alignment=1, textColor=colors.grey)))
+    def _footer_canvas(canvas, _doc):
+        """Nota fornitori in fondo alla pagina: nero, stessa grandezza del titolo."""
+        canvas.saveState()
+        canvas.setFont("Helvetica-Bold", 14)
+        canvas.setFillColor(colors.black)
+        page_width = A4[0]
+        canvas.drawCentredString(page_width / 2, 15 * mm, NOTA_FORNITORI)
+        canvas.restoreState()
 
-    doc.build(elements)
+    doc.build(elements, onFirstPage=_footer_canvas, onLaterPages=_footer_canvas)
     print(f"  Creato: {output_path.name}")
 
 
 # Pattern per estrazione dati consegna (CAP 5 cifre, provincia)
 CAP_RE = re.compile(r"\b(\d{5})\b")
 
-# Latte: dopo "Luogo di destinazione" c'è Cf/P.IVA, poi nome cliente. Frutta: subito nome cliente.
-# Se la riga dopo Luogo sembra CF/Partita Iva, saltala e prendi la successiva come destinatario.
+# Latte: dopo "Luogo di destinazione" possono esserci P.Iva, CF, Albo (altra casella testo).
+# Escludere Dnr Srl / Tel (dati fornitore, non destinatario).
 CF_LIKE_RE = re.compile(r"^(Cf|C\.F\.|CF|Partita\s*Iva|P\.?\s*I\.?)\s*[:\s]", re.I)
+DNR_FORNITORE_RE = re.compile(r"Dnr\s+Srl|Tel:\s*\d{6,}", re.I)  # da escludere
 
 
 def _riga_sembra_cf(riga: str) -> bool:
@@ -514,16 +640,38 @@ def _riga_sembra_cf(riga: str) -> bool:
         return False
     if CF_LIKE_RE.match(riga.strip()):
         return True
-    # CF italiano: 16 caratteri alfanumerici (senza spazi)
     s = re.sub(r"[\s.]", "", riga)
     return len(s) == 16 and s.isalnum()
 
 
-def _estrai_dati_consegna_da_testo(text: str, codice: str) -> dict:
+def _riga_da_escludere(riga: str) -> bool:
+    """Esclude righe con Dnr Srl, Tel (fornitore), o solo P.Iva/CF."""
+    if not riga:
+        return True
+    if DNR_FORNITORE_RE.search(riga):
+        return True
+    if _riga_sembra_cf(riga):
+        return True
+    return False
+
+
+def _splitta_nome_indirizzo(riga: str) -> tuple[str, str]:
+    """Se la riga contiene ' Via ' o ' V. ' ecc., splitta in nome + indirizzo (con Via)."""
+    for sep in (" Via ", " V. ", " Viale ", " Corso ", " C.so ", " Piazza ", " P.zza "):
+        if sep in riga:
+            idx = riga.find(sep)
+            nome = riga[:idx].strip()
+            indirizzo = riga[idx:].strip()  # include Via nell'indirizzo
+            if nome and len(nome) > 1 and indirizzo:
+                return (nome, indirizzo)
+    return (riga, "")
+
+
+def _estrai_dati_consegna_da_testo(text: str, codice: str, da_frutta: bool = True) -> dict:
     """
     Estrae destinatario, indirizzo, CAP, città, provincia dal testo di una pagina DDT.
-    Frutta: Luogo -> nome -> indirizzo.
-    Latte:  Luogo -> Cf -> nome -> indirizzo (salta Cf se riga sembra CF/P.IVA).
+    FRUTTA: logica originale invariata - Luogo -> nome (i+1) -> indirizzo (i+2).
+    LATTE:  layout diverso, usa candidati ed esclusioni.
     """
     res = {"destinatario": "", "indirizzo": "", "cap": "", "citta": "", "provincia": ""}
     if codice.lower() not in text.lower():
@@ -531,32 +679,53 @@ def _estrai_dati_consegna_da_testo(text: str, codice: str) -> dict:
     idx_l = text.find("Luogo di destinazione")
     if idx_l < 0:
         return res
-    blocco = text[idx_l : idx_l + 650]
-    lines = [ln.strip() for ln in blocco.split("\n") if ln.strip() and not ln.strip().upper().startswith("RESPONSABILE")]
-    for i, ln in enumerate(lines):
-        if LUOGO_RE.search(ln):
-            idx_nome = i + 1
-            idx_indirizzo = i + 2
-            # Latte: se riga dopo Luogo è CF, nome è a i+2 e indirizzo a i+3
-            if idx_nome < len(lines) and _riga_sembra_cf(lines[idx_nome]):
-                idx_nome = i + 2
-                idx_indirizzo = i + 3
-            if idx_nome < len(lines):
-                res["destinatario"] = lines[idx_nome]
-            if idx_indirizzo < len(lines):
-                res["indirizzo"] = lines[idx_indirizzo]
-            break
-    for prov_m in PROVINCIA_RE.finditer(blocco):
+
+    if da_frutta:
+        blocco = text[idx_l : idx_l + 650]
+        lines = [ln.strip() for ln in blocco.split("\n") if ln.strip() and not ln.strip().upper().startswith("RESPONSABILE")]
+        # FRUTTA: logica originale, non modificare
+        for i, ln in enumerate(lines):
+            if LUOGO_RE.search(ln):
+                if i + 1 < len(lines):
+                    res["destinatario"] = lines[i + 1]
+                if i + 2 < len(lines):
+                    res["indirizzo"] = lines[i + 2]
+                break
+    else:
+        # LATTE: blocco PRIMA di "CAUSALE DEL TRASPORTO"
+        # Regole: nome cliente tra "CF" (e varianti) e "Albo"; indirizzo tra "Albo" e "RESPONSABILE DEL TRASPORTO:"
+        # Su una riga ciascuno: riga CF = nome, riga Albo = indirizzo
+        idx_causale = text.upper().find("CAUSALE DEL TRASPORTO")
+        blocco = text[:idx_causale] if idx_causale > 0 else text[idx_l : idx_l + 900]
+        for ln in blocco.split("\n"):
+            ln = ln.strip()
+            cf_m = re.match(r"^[Cc]\.?[Ff]\.?\s+", ln)
+            if cf_m:
+                res["destinatario"] = ln[cf_m.end():].strip()
+            else:
+                albo_m = re.match(r"^[Aa]lbo\s+", ln, re.I)
+                if albo_m:
+                    res["indirizzo"] = ln[albo_m.end():].strip()
+
+    # CAP, città, provincia: per LATTE cercare solo dopo "RESPONSABILE DEL TRASPORTO"
+    # (altrimenti si prende 35030 VEGGIANO dall'header LOG.SOLUTIONS)
+    blocco_prov = blocco
+    if not da_frutta:
+        idx_resp = blocco.upper().find("RESPONSABILE DEL TRASPORTO")
+        if idx_resp >= 0:
+            blocco_prov = blocco[idx_resp:]
+
+    for prov_m in PROVINCIA_RE.finditer(blocco_prov):
         sigla = prov_m.group(1)
-        ctx = blocco[max(0, prov_m.start() - 40) : prov_m.start()]
+        ctx = blocco_prov[max(0, prov_m.start() - 40) : prov_m.start()]
         if sigla == "MN" and ("Pomponesco" in ctx or "46030" in ctx):
             continue
         res["provincia"] = sigla
-        cap_possibili = list(CAP_RE.finditer(blocco[: prov_m.start()]))
+        cap_possibili = list(CAP_RE.finditer(blocco_prov[: prov_m.start()]))
         if cap_possibili:
             cap_m = cap_possibili[-1]
             res["cap"] = cap_m.group(1)
-            pre = blocco[cap_m.end() : cap_m.end() + 60]
+            pre = blocco_prov[cap_m.end() : cap_m.end() + 60]
             citta_m = re.search(r"\s*[-]?\s*([A-Za-zÀ-ÿ\s'.]+?)\s*\([A-Z]{2}\)", pre)
             if citta_m:
                 res["citta"] = citta_m.group(1).strip()
@@ -573,12 +742,13 @@ def _estrai_dati_consegna_per_codice(pdf_paths: list[Path], codice: str) -> dict
     ordinati = sorted(pdf_paths, key=_ordina)
     for pdf_path in ordinati:
         try:
+            da_frutta = "frutta" in str(pdf_path).lower()
             with pdfplumber.open(pdf_path) as pdf:
                 for page in pdf.pages:
                     text = page.extract_text() or ""
                     if f"destinazione: {codice}" not in text.lower() and f"destinazione:{codice}" not in text.lower():
                         continue
-                    return _estrai_dati_consegna_da_testo(text, codice)
+                    return _estrai_dati_consegna_da_testo(text, codice, da_frutta=da_frutta)
         except Exception:
             continue
     return {"destinatario": "", "indirizzo": "", "cap": "", "citta": "", "provincia": ""}
@@ -689,7 +859,8 @@ def _verifica_e_valida_codici() -> bool:
                             cod = m.group(1).lower()
                             if cod not in nuovi or cod in dati_per_codice:
                                 continue
-                            dati_per_codice[cod] = _estrai_dati_consegna_da_testo(text, cod)
+                            da_f = "latte" not in str(pdf_path).lower()
+                            dati_per_codice[cod] = _estrai_dati_consegna_da_testo(text, cod, da_frutta=da_f)
             except Exception:
                 continue
         def _formatta_titolo(s: str) -> str:
@@ -861,6 +1032,29 @@ def _verifica_orari_e_report(
     return True
 
 
+def _legge_codice_to_punto_consegna() -> dict[str, int]:
+    """
+    Mappa ogni codice (p####) al punto di consegna (row index).
+    Stessa riga mappatura = stesso punto: frutta p1234 e latte p4567 sulla stessa riga = 1 consegna.
+    """
+    if not MAPPATURA_XLSX.exists():
+        return {}
+    wb = load_workbook(MAPPATURA_XLSX, read_only=True, data_only=True)
+    ws = wb["Mappatura"] if "Mappatura" in wb.sheetnames else wb.active
+    codice_to_punto: dict[str, int] = {}
+    for row_idx in range(2, ws.max_row + 1):
+        cod_f = (ws.cell(row_idx, COL_CODICE_FRUTTA).value or "").strip().lower()
+        cod_l = (ws.cell(row_idx, COL_CODICE_LATTE).value or "").strip().lower()
+        codici_riga = [
+            c for c in (cod_f, cod_l)
+            if c and c != CODICE_CIVETTA
+        ]
+        for cod in codici_riga:
+            codice_to_punto[cod] = row_idx
+    wb.close()
+    return codice_to_punto
+
+
 def _legge_abbinamenti_mappatura() -> dict[str, str]:
     """Ritorna {cod_frutta: cod_latte} dalla mappatura (solo lettura)."""
     if not MAPPATURA_XLSX.exists():
@@ -917,9 +1111,36 @@ def _scrivi_report_rientri(
     print(f"            Report salvato in: {REPORT_RIENTRI_NON_INTEGRABILI_XLSX.name}")
 
 
+def _aggiorna_rientri_allegato(codici_integrati: set[str], data_ddt: str) -> None:
+    """
+    Aggiorna rientri_ddt.xlsx colonna C con "Allegato con DDT (data)" per i rientri integrati.
+    data_ddt: data del giro in cui il rientro è stato allegato (es. 12-03-2026).
+    """
+    if not codici_integrati or not RIENTRI_DDT_XLSX.exists():
+        return
+    try:
+        wb = load_workbook(RIENTRI_DDT_XLSX)
+        ws = wb["Rientri"] if "Rientri" in wb.sheetnames else wb.active
+        data_legible = data_ddt.replace("-", "/")
+        valore = f"Allegato con DDT ({data_legible})"
+        # Header colonna C se non presente
+        if ws.cell(row=1, column=3).value is None or ws.cell(row=1, column=3).value == "":
+            ws.cell(row=1, column=3, value="Allegato con DDT (data)")
+        for row_idx in range(2, ws.max_row + 1):
+            cod = (ws.cell(row=row_idx, column=1).value or "").strip().lower()
+            if cod and cod in codici_integrati:
+                ws.cell(row=row_idx, column=3, value=valore)
+        wb.save(RIENTRI_DDT_XLSX)
+        print(f"            Aggiornato {RIENTRI_DDT_XLSX.name} colonna C per {len(codici_integrati)} rientri allegati")
+    except Exception as e:
+        print(f"            Avviso: impossibile aggiornare rientri_ddt.xlsx: {e}")
+
+
 def _carica_rientri() -> list[tuple[str, str]]:
     """
-    Legge rientri_ddt.xlsx (colonne: Codice consegna, Data DDT).
+    Legge rientri_ddt.xlsx (colonne: Codice consegna, Data DDT, Stato/Allegato).
+    La data indica la cartella DDT-{data} dove cercare il DDT non consegnato.
+    Esclude righe con colonna Stato già popolata (es. "Allegato con DDT (data)").
     Ritorna lista di (codice, data_str) in formato dd-mm-yyyy.
     """
     if not RIENTRI_DDT_XLSX.exists():
@@ -927,14 +1148,16 @@ def _carica_rientri() -> list[tuple[str, str]]:
     wb = load_workbook(RIENTRI_DDT_XLSX, read_only=True, data_only=True)
     ws = wb["Rientri"] if "Rientri" in wb.sheetnames else wb.active
     righe = []
-    for row in ws.iter_rows(min_row=2, max_col=2):
+    for row in ws.iter_rows(min_row=2, max_col=3):
         cod = (row[0].value or "").strip().lower()
-        data_val = row[1].value
-        if not cod or cod.lower() == "codice consegna":
+        data_val = row[1].value if len(row) > 1 else None
+        stato = (row[2].value or "").strip() if len(row) > 2 else ""
+        if not cod or cod == "codice consegna":
             continue
-        data_str = _normalizza_data(data_val)
-        if data_str:
-            righe.append((cod, data_str))
+        if stato and "allegato" in stato.lower():
+            continue
+        data_str = _normalizza_data(data_val) if data_val else ""
+        righe.append((cod, data_str))
     wb.close()
     return righe
 
@@ -965,42 +1188,57 @@ def _normalizza_data(val) -> str | None:
 def _trova_pagina_rientro(codice: str, data_str: str) -> tuple[Path, int, str, str, str] | None:
     """
     Cerca il DDT del rientro in Giri lavorati/DDT-{data}/DDT-ORIGINALI/.
-    codice: p1234. data_str: dd-mm-yyyy.
+    La data indica la cartella specifica (DDT non consegnato in quella data).
+    Se data_str vuota: fallback su tutte le cartelle DDT-* (più recenti prima).
     Ritorna (pdf_path, page_idx, territorio, causale, provincia) o None se non trovato.
     """
     codice = codice.lower()
-    cartella = GIRI_LAVORATI_DIR / f"DDT-{data_str}" / "DDT-ORIGINALI"
-    if not cartella.exists():
+
+    def _cerca_in_cartella(cartella: Path) -> tuple[Path, int, str, str, str] | None:
+        if not cartella.exists():
+            return None
+        # File singolo *_{codice}.pdf (dopo crea_ddt_originali)
+        for singolo in cartella.glob(f"*_{codice}.pdf"):
+            try:
+                with pdfplumber.open(singolo) as pdf:
+                    if pdf.pages:
+                        text = pdf.pages[0].extract_text() or ""
+                        cp = _estrai_causale_provincia(text)
+                        territorio = cp[0][1:5] if cp else ""
+                        causale = cp[0] if cp else ""
+                        provincia = cp[1] if cp else ""
+                        return (singolo, 0, territorio, causale, provincia)
+            except Exception:
+                pass
+        # Cerca in tutti i PDF multi-pagina
+        for pdf_path in sorted(cartella.glob("*.pdf")):
+            try:
+                with pdfplumber.open(pdf_path) as pdf:
+                    for i, page in enumerate(pdf.pages):
+                        text = page.extract_text() or ""
+                        if f"destinazione: {codice}" not in text.lower() and f"destinazione:{codice}" not in text.lower():
+                            continue
+                        cp = _estrai_causale_provincia(text)
+                        territorio = cp[0][1:5] if cp else ""
+                        causale = cp[0] if cp else ""
+                        provincia = cp[1] if cp else ""
+                        return (pdf_path, i, territorio, causale, provincia)
+            except Exception:
+                continue
         return None
-    # Prima prova file singolo {data}_{codice}.pdf (dopo crea_ddt_originali)
-    singolo = cartella / f"{data_str}_{codice}.pdf"
-    if singolo.exists():
-        try:
-            with pdfplumber.open(singolo) as pdf:
-                if pdf.pages:
-                    text = pdf.pages[0].extract_text() or ""
-                    cp = _estrai_causale_provincia(text)
-                    territorio = cp[0][1:5] if cp else ""
-                    causale = cp[0] if cp else ""
-                    provincia = cp[1] if cp else ""
-                    return (singolo, 0, territorio, causale, provincia)
-        except Exception:
-            pass
-    # Fallback: cerca in tutti i PDF (multi-pagina prima di crea_ddt_originali)
-    for pdf_path in sorted(cartella.glob("*.pdf")):
-        try:
-            with pdfplumber.open(pdf_path) as pdf:
-                for i, page in enumerate(pdf.pages):
-                    text = page.extract_text() or ""
-                    if f"destinazione: {codice}" not in text.lower() and f"destinazione:{codice}" not in text.lower():
-                        continue
-                    cp = _estrai_causale_provincia(text)
-                    territorio = cp[0][1:5] if cp else ""
-                    causale = cp[0] if cp else ""
-                    provincia = cp[1] if cp else ""
-                    return (pdf_path, i, territorio, causale, provincia)
-        except Exception:
-            continue
+
+    if data_str:
+        cartella = GIRI_LAVORATI_DIR / f"DDT-{data_str}" / "DDT-ORIGINALI"
+        return _cerca_in_cartella(cartella)
+    # Senza data: cerca in tutte le cartelle DDT-* (ordine: più recenti prima)
+    if not GIRI_LAVORATI_DIR.exists():
+        return None
+    subdirs = sorted([d for d in GIRI_LAVORATI_DIR.iterdir() if d.is_dir() and d.name.startswith("DDT-") and d.name != "DDT-ORIGINALI"], key=lambda x: x.name, reverse=True)
+    for subdir in subdirs:
+        cartella = subdir / "DDT-ORIGINALI"
+        result = _cerca_in_cartella(cartella)
+        if result:
+            return result
     return None
 
 
@@ -1146,9 +1384,6 @@ def _filtro_e_unione_ddt() -> str | None:
             if luogo:
                 luogo_to_territorio_output[luogo] = territorio
     for codice, data_rientro in rientri:
-        if data_rientro >= data_ddt:
-            rientri_esito.append((codice, data_rientro, "Ignorato", "Data uguale o futura"))
-            continue
         result = _trova_pagina_rientro(codice, data_rientro)
         if not result:
             rientri_esito.append((codice, data_rientro, "Non trovato", "DDT non presente in Giri lavorati"))
@@ -1180,8 +1415,12 @@ def _filtro_e_unione_ddt() -> str | None:
         non_trov = sum(1 for r in rientri_esito if r[2] == "Non trovato")
         print(f"  Rientri: {integrati} integrati, {non_int} non integrabili, {non_trov} non trovati")
         _scrivi_report_rientri(rientri_esito)
+        codici_integrati = {r[0] for r in rientri_esito if r[2] == "Integrato"}
+        if codici_integrati:
+            _aggiorna_rientri_allegato(codici_integrati, data_ddt)
 
     metadata: dict[str, dict[str, list[str]]] = {}
+    distinta_luoghi: dict[str, list[str]] = {}
     territori_lista = sorted(territorio_pages.keys())
     print(f"  Territori trovati: {len(territori_lista)} (uno per file output)")
     if len(territori_lista) > 20:
@@ -1198,6 +1437,9 @@ def _filtro_e_unione_ddt() -> str | None:
         zone_ordered = [main] + others
         province = sorted(set(p for provs in cp.values() for p in provs if p))
         filename_base = f"DDT-{'-'.join(zone_ordered)}-{'-'.join(province)}" if province else f"DDT-{'-'.join(zone_ordered)}"
+
+        luoghi_distinta = sorted({page_luogo.get((str(p), i)) for p, i in pages if page_luogo.get((str(p), i))})
+        distinta_luoghi[filename_base] = luoghi_distinta
 
         writer = PdfWriter()
         seen = set()
@@ -1227,7 +1469,76 @@ def _filtro_e_unione_ddt() -> str | None:
     if row_updates:
         _aggiorna_mappatura_orari(row_updates)
 
-    return (data_ddt, metadata) if creati > 0 else None
+    return (data_ddt, metadata, distinta_luoghi) if creati > 0 else None
+
+
+def _genera_report_consegne(cartella: Path, data_ddt: str, distinta_luoghi: dict[str, list[str]], pdf_files: list[Path]) -> Path | None:
+    """
+    Report punti di consegna (non DDT): stessa riga mappatura = 1 consegna.
+    Total e parziali per distinta. Genera PDF, ritorna path per inserimento in DDT assemblato.
+    """
+    codice_to_punto = _legge_codice_to_punto_consegna()
+
+    def _punti_unici(codici: list[str]) -> set:
+        punti = set()
+        for cod in codici:
+            punto = codice_to_punto.get(cod)
+            if punto is not None:
+                punti.add(("r", punto))
+            else:
+                punti.add(("n", cod))
+        return punti
+
+    righe_report: list[tuple[str, int]] = []
+    tutti_punti: set = set()
+    for idx, pdf_path in enumerate(pdf_files):
+        filename_base = pdf_path.stem
+        luoghi = distinta_luoghi.get(filename_base, [])
+        punti = _punti_unici(luoghi)
+        n = len(punti)
+        num_distinta = f"{idx + 1:02d}"
+        zone_suffix = filename_base.replace("DDT-", "", 1) if filename_base.startswith("DDT-") else filename_base
+        nome_distinta = f"Distinta {num_distinta} Zona -{zone_suffix}"
+        righe_report.append((nome_distinta, n))
+        tutti_punti.update(punti)
+
+    totale = len(tutti_punti)
+    report_path = cartella / "report_consegne.pdf"
+
+    doc = SimpleDocTemplate(
+        str(report_path),
+        pagesize=A4,
+        rightMargin=20 * mm,
+        leftMargin=20 * mm,
+        topMargin=15 * mm,
+        bottomMargin=15 * mm,
+    )
+    elements = []
+    elements.append(Paragraph("Report punti di consegna", ParagraphStyle(name="RpTitolo", fontSize=14, fontName="Helvetica-Bold", spaceAfter=12)))
+    elements.append(Paragraph(f"Data DDT: {data_ddt.replace('-', '/')}", ParagraphStyle(name="RpData", fontSize=10, spaceAfter=8)))
+    elements.append(Paragraph(f"Totale consegne (punti unici): {totale}", ParagraphStyle(name="RpTot", fontSize=12, fontName="Helvetica-Bold", spaceAfter=12)))
+    elements.append(Spacer(1, 6))
+    table_data = [["Distinta", "Consegne"]] + [[nome, str(n)] for nome, n in righe_report]
+    tbl = Table(table_data, colWidths=[130 * mm, 40 * mm])
+    tbl.setStyle(TableStyle([
+        ("FONTSIZE", (0, 0), (-1, -1), 10),
+        ("FONT", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8E8E8")),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    ]))
+    elements.append(tbl)
+
+    def _footer_canvas(canvas, _doc):
+        canvas.saveState()
+        canvas.setFont("Helvetica-Bold", 14)
+        canvas.setFillColor(colors.black)
+        canvas.drawCentredString(A4[0] / 2, 15 * mm, NOTA_FORNITORI)
+        canvas.restoreState()
+
+    doc.build(elements, onFirstPage=_footer_canvas, onLaterPages=_footer_canvas)
+    print(f"\nReport consegne (totale {totale} punti) -> inserito in DDT-{data_ddt}.pdf")
+    return report_path
 
 
 def _costruisci_aggiornamenti_orari(
@@ -1275,13 +1586,17 @@ def _costruisci_aggiornamenti_orari(
     return row_updates
 
 
-def _assembla_file_unico(cartella: Path, data_ddt: str, pdf_files: list[Path], riepilogo_dir: Path) -> None:
+def _assembla_file_unico(cartella: Path, data_ddt: str, pdf_files: list[Path], riepilogo_dir: Path, report_pdf_path: Path | None = None) -> None:
     """
     Crea un unico PDF DDT-(data).pdf nella root della cartella.
-    Per ogni viaggio: distinta (1 copia) + pagine DDT zona (2 copie ciascuna).
+    Se presente: report consegne (1 copia) come prima pagina.
+    Per ogni viaggio: distinta (2 copie) + pagine DDT zona (2 copie ciascuna).
     """
     out_path = cartella / f"DDT-{data_ddt}.pdf"
     writer = PdfWriter()
+    if report_pdf_path and report_pdf_path.exists():
+        for page in PdfReader(report_pdf_path).pages:
+            writer.add_page(page)
     for idx, pdf_path in enumerate(pdf_files):
         filename_base = pdf_path.stem
         zone_suffix = filename_base.replace("DDT-", "", 1) if filename_base.startswith("DDT-") else filename_base
@@ -1289,6 +1604,7 @@ def _assembla_file_unico(cartella: Path, data_ddt: str, pdf_files: list[Path], r
         distinta_path = riepilogo_dir / f"Distinta {num_distinta} Zona -{zone_suffix}.pdf"
         if distinta_path.exists():
             for page in PdfReader(distinta_path).pages:
+                writer.add_page(page)
                 writer.add_page(page)
         reader = PdfReader(pdf_path)
         for page in reader.pages:
@@ -1314,7 +1630,7 @@ def main():
     if not risultato:
         print("ERRORE: Filtro e unione DDT non completato.")
         return
-    data_ddt, metadata = risultato
+    data_ddt, metadata, distinta_luoghi = risultato
 
     # 3) Creazione distinte
     cartella = GIRI_LAVORATI_DIR / f"DDT-{data_ddt}"
@@ -1323,7 +1639,8 @@ def main():
     pdf_files = [f for f in sorted(ddt_zona_dir.glob("DDT-*.pdf")) if f.parent == ddt_zona_dir]
     if not pdf_files:
         print(f"\n{cartella.name}: nessun PDF territorio, skip distinte.")
-    else:
+    report_pdf_path: Path | None = None
+    if pdf_files:
         riepilogo_dir = cartella / "RIEPILOGO"
         riepilogo_dir.mkdir(parents=True, exist_ok=True)
         print(f"\nCreazione distinte ({len(pdf_files)} PDF)")
@@ -1345,6 +1662,9 @@ def main():
             _genera_pdf(aggregati, data_ddt, num_distinta, zone_suffix, zone_nums, output_path, causali_province, rientri_territorio)
             creati += 1
 
+        # Report punti di consegna (PDF, total e parziali per distinta)
+        report_pdf_path = _genera_report_consegne(cartella, data_ddt, distinta_luoghi, pdf_files)
+
     # 4) Crea cartella DDT-ORIGINALI e sposta i PDF frutta e latte (rimuovendoli dalle cartelle sorgente)
     originali_dir = cartella / "DDT-ORIGINALI"
     originali_dir.mkdir(parents=True, exist_ok=True)
@@ -1362,7 +1682,12 @@ def main():
 
     # 5) Assemblaggio file unico DDT-(data).pdf nella root della cartella
     if pdf_files and PdfWriter and PdfReader:
-        _assembla_file_unico(cartella, data_ddt, pdf_files, riepilogo_dir)
+        _assembla_file_unico(cartella, data_ddt, pdf_files, riepilogo_dir, report_pdf_path)
+        if report_pdf_path and report_pdf_path.exists():
+            try:
+                report_pdf_path.unlink()
+            except OSError:
+                pass
 
     print(f"\nCompletato: {creati} distinte create in RIEPILOGO.")
 

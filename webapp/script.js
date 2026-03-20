@@ -1,5 +1,5 @@
 /**
- * script.js - v1.31
+ * script.js - v1.32
  * Modulo principale per la gestione della UI, validazioni e wizard.
  * Logica di persistenza spostata su firestore-service.js
  */

@@ -1,10 +1,10 @@
 /**
- * script.js - v1.27
+ * script.js - v1.31
  * Modulo principale per la gestione della UI, validazioni e wizard.
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "1.30";
+const APP_VERSION = "1.31";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -34,6 +34,21 @@ window.setTimeValue = (id, val) => {
     const mEl = document.getElementById(id + 'MM');
     if (hEl) hEl.value = h;
     if (mEl) mEl.value = m;
+};
+
+// Funzione mostrare/nascondere password
+window.togglePasswordVisibility = function() {
+    const passwordInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('toggleIcon');
+    if (!passwordInput || !toggleIcon) return;
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleIcon.textContent = 'visibility_off';
+    } else {
+        passwordInput.type = 'password';
+        toggleIcon.textContent = 'visibility';
+    }
 };
 
 // --- NAVIGAZIONE ---
@@ -152,22 +167,69 @@ window.discardDraft = () => {
 };
 
 // --- MENÙ DINAMICI ---
+window.renderMezziInserimento = function() {
+    const select = document.getElementById('automezzo');
+    if (!select) return;
+    const mezzi = window.appData.lista_mezzi || [];
+    const currentVal = select.value;
+    
+    select.innerHTML = '<option value="">Seleziona targa...</option>';
+    mezzi.sort((a,b) => a.targa.localeCompare(b.targa)).forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.targa;
+        opt.textContent = m.modello ? `${m.targa} (${m.modello})` : m.targa;
+        select.appendChild(opt);
+    });
+    if (currentVal) select.value = currentVal;
+};
+
+window.renderClientiInserimento = function() {
+    const select = document.getElementById('clienteSelect');
+    if (!select) return;
+    
+    // 1. Cerchiamo i clienti contrassegnati come "isProgetto" nel database
+    const clientiInDatabase = (window.appData.lista_clienti || []).filter(c => c.isProgetto === true);
+    let clientiFiltrati = clientiInDatabase.map(c => c.nome);
+
+    // 2. Se il database è vuoto o non ci sono ancora flag, usiamo la lista storica come fallback
+    if (clientiFiltrati.length === 0) {
+        clientiFiltrati = ["PROGETTO SCUOLE", "CATTEL", "GRAN CHEF", "BAUER"];
+    }
+
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">Seleziona cliente</option>';
+    clientiFiltrati.sort().forEach(nome => {
+        const opt = document.createElement('option');
+        opt.value = nome;
+        opt.textContent = nome.toUpperCase();
+        select.appendChild(opt);
+    });
+    if (currentVal) select.value = currentVal;
+};
+
 window.updateViaggi = function() {
-    const cliente = document.getElementById("clienteSelect")?.value || "";
+    const clienteNome = document.getElementById("clienteSelect")?.value || "";
     const viaggioSelect = document.getElementById("viaggioSelect");
     if (!viaggioSelect) return;
 
     viaggioSelect.innerHTML = '<option value="">Seleziona viaggio</option>';
     viaggioSelect.disabled = true;
 
-    const viaggiMap = {
-        "Progetto scuole": ["VIAGGIO 01", "VIAGGIO 02", "VIAGGIO 03", "VIAGGIO 04", "VIAGGIO 05"],
-        "Cattel": ["BS * BRESCIA", "FBS * FUORI BRESCIA"],
-        "Gran Chef": ["BL 1 * BELLUNO", "BS * BRESCIA"],
-        "Bauer": ["VI * VICENZA", "TV * TREVISO"]
-    };
+    // 1. Cerchiamo se il cliente selezionato ha dei viaggi impostati in Firestore
+    const clienteObj = (window.appData.lista_clienti || []).find(c => (c.nome || '').toUpperCase() === clienteNome.toUpperCase());
+    let options = clienteObj ? (clienteObj.viaggi || clienteObj.giri || []) : [];
 
-    const options = viaggiMap[cliente] || [];
+    // 2. Se non ci sono dati in Firestore, usiamo la mappa hardcoded di sicurezza (solo per i 4 principali)
+    if (options.length === 0) {
+        const viaggiMap = {
+            "PROGETTO SCUOLE": ["VIAGGIO 01", "VIAGGIO 02", "VIAGGIO 03", "VIAGGIO 04", "VIAGGIO 05", "VIAGGIO 06", "VIAGGIO 07", "VIAGGIO 08", "VIAGGIO 09", "VIAGGIO 10"],
+            "CATTEL": ["BS * BRESCIA", "FBS * FUORI BRESCIA"],
+            "GRAN CHEF": ["BL 1 * BELLUNO", "BS * BRESCIA"],
+            "BAUER": ["VI * VICENZA", "TV * TREVISO"]
+        };
+        options = viaggiMap[clienteNome.toUpperCase()] || [];
+    }
+
     if (options.length > 0) {
         options.forEach(v => {
             const opt = document.createElement('option');
@@ -180,7 +242,47 @@ window.updateViaggi = function() {
 
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Popola Ore nelle select
+    // 1. Gestione Login
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('username')?.value.trim().toLowerCase();
+            const password = document.getElementById('password')?.value.trim();
+            const btn = loginForm.querySelector('.btn-primary');
+            const alertEl = document.getElementById('authAlert');
+
+            if (!email || !password) return;
+
+            btn.disabled = true;
+            btn.innerHTML = 'Accesso in corso...';
+            if (alertEl) { alertEl.style.display = 'none'; }
+
+            try {
+                if (typeof window.loginWithFirebase === 'function') {
+                    await window.loginWithFirebase(email, password);
+                    console.log("[Auth] Login avviato con successo.");
+                } else {
+                    throw new Error("Modulo Firebase non caricato correttamente.");
+                }
+            } catch (err) {
+                console.error("[Auth] Errore di accesso:", err);
+                if (alertEl) {
+                    alertEl.style.display = 'block';
+                    alertEl.style.background = '#fef2f2';
+                    alertEl.style.color = '#991b1b';
+                    alertEl.style.borderColor = '#fee2e2';
+                    alertEl.textContent = "Errore: " + (err.code === 'auth/invalid-credential' ? 'Credenziali non valide' : err.message);
+                } else {
+                    alert("Errore Accesso: " + err.message);
+                }
+                btn.disabled = false;
+                btn.innerHTML = 'Accedi ora';
+            }
+        });
+    }
+
+    // 2. Popola Ore nelle select
     document.querySelectorAll('.hour-select').forEach(select => {
         for (let i = 0; i < 24; i++) {
             const opt = document.createElement('option');
@@ -270,6 +372,10 @@ window.onUserProfileLoaded = (user) => {
     const dashBtn = document.getElementById('dashboardBtn');
     const role = (user.ruolo || 'autista').toLowerCase();
     if (dashBtn) dashBtn.style.display = (role === 'amministratore' || role === 'impiegata') ? 'flex' : 'none';
+
+    // Inizializza i menu a tendina dinamici se i dati sono già pronti
+    if (typeof window.renderMezziInserimento === 'function') window.renderMezziInserimento();
+    if (typeof window.renderClientiInserimento === 'function') window.renderClientiInserimento();
 
     // Se siamo in inserimento e c'è una bozza, mostriamo il modale
     if (document.getElementById('presenzeForm') && sessionStorage.getItem('currentDraft')) {

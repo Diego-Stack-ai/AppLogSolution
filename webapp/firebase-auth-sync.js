@@ -247,6 +247,7 @@ function startRealtimeSync(isAdmin) {
         });
         window.appData.lista_clienti = clienti;
         if (typeof window.renderClienti === 'function') window.renderClienti();
+        if (typeof window.renderClientiInserimento === 'function') window.renderClientiInserimento();
     });
     activeListeners.push(unsubCustomers);
 

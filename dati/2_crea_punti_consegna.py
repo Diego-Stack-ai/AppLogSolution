@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
-Crea punti_consegna_frutta.xlsx e punti_consegna_latte.xlsx nella cartella
-CONSEGNE/CONSEGNE_{data}/.
+Crea un unico punti_consegna.xlsx nella cartella
+CONSEGNE/CONSEGNE_{data}/, aggregando FRUTTA e LATTE.
 
-Legge i DDT da CONSEGNE/CONSEGNE_{data}/DDT-ORIGINALI-DIVISI/FRUTTA e LATTE.
-Per ogni DDT: estrae Codice luogo e data. Lookup in mappatura: stessa riga = stesso punto.
-Output: entrambi i codici (A, B) per uso futuro.
+Evita duplicati: se lo stesso cliente ha DDT in entrambe le cartelle,
+aggiorna le colonne Codice Frutta e Codice Latte nella stessa riga.
 
 Uso: py crea_punti_consegna.py <data>   (es. 16-03-2026)
 """
@@ -104,63 +103,58 @@ def _carica_mappatura():
     return map_codice
 
 
-def _elabora_cartella(cartella_input: Path, map_codice: dict) -> tuple[list[dict], int, int]:
-    """
-    Per ogni PDF nella cartella: estrae (codice, data), lookup mappatura.
-    Raggruppa per riga mappatura (stesso punto). Ritorna (lista punti, mancanti, totale_ddt).
-    """
+def _elabora_cartella(cartella_input: Path, map_codice: dict) -> list[dict]:
+    """Estrae i DDT dalla cartella e ritorna lista di punti trovati."""
     import pdfplumber
     punti_per_riga: dict[int, dict] = {}
-    codici_mancanti = []
-    totale_ddt = 0
 
     for pdf_path in sorted(cartella_input.glob("*.pdf")):
         try:
             with pdfplumber.open(pdf_path) as pdf:
                 for page in pdf.pages:
                     text = page.extract_text() or ""
-                    data, luogo = _estrai_data_luogo(text)
+                    _, luogo = _estrai_data_luogo(text)
                     if not luogo:
                         continue
-                    totale_ddt += 1
                     if luogo not in map_codice:
-                        codici_mancanti.append(luogo)
                         continue
                     row_idx, dato = map_codice[luogo]
                     if row_idx not in punti_per_riga:
                         punti_per_riga[row_idx] = {
                             **dato,
-                            "data_consegna": data or "",
-                            "codici_ddt_trovati": [],
+                            "codici_ddt_trovati": [luogo],
                         }
-                    punti_per_riga[row_idx]["codici_ddt_trovati"].append(luogo)
-                    if data and not punti_per_riga[row_idx]["data_consegna"]:
-                        punti_per_riga[row_idx]["data_consegna"] = data
+                    else:
+                        punti_per_riga[row_idx]["codici_ddt_trovati"].append(luogo)
+                        # aggiorna i codici Frutta / Latte se presenti
+                        if dato["codice_frutta"]:
+                            punti_per_riga[row_idx]["codice_frutta"] = dato["codice_frutta"]
+                        if dato["codice_latte"]:
+                            punti_per_riga[row_idx]["codice_latte"] = dato["codice_latte"]
         except Exception as e:
             print(f"  Errore {pdf_path.name}: {e}")
 
+    # unisci codici DDT trovati senza duplicati
     for pt in punti_per_riga.values():
         pt["codici_ddt_trovati"] = ", ".join(sorted(set(pt["codici_ddt_trovati"])))
 
-    return (list(punti_per_riga.values()), codici_mancanti, totale_ddt)
+    return list(punti_per_riga.values())
 
 
-def _salva_excel(punti: list[dict], out_path: Path, etichetta: str):
+def _salva_excel(punti: list[dict], out_path: Path):
     from openpyxl import Workbook
     wb = Workbook()
     ws = wb.active
     ws.title = "Punti consegna"
-    col_refs = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
     headers = [
-        "Codice Frutta", "Codice Latte", "Data Consegna", "Codici DDT trovati",
+        "Codice Frutta", "Codice Latte", "Codici DDT trovati",
         "Nome", "Indirizzo", "Orario min", "Orario max", "Latitudine", "Longitudine"
     ]
-    ws.append([f"{col_refs[i]} - {h}" for i, h in enumerate(headers)])
+    ws.append(headers)
     for pt in punti:
         ws.append([
             pt.get("codice_frutta", ""),
             pt.get("codice_latte", ""),
-            pt.get("data_consegna", ""),
             pt.get("codici_ddt_trovati", ""),
             pt.get("nome", ""),
             pt.get("indirizzo", ""),
@@ -176,31 +170,26 @@ def _salva_excel(punti: list[dict], out_path: Path, etichetta: str):
 
 def main():
     if len(sys.argv) < 2:
-        # Cerca l'ultima cartella creata
+        # prendi l'ultima cartella
         folders = [d for d in CONSEGNE_DIR.iterdir() if d.is_dir() and d.name.startswith("CONSEGNE_")]
         if not folders:
-            print("Uso: py 2_crea_punti_consegna.py <data>")
+            print("Uso: py crea_punti_consegna.py <data>")
             return 1
         folders.sort(key=lambda x: x.stat().st_mtime, reverse=True)
         data = folders[0].name.split("_")[1]
-        print(f"Nessuna data specificata. Uso l'ultima cartella trovata: {data}")
+        print(f"Nessuna data specificata. Uso l'ultima cartella: {data}")
     else:
         data = sys.argv[1].strip()
     if re.match(r"^\d{2}-\d{2}$", data):
         data = f"{data}-2026"
 
     output_base = CONSEGNE_DIR / f"CONSEGNE_{data}"
-    # Gestione intelligente percorsi: cerca in DDT-ORIGINALI-DIVISI se presente (per archivio storico)
-    sub_base = output_base / "DDT-ORIGINALI-DIVISI"
-    input_root = sub_base if sub_base.exists() else output_base
-    
+    input_root = output_base / "DDT-ORIGINALI-DIVISI" if (output_base / "DDT-ORIGINALI-DIVISI").exists() else output_base
     input_frutta = input_root / "FRUTTA"
     input_latte = input_root / "LATTE"
-    output_frutta = output_base / "punti_consegna_frutta.xlsx"
-    output_latte = output_base / "punti_consegna_latte.xlsx"
+    output_file = output_base / "punti_consegna.xlsx"
 
-    print("\n--- Creazione punti consegna (FRUTTA e LATTE) ---\n")
-    print(f"Cartella: {output_base}\n")
+    print(f"\n--- Creazione punti consegna unificati ---\nCartella: {output_base}\n")
 
     if not MAPPATURA.exists():
         print(f"Mappatura non trovata: {MAPPATURA}")
@@ -209,30 +198,31 @@ def main():
     map_codice = _carica_mappatura()
     print(f"Mappatura caricata: {len(map_codice)} codici\n")
 
-    # FRUTTA
-    print("FRUTTA:")
-    if input_frutta.exists():
-        punti_f, manc_f, tot_f = _elabora_cartella(input_frutta, map_codice)
-        print(f"  DDT letti: {tot_f} | Punti unici: {len(punti_f)}")
-        if manc_f:
-            print(f"  Codici non in mappatura: {', '.join(sorted(set(manc_f))[:10])}{'...' if len(set(manc_f)) > 10 else ''}")
-        _salva_excel(punti_f, output_frutta, "FRUTTA")
-    else:
-        print(f"  Cartella non trovata: {input_frutta}")
+    punti_totali = []
+    for cartella in [input_frutta, input_latte]:
+        if cartella.exists():
+            punti_totali.extend(_elabora_cartella(cartella, map_codice))
+        else:
+            print(f"  Cartella non trovata: {cartella}")
 
-    print()
+    # elimina duplicati basati su nome + indirizzo
+    punti_unici: dict[tuple[str, str], dict] = {}
+    for pt in punti_totali:
+        chiave = (pt["nome"], pt["indirizzo"])
+        if chiave in punti_unici:
+            # aggiorna codici e DDT trovati
+            esistente = punti_unici[chiave]
+            if pt.get("codice_frutta"):
+                esistente["codice_frutta"] = pt["codice_frutta"]
+            if pt.get("codice_latte"):
+                esistente["codice_latte"] = pt["codice_latte"]
+            esistente["codici_ddt_trovati"] = ", ".join(
+                sorted(set(esistente["codici_ddt_trovati"].split(", ") + pt["codici_ddt_trovati"].split(", ")))
+            )
+        else:
+            punti_unici[chiave] = pt
 
-    # LATTE
-    print("LATTE:")
-    if input_latte.exists():
-        punti_l, manc_l, tot_l = _elabora_cartella(input_latte, map_codice)
-        print(f"  DDT letti: {tot_l} | Punti unici: {len(punti_l)}")
-        if manc_l:
-            print(f"  Codici non in mappatura: {', '.join(sorted(set(manc_l))[:10])}{'...' if len(set(manc_l)) > 10 else ''}")
-        _salva_excel(punti_l, output_latte, "LATTE")
-    else:
-        print(f"  Cartella non trovata: {input_latte}")
-
+    _salva_excel(list(punti_unici.values()), output_file)
     print("\n--- Completato ---\n")
     return 0
 

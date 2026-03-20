@@ -75,18 +75,28 @@ def _salva_kml(punti: list[dict], path: Path, data: str):
 
 def _salva_html_app(punti: list[dict], output_base: Path, data: str):
     """Genera HTML tipo app per telefono: lista destinazioni, 'Consegna completata', navigazione."""
-    punti_js = json.dumps([
-        {
+    punti_js_data = []
+    for i, p in enumerate(punti, 1):
+        is_delivery = bool(p.get("codici_ddt_frutta") or p.get("codici_ddt_latte"))
+        has_rientro = bool(p.get("rientri_alert"))
+        tipo = 1
+        if is_delivery and has_rientro:
+            tipo = 2
+        elif not is_delivery and has_rientro:
+            tipo = 3
+            
+        punti_js_data.append({
             "i": i, "nome": _val(p.get("nome")) or _val(p.get("indirizzo")) or f"Punto {i}",
             "indirizzo": _val(p.get("indirizzo")),
             "lat": p["lat"], "lon": p["lon"],
             "orario": f"{_val(p.get('orario_min'))}-{_val(p.get('orario_max'))}",
             "cod_f": _val(p.get("codice_frutta")), "cod_l": _val(p.get("codice_latte")),
             "color": "#d32f2f" if any(a.get("status") == "red" for a in p.get("rientri_alert", [])) 
-                     else ("#fbc02d" if p.get("rientri_alert") else "#2e7d32")
-        }
-        for i, p in enumerate(punti, 1)
-    ], ensure_ascii=False)
+                     else ("#fbc02d" if p.get("rientri_alert") else "#2e7d32"),
+            "tipo": tipo
+        })
+
+    punti_js = json.dumps(punti_js_data, ensure_ascii=False)
     storage_key = f"consegne_{data.replace('-', '_')}"
     html = f"""<!DOCTYPE html>
 <html lang="it">
@@ -146,7 +156,13 @@ function initMap() {{
   PUNTI.forEach(p => {{
     const ok = fatto.includes(p.i);
     const bg = ok ? "#bdbdbd" : p.color;
-    L.marker([p.lat,p.lon], {{icon: L.divIcon({{html:'<div style="background:' + bg + ';color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;border:1px solid #000">' + p.i + '</div>', iconSize:[28,28], iconAnchor:[14,14]}})}})
+    
+    // Tipo 1: Cerchio (Standard), Tipo 2: Quadrato (Consegna+Rientro), Tipo 3: Diamante/Foglia (Solo Rientro)
+    let radius = "50%";
+    if (p.tipo === 2) radius = "0%";
+    if (p.tipo === 3) radius = "50% 0 50% 0";
+    
+    L.marker([p.lat,p.lon], {{icon: L.divIcon({{html:'<div style="background:' + bg + ';color:#fff;width:28px;height:28px;border-radius:' + radius + ';display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;border:1px solid #000">' + p.i + '</div>', iconSize:[28,28], iconAnchor:[14,14]}})}})
       .bindPopup('<b>' + (p.nome||'').replace(/</g,'&lt;') + '</b><br>' + (p.indirizzo||'').replace(/</g,'&lt;') + '<br><a href="https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lon + '" target="_blank">Naviga</a> <button onclick="toggle(' + p.i + '); this.disabled=true; this.textContent=\\'Fatto\\'">Consegna completata</button>')
       .addTo(m);
   }});
@@ -215,23 +231,19 @@ def _geocode_photon(query: str, cache: dict) -> tuple[float | None, float | None
 
 def main():
     if len(sys.argv) < 2:
-        print("Uso: py crea_mappa_consegne.py <data> [--no-geocode]")
-        print("  Per i punti senza coordinate: usa C+D+indirizzo, poi solo indirizzo (default)")
-        print("  --no-geocode: salta geocoding, solo punti con coordinate M,N")
-        return 1
-
-    if len(sys.argv) < 2:
         # Cerca l'ultima cartella creata
         folders = [d for d in CONSEGNE_DIR.iterdir() if d.is_dir() and d.name.startswith("CONSEGNE_")]
         if not folders:
-            print("Uso: py 4_crea_mappa_consegne.py <data>")
+            print("Uso: py crea_mappa_consegne.py <data> [--no-geocode]")
             return 1
-        folders.sort(key=lambda x: x.stat().st_mtime, reverse=True)
+        folders.sort(key=lambda x: x.stat().st_ctime, reverse=True)
         data = folders[0].name.split("_")[1]
-        print(f"Nessuna data specificata. Uso l'ultima cartella trovata: {data}")
+        print(f"Data non specificata. Uso l'ultima cartella trovata: {data}")
     else:
         data = sys.argv[1].strip()
+    
     usa_geocode = "--no-geocode" not in [a.lower() for a in sys.argv[2:]]
+
 
     output_base = CONSEGNE_DIR / f"CONSEGNE_{data}"
     json_path = output_base / "punti_consegna_unificati.json"
@@ -288,12 +300,30 @@ def main():
         print("Per la mappa: pip install folium")
         return 1
 
-    lat_med = sum(p["lat"] for p in punti_con_coord) / len(punti_con_coord)
-    lon_med = sum(p["lon"] for p in punti_con_coord) / len(punti_con_coord)
+    def _to_f(x):
+        try: return float(x)
+        except: return None
+
+    punti_validi = []
+    for p in punti_con_coord:
+        lat_f = _to_f(p.get("lat"))
+        lon_f = _to_f(p.get("lon"))
+        if lat_f is not None and lon_f is not None:
+            p["lat"], p["lon"] = lat_f, lon_f
+            punti_validi.append(p)
+
+    if not punti_validi:
+        print("Errore: Nessun punto ha coordinate numeriche valide.")
+        return 1
+
+    lat_med = sum(p["lat"] for p in punti_validi) / len(punti_validi)
+    lon_med = sum(p["lon"] for p in punti_validi) / len(punti_validi)
     m = folium.Map(location=[lat_med, lon_med], zoom_start=9)
 
-    for i, p in enumerate(punti_con_coord, 1):
+
+    for i, p in enumerate(punti_validi, 1):
         nome = _val(p.get("nome")) or _val(p.get("indirizzo")) or "-"
+
         ind = _val(p.get("indirizzo")) or "-"
         cod_f = _val(p.get("codice_frutta")) or ""
         cod_l = _val(p.get("codice_latte")) or ""
@@ -326,14 +356,23 @@ def main():
         
         alerts = p.get("rientri_alert", [])
         f_color = "darkgreen"
-        if alerts:
-            f_color = "red" if any(a.get("status")=="red" for a in alerts) else "orange"
+        f_icon = "info-sign"  # Default: Standard delivery
+        
+        is_delivery = bool(p.get("codici_ddt_frutta") or p.get("codici_ddt_latte"))
+        has_rientro = bool(alerts)
+        
+        if is_delivery and has_rientro:
+            f_color = "orange"
+            f_icon = "transfer" # Icona scambio per Consegna + Rientro
+        elif not is_delivery and has_rientro:
+            f_color = "red"
+            f_icon = "share-alt" # Icona freccia/rientro per Solo Rientro
         
         folium.Marker(
             location=[p['lat'], p['lon']],
             popup=folium.Popup(popup_html, max_width=320),
             tooltip=f"{i}. {nome[:40]} | {oM}",
-            icon=folium.Icon(color=f_color, icon="info-sign")
+            icon=folium.Icon(color=f_color, icon=f_icon)
         ).add_to(m)
 
     html_path = output_base / f"mappa_consegne_{data.replace('-', '_')}.html"

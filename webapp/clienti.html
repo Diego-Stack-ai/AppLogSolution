@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Clienti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.26">
+    <link rel="stylesheet" href="styles.css?v=1.31">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     
     <!-- PWA & Mobile Optimization -->
@@ -15,8 +15,8 @@
     <link rel="apple-touch-icon" href="img/logo.png">
     <meta name="theme-color" content="#4f46e5">
 
-    <script src="script.js?v=1.26"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.26"></script>
+    <script src="script.js?v=1.31"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.31"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDLnhP2Q4bz2ubYwcMLiD3-qq4c220eVKw&loading=async&callback=initAutocomplete&libraries=places&language=it"></script>
@@ -328,6 +328,18 @@
                     <label>Email</label>
                     <input type="email" id="editEmail">
                 </div>
+                <!-- Nuovi Campi per Inserimento Rapido -->
+                <div class="input-group" style="grid-column: 1 / -1; background: #eef2ff; padding: 15px; border-radius: 12px; border: 1px dashed #4f46e5;">
+                    <label style="color: #4f46e5; font-weight: 700;">Configurazione Inserimento Rapido</label>
+                    <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="editIsProgetto" style="width: 20px; height: 20px; cursor: pointer;">
+                        <span style="font-size: 14px; color: #334155;">Mostra questo cliente nel wizard di inserimento</span>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <label style="font-size: 11px;">Elenco Viaggi / Giri (separati da virgola)</label>
+                        <input type="text" id="editViaggi" placeholder="es. VIAGGIO 01, VIAGGIO 02, BS, FBS...">
+                    </div>
+                </div>
 
                 <div class="map-section" style="grid-column: 1 / -1; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; gap: 10px;">
@@ -504,6 +516,8 @@
                 document.getElementById('editEmail').value = c.email || '';
                 document.getElementById('editLat').value = c.lat || '';
                 document.getElementById('editLng').value = c.lng || '';
+                document.getElementById('editIsProgetto').checked = !!c.isProgetto;
+                document.getElementById('editViaggi').value = Array.isArray(c.viaggi) ? c.viaggi.join(', ') : (c.viaggi || '');
 
                 modal.classList.add('active');
                 setTimeout(() => initEditMap(c.lat, c.lng), 300);
@@ -571,7 +585,9 @@
                     orarioMax: document.getElementById('editOrarioMax').value,
                     email: document.getElementById('editEmail').value,
                     lat: document.getElementById('editLat').value,
-                    lng: document.getElementById('editLng').value
+                    lng: document.getElementById('editLng').value,
+                    isProgetto: document.getElementById('editIsProgetto').checked,
+                    viaggi: document.getElementById('editViaggi').value.split(',').map(s => s.trim()).filter(s => s !== '')
                 };
 
                 try {

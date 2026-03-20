@@ -1,4 +1,4 @@
-const CACHE_NAME = 'log-solution-v1.30';
+const CACHE_NAME = 'log-solution-v1.31';
 const ASSETS = [
     './',
     './index.html',
@@ -23,7 +23,7 @@ const ASSETS = [
 
 // 1. Installazione: Cache degli asset statici
 self.addEventListener('install', (event) => {
-    console.log(`[SW v1.27] Installazione cache: ${CACHE_NAME}`);
+    console.log(`[SW v1.31] Installazione cache: ${CACHE_NAME}`);
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
             return cache.addAll(ASSETS);
@@ -35,7 +35,7 @@ self.addEventListener('install', (event) => {
 
 // 2. Attivazione: Pulizia TUTTE le vecchie cache + claim immediato dei client
 self.addEventListener('activate', (event) => {
-    console.log(`[SW v1.27] Attivazione: pulizia cache vecchie...`);
+    console.log(`[SW v1.31] Attivazione: pulizia cache vecchie...`);
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.26">
+    <link rel="stylesheet" href="styles.css?v=1.31">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
@@ -42,6 +42,9 @@
                     </span>
                 </div>
             </div>
+            <div style="text-align: right; margin-bottom: 24px;">
+                <a href="javascript:void(0)" onclick="window.sendResetEmail(document.getElementById('username').value)" style="font-size: 13px; color: var(--primary); text-decoration: none; font-weight: 500;">Password dimenticata?</a>
+            </div>
 
             <button type="submit" class="btn-primary" style="margin-bottom: 12px;">Accedi ora</button>
             <p style="font-size: 11px; color: var(--text-muted); opacity: 0.8; text-align: center; margin: 0;">
@@ -49,8 +52,24 @@
         </form>
     </div>
 
-    <script src="script.js?v=1.26"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.26"></script>
+    <script src="script.js?v=1.31"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.31"></script>
+    <script>
+        // Gestione messaggi di stato via URL
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const alertEl = document.getElementById('authAlert');
+            if (!alertEl) return;
+
+            if (params.get('status') === 'verify_sent') {
+                alertEl.style.display = 'block';
+                alertEl.style.background = '#eff6ff';
+                alertEl.style.color = '#1e40af';
+                alertEl.style.borderColor = '#dbeafe';
+                alertEl.innerHTML = '<span class="material-icons-round" style="font-size:18px;vertical-align:middle;margin-right:8px;">mail_outline</span> Controlla la tua email per verificare l\'account prima di accedere.';
+            }
+        });
+    </script>
 </body>
 </html>
 

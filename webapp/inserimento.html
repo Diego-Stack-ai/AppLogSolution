@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.26">
+    <link rel="stylesheet" href="styles.css?v=1.31">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -183,10 +183,6 @@
                                 <label for="clienteSelect">Cliente / Progetto *</label>
                                 <select id="clienteSelect" required>
                                     <option value="">Seleziona cliente</option>
-                                    <option value="Progetto scuole">Progetto scuole</option>
-                                    <option value="Gran Chef">Gran Chef</option>
-                                    <option value="Bauer">Bauer</option>
-                                    <option value="Cattel">Cattel</option>
                                 </select>
                             </div>
                             <div class="input-group">
@@ -413,11 +409,11 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.27"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.27"></script>
+    <script src="script.js?v=1.31"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.31"></script>
     <script type="module">
-        import { saveTrip } from "./firestore-service.js?v=1.27";
-        import "./gps-tracker.js?v=1.27";
+        import { saveTrip } from "./firestore-service.js?v=1.31";
+        import "./gps-tracker.js?v=1.31";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');

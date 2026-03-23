@@ -224,7 +224,7 @@ def main():
         scripts = [
             ("2_crea_punti_consegna.py", "Generazione punti consegna..."),
             ("3_crea_lista_unificata.py", "Unificazione punti e rientri..."),
-            ("4_crea_mappa_consegne.py", "Generazione mappe e app...")
+            ("4_crea_mappa_zone_interattiva.py", "Generazione mappe e app...")
         ]
         
         for script_name, msg in scripts:

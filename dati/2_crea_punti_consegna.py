@@ -19,6 +19,9 @@ MAPPATURA = BASE_DIR / "mappatura_destinazioni.xlsx"
 
 DATA_DDT_RE = re.compile(r'del\s+(\d{2})/(\d{2})/(\d{4})', re.I)
 LUOGO_RE = re.compile(r'[Ll]uogo [Dd]i [Dd]estinazione:\s*([pP]\d{4,5})')
+CAUSALE_SEZIONE_MARKER = "CAUSALE DEL TRASPORTO"
+CAUSALE_RE = re.compile(r'(?:conto di|ordine e conto di)\s+([A-Z]\d{4})', re.I)
+
 
 
 def _val(x):
@@ -28,15 +31,23 @@ def _val(x):
     return "" if s.lower() == "nan" else s
 
 
-def _estrai_data_luogo(text: str) -> tuple[str | None, str | None]:
-    """Estrae (data, luogo) da testo pagina. data formato DD-MM-YYYY."""
+def _estrai_data_luogo_zona(text: str) -> tuple[str | None, str | None, str | None]:
+    """Estrae (data, luogo, zona) da testo pagina. data formato DD-MM-YYYY."""
     data = None
     m = DATA_DDT_RE.search(text)
     if m:
         data = f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
     luogo_m = LUOGO_RE.search(text)
     luogo = luogo_m.group(1).lower() if luogo_m else None
-    return (data, luogo)
+    
+    idx = text.upper().find(CAUSALE_SEZIONE_MARKER.upper())
+    zona = ""
+    if idx >= 0:
+        sezione = text[idx:idx+200]
+        m_z = CAUSALE_RE.search(sezione)
+        if m_z: zona = m_z.group(1)[1:5]
+        
+    return (data, luogo, zona)
 
 
 def _build_indirizzo(vals, col_ind, col_cap, col_citta, col_prov):
@@ -113,7 +124,7 @@ def _elabora_cartella(cartella_input: Path, map_codice: dict) -> list[dict]:
             with pdfplumber.open(pdf_path) as pdf:
                 for page in pdf.pages:
                     text = page.extract_text() or ""
-                    _, luogo = _estrai_data_luogo(text)
+                    _, luogo, zona = _estrai_data_luogo_zona(text)
                     if not luogo:
                         continue
                     if luogo not in map_codice:
@@ -123,9 +134,11 @@ def _elabora_cartella(cartella_input: Path, map_codice: dict) -> list[dict]:
                         punti_per_riga[row_idx] = {
                             **dato,
                             "codici_ddt_trovati": [luogo],
+                            "zona": zona
                         }
                     else:
                         punti_per_riga[row_idx]["codici_ddt_trovati"].append(luogo)
+                        if zona: punti_per_riga[row_idx]["zona"] = zona
                         # aggiorna i codici Frutta / Latte se presenti
                         if dato["codice_frutta"]:
                             punti_per_riga[row_idx]["codice_frutta"] = dato["codice_frutta"]
@@ -147,7 +160,7 @@ def _salva_excel(punti: list[dict], out_path: Path):
     ws = wb.active
     ws.title = "Punti consegna"
     headers = [
-        "Codice Frutta", "Codice Latte", "Codici DDT trovati",
+        "Codice Frutta", "Codice Latte", "Codici DDT trovati", "Zona",
         "Nome", "Indirizzo", "Orario min", "Orario max", "Latitudine", "Longitudine"
     ]
     ws.append(headers)
@@ -156,6 +169,7 @@ def _salva_excel(punti: list[dict], out_path: Path):
             pt.get("codice_frutta", ""),
             pt.get("codice_latte", ""),
             pt.get("codici_ddt_trovati", ""),
+            pt.get("zona", ""),
             pt.get("nome", ""),
             pt.get("indirizzo", ""),
             pt.get("orario_min", ""),

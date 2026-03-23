@@ -102,6 +102,7 @@ def main():
             "indirizzo": _val(p.get("indirizzo")),
             "codice_frutta": _val(p.get("codice_frutta")),
             "codice_latte": _val(p.get("codice_latte")),
+            "zona": _val(p.get("zona")),
             "data_consegna": _val(p.get("data_consegna")),
             "orario_min": _val(p.get("orario_min")),
             "orario_max": _val(p.get("orario_max")),

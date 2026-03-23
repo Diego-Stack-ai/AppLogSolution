@@ -1,0 +1,16 @@
+# Ignora le cartelle dei dati generati
+CONSEGNE/
+
+# Ignora file di cache e log
+geocode_cache.json
+*.log
+__pycache__/
+.pytest_cache/
+
+# Ignora i file temporanei di Excel
+~$*.xlsx
+*.xlsx
+*.xls
+*.json
+
+# Se vuoi mantenere nel repo solo certi file, puoi scommentarli qui (es. !mappatura_destinazioni.xlsx)

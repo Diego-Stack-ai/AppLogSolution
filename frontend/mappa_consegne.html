@@ -123,11 +123,45 @@
             };
             L.control.layers(baseMaps).addTo(map);
 
+            // CSS per i marker
+            const markerStyles = `
+                .marker-pin {
+                    width: 30px;
+                    height: 30px;
+                    display: flex !important;
+                    align-items: center;
+                    justify-content: center;
+                    color: #fff;
+                    font-weight: bold;
+                    font-size: 13px;
+                    border: 2px solid #fff;
+                    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+                    font-family: 'Outfit', sans-serif;
+                    border-radius: 50% 50% 50% 0;
+                    transform: rotate(-45deg);
+                    background: #4f46e5;
+                }
+                .marker-pin i {
+                    transform: rotate(45deg);
+                    display: block;
+                }
+            `;
+            const styleSheet = document.createElement("style");
+            styleSheet.innerText = markerStyles;
+            document.head.appendChild(styleSheet);
+
             let count = 0;
             data.forEach(c => {
                 if (c.lat && c.lng) {
                     count++;
-                    const marker = L.marker([parseFloat(c.lat), parseFloat(c.lng)]).addTo(map);
+                    const marker = L.marker([parseFloat(c.lat), parseFloat(c.lng)], {
+                        icon: L.divIcon({
+                            className: '',
+                            html: `<div class="marker-pin"><i><span class="material-icons-round" style="font-size:16px;">location_on</span></i></div>`,
+                            iconSize: [30, 30],
+                            iconAnchor: [15, 30]
+                        })
+                    }).addTo(map);
                     
                     const popupContent = `
                         <div class="custom-popup">

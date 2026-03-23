@@ -98,28 +98,6 @@ def _salva_html_app(punti: list[dict], output_base: Path, data: str):
 
     punti_js = json.dumps(punti_js_data, ensure_ascii=False)
     storage_key = f"consegne_{data.replace('-', '_')}"
-    
-    # CSS per i marker
-    marker_css = """
-    .marker-pin {
-        width: 30px;
-        height: 30px;
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        font-weight: bold;
-        font-size: 13px;
-        border: 2px solid #fff;
-        box-shadow: 0 3px 6px rgba(0,0,0,0.25);
-        font-family: sans-serif;
-    }
-    .marker-tipo-1 { border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: #4f46e5; }
-    .marker-tipo-1 span { transform: rotate(45deg); display: block; }
-    .marker-tipo-2 { border-radius: 50%; background: #4f46e5; }
-    .marker-tipo-3 { border-radius: 50% 0 50% 0; background: #4f46e5; }
-    """
-
     html = f"""<!DOCTYPE html>
 <html lang="it">
 <head>
@@ -130,19 +108,18 @@ def _salva_html_app(punti: list[dict], output_base: Path, data: str):
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{{box-sizing:border-box}} body{{margin:0;font-family:system-ui,sans-serif;height:100vh;display:flex;flex-direction:column;background:#f5f5f5}}
-#header{{background:#4f46e5;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}}
+#header{{background:#2e7d32;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}}
 #header h1{{margin:0;font-size:1.1rem}} #progress{{font-size:0.9rem;opacity:.9}}
 #tabs{{display:flex;background:#e0e0e0}} .tab{{flex:1;padding:12px;text-align:center;cursor:pointer;border:none;font-size:1rem}}
 .tab.active{{background:#fff;font-weight:600}}
 #map{{flex:1;min-height:200px}} #list{{flex:1;overflow-y:auto;padding:8px}}
 .punto{{background:#fff;margin:6px 0;padding:12px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.1)}}
-.punto.fatto{{background:#f1f5f9;border-left:4px solid #919191 !important}}
+.punto.fatto{{background:#e8f5e9;border-left:4px solid #2e7d32}}
 .punto h3{{margin:0 0 6px;font-size:1rem}} .punto .ind{{font-size:0.85rem;color:#666;margin-bottom:8px}}
 .punto .btns{{display:flex;gap:8px;flex-wrap:wrap}}
 .btn{{padding:10px 16px;border:none;border-radius:6px;font-size:0.95rem;cursor:pointer;text-decoration:none;display:inline-block;text-align:center}}
-.btn-nav{{background:#4f46e5;color:#fff}} .btn-fatto{{background:#10b981;color:#fff}}
+.btn-nav{{background:#4285f4;color:#fff}} .btn-fatto{{background:#2e7d32;color:#fff}}
 .btn-fatto:disabled{{background:#9e9e9e;cursor:default}}
-{marker_css}
 </style>
 </head>
 <body>
@@ -162,8 +139,7 @@ function updateUI() {{
   const lista = document.getElementById("lista");
   lista.innerHTML = PUNTI.map(p => {{
     const ok = fatto.includes(p.i);
-    const borderColor = p.tipo === 3 ? "#d32f2f" : (p.tipo === 2 ? "#fbc02d" : "#4f46e5");
-    return '<div class="punto' + (ok ? ' fatto' : '') + '" data-i="' + p.i + '" style="border-left:5px solid ' + borderColor + '"><h3>' + p.i + '. ' + (p.nome||'').replace(/</g,'&lt;') + '</h3><div class="ind">' + (p.indirizzo||'').replace(/</g,'&lt;') + '</div><div class="btns"><a class="btn btn-nav" href="https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lon + '" target="_blank">Naviga</a><button class="btn btn-fatto" ' + (ok ? 'disabled' : '') + ' onclick="toggle(' + p.i + ')">' + (ok ? 'Fatto' : 'Consegna completata') + '</button></div></div>';
+    return '<div class="punto' + (ok ? ' fatto' : '') + '" data-i="' + p.i + '" style="border-left:5px solid ' + p.color + '"><h3>' + p.i + '. ' + (p.nome||'').replace(/</g,'&lt;') + '</h3><div class="ind">' + (p.indirizzo||'').replace(/</g,'&lt;') + '</div><div class="btns"><a class="btn btn-nav" href="https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lon + '" target="_blank">Naviga</a><button class="btn btn-fatto" ' + (ok ? 'disabled' : '') + ' onclick="toggle(' + p.i + ')">' + (ok ? 'Fatto' : 'Consegna completata') + '</button></div></div>';
   }}).join("");
 }}
 function toggle(i) {{ if (!fatto.includes(i)) {{ fatto.push(i); fatto.sort((a,b)=>a-b); save(); }} }}
@@ -179,18 +155,16 @@ function initMap() {{
   setTimeout(function() {{ m.invalidateSize(); }}, 200);
   PUNTI.forEach(p => {{
     const ok = fatto.includes(p.i);
-    const bg = ok ? "#919191" : "#4f46e5";
-    const className = "marker-pin marker-tipo-" + p.tipo;
-    L.marker([p.lat,p.lon], {{
-        icon: L.divIcon({{
-            className: '',
-            html: '<div class="' + className + '" style="background:' + bg + '"><span>' + p.i + '</span></div>',
-            iconSize: [30, 30],
-            iconAnchor: [15, 30]
-        }})
-    }})
-    .bindPopup('<b>' + (p.nome||'').replace(/</g,'&lt;') + '</b><br>' + (p.indirizzo||'').replace(/</g,'&lt;') + '<br><a href="https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lon + '" target="_blank">Naviga</a> <button onclick="toggle(' + p.i + '); this.disabled=true; this.textContent=\\'Fatto\\'">Consegna completata</button>')
-    .addTo(m);
+    const bg = ok ? "#bdbdbd" : p.color;
+    
+    // Tipo 1: Cerchio (Standard), Tipo 2: Quadrato (Consegna+Rientro), Tipo 3: Diamante/Foglia (Solo Rientro)
+    let radius = "50%";
+    if (p.tipo === 2) radius = "0%";
+    if (p.tipo === 3) radius = "50% 0 50% 0";
+    
+    L.marker([p.lat,p.lon], {{icon: L.divIcon({{html:'<div style="background:' + bg + ';color:#fff;width:28px;height:28px;border-radius:' + radius + ';display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;border:1px solid #000">' + p.i + '</div>', iconSize:[28,28], iconAnchor:[14,14]}})}})
+      .bindPopup('<b>' + (p.nome||'').replace(/</g,'&lt;') + '</b><br>' + (p.indirizzo||'').replace(/</g,'&lt;') + '<br><a href="https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lon + '" target="_blank">Naviga</a> <button onclick="toggle(' + p.i + '); this.disabled=true; this.textContent=\\'Fatto\\'">Consegna completata</button>')
+      .addTo(m);
   }});
 }}
 updateUI();
@@ -257,6 +231,7 @@ def _geocode_photon(query: str, cache: dict) -> tuple[float | None, float | None
 
 def main():
     if len(sys.argv) < 2:
+        # Cerca l'ultima cartella creata
         folders = [d for d in CONSEGNE_DIR.iterdir() if d.is_dir() and d.name.startswith("CONSEGNE_")]
         if not folders:
             print("Uso: py crea_mappa_consegne.py <data> [--no-geocode]")
@@ -268,6 +243,7 @@ def main():
         data = sys.argv[1].strip()
     
     usa_geocode = "--no-geocode" not in [a.lower() for a in sys.argv[2:]]
+
 
     output_base = CONSEGNE_DIR / f"CONSEGNE_{data}"
     json_path = output_base / "punti_consegna_unificati.json"
@@ -344,24 +320,10 @@ def main():
     lon_med = sum(p["lon"] for p in punti_validi) / len(punti_validi)
     m = folium.Map(location=[lat_med, lon_med], zoom_start=9)
 
-    # Funzione helper per icone Folium
-    def get_div_icon(i, tipo):
-        shape_css = ""
-        span_css = ""
-        if tipo == 1: # Goccia
-            shape_css = "border-radius: 50% 50% 50% 0; transform: rotate(-45deg);"
-            span_css = "transform: rotate(45deg); display: block;"
-        elif tipo == 2: # Rotonda
-            shape_css = "border-radius: 50%;"
-        else: # Foglia
-            shape_css = "border-radius: 50% 0 50% 0;"
-        html = f"""<div style="background: #4f46e5; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; font-size: 13px; border: 2px solid #fff; box-shadow: 0 3px 6px rgba(0,0,0,0.25); font-family: sans-serif; {shape_css}">
-                    <span style="{span_css}">{i}</span>
-                   </div>"""
-        return folium.DivIcon(html=html, icon_size=(30, 30), icon_anchor=(15, 30))
 
     for i, p in enumerate(punti_validi, 1):
         nome = _val(p.get("nome")) or _val(p.get("indirizzo")) or "-"
+
         ind = _val(p.get("indirizzo")) or "-"
         cod_f = _val(p.get("codice_frutta")) or ""
         cod_l = _val(p.get("codice_latte")) or ""
@@ -389,20 +351,28 @@ def main():
           <small>{cod_ref}</small><br>
           <small>Orario: {om}-{oM}</small><br>
           <a href="{dest_url}" target="_blank" style="display:inline-block; margin-top:6px;
-             padding:8px 14px; background:#4f46e5; color:white; text-decoration:none;
+             padding:8px 14px; background:#4285f4; color:white; text-decoration:none;
              border-radius:4px; font-size:14px;">Apri navigazione</a></div>"""
         
+        alerts = p.get("rientri_alert", [])
+        f_color = "darkgreen"
+        f_icon = "info-sign"  # Default: Standard delivery
+        
         is_delivery = bool(p.get("codici_ddt_frutta") or p.get("codici_ddt_latte"))
-        has_rientro = bool(p.get("rientri_alert", []))
-        tipo = 1
-        if is_delivery and has_rientro: tipo = 2
-        elif not is_delivery and has_rientro: tipo = 3
-
+        has_rientro = bool(alerts)
+        
+        if is_delivery and has_rientro:
+            f_color = "orange"
+            f_icon = "transfer" # Icona scambio per Consegna + Rientro
+        elif not is_delivery and has_rientro:
+            f_color = "red"
+            f_icon = "share-alt" # Icona freccia/rientro per Solo Rientro
+        
         folium.Marker(
             location=[p['lat'], p['lon']],
             popup=folium.Popup(popup_html, max_width=320),
             tooltip=f"{i}. {nome[:40]} | {oM}",
-            icon=get_div_icon(i, tipo)
+            icon=folium.Icon(color=f_color, icon=f_icon)
         ).add_to(m)
 
     html_path = output_base / f"mappa_consegne_{data.replace('-', '_')}.html"
@@ -410,20 +380,27 @@ def main():
     m.save(str(html_path))
     content = html_path.read_text(encoding="utf-8")
     if "<head>" in content and "viewport" not in content.lower():
-        content = content.replace("<head>", "<head>\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no\">")
+        content = content.replace(
+            "<head>",
+            "<head>\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no\">"
+        )
         html_path.write_text(content, encoding="utf-8")
 
     _salva_kml(punti_con_coord, kml_path, data)
+
+    # HTML "app" per telefono: lista + consegna completata + navigazione
     app_path = _salva_html_app(punti_con_coord, output_base, data)
 
     print(f"Punti in mappa: {len(punti_con_coord)} / {len(punti)}")
     print(f"Mappa HTML: {html_path.resolve()}")
     print(f"App telefono: {app_path.resolve()}")
-    print(f"KML: {kml_path.resolve()}")
+    print(f"KML (Google My Maps): {kml_path.resolve()}")
+    print("  Importa su mymaps.google.com: Crea nuova mappa > Importa > carica il file .kml")
     if n_geocodificati > 0:
-        print(f"  (Geocodificati correttamente: {n_geocodificati})")
+        print(f"  (Geocodificati da C+D+indirizzo / indirizzo: {n_geocodificati})")
     print("\n--- Completato ---\n")
     return 0
+
 
 if __name__ == "__main__":
     exit(main())

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Consegne 23-03-2026</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,sans-serif;height:100vh;display:flex;flex-direction:column;background:#f5f5f5}
+#header{background:#4f46e5;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+#header h1{margin:0;font-size:1.1rem} #progress{font-size:0.9rem;opacity:.9}
+#tabs{display:flex;background:#e0e0e0} .tab{flex:1;padding:12px;text-align:center;cursor:pointer;border:none;font-size:1rem}
+.tab.active{background:#fff;font-weight:600}
+#map{flex:1;min-height:200px} #list{flex:1;overflow-y:auto;padding:8px}
+.punto{background:#fff;margin:6px 0;padding:12px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.punto.fatto{background:#f1f5f9;border-left:4px solid #919191 !important}
+.punto h3{margin:0 0 6px;font-size:1rem} .punto .ind{font-size:0.85rem;color:#666;margin-bottom:8px}
+.punto .btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:10px 16px;border:none;border-radius:6px;font-size:0.95rem;cursor:pointer;text-decoration:none;display:inline-block;text-align:center}
+.btn-nav{background:#4f46e5;color:#fff} .btn-fatto{background:#10b981;color:#fff}
+.btn-fatto:disabled{background:#9e9e9e;cursor:default}
+
+    .marker-pin {
+        width: 30px;
+        height: 30px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-weight: bold;
+        font-size: 13px;
+        border: 2px solid #fff;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+        font-family: sans-serif;
+    }
+    .marker-tipo-1 { border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: #4f46e5; }
+    .marker-tipo-1 span { transform: rotate(45deg); display: block; }
+    .marker-tipo-2 { border-radius: 50%; background: #4f46e5; }
+    .marker-tipo-3 { border-radius: 50% 0 50% 0; background: #4f46e5; }
+    
+</style>
+</head>
+<body>
+<div id="header"><h1>Consegne 23-03-2026</h1><span id="progress">0 / 51</span></div>
+<div id="tabs"><button class="tab active" data-t="list">Lista</button><button class="tab" data-t="map">Mappa</button></div>
+<div id="panels" style="flex:1;display:flex;flex-direction:column;min-height:0">
+  <div id="list" style="display:block"><div id="lista"></div></div>
+  <div id="map" style="display:none"></div>
+</div>
+<script>
+const PUNTI = [{"i": 1, "nome": "SCUOLA PARITARIA PRIMARIA \"LUIGI CABURLOTTO\"", "indirizzo": "VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)", "lat": 45.4994935, "lon": 12.2373604, "orario": "07:30-10:00", "cod_f": "p10949", "cod_l": "p1937", "color": "#2e7d32", "tipo": 1}, {"i": 2, "nome": "SCUOLA INTERNAZIONALE ITALO-CINESE (SIIC)", "indirizzo": "VIA PALLADIO 51B, 35134 PADOVA (PADOVA)", "lat": 45.3609833, "lon": 11.794445, "orario": "08:30-14:00", "cod_f": "p11146", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 3, "nome": "Fondazione Levis Plona", "indirizzo": "Porta S. Croce N.55, 36100 Vicenza (VI)", "lat": 45.5521980922683, "lon": 11.5371475374494, "orario": "07:30-10:00", "cod_f": "p11205", "cod_l": "p1831", "color": "#2e7d32", "tipo": 1}, {"i": 4, "nome": "Scuola Primaria Di Cencenighe Agordino", "indirizzo": "Via Attilio Tissi, 19, 32020 Cencenighe Agordino (BL)", "lat": 46.3529681, "lon": 11.9716419, "orario": "07:30-14:00", "cod_f": "p11484", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 5, "nome": "Don Orione", "indirizzo": "Via Matteotti, 1, 30039 Stra (VE)", "lat": 45.4158368, "lon": 12.00487, "orario": "08:00-10:00", "cod_f": "p11501", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 6, "nome": "Scuola Primaria Falcade", "indirizzo": "Via Marmolada, 37, 32020 Falcade (BL)", "lat": 46.3641399, "lon": 11.8843646, "orario": "07:30-14:00", "cod_f": "p11639", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 7, "nome": "Scuola Primaria Di Vallada Agordina", "indirizzo": "Frazione Sacchet, 11, 32020 Vallada Agordina (BL)", "lat": 46.3689123, "lon": 11.930854, "orario": "07:30-14:00", "cod_f": "p11737", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 8, "nome": "EROI DEL PIAVE - SALETTO", "indirizzo": "VIA SERG.MAGG.D'AVANZO 67, 31030 BREDA DI PIAVE (TREVISO)", "lat": 45.7201101392011, "lon": 12.3984965383125, "orario": "08:30-10:00", "cod_f": "p13474", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 9, "nome": "IC VICENZA 5 - 2 GIUGNO", "indirizzo": "VIA CAPPUCCINI 65, 36100 VICENZA (VICENZA)", "lat": 45.5516917, "lon": 11.5294147, "orario": "07:45-14:00", "cod_f": "p13812", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 10, "nome": "MARCO POLO", "indirizzo": "VIA F. PETRARCA 5, 30016 JESOLO (VENEZIA)", "lat": 45.5375515838768, "lon": 12.6393863386725, "orario": "07:45-14:00", "cod_f": "p14011", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 11, "nome": "Primaria Sedico", "indirizzo": "Via Stadio 17, 32036 Sedico (BL)", "lat": 46.1120898, "lon": 12.0934719, "orario": "08:00-10:00", "cod_f": "p14083", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 12, "nome": "Scuola Primaria D. Alighieri Grisignano Di", "indirizzo": "Via Pavese, 36040 Grisignano Di Zocco (VI)", "lat": 45.4747764, "lon": 11.694348, "orario": "08:00-10:00", "cod_f": "p2063", "cod_l": "p1745", "color": "#2e7d32", "tipo": 1}, {"i": 13, "nome": "Carmen Frova_Collegio Pio X", "indirizzo": "Borgo Cavour, 40, 31100 Treviso (TV)", "lat": 45.6679011, "lon": 12.2364577, "orario": "08:00-14:00", "cod_f": "p2075", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 14, "nome": "M. POLO - ZERMAN", "indirizzo": "VIA DELLA CHIESA 13, 31021 MOGLIANO VENETO (TREVISO)", "lat": 45.5794722, "lon": 12.2699694, "orario": "07:30-14:00", "cod_f": "p2079", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 15, "nome": "P.E. Venturini", "indirizzo": "Via P. Cicogna , 2, 30015 Chioggia (VE)", "lat": 45.1945681, "lon": 12.2855416, "orario": "07:30-10:00", "cod_f": "p2101", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 16, "nome": "Paolo Vi", "indirizzo": "Via Acacia, N.18, 30015 Chioggia (VE)", "lat": 45.216137, "lon": 12.2737183, "orario": "07:30-14:00", "cod_f": "p2110", "cod_l": "p1835", "color": "#2e7d32", "tipo": 1}, {"i": 17, "nome": "Scuola Primaria Sacro Cuore", "indirizzo": "Via Marconi, 9, 35010 Cadoneghe (PD)", "lat": 45.456696, "lon": 11.9037821, "orario": "08:00-14:00", "cod_f": "p2111", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 18, "nome": "Scuola Dame Inglesi - Fondazione - Mary Ward - Ets - Paritaria", "indirizzo": "Contra Misericordia, 1, 36100 Vicenza (VI)", "lat": 45.5524746, "lon": 11.5422556, "orario": "08:15-14:00", "cod_f": "p2117", "cod_l": "p1818", "color": "#2e7d32", "tipo": 1}, {"i": 19, "nome": "Fondazione Elisabetta Vendramin -Ets - Paritaria", "indirizzo": "Via Col Fagheron, 65, 36061 Bassano Del Grappa (VI)", "lat": 45.7727241, "lon": 11.7534961, "orario": "07:30-10:00", "cod_f": "p2123", "cod_l": "p1924", "color": "#2e7d32", "tipo": 1}, {"i": 20, "nome": "Piazzola S. Brenta Camerini", "indirizzo": "Via Dei Contarini, 65, 35016 Piazzola Sul Brenta (PD)", "lat": 45.5416519, "lon": 11.785254, "orario": "07:30-10:00", "cod_f": "p2129", "cod_l": "p1796", "color": "#2e7d32", "tipo": 1}, {"i": 21, "nome": "S. Pertini - Tempo Pieno", "indirizzo": "Via Vallio, 5, 30013 Cavallino Treporti (VE)", "lat": 45.4521302, "lon": 12.4414766, "orario": "07:30-10:00", "cod_f": "p2155", "cod_l": "p1840", "color": "#2e7d32", "tipo": 1}, {"i": 22, "nome": "LEONARDO DA VINCI", "indirizzo": "VIA BISSUOLA N. 95, 30173 VENEZIA (VENEZIA)", "lat": 45.4938138, "lon": 12.2567126, "orario": "08:15-10:00", "cod_f": "p2161", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 23, "nome": "VIA VIRGILIO", "indirizzo": "VIA VIRGILIO N. 1, 30173 VENEZIA (VENEZIA)", "lat": 45.4958954, "lon": 12.2627391, "orario": "08:30-10:00", "cod_f": "p2162", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 24, "nome": "SCUOLA PRIMARIA SOSPIROLO", "indirizzo": "VIA DON PIETRO ZANGRANDO 18, 32037 SOSPIROLO (BELLUNO)", "lat": 46.1401939, "lon": 12.080948, "orario": "08:00-10:00", "cod_f": "p2191", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 25, "nome": "Ic Vicenza 3 - Pertini", "indirizzo": "Via Einaudi, 33, 36100 Vicenza (VI)", "lat": 45.5075584, "lon": 11.5635442, "orario": "08:00-14:00", "cod_f": "p2217", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 26, "nome": "Scuola Unica Giovanni Paolo Ii", "indirizzo": "Via Casona,30, 36050 Pozzoleone (VI)", "lat": 45.6585971, "lon": 11.6730151, "orario": "07:15-14:00", "cod_f": "p2227", "cod_l": "p2659", "color": "#2e7d32", "tipo": 1}, {"i": 27, "nome": "Istituto Farina", "indirizzo": "Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)", "lat": 45.4848681, "lon": 12.2097059, "orario": "07:30-10:00", "cod_f": "p2233", "cod_l": "p1700", "color": "#2e7d32", "tipo": 1}, {"i": 28, "nome": "Scuola Primaria Paritaria Berna", "indirizzo": "Via Bissuola,93, 30173 Venezia (VE)", "lat": 45.4938138, "lon": 12.2567126, "orario": "08:00-10:00", "cod_f": "p2235", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 29, "nome": "CISMON - CAP.", "indirizzo": "P.LE DEL POPOLO, 36029 VALBRENTA (VICENZA)", "lat": 45.82661, "lon": 11.6465427, "orario": "08:00-14:00", "cod_f": "p2236", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 30, "nome": "SOLAGNA", "indirizzo": "VIA IV NOVEMBRE, 36020 SOLAGNA (VICENZA)", "lat": 45.8198327, "lon": 11.7147493, "orario": "08:00-14:00", "cod_f": "p2237", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 31, "nome": "GESU' MARIA", "indirizzo": "VIA BERNARDI 14, 35135 PADOVA (PADOVA)", "lat": 45.423036, "lon": 11.8760703, "orario": "07:30-14:00", "cod_f": "p2255", "cod_l": "p1802", "color": "#2e7d32", "tipo": 1}, {"i": 32, "nome": "PLACIDO FABRIS - POVEGLIANO", "indirizzo": "VIA MASETTO 5, 31050 POVEGLIANO (TREVISO)", "lat": 45.7578398, "lon": 12.2027331, "orario": "07:30-10:00", "cod_f": "p2288", "cod_l": "p1712", "color": "#2e7d32", "tipo": 1}, {"i": 33, "nome": "SCUOLA SEC. I GRADO - IST.FARINA", "indirizzo": "V.IV NOVEMBRE 34, 36100 VICENZA (VICENZA)", "lat": 45.551449, "lon": 11.5526752, "orario": "07:30-10:00", "cod_f": "p2307", "cod_l": "p1741", "color": "#2e7d32", "tipo": 1}, {"i": 34, "nome": "ADAMO VOLPATO", "indirizzo": "PIAZZA IV NOVEMBRE N.49, 30030 MARTELLAGO (VENEZIA)", "lat": 45.5240565, "lon": 12.1555409, "orario": "07:45-14:00", "cod_f": "p2309", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 35, "nome": "Primaria Leonardo Da Vinci Pianiga", "indirizzo": "Via Patriarcato, 22, 30030 Pianiga (VE)", "lat": 45.457056, "lon": 12.0311559, "orario": "07:45-14:00", "cod_f": "p2311", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 36, "nome": "EDMONDO DE AMICIS", "indirizzo": "VIA VITTORIO VENETO 27, 30031 DOLO (VENEZIA)", "lat": 45.4269741, "lon": 12.0778493, "orario": "07:30-14:00", "cod_f": "p2314", "cod_l": "p1754", "color": "#2e7d32", "tipo": 1}, {"i": 37, "nome": "DANIELE MANIN", "indirizzo": "VIA BRUSAURA 12, 30030 DOLO (VENEZIA)", "lat": 45.4140241, "lon": 12.0944674, "orario": "07:30-14:00", "cod_f": "p2315", "cod_l": "p1755", "color": "#2e7d32", "tipo": 1}, {"i": 38, "nome": "GIOTTO", "indirizzo": "VIA TINTORETTO 3, 30031 DOLO (VENEZIA)", "lat": 45.4266008, "lon": 12.0702557, "orario": "07:30-14:00", "cod_f": "p2316", "cod_l": "p1752", "color": "#2e7d32", "tipo": 1}, {"i": 39, "nome": "SAN GIOVANNI BOSCO", "indirizzo": "VIA ARINO 40, 30031 DOLO (VENEZIA)", "lat": 45.4256448, "lon": 12.0713225, "orario": "07:30-14:00", "cod_f": "p2317", "cod_l": "p1756", "color": "#2e7d32", "tipo": 1}, {"i": 40, "nome": "\"MADDALENA DI CANOSSA\"", "indirizzo": "VIALE EUROPA 20, 31100 TREVISO (TREVISO)", "lat": 45.6745788, "lon": 12.2255846, "orario": "07:45-14:00", "cod_f": "p2341", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 41, "nome": "VO' - NEGRI", "indirizzo": "VIA MAZZINI 208, 35030 VO' (PADOVA)", "lat": 45.3302167, "lon": 11.6427066, "orario": "07:30-14:00", "cod_f": "p2366", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 42, "nome": "LEONARDO DA VINCI", "indirizzo": "VIA MONTALE 2, 30030 VIGONOVO (VENEZIA)", "lat": 45.3880594, "lon": 12.0101781, "orario": "08:00-10:00", "cod_f": "p2381", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 43, "nome": "GIOVANNI XXIII - VIA FEDERICI", "indirizzo": "VIA FEDERICI 12, 31100 TREVISO (TREVISO)", "lat": 45.6723834, "lon": 12.2380837, "orario": "08:00-14:00", "cod_f": "p6231", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 44, "nome": "Scuola Primaria Villa Medico - Zelarino", "indirizzo": "Via Castellana, 154/B, 30174 Venezia (VE)", "lat": 45.5177485, "lon": 12.2027857, "orario": "08:00-14:00", "cod_f": "p7026", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 45, "nome": "IC VICENZA5 - G. GIUSTI", "indirizzo": "CONTRA S. MARIA NOVA 7, 36100 VICENZA (VICENZA)", "lat": 45.5484792, "lon": 11.53704, "orario": "07:45-14:00", "cod_f": "p8366", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 46, "nome": "\"DON G. MEZZACASA\" LA VALLE AG.", "indirizzo": "VIA CHIESA 72, 32020 LA VALLE AGORDINA (BELLUNO)", "lat": 46.2823975, "lon": 12.0681256, "orario": "08:00-14:00", "cod_f": "p8439", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 47, "nome": "GIUSEPPE MARCHETTI", "indirizzo": "VIALE REPUBBLICA 2, 30015 CHIOGGIA (VENEZIA)", "lat": 45.2102979, "lon": 12.2751994, "orario": "08:00-14:00", "cod_f": "p8994", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 48, "nome": "ELSA MORANTE", "indirizzo": "VIA LAGO DI VARANO8, 30034 MIRA (VENEZIA)", "lat": 45.4332209, "lon": 12.1943664, "orario": "08:15-14:00", "cod_f": "p9925", "cod_l": "p00000", "color": "#2e7d32", "tipo": 1}, {"i": 49, "nome": "Scuola Primaria Pertile", "indirizzo": "Via Mainardi Giorgio, 14, 36100 Vicenza (VI)", "lat": 45.5691107, "lon": 11.5734937, "orario": "false-10:00", "cod_f": "p00000", "cod_l": "p1969", "color": "#2e7d32", "tipo": 1}, {"i": 50, "nome": "G. Allegri - Taggi Di Sopra Villafranca Padovana", "indirizzo": "Via Taggi Di Sopra, 12, 35010 Villafranca Padovana (PD)", "lat": 45.467861, "lon": 11.808217, "orario": "07:30-14:00", "cod_f": "p00000", "cod_l": "p2022", "color": "#2e7d32", "tipo": 1}, {"i": 51, "nome": "IPPOLITO NIEVO-CAP.", "indirizzo": "VIA CAMILLO VALLE N. 15", "lat": 45.7778637, "lon": 12.8411426, "orario": "08:00-10:00", "cod_f": "p2359", "cod_l": "p1874", "color": "#d32f2f", "tipo": 3}];
+const KEY = "consegne_23_03_2026";
+let fatto = JSON.parse(localStorage.getItem(KEY) || "[]");
+function save() { localStorage.setItem(KEY, JSON.stringify(fatto)); updateUI(); }
+function updateUI() {
+  document.getElementById("progress").textContent = fatto.length + " / " + PUNTI.length;
+  const lista = document.getElementById("lista");
+  lista.innerHTML = PUNTI.map(p => {
+    const ok = fatto.includes(p.i);
+    const borderColor = p.tipo === 3 ? "#d32f2f" : (p.tipo === 2 ? "#fbc02d" : "#4f46e5");
+    return '<div class="punto' + (ok ? ' fatto' : '') + '" data-i="' + p.i + '" style="border-left:5px solid ' + borderColor + '"><h3>' + p.i + '. ' + (p.nome||'').replace(/</g,'&lt;') + '</h3><div class="ind">' + (p.indirizzo||'').replace(/</g,'&lt;') + '</div><div class="btns"><a class="btn btn-nav" href="https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lon + '" target="_blank">Naviga</a><button class="btn btn-fatto" ' + (ok ? 'disabled' : '') + ' onclick="toggle(' + p.i + ')">' + (ok ? 'Fatto' : 'Consegna completata') + '</button></div></div>';
+  }).join("");
+}
+function toggle(i) { if (!fatto.includes(i)) { fatto.push(i); fatto.sort((a,b)=>a-b); save(); } }
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", function() {
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active")); this.classList.add("active");
+  document.getElementById("list").style.display = this.dataset.t==="list" ? "block" : "none";
+  document.getElementById("map").style.display = this.dataset.t==="map" ? "block" : "none";
+  if (this.dataset.t==="map" && !window._mapInit) { setTimeout(initMap, 100); window._mapInit=true; }
+}));
+function initMap() {
+  const c = PUNTI[0]; const m = L.map("map").setView([c.lat,c.lon], 10);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {attribution:"© OSM"}).addTo(m);
+  setTimeout(function() { m.invalidateSize(); }, 200);
+  PUNTI.forEach(p => {
+    const ok = fatto.includes(p.i);
+    const bg = ok ? "#919191" : "#4f46e5";
+    const className = "marker-pin marker-tipo-" + p.tipo;
+    L.marker([p.lat,p.lon], {
+        icon: L.divIcon({
+            className: '',
+            html: '<div class="' + className + '" style="background:' + bg + '"><span>' + p.i + '</span></div>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 30]
+        })
+    })
+    .bindPopup('<b>' + (p.nome||'').replace(/</g,'&lt;') + '</b><br>' + (p.indirizzo||'').replace(/</g,'&lt;') + '<br><a href="https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lon + '" target="_blank">Naviga</a> <button onclick="toggle(' + p.i + '); this.disabled=true; this.textContent=\'Fatto\'">Consegna completata</button>')
+    .addTo(m);
+  });
+}
+updateUI();
+</script>
+</body>
+</html>

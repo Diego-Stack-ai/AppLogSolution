@@ -6,9 +6,9 @@ from pathlib import Path
 
 # --- CONFIGURAZIONE ---
 PROG_DIR = Path(__file__).resolve().parent
-BASE_DIR = PROG_DIR.parent
-CONSEGNE_DIR = BASE_DIR / "CONSEGNE"
-WEBAPP_FOLDER = BASE_DIR / "frontend" / "mappe_autisti"
+ROOT_DIR = PROG_DIR.parent.parent
+CONSEGNE_DIR = PROG_DIR.parent / "CONSEGNE"
+WEBAPP_FOLDER = ROOT_DIR / "frontend" / "mappe_autisti"
 GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
 
 DEPOT = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"}

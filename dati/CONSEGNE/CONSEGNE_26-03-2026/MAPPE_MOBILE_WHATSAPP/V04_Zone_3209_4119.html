@@ -10,20 +10,24 @@
         :root { --p: #4f46e5; --accent: #10b981; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: #f8fafc; overflow: hidden; }
         .main-container { display: flex; flex-direction: column; height: 100vh; }
-        #map { height: 50vh; width: 100%; background: #dfe5eb; position: relative; }
-        #sidebar { flex: 1; display: flex; flex-direction: column; background: white; border-top: 1px solid #cbd5e1; overflow: hidden; }
-        .header { padding: 6px 15px; background: #1e293b; color: white; border-bottom: 2px solid var(--accent); }
-        .trip-title { margin: 0; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9; }
-        #delivery-list { flex: 1; overflow-y: auto; padding: 10px; background: #f1f5f9; padding-bottom: 40px; }
-        .card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; border: 1px solid #cbd5e1; cursor: pointer; transition: 0.2s; }
+        #map { height: 48vh; width: 100%; background: #dfe5eb; position: relative; }
+        #sidebar { flex: 1; display: flex; flex-direction: column; background: white; border-top: 2px solid #cbd5e1; overflow: hidden; }
+        .header { padding: 4px 12px; background: #1e293b; color: white; border-bottom: 2px solid var(--accent); }
+        .trip-title { margin: 0; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
+        .stats-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 1px; }
+        .stat-item { flex: 1; display: flex; flex-direction: column; align-items: start; }
+        .stat-val { font-size: 0.82rem; font-weight: 800; color: white; line-height: 1; }
+        .stat-lbl { font-size: 0.52rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-top: 1px; }
+        #delivery-list { flex: 1; overflow-y: auto; padding: 8px; background: #f1f5f9; padding-bottom: 40px; }
+        .card { background: white; border-radius: 10px; padding: 10px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; border: 1px solid #cbd5e1; cursor: pointer; }
         .card.next { border-color: var(--accent); background: #f0fdf4; border-left: 4px solid var(--accent); }
-        .stop-num { width: 26px; height: 26px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px; flex-shrink: 0; }
+        .stop-num { width: 24px; height: 24px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10px; flex-shrink: 0; }
         .next .stop-num { background: var(--accent); }
         .stop-info { flex: 1; min-width: 0; }
-        .name { display: block; font-size: 0.82rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .addr { font-size: 0.68rem; color: #64748b; font-weight: 600; }
-        .btn-nav { background: var(--accent); color: white; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0; }
-        .icon-nav { width: 20px; height: 20px; fill: white; }
+        .name { display: block; font-size: 0.8rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .addr { font-size: 0.65rem; color: #64748b; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .btn-nav { background: var(--accent); color: white; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0; }
+        .icon-nav { width: 18px; height: 18px; fill: white; }
     </style>
 </head>
 <body>
@@ -31,123 +35,32 @@
         <div id="map"></div>
         <div id="sidebar">
             <div class="header">
-                <h2 class="trip-title">🚛 V04 | NAVIGATORE AUTISTI</h2>
+                <div class="trip-title">🏎️ V04 | Zone: 3209, 4119</div>
+                <div class="stats-row">
+                    <div class="stat-item"><span class="stat-val">115.6km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 34m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 13m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">4h 47m</span><span class="stat-lbl">Totale</span></div>
+                </div>
             </div>
-            <div id="delivery-list">
-                
-            <div class="card next" onclick="focusOn(0)">
-                <div class="stop-num">1</div>
-                <div class="stop-info"><b class="name">S. PIO X</b><span class="addr">VIA A. MANZONI 2, 30020 MEOLO (VENEZIA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6342243,12.4472654&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(1)">
-                <div class="stop-num">2</div>
-                <div class="stop-info"><b class="name">SALVO D'ACQUISTO</b><span class="addr">PIAZZA IV NOVEMBRE 1/A, 30020 FOSSALTA DI PIAVE (VENEZIA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6457541,12.5121322&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(2)">
-                <div class="stop-num">3</div>
-                <div class="stop-info"><b class="name">TITO ACERBO</b><span class="addr">VIA BOSCO 13, 30024 MUSILE DI PIAVE (VENEZIA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6269737,12.5258098&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(3)">
-                <div class="stop-num">4</div>
-                <div class="stop-info"><b class="name">Edmondo De Amicis - Sede Distaccata</b><span class="addr">Via Marconi 3, 30024 Musile Di Piave (VE)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6221091,12.5601895&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(4)">
-                <div class="stop-num">5</div>
-                <div class="stop-info"><b class="name">EDMONDO DE AMICIS</b><span class="addr">PIAZZA 18 GIUGNO 2, 30024 MUSILE DI PIAVE (VENEZIA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6170315,12.5626757&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(5)">
-                <div class="stop-num">6</div>
-                <div class="stop-info"><b class="name">E. Fermi</b><span class="addr">Via Giovanni Xxiii 5, 30027 San Dono Di Piave (VE)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6347629648625,12.5699955481901&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(6)">
-                <div class="stop-num">7</div>
-                <div class="stop-info"><b class="name">FORTE 48</b><span class="addr">VIA CARROZZANI 29, 30027 SAN DONA' DI PIAVE (VENEZIA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.634093246962,12.5774933971919&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(7)">
-                <div class="stop-num">8</div>
-                <div class="stop-info"><b class="name">MARCO POLO</b><span class="addr">VIA BOEMIA 2, 30027 SAN DONA' DI PIAVE (VENEZIA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6512142,12.6033814&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(8)">
-                <div class="stop-num">9</div>
-                <div class="stop-info"><b class="name">MARCO POLO</b><span class="addr">VIA MILLEPERTICHE 127, 30024 MUSILE DI PIAVE (VENEZIA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5921909,12.5044174&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(9)">
-                <div class="stop-num">10</div>
-                <div class="stop-info"><b class="name">Guglielmo Marconi-Cap.</b><span class="addr">Via Leopardi, 56, 30020 Pramaggiore (VE)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8143653,12.7319217&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(10)">
-                <div class="stop-num">11</div>
-                <div class="stop-info"><b class="name">DANTE ALIGHIERI - LOC. PRADIPOZZO</b><span class="addr">VIA FORNACE N. 34, 30020 PORTOGRUARO (VENEZIA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7785716,12.7905998&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(11)">
-                <div class="stop-num">12</div>
-                <div class="stop-info"><b class="name">CESARE BATTISTI - LOC. SUMMAGA</b><span class="addr">VIA SAN BENEDETTO N. 15, 30020 PORTOGRUARO (VENEZIA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.778982,12.7997797&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(12)">
-                <div class="stop-num">13</div>
-                <div class="stop-info"><b class="name">DON LORENZO MILANI</b><span class="addr">VIA MAGELLANO N. 18, 30026 PORTOGRUARO (VENEZIA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7838418,12.8289614&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(13)">
-                <div class="stop-num">14</div>
-                <div class="stop-info"><b class="name">IPPOLITO NIEVO-CAP.</b><span class="addr">VIA CAMILLO VALLE N. 15, 30026 PORTOGRUARO (VENEZIA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7778637,12.8411426&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(14)">
-                <div class="stop-num">15</div>
-                <div class="stop-info"><b class="name">MARCO POLO</b><span class="addr">VIA LIVENZA N. 3, 30026 PORTOGRUARO (VENEZIA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.771588,12.8330972&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(15)">
-                <div class="stop-num">16</div>
-                <div class="stop-info"><b class="name">Giovanni Pascoli</b><span class="addr">Via Conciliazione 122, 30028 San Michele Al Tagliamento (VE)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7150178,13.0130995&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(16)">
-                <div class="stop-num">17</div>
-                <div class="stop-info"><b class="name">Guglielmo Marconi</b><span class="addr">Via Madonetta 81, 30028 San Michele Al Tagliamento (VE)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6584726,13.0252235&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(17)">
-                <div class="stop-num">18</div>
-                <div class="stop-info"><b class="name">Guglielmo Marconi</b><span class="addr">Via Nazionale 27, 30028 San Michele Al Tagliamento (VE)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6584726,13.0252235&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(18)">
-                <div class="stop-num">19</div>
-                <div class="stop-info"><b class="name">Aristide Gabelli</b><span class="addr">Via Maja 80, 30028 San Michele Al Tagliamento (VE)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6414626,13.0533623&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            </div>
+            <div id="delivery-list"><div class="card next" onclick="focusOn(0)"><div class="stop-num">1</div><div class="stop-info"><b class="name">S. PIO X</b><span class="addr">VIA A. MANZONI 2, 30020 MEOLO (VENEZIA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6342243,12.4472654&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(1)"><div class="stop-num">2</div><div class="stop-info"><b class="name">SALVO D'ACQUISTO</b><span class="addr">PIAZZA IV NOVEMBRE 1/A, 30020 FOSSALTA DI PIAVE (VENEZIA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6457541,12.5121322&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(2)"><div class="stop-num">3</div><div class="stop-info"><b class="name">TITO ACERBO</b><span class="addr">VIA BOSCO 13, 30024 MUSILE DI PIAVE (VENEZIA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6269737,12.5258098&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(3)"><div class="stop-num">4</div><div class="stop-info"><b class="name">Edmondo De Amicis - Sede Distaccata</b><span class="addr">Via Marconi 3, 30024 Musile Di Piave (VE)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6221091,12.5601895&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(4)"><div class="stop-num">5</div><div class="stop-info"><b class="name">EDMONDO DE AMICIS</b><span class="addr">PIAZZA 18 GIUGNO 2, 30024 MUSILE DI PIAVE (VENEZIA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6170315,12.5626757&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(5)"><div class="stop-num">6</div><div class="stop-info"><b class="name">E. Fermi</b><span class="addr">Via Giovanni Xxiii 5, 30027 San Dono Di Piave (VE)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6347629648625,12.5699955481901&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(6)"><div class="stop-num">7</div><div class="stop-info"><b class="name">FORTE 48</b><span class="addr">VIA CARROZZANI 29, 30027 SAN DONA' DI PIAVE (VENEZIA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.634093246962,12.5774933971919&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(7)"><div class="stop-num">8</div><div class="stop-info"><b class="name">MARCO POLO</b><span class="addr">VIA BOEMIA 2, 30027 SAN DONA' DI PIAVE (VENEZIA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6512142,12.6033814&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(8)"><div class="stop-num">9</div><div class="stop-info"><b class="name">MARCO POLO</b><span class="addr">VIA MILLEPERTICHE 127, 30024 MUSILE DI PIAVE (VENEZIA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5921909,12.5044174&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(9)"><div class="stop-num">10</div><div class="stop-info"><b class="name">Guglielmo Marconi-Cap.</b><span class="addr">Via Leopardi, 56, 30020 Pramaggiore (VE)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.8143653,12.7319217&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(10)"><div class="stop-num">11</div><div class="stop-info"><b class="name">DANTE ALIGHIERI - LOC. PRADIPOZZO</b><span class="addr">VIA FORNACE N. 34, 30020 PORTOGRUARO (VENEZIA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7785716,12.7905998&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(11)"><div class="stop-num">12</div><div class="stop-info"><b class="name">CESARE BATTISTI - LOC. SUMMAGA</b><span class="addr">VIA SAN BENEDETTO N. 15, 30020 PORTOGRUARO (VENEZIA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.778982,12.7997797&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(12)"><div class="stop-num">13</div><div class="stop-info"><b class="name">DON LORENZO MILANI</b><span class="addr">VIA MAGELLANO N. 18, 30026 PORTOGRUARO (VENEZIA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7838418,12.8289614&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(13)"><div class="stop-num">14</div><div class="stop-info"><b class="name">IPPOLITO NIEVO-CAP.</b><span class="addr">VIA CAMILLO VALLE N. 15, 30026 PORTOGRUARO (VENEZIA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7778637,12.8411426&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(14)"><div class="stop-num">15</div><div class="stop-info"><b class="name">MARCO POLO</b><span class="addr">VIA LIVENZA N. 3, 30026 PORTOGRUARO (VENEZIA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.771588,12.8330972&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(15)"><div class="stop-num">16</div><div class="stop-info"><b class="name">Giovanni Pascoli</b><span class="addr">Via Conciliazione 122, 30028 San Michele Al Tagliamento (VE)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7150178,13.0130995&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(16)"><div class="stop-num">17</div><div class="stop-info"><b class="name">Guglielmo Marconi</b><span class="addr">Via Madonetta 81, 30028 San Michele Al Tagliamento (VE)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6584726,13.0252235&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(17)"><div class="stop-num">18</div><div class="stop-info"><b class="name">Guglielmo Marconi</b><span class="addr">Via Nazionale 27, 30028 San Michele Al Tagliamento (VE)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6584726,13.0252235&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(18)"><div class="stop-num">19</div><div class="stop-info"><b class="name">Aristide Gabelli</b><span class="addr">Via Maja 80, 30028 San Michele Al Tagliamento (VE)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6414626,13.0533623&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div></div>
         </div>
     </div>
     <script>
         const data = [{"cliente": "S. PIO X", "indirizzo": "VIA A. MANZONI 2, 30020 MEOLO (VENEZIA)", "lat": 45.6342243, "lon": 12.4472654}, {"cliente": "SALVO D'ACQUISTO", "indirizzo": "PIAZZA IV NOVEMBRE 1/A, 30020 FOSSALTA DI PIAVE (VENEZIA)", "lat": 45.6457541, "lon": 12.5121322}, {"cliente": "TITO ACERBO", "indirizzo": "VIA BOSCO 13, 30024 MUSILE DI PIAVE (VENEZIA)", "lat": 45.6269737, "lon": 12.5258098}, {"cliente": "Edmondo De Amicis - Sede Distaccata", "indirizzo": "Via Marconi 3, 30024 Musile Di Piave (VE)", "lat": 45.6221091, "lon": 12.5601895}, {"cliente": "EDMONDO DE AMICIS", "indirizzo": "PIAZZA 18 GIUGNO 2, 30024 MUSILE DI PIAVE (VENEZIA)", "lat": 45.6170315, "lon": 12.5626757}, {"cliente": "E. Fermi", "indirizzo": "Via Giovanni Xxiii 5, 30027 San Dono Di Piave (VE)", "lat": 45.6347629648625, "lon": 12.5699955481901}, {"cliente": "FORTE 48", "indirizzo": "VIA CARROZZANI 29, 30027 SAN DONA' DI PIAVE (VENEZIA)", "lat": 45.634093246962, "lon": 12.5774933971919}, {"cliente": "MARCO POLO", "indirizzo": "VIA BOEMIA 2, 30027 SAN DONA' DI PIAVE (VENEZIA)", "lat": 45.6512142, "lon": 12.6033814}, {"cliente": "MARCO POLO", "indirizzo": "VIA MILLEPERTICHE 127, 30024 MUSILE DI PIAVE (VENEZIA)", "lat": 45.5921909, "lon": 12.5044174}, {"cliente": "Guglielmo Marconi-Cap.", "indirizzo": "Via Leopardi, 56, 30020 Pramaggiore (VE)", "lat": 45.8143653, "lon": 12.7319217}, {"cliente": "DANTE ALIGHIERI - LOC. PRADIPOZZO", "indirizzo": "VIA FORNACE N. 34, 30020 PORTOGRUARO (VENEZIA)", "lat": 45.7785716, "lon": 12.7905998}, {"cliente": "CESARE BATTISTI - LOC. SUMMAGA", "indirizzo": "VIA SAN BENEDETTO N. 15, 30020 PORTOGRUARO (VENEZIA)", "lat": 45.778982, "lon": 12.7997797}, {"cliente": "DON LORENZO MILANI", "indirizzo": "VIA MAGELLANO N. 18, 30026 PORTOGRUARO (VENEZIA)", "lat": 45.7838418, "lon": 12.8289614}, {"cliente": "IPPOLITO NIEVO-CAP.", "indirizzo": "VIA CAMILLO VALLE N. 15, 30026 PORTOGRUARO (VENEZIA)", "lat": 45.7778637, "lon": 12.8411426}, {"cliente": "MARCO POLO", "indirizzo": "VIA LIVENZA N. 3, 30026 PORTOGRUARO (VENEZIA)", "lat": 45.771588, "lon": 12.8330972}, {"cliente": "Giovanni Pascoli", "indirizzo": "Via Conciliazione 122, 30028 San Michele Al Tagliamento (VE)", "lat": 45.7150178, "lon": 13.0130995}, {"cliente": "Guglielmo Marconi", "indirizzo": "Via Madonetta 81, 30028 San Michele Al Tagliamento (VE)", "lat": 45.6584726, "lon": 13.0252235}, {"cliente": "Guglielmo Marconi", "indirizzo": "Via Nazionale 27, 30028 San Michele Al Tagliamento (VE)", "lat": 45.6584726, "lon": 13.0252235}, {"cliente": "Aristide Gabelli", "indirizzo": "Via Maja 80, 30028 San Michele Al Tagliamento (VE)", "lat": 45.6414626, "lon": 13.0533623}]; let map, markers = [];
-        const svg_icon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>';
+        const svg_icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>';
 
         async function initMap() {
             try {
                 map = new google.maps.Map(document.getElementById("map"), { zoom: 12, center: { lat: data[0].lat, lng: data[0].lon }, disableDefaultUI: false });
-                const directionsService = new google.maps.DirectionsService();
-                const directionsRenderer = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6 } });
+                const ds = new google.maps.DirectionsService();
+                const dr = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6 } });
                 const waypts = data.slice(1, -1).map(d => ({ location: { lat: d.lat, lng: d.lon }, stopover: true }));
-                directionsService.route({ origin: { lat: data[0].lat, lng: data[0].lon }, destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, waypoints: waypts, travelMode: "DRIVING" }, (status === "OK") ? res => directionsRenderer.setDirections(res) : null);
+                ds.route({ origin: { lat: data[0].lat, lng: data[0].lon }, destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, waypoints: waypts, travelMode: "DRIVING" }, (res, st) => { if (st === "OK") dr.setDirections(res); });
                 data.forEach((p, i) => {
-                    const marker = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i+1).toString(), color: "white", fontWeight: "bold" }, title: p.cliente });
-                    marker.addListener("click", () => { new google.maps.InfoWindow({ content: `<div style="padding:5px;"><b>${i+1}. ${p.cliente}</b></div>` }).open(map, marker); });
-                    markers.push(marker);
+                    const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i+1).toString(), color: "white", size: "10px", fontWeight: "bold" }, title: p.cliente });
+                    m.addListener("click", () => { new google.maps.InfoWindow({ content: `<b>${i+1}. ${p.cliente}</b>` }).open(map, m); });
+                    markers.push(m);
                 });
                 const b = new google.maps.LatLngBounds(); data.forEach(p => b.extend({ lat: p.lat, lng: p.lon })); map.fitBounds(b);
             } catch (e) { console.error(e); }

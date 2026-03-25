@@ -10,20 +10,24 @@
         :root { --p: #4f46e5; --accent: #10b981; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: #f8fafc; overflow: hidden; }
         .main-container { display: flex; flex-direction: column; height: 100vh; }
-        #map { height: 50vh; width: 100%; background: #dfe5eb; position: relative; }
-        #sidebar { flex: 1; display: flex; flex-direction: column; background: white; border-top: 1px solid #cbd5e1; overflow: hidden; }
-        .header { padding: 6px 15px; background: #1e293b; color: white; border-bottom: 2px solid var(--accent); }
-        .trip-title { margin: 0; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9; }
-        #delivery-list { flex: 1; overflow-y: auto; padding: 10px; background: #f1f5f9; padding-bottom: 40px; }
-        .card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; border: 1px solid #cbd5e1; cursor: pointer; transition: 0.2s; }
+        #map { height: 48vh; width: 100%; background: #dfe5eb; position: relative; }
+        #sidebar { flex: 1; display: flex; flex-direction: column; background: white; border-top: 2px solid #cbd5e1; overflow: hidden; }
+        .header { padding: 4px 12px; background: #1e293b; color: white; border-bottom: 2px solid var(--accent); }
+        .trip-title { margin: 0; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
+        .stats-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 1px; }
+        .stat-item { flex: 1; display: flex; flex-direction: column; align-items: start; }
+        .stat-val { font-size: 0.82rem; font-weight: 800; color: white; line-height: 1; }
+        .stat-lbl { font-size: 0.52rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-top: 1px; }
+        #delivery-list { flex: 1; overflow-y: auto; padding: 8px; background: #f1f5f9; padding-bottom: 40px; }
+        .card { background: white; border-radius: 10px; padding: 10px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; border: 1px solid #cbd5e1; cursor: pointer; }
         .card.next { border-color: var(--accent); background: #f0fdf4; border-left: 4px solid var(--accent); }
-        .stop-num { width: 26px; height: 26px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px; flex-shrink: 0; }
+        .stop-num { width: 24px; height: 24px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10px; flex-shrink: 0; }
         .next .stop-num { background: var(--accent); }
         .stop-info { flex: 1; min-width: 0; }
-        .name { display: block; font-size: 0.82rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .addr { font-size: 0.68rem; color: #64748b; font-weight: 600; }
-        .btn-nav { background: var(--accent); color: white; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0; }
-        .icon-nav { width: 20px; height: 20px; fill: white; }
+        .name { display: block; font-size: 0.8rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .addr { font-size: 0.65rem; color: #64748b; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .btn-nav { background: var(--accent); color: white; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0; }
+        .icon-nav { width: 18px; height: 18px; fill: white; }
     </style>
 </head>
 <body>
@@ -31,148 +35,32 @@
         <div id="map"></div>
         <div id="sidebar">
             <div class="header">
-                <h2 class="trip-title">🚛 V01 | NAVIGATORE AUTISTI</h2>
+                <div class="trip-title">🏎️ V01 | Zone: 3110, 4110</div>
+                <div class="stats-row">
+                    <div class="stat-item"><span class="stat-val">135.5km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">3h 0m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 48m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">5h 48m</span><span class="stat-lbl">Totale</span></div>
+                </div>
             </div>
-            <div id="delivery-list">
-                
-            <div class="card next" onclick="focusOn(0)">
-                <div class="stop-num">1</div>
-                <div class="stop-info"><b class="name">Cervarese-Fossona Papa Luciani</b><span class="addr">Via S. Antonio, 96, 35030 Cervarese Santa Croce (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.424392,11.687904&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(1)">
-                <div class="stop-num">2</div>
-                <div class="stop-info"><b class="name">Rovolon Bastia</b><span class="addr">Via S.Francesco 22, 35030 Rovolon (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.3887674,11.6501101&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(2)">
-                <div class="stop-num">3</div>
-                <div class="stop-info"><b class="name">TEOLO-DON BOSCO</b><span class="addr">VIA MOLARE 25, 35037 TEOLO (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.347459,11.6725064&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(3)">
-                <div class="stop-num">4</div>
-                <div class="stop-info"><b class="name">CINTO EUGANEO-FONTANAFREDDA</b><span class="addr">VIA ROMA 36, 35030 CINTO EUGANEO (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.292179,11.656624&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(4)">
-                <div class="stop-num">5</div>
-                <div class="stop-info"><b class="name">LOZZO ATESTINO - MARCONI</b><span class="addr">VIA GUIDO NEGRI, 35034 LOZZO ATESTINO (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.2800199,11.5890453&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(5)">
-                <div class="stop-num">6</div>
-                <div class="stop-info"><b class="name">OSPEDALETTO EUG. "G.B.FERRARI"</b><span class="addr">VIA G.B. FERRARI 5, 35045 OSPEDALETTO EUGANEO (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.2235676,11.6017154&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(6)">
-                <div class="stop-num">7</div>
-                <div class="stop-info"><b class="name">"A. MANZONI" LOC. PALUGANA</b><span class="addr">VIA PALUGANA SUD 36, 35045 OSPEDALETTO EUGANEO (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.2235676,11.6017154&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(7)">
-                <div class="stop-num">8</div>
-                <div class="stop-info"><b class="name">ESTE-S.MARIA LOC. PILASTRO</b><span class="addr">VIA SCARABELLO 2, 35042 ESTE (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.2245872,11.6417771&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(8)">
-                <div class="stop-num">9</div>
-                <div class="stop-info"><b class="name">"DUCA DEGLI ABRUZZI"</b><span class="addr">VIA ROMA 32, 35040 SANTA CATERINA D'ESTE (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.1948386,11.6204779&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(9)">
-                <div class="stop-num">10</div>
-                <div class="stop-info"><b class="name">S. Caterina D'Este -Duca Degli Abruzzi</b><span class="addr">Via Roma 32, 35049 S. Caterina D'Este (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.1770758,11.6170119&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(10)">
-                <div class="stop-num">11</div>
-                <div class="stop-info"><b class="name">PONSO "CARLO COLLODI"</b><span class="addr">VIA ROSSELLE 16A, 35040 PONSO (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.1930072,11.5849071&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(11)">
-                <div class="stop-num">12</div>
-                <div class="stop-info"><b class="name">Primaria Santa Margherita D'Adige-Località Santa Margherita D'Adige</b><span class="addr">Viale Europa, 157, 35046 Borgo Veneto (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.2119866,11.5551887&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(12)">
-                <div class="stop-num">13</div>
-                <div class="stop-info"><b class="name">SALETTO</b><span class="addr">VIA MARCONI 35, 35046 BORGO VENETO (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.2244572,11.5377897&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(13)">
-                <div class="stop-num">14</div>
-                <div class="stop-info"><b class="name">MEGLIADINO SAN FIDENZIO</b><span class="addr">VIA MARCONI 5, 35046 BORGO VENETO (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.2267084,11.5320088&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(14)">
-                <div class="stop-num">15</div>
-                <div class="stop-info"><b class="name">Primaria Megliadino San Vitale</b><span class="addr">Via Roma, 50, 35040 Megliadino San Vitale (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.1961849,11.5243219&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(15)">
-                <div class="stop-num">16</div>
-                <div class="stop-info"><b class="name">Casale Di Scodosia-Marconi</b><span class="addr">Piazza Matteotti 32/33, 35040 Casale Di Scodosia (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.1883645404963,11.4653727781197&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(16)">
-                <div class="stop-num">17</div>
-                <div class="stop-info"><b class="name">MERLARA - DANTE ALIGHIERI</b><span class="addr">VIA STRADONA 22, 35040 MERLARA (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.1620808,11.4516202&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(17)">
-                <div class="stop-num">18</div>
-                <div class="stop-info"><b class="name">Castelbaldo-Rosa</b><span class="addr">Piazza Della Resistenza 1B, 35040 Castelbaldo (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.1204921360993,11.4518790989041&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(18)">
-                <div class="stop-num">19</div>
-                <div class="stop-info"><b class="name">MASI-ZONARO</b><span class="addr">VIA MONS.G. MASIERO 1, 35040 MASI (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.1088186,11.4919124&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(19)">
-                <div class="stop-num">20</div>
-                <div class="stop-info"><b class="name">Enrico Fermi</b><span class="addr">Via Ca' Nove, 1, 35040 Sant'Urbano (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.1294342,11.6253592&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(20)">
-                <div class="stop-num">21</div>
-                <div class="stop-info"><b class="name">Alcide De Gasperi</b><span class="addr">Via Garibaldi, 17, 35040 Villa Estense (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.1670521,11.6622227&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(21)">
-                <div class="stop-num">22</div>
-                <div class="stop-info"><b class="name">PRIMARIA "CROCE" GRANZE</b><span class="addr">VIA MARTIRI DELLA LIBERTA', 35040 GRANZE (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.1549393162804,11.7133866530957&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(22)">
-                <div class="stop-num">23</div>
-                <div class="stop-info"><b class="name">G.VERDI LOC. DESERTO</b><span class="addr">VIA DESERTO 122, 35042 ESTE (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.2029865,11.6887414&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(23)">
-                <div class="stop-num">24</div>
-                <div class="stop-info"><b class="name">Montagnana-Educandato San Benedetto</b><span class="addr">Via Mure Nord, 35044 Montagnana (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.2355677,11.4645026&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            </div>
+            <div id="delivery-list"><div class="card next" onclick="focusOn(0)"><div class="stop-num">1</div><div class="stop-info"><b class="name">Cervarese-Fossona Papa Luciani</b><span class="addr">Via S. Antonio, 96, 35030 Cervarese Santa Croce (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.424392,11.687904&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(1)"><div class="stop-num">2</div><div class="stop-info"><b class="name">Rovolon Bastia</b><span class="addr">Via S.Francesco 22, 35030 Rovolon (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.3887674,11.6501101&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(2)"><div class="stop-num">3</div><div class="stop-info"><b class="name">TEOLO-DON BOSCO</b><span class="addr">VIA MOLARE 25, 35037 TEOLO (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.347459,11.6725064&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(3)"><div class="stop-num">4</div><div class="stop-info"><b class="name">CINTO EUGANEO-FONTANAFREDDA</b><span class="addr">VIA ROMA 36, 35030 CINTO EUGANEO (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.292179,11.656624&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(4)"><div class="stop-num">5</div><div class="stop-info"><b class="name">LOZZO ATESTINO - MARCONI</b><span class="addr">VIA GUIDO NEGRI, 35034 LOZZO ATESTINO (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.2800199,11.5890453&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(5)"><div class="stop-num">6</div><div class="stop-info"><b class="name">OSPEDALETTO EUG. "G.B.FERRARI"</b><span class="addr">VIA G.B. FERRARI 5, 35045 OSPEDALETTO EUGANEO (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.2235676,11.6017154&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(6)"><div class="stop-num">7</div><div class="stop-info"><b class="name">"A. MANZONI" LOC. PALUGANA</b><span class="addr">VIA PALUGANA SUD 36, 35045 OSPEDALETTO EUGANEO (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.2235676,11.6017154&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(7)"><div class="stop-num">8</div><div class="stop-info"><b class="name">ESTE-S.MARIA LOC. PILASTRO</b><span class="addr">VIA SCARABELLO 2, 35042 ESTE (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.2245872,11.6417771&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(8)"><div class="stop-num">9</div><div class="stop-info"><b class="name">"DUCA DEGLI ABRUZZI"</b><span class="addr">VIA ROMA 32, 35040 SANTA CATERINA D'ESTE (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.1948386,11.6204779&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(9)"><div class="stop-num">10</div><div class="stop-info"><b class="name">S. Caterina D'Este -Duca Degli Abruzzi</b><span class="addr">Via Roma 32, 35049 S. Caterina D'Este (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.1770758,11.6170119&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(10)"><div class="stop-num">11</div><div class="stop-info"><b class="name">PONSO "CARLO COLLODI"</b><span class="addr">VIA ROSSELLE 16A, 35040 PONSO (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.1930072,11.5849071&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(11)"><div class="stop-num">12</div><div class="stop-info"><b class="name">Primaria Santa Margherita D'Adige-Località Santa Margherita D'Adige</b><span class="addr">Viale Europa, 157, 35046 Borgo Veneto (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.2119866,11.5551887&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(12)"><div class="stop-num">13</div><div class="stop-info"><b class="name">SALETTO</b><span class="addr">VIA MARCONI 35, 35046 BORGO VENETO (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.2244572,11.5377897&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(13)"><div class="stop-num">14</div><div class="stop-info"><b class="name">MEGLIADINO SAN FIDENZIO</b><span class="addr">VIA MARCONI 5, 35046 BORGO VENETO (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.2267084,11.5320088&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(14)"><div class="stop-num">15</div><div class="stop-info"><b class="name">Primaria Megliadino San Vitale</b><span class="addr">Via Roma, 50, 35040 Megliadino San Vitale (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.1961849,11.5243219&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(15)"><div class="stop-num">16</div><div class="stop-info"><b class="name">Casale Di Scodosia-Marconi</b><span class="addr">Piazza Matteotti 32/33, 35040 Casale Di Scodosia (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.1883645404963,11.4653727781197&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(16)"><div class="stop-num">17</div><div class="stop-info"><b class="name">MERLARA - DANTE ALIGHIERI</b><span class="addr">VIA STRADONA 22, 35040 MERLARA (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.1620808,11.4516202&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(17)"><div class="stop-num">18</div><div class="stop-info"><b class="name">Castelbaldo-Rosa</b><span class="addr">Piazza Della Resistenza 1B, 35040 Castelbaldo (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.1204921360993,11.4518790989041&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(18)"><div class="stop-num">19</div><div class="stop-info"><b class="name">MASI-ZONARO</b><span class="addr">VIA MONS.G. MASIERO 1, 35040 MASI (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.1088186,11.4919124&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(19)"><div class="stop-num">20</div><div class="stop-info"><b class="name">Enrico Fermi</b><span class="addr">Via Ca' Nove, 1, 35040 Sant'Urbano (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.1294342,11.6253592&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(20)"><div class="stop-num">21</div><div class="stop-info"><b class="name">Alcide De Gasperi</b><span class="addr">Via Garibaldi, 17, 35040 Villa Estense (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.1670521,11.6622227&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(21)"><div class="stop-num">22</div><div class="stop-info"><b class="name">PRIMARIA "CROCE" GRANZE</b><span class="addr">VIA MARTIRI DELLA LIBERTA', 35040 GRANZE (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.1549393162804,11.7133866530957&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(22)"><div class="stop-num">23</div><div class="stop-info"><b class="name">G.VERDI LOC. DESERTO</b><span class="addr">VIA DESERTO 122, 35042 ESTE (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.2029865,11.6887414&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(23)"><div class="stop-num">24</div><div class="stop-info"><b class="name">Montagnana-Educandato San Benedetto</b><span class="addr">Via Mure Nord, 35044 Montagnana (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.2355677,11.4645026&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div></div>
         </div>
     </div>
     <script>
         const data = [{"cliente": "Cervarese-Fossona Papa Luciani", "indirizzo": "Via S. Antonio, 96, 35030 Cervarese Santa Croce (PD)", "lat": 45.424392, "lon": 11.687904}, {"cliente": "Rovolon Bastia", "indirizzo": "Via S.Francesco 22, 35030 Rovolon (PD)", "lat": 45.3887674, "lon": 11.6501101}, {"cliente": "TEOLO-DON BOSCO", "indirizzo": "VIA MOLARE 25, 35037 TEOLO (PADOVA)", "lat": 45.347459, "lon": 11.6725064}, {"cliente": "CINTO EUGANEO-FONTANAFREDDA", "indirizzo": "VIA ROMA 36, 35030 CINTO EUGANEO (PADOVA)", "lat": 45.292179, "lon": 11.656624}, {"cliente": "LOZZO ATESTINO - MARCONI", "indirizzo": "VIA GUIDO NEGRI, 35034 LOZZO ATESTINO (PADOVA)", "lat": 45.2800199, "lon": 11.5890453}, {"cliente": "OSPEDALETTO EUG. \"G.B.FERRARI\"", "indirizzo": "VIA G.B. FERRARI 5, 35045 OSPEDALETTO EUGANEO (PADOVA)", "lat": 45.2235676, "lon": 11.6017154}, {"cliente": "\"A. MANZONI\" LOC. PALUGANA", "indirizzo": "VIA PALUGANA SUD 36, 35045 OSPEDALETTO EUGANEO (PADOVA)", "lat": 45.2235676, "lon": 11.6017154}, {"cliente": "ESTE-S.MARIA LOC. PILASTRO", "indirizzo": "VIA SCARABELLO 2, 35042 ESTE (PADOVA)", "lat": 45.2245872, "lon": 11.6417771}, {"cliente": "\"DUCA DEGLI ABRUZZI\"", "indirizzo": "VIA ROMA 32, 35040 SANTA CATERINA D'ESTE (PADOVA)", "lat": 45.1948386, "lon": 11.6204779}, {"cliente": "S. Caterina D'Este -Duca Degli Abruzzi", "indirizzo": "Via Roma 32, 35049 S. Caterina D'Este (PD)", "lat": 45.1770758, "lon": 11.6170119}, {"cliente": "PONSO \"CARLO COLLODI\"", "indirizzo": "VIA ROSSELLE 16A, 35040 PONSO (PADOVA)", "lat": 45.1930072, "lon": 11.5849071}, {"cliente": "Primaria Santa Margherita D'Adige-Localit\u00e0 Santa Margherita D'Adige", "indirizzo": "Viale Europa, 157, 35046 Borgo Veneto (PD)", "lat": 45.2119866, "lon": 11.5551887}, {"cliente": "SALETTO", "indirizzo": "VIA MARCONI 35, 35046 BORGO VENETO (PADOVA)", "lat": 45.2244572, "lon": 11.5377897}, {"cliente": "MEGLIADINO SAN FIDENZIO", "indirizzo": "VIA MARCONI 5, 35046 BORGO VENETO (PADOVA)", "lat": 45.2267084, "lon": 11.5320088}, {"cliente": "Primaria Megliadino San Vitale", "indirizzo": "Via Roma, 50, 35040 Megliadino San Vitale (PD)", "lat": 45.1961849, "lon": 11.5243219}, {"cliente": "Casale Di Scodosia-Marconi", "indirizzo": "Piazza Matteotti 32/33, 35040 Casale Di Scodosia (PD)", "lat": 45.1883645404963, "lon": 11.4653727781197}, {"cliente": "MERLARA - DANTE ALIGHIERI", "indirizzo": "VIA STRADONA 22, 35040 MERLARA (PADOVA)", "lat": 45.1620808, "lon": 11.4516202}, {"cliente": "Castelbaldo-Rosa", "indirizzo": "Piazza Della Resistenza 1B, 35040 Castelbaldo (PD)", "lat": 45.1204921360993, "lon": 11.4518790989041}, {"cliente": "MASI-ZONARO", "indirizzo": "VIA MONS.G. MASIERO 1, 35040 MASI (PADOVA)", "lat": 45.1088186, "lon": 11.4919124}, {"cliente": "Enrico Fermi", "indirizzo": "Via Ca' Nove, 1, 35040 Sant'Urbano (PD)", "lat": 45.1294342, "lon": 11.6253592}, {"cliente": "Alcide De Gasperi", "indirizzo": "Via Garibaldi, 17, 35040 Villa Estense (PD)", "lat": 45.1670521, "lon": 11.6622227}, {"cliente": "PRIMARIA \"CROCE\" GRANZE", "indirizzo": "VIA MARTIRI DELLA LIBERTA', 35040 GRANZE (PADOVA)", "lat": 45.1549393162804, "lon": 11.7133866530957}, {"cliente": "G.VERDI LOC. DESERTO", "indirizzo": "VIA DESERTO 122, 35042 ESTE (PADOVA)", "lat": 45.2029865, "lon": 11.6887414}, {"cliente": "Montagnana-Educandato San Benedetto", "indirizzo": "Via Mure Nord, 35044 Montagnana (PD)", "lat": 45.2355677, "lon": 11.4645026}]; let map, markers = [];
-        const svg_icon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>';
+        const svg_icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>';
 
         async function initMap() {
             try {
                 map = new google.maps.Map(document.getElementById("map"), { zoom: 12, center: { lat: data[0].lat, lng: data[0].lon }, disableDefaultUI: false });
-                const directionsService = new google.maps.DirectionsService();
-                const directionsRenderer = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6 } });
+                const ds = new google.maps.DirectionsService();
+                const dr = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6 } });
                 const waypts = data.slice(1, -1).map(d => ({ location: { lat: d.lat, lng: d.lon }, stopover: true }));
-                directionsService.route({ origin: { lat: data[0].lat, lng: data[0].lon }, destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, waypoints: waypts, travelMode: "DRIVING" }, (status === "OK") ? res => directionsRenderer.setDirections(res) : null);
+                ds.route({ origin: { lat: data[0].lat, lng: data[0].lon }, destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, waypoints: waypts, travelMode: "DRIVING" }, (res, st) => { if (st === "OK") dr.setDirections(res); });
                 data.forEach((p, i) => {
-                    const marker = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i+1).toString(), color: "white", fontWeight: "bold" }, title: p.cliente });
-                    marker.addListener("click", () => { new google.maps.InfoWindow({ content: `<div style="padding:5px;"><b>${i+1}. ${p.cliente}</b></div>` }).open(map, marker); });
-                    markers.push(marker);
+                    const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i+1).toString(), color: "white", size: "10px", fontWeight: "bold" }, title: p.cliente });
+                    m.addListener("click", () => { new google.maps.InfoWindow({ content: `<b>${i+1}. ${p.cliente}</b>` }).open(map, m); });
+                    markers.push(m);
                 });
                 const b = new google.maps.LatLngBounds(); data.forEach(p => b.extend({ lat: p.lat, lng: p.lon })); map.fitBounds(b);
             } catch (e) { console.error(e); }

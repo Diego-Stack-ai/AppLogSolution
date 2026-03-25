@@ -10,20 +10,24 @@
         :root { --p: #4f46e5; --accent: #10b981; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: #f8fafc; overflow: hidden; }
         .main-container { display: flex; flex-direction: column; height: 100vh; }
-        #map { height: 50vh; width: 100%; background: #dfe5eb; position: relative; }
-        #sidebar { flex: 1; display: flex; flex-direction: column; background: white; border-top: 1px solid #cbd5e1; overflow: hidden; }
-        .header { padding: 6px 15px; background: #1e293b; color: white; border-bottom: 2px solid var(--accent); }
-        .trip-title { margin: 0; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9; }
-        #delivery-list { flex: 1; overflow-y: auto; padding: 10px; background: #f1f5f9; padding-bottom: 40px; }
-        .card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; border: 1px solid #cbd5e1; cursor: pointer; transition: 0.2s; }
+        #map { height: 48vh; width: 100%; background: #dfe5eb; position: relative; }
+        #sidebar { flex: 1; display: flex; flex-direction: column; background: white; border-top: 2px solid #cbd5e1; overflow: hidden; }
+        .header { padding: 4px 12px; background: #1e293b; color: white; border-bottom: 2px solid var(--accent); }
+        .trip-title { margin: 0; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
+        .stats-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 1px; }
+        .stat-item { flex: 1; display: flex; flex-direction: column; align-items: start; }
+        .stat-val { font-size: 0.82rem; font-weight: 800; color: white; line-height: 1; }
+        .stat-lbl { font-size: 0.52rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-top: 1px; }
+        #delivery-list { flex: 1; overflow-y: auto; padding: 8px; background: #f1f5f9; padding-bottom: 40px; }
+        .card { background: white; border-radius: 10px; padding: 10px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; border: 1px solid #cbd5e1; cursor: pointer; }
         .card.next { border-color: var(--accent); background: #f0fdf4; border-left: 4px solid var(--accent); }
-        .stop-num { width: 26px; height: 26px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px; flex-shrink: 0; }
+        .stop-num { width: 24px; height: 24px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10px; flex-shrink: 0; }
         .next .stop-num { background: var(--accent); }
         .stop-info { flex: 1; min-width: 0; }
-        .name { display: block; font-size: 0.82rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .addr { font-size: 0.68rem; color: #64748b; font-weight: 600; }
-        .btn-nav { background: var(--accent); color: white; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0; }
-        .icon-nav { width: 20px; height: 20px; fill: white; }
+        .name { display: block; font-size: 0.8rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .addr { font-size: 0.65rem; color: #64748b; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .btn-nav { background: var(--accent); color: white; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0; }
+        .icon-nav { width: 18px; height: 18px; fill: white; }
     </style>
 </head>
 <body>
@@ -31,168 +35,32 @@
         <div id="map"></div>
         <div id="sidebar">
             <div class="header">
-                <h2 class="trip-title">🚛 V02 | NAVIGATORE AUTISTI</h2>
+                <div class="trip-title">🏎️ V02 | Zone: 0000, 3111, 4111</div>
+                <div class="stats-row">
+                    <div class="stat-item"><span class="stat-val">111.0km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 28m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">3h 16m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">5h 44m</span><span class="stat-lbl">Totale</span></div>
+                </div>
             </div>
-            <div id="delivery-list">
-                
-            <div class="card next" onclick="focusOn(0)">
-                <div class="stop-num">1</div>
-                <div class="stop-info"><b class="name">G. Allegri - Taggi Di Sopra Villafranca Padovana</b><span class="addr">Via Taggi Di Sopra, 12</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.467861,11.808217&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(1)">
-                <div class="stop-num">2</div>
-                <div class="stop-info"><b class="name">CURTAROLO-LOC. PIEVE</b><span class="addr">VIA MONTE PASUBIO3, 35010 CURTAROLO (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.518701,11.8313461&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(2)">
-                <div class="stop-num">3</div>
-                <div class="stop-info"><b class="name">Campo S.Martino-Marsango</b><span class="addr">Via Alcide De Gasperi 43, 35010 Campo San Martino (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.544396,11.810404&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(3)">
-                <div class="stop-num">4</div>
-                <div class="stop-info"><b class="name">CAMPO S.MARTINO-MARCONI</b><span class="addr">VIA FORESE 42, 35010 CAMPO SAN MARTINO (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5467878,11.8148138&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(4)">
-                <div class="stop-num">5</div>
-                <div class="stop-info"><b class="name">CAMPO S.MARTINO-LOC. MARSANGO</b><span class="addr">VIA ALCIDE DE GASPERI 43, 35010 CAMPO SAN MARTINO (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5516149,11.8348171&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(5)">
-                <div class="stop-num">6</div>
-                <div class="stop-info"><b class="name">CAMPO S.MARTINO-LOC. BUSIAGO</b><span class="addr">VIA S.LORENZO 83, 35010 CAMPO SAN MARTINO (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5622293,11.8243292&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(6)">
-                <div class="stop-num">7</div>
-                <div class="stop-info"><b class="name">L. Bottazzo</b><span class="addr">Via Montessori 1,, 35016 Piazzola Sul Brenta (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5391746,11.7896669&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(7)">
-                <div class="stop-num">8</div>
-                <div class="stop-info"><b class="name">FONTANIVA-S.GIORGIO IN BRENTA</b><span class="addr">PIAZZA DON SILVIO MOZZATO, 35014 FONTANIVA (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6131724,11.7659423&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(8)">
-                <div class="stop-num">9</div>
-                <div class="stop-info"><b class="name">FONTANIVA-BATTISTI</b><span class="addr">PIAZZA UMBERTO PRIMO 13, 35014 FONTANIVA (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6371624,11.7578545&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(9)">
-                <div class="stop-num">10</div>
-                <div class="stop-info"><b class="name">Cittadella-L.Cornaro Piscopia</b><span class="addr">Via Angelo Gabrielli 32, 35013 Cittadella (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6450621,11.7840418&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(10)">
-                <div class="stop-num">11</div>
-                <div class="stop-info"><b class="name">Cittadella-S.Maria</b><span class="addr">Via Case Bianche 6 / 10, 35013 Cittadella (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6450621,11.7840418&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(11)">
-                <div class="stop-num">12</div>
-                <div class="stop-info"><b class="name">Cittadella-Borgo Treviso</b><span class="addr">Via S. Prosdocimo, 22, 35013 Cittadella (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6514754,11.7928968&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(12)">
-                <div class="stop-num">13</div>
-                <div class="stop-info"><b class="name">Galliera Veneta-G.Giardino</b><span class="addr">Via G. Leopardi Nr. 4, 35015 Galliera Veneta (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6557112,11.814168&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(13)">
-                <div class="stop-num">14</div>
-                <div class="stop-info"><b class="name">Galliera Veneta-D.G.Manesso</b><span class="addr">Via G. Leopardi Nr. 6, 35015 Galliera Veneta (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6557112,11.814168&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(14)">
-                <div class="stop-num">15</div>
-                <div class="stop-info"><b class="name">Tombolo - Tombolan Fava</b><span class="addr">Via Sant'Andrea Apostolo, 7, 35019 Tombolo (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6381425,11.8311346&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(15)">
-                <div class="stop-num">16</div>
-                <div class="stop-info"><b class="name">Duca D'Aosta San Martino Di Lupari</b><span class="addr">Via Julia, 35018 San Martino Di Lupari (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6471714,11.8603388&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(16)">
-                <div class="stop-num">17</div>
-                <div class="stop-info"><b class="name">C. Battisti Campretto</b><span class="addr">Via Dell'Usignolo, 35018 San Martino Di Lupari (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6366694,11.8676692&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(17)">
-                <div class="stop-num">18</div>
-                <div class="stop-info"><b class="name">A. Diaz Borghetto</b><span class="addr">Via Del Cimitero N. 5, 35018 San Martino Di Lupari (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.659803,11.8611803&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(18)">
-                <div class="stop-num">19</div>
-                <div class="stop-info"><b class="name">N. Sauro Campagnalta</b><span class="addr">Viale Dei Martiri, 10, 35018 San Martino Di Lupari (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6729491,11.8532186&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(19)">
-                <div class="stop-num">20</div>
-                <div class="stop-info"><b class="name">Galliera Veneta-Monte Grappa</b><span class="addr">Via Campagna N. 84, 35015 Galliera Veneta (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6767898,11.8189718&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(20)">
-                <div class="stop-num">21</div>
-                <div class="stop-info"><b class="name">Primaria Pozzetto Cittadella-Ca' Onorai</b><span class="addr">Via Vecchia Di Bassano, 2/B, 35013 Cittadella (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6672022,11.780156&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(21)">
-                <div class="stop-num">22</div>
-                <div class="stop-info"><b class="name">A. Gabelli - Belvedere Di Tezze</b><span class="addr">Via Nazionale, 125, 36056 Tezze Sul Brenta (VI)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6800786,11.7742551&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(22)">
-                <div class="stop-num">23</div>
-                <div class="stop-info"><b class="name">Primaria Laghi Cittadella-Laghi</b><span class="addr">Via Don G.Lago, 25, 35013 Cittadella (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6677433,11.7565771&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(23)">
-                <div class="stop-num">24</div>
-                <div class="stop-info"><b class="name">IV NOVEMBRE - CAMPAGNARI</b><span class="addr">VIA MADRE TERESA DI CALCUTTA 2, 36056 TEZZE SUL BRENTA (VICENZA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6842851,11.7417891&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(24)">
-                <div class="stop-num">25</div>
-                <div class="stop-info"><b class="name">G Rodari - Loreggiola</b><span class="addr">Via Pio X N. 13, 35010 Loreggia (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6100998,11.9182903&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(25)">
-                <div class="stop-num">26</div>
-                <div class="stop-info"><b class="name">PIOMBINO DESE-A. STIFFONI</b><span class="addr">VIA DANTE 11, 35017 PIOMBINO DESE (PADOVA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6098378,11.9963249&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(26)">
-                <div class="stop-num">27</div>
-                <div class="stop-info"><b class="name">A.Palladio Loc. Torreselle</b><span class="addr">Via Gattoeo, 1, 35017 Piombino Dese (PD)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6252215,12.0393186&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            <div class="card " onclick="focusOn(27)">
-                <div class="stop-num">28</div>
-                <div class="stop-info"><b class="name">VITTORINO DA FELTRE</b><span class="addr">VIA G.B.ROSSI 25, 30033 NOALE (VENEZIA)</span></div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5511278606687,12.066637949173&travelmode=driving" class="btn-nav"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a>
-            </div>
-            </div>
+            <div id="delivery-list"><div class="card next" onclick="focusOn(0)"><div class="stop-num">1</div><div class="stop-info"><b class="name">G. Allegri - Taggi Di Sopra Villafranca Padovana</b><span class="addr">Via Taggi Di Sopra, 12</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.467861,11.808217&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(1)"><div class="stop-num">2</div><div class="stop-info"><b class="name">CURTAROLO-LOC. PIEVE</b><span class="addr">VIA MONTE PASUBIO3, 35010 CURTAROLO (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.518701,11.8313461&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(2)"><div class="stop-num">3</div><div class="stop-info"><b class="name">Campo S.Martino-Marsango</b><span class="addr">Via Alcide De Gasperi 43, 35010 Campo San Martino (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.544396,11.810404&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(3)"><div class="stop-num">4</div><div class="stop-info"><b class="name">CAMPO S.MARTINO-MARCONI</b><span class="addr">VIA FORESE 42, 35010 CAMPO SAN MARTINO (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5467878,11.8148138&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(4)"><div class="stop-num">5</div><div class="stop-info"><b class="name">CAMPO S.MARTINO-LOC. MARSANGO</b><span class="addr">VIA ALCIDE DE GASPERI 43, 35010 CAMPO SAN MARTINO (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5516149,11.8348171&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(5)"><div class="stop-num">6</div><div class="stop-info"><b class="name">CAMPO S.MARTINO-LOC. BUSIAGO</b><span class="addr">VIA S.LORENZO 83, 35010 CAMPO SAN MARTINO (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5622293,11.8243292&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(6)"><div class="stop-num">7</div><div class="stop-info"><b class="name">L. Bottazzo</b><span class="addr">Via Montessori 1,, 35016 Piazzola Sul Brenta (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5391746,11.7896669&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(7)"><div class="stop-num">8</div><div class="stop-info"><b class="name">FONTANIVA-S.GIORGIO IN BRENTA</b><span class="addr">PIAZZA DON SILVIO MOZZATO, 35014 FONTANIVA (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6131724,11.7659423&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(8)"><div class="stop-num">9</div><div class="stop-info"><b class="name">FONTANIVA-BATTISTI</b><span class="addr">PIAZZA UMBERTO PRIMO 13, 35014 FONTANIVA (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6371624,11.7578545&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(9)"><div class="stop-num">10</div><div class="stop-info"><b class="name">Cittadella-L.Cornaro Piscopia</b><span class="addr">Via Angelo Gabrielli 32, 35013 Cittadella (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6450621,11.7840418&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(10)"><div class="stop-num">11</div><div class="stop-info"><b class="name">Cittadella-S.Maria</b><span class="addr">Via Case Bianche 6 / 10, 35013 Cittadella (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6450621,11.7840418&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(11)"><div class="stop-num">12</div><div class="stop-info"><b class="name">Cittadella-Borgo Treviso</b><span class="addr">Via S. Prosdocimo, 22, 35013 Cittadella (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6514754,11.7928968&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(12)"><div class="stop-num">13</div><div class="stop-info"><b class="name">Galliera Veneta-G.Giardino</b><span class="addr">Via G. Leopardi Nr. 4, 35015 Galliera Veneta (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6557112,11.814168&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(13)"><div class="stop-num">14</div><div class="stop-info"><b class="name">Galliera Veneta-D.G.Manesso</b><span class="addr">Via G. Leopardi Nr. 6, 35015 Galliera Veneta (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6557112,11.814168&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(14)"><div class="stop-num">15</div><div class="stop-info"><b class="name">Tombolo - Tombolan Fava</b><span class="addr">Via Sant'Andrea Apostolo, 7, 35019 Tombolo (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6381425,11.8311346&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(15)"><div class="stop-num">16</div><div class="stop-info"><b class="name">Duca D'Aosta San Martino Di Lupari</b><span class="addr">Via Julia, 35018 San Martino Di Lupari (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6471714,11.8603388&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(16)"><div class="stop-num">17</div><div class="stop-info"><b class="name">C. Battisti Campretto</b><span class="addr">Via Dell'Usignolo, 35018 San Martino Di Lupari (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6366694,11.8676692&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(17)"><div class="stop-num">18</div><div class="stop-info"><b class="name">A. Diaz Borghetto</b><span class="addr">Via Del Cimitero N. 5, 35018 San Martino Di Lupari (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.659803,11.8611803&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(18)"><div class="stop-num">19</div><div class="stop-info"><b class="name">N. Sauro Campagnalta</b><span class="addr">Viale Dei Martiri, 10, 35018 San Martino Di Lupari (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6729491,11.8532186&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(19)"><div class="stop-num">20</div><div class="stop-info"><b class="name">Galliera Veneta-Monte Grappa</b><span class="addr">Via Campagna N. 84, 35015 Galliera Veneta (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6767898,11.8189718&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(20)"><div class="stop-num">21</div><div class="stop-info"><b class="name">Primaria Pozzetto Cittadella-Ca' Onorai</b><span class="addr">Via Vecchia Di Bassano, 2/B, 35013 Cittadella (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6672022,11.780156&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(21)"><div class="stop-num">22</div><div class="stop-info"><b class="name">A. Gabelli - Belvedere Di Tezze</b><span class="addr">Via Nazionale, 125, 36056 Tezze Sul Brenta (VI)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6800786,11.7742551&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(22)"><div class="stop-num">23</div><div class="stop-info"><b class="name">Primaria Laghi Cittadella-Laghi</b><span class="addr">Via Don G.Lago, 25, 35013 Cittadella (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6677433,11.7565771&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(23)"><div class="stop-num">24</div><div class="stop-info"><b class="name">IV NOVEMBRE - CAMPAGNARI</b><span class="addr">VIA MADRE TERESA DI CALCUTTA 2, 36056 TEZZE SUL BRENTA (VICENZA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6842851,11.7417891&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(24)"><div class="stop-num">25</div><div class="stop-info"><b class="name">G Rodari - Loreggiola</b><span class="addr">Via Pio X N. 13, 35010 Loreggia (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6100998,11.9182903&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(25)"><div class="stop-num">26</div><div class="stop-info"><b class="name">PIOMBINO DESE-A. STIFFONI</b><span class="addr">VIA DANTE 11, 35017 PIOMBINO DESE (PADOVA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6098378,11.9963249&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(26)"><div class="stop-num">27</div><div class="stop-info"><b class="name">A.Palladio Loc. Torreselle</b><span class="addr">Via Gattoeo, 1, 35017 Piombino Dese (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6252215,12.0393186&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(27)"><div class="stop-num">28</div><div class="stop-info"><b class="name">VITTORINO DA FELTRE</b><span class="addr">VIA G.B.ROSSI 25, 30033 NOALE (VENEZIA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5511278606687,12.066637949173&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div></div>
         </div>
     </div>
     <script>
         const data = [{"cliente": "G. Allegri - Taggi Di Sopra Villafranca Padovana", "indirizzo": "Via Taggi Di Sopra, 12", "lat": 45.467861, "lon": 11.808217}, {"cliente": "CURTAROLO-LOC. PIEVE", "indirizzo": "VIA MONTE PASUBIO3, 35010 CURTAROLO (PADOVA)", "lat": 45.518701, "lon": 11.8313461}, {"cliente": "Campo S.Martino-Marsango", "indirizzo": "Via Alcide De Gasperi 43, 35010 Campo San Martino (PD)", "lat": 45.544396, "lon": 11.810404}, {"cliente": "CAMPO S.MARTINO-MARCONI", "indirizzo": "VIA FORESE 42, 35010 CAMPO SAN MARTINO (PADOVA)", "lat": 45.5467878, "lon": 11.8148138}, {"cliente": "CAMPO S.MARTINO-LOC. MARSANGO", "indirizzo": "VIA ALCIDE DE GASPERI 43, 35010 CAMPO SAN MARTINO (PADOVA)", "lat": 45.5516149, "lon": 11.8348171}, {"cliente": "CAMPO S.MARTINO-LOC. BUSIAGO", "indirizzo": "VIA S.LORENZO 83, 35010 CAMPO SAN MARTINO (PADOVA)", "lat": 45.5622293, "lon": 11.8243292}, {"cliente": "L. Bottazzo", "indirizzo": "Via Montessori 1,, 35016 Piazzola Sul Brenta (PD)", "lat": 45.5391746, "lon": 11.7896669}, {"cliente": "FONTANIVA-S.GIORGIO IN BRENTA", "indirizzo": "PIAZZA DON SILVIO MOZZATO, 35014 FONTANIVA (PADOVA)", "lat": 45.6131724, "lon": 11.7659423}, {"cliente": "FONTANIVA-BATTISTI", "indirizzo": "PIAZZA UMBERTO PRIMO 13, 35014 FONTANIVA (PADOVA)", "lat": 45.6371624, "lon": 11.7578545}, {"cliente": "Cittadella-L.Cornaro Piscopia", "indirizzo": "Via Angelo Gabrielli 32, 35013 Cittadella (PD)", "lat": 45.6450621, "lon": 11.7840418}, {"cliente": "Cittadella-S.Maria", "indirizzo": "Via Case Bianche 6 / 10, 35013 Cittadella (PD)", "lat": 45.6450621, "lon": 11.7840418}, {"cliente": "Cittadella-Borgo Treviso", "indirizzo": "Via S. Prosdocimo, 22, 35013 Cittadella (PD)", "lat": 45.6514754, "lon": 11.7928968}, {"cliente": "Galliera Veneta-G.Giardino", "indirizzo": "Via G. Leopardi Nr. 4, 35015 Galliera Veneta (PD)", "lat": 45.6557112, "lon": 11.814168}, {"cliente": "Galliera Veneta-D.G.Manesso", "indirizzo": "Via G. Leopardi Nr. 6, 35015 Galliera Veneta (PD)", "lat": 45.6557112, "lon": 11.814168}, {"cliente": "Tombolo - Tombolan Fava", "indirizzo": "Via Sant'Andrea Apostolo, 7, 35019 Tombolo (PD)", "lat": 45.6381425, "lon": 11.8311346}, {"cliente": "Duca D'Aosta San Martino Di Lupari", "indirizzo": "Via Julia, 35018 San Martino Di Lupari (PD)", "lat": 45.6471714, "lon": 11.8603388}, {"cliente": "C. Battisti Campretto", "indirizzo": "Via Dell'Usignolo, 35018 San Martino Di Lupari (PD)", "lat": 45.6366694, "lon": 11.8676692}, {"cliente": "A. Diaz Borghetto", "indirizzo": "Via Del Cimitero N. 5, 35018 San Martino Di Lupari (PD)", "lat": 45.659803, "lon": 11.8611803}, {"cliente": "N. Sauro Campagnalta", "indirizzo": "Viale Dei Martiri, 10, 35018 San Martino Di Lupari (PD)", "lat": 45.6729491, "lon": 11.8532186}, {"cliente": "Galliera Veneta-Monte Grappa", "indirizzo": "Via Campagna N. 84, 35015 Galliera Veneta (PD)", "lat": 45.6767898, "lon": 11.8189718}, {"cliente": "Primaria Pozzetto Cittadella-Ca' Onorai", "indirizzo": "Via Vecchia Di Bassano, 2/B, 35013 Cittadella (PD)", "lat": 45.6672022, "lon": 11.780156}, {"cliente": "A. Gabelli - Belvedere Di Tezze", "indirizzo": "Via Nazionale, 125, 36056 Tezze Sul Brenta (VI)", "lat": 45.6800786, "lon": 11.7742551}, {"cliente": "Primaria Laghi Cittadella-Laghi", "indirizzo": "Via Don G.Lago, 25, 35013 Cittadella (PD)", "lat": 45.6677433, "lon": 11.7565771}, {"cliente": "IV NOVEMBRE - CAMPAGNARI", "indirizzo": "VIA MADRE TERESA DI CALCUTTA 2, 36056 TEZZE SUL BRENTA (VICENZA)", "lat": 45.6842851, "lon": 11.7417891}, {"cliente": "G Rodari - Loreggiola", "indirizzo": "Via Pio X N. 13, 35010 Loreggia (PD)", "lat": 45.6100998, "lon": 11.9182903}, {"cliente": "PIOMBINO DESE-A. STIFFONI", "indirizzo": "VIA DANTE 11, 35017 PIOMBINO DESE (PADOVA)", "lat": 45.6098378, "lon": 11.9963249}, {"cliente": "A.Palladio Loc. Torreselle", "indirizzo": "Via Gattoeo, 1, 35017 Piombino Dese (PD)", "lat": 45.6252215, "lon": 12.0393186}, {"cliente": "VITTORINO DA FELTRE", "indirizzo": "VIA G.B.ROSSI 25, 30033 NOALE (VENEZIA)", "lat": 45.5511278606687, "lon": 12.066637949173}]; let map, markers = [];
-        const svg_icon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>';
+        const svg_icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>';
 
         async function initMap() {
             try {
                 map = new google.maps.Map(document.getElementById("map"), { zoom: 12, center: { lat: data[0].lat, lng: data[0].lon }, disableDefaultUI: false });
-                const directionsService = new google.maps.DirectionsService();
-                const directionsRenderer = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6 } });
+                const ds = new google.maps.DirectionsService();
+                const dr = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6 } });
                 const waypts = data.slice(1, -1).map(d => ({ location: { lat: d.lat, lng: d.lon }, stopover: true }));
-                directionsService.route({ origin: { lat: data[0].lat, lng: data[0].lon }, destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, waypoints: waypts, travelMode: "DRIVING" }, (status === "OK") ? res => directionsRenderer.setDirections(res) : null);
+                ds.route({ origin: { lat: data[0].lat, lng: data[0].lon }, destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, waypoints: waypts, travelMode: "DRIVING" }, (res, st) => { if (st === "OK") dr.setDirections(res); });
                 data.forEach((p, i) => {
-                    const marker = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i+1).toString(), color: "white", fontWeight: "bold" }, title: p.cliente });
-                    marker.addListener("click", () => { new google.maps.InfoWindow({ content: `<div style="padding:5px;"><b>${i+1}. ${p.cliente}</b></div>` }).open(map, marker); });
-                    markers.push(marker);
+                    const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i+1).toString(), color: "white", size: "10px", fontWeight: "bold" }, title: p.cliente });
+                    m.addListener("click", () => { new google.maps.InfoWindow({ content: `<b>${i+1}. ${p.cliente}</b>` }).open(map, m); });
+                    markers.push(m);
                 });
                 const b = new google.maps.LatLngBounds(); data.forEach(p => b.extend({ lat: p.lat, lng: p.lon })); map.fitBounds(b);
             } catch (e) { console.error(e); }

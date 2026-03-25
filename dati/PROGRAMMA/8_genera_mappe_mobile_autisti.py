@@ -8,6 +8,7 @@ from pathlib import Path
 PROG_DIR = Path(__file__).resolve().parent
 BASE_DIR = PROG_DIR.parent
 CONSEGNE_DIR = BASE_DIR / "CONSEGNE"
+WEBAPP_FOLDER = BASE_DIR / "frontend" / "mappe_autisti"
 GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
 
 DEPOT = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"}
@@ -44,7 +45,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{{ v_id }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&libraries=geometry,marker"></script>
     <style>
         :root { --p: #4f46e5; --accent: #10b981; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: #f8fafc; overflow: hidden; }
@@ -71,46 +73,27 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <div id="map"></div>
         <div id="sidebar">
             <div class="header">
-                <h2 class="trip-title">🏎️ {{ v_id }} | Giro Autista</h2>
+                <h2 class="trip-title">🏎️ {{ v_id }} | Navigatore Autisti</h2>
             </div>
             <div id="delivery-list">
-                <a href="https://www.google.com/maps/dir/?api=1&destination={{ first_lat }},{{ first_lon }}" class="btn-global">🚀 APRI TUTTE LE TAPPE</a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination={{ first_lat }},{{ first_lon }}" class="btn-global">🚀 APRI IN GOOGLE MAPS</a>
                 {{ cards_html|safe }}
             </div>
         </div>
     </div>
     <script>
         const data = {{ deliveries_js|safe }}; let map, markers = [];
-        const navIcon = `<svg class="icon-nav" viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>`;
 
-        function initMap() {
+        async function initMap() {
             try {
-                map = new google.maps.Map(document.getElementById("map"), { 
-                    zoom: 12, center: { lat: data[0].lat, lng: data[0].lon },
-                    disableDefaultUI: false, streetViewControl: false
-                });
-
+                map = new google.maps.Map(document.getElementById("map"), { zoom: 12, center: { lat: data[0].lat, lng: data[0].lon }, disableDefaultUI: false });
                 const directionsService = new google.maps.DirectionsService();
-                const directionsRenderer = new google.maps.DirectionsRenderer({ 
-                    map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6 } 
-                });
-                
+                const directionsRenderer = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6 } });
                 const waypts = data.slice(1, -1).map(d => ({ location: { lat: d.lat, lng: d.lon }, stopover: true }));
-                directionsService.route({ 
-                    origin: { lat: data[0].lat, lng: data[0].lon }, 
-                    destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, 
-                    waypoints: waypts, travelMode: "DRIVING" 
-                }, (res, status) => { if (status === "OK") directionsRenderer.setDirections(res); });
-
+                directionsService.route({ origin: { lat: data[0].lat, lng: data[0].lon }, destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, waypoints: waypts, travelMode: "DRIVING" }, (res, status) => { if (status === "OK") directionsRenderer.setDirections(res); });
                 data.forEach((p, i) => {
-                    const marker = new google.maps.Marker({
-                        position: { lat: p.lat, lng: p.lon }, map: map, 
-                        label: { text: (i+1).toString(), color: "white", fontWeight: "bold" },
-                        title: p.cliente
-                    });
-                    marker.addListener("click", () => {
-                       new google.maps.InfoWindow({ content: `<div style="padding:5px;"><b>${i+1}. ${p.cliente}</b></div>` }).open(map, marker);
-                    });
+                    const marker = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i+1).toString(), color: "white", fontWeight: "bold" }, title: p.cliente });
+                    marker.addListener("click", () => { new google.maps.InfoWindow({ content: `<div style="padding:5px;"><b>${i+1}. ${p.cliente}</b></div>` }).open(map, marker); });
                     markers.push(marker);
                 });
                 const b = new google.maps.LatLngBounds(); data.forEach(p => b.extend({ lat: p.lat, lng: p.lon })); map.fitBounds(b);
@@ -126,13 +109,13 @@ def main():
     target_dir = get_latest_consegne_dir()
     if not target_dir: return
     json_path = target_dir / "viaggi_giornalieri.json"
-    if not json_path.exists(): return
     with open(json_path, "r", encoding="utf-8") as f: viaggi = json.load(f)
 
+    # Cartella locale + Cartella WEBAPP per Firebase
     out_folder = target_dir / "MAPPE_MOBILE_WHATSAPP"
     out_folder.mkdir(exist_ok=True)
+    WEBAPP_FOLDER.mkdir(exist_ok=True, parents=True)
     
-    # Icona SVG pre-renderizzata per le card
     svg_icon = '<svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>'
 
     for i, v in enumerate(viaggi):
@@ -161,7 +144,9 @@ def main():
         html = html.replace("{{ cards_html|safe }}", cards_html)
         html = html.replace("{{ deliveries_js|safe }}", json.dumps(deliveries))
         
+        # Salvataggio nelle due posizioni
         (out_folder / fname).write_text(html, encoding="utf-8")
-        print(f" ✅ Generata Mappa (Fix Icone SVG): {fname}")
+        (WEBAPP_FOLDER / fname).write_text(html, encoding="utf-8")
+        print(f" ✅ Mappa Pronta per Firebase: webapp/mappe_autisti/{fname}")
 
 if __name__ == "__main__": main()

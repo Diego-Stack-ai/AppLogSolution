@@ -41,13 +41,14 @@ try:
 except ImportError:
     raise ImportError("pip install reportlab")
 
-# Funziona sia come script sia come exe (PyInstaller): cartella principale = Gestione DDT viaggi
-BASE_DIR = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent.parent
-PROGRAMMA_DIR = BASE_DIR / "Programma"
-DDT_FRUTTA_DIR = BASE_DIR / "DDT frutta"
-DDT_LATTE_DIR = BASE_DIR / "DDT latte"
-GIRI_LAVORATI_DIR = BASE_DIR / "Giri lavorati"
-MAPPATURA_XLSX = BASE_DIR / "mappatura_destinazioni.xlsx"
+# Funziona sia come script sia come exe (PyInstaller)
+PROG_DIR = Path(__file__).resolve().parent
+BASE_DIR = PROG_DIR.parent
+PROGRAMMA_DIR = PROG_DIR
+DDT_FRUTTA_DIR = BASE_DIR / "FRUTTA"
+DDT_LATTE_DIR = BASE_DIR / "LATTE"
+GIRI_LAVORATI_DIR = BASE_DIR / "CONSEGNE"
+MAPPATURA_XLSX = PROG_DIR / "mappatura_destinazioni.xlsx"
 NUOVI_CODICI_XLSX = BASE_DIR / "nuovi_codici_consegna.xlsx"
 REPORT_ORARI_MANCANTI_XLSX = BASE_DIR / "report_orari_mancanti.xlsx"
 RIENTRI_DDT_XLSX = BASE_DIR / "rientri_ddt.xlsx"

@@ -147,6 +147,32 @@ def main():
         # Salvataggio nelle due posizioni
         (out_folder / fname).write_text(html, encoding="utf-8")
         (WEBAPP_FOLDER / fname).write_text(html, encoding="utf-8")
-        print(f" ✅ Mappa Pronta per Firebase: webapp/mappe_autisti/{fname}")
+        
+        # Stampa Link Pubblico
+        github_link = f"https://diego-stack-ai.github.io/AppLogSolution/frontend/mappe_autisti/{fname}"
+        print(f" ✅ Generato: {fname}")
+        print(f"    🔗 Link WhatsApp: {github_link}\n")
+
+    # Generazione File TXT con i link
+    txt_content = "🚀 LINK MAPPE PER AUTISTI (GIORNO CORRENTE)\n"
+    txt_content += "------------------------------------------\n\n"
+    
+    for i, v in enumerate(viaggi):
+        v_id = f"V{i+1:02d}"
+        punti_raw = v.get("lista_punti", [])
+        if not punti_raw: continue
+        zone_list = sorted(list(set([str(p.get('zona', '0000')) for p in punti_raw])))
+        fname = f"{v_id}_Zone_{'_'.join(zone_list[:4])}.html"
+        github_link = f"https://diego-stack-ai.github.io/AppLogSolution/frontend/mappe_autisti/{fname}"
+        txt_content += f"🏎️ {v_id}: {github_link}\n\n"
+
+    # Salva il TXT
+    (out_folder / "LINK_WHATSAPP_AUTISTI.txt").write_text(txt_content, encoding="utf-8")
+    (WEBAPP_FOLDER / "LINK_WHATSAPP_AUTISTI.txt").write_text(txt_content, encoding="utf-8")
+
+    print(f"\n🚀 OPERAZIONE COMPLETATA!")
+    print(f"🎨 File pronti in: {out_folder}")
+    print(f"📄 Link salvati in: LINK_WHATSAPP_AUTISTI.txt")
+    print(f"🌐 Esegui 'git push' e 'firebase deploy' per aggiornare i link sopra.")
 
 if __name__ == "__main__": main()

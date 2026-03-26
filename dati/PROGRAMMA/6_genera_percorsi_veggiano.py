@@ -12,9 +12,21 @@ BASE_DIR = PROG_DIR.parent
 CONSEGNE_DIR = BASE_DIR / "CONSEGNE"
 GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
 
+# --- CONFIGURAZIONE OTTIMIZZAZIONE ---
+# Opzioni: "HAVERSINE" (Locale/Veloce) o "GOOGLE_MATRIX" (API/Preciso)
+MODO_DISTANZA = "HAVERSINE" 
+
 DEPOT = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"}
 TIME_OFFSET_PER_STOP = 8
 AVG_SPEED_KMH = 35
+
+# Tentativo di import OR-Tools
+try:
+    from ortools.constraint_solver import routing_enums_pb2
+    from ortools.constraint_solver import pywrapcp
+    HAS_OR_TOOLS = True
+except ImportError:
+    HAS_OR_TOOLS = False
 
 def get_latest_consegne_dir():
     dirs = [d for d in CONSEGNE_DIR.iterdir() if d.is_dir() and d.name.startswith("CONSEGNE_")]
@@ -26,16 +38,99 @@ def sanitize_filename(filename):
 
 def haversine(p1, p2):
     try:
-        lat1, lon1 = float(p1['lat']), float(p1['lon'])
-        lat2, lon2 = float(p2['lat']), float(p2['lon'])
+        lat1, lon1 = float(p1.get('lat', 0)), float(p1.get('lon', p1.get('lng', 0)))
+        lat2, lon2 = float(p2.get('lat', 0)), float(p2.get('lon', p2.get('lng', 0)))
     except: return 999999.0
     R = 6371 
     dlat, dlon = math.radians(lat2 - lat1), math.radians(lon2 - lon1)
     a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
     return R * (2 * math.asin(math.sqrt(a)))
 
-def ottimizza_percorso(punti):
-    if not punti: return []
+# --- LOGICA DI OTTIMIZZAZIONE AVANZATA (OR-TOOLS) ---
+
+def crea_matrice_distanze(punti_con_deposito):
+    """Crea la matrice delle distanze (in metri) tra tutti i punti."""
+    n = len(punti_con_deposito)
+    matrix = [[0] * n for _ in range(n)]
+    
+    if MODO_DISTANZA == "HAVERSINE":
+        for i in range(n):
+            for j in range(n):
+                if i == j: continue
+                matrix[i][j] = int(haversine(punti_con_deposito[i], punti_con_deposito[j]) * 1000)
+    
+    elif MODO_DISTANZA == "GOOGLE_MATRIX":
+        # Google Matrix API limit: 25 origins/destinations per request
+        if n > 25:
+            print("⚠️ Troppe tappe (>25) per Google Matrix API. Uso Haversine locale.")
+            return crea_matrice_distanze_haversine_internal(punti_con_deposito)
+            
+        coords = "|".join([f"{p['lat']},{p['lon']}" for p in punti_con_deposito])
+        url = f"https://maps.googleapis.com/maps/api/distancematrix/json?origins={coords}&destinations={coords}&key={GOOGLE_MAPS_API_KEY}"
+        try:
+            r = requests.get(url).json()
+            if r['status'] == 'OK':
+                for i, row in enumerate(r['rows']):
+                    for j, element in enumerate(row['elements']):
+                        if element['status'] == 'OK':
+                            matrix[i][j] = element['distance']['value']
+                        else:
+                            matrix[i][j] = int(haversine(punti_con_deposito[i], punti_con_deposito[j]) * 1000)
+            else:
+                print(f"⚠️ Errore Google Matrix status: {r['status']}. Uso Haversine.")
+                return crea_matrice_distanze_haversine_internal(punti_con_deposito)
+        except Exception as e:
+            print(f"⚠️ Errore connessione Matrix API: {e}. Uso Haversine.")
+            return crea_matrice_distanze_haversine_internal(punti_con_deposito)
+            
+    return matrix
+
+def crea_matrice_distanze_haversine_internal(punti_con_deposito):
+    n = len(punti_con_deposito)
+    return [[int(haversine(punti_con_deposito[i], punti_con_deposito[j]) * 1000) for j in range(n)] for i in range(n)]
+
+def ottimizza_percorso(punti_consegna):
+    """Sceglie automaticamente tra OR-Tools (TSP) o Nearest Neighbor."""
+    if not punti_consegna: return []
+    
+    if not HAS_OR_TOOLS:
+        return ottimizza_percorso_legacy(punti_consegna)
+
+    all_locations = [DEPOT] + punti_consegna
+    distance_matrix = crea_matrice_distanze(all_locations)
+    
+    manager = pywrapcp.RoutingIndexManager(len(all_locations), 1, 0)
+    routing = pywrapcp.RoutingModel(manager)
+
+    def distance_callback(from_index, to_index):
+        from_node = manager.IndexToNode(from_index)
+        to_node = manager.IndexToNode(to_index)
+        return distance_matrix[from_node][to_node]
+
+    transit_callback_index = routing.RegisterTransitCallback(distance_callback)
+    routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
+
+    search_parameters = pywrapcp.DefaultRoutingSearchParameters()
+    search_parameters.first_solution_strategy = (
+        routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
+    search_parameters.time_limit.seconds = 3
+
+    solution = routing.SolveWithParameters(search_parameters)
+
+    if solution:
+        percorso_ottimizzato = []
+        index = routing.Start(0)
+        while not routing.IsEnd(index):
+            node_index = manager.IndexToNode(index)
+            if node_index != 0:
+                percorso_ottimizzato.append(all_locations[node_index])
+            index = solution.Value(routing.NextVar(index))
+        return percorso_ottimizzato
+    
+    return ottimizza_percorso_legacy(punti_consegna)
+
+def ottimizza_percorso_legacy(punti):
+    """Algoritmo Nearest Neighbor originale."""
     non_visitati, percorso, corrente = punti[:], [], DEPOT
     while non_visitati:
         idx, pross = min(enumerate(non_visitati), key=lambda x: (haversine(corrente, x[1]), x[0]))
@@ -44,20 +139,20 @@ def ottimizza_percorso(punti):
         corrente = pross
     return percorso
 
+# --- FINE LOGICA DI OTTIMIZZAZIONE ---
+
 def get_google_trip_data(percorso):
-    """Calcola KM e prova a scaricare le strade reali. Fallisce silenziosamente."""
+    """Calcola KM e scarica le strade reali via Google Directions API."""
     punti_pieni = [DEPOT] + percorso + [DEPOT]
     km_tot, sec_tot = 0, 0
     polylines = []
     
-    # Stima base (sempre presente per sicurezza)
     km_stima, sec_stima = 0, 0
     for k in range(len(punti_pieni)-1):
         d = haversine(punti_pieni[k], punti_pieni[k+1]) * 1.3
         km_stima += d
         sec_stima += (d / AVG_SPEED_KMH) * 3600
 
-    # Tentativo API
     try:
         chunk_size = 20 
         for i in range(0, len(punti_pieni)-1, chunk_size):
@@ -72,10 +167,8 @@ def get_google_trip_data(percorso):
                 polylines.append(r['routes'][0]['overview_polyline']['points'])
     except: pass
             
-    # Se le API hanno fallito o negato l'accesso, usiamo la stima
     final_km = round(km_tot if km_tot > 0 else km_stima, 1)
     final_guida_sec = sec_tot if sec_tot > 0 else sec_stima
-    
     t_guida_min = int(final_guida_sec / 60)
     t_sosta_min = len(percorso) * TIME_OFFSET_PER_STOP
     return final_km, t_guida_min, t_sosta_min, (t_guida_min + t_sosta_min), polylines
@@ -152,14 +245,12 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path):
             map = new Map(document.getElementById("map"), {{ zoom: 12, center: {{ lat: data[0].lat, lng: data[0].lon }}, mapId: 'DEMO_MAP_ID' }});
             data.forEach((p, i) => markers.push(new AdvancedMarkerElement({{ map, position: {{ lat: p.lat, lng: p.lon }}, content: createPin(i, i===0 || i===data.length-1) }})));
             
-            // Se abbiamo le strade reali (polylines scaricate da Python)
             if (polys.length > 0) {{
                 polys.forEach(pString => {{
                     const p = google.maps.geometry.encoding.decodePath(pString);
                     new google.maps.Polyline({{ path: p, strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6, map }});
                 }});
             }} else {{
-                // Fallback: Linee rette (come funzionava prima)
                 new google.maps.Polyline({{ 
                     path: data.map(p => ({{ lat: p.lat, lng: p.lon }})), 
                     strokeColor: "#4f46e5", strokeOpacity: 0.6, strokeWeight: 4, map 
@@ -234,7 +325,7 @@ def main():
     
     data_zone_sorted = sorted(data_zone, key=lambda x: x.get('id_zona', ''))
     
-    print(f"\n--- GENERAZIONE PERCORSI ({target_dir.name}) ---")
+    print(f"\n--- GENERAZIONE PERCORSI CON OR-TOOLS ({MODO_DISTANZA}) ---")
 
     for i, z in enumerate(data_zone_sorted, 1):
         punti = z.get("lista_punti", [])
@@ -255,6 +346,9 @@ def main():
 
     riepilogo_fname = sanitize_filename("RIEPILOGO_GIRI.html")
     gera_riepilogo(summary, out_dir / riepilogo_fname)
-    print(f"\n🚀 COMPLETATO! Linee visibili.")
+    print(f"\n🚀 COMPLETATO! Linee visibili con OR-Tools.")
 
-if __name__ == "__main__": main()
+if __name__ == "__main__": 
+    if not HAS_OR_TOOLS:
+        print("\nℹ️  Per risultati migliori, installa OR-Tools: pip install ortools\n")
+    main()

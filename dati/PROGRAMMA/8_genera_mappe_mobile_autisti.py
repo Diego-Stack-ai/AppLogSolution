@@ -2,6 +2,7 @@ import json
 import math
 import re
 import requests
+import subprocess
 from pathlib import Path
 
 # --- CONFIGURAZIONE ---
@@ -12,6 +13,14 @@ WEBAPP_FOLDER = ROOT_DIR / "frontend" / "mappe_autisti"
 GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
 
 DEPOT = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"}
+
+# Tentativo di import OR-Tools
+try:
+    from ortools.constraint_solver import routing_enums_pb2
+    from ortools.constraint_solver import pywrapcp
+    HAS_OR_TOOLS = True
+except ImportError:
+    HAS_OR_TOOLS = False
 
 def get_latest_consegne_dir():
     dirs = [d for d in CONSEGNE_DIR.iterdir() if d.is_dir() and d.name.startswith("CONSEGNE_")]
@@ -28,8 +37,43 @@ def haversine(p1, p2):
     a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
     return R * (2 * math.asin(math.sqrt(a)))
 
-def ottimizza_percorso(punti):
-    if not punti: return []
+# --- LOGICA DI OTTIMIZZAZIONE AVANZATA (OR-TOOLS) ---
+
+def ottimizza_percorso(punti_consegna):
+    if not punti_consegna: return []
+    if not HAS_OR_TOOLS: return ottimizza_percorso_legacy(punti_consegna)
+
+    all_locations = [DEPOT] + punti_consegna
+    n = len(all_locations)
+    distance_matrix = [[int(haversine(all_locations[i], all_locations[j]) * 1000) for j in range(n)] for i in range(n)]
+    
+    manager = pywrapcp.RoutingIndexManager(n, 1, 0)
+    routing = pywrapcp.RoutingModel(manager)
+
+    def distance_callback(from_index, to_index):
+        return distance_matrix[manager.IndexToNode(from_index)][manager.IndexToNode(to_index)]
+
+    transit_callback_index = routing.RegisterTransitCallback(distance_callback)
+    routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
+
+    search_parameters = pywrapcp.DefaultRoutingSearchParameters()
+    search_parameters.first_solution_strategy = (
+        routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
+    search_parameters.time_limit.seconds = 2
+
+    solution = routing.SolveWithParameters(search_parameters)
+
+    if solution:
+        percorso_ottimizzato = []
+        index = routing.Start(0)
+        while not routing.IsEnd(index):
+            node_index = manager.IndexToNode(index)
+            if node_index != 0: percorso_ottimizzato.append(all_locations[node_index])
+            index = solution.Value(routing.NextVar(index))
+        return percorso_ottimizzato
+    return ottimizza_percorso_legacy(punti_consegna)
+
+def ottimizza_percorso_legacy(punti):
     non_visitati, percorso, corrente = punti[:], [], DEPOT
     while non_visitati:
         idx, pross = min(enumerate(non_visitati), key=lambda x: (haversine(corrente, x[1]), x[0]))
@@ -37,6 +81,22 @@ def ottimizza_percorso(punti):
         non_visitati.pop(idx)
         corrente = pross
     return percorso
+
+def deploy_online():
+    """Esegue il push su GitHub e il deploy su Firebase."""
+    print("\n📦 Avvio deploy automatico su GitHub e Firebase...")
+    try:
+        # Push su GitHub
+        subprocess.run(["git", "add", "."], cwd=ROOT_DIR, check=True)
+        subprocess.run(["git", "commit", "-m", "Aggiornamento mappe autisti (auto-publish)"], cwd=ROOT_DIR, check=True)
+        subprocess.run(["git", "push"], cwd=ROOT_DIR, check=True)
+        print("✅ Push GitHub completato.")
+        
+        # Deploy Firebase
+        subprocess.run(["firebase", "deploy", "--only", "hosting"], cwd=ROOT_DIR, shell=True, check=True)
+        print("✅ Deploy Firebase completato.")
+    except Exception as e:
+        print(f"\n⚠️ Nota Deploy: {e}")
 
 def format_time(minutes):
     hh, mm = divmod(int(minutes), 60)
@@ -119,6 +179,7 @@ def main():
     target_dir = get_latest_consegne_dir()
     if not target_dir: return
     json_path = target_dir / "viaggi_giornalieri.json"
+    if not json_path.exists(): return
     with open(json_path, "r", encoding="utf-8") as f: viaggi = json.load(f)
 
     out_folder = target_dir / "MAPPE_MOBILE_WHATSAPP"
@@ -132,7 +193,6 @@ def main():
         if not p_raw: continue
         perc = ottimizza_percorso(p_raw)
         
-        # Statistiche
         km = round(sum(haversine(perc[j], perc[j+1]) for j in range(len(perc)-1)) * 1.25, 1)
         t_guida = int(km / 45 * 60)
         t_sosta = len(perc) * 7
@@ -160,6 +220,7 @@ def main():
     (out_folder / "LINK_WHATSAPP_AUTISTI.txt").write_text(txt_content, encoding="utf-8")
     (WEBAPP_FOLDER / "LINK_WHATSAPP_AUTISTI.txt").write_text(txt_content, encoding="utf-8")
 
-    print(f"\n🚀 OPERAZIONE COMPLETATA!\n📄 Statistiche incluse e nomi file ripristinati.")
+    print(f"\n✅ Generation completa con OR-Tools.")
+    deploy_online()
 
 if __name__ == "__main__": main()

@@ -7,7 +7,7 @@ echo     GENERAZIONE MAPPE PER SMARTPHONE (WHATSAPP)
 echo ------------------------------------------------------------
 echo.
 echo Sto generando i percorsi in ordine ottimizzato...
-python "%~dp0PROGRAMMA\8_genera_mappe_mobile_autisti.py"
+python "%~dp0PROGRAMMA\7_genera_mappe_mobile_autisti.py"
 echo.
 echo ------------------------------------------------------------
 echo OPERAZIONE COMPLETATA!

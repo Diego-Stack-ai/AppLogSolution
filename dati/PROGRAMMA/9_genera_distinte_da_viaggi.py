@@ -32,6 +32,7 @@ from pathlib import Path
 PROG_DIR     = Path(__file__).resolve().parent
 BASE_DIR     = PROG_DIR.parent
 CONSEGNE_DIR = BASE_DIR / "CONSEGNE"
+RIENTRI_XLSX = BASE_DIR / "rientri_ddt.xlsx"
 CODICE_VUOTO = "p00000"
 
 # Importa logica estrazione articoli da crea_distinta_magazzino
@@ -286,23 +287,74 @@ def _aggrega_articoli(lista: list) -> dict:
 # RICERCA PDF
 # ──────────────────────────────────────────────────────────────────────────────
 
+def _carica_rientri() -> dict:
+    """
+    Legge rientri_ddt.xlsx e restituisce un dizionario:
+        { codice_lower: 'DD-MM-YYYY' }
+    Colonna A = codice consegna (es. 'p1745')
+    Colonna B = data DDT originale (datetime o stringa)
+    Il PDF fisico va cercato in:
+        CONSEGNE_{data}/DDT-ORIGINALI-DIVISI/{FRUTTA o LATTE}/{codice}_{data}.pdf
+    """
+    if not RIENTRI_XLSX.exists():
+        return {}
+    try:
+        from openpyxl import load_workbook
+        wb = load_workbook(RIENTRI_XLSX, read_only=True, data_only=True)
+        ws = wb.active
+        rientri = {}
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            codice = row[0]
+            data_b = row[1]
+            if not codice or not data_b:
+                continue
+            codice = str(codice).strip().lower()
+            if hasattr(data_b, 'strftime'):
+                data_str = data_b.strftime("%d-%m-%Y")
+            else:
+                data_str = str(data_b).strip()
+            if codice and data_str:
+                rientri[codice] = data_str
+        wb.close()
+        return rientri
+    except Exception as e:
+        print(f"  ⚠️  Errore lettura rientri_ddt.xlsx: {e}")
+        return {}
+
+
 def _trova_pdf(codice: str, data: str, cartella: Path) -> Path | None:
     """
     Cerca il PDF del cliente nella cartella specificata.
     Nome atteso: {codice}_{data}.pdf  (es. p2067_26-03-2026.pdf)
-    Fallback: qualsiasi file che inizia con {codice}_
+
+    Supporta cartelle multi-data (es. "30-03-2026_31-03-2026"):
+      1. Prova la data esatta composta (es. p1745_30-03-2026_31-03-2026.pdf)
+      2. Per cartelle multi-data, prova ogni singola data separata (es. p1745_30-03-2026.pdf)
+      3. Fallback glob: qualsiasi file che inizia con {codice}_
     """
     if codice == CODICE_VUOTO or not codice:
         return None
-    # Ricerca esatta per data
-    nome_esatto = f"{codice}_{data}.pdf"
-    p = cartella / nome_esatto
+
+    # 1. Ricerca esatta (funziona per date singole e come primo tentativo)
+    p = cartella / f"{codice}_{data}.pdf"
     if p.exists():
         return p
-    # Fallback: cerca qualsiasi file che inizia con il codice
+
+    # 2. Se la data è multi-data (contiene "_" che separa due date DD-MM-YYYY_DD-MM-YYYY),
+    #    prova ogni singola data estratta
+    #    Formato atteso: "30-03-2026_31-03-2026" → ['30-03-2026', '31-03-2026']
+    parti_data = re.findall(r"\d{2}-\d{2}-\d{4}", data)
+    if len(parti_data) > 1:
+        for d in parti_data:
+            p = cartella / f"{codice}_{d}.pdf"
+            if p.exists():
+                return p
+
+    # 3. Fallback glob: cerca qualsiasi file che inizia con il codice
     matches = list(cartella.glob(f"{codice}_*.pdf"))
     if matches:
         return matches[0]
+
     return None
 
 
@@ -438,25 +490,30 @@ def _genera_distinta_pdf(viaggio: dict, articoli_viaggio: dict, out_path: Path, 
     doc.build(elementi)
 
     # --- Assembla fascicoli: [Distinta Copy 1 + DDTs] + [Distinta Copy 2 + DDTs] ---
+    # I DDT vengono allegati in ordine INVERSO rispetto al percorso:
+    # → Nel PDF: stop N, stop N-1, ..., stop 1
+    # → Dopo la stampa (i fogli escono impilati): stop 1 è in CIMA alla pila ✅
+    # Così l'autista trova subito il DDT della prima consegna senza sfogliare.
+    pdf_ddt_inv = list(reversed(pdf_ddt))
+
     try:
         from pypdf import PdfWriter, PdfReader
         writer = PdfWriter()
         reader_tmp = PdfReader(str(tmp))
-        
+
         # --- BLOCCO 1: AUTISTA ---
         if len(reader_tmp.pages) > 0:
             writer.add_page(reader_tmp.pages[0])
-        for pdf in pdf_ddt:
+        for pdf in pdf_ddt_inv:
             writer.append(str(pdf))
-            
+
         # --- BLOCCO 2: UFFICIO ---
         if len(reader_tmp.pages) > 1:
             writer.add_page(reader_tmp.pages[1])
         else:
-            # Fallback se non c'è page break (difficile)
             writer.add_page(reader_tmp.pages[0])
-            
-        for pdf in pdf_ddt:
+
+        for pdf in pdf_ddt_inv:
             writer.append(str(pdf))
 
         with open(out_path, "wb") as f:
@@ -507,6 +564,11 @@ def main():
     print(f"  9_GENERA_DISTINTE — {data_ddt}  ({len(viaggi)} giri)")
     print(f"{'='*65}\n")
 
+    # Carica mappa rientri: { codice: data_originale }
+    rientri = _carica_rientri()
+    if rientri:
+        print(f"  [RIENTRI] Caricati da rientri_ddt.xlsx: {len(rientri)} codici mappati")
+
     # Traccia i PDF usati (per verifica orfani)
     pdf_usati: set[Path] = set()
     pdf_generati: list[Path] = []
@@ -538,17 +600,38 @@ def main():
                 dir_frutta_r = dir_frutta
                 dir_latte_r  = dir_latte
 
-            for codice, cartella_tipo, tipo in [(cf, dir_frutta_r, "FRUTTA"), (cl, dir_latte_r, "LATTE")]:
+            for codice, tipo in [(cf, "FRUTTA"), (cl, "LATTE")]:
                 if codice == CODICE_VUOTO or not codice:
                     continue
-                pdf = _trova_pdf(codice, d_p, cartella_tipo)
+
+                pdf = None
+                tipo_trovato = tipo
+
+                if codice.lower() in rientri:
+                    # ── RIENTRO: cerca SOLO nella cartella della data storica (col. B) ──
+                    # Mai nella cartella corrente: il DDT di rientro è per definizione
+                    # archiviato nella cartella della sua data originale.
+                    data_rientro = rientri[codice.lower()]
+                    cart_storica = CONSEGNE_DIR / f"CONSEGNE_{data_rientro}" / "DDT-ORIGINALI-DIVISI"
+                    for sotto in ["FRUTTA", "LATTE"]:
+                        pdf = _trova_pdf(codice, data_rientro, cart_storica / sotto)
+                        if pdf:
+                            tipo_trovato = sotto
+                            break
+                else:
+                    # ── CONSEGNA NORMALE: cerca nella cartella della sessione corrente ──
+                    cart_tipo = dir_frutta_r if tipo == "FRUTTA" else dir_latte_r
+                    pdf = _trova_pdf(codice, d_p, cart_tipo)
+
                 if pdf:
                     pdf_usati.add(pdf)
-                    pdf_usati_viaggio.append(pdf)  # traccia per allegare alla distinta
-                    articoli = _raccogli_articoli_da_pdf(pdf, tipo)
+                    pdf_usati_viaggio.append(pdf)
+                    articoli = _raccogli_articoli_da_pdf(pdf, tipo_trovato)
                     articoli_giro.extend(articoli)
                     n_art = len(articoli)
-                    print(f"       ✅ {nome:<40} {codice} ({tipo}) → {n_art} art.")
+                    is_rientro = codice.lower() in rientri
+                    tag = f" [RIENTRO←{rientri[codice.lower()]}]" if is_rientro else ""
+                    print(f"       ✅ {nome:<40} {codice} ({tipo_trovato}){tag} → {n_art} art.")
                 else:
                     pdf_non_trovati.append(f"{codice} ({tipo})")
                     print(f"       ⚠️  {nome:<40} {codice} ({tipo}) → PDF non trovato")

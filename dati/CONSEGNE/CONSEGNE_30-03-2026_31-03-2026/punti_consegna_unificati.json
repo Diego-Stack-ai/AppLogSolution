@@ -7,7 +7,7 @@
       "codice_frutta": "p10949",
       "codice_latte": "p1937",
       "codice_univoco": "p10949_p1937",
-      "zona": "3106_B",
+      "zona": "3208",
       "data_consegna": "",
       "orario_min": "07:30",
       "orario_max": "10:00",
@@ -76,7 +76,7 @@
       "codice_frutta": "p13474",
       "codice_latte": "p00000",
       "codice_univoco": "p13474_p00000",
-      "zona": "3106_B",
+      "zona": "3208",
       "data_consegna": "",
       "orario_min": "08:30",
       "orario_max": "10:00",
@@ -214,7 +214,7 @@
       "codice_frutta": "p2140",
       "codice_latte": "p1764",
       "codice_univoco": "p2140_p1764",
-      "zona": "3106_B",
+      "zona": "3208",
       "data_consegna": "",
       "orario_min": "07:45",
       "orario_max": "10:00",
@@ -237,7 +237,7 @@
       "codice_frutta": "p2153",
       "codice_latte": "p00000",
       "codice_univoco": "p2153_p00000",
-      "zona": "3106_B",
+      "zona": "3208",
       "data_consegna": "",
       "orario_min": "08:15",
       "orario_max": "10:00",
@@ -260,7 +260,7 @@
       "codice_frutta": "p2155",
       "codice_latte": "p1840",
       "codice_univoco": "p2155_p1840",
-      "zona": "3106_B",
+      "zona": "3208",
       "data_consegna": "",
       "orario_min": "07:30",
       "orario_max": "10:00",
@@ -287,8 +287,8 @@
       "data_consegna": "",
       "orario_min": "07:45",
       "orario_max": "10:00",
-      "lat": 46.141585522141774,
-      "lon": 12.212802752923961,
+      "lat": 46.14158552214177,
+      "lon": 12.21280275292396,
       "codici_ddt_frutta": [
         "p2169"
       ],
@@ -306,7 +306,7 @@
       "codice_frutta": "p2233",
       "codice_latte": "p1700",
       "codice_univoco": "p2233_p1700",
-      "zona": "3106_B",
+      "zona": "3208",
       "data_consegna": "",
       "orario_min": "07:30",
       "orario_max": "10:00",
@@ -421,7 +421,7 @@
       "codice_frutta": "p8720",
       "codice_latte": "p00000",
       "codice_univoco": "p8720_p00000",
-      "zona": "3106_B",
+      "zona": "3208",
       "data_consegna": "",
       "orario_min": "08:00",
       "orario_max": "14:00",
@@ -443,7 +443,7 @@
       "indirizzo": "VIA MONTE PASUBIO3",
       "codice_frutta": "p2240",
       "codice_latte": "p1811",
-      "data_consegna": "30-03-2026_31-03-2026",
+      "data_consegna": "26-03-2026",
       "orario_min": "07:30",
       "orario_max": "10:00",
       "lat": 45.518701,
@@ -457,11 +457,13 @@
       "rientri_alert": [
         {
           "codice": "p2240",
-          "status": "red"
+          "status": "red",
+          "data_ddt": "26-03-2026"
         },
         {
           "codice": "p1811",
-          "status": "red"
+          "status": "red",
+          "data_ddt": "26-03-2026"
         }
       ],
       "row_idx_mappatura": 97,
@@ -474,7 +476,7 @@
       "indirizzo": "VIA ALCIDE DE GASPERI 43",
       "codice_frutta": "p2243",
       "codice_latte": "P1807",
-      "data_consegna": "30-03-2026_31-03-2026",
+      "data_consegna": "26-03-2026",
       "orario_min": "07:30",
       "orario_max": "10:00",
       "lat": 45.5516149,
@@ -488,11 +490,13 @@
       "rientri_alert": [
         {
           "codice": "p2243",
-          "status": "red"
+          "status": "red",
+          "data_ddt": "26-03-2026"
         },
         {
           "codice": "p1807",
-          "status": "red"
+          "status": "red",
+          "data_ddt": "26-03-2026"
         }
       ],
       "row_idx_mappatura": 76,
@@ -505,7 +509,7 @@
       "indirizzo": "VIA S.LORENZO 83",
       "codice_frutta": "p2244",
       "codice_latte": "p1810",
-      "data_consegna": "30-03-2026_31-03-2026",
+      "data_consegna": "26-03-2026",
       "orario_min": "07:30",
       "orario_max": "10:00",
       "lat": 45.5622293,
@@ -519,11 +523,13 @@
       "rientri_alert": [
         {
           "codice": "p2244",
-          "status": "red"
+          "status": "red",
+          "data_ddt": "26-03-2026"
         },
         {
           "codice": "p1810",
-          "status": "red"
+          "status": "red",
+          "data_ddt": "26-03-2026"
         }
       ],
       "row_idx_mappatura": 75,
@@ -536,7 +542,7 @@
       "indirizzo": "VIA MONS.G. MASIERO 1",
       "codice_frutta": "p8992",
       "codice_latte": "p2023",
-      "data_consegna": "30-03-2026_31-03-2026",
+      "data_consegna": "26-03-2026",
       "orario_min": "08:00",
       "orario_max": "10:00",
       "lat": 45.1088186,
@@ -550,11 +556,13 @@
       "rientri_alert": [
         {
           "codice": "p8992",
-          "status": "red"
+          "status": "red",
+          "data_ddt": "26-03-2026"
         },
         {
           "codice": "p2023",
-          "status": "red"
+          "status": "red",
+          "data_ddt": "26-03-2026"
         }
       ],
       "row_idx_mappatura": 274,
@@ -567,12 +575,12 @@
       "indirizzo": "VIA AMPELIO DE FAVERI 1",
       "codice_frutta": "p2389",
       "codice_latte": "p00000",
-      "data_consegna": "30-03-2026_31-03-2026",
+      "data_consegna": "25-03-2026",
       "orario_min": "08:00",
       "orario_max": "10:00",
       "lat": 45.7315669,
       "lon": 12.4391757,
-      "zona": "3106_B",
+      "zona": "3208",
       "codici_ddt_frutta": [
         "p2389"
       ],
@@ -580,7 +588,8 @@
       "rientri_alert": [
         {
           "codice": "p2389",
-          "status": "red"
+          "status": "red",
+          "data_ddt": "25-03-2026"
         }
       ],
       "row_idx_mappatura": 381,
@@ -593,7 +602,7 @@
       "indirizzo": "VIA ROMA 21",
       "codice_frutta": "p6032",
       "codice_latte": "p2001",
-      "data_consegna": "30-03-2026_31-03-2026",
+      "data_consegna": "25-03-2026",
       "orario_min": "08:00",
       "orario_max": "14:00",
       "lat": 46.5666887,
@@ -606,7 +615,8 @@
       "rientri_alert": [
         {
           "codice": "p6032",
-          "status": "red"
+          "status": "red",
+          "data_ddt": "25-03-2026"
         }
       ],
       "row_idx_mappatura": 2,
@@ -619,7 +629,7 @@
       "indirizzo": "VIA DI PIANO 30",
       "codice_frutta": "p8840",
       "codice_latte": "p1895",
-      "data_consegna": "30-03-2026_31-03-2026",
+      "data_consegna": "25-03-2026",
       "orario_min": "08:00",
       "orario_max": "14:00",
       "lat": 46.5989587,
@@ -632,7 +642,8 @@
       "rientri_alert": [
         {
           "codice": "p8840",
-          "status": "red"
+          "status": "red",
+          "data_ddt": "25-03-2026"
         }
       ],
       "row_idx_mappatura": 312,
@@ -645,7 +656,7 @@
       "indirizzo": "Via Dei Denever, 21 - S.Fosca",
       "codice_frutta": "p2108",
       "codice_latte": "p2655",
-      "data_consegna": "30-03-2026_31-03-2026",
+      "data_consegna": "25-03-2026",
       "orario_min": "07:45",
       "orario_max": "10:00",
       "lat": 46.4445552,
@@ -658,7 +669,8 @@
       "rientri_alert": [
         {
           "codice": "p2108",
-          "status": "red"
+          "status": "red",
+          "data_ddt": "25-03-2026"
         }
       ],
       "row_idx_mappatura": 129,

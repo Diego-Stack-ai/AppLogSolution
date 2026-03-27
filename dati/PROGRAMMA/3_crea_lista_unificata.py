@@ -159,33 +159,52 @@ def _carica_excel(path: Path):
     return data
 
 def _carica_rientri(map_codice: dict):
+    """Legge rientri_ddt.xlsx.
+    Col A = codice, Col B = data DDT originale (→ cartella CONSEGNE_), Col C = stato.
+    Restituisce:
+      rientri_per_riga  : {row_idx_mappa: [(codice, data_originale), ...]}
+      righe_da_lavorare : [(codice, riga_excel, data_originale), ...]
+    """
     path = BASE_DIR / "rientri_ddt.xlsx"
     if not path.exists(): return {}, []
     from openpyxl import load_workbook
+    from datetime import datetime as _dt
     wb = load_workbook(path, read_only=True, data_only=True)
     ws = wb.active
     rientri_per_riga = {}
-    righe_da_lavorare = [] # Lista di (codice, riga_excel)
-    
+    righe_da_lavorare = []  # (codice, riga_excel, data_originale)
+
     for r_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
         cod_r = _val(row[0].value)
         if not cod_r: continue
         stato = _val(row[2].value) if len(row) > 2 else ""
-        
-        # Saltiamo solo DDT già assegnati a una data di consegna
-        # (contengono data nel formato 'allegato DDT' o 'Allegato con DDT')
-        # I DDT con stato '' o 'In lavorazione' vengono riprocessati
+
+        # Saltiamo solo DDT già assegnati (contengono 'allegato' senza 'lavorazione')
         stato_lower = stato.lower()
-        ddt_assegnato = ('allegato' in stato_lower and 'lavorazione' not in stato_lower)
-        if ddt_assegnato: continue
-        
+        if 'allegato' in stato_lower and 'lavorazione' not in stato_lower:
+            continue
+
+        # ── Leggi colonna B: Data DDT originale ──────────────────────────────
+        val_b = row[1].value if len(row) > 1 else None
+        if val_b:
+            if hasattr(val_b, 'strftime'):               # datetime object
+                data_orig = val_b.strftime("%d-%m-%Y")
+            else:                                         # stringa "YYYY-MM-DD ..."
+                try:
+                    data_orig = _dt.strptime(str(val_b)[:10], "%Y-%m-%d").strftime("%d-%m-%Y")
+                except Exception:
+                    data_orig = ""
+        else:
+            data_orig = ""
+
         c = cod_r.lower()
         if c in map_codice:
             row_idx_mappa, _ = map_codice[c]
-            if row_idx_mappa not in rientri_per_riga: rientri_per_riga[row_idx_mappa] = []
-            if c not in rientri_per_riga[row_idx_mappa]:
-                rientri_per_riga[row_idx_mappa].append(c)
-                righe_da_lavorare.append((c, r_idx))
+            if row_idx_mappa not in rientri_per_riga:
+                rientri_per_riga[row_idx_mappa] = []
+            if not any(x[0] == c for x in rientri_per_riga[row_idx_mappa]):
+                rientri_per_riga[row_idx_mappa].append((c, data_orig))
+                righe_da_lavorare.append((c, r_idx, data_orig))
     wb.close()
     return rientri_per_riga, righe_da_lavorare
 
@@ -227,7 +246,7 @@ def main():
             print("Uso: py 3_crea_lista_unificata.py <data>")
             return 1
         folders.sort(key=lambda x: x.stat().st_mtime, reverse=True)
-        data = folders[0].name.split("_")[1]
+        data = folders[0].name[len("CONSEGNE_"):]  # es. "30-03-2026" o "30-03-2026_31-03-2026"
         print(f"Nessuna data specificata. Uso l'ultima cartella trovata: {data}")
     else:
         data = sys.argv[1].strip()
@@ -297,47 +316,51 @@ def main():
         add_punto(p, idx)
 
     # Gestione rientri
-    for idx_mappa, codici in rientri_globale.items():
+    # rientri_globale = {idx_mappa: [(codice, data_originale), ...]}
+    for idx_mappa, codici_con_date in rientri_globale.items():
         if idx_mappa in map_idx_mappa_to_punti:
             # Abbina il rientro ai punti di consegna esistenti (cliente presente oggi)
             for up in map_idx_mappa_to_punti[idx_mappa]:
                 current_codes = (up.get("codici_ddt_frutta") or []) + (up.get("codici_ddt_latte") or [])
-                for cr in codici:
+                for cr, data_orig in codici_con_date:
                     status = "yellow" if cr in current_codes else "red"
                     if not any(a["codice"] == cr for a in up["rientri_alert"]):
-                        up["rientri_alert"].append({"codice": cr, "status": status})
-                        r_excel = next((r for c, r in righe_excel_rientri if c == cr), None)
-                        if r_excel: righe_rientri_da_marcare.append(r_excel)  # allegato con successo
+                        up["rientri_alert"].append({"codice": cr, "status": status, "data_ddt": data_orig})
+                        r_excel = next((r for c, r, d in righe_excel_rientri if c == cr), None)
+                        if r_excel: righe_rientri_da_marcare.append(r_excel)
         else:
-            # DDT non abbinato ad alcuna consegna oggi → zona speciale
+            # DDT non abbinato ad alcuna consegna oggi → zona speciale sulla mappa
             path_m = PROG_DIR / "mappatura_destinazioni.xlsx"
             from openpyxl import load_workbook
             wb_m = load_workbook(path_m, read_only=True, data_only=True)
             ws_m = wb_m.active
             row = list(ws_m.iter_rows(min_row=idx_mappa, max_row=idx_mappa))[0]
-            nome_r = _val(row[2].value) or f"Rientro {codici[0]}"
-            ind_r = _val(row[4].value)
-            lat_r = row[12].value
-            lon_r = row[13].value
+            # Usa il primo codice per il nome fallback
+            primo_codice, primo_data_orig = codici_con_date[0]
+            nome_r = _val(row[2].value) or f"Rientro {primo_codice}"
+            ind_r  = _val(row[4].value)
+            lat_r  = row[12].value
+            lon_r  = row[13].value
             punto_r = {
                 "nome": nome_r,
                 "indirizzo": ind_r,
                 "codice_frutta": _val(row[0].value),
-                "codice_latte": _val(row[1].value),
-                "data_consegna": data,
+                "codice_latte":  _val(row[1].value),
+                # ← data originale del DDT (colonna B): indica la cartella CONSEGNE_ dove
+                #   si trova fisicamente il PDF. Usata da 9_genera_distinte per trovarlo.
+                "data_consegna": primo_data_orig or data,
                 "orario_min": _val(row[10].value),
                 "orario_max": _val(row[11].value),
                 "lat": lat_r,
                 "lon": lon_r,
-                "zona": "DDT_DA_INSERIRE",   # zona speciale visibile sulla mappa
+                "zona": "DDT_DA_INSERIRE",
                 "codici_ddt_frutta": [],
-                "codici_ddt_latte": [],
-                "rientri_alert": [{"codice": cr, "status": "red"} for cr in codici],
+                "codici_ddt_latte":  [],
+                "rientri_alert": [{"codice": cr, "status": "red", "data_ddt": d} for cr, d in codici_con_date],
                 "row_idx_mappatura": idx_mappa,
-                "_is_rientro_speciale": True   # flag per la mappa
+                "_is_rientro_speciale": True
             }
-            # Aggiungi i codici DDT rientro alle liste
-            for cr in codici:
+            for cr, data_orig in codici_con_date:
                 tipo = _val(row[0].value).lower()
                 if tipo:
                     punto_r["codici_ddt_frutta"].append(cr)
@@ -345,9 +368,9 @@ def main():
                     punto_r["codici_ddt_latte"].append(cr)
             unificati.append(punto_r)
             wb_m.close()
-            # Marca come 'In lavorazione' (non scrivere data, non ancora assegnato)
-            for cr in codici:
-                r_excel = next((r for c, r in righe_excel_rientri if c == cr), None)
+            # Marca come 'In lavorazione'
+            for cr, _ in codici_con_date:
+                r_excel = next((r for c, r, d in righe_excel_rientri if c == cr), None)
                 if r_excel: righe_rientri_in_lavorazione.append(r_excel)
 
     lista_finale = unificati

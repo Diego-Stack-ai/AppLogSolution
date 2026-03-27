@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>V01</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker"></script>
+    <style>
+        :root { --p: #4f46e5; --accent: #10b981; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: #f8fafc; overflow: hidden; }
+        .main-container { display: flex; flex-direction: column; height: 100vh; }
+        #map { height: 48vh; width: 100%; background: #dfe5eb; position: relative; }
+        #sidebar { flex: 1; display: flex; flex-direction: column; background: white; border-top: 2px solid #cbd5e1; overflow: hidden; }
+        .header { padding: 4px 12px; background: #1e293b; color: white; border-bottom: 2px solid var(--accent); }
+        .trip-title { margin: 0; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
+        .stats-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 1px; }
+        .stat-item { flex: 1; display: flex; flex-direction: column; align-items: start; }
+        .stat-val { font-size: 0.82rem; font-weight: 800; color: white; line-height: 1; }
+        .stat-lbl { font-size: 0.52rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-top: 1px; }
+        #delivery-list { flex: 1; overflow-y: auto; padding: 8px; background: #f1f5f9; padding-bottom: 40px; }
+        .card { background: white; border-radius: 10px; padding: 10px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; border: 1px solid #cbd5e1; cursor: pointer; }
+        .card.next { border-color: var(--accent); background: #f0fdf4; border-left: 4px solid var(--accent); }
+        .stop-num { width: 24px; height: 24px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10px; flex-shrink: 0; }
+        .next .stop-num { background: var(--accent); }
+        .stop-info { flex: 1; min-width: 0; }
+        .name { display: block; font-size: 0.8rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .addr { font-size: 0.65rem; color: #64748b; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .btn-nav { background: var(--accent); color: white; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0; }
+        .icon-nav { width: 18px; height: 18px; fill: white; }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div id="map"></div>
+        <div id="sidebar">
+            <div class="header">
+                <div class="trip-title">🏎️ V01 | Zone: 3202, DDT_DA_INSERIRE</div>
+                <div class="stats-row">
+                    <div class="stat-item"><span class="stat-val">129.2km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 52m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">35m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">3h 27m</span><span class="stat-lbl">Totale</span></div>
+                </div>
+            </div>
+            <div id="delivery-list"><div class="card next" onclick="focusOn(0)"><div class="stop-num">1</div><div class="stop-info"><b class="name">A.Gabelli Belluno</b><span class="addr">Piazzale Cesare Battisti, 32100 Belluno (BL)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=46.14158552214177,12.21280275292396&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(1)"><div class="stop-num">2</div><div class="stop-info"><b class="name">"A. DORIGUZZI ROSSIN" - DANTA</b><span class="addr">VIA ROMA 21</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=46.5666887,12.5217516&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(2)"><div class="stop-num">3</div><div class="stop-info"><b class="name">PRIMARIA COMELICO SUPERIORE</b><span class="addr">VIA DI PIANO 30</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=46.5989587,12.4935433&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(3)"><div class="stop-num">4</div><div class="stop-info"><b class="name">Don Talamini- Selva Di Cadore</b><span class="addr">Via Dei Denever, 21 - S.Fosca</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=46.4445552,12.0611814&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(4)"><div class="stop-num">5</div><div class="stop-info"><b class="name">Scuola Primaria Agosti</b><span class="addr">Piazza S.Giovanni Bosco,12, 32100 Belluno (BL)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=46.3746098,12.1211294&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div></div>
+        </div>
+    </div>
+    <script>
+        const data = [{"cliente": "A.Gabelli Belluno", "indirizzo": "Piazzale Cesare Battisti, 32100 Belluno (BL)", "lat": 46.14158552214177, "lon": 12.21280275292396}, {"cliente": "\"A. DORIGUZZI ROSSIN\" - DANTA", "indirizzo": "VIA ROMA 21", "lat": 46.5666887, "lon": 12.5217516}, {"cliente": "PRIMARIA COMELICO SUPERIORE", "indirizzo": "VIA DI PIANO 30", "lat": 46.5989587, "lon": 12.4935433}, {"cliente": "Don Talamini- Selva Di Cadore", "indirizzo": "Via Dei Denever, 21 - S.Fosca", "lat": 46.4445552, "lon": 12.0611814}, {"cliente": "Scuola Primaria Agosti", "indirizzo": "Piazza S.Giovanni Bosco,12, 32100 Belluno (BL)", "lat": 46.3746098, "lon": 12.1211294}]; let map, markers = [];
+        const svg_icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>';
+
+        async function initMap() {
+            try {
+                map = new google.maps.Map(document.getElementById("map"), { zoom: 12, center: { lat: data[0].lat, lng: data[0].lon }, disableDefaultUI: false });
+                const ds = new google.maps.DirectionsService();
+                const dr = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6 } });
+                const waypts = data.slice(1, -1).map(d => ({ location: { lat: d.lat, lng: d.lon }, stopover: true }));
+                ds.route({ origin: { lat: data[0].lat, lng: data[0].lon }, destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, waypoints: waypts, travelMode: "DRIVING" }, (res, st) => { if (st === "OK") dr.setDirections(res); });
+                data.forEach((p, i) => {
+                    const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i+1).toString(), color: "white", size: "10px", fontWeight: "bold" }, title: p.cliente });
+                    m.addListener("click", () => { new google.maps.InfoWindow({ content: `<b>${i+1}. ${p.cliente}</b>` }).open(map, m); });
+                    markers.push(m);
+                });
+                const b = new google.maps.LatLngBounds(); data.forEach(p => b.extend({ lat: p.lat, lng: p.lon })); map.fitBounds(b);
+            } catch (e) { console.error(e); }
+        }
+        function focusOn(i) { map.panTo(markers[i].getPosition()); map.setZoom(17); }
+        window.onload = initMap;
+    </script>
+</body>
+</html>

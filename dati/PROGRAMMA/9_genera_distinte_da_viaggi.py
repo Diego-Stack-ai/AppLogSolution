@@ -293,6 +293,8 @@ def _carica_rientri() -> dict:
         { codice_lower: 'DD-MM-YYYY' }
     Colonna A = codice consegna (es. 'p1745')
     Colonna B = data DDT originale (datetime o stringa)
+    Colonna C = stato: se contiene 'allegato' (senza 'lavorazione') → già consegnato, salta.
+
     Il PDF fisico va cercato in:
         CONSEGNE_{data}/DDT-ORIGINALI-DIVISI/{FRUTTA o LATTE}/{codice}_{data}.pdf
     """
@@ -308,6 +310,12 @@ def _carica_rientri() -> dict:
             data_b = row[1]
             if not codice or not data_b:
                 continue
+
+            # ── Filtro colonna C: salta i rientri già consegnati ──────────
+            stato = str(row[2] or "").strip().lower() if len(row) > 2 else ""
+            if "allegato" in stato and "lavorazione" not in stato:
+                continue   # già consegnato in una sessione precedente
+
             codice = str(codice).strip().lower()
             if hasattr(data_b, 'strftime'):
                 data_str = data_b.strftime("%d-%m-%Y")
@@ -320,6 +328,7 @@ def _carica_rientri() -> dict:
     except Exception as e:
         print(f"  ⚠️  Errore lettura rientri_ddt.xlsx: {e}")
         return {}
+
 
 
 def _trova_pdf(codice: str, data: str, cartella: Path) -> Path | None:

@@ -115,8 +115,16 @@ def _carica_mappatura():
     return map_codice
 
 
-def _elabora_cartella(cartella_input: Path, map_codice: dict) -> list[dict]:
-    """Estrae i DDT dalla cartella e ritorna lista di punti trovati."""
+def _elabora_cartella(cartella_input: Path, map_codice: dict,
+                      pdf_frutta_presenti: set, pdf_latte_presenti: set) -> list[dict]:
+    """Estrae i DDT dalla cartella e ritorna lista di punti trovati.
+
+    codice_frutta / codice_latte vengono impostati SOLO se il PDF
+    corrispondente e' fisicamente presente nella rispettiva cartella.
+    Questo evita i falsi ⚠️ 'PDF non trovato' in 9_genera_distinte
+    per scuole che in mappatura hanno entrambi i codici ma quel giorno
+    ricevono solo frutta (o solo latte).
+    """
     import pdfplumber
     punti_per_riga: dict[int, dict] = {}
 
@@ -134,17 +142,25 @@ def _elabora_cartella(cartella_input: Path, map_codice: dict) -> list[dict]:
                     if row_idx not in punti_per_riga:
                         punti_per_riga[row_idx] = {
                             **dato,
+                            "codice_frutta": "p00000",   # di default: nessuno
+                            "codice_latte":  "p00000",   # di default: nessuno
                             "codici_ddt_trovati": [luogo],
                             "zona": zona
                         }
                     else:
                         punti_per_riga[row_idx]["codici_ddt_trovati"].append(luogo)
                         if zona: punti_per_riga[row_idx]["zona"] = zona
-                        # aggiorna i codici Frutta / Latte se presenti
-                        if dato["codice_frutta"]:
-                            punti_per_riga[row_idx]["codice_frutta"] = dato["codice_frutta"]
-                        if dato["codice_latte"]:
-                            punti_per_riga[row_idx]["codice_latte"] = dato["codice_latte"]
+
+                    # Imposta codice_frutta SOLO se il PDF frutta e' presente
+                    cf = dato.get("codice_frutta", "")
+                    if cf and cf.lower() not in ("p00000", "") and cf.lower() in pdf_frutta_presenti:
+                        punti_per_riga[row_idx]["codice_frutta"] = cf
+
+                    # Imposta codice_latte SOLO se il PDF latte e' presente
+                    cl = dato.get("codice_latte", "")
+                    if cl and cl.lower() not in ("p00000", "") and cl.lower() in pdf_latte_presenti:
+                        punti_per_riga[row_idx]["codice_latte"] = cl
+
         except Exception as e:
             print(f"  Errore {pdf_path.name}: {e}")
 
@@ -213,10 +229,29 @@ def main():
     map_codice = _carica_mappatura()
     print(f"Mappatura caricata: {len(map_codice)} codici\n")
 
+    # ── Costruisce i set di codici PDF fisicamente presenti ──────────────────
+    # Legge i nomi file nelle cartelle FRUTTA e LATTE ed estrae il codice
+    # (es. "p2063_30-03-2026.pdf" → "p2063")
+    def _codici_in_cartella(cart: Path) -> set:
+        if not cart.exists():
+            return set()
+        codici = set()
+        for f in cart.glob("*.pdf"):
+            # nome atteso: {codice}_{data}.pdf  oppure {codice}_{data}_N.pdf
+            parti = f.stem.split("_")
+            if parti:
+                codici.add(parti[0].lower())
+        return codici
+
+    pdf_frutta_presenti = _codici_in_cartella(input_frutta)
+    pdf_latte_presenti  = _codici_in_cartella(input_latte)
+    print(f"  PDF presenti → FRUTTA: {len(pdf_frutta_presenti)}  LATTE: {len(pdf_latte_presenti)}")
+
     punti_totali = []
     for cartella in [input_frutta, input_latte]:
         if cartella.exists():
-            punti_totali.extend(_elabora_cartella(cartella, map_codice))
+            punti_totali.extend(_elabora_cartella(cartella, map_codice,
+                                                  pdf_frutta_presenti, pdf_latte_presenti))
         else:
             print(f"  Cartella non trovata: {cartella}")
 
@@ -226,11 +261,14 @@ def main():
         chiave = (pt["nome"], pt["indirizzo"])
         if chiave in punti_unici:
             # aggiorna codici e DDT trovati
+            # Aggiorna solo se il nuovo valore è un codice reale (non p00000, non vuoto)
             esistente = punti_unici[chiave]
-            if pt.get("codice_frutta"):
-                esistente["codice_frutta"] = pt["codice_frutta"]
-            if pt.get("codice_latte"):
-                esistente["codice_latte"] = pt["codice_latte"]
+            cf_new = pt.get("codice_frutta", "")
+            cl_new = pt.get("codice_latte",  "")
+            if cf_new and cf_new.lower() not in ("p00000", ""):
+                esistente["codice_frutta"] = cf_new
+            if cl_new and cl_new.lower() not in ("p00000", ""):
+                esistente["codice_latte"] = cl_new
             esistente["codici_ddt_trovati"] = ", ".join(
                 sorted(set(esistente["codici_ddt_trovati"].split(", ") + pt["codici_ddt_trovati"].split(", ")))
             )

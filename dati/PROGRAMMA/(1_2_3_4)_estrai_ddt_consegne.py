@@ -224,10 +224,16 @@ def _pulisci_output(base: Path, data_v: str):
 # --- ARTICOLI NOTI ---
 ARTICOLI_NOTI = {"ME-T-DI-V0-NA", "PE-T-DI-L3-NA", "10-GEL", "10-FLYER", "10-MANIFESTO", "LT-DL-02-LC", "LT-ES-04-LS",
                  "LT-ESL-IN-LB", "LT-AQ-04-LV", "YO-BI-MN-04-LB", "YO-DL-02-LC", "AP-SU-PC", "FO-DI-PV-04-LB",
-                 "CA-Z-BI-L3-NA", "FO-DI-GP-01-NI", "FVNS-03-GADGET", "KI-S-BI-L3-NA", "FVNS-03-POSTER"}
+                 "CA-Z-BI-L3-NA", "FO-DI-GP-01-NI", "FVNS-03-GADGET", "KI-S-BI-L3-NA", "FVNS-03-POSTER",
+                 # Aggiunti 26/03/2026
+                 "FI-Z-BI-L3-NA",   # Finocchio biologico da porzionare in classe
+                 "ME-S-BI-L3-NA",   # Mela biologica del territorio per estratto
+                 }
 
 def _verifica_nuovi_articoli(base):
-    print("Verifica articoli..."); import pdfplumber; trovati = set(); art_re = re.compile(r'^([A-Z0-9]{2,}-[A-Z0-9\-]+|FVNS-\d+-)', re.M)
+    print("Verifica articoli..."); import pdfplumber; trovati = set()
+    # Regex: cattura codici standard (es. 10-FLYER) e codici data flyer (es. --300326)
+    art_re = re.compile(r'^([A-Z0-9]{2,}-[A-Z0-9\-]+|FVNS-\d+-|--\d{6})', re.M)
     divisi = base / "DDT-ORIGINALI-DIVISI"
     if not divisi.exists(): return True
     for p in divisi.rglob("*.pdf"):
@@ -237,6 +243,8 @@ def _verifica_nuovi_articoli(base):
                     for m in art_re.finditer(pg.extract_text() or ""):
                         c = m.group(1).strip()
                         if c == "FVNS-03-": c = "FVNS-03-POSTER"
+                        # Normalizza codici data flyer (--NNNNNN) → 10-FLYER
+                        if re.match(r'^--\d{6}$', c): c = "10-FLYER"
                         trovati.add(c)
         except: continue
     nuovi = trovati - ARTICOLI_NOTI

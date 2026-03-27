@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script>
+        (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. See https://goo.gle/js-api-loading-troubleshooting"):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
+            key: "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4",
+            v: "beta"
+        });
+    </script>
+    <style>
+        :root { 
+            --primary: #6366f1; --primary-dark: #4f46e5; --bg: #0f172a; 
+            --sidebar-bg: #ffffff; --text-main: #1e293b; --text-muted: #64748b;
+            --accent: #10b981; --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Inter', sans-serif; height: 100vh; display: flex; background: var(--bg); overflow: hidden; }
+        #sidebar { width: 400px; height: 100%; background: var(--sidebar-bg); border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; z-index: 1000; box-shadow: 10px 0 30px rgba(0,0,0,0.05); }
+        #header { padding: 25px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; }
+        #zone-list { flex: 1; overflow-y: auto; padding: 15px; background: #f8fafc; }
+        .zone-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; margin-bottom: 12px; cursor: pointer; transition: 0.2s; box-shadow: var(--card-shadow); }
+        .zone-card.selected { border: 2px solid var(--primary); background: #f5f3ff; }
+        .zone-header { display: flex; align-items: center; gap: 10px; }
+        .color-pill { width: 12px; height: 12px; border-radius: 4px; }
+        .zone-title { font-weight: 700; flex: 1; font-size: 0.9rem; }
+        #map { flex: 1; }
+        .btn { padding: 6px 10px; font-size: 0.7rem; font-weight: 700; cursor: pointer; border-radius: 6px; border: 1px solid #ddd; background: white; }
+        .btn-confirm { background: #22c55e; color: white; border: none; }
+        .btn-cancel { background: #ef4444; color: white; border: none; }
+        .btn-lock { background: #f1f5f9; min-width: 100px; }
+        .btn-lock.locked { background: #ef4444; color: white; }
+        #save-status { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 10px 20px; background: #10b981; color: white; border-radius: 30px; font-weight: 700; display: none; z-index: 5000; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .custom-marker { position: absolute; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 11px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid white; transition: 0.2s; }
+        .m-tonda { border-radius: 50%; }
+        .m-goccia { border-radius: 50% 50% 50% 0; transform: rotate(-45deg); }
+        .m-goccia span { transform: rotate(45deg); }
+        .m-quadrato { border-radius: 4px; }
+        .m-triangolo { background: transparent !important; border-left: 18px solid transparent; border-right: 18px solid transparent; border-bottom: 36px solid #ccc; width: 0 !important; height: 0 !important; border-radius:0; }
+        .m-triangolo span { position: absolute; top: 16px; left: -8px; width: 16px; }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <div id="header">
+            <h1 style="margin:0; font-size:1.2rem;">Gestione Zone <span id="tot-points" style="font-size:0.7rem; opacity:0.7;">0 Punti</span></h1>
+            <div style="margin-top:10px; display:flex; justify-content: space-between; align-items:center;">
+                <button onclick="saveAllToServer()" style="background:var(--accent); color:white; border:none; padding:8px 15px; border-radius:8px; font-weight:800; cursor:pointer;">SALVA TUTTO</button>
+                <div style="text-align:right;"><small style="opacity:0.6;">30-03-2026</small></div>
+            </div>
+            <div style="display:flex; gap:5px; margin-top:10px;">
+                <button onclick="toggleLockMap()" id="btn-lock-map" class="btn btn-lock">CARICAMENTO...</button>
+                <button id="btn-toggle-drag" onclick="toggleDragging()" class="btn" style="flex:1;">🔒 SPOSTA PUNTI (OFF)</button>
+            </div>
+        </div>
+        <div id="zone-list"></div>
+    </div>
+    <div id="map"></div>
+    <div id="save-status">💾 AGGIORNAMENTO COMPLETATO!</div>
+
+    <script>
+        let DATA_ZONE = [{"id_zona": "0000", "lista_punti": [{"nome": "SCUOLA PRIMARIA \"DON L. MILANI\"", "indirizzo": "VIA AMPELIO DE FAVERI 1", "codice_frutta": "p2389", "codice_latte": "p00000", "data_consegna": "30-03-2026", "orario_min": "08:00", "orario_max": "10:00", "lat": 45.7315669, "lon": 12.4391757, "zona": "0000", "codici_ddt_frutta": [], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p2389", "status": "red"}], "row_idx_mappatura": 381, "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"DON L. MILANI\" VIA AMPELIO DE FAVERI 1", "geo_query_indirizzo": "VIA AMPELIO DE FAVERI 1"}, {"nome": "\"G. SCARABELLOTTO\" ORSAGO", "indirizzo": "VIA DON MILANI 4", "codice_frutta": "p13590", "codice_latte": "p00000", "data_consegna": "30-03-2026", "orario_min": "07:30", "orario_max": "10:00", "lat": 45.9276608, "lon": 12.4231599, "zona": "0000", "codici_ddt_frutta": [], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p13590", "status": "red"}], "row_idx_mappatura": 13, "geo_query_nome_indirizzo": "\"G. SCARABELLOTTO\" ORSAGO VIA DON MILANI 4", "geo_query_indirizzo": "VIA DON MILANI 4"}, {"nome": "\"A. DORIGUZZI ROSSIN\" - DANTA", "indirizzo": "VIA ROMA 21", "codice_frutta": "p6032", "codice_latte": "p2001", "data_consegna": "30-03-2026", "orario_min": "08:00", "orario_max": "14:00", "lat": 46.5666887, "lon": 12.5217516, "zona": "0000", "codici_ddt_frutta": [], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p6032", "status": "red"}, {"codice": "p2001", "status": "red"}], "row_idx_mappatura": 2, "geo_query_nome_indirizzo": "\"A. DORIGUZZI ROSSIN\" - DANTA VIA ROMA 21", "geo_query_indirizzo": "VIA ROMA 21"}, {"nome": "\"DON UMBERTO TRAME\" LAMOSANO", "indirizzo": "VIA TARCOGNA 116", "codice_frutta": "p2384", "codice_latte": "p00000", "data_consegna": "30-03-2026", "orario_min": "08:00", "orario_max": "10:00", "lat": 46.1762785, "lon": 12.3886223, "zona": "0000", "codici_ddt_frutta": [], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p2384", "status": "red"}], "row_idx_mappatura": 10, "geo_query_nome_indirizzo": "\"DON UMBERTO TRAME\" LAMOSANO VIA TARCOGNA 116", "geo_query_indirizzo": "VIA TARCOGNA 116"}, {"nome": "Don Talamini- Selva Di Cadore", "indirizzo": "Via Dei Denever, 21 - S.Fosca", "codice_frutta": "p2108", "codice_latte": "p2655", "data_consegna": "30-03-2026", "orario_min": "07:45", "orario_max": "10:00", "lat": 46.4445552, "lon": 12.0611814, "zona": "0000", "codici_ddt_frutta": [], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p2108", "status": "red"}, {"codice": "p2655", "status": "red"}], "row_idx_mappatura": 129, "geo_query_nome_indirizzo": "Don Talamini- Selva Di Cadore Via Dei Denever, 21 - S.Fosca", "geo_query_indirizzo": "Via Dei Denever, 21 - S.Fosca"}, {"nome": "SC. ELEM. STATALE DI SOVRAMONTE", "indirizzo": "PIANA DI SORRIVA 332", "codice_frutta": "p11826", "codice_latte": "p00000", "data_consegna": "30-03-2026", "orario_min": "07:30", "orario_max": "14:00", "lat": 46.0555732641349, "lon": 11.7762608155279, "zona": "0000", "codici_ddt_frutta": [], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p11826", "status": "red"}], "row_idx_mappatura": 369, "geo_query_nome_indirizzo": "SC. ELEM. STATALE DI SOVRAMONTE PIANA DI SORRIVA 332", "geo_query_indirizzo": "PIANA DI SORRIVA 332"}, {"nome": "PRIMARIA COMELICO SUPERIORE", "indirizzo": "VIA DI PIANO 30", "codice_frutta": "p8840", "codice_latte": "p1895", "data_consegna": "30-03-2026", "orario_min": "08:00", "orario_max": "14:00", "lat": 46.5989587, "lon": 12.4935433, "zona": "0000", "codici_ddt_frutta": [], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p8840", "status": "red"}, {"codice": "p1895", "status": "red"}], "row_idx_mappatura": 312, "geo_query_nome_indirizzo": "PRIMARIA COMELICO SUPERIORE VIA DI PIANO 30", "geo_query_indirizzo": "VIA DI PIANO 30"}, {"nome": "CURTAROLO-LOC. PIEVE", "indirizzo": "VIA MONTE PASUBIO3", "codice_frutta": "p2240", "codice_latte": "p1811", "data_consegna": "30-03-2026", "orario_min": "07:30", "orario_max": "10:00", "lat": 45.518701, "lon": 11.8313461, "zona": "0000", "codici_ddt_frutta": [], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p2240", "status": "red"}, {"codice": "p1811", "status": "red"}], "row_idx_mappatura": 97, "geo_query_nome_indirizzo": "CURTAROLO-LOC. PIEVE VIA MONTE PASUBIO3", "geo_query_indirizzo": "VIA MONTE PASUBIO3"}, {"nome": "CAMPO S.MARTINO-LOC. MARSANGO", "indirizzo": "VIA ALCIDE DE GASPERI 43", "codice_frutta": "p2243", "codice_latte": "P1807", "data_consegna": "30-03-2026", "orario_min": "07:30", "orario_max": "10:00", "lat": 45.5516149, "lon": 11.8348171, "zona": "0000", "codici_ddt_frutta": [], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p2243", "status": "red"}, {"codice": "p1807", "status": "red"}], "row_idx_mappatura": 76, "geo_query_nome_indirizzo": "CAMPO S.MARTINO-LOC. MARSANGO VIA ALCIDE DE GASPERI 43", "geo_query_indirizzo": "VIA ALCIDE DE GASPERI 43"}, {"nome": "CAMPO S.MARTINO-LOC. BUSIAGO", "indirizzo": "VIA S.LORENZO 83", "codice_frutta": "p2244", "codice_latte": "p1810", "data_consegna": "30-03-2026", "orario_min": "07:30", "orario_max": "10:00", "lat": 45.5622293, "lon": 11.8243292, "zona": "0000", "codici_ddt_frutta": [], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p2244", "status": "red"}, {"codice": "p1810", "status": "red"}], "row_idx_mappatura": 75, "geo_query_nome_indirizzo": "CAMPO S.MARTINO-LOC. BUSIAGO VIA S.LORENZO 83", "geo_query_indirizzo": "VIA S.LORENZO 83"}, {"nome": "MASI-ZONARO", "indirizzo": "VIA MONS.G. MASIERO 1", "codice_frutta": "p8992", "codice_latte": "p2023", "data_consegna": "30-03-2026", "orario_min": "08:00", "orario_max": "10:00", "lat": 45.1088186, "lon": 11.4919124, "zona": "0000", "codici_ddt_frutta": [], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p8992", "status": "red"}, {"codice": "p2023", "status": "red"}], "row_idx_mappatura": 274, "geo_query_nome_indirizzo": "MASI-ZONARO VIA MONS.G. MASIERO 1", "geo_query_indirizzo": "VIA MONS.G. MASIERO 1"}], "color": "#06b6d4", "nome_giro": "Viaggio 7"}, {"id_zona": "3101", "lista_punti": [{"nome": "SCUOLA PARITARIA PRIMARIA \"LUIGI CABURLOTTO\"", "indirizzo": "VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)", "codice_frutta": "p10949", "codice_latte": "p1937", "codice_univoco": "p10949_p1937", "zona": "3101", "data_consegna": "", "orario_min": "07:30", "orario_max": "10:00", "lat": 45.4994935, "lon": 12.2373604, "codici_ddt_frutta": ["p10949"], "codici_ddt_latte": ["p1937"], "rientri_alert": [], "row_idx_mappatura": 375, "geo_query_nome_indirizzo": "SCUOLA PARITARIA PRIMARIA \"LUIGI CABURLOTTO\" VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)", "geo_query_indirizzo": "VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)"}, {"nome": "Istituto Farina", "indirizzo": "Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)", "codice_frutta": "p2233", "codice_latte": "p1700", "codice_univoco": "p2233_p1700", "zona": "3101", "data_consegna": "", "orario_min": "07:30", "orario_max": "10:00", "lat": 45.4991227, "lon": 12.2384022, "codici_ddt_frutta": ["p2233"], "codici_ddt_latte": ["p1700"], "rientri_alert": [], "row_idx_mappatura": 241, "geo_query_nome_indirizzo": "Istituto Farina Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)", "geo_query_indirizzo": "Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)"}], "color": "#4f46e5", "nome_giro": "Viaggio 1"}, {"id_zona": "3103", "lista_punti": [{"nome": "Fondazione Levis Plona", "indirizzo": "Porta S. Croce N.55, 36100 Vicenza (VI)", "codice_frutta": "p11205", "codice_latte": "p1831", "codice_univoco": "p11205_p1831", "zona": "3103", "data_consegna": "", "orario_min": "07:30", "orario_max": "10:00", "lat": 45.5521980922683, "lon": 11.5371475374494, "codici_ddt_frutta": ["p11205"], "codici_ddt_latte": ["p1831"], "rientri_alert": [], "row_idx_mappatura": 157, "geo_query_nome_indirizzo": "Fondazione Levis Plona Porta S. Croce N.55, 36100 Vicenza (VI)", "geo_query_indirizzo": "Porta S. Croce N.55, 36100 Vicenza (VI)"}, {"nome": "Ic Vicenza 2 E 4 - G.B. Tiepolo", "indirizzo": "Via Palemone, 14, 36100 Vicenza (VI)", "codice_frutta": "p2044", "codice_latte": "p1906", "codice_univoco": "p2044_p1906", "zona": "3103", "data_consegna": "", "orario_min": "08:00", "orario_max": "10:00", "lat": 45.5468441, "lon": 11.5727897, "codici_ddt_frutta": ["p2044"], "codici_ddt_latte": ["p1906"], "rientri_alert": [], "row_idx_mappatura": 227, "geo_query_nome_indirizzo": "Ic Vicenza 2 E 4 - G.B. Tiepolo Via Palemone, 14, 36100 Vicenza (VI)", "geo_query_indirizzo": "Via Palemone, 14, 36100 Vicenza (VI)"}, {"nome": "Scuola Primaria D. Alighieri Grisignano Di", "indirizzo": "Via Pavese, 36040 Grisignano Di Zocco (VI)", "codice_frutta": "p2063", "codice_latte": "p1745", "codice_univoco": "p2063_p1745", "zona": "3103", "data_consegna": "", "orario_min": "08:00", "orario_max": "10:00", "lat": 45.4747764, "lon": 11.694348, "codici_ddt_frutta": ["p2063"], "codici_ddt_latte": ["p1745"], "rientri_alert": [], "row_idx_mappatura": 393, "geo_query_nome_indirizzo": "Scuola Primaria D. Alighieri Grisignano Di Via Pavese, 36040 Grisignano Di Zocco (VI)", "geo_query_indirizzo": "Via Pavese, 36040 Grisignano Di Zocco (VI)"}], "color": "#10b981", "nome_giro": "Viaggio 2"}, {"id_zona": "3104", "lista_punti": [{"nome": "MUSSOLENTE - CASONI", "indirizzo": "VIA FRANCESCO BARACCA 2, 36060 MUSSOLENTE (VICENZA)", "codice_frutta": "p11969", "codice_latte": "p00000", "codice_univoco": "p11969_p00000", "zona": "3104", "data_consegna": "", "orario_min": "07:15", "orario_max": "10:00", "lat": 45.7553727, "lon": 11.810372, "codici_ddt_frutta": ["p11969"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 286, "geo_query_nome_indirizzo": "MUSSOLENTE - CASONI VIA FRANCESCO BARACCA 2, 36060 MUSSOLENTE (VICENZA)", "geo_query_indirizzo": "VIA FRANCESCO BARACCA 2, 36060 MUSSOLENTE (VICENZA)"}], "color": "#f59e0b", "nome_giro": "Viaggio 3"}, {"id_zona": "3105", "lista_punti": [{"nome": "A. Da Tremignon", "indirizzo": "Via Borsellino, 25, 35016 Piazzola Sul Brenta (PD)", "codice_frutta": "p2128", "codice_latte": "p00000", "codice_univoco": "p2128_p00000", "zona": "3105", "data_consegna": "", "orario_min": "08:00", "orario_max": "10:00", "lat": 45.5184479, "lon": 11.8079308, "codici_ddt_frutta": ["p2128"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 32, "geo_query_nome_indirizzo": "A. Da Tremignon Via Borsellino, 25, 35016 Piazzola Sul Brenta (PD)", "geo_query_indirizzo": "Via Borsellino, 25, 35016 Piazzola Sul Brenta (PD)"}], "color": "#8b5cf6", "nome_giro": "Viaggio 5"}, {"id_zona": "3208", "lista_punti": [{"nome": "S. Pertini - Tempo Pieno", "indirizzo": "Via Vallio, 5, 30013 Cavallino Treporti (VE)", "codice_frutta": "p2155", "codice_latte": "p1840", "codice_univoco": "p2155_p1840", "zona": "3208", "data_consegna": "", "orario_min": "07:30", "orario_max": "10:00", "lat": 45.4521302, "lon": 12.4414766, "codici_ddt_frutta": ["p2155"], "codici_ddt_latte": ["p1840"], "rientri_alert": [], "row_idx_mappatura": 340, "geo_query_nome_indirizzo": "S. Pertini - Tempo Pieno Via Vallio, 5, 30013 Cavallino Treporti (VE)", "geo_query_indirizzo": "Via Vallio, 5, 30013 Cavallino Treporti (VE)"}, {"nome": "\"ANDREA MUSALO\" - BIANCADE", "indirizzo": "VIA DARY 17, 31030 RONCADE (TREVISO)", "codice_frutta": "p8720", "codice_latte": "p00000", "codice_univoco": "p8720_p00000", "zona": "3208", "data_consegna": "", "orario_min": "08:00", "orario_max": "14:00", "lat": 45.6478559, "lon": 12.3609891, "codici_ddt_frutta": ["p8720"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 5, "geo_query_nome_indirizzo": "\"ANDREA MUSALO\" - BIANCADE VIA DARY 17, 31030 RONCADE (TREVISO)", "geo_query_indirizzo": "VIA DARY 17, 31030 RONCADE (TREVISO)"}], "color": "#ec4899", "nome_giro": "Viaggio 6"}, {"id_zona": "3211", "lista_punti": [{"nome": "EROI DEL PIAVE - SALETTO", "indirizzo": "VIA SERG.MAGG.D'AVANZO 67, 31030 BREDA DI PIAVE (TREVISO)", "codice_frutta": "p13474", "codice_latte": "p00000", "codice_univoco": "p13474_p00000", "zona": "3211", "data_consegna": "", "orario_min": "08:30", "orario_max": "10:00", "lat": 45.7201101392011, "lon": 12.3984965383125, "codici_ddt_frutta": ["p13474"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 146, "geo_query_nome_indirizzo": "EROI DEL PIAVE - SALETTO VIA SERG.MAGG.D'AVANZO 67, 31030 BREDA DI PIAVE (TREVISO)", "geo_query_indirizzo": "VIA SERG.MAGG.D'AVANZO 67, 31030 BREDA DI PIAVE (TREVISO)"}, {"nome": "Scuola Primaria G. Marconi Di Padernello", "indirizzo": "Via Giusti, 19, 31038 Padernello (TV)", "codice_frutta": "p2140", "codice_latte": "p1764", "codice_univoco": "p2140_p1764", "zona": "3211", "data_consegna": "", "orario_min": "07:45", "orario_max": "10:00", "lat": 45.6817259, "lon": 12.1253065, "codici_ddt_frutta": ["p2140"], "codici_ddt_latte": ["p1764"], "rientri_alert": [], "row_idx_mappatura": 399, "geo_query_nome_indirizzo": "Scuola Primaria G. Marconi Di Padernello Via Giusti, 19, 31038 Padernello (TV)", "geo_query_indirizzo": "Via Giusti, 19, 31038 Padernello (TV)"}], "color": "#ef4444", "nome_giro": "Viaggio 4"}];
+        let map, gMarkers = [], DRAGGING_ENABLED = false, isLockedGlobal = false;
+        let activeExpandedZid = null, activeAction = null, activeSourceZid = null;
+
+        async function initMap() {
+            const { Map } = await google.maps.importLibrary("maps");
+            map = new Map(document.getElementById("map"), { center: { lat: 45.5, lng: 11.8 }, zoom: 9, mapTypeId: 'hybrid', mapId: "MY_MAP_ID" });
+            _updateLockUI();
+            updateTotals();
+            await renderMarkers();
+            renderSidebar();
+            if(gMarkers.length) { 
+                let b = new google.maps.LatLngBounds(); 
+                gMarkers.forEach(m => b.extend(m.position)); 
+                map.fitBounds(b); 
+            }
+        }
+
+        function _updateLockUI() {
+            const btn = document.getElementById('btn-lock-map');
+            btn.innerHTML = isLockedGlobal ? 'BLOCCATA 🔒' : 'SBLOCCATA 🔓';
+            btn.className = 'btn btn-lock' + (isLockedGlobal ? ' locked' : '');
+        }
+
+        async function toggleLockMap() {
+            isLockedGlobal = !isLockedGlobal;
+            fetch('/toggle_lock', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action: isLockedGlobal?'lock':'unlock'}) })
+            .then(() => { _updateLockUI(); renderMarkers(); renderSidebar(); });
+        }
+
+        async function toggleDragging() {
+            DRAGGING_ENABLED = !DRAGGING_ENABLED;
+            const btn = document.getElementById('btn-toggle-drag');
+            btn.textContent = DRAGGING_ENABLED ? "🔓 SPOSTA PUNTI (ON)" : "🔒 SPOSTA PUNTI (OFF)";
+            btn.style.background = DRAGGING_ENABLED ? "#10b981" : "#4b5563";
+            btn.style.color = "white";
+            await renderMarkers();
+        }
+
+        async function renderMarkers() {
+            gMarkers.forEach(m => m.setMap(null)); gMarkers = [];
+            const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+            const coordCounts = {};
+            DATA_ZONE.forEach(z => {
+                z.lista_punti.forEach((p, idx) => {
+                    if (!p.lat) return;
+                    const key = `${p.lat.toFixed(6)}_${p.lon.toFixed(6)}`;
+                    coordCounts[key] = (coordCounts[key] || 0) + 1;
+                    const layer = coordCounts[key];
+                    let shape = 'm-goccia';
+                    if (layer === 2) shape = 'm-quadrato'; else if (layer === 3) shape = 'm-triangolo'; else if (layer > 3) shape = 'm-tonda';
+                    
+                    const el = document.createElement("div");
+                    el.className = `custom-marker ${shape}`;
+                    if (shape === 'm-triangolo') el.style.borderBottomColor = z.color; else el.style.backgroundColor = z.color;
+                    el.innerHTML = `<span>${idx+1}</span>`;
+                    
+                    const m = new AdvancedMarkerElement({ position: {lat: p.lat, lng: p.lon}, map: map, title: p.nome, content: el, gmpDraggable: DRAGGING_ENABLED && !isLockedGlobal });
+                    m.addListener("dragend", () => {
+                        p.lat = m.position.lat; p.lon = m.position.lng;
+                        _salvaSingolo(p.nome, p.indirizzo || '', p.lat, p.lon);
+                    });
+                    m.addListener("gmp-click", () => {
+                        new google.maps.InfoWindow({ content: `<div style="padding:10px;"><b>${p.nome}</b><br>${p.indirizzo}<br><br><button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}')" style="width:100%; cursor:pointer;">VEDI SU GOOGLE</button></div>` }).open(map, m);
+                    });
+                    gMarkers.push(m);
+                });
+            });
+        }
+
+        function _salvaSingolo(nome, indirizzo, lat, lon) {
+            fetch('/save_coord', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({nome, indirizzo, lat, lon}) })
+            .then(r => r.json())
+            .then(d => { 
+                let st = document.getElementById('save-status');
+                if (d.status === 'ok') {
+                    st.style.background = '#10b981';
+                    st.textContent = '✅ Salvato: ' + nome;
+                } else {
+                    st.style.background = '#ef4444';
+                    st.textContent = '❌ Errore: ' + (d.msg || 'sconosciuto');
+                }
+                st.style.display = 'block'; 
+                setTimeout(()=>{st.style.display='none';}, 3000); 
+            })
+            .catch(err => {
+                let st = document.getElementById('save-status');
+                st.style.background = '#ef4444';
+                st.textContent = '❌ Connessione persa!';
+                st.style.display = 'block';
+                setTimeout(()=>{st.style.display='none';}, 3000);
+            });
+        }
+
+        function renderSidebar() {
+            const list = document.getElementById('zone-list');
+            list.innerHTML = DATA_ZONE.filter(z => z.lista_punti.length > 0).map(z => {
+                const isSelected = (activeExpandedZid === z.id_zona) || (activeSourceZid === z.id_zona);
+                return `
+                <div class="zone-card ${isSelected ? 'selected' : ''}" onclick="focusZone('${z.id_zona}')">
+                    <div class="zone-header">
+                        <div class="color-pill" style="background: ${z.color}"></div>
+                        <div class="zone-title"><span style="display:block;">${z.nome_giro || z.id_zona}</span><span style="display:block; font-size:0.65rem; font-weight:600; color:#94a3b8;">Zona ${z.id_zona}</span></div><span style="font-size:0.7rem; font-weight:800; opacity:0.6;">${z.lista_punti.length}</span>
+
+                    </div>
+                    ${isSelected ? `
+                        <div style="margin-top:10px; max-height:250px; overflow-y:auto; border-top:1px solid #eee; padding-top:10px;">
+                            ${z.lista_punti.map((p, idx) => {
+                                const pid = (p.codice_frutta + "_" + p.nome).replace(/[^a-zA-Z0-9]/g, '_');
+                                let ctrl = '';
+                                if (activeAction === 'dividi') ctrl = `<input type="checkbox" class="dividi-chk" value="${pid}" onclick="event.stopPropagation()">`;
+                                else if (activeAction === 'sposta') ctrl = `<select class="sposta-sel" data-pid="${pid}" onclick="event.stopPropagation()" style="font-size:0.6rem; width:80px;"><option value="">--</option>${DATA_ZONE.filter(o=>o.id_zona!==z.id_zona).map(o=>`<option value="${o.id_zona}">${o.id_zona}</option>`).join('')}</select>`;
+                                
+                                return `<div style="font-size:0.7rem; margin-bottom:5px; display:flex; justify-content:space-between;">
+                                    <span title="${p.indirizzo}">${p.nome} <b>(${idx+1})</b></span>
+                                    ${ctrl}
+                                </div>`;
+                            }).join('')}
+                        </div>
+                        <div style="margin-top:10px; display:flex; gap:4px;">
+                            ${activeAction ? `
+                                <button class="btn btn-cancel" onclick="event.stopPropagation(); cancelAction()">X</button>
+                                <button class="btn btn-confirm" style="flex:1;" onclick="event.stopPropagation(); ${activeAction==='dividi'?'executeDividi':'executeSposta'}('${z.id_zona}')">OK</button>
+                            ` : `
+                                <button class="btn" style="flex:1;" ${isLockedGlobal?'disabled':''} onclick="event.stopPropagation(); startAction('dividi', '${z.id_zona}')">DIVIDI</button>
+                                <button class="btn" style="flex:1;" ${isLockedGlobal?'disabled':''} onclick="event.stopPropagation(); startAction('sposta', '${z.id_zona}')">SPOSTA</button>
+                            `}
+                        </div>
+                    ` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        function focusZone(zid) { if(activeAction) return; activeExpandedZid = (activeExpandedZid === zid) ? null : zid; renderSidebar(); }
+        function startAction(type, zid) { activeAction = type; activeSourceZid = zid; renderSidebar(); }
+        function cancelAction() { activeAction = null; activeSourceZid = null; renderSidebar(); }
+
+        function executeDividi(sourceZid) {
+            const z = DATA_ZONE.find(x => x.id_zona === sourceZid);
+            const chks = document.querySelectorAll('.dividi-chk:checked');
+            if(!chks.length) return alert("Seleziona punti!");
+            const ids = Array.from(chks).map(c => c.value);
+            const toMove = z.lista_punti.filter(p => ids.includes((p.codice_frutta + "_" + p.nome).replace(/[^a-zA-Z0-9]/g, '_')));
+            const newZ = { id_zona: sourceZid+"_B", nome_giro: (z.nome_giro||"Viaggio")+"/B", color: "#"+Math.floor(Math.random()*16777215).toString(16), lista_punti: toMove };
+            z.lista_punti = z.lista_punti.filter(p => !toMove.includes(p));
+            DATA_ZONE.push(newZ);
+            cancelAction(); updateTotals(); renderMarkers(); renderSidebar();
+        }
+
+        function executeSposta(sourceZid) {
+            const z = DATA_ZONE.find(x => x.id_zona === sourceZid);
+            const sels = document.querySelectorAll('.sposta-sel');
+            sels.forEach(s => {
+                if(s.value) {
+                    const target = DATA_ZONE.find(x => x.id_zona === s.value);
+                    const pid = s.dataset.pid;
+                    const pIdx = z.lista_punti.findIndex(p => (p.codice_frutta + "_" + p.nome).replace(/[^a-zA-Z0-9]/g, '_') === pid);
+                    if(pIdx >= 0) { target.lista_punti.push(z.lista_punti.splice(pIdx, 1)[0]); }
+                }
+            });
+            cancelAction(); updateTotals(); renderMarkers(); renderSidebar();
+        }
+
+        function updateTotals() {
+            const total = DATA_ZONE.reduce((acc, z) => acc + z.lista_punti.length, 0);
+            document.getElementById('tot-points').textContent = `${total} Punti`;
+        }
+
+        function saveAllToServer() {
+            const btn = event.target; btn.disabled = true; btn.textContent = "...";
+            fetch('/save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(DATA_ZONE) })
+            .then(() => { 
+                document.getElementById('save-status').style.display = 'block'; 
+                setTimeout(()=>document.getElementById('save-status').style.display='none', 3000); 
+            }).finally(() => { btn.disabled = false; btn.textContent = "SALVA TUTTO"; });
+        }
+
+        window.onload = initMap;
+    </script>
+</body>
+</html>

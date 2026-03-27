@@ -405,7 +405,7 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
     # Intestazione
     elementi.append(Paragraph(f"DISTINTA DI CARICO — {nome_giro}  [{label}]", st_titolo))
     elementi.append(Paragraph(f"Zone: {zone}  |  Fermate: {n_fermate}  |  Data: {data_ddt}", st_sub))
-    elementi.append(Paragraph("⚠️  Caricare nell'ordine inverso: l'ULTIMA fermata va caricata PER PRIMA.", st_warn))
+    elementi.append(Paragraph("PERICOLO: Caricare nell'ordine inverso: l'ULTIMA fermata va caricata PER PRIMA.", st_warn))
     elementi.append(Spacer(1, 4*mm))
 
     # ── SEZIONE 1: ARTICOLI (RICHIESTA: PRIMA IL RIEPILOGO ARTICOLI) ──
@@ -414,7 +414,7 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
     for (codice, scadenza), art in sorted(articoli_viaggio.items(), key=lambda x: x[0][0]):
         qty_cons, display = _consolida_quantita(codice, art["quantita"])
         kg_tot = float(art["kg"]) if art["kg"] else 0
-        nota = "" if codice in ARTICOLI_NOTI else "⚠️ NUOVO"
+        nota = "" if codice in ARTICOLI_NOTI else "[!] NUOVO"
         dati_art.append([
             codice,
             display or "—",
@@ -570,7 +570,7 @@ def main():
     out_dir.mkdir(exist_ok=True)
 
     print(f"\n{'='*65}")
-    print(f"  9_GENERA_DISTINTE — {data_ddt}  ({len(viaggi)} giri)")
+    print(f"  9_GENERA_DISTINTE - {data_ddt}  ({len(viaggi)} giri)")
     print(f"{'='*65}\n")
 
     # Carica mappa rientri: { codice: data_originale }
@@ -588,7 +588,7 @@ def main():
         punti     = viaggio.get("lista_punti", [])
         data_v    = viaggio.get("data_ddt", data_ddt)
 
-        print(f"  📦 {nome_giro} (zone: {zone}) — {len(punti)} fermate")
+        print(f"  [GIRO] {nome_giro} (zone: {zone}) - {len(punti)} fermate")
 
         articoli_giro: list[dict] = []
         pdf_non_trovati: list[str] = []
@@ -640,14 +640,14 @@ def main():
                     n_art = len(articoli)
                     is_rientro = codice.lower() in rientri
                     tag = f" [RIENTRO←{rientri[codice.lower()]}]" if is_rientro else ""
-                    print(f"       ✅ {nome:<40} {codice} ({tipo_trovato}){tag} → {n_art} art.")
+                    print(f"       OK {nome:<40} {codice} ({tipo_trovato}){tag} -> {n_art} art.")
                 else:
                     pdf_non_trovati.append(f"{codice} ({tipo})")
-                    print(f"       ⚠️  {nome:<40} {codice} ({tipo}) → PDF non trovato")
+                    print(f"       !! {nome:<40} {codice} ({tipo}) -> PDF non trovato")
 
         # Aggrega articoli del viaggio
         articoli_agg = _aggrega_articoli(articoli_giro)
-        print(f"       → Totale articoli distinti: {len(articoli_agg)}")
+        print(f"       -> Totale articoli distinti: {len(articoli_agg)}")
 
         # Genera PDF distinta
         sanitized = re.sub(r'[\\/*?:"<>|]', '_', nome_giro)
@@ -658,9 +658,9 @@ def main():
         try:
             _genera_distinta_pdf(viaggio, articoli_agg, out_pdf, data_ddt, list(pdf_usati_viaggio))
             pdf_generati.append(out_pdf)
-            print(f"       📄 Salvato: {pdf_name} (doppia copia + {len(pdf_usati_viaggio)} DDT x2)\n")
+            print(f"       DOC Salvato: {pdf_name} (doppia copia + {len(pdf_usati_viaggio)} DDT x2)\n")
         except Exception as e:
-            print(f"       ❌ Errore PDF: {e}\n")
+            print(f"       ERR Errore PDF: {e}\n")
 
     # ── Assembla Master PDF ──
     if pdf_generati:
@@ -672,14 +672,14 @@ def main():
                 writer.append(str(p))
             with open(master_path, "wb") as f:
                 writer.write(f)
-            print(f"  📚 Master PDF: {master_path.name}")
+            print(f"  BIB Master PDF: {master_path.name}")
         except ImportError:
             print("  ⚠️  pypdf non installato — Master PDF non generato (pip install pypdf)")
         except Exception as e:
             print(f"  ⚠️  Errore Master PDF: {e}")
 
     # ── Verifica orfani ──
-    print(f"\n  🔍 Verifica DDT orfani...")
+    print(f"\n  FIN Verifica DDT orfani...")
     tutti_pdf: list[Path] = []
     for d in [dir_frutta, dir_latte]:
         if d.exists():
@@ -687,15 +687,15 @@ def main():
 
     orfani = [p for p in tutti_pdf if p not in pdf_usati]
     if orfani:
-        print(f"  ⚠️  {len(orfani)} PDF non assegnati a nessun viaggio:")
+        print(f"  !! {len(orfani)} PDF non assegnati a nessun viaggio:")
         for p in sorted(orfani):
             print(f"       - {p.parent.name}/{p.name}")
     else:
-        print(f"  ✅ Tutti i PDF DDT sono stati assegnati a un viaggio.")
+        print(f"  OK Tutti i PDF DDT sono stati assegnati a un viaggio.")
 
     # ── Riepilogo finale ──
     print(f"\n{'='*65}")
-    print(f"  ✅ COMPLETATO!")
+    print(f"  OK COMPLETATO!")
     print(f"     Distinte generate: {len(pdf_generati)}")
     print(f"     Cartella output:   {out_dir.name}")
     print(f"{'='*65}\n")

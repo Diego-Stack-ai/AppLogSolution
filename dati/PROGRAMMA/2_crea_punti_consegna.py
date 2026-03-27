@@ -191,7 +191,7 @@ def main():
             print("Uso: py crea_punti_consegna.py <data>")
             return 1
         folders.sort(key=lambda x: x.stat().st_mtime, reverse=True)
-        data = folders[0].name.split("_")[1]
+        data = folders[0].name[len("CONSEGNE_"):]  # es. "30-03-2026" o "30-03-2026_31-03-2026"
         print(f"Nessuna data specificata. Uso l'ultima cartella: {data}")
     else:
         data = sys.argv[1].strip()

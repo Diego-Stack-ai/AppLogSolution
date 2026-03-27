@@ -5,14 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.31">
+    <link rel="stylesheet" href="styles.css?v=1.33">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="LogSolution">
+    <meta name="apple-mobile-web-app-title" content="Log Solutions">
     <link rel="apple-touch-icon" href="img/logo.png">
     <meta name="theme-color" content="#4f46e5">
 </head>
@@ -121,6 +121,57 @@
 
             <h3 class="section-title" style="margin-top: 48px;">Elenco Utenti Firestore</h3>
             <div id="listaAutisti" style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- Popolato da JS -->
+            </div>
+        </div>
+
+        <!-- Sezione Gestione Clienti & Viaggi -->
+        <div id="toggleProgettiBtn"
+            style="display: flex; justify-content: space-between; align-items: center; margin: 32px 0 0 0; cursor: pointer; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <h3 class="section-title" style="margin: 0;">📦 Gestione Clienti &amp; Viaggi</h3>
+            <span class="material-icons-round" id="toggleProgettiIcon" style="color: var(--primary); transition: transform 0.3s ease;">expand_more</span>
+        </div>
+
+        <div id="progettiContent" style="display: none; padding-top: 20px;">
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
+                💡 Gestisci qui i clienti/progetti e i viaggi associati. Questi dati vengono usati nel dropdown della pagina <b>Registrazione Turno</b>.
+            </p>
+
+            <!-- Form aggiunta/modifica cliente -->
+            <div class="form-grid" style="margin-bottom: 16px;">
+                <div class="input-group">
+                    <label for="progettoNomeInput">Nome Cliente / Progetto *</label>
+                    <input type="text" id="progettoNomeInput" placeholder="es. PROGETTO SCUOLE" style="text-transform: uppercase;">
+                </div>
+            </div>
+
+            <!-- Gestione viaggi del cliente -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                <label style="font-size: 13px; font-weight: 600; color: #475569; display: block; margin-bottom: 10px;">Viaggi associati</label>
+                <div id="viaggiTagList" style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 36px; margin-bottom: 10px;"></div>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="nuovoViaggio" placeholder="es. VIAGGIO 01 o BS * BRESCIA" style="flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px;">
+                    <button type="button" onclick="aggiungiViaggio()" class="btn-primary" style="width: auto; padding: 10px 16px; font-size: 13px;">+ Aggiungi</button>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-bottom: 32px;">
+                <button type="button" id="btnSalvaProgetto" class="btn-primary" style="flex: 1;">Salva Cliente</button>
+                <button type="button" id="btnAnnullaProgetto" class="btn-primary" style="flex: 1; background:#f1f5f9; color:#334155; box-shadow:none; display:none;">Annulla</button>
+            </div>
+
+            <!-- Importazione dati predefiniti -->
+            <div id="importDefaultBox" style="background:#fffbeb; border:1px dashed #f59e0b; border-radius:12px; padding:16px; margin-bottom:24px; display:none;">
+                <p style="margin:0 0 12px 0; font-size:13px; color:#92400e;">
+                    ⚠️ Nessun cliente configurato. Vuoi importare i <b>4 clienti predefiniti</b> (PROGETTO SCUOLE, CATTEL, GRAN CHEF, BAUER) con i loro viaggi?
+                </p>
+                <button type="button" id="btnImportDefault" class="btn-primary" style="background:#f59e0b; box-shadow:0 4px 12px rgba(245,158,11,0.3); font-size:13px; padding:10px 20px; width:auto;">
+                    ⬆️ Importa Dati Predefiniti
+                </button>
+            </div>
+
+            <h3 class="section-title">Clienti Esistenti</h3>
+            <div id="listaProgetti" style="display: flex; flex-direction: column; gap: 12px;">
                 <!-- Popolato da JS -->
             </div>
         </div>
@@ -462,9 +513,168 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=1.31"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.31"></script>
+    <script src="script.js?v=1.33"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.33"></script>
+
+    <script type="module">
+    // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
+    import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot }
+        from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { firebaseConfig } from "./firebase-config.js";
+
+    const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    // ── CRUD locale (non dipende da window.saveProgetto) ──────────────────
+    async function saveProgetto(id, data) {
+        if (id) { await updateDoc(doc(db, "progetti", id), data); }
+        else     { await addDoc(collection(db, "progetti"), data); }
+    }
+    async function delProgetto(id) { await deleteDoc(doc(db, "progetti", id)); }
+
+    // ── DATI DI DEFAULT ───────────────────────────────────────────────────
+    const DEFAULT_PROGETTI = [
+        { nome: 'PROGETTO SCUOLE', viaggi: ['VIAGGIO 01','VIAGGIO 02','VIAGGIO 03','VIAGGIO 04','VIAGGIO 05','VIAGGIO 06','VIAGGIO 07','VIAGGIO 08','VIAGGIO 09','VIAGGIO 10'] },
+        { nome: 'CATTEL',          viaggi: ['BS * BRESCIA', 'FBS * FUORI BRESCIA'] },
+        { nome: 'GRAN CHEF',       viaggi: ['BL 1 * BELLUNO', 'BS * BRESCIA'] },
+        { nome: 'BAUER',           viaggi: ['VI * VICENZA', 'TV * TREVISO'] }
+    ];
+
+    // ── STATO ─────────────────────────────────────────────────────────────
+    let currentViaggi = [];
+    let editId = null;
+    let progettiCache = [];
+
+    // ── LISTENER REALTIME ─────────────────────────────────────────────────
+    onSnapshot(collection(db, "progetti"), snap => {
+        progettiCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        window.appData = window.appData || {};
+        window.appData.lista_progetti = progettiCache;
+        renderLista();
+        // aggiorna anche il dropdown in inserimento se disponibile
+        if (typeof window.renderProgettiInserimento === 'function') window.renderProgettiInserimento();
+    });
+
+    // ── INIT DOM ──────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggleBtn   = document.getElementById('toggleProgettiBtn');
+        const contentDiv  = document.getElementById('progettiContent');
+        const iconSpan    = document.getElementById('toggleProgettiIcon');
+        const nomeInput   = document.getElementById('progettoNomeInput');
+        const tagList     = document.getElementById('viaggiTagList');
+        const nuovoVInput = document.getElementById('nuovoViaggio');
+        const btnSalva    = document.getElementById('btnSalvaProgetto');
+        const btnAnnulla  = document.getElementById('btnAnnullaProgetto');
+
+        // Collassa/espandi
+        toggleBtn.addEventListener('click', () => {
+            const open = contentDiv.style.display !== 'none';
+            contentDiv.style.display = open ? 'none' : 'block';
+            iconSpan.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
+        });
+
+        // Aggiungi viaggio come tag
+        window.aggiungiViaggio = () => {
+            const v = nuovoVInput.value.trim().toUpperCase();
+            if (!v || currentViaggi.includes(v)) { nuovoVInput.value = ''; return; }
+            currentViaggi.push(v); nuovoVInput.value = ''; renderTagList();
+        };
+        nuovoVInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); window.aggiungiViaggio(); } });
+
+        function renderTagList() {
+            tagList.innerHTML = '';
+            currentViaggi.forEach((v, i) => {
+                const tag = document.createElement('div');
+                tag.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:#e0e7ff;color:#3730a3;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;';
+                tag.innerHTML = `<span>${v}</span><span onclick="rimuoviViaggio(${i})" style="cursor:pointer;font-weight:900;color:#6366f1;font-size:14px;line-height:1;">×</span>`;
+                tagList.appendChild(tag);
+            });
+        }
+
+        window.rimuoviViaggio = i => { currentViaggi.splice(i, 1); renderTagList(); };
+
+        // Salva
+        btnSalva.onclick = async () => {
+            const nome = nomeInput.value.trim().toUpperCase();
+            if (!nome) return alert('Inserire il nome del cliente.');
+            btnSalva.disabled = true; btnSalva.textContent = 'Salvataggio...';
+            try {
+                await saveProgetto(editId, { nome, viaggi: currentViaggi });
+                resetForm();
+            } catch(e) { alert('Errore: ' + e.message); }
+            finally { btnSalva.disabled = false; btnSalva.textContent = editId ? 'Aggiorna Cliente' : 'Salva Cliente'; }
+        };
+
+        btnAnnulla.onclick = resetForm;
+
+        function resetForm() {
+            editId = null; currentViaggi = []; nomeInput.value = ''; renderTagList();
+            btnSalva.textContent = 'Salva Cliente'; btnAnnulla.style.display = 'none';
+        }
+
+        // Modifica
+        window.editProgetto = id => {
+            const p = progettiCache.find(x => x.id === id);
+            if (!p) return;
+            editId = id; nomeInput.value = p.nome || ''; currentViaggi = [...(p.viaggi || [])];
+            renderTagList(); btnSalva.textContent = 'Aggiorna Cliente'; btnAnnulla.style.display = 'block';
+            contentDiv.scrollIntoView({ behavior: 'smooth' });
+        };
+
+        // Elimina
+        window.deleteProgetto_ui = async (id, nome) => {
+            if (!confirm(`Eliminare "${nome}" e tutti i suoi viaggi?`)) return;
+            try { await delProgetto(id); } catch(e) { alert('Errore: ' + e.message); }
+        };
+
+        // Importa default
+        document.getElementById('btnImportDefault').onclick = async () => {
+            const btn = document.getElementById('btnImportDefault');
+            btn.disabled = true; btn.textContent = 'Importazione...';
+            try {
+                for (const p of DEFAULT_PROGETTI) await saveProgetto(null, p);
+                btn.textContent = '✅ Importati!';
+            } catch(e) {
+                alert('Errore importazione: ' + e.message);
+                btn.disabled = false; btn.textContent = '⬆️ Importa Dati Predefiniti';
+            }
+        };
+    });
+
+    // ── RENDER LISTA ──────────────────────────────────────────────────────
+    function renderLista() {
+        const lista     = document.getElementById('listaProgetti');
+        const importBox = document.getElementById('importDefaultBox');
+        if (!lista) return;
+        if (importBox) importBox.style.display = progettiCache.length === 0 ? 'block' : 'none';
+        if (progettiCache.length === 0) {
+            lista.innerHTML = '<p style="text-align:center;color:#64748b;font-size:14px;">Nessun cliente configurato.</p>';
+            return;
+        }
+        lista.innerHTML = '';
+        [...progettiCache].sort((a,b) => (a.nome||'').localeCompare(b.nome||'')).forEach(p => {
+            const row = document.createElement('div');
+            row.className = 'list-row'; row.style.marginBottom = '8px';
+            const tags = (p.viaggi||[]).map(v =>
+                `<span style="background:#e0e7ff;color:#3730a3;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:600;">${v}</span>`
+            ).join('');
+            row.innerHTML = `
+                <div style="flex:1;">
+                    <div style="font-weight:700;color:#334155;margin-bottom:6px;">${p.nome}</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:5px;">${tags||'<span style="font-size:12px;color:#94a3b8;">Nessun viaggio</span>'}</div>
+                </div>
+                <div style="display:flex;gap:8px;flex-shrink:0;">
+                    <button onclick="editProgetto('${p.id}')" class="action-btn edit-btn" title="Modifica">
+                        <span class="material-icons-round" style="font-size:20px;">edit</span>
+                    </button>
+                    <button onclick="deleteProgetto_ui('${p.id}','${p.nome}')" class="action-btn delete-btn" title="Elimina">
+                        <span class="material-icons-round" style="font-size:20px;">delete</span>
+                    </button>
+                </div>`;
+            lista.appendChild(row);
+        });
+    }
+    </script>
 </body>
-
 </html>
-

@@ -1,10 +1,10 @@
 /**
- * script.js - v1.32
+ * script.js - v1.33
  * Modulo principale per la gestione della UI, validazioni e wizard.
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "1.31";
+const APP_VERSION = "1.33";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -186,19 +186,19 @@ window.renderMezziInserimento = function() {
 window.renderClientiInserimento = function() {
     const select = document.getElementById('clienteSelect');
     if (!select) return;
-    
-    // 1. Cerchiamo i clienti contrassegnati come "isProgetto" nel database
-    const clientiInDatabase = (window.appData.lista_clienti || []).filter(c => c.isProgetto === true);
-    let clientiFiltrati = clientiInDatabase.map(c => c.nome);
 
-    // 2. Se il database è vuoto o non ci sono ancora flag, usiamo la lista storica come fallback
-    if (clientiFiltrati.length === 0) {
-        clientiFiltrati = ["PROGETTO SCUOLE", "CATTEL", "GRAN CHEF", "BAUER"];
+    // 1. Usa lista_progetti da Firestore se disponibile
+    const progetti = window.appData.lista_progetti || [];
+    let nomi = progetti.map(p => p.nome).filter(Boolean);
+
+    // 2. Fallback hardcoded se Firestore è vuoto
+    if (nomi.length === 0) {
+        nomi = ["PROGETTO SCUOLE", "CATTEL", "GRAN CHEF", "BAUER"];
     }
 
     const currentVal = select.value;
     select.innerHTML = '<option value="">Seleziona cliente</option>';
-    clientiFiltrati.sort().forEach(nome => {
+    nomi.sort().forEach(nome => {
         const opt = document.createElement('option');
         opt.value = nome;
         opt.textContent = nome.toUpperCase();
@@ -206,6 +206,9 @@ window.renderClientiInserimento = function() {
     });
     if (currentVal) select.value = currentVal;
 };
+
+// Alias usato dal listener realtime
+window.renderProgettiInserimento = window.renderClientiInserimento;
 
 window.updateViaggi = function() {
     const clienteNome = document.getElementById("clienteSelect")?.value || "";
@@ -215,11 +218,13 @@ window.updateViaggi = function() {
     viaggioSelect.innerHTML = '<option value="">Seleziona viaggio</option>';
     viaggioSelect.disabled = true;
 
-    // 1. Cerchiamo se il cliente selezionato ha dei viaggi impostati in Firestore
-    const clienteObj = (window.appData.lista_clienti || []).find(c => (c.nome || '').toUpperCase() === clienteNome.toUpperCase());
-    let options = clienteObj ? (clienteObj.viaggi || clienteObj.giri || []) : [];
+    // 1. Cerca il progetto su Firestore (lista_progetti)
+    const progetto = (window.appData.lista_progetti || []).find(
+        p => (p.nome || '').toUpperCase() === clienteNome.toUpperCase()
+    );
+    let options = progetto ? (progetto.viaggi || []) : [];
 
-    // 2. Se non ci sono dati in Firestore, usiamo la mappa hardcoded di sicurezza (solo per i 4 principali)
+    // 2. Fallback hardcoded se non trovato su Firestore
     if (options.length === 0) {
         const viaggiMap = {
             "PROGETTO SCUOLE": ["VIAGGIO 01", "VIAGGIO 02", "VIAGGIO 03", "VIAGGIO 04", "VIAGGIO 05", "VIAGGIO 06", "VIAGGIO 07", "VIAGGIO 08", "VIAGGIO 09", "VIAGGIO 10"],

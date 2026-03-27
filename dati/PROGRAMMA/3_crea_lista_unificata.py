@@ -172,8 +172,12 @@ def _carica_rientri(map_codice: dict):
         if not cod_r: continue
         stato = _val(row[2].value) if len(row) > 2 else ""
         
-        # Saltiamo quelli già popolati (vecchi allegati)
-        if stato: continue
+        # Saltiamo solo DDT già assegnati a una data di consegna
+        # (contengono data nel formato 'allegato DDT' o 'Allegato con DDT')
+        # I DDT con stato '' o 'In lavorazione' vengono riprocessati
+        stato_lower = stato.lower()
+        ddt_assegnato = ('allegato' in stato_lower and 'lavorazione' not in stato_lower)
+        if ddt_assegnato: continue
         
         c = cod_r.lower()
         if c in map_codice:
@@ -185,21 +189,20 @@ def _carica_rientri(map_codice: dict):
     wb.close()
     return rientri_per_riga, righe_da_lavorare
 
-def _aggiorna_stato_rientri_excel(righe_validate: list[int], data_ddt: str):
-    """Scrive 'allegato DDT [data]' nelle righe specificate dell'Excel rientri."""
+def _aggiorna_stato_rientri_excel(righe_validate: list[int], testo: str):
+    """Scrive `testo` nella col C per le righe specificate di rientri_ddt.xlsx."""
     if not righe_validate: return
     path = BASE_DIR / "rientri_ddt.xlsx"
     from openpyxl import load_workbook
     try:
         wb = load_workbook(path)
         ws = wb.active
-        testo_stato = f"allegato DDT {data_ddt}"
         for r_idx in righe_validate:
-            ws.cell(row=r_idx, column=3).value = testo_stato
+            ws.cell(row=r_idx, column=3).value = testo
         wb.save(path)
-        print(f"  💾 Excel Rientri aggiornato: {len(righe_validate)} stati impostati.")
+        print(f"  💾 Excel Rientri: {len(righe_validate)} righe → '{testo}'")
     except PermissionError:
-        print(f"  ⚠️  ERRORE: Impossibile aggiornare Excel Rientri. Chiudi il file '{path.name}'!")
+        print(f"  ⚠️  ERRORE: Impossibile aggiornare Excel Rientri. Chiudi il file!")
     except Exception as e:
         print(f"  ⚠️  Errore salvataggio rientri: {e}")
 
@@ -240,8 +243,8 @@ def main():
     map_codice = _carica_mappatura_veloce()
     rientri_globale, righe_excel_rientri = _carica_rientri(map_codice)
     
-    # Track righe da aggiornare nell'Excel alla fine
-    righe_rientri_da_marcare = []
+    righe_rientri_da_marcare = []       # matched → scriverò data consegna
+    righe_rientri_in_lavorazione = []   # unmatched → scriverò 'In lavorazione'
 
     unificati = [] # Cambiato in lista per evitare raggruppamenti
     # Mappa per agganciare velocemente i rientri ai punti (idx_mappa -> lista di riferimenti ai punti)
@@ -296,19 +299,17 @@ def main():
     # Gestione rientri
     for idx_mappa, codici in rientri_globale.items():
         if idx_mappa in map_idx_mappa_to_punti:
-            # Aggancia il rientro a TUTTI i punti che hanno questo indice di mappatura
+            # Abbina il rientro ai punti di consegna esistenti (cliente presente oggi)
             for up in map_idx_mappa_to_punti[idx_mappa]:
                 current_codes = (up.get("codici_ddt_frutta") or []) + (up.get("codici_ddt_latte") or [])
                 for cr in codici:
                     status = "yellow" if cr in current_codes else "red"
-                    # Evita duplicati di alert
                     if not any(a["codice"] == cr for a in up["rientri_alert"]):
                         up["rientri_alert"].append({"codice": cr, "status": status})
-                        # Troviamo la riga excel corrispondente per questo codice
                         r_excel = next((r for c, r in righe_excel_rientri if c == cr), None)
-                        if r_excel: righe_rientri_da_marcare.append(r_excel)
+                        if r_excel: righe_rientri_da_marcare.append(r_excel)  # allegato con successo
         else:
-            # Nuovo punto SOLO per rientro (non presente in consegne)
+            # DDT non abbinato ad alcuna consegna oggi → zona speciale
             path_m = PROG_DIR / "mappatura_destinazioni.xlsx"
             from openpyxl import load_workbook
             wb_m = load_workbook(path_m, read_only=True, data_only=True)
@@ -316,6 +317,8 @@ def main():
             row = list(ws_m.iter_rows(min_row=idx_mappa, max_row=idx_mappa))[0]
             nome_r = _val(row[2].value) or f"Rientro {codici[0]}"
             ind_r = _val(row[4].value)
+            lat_r = row[12].value
+            lon_r = row[13].value
             punto_r = {
                 "nome": nome_r,
                 "indirizzo": ind_r,
@@ -324,21 +327,28 @@ def main():
                 "data_consegna": data,
                 "orario_min": _val(row[10].value),
                 "orario_max": _val(row[11].value),
-                "lat": row[12].value,
-                "lon": row[13].value,
-                "zona": "0000",
+                "lat": lat_r,
+                "lon": lon_r,
+                "zona": "DDT_DA_INSERIRE",   # zona speciale visibile sulla mappa
                 "codici_ddt_frutta": [],
                 "codici_ddt_latte": [],
                 "rientri_alert": [{"codice": cr, "status": "red"} for cr in codici],
-                "row_idx_mappatura": idx_mappa
+                "row_idx_mappatura": idx_mappa,
+                "_is_rientro_speciale": True   # flag per la mappa
             }
+            # Aggiungi i codici DDT rientro alle liste
+            for cr in codici:
+                tipo = _val(row[0].value).lower()
+                if tipo:
+                    punto_r["codici_ddt_frutta"].append(cr)
+                else:
+                    punto_r["codici_ddt_latte"].append(cr)
             unificati.append(punto_r)
             wb_m.close()
-            
-            # Segnamo anche questi codici come da marcare nell'Excel
+            # Marca come 'In lavorazione' (non scrivere data, non ancora assegnato)
             for cr in codici:
                 r_excel = next((r for c, r in righe_excel_rientri if c == cr), None)
-                if r_excel: righe_rientri_da_marcare.append(r_excel)
+                if r_excel: righe_rientri_in_lavorazione.append(r_excel)
 
     lista_finale = unificati
     mappati = sum(1 for p in lista_finale if p.get("row_idx_mappatura") is not None)
@@ -378,7 +388,9 @@ def main():
 
     # ── AGGIORNAMENTO EXCEL RIENTRI ──
     if righe_rientri_da_marcare:
-        _aggiorna_stato_rientri_excel(list(set(righe_rientri_da_marcare)), data)
+        _aggiorna_stato_rientri_excel(list(set(righe_rientri_da_marcare)), f"allegato DDT {data}")
+    if righe_rientri_in_lavorazione:
+        _aggiorna_stato_rientri_excel(list(set(righe_rientri_in_lavorazione)), "In lavorazione")
 
     print("--- Completato ---\n")
     return 0

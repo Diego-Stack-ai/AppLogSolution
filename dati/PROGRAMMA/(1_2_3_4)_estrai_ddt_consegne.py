@@ -108,8 +108,10 @@ def _estrai_dati_consegna_da_testo(text: str, codice: str, da_frutta: bool) -> d
     return res
 
 
-def _ricava_data_da_pdf() -> str | None:
+def _ricava_date_da_pdf() -> list[str]:
+    """Raccoglie TUTTE le date distinte trovate nei PDF di FRUTTA e LATTE."""
     import pdfplumber
+    date_trovate: set[str] = set()
     for cart in (INPUT_FRUTTA, INPUT_LATTE):
         if not cart.exists(): continue
         for pdf_path in sorted(cart.glob("*.pdf")):
@@ -118,9 +120,9 @@ def _ricava_data_da_pdf() -> str | None:
                     for page in pdf.pages:
                         text = page.extract_text() or ""
                         data, _ = _estrai_data_luogo(text)
-                        if data: return data
+                        if data: date_trovate.add(data)
             except: pass
-    return None
+    return sorted(date_trovate)
 
 
 def _leggi_codici_mappatura():
@@ -169,7 +171,8 @@ def _verifica_nuovi_clienti(dati_nuovi: dict):
     return False
 
 
-def _estrai_da_cartella(cart_in: Path, cart_out: Path, etichetta: str, data_v: str, mappati: set, *, duplicata: bool = False):
+def _estrai_da_cartella(cart_in: Path, cart_out: Path, etichetta: str, date_valide: set[str], mappati: set, *, duplicata: bool = False):
+    """Estrae DDT da tutti i PDF accettando qualsiasi data presente in date_valide."""
     nuovi_dati = {}
     if not cart_in.exists(): return 0, 0, nuovi_dati
     cart_out.mkdir(parents=True, exist_ok=True)
@@ -185,7 +188,7 @@ def _estrai_da_cartella(cart_in: Path, cart_out: Path, etichetta: str, data_v: s
                 for i in range(0, len(pdf.pages), 2 if duplicata else 1):
                     text = pdf.pages[i].extract_text() or ""
                     d, l = _estrai_data_luogo(text)
-                    if not d or not l or d != data_v: continue
+                    if not d or not l or d not in date_valide: continue  # accetta tutte le date valide
                     if l not in mappati and l not in nuovi_dati:
                         nuovi_dati[l] = _estrai_dati_consegna_da_testo(text, l, duplicata)
                         nuovi_dati[l]["tipo"] = etichetta
@@ -202,13 +205,14 @@ def _estrai_da_cartella(cart_in: Path, cart_out: Path, etichetta: str, data_v: s
     return creati, sum(1 for c in visti.values() if c > 1), nuovi_dati
 
 
-def _pulisci_sorgenti(cart_in: Path, data_v: str):
+def _pulisci_sorgenti(cart_in: Path, date_valide: set[str]):
+    """Elimina i PDF sorgenti che contengono pagine di qualsiasi data elaborata."""
     import pdfplumber
     rimossi = 0
     for p in cart_in.glob("*.pdf"):
         try:
             with pdfplumber.open(p) as pdf:
-                if any(_estrai_data_luogo(pg.extract_text() or "")[0] == data_v for pg in pdf.pages):
+                if any(_estrai_data_luogo(pg.extract_text() or "")[0] in date_valide for pg in pdf.pages):
                     pdf.close(); p.unlink(); rimossi += 1
         except: pass
     return rimossi
@@ -261,24 +265,51 @@ def _verifica_nuovi_articoli(base):
 
 
 def main():
+    # ── Determina le date valide ────────────────────────────────────────────
     arg = sys.argv[1].strip() if len(sys.argv) > 1 else None
-    if arg and re.match(r"^\d{2}-\d{2}$", arg): arg = f"{arg}-2026"
-    data = arg or _ricava_data_da_pdf()
-    if not data: return print("❌ Nessun PDF.")
-    base = CONSEGNE_DIR / f"CONSEGNE_{data}"
-    if base.exists() and not arg: return print(f"⚠️ Cartella {base.name} esiste.")
-    _pulisci_output(base, data)
-    print(f"\n--- Estrazione DDT ({data}) ---\n")
-    out_f, out_l = base/"DDT-ORIGINALI-DIVISI"/"FRUTTA", base/"DDT-ORIGINALI-DIVISI"/"LATTE"
+    if arg:
+        # Supporta: "27-03", "27-03-2026", "27-03-2026_28-03-2026"
+        date_valide: set[str] = set()
+        for parte in arg.split("_"):
+            if re.match(r"^\d{2}-\d{2}$", parte): parte = f"{parte}-2026"
+            date_valide.add(parte)
+    else:
+        date_list = _ricava_date_da_pdf()
+        if not date_list: return print("❌ Nessun PDF trovato.")
+        date_valide = set(date_list)
+
+    # ── Nome cartella: singola o doppia data ────────────────────────────────
+    data_label = "_".join(sorted(date_valide))   # es. "30-03-2026" o "30-03-2026_31-03-2026"
+    base = CONSEGNE_DIR / f"CONSEGNE_{data_label}"
+    if base.exists() and not arg:
+        return print(f"⚠️ Cartella {base.name} esiste già. Passa la data come argomento per forzare.")
+
+    _pulisci_output(base, data_label)
+    nd = len(date_valide)
+    print(f"\n--- Estrazione DDT ({data_label}) — {nd} data{'e' if nd > 1 else ''} ---\n")
+    if nd > 1:
+        print(f"  ℹ️  Date rilevate: {', '.join(sorted(date_valide))} → elaborazione accorpata\n")
+
+    out_f = base / "DDT-ORIGINALI-DIVISI" / "FRUTTA"
+    out_l = base / "DDT-ORIGINALI-DIVISI" / "LATTE"
     mappati = _leggi_codici_mappatura()
-    res_f = _estrai_da_cartella(INPUT_FRUTTA, out_f, "FRUTTA", data, mappati, duplicata=True)
-    res_l = _estrai_da_cartella(INPUT_LATTE, out_l, "LATTE", data, mappati)
+    res_f = _estrai_da_cartella(INPUT_FRUTTA, out_f, "FRUTTA", date_valide, mappati, duplicata=True)
+    res_l = _estrai_da_cartella(INPUT_LATTE,  out_l, "LATTE",  date_valide, mappati)
+
     if not _verifica_nuovi_clienti({**res_f[2], **res_l[2]}): sys.exit(1)
     if not _verifica_nuovi_articoli(base): sys.exit(1)
-    print("Pulizia e avvio pipeline..."); _pulisci_sorgenti(INPUT_FRUTTA, data); _pulisci_sorgenti(INPUT_LATTE, data); time.sleep(1)
+
+    print("Pulizia sorgenti e avvio pipeline...")
+    _pulisci_sorgenti(INPUT_FRUTTA, date_valide)
+    _pulisci_sorgenti(INPUT_LATTE,  date_valide)
+    time.sleep(1)
+
     for s in ["2_crea_punti_consegna.py", "3_crea_lista_unificata.py", "4_mappa_zone_google.py"]:
         p = PROG_DIR / s
-        if p.exists(): print(f"⚙️ {s}..."); subprocess.run([sys.executable, str(p), data], cwd=BASE_DIR)
-    print(f"\n✅ COMPLETATO ({data})!")
+        if p.exists():
+            print(f"⚙️ {s}...")
+            subprocess.run([sys.executable, str(p), data_label], cwd=BASE_DIR)
+
+    print(f"\n✅ COMPLETATO ({data_label})!")
 
 if __name__ == "__main__": main()

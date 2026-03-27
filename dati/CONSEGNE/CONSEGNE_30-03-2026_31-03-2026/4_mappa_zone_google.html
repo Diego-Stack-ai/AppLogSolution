@@ -1,295 +1,4 @@
-import json, sys, re, webbrowser, threading, time, logging
-import html as html_module
-import xml.etree.ElementTree as ET
-from pathlib import Path
-
-# Flask e Flask-CORS verranno importati solo se serve avviare il server
-try:
-    from flask import Flask, render_template_string, request, jsonify
-    from flask_cors import CORS
-    HAS_FLASK = True
-except ImportError:
-    HAS_FLASK = False
-    Flask = lambda *args, **kwargs: None
-    render_template_string = request = jsonify = None
-
-# --- CONFIGURAZIONE ---
-PROG_DIR = Path(__file__).resolve().parent
-BASE_DIR = PROG_DIR.parent
-CONSEGNE_DIR = BASE_DIR / "CONSEGNE"
-
-# INSERISCI QUI LA TUA API KEY DI GOOGLE MAPS
-GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
-
-if HAS_FLASK:
-    app = Flask(__name__)
-    CORS(app, resources={r"/*": {"origins": "*"}})
-else:
-    app = None
-
-# Configurazione Logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-# Variabili globali per tracciare i file in uso
-TARGET_FILE_UNIFICATO = None
-TARGET_FILE_VIAGGI = None
-ZONE_LIST_CACHE = []
-DATA_GIORNO = ""
-
-def _get_color(idx):
-    palette = ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#14b8a6", "#6366f1", "#a855f7", "#3b82f6", "#22c55e", "#d946ef", "#84cc16"]
-    return palette[idx % len(palette)]
-
-excel_lock = threading.Lock()
-
-def _aggiorna_entrambi_excel(nome, lat, lon, indirizzo=None):
-    """Sincronizzazione Atomica su Excel Master e Excel Giornaliero."""
-    import pandas as pd
-    try:
-        output_base = CONSEGNE_DIR / f"CONSEGNE_{DATA_GIORNO}"
-        targets = [PROG_DIR / "mappatura_destinazioni.xlsx", output_base / "punti_consegna.xlsx"]
-        
-        success = True
-        for file_path in targets:
-            if not file_path.exists(): continue
-            with excel_lock:
-                try:
-                    df = pd.read_excel(file_path)
-                    # Ricerca flessibile della colonna nome
-                    col_nome = next(
-                        (c for c in df.columns if str(c).strip().lower() in
-                         ["a chi va consegnato", "cliente", "nome", "destinatario"]),
-                        None
-                    )
-                    if not col_nome:
-                        logger.error(f"Colonna nome non trovata in {file_path.name} - colonne: {df.columns.tolist()}")
-                        success = False
-                        continue
-                    # Ricerca flessibile della colonna indirizzo
-                    col_ind = next(
-                        (c for c in df.columns if str(c).strip().lower() in
-                         ["indirizzo", "via", "via/piazza", "sede"]),
-                        None
-                    )
-                    mask = df[col_nome].astype(str).str.strip().str.lower() == str(nome).strip().lower()
-                    # Disambiguazione per nome duplicato (es. tre Marco Polo)
-                    if indirizzo and col_ind and mask.sum() > 1:
-                        mask_ind = df[col_ind].astype(str).str.strip().str.lower() == str(indirizzo).strip().lower()
-                        if (mask & mask_ind).any():
-                            mask = mask & mask_ind
-                    if mask.any():
-                        df.loc[mask, 'Latitudine'] = lat
-                        df.loc[mask, 'Longitudine'] = lon
-                        df.to_excel(file_path, index=False)
-                        logger.info(f"Aggiornato Excel: {file_path.name} → {nome}")
-                    else:
-                        logger.warning(f"Punto non trovato in {file_path.name}: {nome}")
-                except Exception as e:
-                    logger.exception(f"Errore scrittura {file_path.name}")
-                    success = False
-        return success
-    except Exception as e:
-        logger.exception("Errore globale Excel update")
-        return False
-
-if HAS_FLASK:
-    @app.after_request
-    def add_header(r):
-        r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-        r.headers["Pragma"] = "no-cache"
-        r.headers["Expires"] = "0"
-        return r
-
-    @app.route('/')
-    def index():
-        is_locked_val = True
-        if TARGET_FILE_UNIFICATO and TARGET_FILE_UNIFICATO.exists():
-            try:
-                unif = json.loads(TARGET_FILE_UNIFICATO.read_text(encoding="utf-8"))
-                is_locked_val = unif.get("is_locked", True)
-            except: pass
-        return render_template_string(HTML_TEMPLATE, DATA_GIORNO=DATA_GIORNO, JSON_ZONE=json.dumps(ZONE_LIST_CACHE, ensure_ascii=False), GOOGLE_MAPS_API_KEY=GOOGLE_MAPS_API_KEY, IS_LOCKED_JS="true" if is_locked_val else "false")
-
-    @app.route('/save', methods=['POST'])
-    def save():
-        """Salvataggio globale: Zone + Coordinate su tutti i file + aggiornamento rientri DDT."""
-        global ZONE_LIST_CACHE
-        try:
-            data = request.json
-            ZONE_LIST_CACHE = data
-            output_base = CONSEGNE_DIR / f"CONSEGNE_{DATA_GIORNO}"
-
-            # 1. Aggiorna Excel (Bulk)
-            import pandas as pd
-            for ex_p in [PROG_DIR / "mappatura_destinazioni.xlsx", output_base / "punti_consegna.xlsx"]:
-                if ex_p.exists():
-                    with excel_lock:
-                        df = pd.read_excel(ex_p)
-                        col_nome = next(
-                            (c for c in df.columns if str(c).strip().lower() in
-                             ["a chi va consegnato", "cliente", "nome", "destinatario"]),
-                            None
-                        )
-                        if col_nome:
-                            for z in data:
-                                for p in z.get("lista_punti", []):
-                                    mask = df[col_nome].astype(str).str.strip().str.lower() == str(p['nome']).strip().lower()
-                                    if mask.any():
-                                        df.loc[mask, 'Latitudine'] = p['lat']
-                                        df.loc[mask, 'Longitudine'] = p['lon']
-                        df.to_excel(ex_p, index=False)
-
-            # 2. Aggiorna JSON Unificato
-            if TARGET_FILE_UNIFICATO and TARGET_FILE_UNIFICATO.exists():
-                unif = json.loads(TARGET_FILE_UNIFICATO.read_text(encoding="utf-8"))
-                p_map = { (p.get("codice_univoco") or f"{p.get('codice_frutta')}_{p.get('codice_latte')}"): (z["id_zona"], p['lat'], p['lon']) for z in data for p in z["lista_punti"] }
-                for p in unif.get("punti", []):
-                    pid = p.get("codice_univoco") or f"{p.get('codice_frutta')}_{p.get('codice_latte')}"
-                    if pid in p_map:
-                        p["zona"], lat, lon = p_map[pid]
-                        if lat: p["lat"] = lat
-                        if lon: p["lon"] = lon
-                TARGET_FILE_UNIFICATO.write_text(json.dumps(unif, indent=2, ensure_ascii=False), encoding="utf-8")
-
-            # 3. Aggiorna JSON Viaggi
-            data_f = [z for z in data if len(z.get("lista_punti", [])) > 0]
-            if TARGET_FILE_VIAGGI:
-                TARGET_FILE_VIAGGI.write_text(json.dumps(data_f, indent=2, ensure_ascii=False), encoding="utf-8")
-
-            # 4. Aggiorna rientri_ddt.xlsx in base alla zona finale dei punti speciali
-            _aggiorna_rientri_dopo_salvataggio(data, DATA_GIORNO)
-
-            return jsonify({"status": "ok"})
-        except Exception as e:
-            logger.exception("Errore save")
-            return jsonify({"status": "error", "message": str(e)}), 500
-
-    @app.route('/save_coord', methods=['POST'])
-    def save_coord():
-        """Salvataggio atomico al movimento di un singolo punto."""
-        try:
-            p = request.json  # {nome, indirizzo, lat, lon}
-            nome = p.get('nome', '')
-            indirizzo = p.get('indirizzo', '')
-            lat = p['lat']
-            lon = p['lon']
-
-            res = _aggiorna_entrambi_excel(nome, lat, lon, indirizzo=indirizzo)
-            if res is True:
-                global ZONE_LIST_CACHE
-                for z in ZONE_LIST_CACHE:
-                    for pt in z.get("lista_punti", []):
-                        if pt.get("nome", "").lower() == nome.lower() and \
-                           (not indirizzo or pt.get("indirizzo", "").lower() == indirizzo.lower()):
-                            pt['lat'], pt['lon'] = lat, lon
-
-                # Aggiorna JSON Unificato e Viaggi al volo
-                for f_path, is_unif in [(TARGET_FILE_UNIFICATO, True), (TARGET_FILE_VIAGGI, False)]:
-                    if f_path and f_path.exists():
-                        d = json.loads(f_path.read_text(encoding='utf-8'))
-                        lista = d.get('punti', []) if is_unif else [x for zz in d for x in zz.get('lista_punti', [])]
-                        for pt in lista:
-                            if pt.get('nome', '').lower() == nome.lower() and \
-                               (not indirizzo or pt.get('indirizzo', '').lower() == indirizzo.lower()):
-                                pt['lat'], pt['lon'] = lat, lon
-                        f_path.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding='utf-8')
-                return jsonify({"status": "ok", "msg": "Sincronizzazione completata!"})
-            return jsonify({"status": "error", "msg": str(res)}), 500
-        except Exception as e:
-            return jsonify({"status": "error", "msg": str(e)}), 500
-
-    @app.route('/toggle_lock', methods=['POST'])
-    def toggle_lock():
-        try:
-            req = request.json
-            action = req.get('action')
-            if TARGET_FILE_UNIFICATO and TARGET_FILE_UNIFICATO.exists():
-                unificato = json.loads(TARGET_FILE_UNIFICATO.read_text(encoding="utf-8"))
-                is_locked = (action == 'lock')
-                unificato['is_locked'] = is_locked
-                TARGET_FILE_UNIFICATO.write_text(json.dumps(unificato, indent=2, ensure_ascii=False), encoding="utf-8")
-                return jsonify({"status": "ok", "is_locked": is_locked})
-            return jsonify({"status": "error", "message": "File non trovato"}), 404
-        except Exception as e:
-            return jsonify({"status": "error", "message": str(e)}), 500
-
-def _aggiorna_rientri_dopo_salvataggio(zone_data: list, data_giorno: str):
-    """Aggiorna colonna C di rientri_ddt.xlsx in base alla zona finale:
-       - Punto rimasto in DDT_DA_INSERIRE → colonna C = '' (libero per prossima lavorazione)
-       - Punto spostato in zona reale      → colonna C = 'allegato DDT {data_giorno}'
-    """
-    rientri_path = BASE_DIR / "rientri_ddt.xlsx"
-    if not rientri_path.exists(): return
-    try:
-        from openpyxl import load_workbook
-        wb = load_workbook(rientri_path)
-        ws = wb.active
-        # Raccogli tutti i codici DDT rientro per zona finale
-        codici_in_speciale = set()  # rimasti in DDT_DA_INSERIRE
-        codici_assegnati = set()    # spostati in zona reale
-        for z in zone_data:
-            zid = z.get("id_zona", "")
-            for p in z.get("lista_punti", []):
-                if not p.get("_is_rientro_speciale"): continue
-                codici_ddt = (p.get("codici_ddt_frutta") or []) + (p.get("codici_ddt_latte") or [])
-                if zid == "DDT_DA_INSERIRE":
-                    codici_in_speciale.update(c.lower() for c in codici_ddt)
-                else:
-                    codici_assegnati.update(c.lower() for c in codici_ddt)
-        if not codici_in_speciale and not codici_assegnati: return
-        modifiche = 0
-        for row in ws.iter_rows(min_row=2):
-            cod = str(row[0].value or '').strip().lower()
-            if cod in codici_in_speciale:
-                row[2].value = ''        # libero per la prossima giornata
-                modifiche += 1
-            elif cod in codici_assegnati:
-                row[2].value = f"allegato DDT {data_giorno}"
-                modifiche += 1
-        if modifiche:
-            wb.save(rientri_path)
-            logger.info(f"rientri_ddt.xlsx aggiornato: {modifiche} righe (speciali={len(codici_in_speciale)}, assegnati={len(codici_assegnati)})")
-    except Exception as e:
-        logger.warning(f"Errore aggiornamento rientri post-save: {e}")
-
-def _libera_porta_5000():
-    import subprocess as _sp
-    try:
-        res = _sp.run(["netstat", "-ano"], capture_output=True, text=True)
-        for d in res.stdout.splitlines():
-            if ":5000 " in d and "LISTENING" in d:
-                pid = d.strip().split()[-1]
-                if pid.isdigit():
-                    _sp.run(["taskkill", "/PID", pid, "/F"], capture_output=True)
-                    print(f"🔪 Porta 5000 liberata (PID {pid})")
-        time.sleep(0.5)
-    except: pass
-
-def _salva_kml(punti, path, data):
-    root = ET.Element("kml", xmlns="http://www.opengis.net/kml/2.2")
-    doc = ET.SubElement(root, "Document")
-    ET.SubElement(doc, "name").text = f"Zone Google {data}"
-    for i, p in enumerate(punti, 1):
-        if not p.get('lat') or not p.get('lon'): continue
-        pm = ET.SubElement(doc, "Placemark")
-        ET.SubElement(pm, "name").text = f"{i}. {p.get('nome')[:80]}"
-        desc = [f"<b>{p.get('nome')}</b>", f"Indirizzo: {p.get('indirizzo', '')}", f"Zona: {p.get('zona', '')}"]
-        ET.SubElement(pm, "description").text = "<br>".join(desc)
-        pt = ET.SubElement(pm, "Point")
-        ET.SubElement(pt, "coordinates").text = f"{p['lon']},{p['lat']},0"
-    tree = ET.ElementTree(root)
-    if hasattr(ET, "indent"): ET.indent(tree, space="  ")
-    tree.write(path, encoding="utf-8", xml_declaration=True, method="xml")
-
-def _salva_html_fisico(output_base, template_html, data, zone_json, api_key, is_locked):
-    is_locked_js = 'true' if is_locked else 'false'
-    html_content = template_html.replace("{{DATA_GIORNO}}", data).replace("{{JSON_ZONE | safe}}", zone_json).replace("{{GOOGLE_MAPS_API_KEY}}", api_key).replace("{{IS_LOCKED_JS}}", is_locked_js)
-    file_path = output_base / "4_mappa_zone_google.html"
-    file_path.write_text(html_content, encoding="utf-8")
-
-# --- TEMPLATE HTML RIPRISTINATO INTEGRALMENTE ---
-HTML_TEMPLATE = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="utf-8">
@@ -297,7 +6,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script>
         (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. See https://goo.gle/js-api-loading-troubleshooting"):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
-            key: "{{GOOGLE_MAPS_API_KEY}}",
+            key: "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4",
             v: "beta"
         });
     </script>
@@ -353,7 +62,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <h1 style="margin:0; font-size:1.2rem;">Gestione Zone <span id="tot-points" style="font-size:0.7rem; opacity:0.7;">0 Punti</span></h1>
             <div style="margin-top:10px; display:flex; justify-content: space-between; align-items:center;">
                 <button onclick="saveAllToServer()" style="background:var(--accent); color:white; border:none; padding:8px 15px; border-radius:8px; font-weight:800; cursor:pointer;">SALVA TUTTO</button>
-                <div style="text-align:right;"><small style="opacity:0.6;">{{DATA_GIORNO}}</small></div>
+                <div style="text-align:right;"><small style="opacity:0.6;">30-03-2026_31-03-2026</small></div>
             </div>
             <div style="display:flex; gap:5px; margin-top:10px;">
                 <button onclick="toggleLockMap()" id="btn-lock-map" class="btn btn-lock">CARICAMENTO...</button>
@@ -366,8 +75,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <div id="save-status">💾 AGGIORNAMENTO COMPLETATO!</div>
 
     <script>
-        let DATA_ZONE = {{JSON_ZONE | safe}};
-        let map, gMarkers = [], DRAGGING_ENABLED = false, isLockedGlobal = {{IS_LOCKED_JS}};
+        let DATA_ZONE = [{"id_zona": "3103", "lista_punti": [{"nome": "Fondazione Levis Plona", "indirizzo": "Porta S. Croce N.55, 36100 Vicenza (VI)", "codice_frutta": "p11205", "codice_latte": "p1831", "codice_univoco": "p11205_p1831", "zona": "3103", "data_consegna": "", "orario_min": "07:30", "orario_max": "10:00", "lat": 45.5521980922683, "lon": 11.5371475374494, "codici_ddt_frutta": ["p11205"], "codici_ddt_latte": ["p1831"], "rientri_alert": [], "row_idx_mappatura": 157, "geo_query_nome_indirizzo": "Fondazione Levis Plona Porta S. Croce N.55, 36100 Vicenza (VI)", "geo_query_indirizzo": "Porta S. Croce N.55, 36100 Vicenza (VI)"}, {"nome": "MUSSOLENTE - CASONI", "indirizzo": "VIA FRANCESCO BARACCA 2, 36060 MUSSOLENTE (VICENZA)", "codice_frutta": "p11969", "codice_latte": "p00000", "codice_univoco": "p11969_p00000", "zona": "3103", "data_consegna": "", "orario_min": "07:15", "orario_max": "10:00", "lat": 45.7553727, "lon": 11.810372, "codici_ddt_frutta": ["p11969"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 286, "geo_query_nome_indirizzo": "MUSSOLENTE - CASONI VIA FRANCESCO BARACCA 2, 36060 MUSSOLENTE (VICENZA)", "geo_query_indirizzo": "VIA FRANCESCO BARACCA 2, 36060 MUSSOLENTE (VICENZA)"}, {"nome": "Ic Vicenza 2 E 4 - G.B. Tiepolo", "indirizzo": "Via Palemone, 14, 36100 Vicenza (VI)", "codice_frutta": "p2044", "codice_latte": "p1906", "codice_univoco": "p2044_p1906", "zona": "3103", "data_consegna": "", "orario_min": "08:00", "orario_max": "10:00", "lat": 45.54721178499754, "lon": 11.5727163920713, "codici_ddt_frutta": ["p2044"], "codici_ddt_latte": ["p1906"], "rientri_alert": [], "row_idx_mappatura": 227, "geo_query_nome_indirizzo": "Ic Vicenza 2 E 4 - G.B. Tiepolo Via Palemone, 14, 36100 Vicenza (VI)", "geo_query_indirizzo": "Via Palemone, 14, 36100 Vicenza (VI)"}, {"nome": "Scuola Primaria D. Alighieri Grisignano Di", "indirizzo": "Via Pavese, 36040 Grisignano Di Zocco (VI)", "codice_frutta": "p2063", "codice_latte": "p1745", "codice_univoco": "p2063_p1745", "zona": "3103", "data_consegna": "", "orario_min": "08:00", "orario_max": "10:00", "lat": 45.4747764, "lon": 11.694348, "codici_ddt_frutta": ["p2063"], "codici_ddt_latte": ["p1745"], "rientri_alert": [], "row_idx_mappatura": 393, "geo_query_nome_indirizzo": "Scuola Primaria D. Alighieri Grisignano Di Via Pavese, 36040 Grisignano Di Zocco (VI)", "geo_query_indirizzo": "Via Pavese, 36040 Grisignano Di Zocco (VI)"}, {"nome": "Scuola Primaria G. Zanella", "indirizzo": "Via Rossini, 2/4, 36010 Monticello Conte Otto (VI)", "codice_frutta": "p2124", "codice_latte": "p00000", "codice_univoco": "p2124_p00000", "zona": "3103", "data_consegna": "", "orario_min": "07:45", "orario_max": "10:00", "lat": 45.6037003, "lon": 11.5708813, "codici_ddt_frutta": ["p2124"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 401, "geo_query_nome_indirizzo": "Scuola Primaria G. Zanella Via Rossini, 2/4, 36010 Monticello Conte Otto (VI)", "geo_query_indirizzo": "Via Rossini, 2/4, 36010 Monticello Conte Otto (VI)"}, {"nome": "A. Da Tremignon", "indirizzo": "Via Borsellino, 25, 35016 Piazzola Sul Brenta (PD)", "codice_frutta": "p2128", "codice_latte": "p00000", "codice_univoco": "p2128_p00000", "zona": "3103", "data_consegna": "", "orario_min": "08:00", "orario_max": "10:00", "lat": 45.5184479, "lon": 11.8079308, "codici_ddt_frutta": ["p2128"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 32, "geo_query_nome_indirizzo": "A. Da Tremignon Via Borsellino, 25, 35016 Piazzola Sul Brenta (PD)", "geo_query_indirizzo": "Via Borsellino, 25, 35016 Piazzola Sul Brenta (PD)"}, {"nome": "CURTAROLO-LOC. PIEVE", "indirizzo": "VIA MONTE PASUBIO3", "codice_frutta": "p2240", "codice_latte": "p1811", "data_consegna": "30-03-2026_31-03-2026", "orario_min": "07:30", "orario_max": "10:00", "lat": 45.518701, "lon": 11.8313461, "zona": "3103", "codici_ddt_frutta": ["p2240", "p1811"], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p2240", "status": "red"}, {"codice": "p1811", "status": "red"}], "row_idx_mappatura": 97, "_is_rientro_speciale": true, "geo_query_nome_indirizzo": "CURTAROLO-LOC. PIEVE VIA MONTE PASUBIO3", "geo_query_indirizzo": "VIA MONTE PASUBIO3"}, {"nome": "CAMPO S.MARTINO-LOC. MARSANGO", "indirizzo": "VIA ALCIDE DE GASPERI 43", "codice_frutta": "p2243", "codice_latte": "P1807", "data_consegna": "30-03-2026_31-03-2026", "orario_min": "07:30", "orario_max": "10:00", "lat": 45.5516149, "lon": 11.8348171, "zona": "3103", "codici_ddt_frutta": ["p2243", "p1807"], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p2243", "status": "red"}, {"codice": "p1807", "status": "red"}], "row_idx_mappatura": 76, "_is_rientro_speciale": true, "geo_query_nome_indirizzo": "CAMPO S.MARTINO-LOC. MARSANGO VIA ALCIDE DE GASPERI 43", "geo_query_indirizzo": "VIA ALCIDE DE GASPERI 43"}, {"nome": "CAMPO S.MARTINO-LOC. BUSIAGO", "indirizzo": "VIA S.LORENZO 83", "codice_frutta": "p2244", "codice_latte": "p1810", "data_consegna": "30-03-2026_31-03-2026", "orario_min": "07:30", "orario_max": "10:00", "lat": 45.5622293, "lon": 11.8243292, "zona": "3103", "codici_ddt_frutta": ["p2244", "p1810"], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p2244", "status": "red"}, {"codice": "p1810", "status": "red"}], "row_idx_mappatura": 75, "_is_rientro_speciale": true, "geo_query_nome_indirizzo": "CAMPO S.MARTINO-LOC. BUSIAGO VIA S.LORENZO 83", "geo_query_indirizzo": "VIA S.LORENZO 83"}], "color": "#10b981", "nome_giro": "Viaggio 2"}, {"id_zona": "3106", "lista_punti": [{"nome": "Istituto Canossiano", "indirizzo": "Piazza Cesare Battisti, 27 -Entrare Dal Cancello Di Via Verdi, 35026 Conselve (PD)", "codice_frutta": "p2256", "codice_latte": "p00000", "codice_univoco": "p2256_p00000", "zona": "3106", "data_consegna": "", "orario_min": "08:00", "orario_max": "10:00", "lat": 45.2291757, "lon": 11.8774862, "codici_ddt_frutta": ["p2256"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 239, "geo_query_nome_indirizzo": "Istituto Canossiano Piazza Cesare Battisti, 27 -Entrare Dal Cancello Di Via Verdi, 35026 Conselve (PD)", "geo_query_indirizzo": "Piazza Cesare Battisti, 27 -Entrare Dal Cancello Di Via Verdi, 35026 Conselve (PD)"}, {"nome": "\"BIANCHI BUGGIANI\"", "indirizzo": "VIA BUGGIANI2, 35043 MONSELICE (PADOVA)", "codice_frutta": "p2320", "codice_latte": "p1767", "codice_univoco": "p2320_p1767", "zona": "3106", "data_consegna": "", "orario_min": "07:00", "orario_max": "10:00", "lat": 45.2369022, "lon": 11.7504738, "codici_ddt_frutta": ["p2320"], "codici_ddt_latte": ["p1767"], "rientri_alert": [], "row_idx_mappatura": 7, "geo_query_nome_indirizzo": "\"BIANCHI BUGGIANI\" VIA BUGGIANI2, 35043 MONSELICE (PADOVA)", "geo_query_indirizzo": "VIA BUGGIANI2, 35043 MONSELICE (PADOVA)"}, {"nome": "\"SACRO CUORE\"", "indirizzo": "LARGO CARDINAL PALTANIERI 2, 35043 MONSELICE (PADOVA)", "codice_frutta": "p2321", "codice_latte": "p1768", "codice_univoco": "p2321_p1768", "zona": "3106", "data_consegna": "", "orario_min": "07:30", "orario_max": "10:00", "lat": 45.2369022, "lon": 11.7504738, "codici_ddt_frutta": ["p2321"], "codici_ddt_latte": ["p1768"], "rientri_alert": [], "row_idx_mappatura": 28, "geo_query_nome_indirizzo": "\"SACRO CUORE\" LARGO CARDINAL PALTANIERI 2, 35043 MONSELICE (PADOVA)", "geo_query_indirizzo": "LARGO CARDINAL PALTANIERI 2, 35043 MONSELICE (PADOVA)"}, {"nome": "SCUOLA PRIMARIA \"E. DE AMICIS\"", "indirizzo": "VIA ROMA 103, 35020 ARRE (PADOVA)", "codice_frutta": "p6917", "codice_latte": "p2641", "codice_univoco": "p6917_p2641", "zona": "3106", "data_consegna": "", "orario_min": "08:00", "orario_max": "10:00", "lat": 45.2162494, "lon": 11.9323501, "codici_ddt_frutta": ["p6917"], "codici_ddt_latte": ["p2641"], "rientri_alert": [], "row_idx_mappatura": 382, "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"E. DE AMICIS\" VIA ROMA 103, 35020 ARRE (PADOVA)", "geo_query_indirizzo": "VIA ROMA 103, 35020 ARRE (PADOVA)"}, {"nome": "MASI-ZONARO", "indirizzo": "VIA MONS.G. MASIERO 1", "codice_frutta": "p8992", "codice_latte": "p2023", "data_consegna": "30-03-2026_31-03-2026", "orario_min": "08:00", "orario_max": "10:00", "lat": 45.1088186, "lon": 11.4919124, "zona": "3106", "codici_ddt_frutta": ["p8992", "p2023"], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p8992", "status": "red"}, {"codice": "p2023", "status": "red"}], "row_idx_mappatura": 274, "_is_rientro_speciale": true, "geo_query_nome_indirizzo": "MASI-ZONARO VIA MONS.G. MASIERO 1", "geo_query_indirizzo": "VIA MONS.G. MASIERO 1"}], "color": "#ef4444", "nome_giro": "Viaggio 4"}, {"id_zona": "3106_B", "lista_punti": [{"nome": "SCUOLA PARITARIA PRIMARIA \"LUIGI CABURLOTTO\"", "indirizzo": "VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)", "codice_frutta": "p10949", "codice_latte": "p1937", "codice_univoco": "p10949_p1937", "zona": "3106_B", "data_consegna": "", "orario_min": "07:30", "orario_max": "10:00", "lat": 45.4994935, "lon": 12.2373604, "codici_ddt_frutta": ["p10949"], "codici_ddt_latte": ["p1937"], "rientri_alert": [], "row_idx_mappatura": 375, "geo_query_nome_indirizzo": "SCUOLA PARITARIA PRIMARIA \"LUIGI CABURLOTTO\" VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)", "geo_query_indirizzo": "VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)"}, {"nome": "EROI DEL PIAVE - SALETTO", "indirizzo": "VIA SERG.MAGG.D'AVANZO 67, 31030 BREDA DI PIAVE (TREVISO)", "codice_frutta": "p13474", "codice_latte": "p00000", "codice_univoco": "p13474_p00000", "zona": "3106_B", "data_consegna": "", "orario_min": "08:30", "orario_max": "10:00", "lat": 45.7201101392011, "lon": 12.3984965383125, "codici_ddt_frutta": ["p13474"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 146, "geo_query_nome_indirizzo": "EROI DEL PIAVE - SALETTO VIA SERG.MAGG.D'AVANZO 67, 31030 BREDA DI PIAVE (TREVISO)", "geo_query_indirizzo": "VIA SERG.MAGG.D'AVANZO 67, 31030 BREDA DI PIAVE (TREVISO)"}, {"nome": "Scuola Primaria G. Marconi Di Padernello", "indirizzo": "Via Giusti, 19, 31038 Padernello (TV)", "codice_frutta": "p2140", "codice_latte": "p1764", "codice_univoco": "p2140_p1764", "zona": "3106_B", "data_consegna": "", "orario_min": "07:45", "orario_max": "10:00", "lat": 45.6817259, "lon": 12.1253065, "codici_ddt_frutta": ["p2140"], "codici_ddt_latte": ["p1764"], "rientri_alert": [], "row_idx_mappatura": 399, "geo_query_nome_indirizzo": "Scuola Primaria G. Marconi Di Padernello Via Giusti, 19, 31038 Padernello (TV)", "geo_query_indirizzo": "Via Giusti, 19, 31038 Padernello (TV)"}, {"nome": "Gianni Rodari - Barcon", "indirizzo": "Via Pola, 19, 31050 Vedelago (TV)", "codice_frutta": "p2153", "codice_latte": "p00000", "codice_univoco": "p2153_p00000", "zona": "3106_B", "data_consegna": "", "orario_min": "08:15", "orario_max": "10:00", "lat": 45.7211921, "lon": 12.004646, "codici_ddt_frutta": ["p2153"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 198, "geo_query_nome_indirizzo": "Gianni Rodari - Barcon Via Pola, 19, 31050 Vedelago (TV)", "geo_query_indirizzo": "Via Pola, 19, 31050 Vedelago (TV)"}, {"nome": "S. Pertini - Tempo Pieno", "indirizzo": "Via Vallio, 5, 30013 Cavallino Treporti (VE)", "codice_frutta": "p2155", "codice_latte": "p1840", "codice_univoco": "p2155_p1840", "zona": "3106_B", "data_consegna": "", "orario_min": "07:30", "orario_max": "10:00", "lat": 45.4521302, "lon": 12.4414766, "codici_ddt_frutta": ["p2155"], "codici_ddt_latte": ["p1840"], "rientri_alert": [], "row_idx_mappatura": 340, "geo_query_nome_indirizzo": "S. Pertini - Tempo Pieno Via Vallio, 5, 30013 Cavallino Treporti (VE)", "geo_query_indirizzo": "Via Vallio, 5, 30013 Cavallino Treporti (VE)"}, {"nome": "Istituto Farina", "indirizzo": "Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)", "codice_frutta": "p2233", "codice_latte": "p1700", "codice_univoco": "p2233_p1700", "zona": "3106_B", "data_consegna": "", "orario_min": "07:30", "orario_max": "10:00", "lat": 45.4991227, "lon": 12.2384022, "codici_ddt_frutta": ["p2233"], "codici_ddt_latte": ["p1700"], "rientri_alert": [], "row_idx_mappatura": 241, "geo_query_nome_indirizzo": "Istituto Farina Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)", "geo_query_indirizzo": "Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)"}, {"nome": "\"ANDREA MUSALO\" - BIANCADE", "indirizzo": "VIA DARY 17, 31030 RONCADE (TREVISO)", "codice_frutta": "p8720", "codice_latte": "p00000", "codice_univoco": "p8720_p00000", "zona": "3106_B", "data_consegna": "", "orario_min": "08:00", "orario_max": "14:00", "lat": 45.6478559, "lon": 12.3609891, "codici_ddt_frutta": ["p8720"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 5, "geo_query_nome_indirizzo": "\"ANDREA MUSALO\" - BIANCADE VIA DARY 17, 31030 RONCADE (TREVISO)", "geo_query_indirizzo": "VIA DARY 17, 31030 RONCADE (TREVISO)"}, {"nome": "SCUOLA PRIMARIA \"DON L. MILANI\"", "indirizzo": "VIA AMPELIO DE FAVERI 1", "codice_frutta": "p2389", "codice_latte": "p00000", "data_consegna": "30-03-2026_31-03-2026", "orario_min": "08:00", "orario_max": "10:00", "lat": 45.7315669, "lon": 12.4391757, "zona": "3106_B", "codici_ddt_frutta": ["p2389"], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p2389", "status": "red"}], "row_idx_mappatura": 381, "_is_rientro_speciale": true, "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"DON L. MILANI\" VIA AMPELIO DE FAVERI 1", "geo_query_indirizzo": "VIA AMPELIO DE FAVERI 1"}], "color": "#4f46e5", "nome_giro": "Viaggio 1"}, {"id_zona": "3202", "lista_punti": [{"nome": "Scuola Primaria Agosti", "indirizzo": "Piazza S.Giovanni Bosco,12, 32100 Belluno (BL)", "codice_frutta": "p2061", "codice_latte": "p00000", "codice_univoco": "p2061_p00000", "zona": "3202", "data_consegna": "", "orario_min": "07:30", "orario_max": "10:00", "lat": 46.3746098, "lon": 12.1211294, "codici_ddt_frutta": ["p2061"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 389, "geo_query_nome_indirizzo": "Scuola Primaria Agosti Piazza S.Giovanni Bosco,12, 32100 Belluno (BL)", "geo_query_indirizzo": "Piazza S.Giovanni Bosco,12, 32100 Belluno (BL)"}, {"nome": "A.Gabelli Belluno", "indirizzo": "Piazzale Cesare Battisti, 32100 Belluno (BL)", "codice_frutta": "p2169", "codice_latte": "p1914", "codice_univoco": "p2169_p1914", "zona": "3202", "data_consegna": "", "orario_min": "07:45", "orario_max": "10:00", "lat": 46.141585522141774, "lon": 12.212802752923961, "codici_ddt_frutta": ["p2169"], "codici_ddt_latte": ["p1914"], "rientri_alert": [], "row_idx_mappatura": 45, "geo_query_nome_indirizzo": "A.Gabelli Belluno Piazzale Cesare Battisti, 32100 Belluno (BL)", "geo_query_indirizzo": "Piazzale Cesare Battisti, 32100 Belluno (BL)"}, {"nome": "\"A. DORIGUZZI ROSSIN\" - DANTA", "indirizzo": "VIA ROMA 21", "codice_frutta": "p6032", "codice_latte": "p2001", "data_consegna": "30-03-2026_31-03-2026", "orario_min": "08:00", "orario_max": "14:00", "lat": 46.5666887, "lon": 12.5217516, "zona": "3202", "codici_ddt_frutta": ["p6032"], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p6032", "status": "red"}], "row_idx_mappatura": 2, "_is_rientro_speciale": true, "geo_query_nome_indirizzo": "\"A. DORIGUZZI ROSSIN\" - DANTA VIA ROMA 21", "geo_query_indirizzo": "VIA ROMA 21"}, {"nome": "PRIMARIA COMELICO SUPERIORE", "indirizzo": "VIA DI PIANO 30", "codice_frutta": "p8840", "codice_latte": "p1895", "data_consegna": "30-03-2026_31-03-2026", "orario_min": "08:00", "orario_max": "14:00", "lat": 46.5989587, "lon": 12.4935433, "zona": "3202", "codici_ddt_frutta": ["p8840"], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p8840", "status": "red"}], "row_idx_mappatura": 312, "_is_rientro_speciale": true, "geo_query_nome_indirizzo": "PRIMARIA COMELICO SUPERIORE VIA DI PIANO 30", "geo_query_indirizzo": "VIA DI PIANO 30"}, {"nome": "Don Talamini- Selva Di Cadore", "indirizzo": "Via Dei Denever, 21 - S.Fosca", "codice_frutta": "p2108", "codice_latte": "p2655", "data_consegna": "30-03-2026_31-03-2026", "orario_min": "07:45", "orario_max": "10:00", "lat": 46.4445552, "lon": 12.0611814, "zona": "3202", "codici_ddt_frutta": ["p2108"], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p2108", "status": "red"}], "row_idx_mappatura": 129, "_is_rientro_speciale": true, "geo_query_nome_indirizzo": "Don Talamini- Selva Di Cadore Via Dei Denever, 21 - S.Fosca", "geo_query_indirizzo": "Via Dei Denever, 21 - S.Fosca"}], "color": "#f59e0b", "nome_giro": "Viaggio 3"}];
+        let map, gMarkers = [], DRAGGING_ENABLED = false, isLockedGlobal = true;
         let activeExpandedZid = null, activeAction = null, activeSourceZid = null;
         let _hasUnsavedChanges = false;
 
@@ -454,10 +163,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 if (d.status === 'ok') {
                     _hasUnsavedChanges = false;
                     st.style.background = '#10b981';
-                    st.textContent = '\u2705 Salvato: ' + nome;
+                    st.textContent = '✅ Salvato: ' + nome;
                 } else {
                     st.style.background = '#ef4444';
-                    st.textContent = '\u274c Errore: ' + (d.msg || 'sconosciuto');
+                    st.textContent = '❌ Errore: ' + (d.msg || 'sconosciuto');
                 }
                 st.style.display = 'block'; 
                 setTimeout(()=>{st.style.display='none';}, 3000); 
@@ -465,7 +174,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             .catch(err => {
                 let st = document.getElementById('save-status');
                 st.style.background = '#ef4444';
-                st.textContent = '\u274c Connessione persa!';
+                st.textContent = '❌ Connessione persa!';
                 st.style.display = 'block';
                 setTimeout(()=>{st.style.display='none';}, 3000);
             });
@@ -601,62 +310,4 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         window.onload = initMap;
     </script>
 </body>
-</html>"""
-
-def _carica_e_genera(data_giorno):
-    global TARGET_FILE_UNIFICATO, TARGET_FILE_VIAGGI, ZONE_LIST_CACHE, DATA_GIORNO
-    DATA_GIORNO = data_giorno
-    output_base = CONSEGNE_DIR / f"CONSEGNE_{DATA_GIORNO}"
-    TARGET_FILE_UNIFICATO = output_base / "punti_consegna_unificati.json"
-    TARGET_FILE_VIAGGI = output_base / "viaggi_giornalieri.json"
-    
-    if not TARGET_FILE_UNIFICATO.exists(): return False
-    try:
-        unif_data = json.loads(TARGET_FILE_UNIFICATO.read_text(encoding="utf-8"))
-        punti = unif_data.get("punti", [])
-        zone_dict = {}
-        for p in punti:
-            zid = p.get("zona") or "SENZA_ZONA"
-            if zid not in zone_dict:
-                if zid == "DDT_DA_INSERIRE":
-                    nome_z = "⚠️ DDT DA INSERIRE"
-                    colore_z = "#f59e0b"  # arancio per distinguerla
-                else:
-                    nome_z = f"Viaggio {len([z for z in zone_dict if z != 'DDT_DA_INSERIRE'])+1}"
-                    colore_z = _get_color(len(zone_dict))
-                zone_dict[zid] = {"id_zona": zid, "lista_punti": [], "color": colore_z, "nome_giro": nome_z}
-            zone_dict[zid]["lista_punti"].append(p)
-        # Ordina: zone normali per id, DDT_DA_INSERIRE alla fine
-        zone_normali = sorted([z for z in zone_dict.values() if z["id_zona"] != "DDT_DA_INSERIRE"], key=lambda x: str(x["id_zona"]))
-        zone_speciali = [z for z in zone_dict.values() if z["id_zona"] == "DDT_DA_INSERIRE"]
-        ZONE_LIST_CACHE = zone_normali + zone_speciali
-        
-        if not TARGET_FILE_VIAGGI.exists():
-            TARGET_FILE_VIAGGI.write_text(json.dumps(ZONE_LIST_CACHE, indent=2, ensure_ascii=False), encoding="utf-8")
-        
-        _salva_html_fisico(output_base, HTML_TEMPLATE, DATA_GIORNO, json.dumps(ZONE_LIST_CACHE, ensure_ascii=False), GOOGLE_MAPS_API_KEY, unif_data.get("is_locked", True))
-        _salva_kml(punti, output_base / f"zone_google_{DATA_GIORNO.replace('-', '_')}.kml", DATA_GIORNO)
-        return True
-    except: return False
-
-def main():
-    args = sys.argv[1:]; serve = True; data = ""
-    for a in args:
-        if a == "--no-serve": serve = False
-        elif not a.startswith("--"): data = a
-    if not data:
-        f = [d for d in CONSEGNE_DIR.iterdir() if d.is_dir() and d.name.startswith("CONSEGNE_")]
-        if not f: return
-        f.sort(key=lambda x: x.stat().st_mtime, reverse=True)
-        data = f[0].name.replace("CONSEGNE_", "")
-    
-    if _carica_e_genera(data) and serve:
-        _libera_porta_5000()
-        print(f"\n🌐 Mappa Operativa: http://127.0.0.1:5000")
-        def open_b():
-            time.sleep(1.2)
-            webbrowser.open("http://127.0.0.1:5000")
-        threading.Thread(target=open_b, daemon=True).start()
-        app.run(port=5000, debug=False)
-
-if __name__ == "__main__": main()
+</html>

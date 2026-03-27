@@ -1,13 +1,20 @@
 {
-  "name": "LogSolution",
-  "short_name": "LogSolution",
+  "name": "Log Solutions",
+  "short_name": "Log Solutions",
   "description": "Sistema professionale per la gestione trasporti e consegne",
-  "start_url": "index.html",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#4f46e5",
   "orientation": "portrait",
   "icons": [
+    {
+      "src": "img/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
     {
       "src": "img/logo.png",
       "sizes": "512x512",

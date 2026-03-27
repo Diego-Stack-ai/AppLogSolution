@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>V01</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker"></script>
+    <style>
+        :root { --p: #4f46e5; --accent: #10b981; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: #f8fafc; overflow: hidden; }
+        .main-container { display: flex; flex-direction: column; height: 100vh; }
+        #map { height: 48vh; width: 100%; background: #dfe5eb; position: relative; }
+        #sidebar { flex: 1; display: flex; flex-direction: column; background: white; border-top: 2px solid #cbd5e1; overflow: hidden; }
+        .header { padding: 4px 12px; background: #1e293b; color: white; border-bottom: 2px solid var(--accent); }
+        .trip-title { margin: 0; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
+        .stats-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 1px; }
+        .stat-item { flex: 1; display: flex; flex-direction: column; align-items: start; }
+        .stat-val { font-size: 0.82rem; font-weight: 800; color: white; line-height: 1; }
+        .stat-lbl { font-size: 0.52rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-top: 1px; }
+        #delivery-list { flex: 1; overflow-y: auto; padding: 8px; background: #f1f5f9; padding-bottom: 40px; }
+        .card { background: white; border-radius: 10px; padding: 10px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; border: 1px solid #cbd5e1; cursor: pointer; }
+        .card.next { border-color: var(--accent); background: #f0fdf4; border-left: 4px solid var(--accent); }
+        .stop-num { width: 24px; height: 24px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10px; flex-shrink: 0; }
+        .next .stop-num { background: var(--accent); }
+        .stop-info { flex: 1; min-width: 0; }
+        .name { display: block; font-size: 0.8rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .addr { font-size: 0.65rem; color: #64748b; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .btn-nav { background: var(--accent); color: white; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0; }
+        .icon-nav { width: 18px; height: 18px; fill: white; }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div id="map"></div>
+        <div id="sidebar">
+            <div class="header">
+                <div class="trip-title">🏎️ V01 | Zone: 3103, 3104, 3105, 3107</div>
+                <div class="stats-row">
+                    <div class="stat-item"><span class="stat-val">93.9km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 5m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">1h 3m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">3h 8m</span><span class="stat-lbl">Totale</span></div>
+                </div>
+            </div>
+            <div id="delivery-list"><div class="card next" onclick="focusOn(0)"><div class="stop-num">1</div><div class="stop-info"><b class="name">Scuola Primaria D. Alighieri Grisignano Di</b><span class="addr">Via Pavese, 36040 Grisignano Di Zocco (VI)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4747764,11.694348&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(1)"><div class="stop-num">2</div><div class="stop-info"><b class="name">Ic Vicenza 2 E 4 - G.B. Tiepolo</b><span class="addr">Via Palemone, 14, 36100 Vicenza (VI)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.54721178499754,11.5727163920713&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(2)"><div class="stop-num">3</div><div class="stop-info"><b class="name">Fondazione Levis Plona</b><span class="addr">Porta S. Croce N.55, 36100 Vicenza (VI)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5521980922683,11.5371475374494&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(3)"><div class="stop-num">4</div><div class="stop-info"><b class="name">Scuola Primaria G. Zanella</b><span class="addr">Via Rossini, 2/4, 36010 Monticello Conte Otto (VI)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6037003,11.5708813&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(4)"><div class="stop-num">5</div><div class="stop-info"><b class="name">MUSSOLENTE - CASONI</b><span class="addr">VIA FRANCESCO BARACCA 2, 36060 MUSSOLENTE (VICENZA)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7553727,11.810372&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(5)"><div class="stop-num">6</div><div class="stop-info"><b class="name">CAMPO S.MARTINO-LOC. BUSIAGO</b><span class="addr">VIA S.LORENZO 83</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5622293,11.8243292&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(6)"><div class="stop-num">7</div><div class="stop-info"><b class="name">CAMPO S.MARTINO-LOC. MARSANGO</b><span class="addr">VIA ALCIDE DE GASPERI 43</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5516149,11.8348171&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(7)"><div class="stop-num">8</div><div class="stop-info"><b class="name">CURTAROLO-LOC. PIEVE</b><span class="addr">VIA MONTE PASUBIO3</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.518701,11.8313461&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div><div class="card " onclick="focusOn(8)"><div class="stop-num">9</div><div class="stop-info"><b class="name">A. Da Tremignon</b><span class="addr">Via Borsellino, 25, 35016 Piazzola Sul Brenta (PD)</span></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5184479,11.8079308&travelmode=driving" class="btn-nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></a></div></div>
+        </div>
+    </div>
+    <script>
+        const data = [{"cliente": "Scuola Primaria D. Alighieri Grisignano Di", "indirizzo": "Via Pavese, 36040 Grisignano Di Zocco (VI)", "lat": 45.4747764, "lon": 11.694348}, {"cliente": "Ic Vicenza 2 E 4 - G.B. Tiepolo", "indirizzo": "Via Palemone, 14, 36100 Vicenza (VI)", "lat": 45.54721178499754, "lon": 11.5727163920713}, {"cliente": "Fondazione Levis Plona", "indirizzo": "Porta S. Croce N.55, 36100 Vicenza (VI)", "lat": 45.5521980922683, "lon": 11.5371475374494}, {"cliente": "Scuola Primaria G. Zanella", "indirizzo": "Via Rossini, 2/4, 36010 Monticello Conte Otto (VI)", "lat": 45.6037003, "lon": 11.5708813}, {"cliente": "MUSSOLENTE - CASONI", "indirizzo": "VIA FRANCESCO BARACCA 2, 36060 MUSSOLENTE (VICENZA)", "lat": 45.7553727, "lon": 11.810372}, {"cliente": "CAMPO S.MARTINO-LOC. BUSIAGO", "indirizzo": "VIA S.LORENZO 83", "lat": 45.5622293, "lon": 11.8243292}, {"cliente": "CAMPO S.MARTINO-LOC. MARSANGO", "indirizzo": "VIA ALCIDE DE GASPERI 43", "lat": 45.5516149, "lon": 11.8348171}, {"cliente": "CURTAROLO-LOC. PIEVE", "indirizzo": "VIA MONTE PASUBIO3", "lat": 45.518701, "lon": 11.8313461}, {"cliente": "A. Da Tremignon", "indirizzo": "Via Borsellino, 25, 35016 Piazzola Sul Brenta (PD)", "lat": 45.5184479, "lon": 11.8079308}]; let map, markers = [];
+        const svg_icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>';
+
+        async function initMap() {
+            try {
+                map = new google.maps.Map(document.getElementById("map"), { zoom: 12, center: { lat: data[0].lat, lng: data[0].lon }, disableDefaultUI: false });
+                const ds = new google.maps.DirectionsService();
+                const dr = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6 } });
+                const waypts = data.slice(1, -1).map(d => ({ location: { lat: d.lat, lng: d.lon }, stopover: true }));
+                ds.route({ origin: { lat: data[0].lat, lng: data[0].lon }, destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, waypoints: waypts, travelMode: "DRIVING" }, (res, st) => { if (st === "OK") dr.setDirections(res); });
+                data.forEach((p, i) => {
+                    const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i+1).toString(), color: "white", size: "10px", fontWeight: "bold" }, title: p.cliente });
+                    m.addListener("click", () => { new google.maps.InfoWindow({ content: `<b>${i+1}. ${p.cliente}</b>` }).open(map, m); });
+                    markers.push(m);
+                });
+                const b = new google.maps.LatLngBounds(); data.forEach(p => b.extend({ lat: p.lat, lng: p.lon })); map.fitBounds(b);
+            } catch (e) { console.error(e); }
+        }
+        function focusOn(i) { map.panTo(markers[i].getPosition()); map.setZoom(17); }
+        window.onload = initMap;
+    </script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, doc, getDoc, updateDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, doc, getDoc, updateDoc, setDoc, deleteDoc, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, browserLocalPersistence, setPersistence, updatePassword, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { firebaseConfig } from "./firebase-config.js";
 
@@ -150,20 +150,8 @@ onAuthStateChanged(auth, async (user) => {
                 window.appData.currentUser = { id: user.uid, email: user.email, ...userData, ruolo: role };
                 
                 console.log(`Auth: Profilo caricato [${userData.nome}], Ruolo: "${role}"`);
-                
-                // DEBUG BANNER - visibile solo in locale
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                    const existing = document.getElementById('__debug_banner');
-                    if (!existing) {
-                        const banner = document.createElement('div');
-                        banner.id = '__debug_banner';
-                        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#1e40af;color:white;padding:8px 16px;font-size:13px;font-family:monospace;text-align:center;';
-                        banner.textContent = `🔐 Utente: ${user.email} | Ruolo: ${role} | Pagina: ${page}`;
-                        document.body.appendChild(banner);
-                        setTimeout(() => banner.remove(), 12000);
-                    }
-                }
-                
+
+
                 // Hook per aggiornamenti UI nelle pagine
                 // Chiamata immediata + retry dopo 300ms per sicurezza su mobile
                 if (typeof window.onUserProfileLoaded === 'function') {
@@ -277,7 +265,44 @@ function startRealtimeSync(isAdmin) {
         if (typeof window.renderMezziInserimento === 'function') window.renderMezziInserimento();
     });
     activeListeners.push(unsubMezzi);
+
+    // Listener per Progetti (clienti con viaggi associati)
+    const unsubProgetti = onSnapshot(collection(db, "progetti"), (snapshot) => {
+        const progetti = [];
+        snapshot.forEach((d) => {
+            progetti.push({ id: d.id, ...d.data(), isProgetto: true });
+        });
+        window.appData.lista_progetti = progetti;
+        if (typeof window.renderProgettiInserimento === 'function') window.renderProgettiInserimento();
+        if (typeof window.renderProgettiImpostazioni === 'function') window.renderProgettiImpostazioni();
+    });
+    activeListeners.push(unsubProgetti);
 }
+
+// ─── CRUD PROGETTI ────────────────────────────────────────────────────────────
+window.saveProgetto = async function(id, data) {
+    try {
+        if (id) {
+            await updateDoc(doc(db, "progetti", id), data);
+        } else {
+            await addDoc(collection(db, "progetti"), data);
+        }
+        return true;
+    } catch (e) {
+        console.error("Errore salvataggio Progetto:", e);
+        throw e;
+    }
+};
+
+window.deleteProgetto = async function(id) {
+    try {
+        await deleteDoc(doc(db, "progetti", id));
+        return true;
+    } catch (e) {
+        console.error("Errore eliminazione Progetto:", e);
+        throw e;
+    }
+};
 
 // Funzione di salvataggio/creazione remoto per i clienti
 window.updateCustomer = async function(id, data) {

@@ -1,5 +1,5 @@
 /**
- * ui-render.js — v1.30
+ * ui-render.js — v1.32
  * Rendering dinamico delle card dei viaggi recuperati da Firestore.
  * Gestisce anche la rimozione della card dalla DOM dopo eliminazione.
  */

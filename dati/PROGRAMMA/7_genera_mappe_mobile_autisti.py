@@ -254,9 +254,23 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </body>
 </html>"""
 
+def cleanup_webapp_folder():
+    if WEBAPP_FOLDER.exists():
+        print(f"🧹 Pulizia cartella webapp '{WEBAPP_FOLDER.name}'...")
+        for f in WEBAPP_FOLDER.glob("*.html"):
+            try: f.unlink()
+            except: pass
+        for f in WEBAPP_FOLDER.glob("*.txt"):
+            try: f.unlink()
+            except: pass
+
 def main():
     target_dir = get_latest_consegne_dir()
     if not target_dir: return
+    
+    # 1. Pulisce la cartella pubblica per GitHub/Firebase
+    cleanup_webapp_folder()
+    
     json_path = target_dir / "viaggi_giornalieri_OTTIMIZZATO.json"
     if not json_path.exists():
         print(f"⚠️ File ottimizzato non trovato: {json_path.name}. Esegui prima il BAT 3!")

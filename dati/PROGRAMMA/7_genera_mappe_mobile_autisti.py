@@ -110,7 +110,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <title>{{ v_id }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <script src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&libraries=geometry,marker"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&libraries=geometry,marker&callback=initMap" async defer></script>
     <style>
         :root { --p: #4f46e5; --accent: #10b981; --done: #94a3b8; --geo: #3b82f6; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: #f8fafc; overflow: hidden; }

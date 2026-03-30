@@ -215,43 +215,50 @@ if HAS_FLASK:
             return jsonify({"status": "error", "message": str(e)}), 500
 
 def _aggiorna_rientri_dopo_salvataggio(zone_data: list, data_giorno: str):
-    """Aggiorna colonna C di rientri_ddt.xlsx in base alla zona finale:
-       - Punto rimasto in DDT_DA_INSERIRE → colonna C = '' (libero per prossima lavorazione)
-       - Punto spostato in zona reale      → colonna C = 'allegato DDT {data_giorno}'
-    """
+    """Aggiorna colonna C di rientri_ddt.xlsx in base alla zona finale di OGNI punto."""
     rientri_path = BASE_DIR / "rientri_ddt.xlsx"
     if not rientri_path.exists(): return
     try:
         from openpyxl import load_workbook
         wb = load_workbook(rientri_path)
         ws = wb.active
-        # Raccogli tutti i codici DDT rientro per zona finale
-        codici_in_speciale = set()  # rimasti in DDT_DA_INSERIRE
-        codici_assegnati = set()    # spostati in zona reale
+        
+        # Mappatura Codice -> Stato finale desiderato
+        status_map = {} # {codice_ddt: "allegato..." o ""}
+        
         for z in zone_data:
             zid = z.get("id_zona", "")
             for p in z.get("lista_punti", []):
-                if not p.get("_is_rientro_speciale"): continue
-                codici_ddt = (p.get("codici_ddt_frutta") or []) + (p.get("codici_ddt_latte") or [])
-                if zid == "DDT_DA_INSERIRE":
-                    codici_in_speciale.update(c.lower() for c in codici_ddt)
-                else:
-                    codici_assegnati.update(c.lower() for c in codici_ddt)
-        if not codici_in_speciale and not codici_assegnati: return
+                # Raccogliamo tutti i possibili codici DDT del punto (da liste o campi singoli)
+                codici = []
+                codici.extend(p.get("codici_ddt_frutta") or [])
+                codici.extend(p.get("codici_ddt_latte") or [])
+                if not codici:
+                    # Fallback se le liste sono vuote
+                    c_f, c_l = p.get("codice_frutta"), p.get("codice_latte")
+                    if c_f and c_f != "p00000": codici.append(c_f)
+                    if c_l and c_l != "p00000": codici.append(c_l)
+                
+                # Determiniamo lo stato in base a dove si trova il punto ora
+                final_status = "" if zid == "DDT_DA_INSERIRE" else f"allegato DDT {data_giorno}"
+                
+                for c in codici:
+                    status_map[str(c).strip().lower()] = final_status
+
+        if not status_map: return
+        
         modifiche = 0
         for row in ws.iter_rows(min_row=2):
-            cod = str(row[0].value or '').strip().lower()
-            if cod in codici_in_speciale:
-                row[2].value = ''        # libero per la prossima giornata
+            cod_excel = str(row[0].value or '').strip().lower()
+            if cod_excel in status_map:
+                row[2].value = status_map[cod_excel]
                 modifiche += 1
-            elif cod in codici_assegnati:
-                row[2].value = f"allegato DDT {data_giorno}"
-                modifiche += 1
+        
         if modifiche:
             wb.save(rientri_path)
-            logger.info(f"rientri_ddt.xlsx aggiornato: {modifiche} righe (speciali={len(codici_in_speciale)}, assegnati={len(codici_assegnati)})")
+            logger.info(f"📂 Excel Rientri aggiornato: {modifiche} righe modificate.")
     except Exception as e:
-        logger.warning(f"Errore aggiornamento rientri post-save: {e}")
+        logger.exception("Errore aggiornamento rientri_ddt.xlsx")
 
 def _libera_porta_5000():
     import subprocess as _sp

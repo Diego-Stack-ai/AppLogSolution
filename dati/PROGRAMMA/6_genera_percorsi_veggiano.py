@@ -323,6 +323,7 @@ def gera_riepilogo(summary_data, output_path):
             <div style="position:absolute; top:0; left:0; width:12px; height:100%; background:#4f46e5;"></div>
             <div style="font-size:0.8rem; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:8px;">{z['v_id']}</div>
             <b style="font-size:1.15rem; color:#0f172a; display:block;">Zone: {z['zone_str']}</b>
+            <div style="font-size:0.85rem; font-weight:700; color:#10b981; margin-top:5px;">💰 Fatturato: € {z['fatturato']} ({z['tot_ddt']} DDT)</div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin:20px 0; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:15px;">
                 <span>🛣️ <b>{z['km']} km</b></span><span>🕒 Guida: {fmt_min(z['t_guida'])}</span>
                 <span>📦 {z['punti']} tappe</span><span style="font-weight:900; color:#4f46e5;">🏁 TOT: {fmt_min(z['t_tot'])}</span>
@@ -331,22 +332,27 @@ def gera_riepilogo(summary_data, output_path):
         </div>
     ''' for z in summary_data])
 
+    VALORE_DDT = 18.50
+    tot_ddt_generale = sum(z['tot_ddt'] for z in summary_data)
+    fatturato_generale = f"{sum(float(z['fatturato']) for z in summary_data):.2f}"
+
     html = f"""<!DOCTYPE html>
 <html lang="it"><head><meta charset="utf-8"><title>Dashboard Logistica</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
 <style>
     body {{ font-family: 'Inter', sans-serif; background: #f8fafc; padding: 60px 20px; color: #1e293b; }}
-    .main-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin: 40px 0; }}
+    .main-grid {{ display: grid; grid-template-columns: repeat(5, 1fr); gap: 24px; margin: 40px 0; }}
     .sum-card {{ background: white; padding: 35px; border-radius: 24px; text-align: center; border: 1px solid #e2e8f0; }}
     .g-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 30px; }}
 </style></head>
 <body>
-    <div style="max-width:1300px; margin:0 auto;">
+    <div style="max-width:1400px; margin:0 auto;">
         <h1 style="font-weight:900; font-size:2.8rem; margin:0;">Dashboard Logistica</h1>
         <p style="color:#64748b; font-size:1.1rem; margin-top:10px;">Pianificazione flotta basata su Veggiano (PD)</p>
         <div class="main-grid">
             <div class="sum-card"><b style="font-size:2.2rem; color:#4f46e5;">{len(summary_data)}</b><br><small>GIRI</small></div>
             <div class="sum-card"><b style="font-size:2.2rem; color:#4f46e5;">{km_tot} km</b><br><small>KM TOTALI</small></div>
+            <div class="sum-card"><b style="font-size:2.2rem; color:#10b981;">€ {fatturato_generale}</b><br><small>FATTURATO ({tot_ddt_generale} DDT)</small></div>
             <div class="sum-card"><b style="font-size:2.2rem; color:#10b981;">{fmt_min(sum(z['t_sosta'] for z in summary_data))}</b><br><small>SCARICO</small></div>
             <div class="sum-card" style="background:#eef2ff;"><b style="font-size:2.2rem; color:#4f46e5;">{fmt_min(min_tot)}</b><br><small>TEMPO TOTALE</small></div>
         </div>
@@ -379,8 +385,21 @@ def main():
         perc = ottimizza_percorso(punti)
         km, t_guida, t_sosta, t_tot, polylines = get_google_trip_data(perc)
         
+        
+        # Calcolo Fatturato DDT (18.50 Euro ciascuno)
+        tot_ddt = 0
+        for p in punti:
+            tot_ddt += len(p.get("codici_ddt_frutta") or [])
+            tot_ddt += len(p.get("codici_ddt_latte") or [])
+            # Fallback per punti caricati senza liste esplicite
+            if not p.get("codici_ddt_frutta") and not p.get("codici_ddt_latte"):
+                if p.get("codice_frutta") and p.get("codice_frutta") != "p00000": tot_ddt += 1
+                if p.get("codice_latte") and p.get("codice_latte") != "p00000": tot_ddt += 1
+        
+        fatturato = f"{tot_ddt * 18.50:.2f}"
+        
         fname = sanitize_filename(f"{v_id}_Zone_{'_'.join(zone_coinvolte[:3])}.html")
-        info = {'v_id': v_id, 'zone_str': z_str, 'fname': fname, 'km': km, 't_guida': t_guida, 't_sosta': t_sosta, 't_tot': t_tot, 'punti': len(punti)}
+        info = {'v_id': v_id, 'zone_str': z_str, 'fname': fname, 'km': km, 't_guida': t_guida, 't_sosta': t_sosta, 't_tot': t_tot, 'punti': len(punti), 'tot_ddt': tot_ddt, 'fatturato': fatturato}
         summary.append(info)
         
         genera_html_giro(v_id, z_str, perc, (km, t_guida, t_sosta, t_tot), polylines, out_dir / fname)

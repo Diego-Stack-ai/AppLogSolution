@@ -112,10 +112,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&libraries=geometry,marker"></script>
     <style>
-        :root { --p: #4f46e5; --accent: #10b981; --done: #94a3b8; }
+        :root { --p: #4f46e5; --accent: #10b981; --done: #94a3b8; --geo: #3b82f6; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: #f8fafc; overflow: hidden; }
         .main-container { display: flex; flex-direction: column; height: 100vh; }
-        #map { height: 45vh; width: 100%; background: #dfe5eb; position: relative; }
+        #map { height: 42vh; width: 100%; background: #dfe5eb; position: relative; }
         #sidebar { flex: 1; display: flex; flex-direction: column; background: white; border-top: 2px solid #cbd5e1; overflow: hidden; }
         .header { padding: 6px 12px; background: #1e293b; color: white; border-bottom: 2px solid var(--accent); position: relative; }
         .trip-title { margin: 0; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
@@ -140,11 +140,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .actions { display: flex; gap: 6px; }
         .btn-nav { background: var(--accent); color: white; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; }
         .btn-done { background: white; color: #64748b; width: 40px; height: 40px; border-radius: 8px; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; }
-        
+        .btn-geo { background: var(--geo); color: white; width: 40px; height: 40px; border-radius: 8px; border: none; display: flex; align-items: center; justify-content: center; }
+        .btn-geo.saved { background: #1e293b; }
+
         #gps-btn { position: absolute; bottom: 20px; right: 20px; background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; color: var(--p); border: none; }
+        #geo-feedback { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 30px; font-size: 0.8rem; font-weight: 700; z-index: 2000; display: none; }
     </style>
 </head>
 <body>
+    <div id="geo-feedback">Coordinate salvate!</div>
     <div class="main-container">
         <div id="map">
             <button id="gps-btn" onclick="centerOnMe()"><span class="material-icons-round">my_location</span></button>
@@ -163,10 +167,66 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <div id="delivery-list">{{ cards_html|safe }}</div>
         </div>
     </div>
+    
+    <!-- FIREBASE SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLnhP2Q4bz2ubYwcMLiD3-qq4c220eVKw",
+            authDomain: "log-solution-60007.firebaseapp.com",
+            projectId: "log-solution-60007",
+            storageBucket: "log-solution-60007.appspot.com",
+            messagingSenderId: "343696844738",
+            appId: "1:343696844738:web:b8d4e10c71fb2c67bc7d20"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.saveRealCoords = async function(i) {
+            if (!window.currentPos) {
+                alert("GPS non pronto. Attendi il pallino blu.");
+                return;
+            }
+            const p = window.data[i];
+            const btn = document.querySelectorAll('.btn-geo')[i];
+            
+            try {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-icons-round">sync</span>';
+                
+                await addDoc(collection(db, "coordinate_reali"), {
+                    codice_frutta: p.codice_frutta || "",
+                    codice_latte: p.codice_latte || "",
+                    nome: p.cliente,
+                    indirizzo: p.indirizzo,
+                    lat: window.currentPos.lat,
+                    lon: window.currentPos.lng,
+                    timestamp: serverTimestamp(),
+                    v_id: window.v_id
+                });
+
+                btn.classList.add('saved');
+                btn.innerHTML = '<span class="material-icons-round">location_on</span>';
+                const f = document.getElementById('geo-feedback');
+                f.style.display = 'block';
+                setTimeout(() => f.style.display = 'none', 3000);
+            } catch (e) {
+                console.error(e);
+                alert("Errore salvataggio!");
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-icons-round">location_searching</span>';
+            }
+        };
+    </script>
+
     <script>
         const v_id = "{{ v_id }}";
         const data = {{ deliveries_js|safe }};
+        window.data = data; window.v_id = v_id;
         let map, markers = [], userMarker;
+        window.currentPos = null;
         
         // --- GESTIONE STATO CONSEGNE ---
         function loadStatus() {
@@ -212,6 +272,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(pos => {
                     const myPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    window.currentPos = myPos;
                     if (!userMarker) {
                         userMarker = new google.maps.Marker({
                             position: myPos, map: map,
@@ -249,7 +310,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         function focusOn(i) { if(markers[i]) { map.panTo(markers[i].getPosition()); map.setZoom(17); } }
         function centerOnMe() { if(userMarker) { map.panTo(userMarker.getPosition()); map.setZoom(16); } }
-        window.onload = initMap;
     </script>
 </body>
 </html>"""
@@ -306,8 +366,8 @@ def main():
             query = f"{d['cliente']} {d['indirizzo']}".replace(" ", "+")
             return f"https://www.google.com/maps/dir/?api=1&destination={query}&travelmode=driving"
 
-        deliveries = [{"cliente": p.get("nome", "Cliente"), "indirizzo": p.get("indirizzo", "-"), "lat": p.get("lat"), "lon": p.get("lon")} for p in perc]
-        cards_html = "".join([f'<div class="card {"next" if idx == 0 else ""}" onclick="focusOn({idx})"><div class="stop-num">{idx+1}</div><div class="stop-info"><b class="name">{d["cliente"]}</b><span class="addr">{d["indirizzo"]}</span></div><div class="actions"><button class="btn-done" onclick="toggleDone({idx}, event)"><span class="material-icons-round">radio_button_unchecked</span></button><a href="{get_nav_url(d)}" class="btn-nav">{svg_icon}</a></div></div>' for idx, d in enumerate(deliveries)])
+        deliveries = [{"cliente": p.get("nome", "Cliente"), "indirizzo": p.get("indirizzo", "-"), "lat": p.get("lat"), "lon": p.get("lon"), "codice_frutta": p.get("codice_frutta", ""), "codice_latte": p.get("codice_latte", "")} for p in perc]
+        cards_html = "".join([f'<div class="card {"next" if idx == 0 else ""}" onclick="focusOn({idx})"><div class="stop-num">{idx+1}</div><div class="stop-info"><b class="name">{d["cliente"]}</b><span class="addr">{d["indirizzo"]}</span></div><div class="actions"><button class="btn-geo" onclick="saveRealCoords({idx}, event)"><span class="material-icons-round">location_searching</span></button><button class="btn-done" onclick="toggleDone({idx}, event)"><span class="material-icons-round">radio_button_unchecked</span></button><a href="{get_nav_url(d)}" class="btn-nav">{svg_icon}</a></div></div>' for idx, d in enumerate(deliveries)])
 
         html = HTML_TEMPLATE.replace("{{ v_id }}", v_id).replace("{{ zone_str }}", z_str).replace("{{ api_key }}", GOOGLE_MAPS_API_KEY).replace("{{ km }}", str(km)).replace("{{ t_guida }}", format_time(t_guida)).replace("{{ t_sosta }}", format_time(t_sosta)).replace("{{ t_tot }}", format_time(t_tot)).replace("{{ cards_html|safe }}", cards_html).replace("{{ deliveries_js|safe }}", json.dumps(deliveries))
         (out_folder / fname).write_text(html, encoding="utf-8")
@@ -315,17 +375,15 @@ def main():
 
     txt_content = "🚀 LINK MAPPE PER AUTISTI (GIORNO CORRENTE)\n------------------------------------------\n\n"
     for i, v in enumerate(viaggi):
-        p_raw = v.get("lista_punti", [])
-        if not p_raw: continue
-        zone_list = sorted(list(set([str(p.get('zona', '0000')) for p in p_raw])))
-        fname = f"V{i+1:02d}_Zone_{'_'.join(zone_list[:4])}.html"
+        v_id = v.get("nome_giro", f"V{i+1:02d}")
+        # IMPORTANTE: Usiamo il nome del file già generato sopra
+        zone_list = sorted(list(set([str(p.get('zona', '0000')) for p in v.get("lista_punti", [])])))
+        fname = f"{v_id}_Zone_{'_'.join(zone_list[:4])}.html"
         
         # Generiamo link Firebase (più stabili per la web app)
         firebase_link = f"https://log-solution-60007.web.app/mappe_autisti/{fname}"
-        github_link = f"https://diego-stack-ai.github.io/AppLogSolution/frontend/mappe_autisti/{fname}"
         
-        txt_content += f"🏎️ V{i+1:02d} (FIREBASE): {firebase_link}\n"
-        txt_content += f"🔗 V{i+1:02d} (GITHUB): {github_link}\n\n"
+        txt_content += f"🏎️ {v_id} (MAPPA): {firebase_link}\n\n"
         
     (out_folder / "LINK_WHATSAPP_AUTISTI.txt").write_text(txt_content, encoding="utf-8")
     (WEBAPP_FOLDER / "LINK_WHATSAPP_AUTISTI.txt").write_text(txt_content, encoding="utf-8")

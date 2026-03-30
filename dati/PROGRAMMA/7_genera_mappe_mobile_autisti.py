@@ -135,7 +135,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .stop-num { width: 28px; height: 28px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px; flex-shrink: 0; }
         .stop-info { flex: 1; min-width: 0; }
         .name { display: block; font-size: 0.85rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .addr { font-size: 0.68rem; color: #64748b; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .addr { font-size: 0.8rem; color: #64748b; font-weight: 600; line-height: 1.1; display: block; }
         
         .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 5px; }
         .btn-nav, .btn-done, .btn-geo { 
@@ -373,7 +373,19 @@ def main():
             return f"https://www.google.com/maps/dir/?api=1&destination={query}&travelmode=driving"
 
         deliveries = [{"cliente": p.get("nome", "Cliente"), "indirizzo": p.get("indirizzo", "-"), "lat": p.get("lat"), "lon": p.get("lon"), "codice_frutta": p.get("codice_frutta", ""), "codice_latte": p.get("codice_latte", "")} for p in perc]
-        cards_html = "".join([f'<div class="card {"next" if idx == 0 else ""}" onclick="focusOn({idx})"><div class="stop-num">{idx+1}</div><div class="stop-info"><b class="name">{d["cliente"]}</b><span class="addr">{d["indirizzo"]}</span></div><div class="actions"><button class="btn-geo" onclick="saveRealCoords({idx}, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button><button class="btn-done" onclick="toggleDone({idx}, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button><a href="{get_nav_url(d)}" class="btn-nav"><span class="material-icons-round">navigation</span> NAVIGA</a></div></div>' for idx, d in enumerate(deliveries)])
+        
+        cards_list = []
+        for idx, d in enumerate(deliveries):
+            # Formattazione indirizzo su due righe: via/piazza sopra (grassetto), resto sotto
+            p_addr = d["indirizzo"].split(',', 1)
+            via_parte = p_addr[0].strip()
+            resto_parte = p_addr[1].strip() if len(p_addr) > 1 else ""
+            addr_html = f'<span class="addr"><b>{via_parte}</b><br>{resto_parte}</span>'
+            
+            c = f'<div class="card {"next" if idx == 0 else ""}" onclick="focusOn({idx})"><div class="stop-num">{idx+1}</div><div class="stop-info"><b class="name">{d["cliente"]}</b>{addr_html}</div><div class="actions"><button class="btn-geo" onclick="saveRealCoords({idx}, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button><button class="btn-done" onclick="toggleDone({idx}, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button><a href="{get_nav_url(d)}" class="btn-nav"><span class="material-icons-round">navigation</span> NAVIGA</a></div></div>'
+            cards_list.append(c)
+        
+        cards_html = "".join(cards_list)
 
         html = HTML_TEMPLATE.replace("{{ v_id }}", v_id).replace("{{ zone_str }}", z_str).replace("{{ api_key }}", GOOGLE_MAPS_API_KEY).replace("{{ km }}", str(km)).replace("{{ t_guida }}", format_time(t_guida)).replace("{{ t_sosta }}", format_time(t_sosta)).replace("{{ t_tot }}", format_time(t_tot)).replace("{{ cards_html|safe }}", cards_html).replace("{{ deliveries_js|safe }}", json.dumps(deliveries))
         (out_folder / fname).write_text(html, encoding="utf-8")

@@ -22,23 +22,35 @@
         .stat-lbl { font-size: 0.52rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-top: 1px; }
         #delivery-list { flex: 1; overflow-y: auto; padding: 8px; background: #f1f5f9; padding-bottom: 60px; }
         
-        .card { background: white; border-radius: 10px; padding: 10px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; border: 1px solid #cbd5e1; position: relative; transition: all 0.2s; }
+        .card { 
+            background: white; border-radius: 12px; padding: 10px; margin-bottom: 8px; 
+            display: grid; grid-template-columns: 42px 1fr 52px; gap: 8px; align-items: center;
+            border: 1px solid #cbd5e1; position: relative; transition: all 0.2s; 
+        }
         .card.done { opacity: 0.6; background: #e2e8f0; border-color: #cbd5e1; }
         .card.done .stop-num { background: var(--done); }
         .card.done .btn-done { color: var(--accent); background: white; border: 1px solid var(--accent); }
         .card.next { border-color: var(--p); border-left: 5px solid var(--p); }
         
-        .stop-num { width: 28px; height: 28px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px; flex-shrink: 0; }
-        .stop-info { flex: 1; min-width: 0; }
+        .stop-num { width: 32px; height: 32px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
+        .stop-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
         .name { display: block; font-size: 0.85rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .addr { font-size: 0.8rem; color: #64748b; font-weight: 600; line-height: 1.1; display: block; }
+        .addr { font-size: 0.78rem; color: #64748b; font-weight: 600; line-height: 1.1; display: block; }
         
-        .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 5px; }
-        .btn-nav, .btn-done, .btn-geo { 
-            height: 34px; border-radius: 8px; font-size: 0.65rem; font-weight: 800;
-            display: flex; align-items: center; justify-content: center; gap: 6px; 
-            padding: 0 10px; text-decoration: none; border: none; white-space: nowrap;
+        .actions { display: flex; gap: 6px; width: 100%; margin-bottom: 2px; }
+        .btn-done, .btn-geo { 
+            flex: 1; height: 32px; border-radius: 6px; font-size: 0.6rem; font-weight: 800;
+            display: flex; align-items: center; justify-content: center; gap: 4px; 
+            padding: 0 4px; text-decoration: none; border: none; white-space: nowrap;
         }
+        .btn-nav { 
+            background: var(--accent); color: white; width: 44px; height: 44px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; text-decoration: none;
+        }
+        .btn-done { background: white; color: #64748b; border: 1px solid #cbd5e1; }
+        .btn-geo { background: var(--geo); color: white; }
+        .btn-geo.saved { background: #1e293b; }
+        .material-icons-round { font-size: 16px !important; }
         .btn-nav { background: var(--accent); color: white; }
         .btn-done { background: white; color: #64748b; border: 1px solid #cbd5e1; }
         .btn-geo { background: var(--geo); color: white; }
@@ -66,7 +78,106 @@
                     <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">3h 8m</span><span class="stat-lbl">Totale</span></div>
                 </div>
             </div>
-            <div id="delivery-list"><div class="card next" onclick="focusOn(0)"><div class="stop-num">1</div><div class="stop-info"><b class="name">Scuola Primaria D. Alighieri Grisignano Di</b><span class="addr"><b>Via Pavese</b><br>36040 Grisignano Di Zocco (VI)</span></div><div class="actions"><button class="btn-geo" onclick="saveRealCoords(0, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button><button class="btn-done" onclick="toggleDone(0, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button><a href="https://www.google.com/maps/dir/?api=1&destination=45.4747764,11.694348&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span> NAVIGA</a></div></div><div class="card " onclick="focusOn(1)"><div class="stop-num">2</div><div class="stop-info"><b class="name">Ic Vicenza 2 E 4 - G.B. Tiepolo</b><span class="addr"><b>Via Palemone</b><br>14, 36100 Vicenza (VI)</span></div><div class="actions"><button class="btn-geo" onclick="saveRealCoords(1, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button><button class="btn-done" onclick="toggleDone(1, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button><a href="https://www.google.com/maps/dir/?api=1&destination=45.54721178499754,11.5727163920713&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span> NAVIGA</a></div></div><div class="card " onclick="focusOn(2)"><div class="stop-num">3</div><div class="stop-info"><b class="name">Fondazione Levis Plona</b><span class="addr"><b>Porta S. Croce N.55</b><br>36100 Vicenza (VI)</span></div><div class="actions"><button class="btn-geo" onclick="saveRealCoords(2, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button><button class="btn-done" onclick="toggleDone(2, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button><a href="https://www.google.com/maps/dir/?api=1&destination=45.5521980922683,11.5371475374494&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span> NAVIGA</a></div></div><div class="card " onclick="focusOn(3)"><div class="stop-num">4</div><div class="stop-info"><b class="name">Scuola Primaria G. Zanella</b><span class="addr"><b>Via Rossini</b><br>2/4, 36010 Monticello Conte Otto (VI)</span></div><div class="actions"><button class="btn-geo" onclick="saveRealCoords(3, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button><button class="btn-done" onclick="toggleDone(3, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button><a href="https://www.google.com/maps/dir/?api=1&destination=45.6037003,11.5708813&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span> NAVIGA</a></div></div><div class="card " onclick="focusOn(4)"><div class="stop-num">5</div><div class="stop-info"><b class="name">MUSSOLENTE - CASONI</b><span class="addr"><b>VIA FRANCESCO BARACCA 2</b><br>36060 MUSSOLENTE (VICENZA)</span></div><div class="actions"><button class="btn-geo" onclick="saveRealCoords(4, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button><button class="btn-done" onclick="toggleDone(4, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button><a href="https://www.google.com/maps/dir/?api=1&destination=45.7553727,11.810372&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span> NAVIGA</a></div></div><div class="card " onclick="focusOn(5)"><div class="stop-num">6</div><div class="stop-info"><b class="name">CAMPO S.MARTINO-LOC. BUSIAGO</b><span class="addr"><b>VIA S.LORENZO 83</b><br></span></div><div class="actions"><button class="btn-geo" onclick="saveRealCoords(5, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button><button class="btn-done" onclick="toggleDone(5, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button><a href="https://www.google.com/maps/dir/?api=1&destination=45.5622293,11.8243292&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span> NAVIGA</a></div></div><div class="card " onclick="focusOn(6)"><div class="stop-num">7</div><div class="stop-info"><b class="name">CAMPO S.MARTINO-LOC. MARSANGO</b><span class="addr"><b>VIA ALCIDE DE GASPERI 43</b><br></span></div><div class="actions"><button class="btn-geo" onclick="saveRealCoords(6, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button><button class="btn-done" onclick="toggleDone(6, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button><a href="https://www.google.com/maps/dir/?api=1&destination=45.5516149,11.8348171&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span> NAVIGA</a></div></div><div class="card " onclick="focusOn(7)"><div class="stop-num">8</div><div class="stop-info"><b class="name">CURTAROLO-LOC. PIEVE</b><span class="addr"><b>VIA MONTE PASUBIO3</b><br></span></div><div class="actions"><button class="btn-geo" onclick="saveRealCoords(7, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button><button class="btn-done" onclick="toggleDone(7, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button><a href="https://www.google.com/maps/dir/?api=1&destination=45.518701,11.8313461&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span> NAVIGA</a></div></div><div class="card " onclick="focusOn(8)"><div class="stop-num">9</div><div class="stop-info"><b class="name">A. Da Tremignon</b><span class="addr"><b>Via Borsellino</b><br>25, 35016 Piazzola Sul Brenta (PD)</span></div><div class="actions"><button class="btn-geo" onclick="saveRealCoords(8, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button><button class="btn-done" onclick="toggleDone(8, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button><a href="https://www.google.com/maps/dir/?api=1&destination=45.5184479,11.8079308&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span> NAVIGA</a></div></div></div>
+            <div id="delivery-list"><div class="card next" onclick="focusOn(0)">
+                <div class="stop-num">1</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(0, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(0, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Scuola Primaria D. Alighieri Grisignano Di</b>
+                    <span class="addr"><b>Via Pavese</b><br>36040 Grisignano Di Zocco (VI)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4747764,11.694348&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(1)">
+                <div class="stop-num">2</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(1, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(1, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Ic Vicenza 2 E 4 - G.B. Tiepolo</b>
+                    <span class="addr"><b>Via Palemone</b><br>14, 36100 Vicenza (VI)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.54721178499754,11.5727163920713&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(2)">
+                <div class="stop-num">3</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(2, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(2, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Fondazione Levis Plona</b>
+                    <span class="addr"><b>Porta S. Croce N.55</b><br>36100 Vicenza (VI)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5521980922683,11.5371475374494&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(3)">
+                <div class="stop-num">4</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(3, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(3, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Scuola Primaria G. Zanella</b>
+                    <span class="addr"><b>Via Rossini</b><br>2/4, 36010 Monticello Conte Otto (VI)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6037003,11.5708813&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(4)">
+                <div class="stop-num">5</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(4, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(4, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">MUSSOLENTE - CASONI</b>
+                    <span class="addr"><b>VIA FRANCESCO BARACCA 2</b><br>36060 MUSSOLENTE (VICENZA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7553727,11.810372&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(5)">
+                <div class="stop-num">6</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(5, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(5, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">CAMPO S.MARTINO-LOC. BUSIAGO</b>
+                    <span class="addr"><b>VIA S.LORENZO 83</b><br></span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5622293,11.8243292&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(6)">
+                <div class="stop-num">7</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(6, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(6, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">CAMPO S.MARTINO-LOC. MARSANGO</b>
+                    <span class="addr"><b>VIA ALCIDE DE GASPERI 43</b><br></span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5516149,11.8348171&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(7)">
+                <div class="stop-num">8</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(7, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(7, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">CURTAROLO-LOC. PIEVE</b>
+                    <span class="addr"><b>VIA MONTE PASUBIO3</b><br></span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.518701,11.8313461&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(8)">
+                <div class="stop-num">9</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(8, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(8, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">A. Da Tremignon</b>
+                    <span class="addr"><b>Via Borsellino</b><br>25, 35016 Piazzola Sul Brenta (PD)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5184479,11.8079308&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div></div>
         </div>
     </div>
     

@@ -126,23 +126,35 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .stat-lbl { font-size: 0.52rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-top: 1px; }
         #delivery-list { flex: 1; overflow-y: auto; padding: 8px; background: #f1f5f9; padding-bottom: 60px; }
         
-        .card { background: white; border-radius: 10px; padding: 10px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; border: 1px solid #cbd5e1; position: relative; transition: all 0.2s; }
+        .card { 
+            background: white; border-radius: 12px; padding: 10px; margin-bottom: 8px; 
+            display: grid; grid-template-columns: 42px 1fr 52px; gap: 8px; align-items: center;
+            border: 1px solid #cbd5e1; position: relative; transition: all 0.2s; 
+        }
         .card.done { opacity: 0.6; background: #e2e8f0; border-color: #cbd5e1; }
         .card.done .stop-num { background: var(--done); }
         .card.done .btn-done { color: var(--accent); background: white; border: 1px solid var(--accent); }
         .card.next { border-color: var(--p); border-left: 5px solid var(--p); }
         
-        .stop-num { width: 28px; height: 28px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px; flex-shrink: 0; }
-        .stop-info { flex: 1; min-width: 0; }
+        .stop-num { width: 32px; height: 32px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
+        .stop-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
         .name { display: block; font-size: 0.85rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .addr { font-size: 0.8rem; color: #64748b; font-weight: 600; line-height: 1.1; display: block; }
+        .addr { font-size: 0.78rem; color: #64748b; font-weight: 600; line-height: 1.1; display: block; }
         
-        .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 5px; }
-        .btn-nav, .btn-done, .btn-geo { 
-            height: 34px; border-radius: 8px; font-size: 0.65rem; font-weight: 800;
-            display: flex; align-items: center; justify-content: center; gap: 6px; 
-            padding: 0 10px; text-decoration: none; border: none; white-space: nowrap;
+        .actions { display: flex; gap: 6px; width: 100%; margin-bottom: 2px; }
+        .btn-done, .btn-geo { 
+            flex: 1; height: 32px; border-radius: 6px; font-size: 0.6rem; font-weight: 800;
+            display: flex; align-items: center; justify-content: center; gap: 4px; 
+            padding: 0 4px; text-decoration: none; border: none; white-space: nowrap;
         }
+        .btn-nav { 
+            background: var(--accent); color: white; width: 44px; height: 44px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; text-decoration: none;
+        }
+        .btn-done { background: white; color: #64748b; border: 1px solid #cbd5e1; }
+        .btn-geo { background: var(--geo); color: white; }
+        .btn-geo.saved { background: #1e293b; }
+        .material-icons-round { font-size: 16px !important; }
         .btn-nav { background: var(--accent); color: white; }
         .btn-done { background: white; color: #64748b; border: 1px solid #cbd5e1; }
         .btn-geo { background: var(--geo); color: white; }
@@ -373,7 +385,6 @@ def main():
             return f"https://www.google.com/maps/dir/?api=1&destination={query}&travelmode=driving"
 
         deliveries = [{"cliente": p.get("nome", "Cliente"), "indirizzo": p.get("indirizzo", "-"), "lat": p.get("lat"), "lon": p.get("lon"), "codice_frutta": p.get("codice_frutta", ""), "codice_latte": p.get("codice_latte", "")} for p in perc]
-        
         cards_list = []
         for idx, d in enumerate(deliveries):
             # Formattazione indirizzo su due righe: via/piazza sopra (grassetto), resto sotto
@@ -382,7 +393,18 @@ def main():
             resto_parte = p_addr[1].strip() if len(p_addr) > 1 else ""
             addr_html = f'<span class="addr"><b>{via_parte}</b><br>{resto_parte}</span>'
             
-            c = f'<div class="card {"next" if idx == 0 else ""}" onclick="focusOn({idx})"><div class="stop-num">{idx+1}</div><div class="stop-info"><b class="name">{d["cliente"]}</b>{addr_html}</div><div class="actions"><button class="btn-geo" onclick="saveRealCoords({idx}, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button><button class="btn-done" onclick="toggleDone({idx}, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button><a href="{get_nav_url(d)}" class="btn-nav"><span class="material-icons-round">navigation</span> NAVIGA</a></div></div>'
+            c = f'''<div class="card {'next' if idx == 0 else ''}" onclick="focusOn({idx})">
+                <div class="stop-num">{idx+1}</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords({idx}, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone({idx}, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">{d["cliente"]}</b>
+                    {addr_html}
+                </div>
+                <a href="{get_nav_url(d)}" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div>'''
             cards_list.append(c)
         
         cards_html = "".join(cards_list)

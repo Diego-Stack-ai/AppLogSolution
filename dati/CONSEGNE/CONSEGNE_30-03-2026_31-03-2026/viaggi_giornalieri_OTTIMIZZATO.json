@@ -1,148 +1,7 @@
 [
   {
     "nome_giro": "V01",
-    "file_sorgente": "V01_Zone_3202_DDT_DA_INSERIRE.html",
-    "zone": [
-      "3202",
-      "DDT",
-      "DA",
-      "INSERIRE"
-    ],
-    "num_fermate": 5,
-    "data_ddt": "30-03-2026_31-03-2026",
-    "lista_punti": [
-      {
-        "nome": "A.Gabelli Belluno",
-        "indirizzo": "Piazzale Cesare Battisti, 32100 Belluno (BL)",
-        "codice_frutta": "p2169",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2169_p00000",
-        "zona": "3202",
-        "data_consegna": "30-03-2026_31-03-2026",
-        "orario_min": "07:45",
-        "orario_max": "10:00",
-        "lat": 46.14158552214177,
-        "lon": 12.21280275292396,
-        "codici_ddt_frutta": [
-          "p2169"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 45,
-        "geo_query_nome_indirizzo": "A.Gabelli Belluno Piazzale Cesare Battisti, 32100 Belluno (BL)",
-        "geo_query_indirizzo": "Piazzale Cesare Battisti, 32100 Belluno (BL)"
-      },
-      {
-        "nome": "\"A. DORIGUZZI ROSSIN\" - DANTA",
-        "indirizzo": "VIA ROMA 21",
-        "codice_frutta": "p6032",
-        "codice_latte": "p2001",
-        "data_consegna": "25-03-2026",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 46.5666887,
-        "lon": 12.5217516,
-        "zona": "DDT_DA_INSERIRE",
-        "codici_ddt_frutta": [
-          "p6032"
-        ],
-        "codici_ddt_latte": [],
-        "rientri_alert": [
-          {
-            "codice": "p6032",
-            "status": "red",
-            "data_ddt": "25-03-2026"
-          }
-        ],
-        "row_idx_mappatura": 2,
-        "_is_rientro_speciale": true,
-        "geo_query_nome_indirizzo": "\"A. DORIGUZZI ROSSIN\" - DANTA VIA ROMA 21",
-        "geo_query_indirizzo": "VIA ROMA 21"
-      },
-      {
-        "nome": "PRIMARIA COMELICO SUPERIORE",
-        "indirizzo": "VIA DI PIANO 30",
-        "codice_frutta": "p8840",
-        "codice_latte": "p1895",
-        "data_consegna": "25-03-2026",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 46.5989587,
-        "lon": 12.4935433,
-        "zona": "DDT_DA_INSERIRE",
-        "codici_ddt_frutta": [
-          "p8840"
-        ],
-        "codici_ddt_latte": [],
-        "rientri_alert": [
-          {
-            "codice": "p8840",
-            "status": "red",
-            "data_ddt": "25-03-2026"
-          }
-        ],
-        "row_idx_mappatura": 312,
-        "_is_rientro_speciale": true,
-        "geo_query_nome_indirizzo": "PRIMARIA COMELICO SUPERIORE VIA DI PIANO 30",
-        "geo_query_indirizzo": "VIA DI PIANO 30"
-      },
-      {
-        "nome": "Don Talamini- Selva Di Cadore",
-        "indirizzo": "Via Dei Denever, 21 - S.Fosca",
-        "codice_frutta": "p2108",
-        "codice_latte": "p2655",
-        "data_consegna": "25-03-2026",
-        "orario_min": "07:45",
-        "orario_max": "10:00",
-        "lat": 46.4445552,
-        "lon": 12.0611814,
-        "zona": "DDT_DA_INSERIRE",
-        "codici_ddt_frutta": [
-          "p2108"
-        ],
-        "codici_ddt_latte": [],
-        "rientri_alert": [
-          {
-            "codice": "p2108",
-            "status": "red",
-            "data_ddt": "25-03-2026"
-          }
-        ],
-        "row_idx_mappatura": 129,
-        "_is_rientro_speciale": true,
-        "geo_query_nome_indirizzo": "Don Talamini- Selva Di Cadore Via Dei Denever, 21 - S.Fosca",
-        "geo_query_indirizzo": "Via Dei Denever, 21 - S.Fosca"
-      },
-      {
-        "nome": "Scuola Primaria Agosti",
-        "indirizzo": "Piazza S.Giovanni Bosco,12, 32100 Belluno (BL)",
-        "codice_frutta": "p2061",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2061_p00000",
-        "zona": "3202",
-        "data_consegna": "30-03-2026_31-03-2026",
-        "orario_min": "07:30",
-        "orario_max": "10:00",
-        "lat": 46.3746098,
-        "lon": 12.1211294,
-        "codici_ddt_frutta": [
-          "p2061"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 389,
-        "geo_query_nome_indirizzo": "Scuola Primaria Agosti Piazza S.Giovanni Bosco,12, 32100 Belluno (BL)",
-        "geo_query_indirizzo": "Piazza S.Giovanni Bosco,12, 32100 Belluno (BL)"
-      }
-    ]
-  },
-  {
-    "nome_giro": "V02",
-    "file_sorgente": "V02_Zone_3103_3104_3105.html",
+    "file_sorgente": "V01_Zone_3103_3104_3105.html",
     "zone": [
       "3103",
       "3104",
@@ -391,8 +250,8 @@
     ]
   },
   {
-    "nome_giro": "V03",
-    "file_sorgente": "V03_Zone_3106_DDT_DA_INSERIRE.html",
+    "nome_giro": "V02",
+    "file_sorgente": "V02_Zone_3106_DDT_DA_INSERIRE.html",
     "zone": [
       "3106",
       "DDT",
@@ -526,6 +385,147 @@
         "_is_rientro_speciale": true,
         "geo_query_nome_indirizzo": "MASI-ZONARO VIA MONS.G. MASIERO 1",
         "geo_query_indirizzo": "VIA MONS.G. MASIERO 1"
+      }
+    ]
+  },
+  {
+    "nome_giro": "V03",
+    "file_sorgente": "V03_Zone_3202_DDT_DA_INSERIRE.html",
+    "zone": [
+      "3202",
+      "DDT",
+      "DA",
+      "INSERIRE"
+    ],
+    "num_fermate": 5,
+    "data_ddt": "30-03-2026_31-03-2026",
+    "lista_punti": [
+      {
+        "nome": "A.Gabelli Belluno",
+        "indirizzo": "Piazzale Cesare Battisti, 32100 Belluno (BL)",
+        "codice_frutta": "p2169",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2169_p00000",
+        "zona": "3202",
+        "data_consegna": "30-03-2026_31-03-2026",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 46.14158552214177,
+        "lon": 12.21280275292396,
+        "codici_ddt_frutta": [
+          "p2169"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 45,
+        "geo_query_nome_indirizzo": "A.Gabelli Belluno Piazzale Cesare Battisti, 32100 Belluno (BL)",
+        "geo_query_indirizzo": "Piazzale Cesare Battisti, 32100 Belluno (BL)"
+      },
+      {
+        "nome": "\"A. DORIGUZZI ROSSIN\" - DANTA",
+        "indirizzo": "VIA ROMA 21",
+        "codice_frutta": "p6032",
+        "codice_latte": "p2001",
+        "data_consegna": "25-03-2026",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 46.5666887,
+        "lon": 12.5217516,
+        "zona": "DDT_DA_INSERIRE",
+        "codici_ddt_frutta": [
+          "p6032"
+        ],
+        "codici_ddt_latte": [],
+        "rientri_alert": [
+          {
+            "codice": "p6032",
+            "status": "red",
+            "data_ddt": "25-03-2026"
+          }
+        ],
+        "row_idx_mappatura": 2,
+        "_is_rientro_speciale": true,
+        "geo_query_nome_indirizzo": "\"A. DORIGUZZI ROSSIN\" - DANTA VIA ROMA 21",
+        "geo_query_indirizzo": "VIA ROMA 21"
+      },
+      {
+        "nome": "PRIMARIA COMELICO SUPERIORE",
+        "indirizzo": "VIA DI PIANO 30",
+        "codice_frutta": "p8840",
+        "codice_latte": "p1895",
+        "data_consegna": "25-03-2026",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 46.5989587,
+        "lon": 12.4935433,
+        "zona": "DDT_DA_INSERIRE",
+        "codici_ddt_frutta": [
+          "p8840"
+        ],
+        "codici_ddt_latte": [],
+        "rientri_alert": [
+          {
+            "codice": "p8840",
+            "status": "red",
+            "data_ddt": "25-03-2026"
+          }
+        ],
+        "row_idx_mappatura": 312,
+        "_is_rientro_speciale": true,
+        "geo_query_nome_indirizzo": "PRIMARIA COMELICO SUPERIORE VIA DI PIANO 30",
+        "geo_query_indirizzo": "VIA DI PIANO 30"
+      },
+      {
+        "nome": "Don Talamini- Selva Di Cadore",
+        "indirizzo": "Via Dei Denever, 21 - S.Fosca",
+        "codice_frutta": "p2108",
+        "codice_latte": "p2655",
+        "data_consegna": "25-03-2026",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 46.4445552,
+        "lon": 12.0611814,
+        "zona": "DDT_DA_INSERIRE",
+        "codici_ddt_frutta": [
+          "p2108"
+        ],
+        "codici_ddt_latte": [],
+        "rientri_alert": [
+          {
+            "codice": "p2108",
+            "status": "red",
+            "data_ddt": "25-03-2026"
+          }
+        ],
+        "row_idx_mappatura": 129,
+        "_is_rientro_speciale": true,
+        "geo_query_nome_indirizzo": "Don Talamini- Selva Di Cadore Via Dei Denever, 21 - S.Fosca",
+        "geo_query_indirizzo": "Via Dei Denever, 21 - S.Fosca"
+      },
+      {
+        "nome": "Scuola Primaria Agosti",
+        "indirizzo": "Piazza S.Giovanni Bosco,12, 32100 Belluno (BL)",
+        "codice_frutta": "p2061",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2061_p00000",
+        "zona": "3202",
+        "data_consegna": "30-03-2026_31-03-2026",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 46.3746098,
+        "lon": 12.1211294,
+        "codici_ddt_frutta": [
+          "p2061"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 389,
+        "geo_query_nome_indirizzo": "Scuola Primaria Agosti Piazza S.Giovanni Bosco,12, 32100 Belluno (BL)",
+        "geo_query_indirizzo": "Piazza S.Giovanni Bosco,12, 32100 Belluno (BL)"
       }
     ]
   },

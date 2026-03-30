@@ -42,7 +42,8 @@ DISTINTA_MOD = BASE_DIR / "crea_distinta_magazzino.py"
 ARTICOLI_NOTI = frozenset({
     "ME-T-DI-V0-NA", "PE-T-DI-L3-NA", "10-GEL", "10-FLYER", "10-MANIFESTO", "LT-DL-02-LC", "LT-ES-04-LS",
     "LT-ESL-IN-LB", "LT-AQ-04-LV", "YO-BI-MN-04-LB", "YO-DL-02-LC", "AP-SU-PC", "FO-DI-PV-04-LB",
-    "CA-Z-BI-L3-NA", "FO-DI-GP-01-NI", "FVNS-03-GADGET", "KI-S-BI-L3-NA", "FVNS-03-POSTER"
+    "CA-Z-BI-L3-NA", "FO-DI-GP-01-NI", "FVNS-03-GADGET", "KI-S-BI-L3-NA", "FVNS-03-POSTER",
+    "FI-Z-BI-L3-NA", "ME-S-BI-L3-NA"
 })
 
 CODICE_MAP = {
@@ -287,7 +288,7 @@ def _aggrega_articoli(lista: list) -> dict:
 # RICERCA PDF
 # ──────────────────────────────────────────────────────────────────────────────
 
-def _carica_rientri() -> dict:
+def _carica_rientri(data_attuale: str = None) -> dict:
     """
     Legge rientri_ddt.xlsx e restituisce un dizionario:
         { codice_lower: 'DD-MM-YYYY' }
@@ -314,7 +315,10 @@ def _carica_rientri() -> dict:
             # ── Filtro colonna C: salta i rientri già consegnati ──────────
             stato = str(row[2] or "").strip().lower() if len(row) > 2 else ""
             if "allegato" in stato and "lavorazione" not in stato:
-                continue   # già consegnato in una sessione precedente
+                # Se data_attuale è nel testo dello stato, significa che lo abbiamo 
+                # appena contrassegnato noi in questa sessione. In tal caso NO saltiamo.
+                if not data_attuale or data_attuale.lower() not in stato:
+                    continue   # già consegnato in una sessione precedente
 
             codice = str(codice).strip().lower()
             if hasattr(data_b, 'strftime'):
@@ -410,15 +414,14 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
 
     # ── SEZIONE 1: ARTICOLI (RICHIESTA: PRIMA IL RIEPILOGO ARTICOLI) ──
     elementi.append(Paragraph("RIEPILOGO ARTICOLI DA CARICARE PER GIRO:", st_body))
-    dati_art = [["Codice Articolo", "Quantità Consolidata", "KG Totali", "Confezionamento", "Note"]]
+    dati_art = [["Codice Articolo", "Descrizione Natura Qualità", "Quantità Consolidata", "Confezionamento", "Note"]]
     for (codice, scadenza), art in sorted(articoli_viaggio.items(), key=lambda x: x[0][0]):
         qty_cons, display = _consolida_quantita(codice, art["quantita"])
-        kg_tot = float(art["kg"]) if art["kg"] else 0
         nota = "" if codice in ARTICOLI_NOTI else "[!] NUOVO"
         dati_art.append([
             codice,
+            art.get("descrizione", codice)[:45],
             display or "—",
-            f"{kg_tot:.1f}" if kg_tot else "—",
             art.get("confezionamento", "")[:30] or "—",
             nota,
         ])
@@ -432,7 +435,7 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
         ("LEFTPADDING",    (0, 0), (-1, -1), 3),
         ("RIGHTPADDING",   (0, 0), (-1, -1), 3),
     ])
-    t_art = Table(dati_art, colWidths=[35*mm, 40*mm, 20*mm, 50*mm, 22*mm])
+    t_art = Table(dati_art, colWidths=[25*mm, 65*mm, 35*mm, 35*mm, 20*mm])
     t_art.setStyle(ts_art)
     elementi.append(t_art)
     elementi.append(Spacer(1, 10*mm))
@@ -510,20 +513,24 @@ def _genera_distinta_pdf(viaggio: dict, articoli_viaggio: dict, out_path: Path, 
         writer = PdfWriter()
         reader_tmp = PdfReader(str(tmp))
 
-        # --- BLOCCO 1: AUTISTA ---
+        # --- ASSEMBLAGGIO INTERFOGLIATO (DOPPIA COPIA CONSECUTIVA) ---
+        # L'obiettivo è avere: [Distinta C1, Distinta C2, DDT 1, DDT 1 copia, DDT 2, DDT 2 copia, ...]
+
+        # 1. Le due copie della Distinta di Carico (Pagina 1 e 2)
         if len(reader_tmp.pages) > 0:
             writer.add_page(reader_tmp.pages[0])
-        for pdf in pdf_ddt_inv:
-            writer.append(str(pdf))
-
-        # --- BLOCCO 2: UFFICIO ---
+        
         if len(reader_tmp.pages) > 1:
             writer.add_page(reader_tmp.pages[1])
         else:
+            # Fallback se ne è stata generata solo una (non dovrebbe succedere)
             writer.add_page(reader_tmp.pages[0])
 
+        # 2. Ogni DDT viene aggiunto in doppia copia consecutiva
         for pdf in pdf_ddt_inv:
-            writer.append(str(pdf))
+            # Ordine inverso rispetto al percorso -> Stop 1 in cima alla pila dopo stampa
+            writer.append(str(pdf)) # Primo giro
+            writer.append(str(pdf)) # Secondo giro (copia)
 
         with open(out_path, "wb") as f:
             writer.write(f)
@@ -574,7 +581,7 @@ def main():
     print(f"{'='*65}\n")
 
     # Carica mappa rientri: { codice: data_originale }
-    rientri = _carica_rientri()
+    rientri = _carica_rientri(data_ddt)
     if rientri:
         print(f"  [RIENTRI] Caricati da rientri_ddt.xlsx: {len(rientri)} codici mappati")
 
@@ -613,6 +620,13 @@ def main():
                 if codice == CODICE_VUOTO or not codice:
                     continue
 
+                # Se si tratta di un punto con data storica (rientro), aggiungi solo
+                # se il singolo codice è tra quelli da rientrare su rientri_ddt.xlsx.
+                if d_p != data_v and codice.lower() not in rientri:
+                    # Questo previene l'aggiunta automatica di codici Latte non necessari
+                    # recuperati via Mappatura Master.
+                    continue
+
                 pdf = None
                 tipo_trovato = tipo
 
@@ -639,7 +653,7 @@ def main():
                     articoli_giro.extend(articoli)
                     n_art = len(articoli)
                     is_rientro = codice.lower() in rientri
-                    tag = f" [RIENTRO←{rientri[codice.lower()]}]" if is_rientro else ""
+                    tag = f" [RIENTRO<-{rientri[codice.lower()]}]" if is_rientro else ""
                     print(f"       OK {nome:<40} {codice} ({tipo_trovato}){tag} -> {n_art} art.")
                 else:
                     pdf_non_trovati.append(f"{codice} ({tipo})")

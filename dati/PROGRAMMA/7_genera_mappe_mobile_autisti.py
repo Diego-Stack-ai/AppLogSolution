@@ -156,20 +156,74 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         async function initMap() {
             try {
-                map = new google.maps.Map(document.getElementById("map"), { zoom: 12, center: { lat: data[0].lat, lng: data[0].lon }, disableDefaultUI: false });
+                // Cerchiamo il primo punto con coordinate valide per centrare la mappa
+                let centerPoint = data.find(p => p.lat && p.lon);
+                if (!centerPoint) centerPoint = { lat: 45.4428, lon: 11.7145 }; // Default Veggiano
+
+                map = new google.maps.Map(document.getElementById("map"), { 
+                    zoom: 12, 
+                    center: { lat: centerPoint.lat, lng: centerPoint.lon }, 
+                    disableDefaultUI: false 
+                });
+
                 const ds = new google.maps.DirectionsService();
                 const dr = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6 } });
-                const waypts = data.slice(1, -1).map(d => ({ location: { lat: d.lat, lng: d.lon }, stopover: true }));
-                ds.route({ origin: { lat: data[0].lat, lng: data[0].lon }, destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, waypoints: waypts, travelMode: "DRIVING" }, (res, st) => { if (st === "OK") dr.setDirections(res); });
+                const waypts = data.slice(1, -1).filter(d => d.lat && d.lon).map(d => ({ location: { lat: d.lat, lng: d.lon }, stopover: true }));
+                
+                // Disegna il percorso solo se i punti principali hanno coordinate
+                if (data[0].lat && data[data.length-1].lat) {
+                    ds.route({ 
+                        origin: { lat: data[0].lat, lng: data[0].lon }, 
+                        destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, 
+                        waypoints: waypts, 
+                        travelMode: "DRIVING" 
+                    }, (res, st) => { if (st === "OK") dr.setDirections(res); });
+                }
+
+                const geocoder = new google.maps.Geocoder();
+                const bounds = new google.maps.LatLngBounds();
+
                 data.forEach((p, i) => {
-                    const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i+1).toString(), color: "white", size: "10px", fontWeight: "bold" }, title: p.cliente });
-                    m.addListener("click", () => { new google.maps.InfoWindow({ content: `<b>${i+1}. ${p.cliente}</b>` }).open(map, m); });
-                    markers.push(m);
+                    if (p.lat && p.lon) {
+                        addMarker(p, i, bounds);
+                    } else {
+                        // Geocoding di backup: Nome + Indirizzo
+                        const query = `${p.cliente}, ${p.indirizzo}`;
+                        geocoder.geocode({ address: query }, (results, status) => {
+                            if (status === "OK") {
+                                p.lat = results[0].geometry.location.lat();
+                                p.lon = results[0].geometry.location.lng();
+                                addMarker(p, i, bounds);
+                            } else {
+                                // Fallback solo indirizzo
+                                geocoder.geocode({ address: p.indirizzo }, (res2, st2) => {
+                                    if (st2 === "OK") {
+                                        p.lat = res2[0].geometry.location.lat();
+                                        p.lon = res2[0].geometry.location.lng();
+                                        addMarker(p, i, bounds);
+                                    }
+                                });
+                            }
+                        });
+                    }
                 });
-                const b = new google.maps.LatLngBounds(); data.forEach(p => b.extend({ lat: p.lat, lng: p.lon })); map.fitBounds(b);
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Map Init Error:", e); }
         }
-        function focusOn(i) { map.panTo(markers[i].getPosition()); map.setZoom(17); }
+
+        function addMarker(p, i, bounds) {
+            const m = new google.maps.Marker({ 
+                position: { lat: p.lat, lng: p.lon }, 
+                map: map, 
+                label: { text: (i+1).toString(), color: "white", size: "10px", fontWeight: "bold" }, 
+                title: p.cliente 
+            });
+            m.addListener("click", () => { new google.maps.InfoWindow({ content: `<b>${i+1}. ${p.cliente}</b>` }).open(map, m); });
+            markers[i] = m;
+            bounds.extend(m.getPosition());
+            map.fitBounds(bounds);
+        }
+
+        function focusOn(i) { if(markers[i]) { map.panTo(markers[i].getPosition()); map.setZoom(17); } }
         window.onload = initMap;
     </script>
 </body>
@@ -202,8 +256,16 @@ def main():
         z_str = "Zone: " + ", ".join(zone_list[:4])
         fname = f"{v_id}_Zone_{'_'.join(zone_list[:4])}.html"
 
+        # Fallback per navigazione: se mancano lat/lon usa Nome + Indirizzo
+        def get_nav_url(d):
+            if d.get("lat") and d.get("lon"):
+                return f"https://www.google.com/maps/dir/?api=1&destination={d['lat']},{d['lon']}&travelmode=driving"
+            # Ricerca testuale: Nome + Indirizzo
+            query = f"{d['cliente']} {d['indirizzo']}".replace(" ", "+")
+            return f"https://www.google.com/maps/dir/?api=1&destination={query}&travelmode=driving"
+
         deliveries = [{"cliente": p.get("nome", "Cliente"), "indirizzo": p.get("indirizzo", "-"), "lat": p.get("lat"), "lon": p.get("lon")} for p in perc]
-        cards_html = "".join([f'<div class="card {"next" if idx == 0 else ""}" onclick="focusOn({idx})"><div class="stop-num">{idx+1}</div><div class="stop-info"><b class="name">{d["cliente"]}</b><span class="addr">{d["indirizzo"]}</span></div><a href="https://www.google.com/maps/dir/?api=1&destination={d["lat"]},{d["lon"]}&travelmode=driving" class="btn-nav">{svg_icon}</a></div>' for idx, d in enumerate(deliveries)])
+        cards_html = "".join([f'<div class="card {"next" if idx == 0 else ""}" onclick="focusOn({idx})"><div class="stop-num">{idx+1}</div><div class="stop-info"><b class="name">{d["cliente"]}</b><span class="addr">{d["indirizzo"]}</span></div><a href="{get_nav_url(d)}" class="btn-nav">{svg_icon}</a></div>' for idx, d in enumerate(deliveries)])
 
         html = HTML_TEMPLATE.replace("{{ v_id }}", v_id).replace("{{ zone_str }}", z_str).replace("{{ api_key }}", GOOGLE_MAPS_API_KEY).replace("{{ km }}", str(km)).replace("{{ t_guida }}", format_time(t_guida)).replace("{{ t_sosta }}", format_time(t_sosta)).replace("{{ t_tot }}", format_time(t_tot)).replace("{{ cards_html|safe }}", cards_html).replace("{{ deliveries_js|safe }}", json.dumps(deliveries))
         (out_folder / fname).write_text(html, encoding="utf-8")
@@ -215,8 +277,14 @@ def main():
         if not p_raw: continue
         zone_list = sorted(list(set([str(p.get('zona', '0000')) for p in p_raw])))
         fname = f"V{i+1:02d}_Zone_{'_'.join(zone_list[:4])}.html"
+        
+        # Generiamo link Firebase (più stabili per la web app)
+        firebase_link = f"https://log-solution-60007.web.app/mappe_autisti/{fname}"
         github_link = f"https://diego-stack-ai.github.io/AppLogSolution/frontend/mappe_autisti/{fname}"
-        txt_content += f"🏎️ V{i+1:02d}: {github_link}\n\n"
+        
+        txt_content += f"🏎️ V{i+1:02d} (FIREBASE): {firebase_link}\n"
+        txt_content += f"🔗 V{i+1:02d} (GITHUB): {github_link}\n\n"
+        
     (out_folder / "LINK_WHATSAPP_AUTISTI.txt").write_text(txt_content, encoding="utf-8")
     (WEBAPP_FOLDER / "LINK_WHATSAPP_AUTISTI.txt").write_text(txt_content, encoding="utf-8")
 

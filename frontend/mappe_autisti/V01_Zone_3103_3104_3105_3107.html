@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V02</title>
+    <title>V01</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker"></script>
     <style>
@@ -35,7 +35,7 @@
         <div id="map"></div>
         <div id="sidebar">
             <div class="header">
-                <div class="trip-title">🏎️ V02 | Zone: 3103, 3104, 3105, 3107</div>
+                <div class="trip-title">🏎️ V01 | Zone: 3103, 3104, 3105, 3107</div>
                 <div class="stats-row">
                     <div class="stat-item"><span class="stat-val">93.9km</span><span class="stat-lbl">Strada</span></div>
                     <div class="stat-item"><span class="stat-val">2h 5m</span><span class="stat-lbl">Guida</span></div>
@@ -52,20 +52,74 @@
 
         async function initMap() {
             try {
-                map = new google.maps.Map(document.getElementById("map"), { zoom: 12, center: { lat: data[0].lat, lng: data[0].lon }, disableDefaultUI: false });
+                // Cerchiamo il primo punto con coordinate valide per centrare la mappa
+                let centerPoint = data.find(p => p.lat && p.lon);
+                if (!centerPoint) centerPoint = { lat: 45.4428, lon: 11.7145 }; // Default Veggiano
+
+                map = new google.maps.Map(document.getElementById("map"), { 
+                    zoom: 12, 
+                    center: { lat: centerPoint.lat, lng: centerPoint.lon }, 
+                    disableDefaultUI: false 
+                });
+
                 const ds = new google.maps.DirectionsService();
                 const dr = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6 } });
-                const waypts = data.slice(1, -1).map(d => ({ location: { lat: d.lat, lng: d.lon }, stopover: true }));
-                ds.route({ origin: { lat: data[0].lat, lng: data[0].lon }, destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, waypoints: waypts, travelMode: "DRIVING" }, (res, st) => { if (st === "OK") dr.setDirections(res); });
+                const waypts = data.slice(1, -1).filter(d => d.lat && d.lon).map(d => ({ location: { lat: d.lat, lng: d.lon }, stopover: true }));
+                
+                // Disegna il percorso solo se i punti principali hanno coordinate
+                if (data[0].lat && data[data.length-1].lat) {
+                    ds.route({ 
+                        origin: { lat: data[0].lat, lng: data[0].lon }, 
+                        destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, 
+                        waypoints: waypts, 
+                        travelMode: "DRIVING" 
+                    }, (res, st) => { if (st === "OK") dr.setDirections(res); });
+                }
+
+                const geocoder = new google.maps.Geocoder();
+                const bounds = new google.maps.LatLngBounds();
+
                 data.forEach((p, i) => {
-                    const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i+1).toString(), color: "white", size: "10px", fontWeight: "bold" }, title: p.cliente });
-                    m.addListener("click", () => { new google.maps.InfoWindow({ content: `<b>${i+1}. ${p.cliente}</b>` }).open(map, m); });
-                    markers.push(m);
+                    if (p.lat && p.lon) {
+                        addMarker(p, i, bounds);
+                    } else {
+                        // Geocoding di backup: Nome + Indirizzo
+                        const query = `${p.cliente}, ${p.indirizzo}`;
+                        geocoder.geocode({ address: query }, (results, status) => {
+                            if (status === "OK") {
+                                p.lat = results[0].geometry.location.lat();
+                                p.lon = results[0].geometry.location.lng();
+                                addMarker(p, i, bounds);
+                            } else {
+                                // Fallback solo indirizzo
+                                geocoder.geocode({ address: p.indirizzo }, (res2, st2) => {
+                                    if (st2 === "OK") {
+                                        p.lat = res2[0].geometry.location.lat();
+                                        p.lon = res2[0].geometry.location.lng();
+                                        addMarker(p, i, bounds);
+                                    }
+                                });
+                            }
+                        });
+                    }
                 });
-                const b = new google.maps.LatLngBounds(); data.forEach(p => b.extend({ lat: p.lat, lng: p.lon })); map.fitBounds(b);
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Map Init Error:", e); }
         }
-        function focusOn(i) { map.panTo(markers[i].getPosition()); map.setZoom(17); }
+
+        function addMarker(p, i, bounds) {
+            const m = new google.maps.Marker({ 
+                position: { lat: p.lat, lng: p.lon }, 
+                map: map, 
+                label: { text: (i+1).toString(), color: "white", size: "10px", fontWeight: "bold" }, 
+                title: p.cliente 
+            });
+            m.addListener("click", () => { new google.maps.InfoWindow({ content: `<b>${i+1}. ${p.cliente}</b>` }).open(map, m); });
+            markers[i] = m;
+            bounds.extend(m.getPosition());
+            map.fitBounds(bounds);
+        }
+
+        function focusOn(i) { if(markers[i]) { map.panTo(markers[i].getPosition()); map.setZoom(17); } }
         window.onload = initMap;
     </script>
 </body>

@@ -258,9 +258,39 @@
         async function initMap() {
             const { Map } = await google.maps.importLibrary("maps");
             const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
-            map = new Map(document.getElementById("map"), { zoom: 12, center: { lat: data[0].lat, lng: data[0].lon }, mapId: 'DEMO_MAP_ID' });
-            data.forEach((p, i) => markers.push(new AdvancedMarkerElement({ map, position: { lat: p.lat, lng: p.lon }, content: createPin(i, i===0 || i===data.length-1) })));
             
+            // Trova primo punto per centrare
+            const centerP = data.find(p => p.lat && p.lon) || {lat: 45.4428, lon: 11.7145};
+            map = new Map(document.getElementById("map"), { zoom: 12, center: { lat: centerP.lat, lng: centerP.lon }, mapId: 'DEMO_MAP_ID' });
+            
+            const geocoder = new google.maps.Geocoder();
+            const bounds = new google.maps.LatLngBounds();
+
+            data.forEach((p, i) => {
+                const isD = (i === 0 || i === data.length - 1);
+                if (p.lat && p.lon) {
+                    addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                } else {
+                    // Geocoding di backup
+                    const query = `${p.nome}, ${p.indirizzo}`;
+                    geocoder.geocode({ address: query }, (results, status) => {
+                        if (status === "OK") {
+                            const loc = results[0].geometry.location;
+                            p.lat = loc.lat(); p.lon = loc.lng();
+                            addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                        } else {
+                            geocoder.geocode({ address: p.indirizzo }, (res2, st2) => {
+                                if (st2 === "OK") {
+                                    const loc2 = res2[0].geometry.location;
+                                    p.lat = loc2.lat(); p.lon = loc2.lng();
+                                    addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
             if (polys.length > 0) {
                 polys.forEach(pString => {
                     const p = google.maps.geometry.encoding.decodePath(pString);
@@ -268,13 +298,24 @@
                 });
             } else {
                 new google.maps.Polyline({ 
-                    path: data.map(p => ({ lat: p.lat, lng: p.lon })), 
+                    path: data.filter(p => p.lat).map(p => ({ lat: p.lat, lng: p.lon })), 
                     strokeColor: "#4f46e5", strokeOpacity: 0.6, strokeWeight: 4, map 
                 });
             }
-            
-            const b = new google.maps.LatLngBounds(); data.forEach(p => b.extend({ lat: p.lat, lng: p.lon })); map.fitBounds(b);
         }
+
+        function addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement) {
+            const m = new AdvancedMarkerElement({
+                map,
+                position: { lat: p.lat, lng: p.lon },
+                content: createPin(i, isD),
+                title: p.nome
+            });
+            markers[i] = m;
+            bounds.extend(m.position);
+            map.fitBounds(bounds);
+        }
+
         function createPin(idx, isD) {
             const d = document.createElement("div"); d.style.background = isD ? "#475569" : "#4f46e5";
             d.style.color = "white"; d.style.width = "26px"; d.style.height = "26px"; d.style.borderRadius = "50%"; 
@@ -283,6 +324,7 @@
             d.innerText = isD ? "" : idx; if(isD) d.innerHTML = '<span class="material-icons-round" style="font-size:14px">home</span>';
             return d;
         }
+
         function panTo(i) { if(markers[i]) { map.panTo(markers[i].position); map.setZoom(17); } }
         window.addEventListener('load', initMap);
     </script>

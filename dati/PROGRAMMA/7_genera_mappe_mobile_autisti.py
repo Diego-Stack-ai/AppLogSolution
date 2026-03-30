@@ -109,37 +109,50 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{{ v_id }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&libraries=geometry,marker"></script>
     <style>
-        :root { --p: #4f46e5; --accent: #10b981; }
+        :root { --p: #4f46e5; --accent: #10b981; --done: #94a3b8; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: #f8fafc; overflow: hidden; }
         .main-container { display: flex; flex-direction: column; height: 100vh; }
-        #map { height: 48vh; width: 100%; background: #dfe5eb; position: relative; }
+        #map { height: 45vh; width: 100%; background: #dfe5eb; position: relative; }
         #sidebar { flex: 1; display: flex; flex-direction: column; background: white; border-top: 2px solid #cbd5e1; overflow: hidden; }
-        .header { padding: 4px 12px; background: #1e293b; color: white; border-bottom: 2px solid var(--accent); }
+        .header { padding: 6px 12px; background: #1e293b; color: white; border-bottom: 2px solid var(--accent); position: relative; }
         .trip-title { margin: 0; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
-        .stats-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 1px; }
+        .reset-btn { position: absolute; right: 12px; top: 8px; font-size: 0.6rem; color: #94a3b8; text-decoration: underline; border: none; background: none; font-weight: 600; }
+        .stats-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 2px; }
         .stat-item { flex: 1; display: flex; flex-direction: column; align-items: start; }
         .stat-val { font-size: 0.82rem; font-weight: 800; color: white; line-height: 1; }
         .stat-lbl { font-size: 0.52rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-top: 1px; }
-        #delivery-list { flex: 1; overflow-y: auto; padding: 8px; background: #f1f5f9; padding-bottom: 40px; }
-        .card { background: white; border-radius: 10px; padding: 10px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; border: 1px solid #cbd5e1; cursor: pointer; }
-        .card.next { border-color: var(--accent); background: #f0fdf4; border-left: 4px solid var(--accent); }
-        .stop-num { width: 24px; height: 24px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10px; flex-shrink: 0; }
-        .next .stop-num { background: var(--accent); }
+        #delivery-list { flex: 1; overflow-y: auto; padding: 8px; background: #f1f5f9; padding-bottom: 60px; }
+        
+        .card { background: white; border-radius: 10px; padding: 10px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; border: 1px solid #cbd5e1; position: relative; transition: all 0.2s; }
+        .card.done { opacity: 0.6; background: #e2e8f0; border-color: #cbd5e1; }
+        .card.done .stop-num { background: var(--done); }
+        .card.done .btn-done { color: var(--accent); background: white; border: 1px solid var(--accent); }
+        .card.next { border-color: var(--p); border-left: 5px solid var(--p); }
+        
+        .stop-num { width: 28px; height: 28px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px; flex-shrink: 0; }
         .stop-info { flex: 1; min-width: 0; }
-        .name { display: block; font-size: 0.8rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .addr { font-size: 0.65rem; color: #64748b; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .btn-nav { background: var(--accent); color: white; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0; }
-        .icon-nav { width: 18px; height: 18px; fill: white; }
+        .name { display: block; font-size: 0.85rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .addr { font-size: 0.68rem; color: #64748b; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        .actions { display: flex; gap: 6px; }
+        .btn-nav { background: var(--accent); color: white; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+        .btn-done { background: white; color: #64748b; width: 40px; height: 40px; border-radius: 8px; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; }
+        
+        #gps-btn { position: absolute; bottom: 20px; right: 20px; background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; color: var(--p); border: none; }
     </style>
 </head>
 <body>
     <div class="main-container">
-        <div id="map"></div>
+        <div id="map">
+            <button id="gps-btn" onclick="centerOnMe()"><span class="material-icons-round">my_location</span></button>
+        </div>
         <div id="sidebar">
             <div class="header">
                 <div class="trip-title">🏎️ {{ v_id }} | {{ zone_str }}</div>
+                <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
                 <div class="stats-row">
                     <div class="stat-item"><span class="stat-val">{{ km }}km</span><span class="stat-lbl">Strada</span></div>
                     <div class="stat-item"><span class="stat-val">{{ t_guida }}</span><span class="stat-lbl">Guida</span></div>
@@ -151,79 +164,91 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </div>
     </div>
     <script>
-        const data = {{ deliveries_js|safe }}; let map, markers = [];
-        const svg_icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>';
-
-        async function initMap() {
-            try {
-                // Cerchiamo il primo punto con coordinate valide per centrare la mappa
-                let centerPoint = data.find(p => p.lat && p.lon);
-                if (!centerPoint) centerPoint = { lat: 45.4428, lon: 11.7145 }; // Default Veggiano
-
-                map = new google.maps.Map(document.getElementById("map"), { 
-                    zoom: 12, 
-                    center: { lat: centerPoint.lat, lng: centerPoint.lon }, 
-                    disableDefaultUI: false 
-                });
-
-                const ds = new google.maps.DirectionsService();
-                const dr = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6 } });
-                const waypts = data.slice(1, -1).filter(d => d.lat && d.lon).map(d => ({ location: { lat: d.lat, lng: d.lon }, stopover: true }));
-                
-                // Disegna il percorso solo se i punti principali hanno coordinate
-                if (data[0].lat && data[data.length-1].lat) {
-                    ds.route({ 
-                        origin: { lat: data[0].lat, lng: data[0].lon }, 
-                        destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, 
-                        waypoints: waypts, 
-                        travelMode: "DRIVING" 
-                    }, (res, st) => { if (st === "OK") dr.setDirections(res); });
+        const v_id = "{{ v_id }}";
+        const data = {{ deliveries_js|safe }};
+        let map, markers = [], userMarker;
+        
+        // --- GESTIONE STATO CONSEGNE ---
+        function loadStatus() {
+            const saved = JSON.parse(localStorage.getItem('done_' + v_id) || "[]");
+            data.forEach((p, i) => {
+                if (saved.includes(i)) {
+                    document.querySelectorAll('.card')[i].classList.add('done');
+                    const btn = document.querySelectorAll('.btn-done')[i];
+                    if(btn) btn.innerHTML = '<span class="material-icons-round">check_circle</span>';
                 }
+            });
+        }
+        function toggleDone(i, event) {
+            if(event) event.stopPropagation();
+            const card = document.querySelectorAll('.card')[i];
+            const btn = document.querySelectorAll('.btn-done')[i];
+            card.classList.toggle('done');
+            
+            const saved = JSON.parse(localStorage.getItem('done_' + v_id) || "[]");
+            if (card.classList.contains('done')) {
+                if (!saved.includes(i)) saved.push(i);
+                if(btn) btn.innerHTML = '<span class="material-icons-round">check_circle</span>';
+            } else {
+                const idx = saved.indexOf(i);
+                if (idx > -1) saved.splice(idx, 1);
+                if(btn) btn.innerHTML = '<span class="material-icons-round">radio_button_unchecked</span>';
+            }
+            localStorage.setItem('done_' + v_id, JSON.stringify(saved));
+        }
+        function resetDone() {
+            if(confirm("Vuoi azzerare tutte le consegne di questo giro?")) {
+                localStorage.removeItem('done_' + v_id);
+                location.reload();
+            }
+        }
 
-                const geocoder = new google.maps.Geocoder();
-                const bounds = new google.maps.LatLngBounds();
-
-                data.forEach((p, i) => {
-                    if (p.lat && p.lon) {
-                        addMarker(p, i, bounds);
-                    } else {
-                        // Geocoding di backup: Nome + Indirizzo
-                        const query = `${p.cliente}, ${p.indirizzo}`;
-                        geocoder.geocode({ address: query }, (results, status) => {
-                            if (status === "OK") {
-                                p.lat = results[0].geometry.location.lat();
-                                p.lon = results[0].geometry.location.lng();
-                                addMarker(p, i, bounds);
-                            } else {
-                                // Fallback solo indirizzo
-                                geocoder.geocode({ address: p.indirizzo }, (res2, st2) => {
-                                    if (st2 === "OK") {
-                                        p.lat = res2[0].geometry.location.lat();
-                                        p.lon = res2[0].geometry.location.lng();
-                                        addMarker(p, i, bounds);
-                                    }
-                                });
-                            }
+        // --- MAPPA E GPS ---
+        async function initMap() {
+            const centerPoint = data.find(p => p.lat && p.lon) || { lat: 45.4428, lon: 11.7145 };
+            map = new google.maps.Map(document.getElementById("map"), { zoom: 12, center: { lat: centerPoint.lat, lng: centerPoint.lon }, disableDefaultUI: true });
+            
+            // GPS Real-time
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(pos => {
+                    const myPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    if (!userMarker) {
+                        userMarker = new google.maps.Marker({
+                            position: myPos, map: map,
+                            icon: { path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: "#4285F4", fillOpacity: 1, strokeColor: "white", strokeWeight: 2 }
                         });
-                    }
-                });
-            } catch (e) { console.error("Map Init Error:", e); }
+                    } else { userMarker.setPosition(myPos); }
+                }, err => console.log("GPS Off"), { enableHighAccuracy: true });
+            }
+
+            const ds = new google.maps.DirectionsService();
+            const dr = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.7, strokeWeight: 5 } });
+            const waypts = data.slice(1, -1).filter(d => d.lat && d.lon).map(d => ({ location: { lat: d.lat, lng: d.lon }, stopover: true }));
+            
+            if (data[0].lat && data[data.length-1].lat) {
+                ds.route({ origin: { lat: data[0].lat, lng: data[0].lon }, destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, waypoints: waypts, travelMode: "DRIVING" }, (res, st) => { if (st === "OK") dr.setDirections(res); });
+            }
+
+            const geocoder = new google.maps.Geocoder();
+            const bounds = new google.maps.LatLngBounds();
+            data.forEach((p, i) => {
+                if (p.lat && p.lon) { addMarker(p, i, bounds); } 
+                else {
+                    geocoder.geocode({ address: `${p.cliente}, ${p.indirizzo}` }, (res, st) => {
+                        if (st === "OK") { p.lat = res[0].geometry.location.lat(); p.lon = res[0].geometry.location.lng(); addMarker(p, i, bounds); }
+                    });
+                }
+            });
+            loadStatus();
         }
 
         function addMarker(p, i, bounds) {
-            const m = new google.maps.Marker({ 
-                position: { lat: p.lat, lng: p.lon }, 
-                map: map, 
-                label: { text: (i+1).toString(), color: "white", size: "10px", fontWeight: "bold" }, 
-                title: p.cliente 
-            });
-            m.addListener("click", () => { new google.maps.InfoWindow({ content: `<b>${i+1}. ${p.cliente}</b>` }).open(map, m); });
-            markers[i] = m;
-            bounds.extend(m.getPosition());
-            map.fitBounds(bounds);
+            const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i+1).toString(), color: "white", fontSize: "10px", fontWeight: "900" } });
+            markers[i] = m; bounds.extend(m.getPosition()); map.fitBounds(bounds);
         }
 
         function focusOn(i) { if(markers[i]) { map.panTo(markers[i].getPosition()); map.setZoom(17); } }
+        function centerOnMe() { if(userMarker) { map.panTo(userMarker.getPosition()); map.setZoom(16); } }
         window.onload = initMap;
     </script>
 </body>
@@ -232,8 +257,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 def main():
     target_dir = get_latest_consegne_dir()
     if not target_dir: return
-    json_path = target_dir / "viaggi_giornalieri.json"
-    if not json_path.exists(): return
+    json_path = target_dir / "viaggi_giornalieri_OTTIMIZZATO.json"
+    if not json_path.exists():
+        print(f"⚠️ File ottimizzato non trovato: {json_path.name}. Esegui prima il BAT 3!")
+        return
     with open(json_path, "r", encoding="utf-8") as f: viaggi = json.load(f)
 
     out_folder = target_dir / "MAPPE_MOBILE_WHATSAPP"
@@ -242,17 +269,18 @@ def main():
     svg_icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>'
 
     for i, v in enumerate(viaggi):
-        v_id = f"V{i+1:02d}"
-        p_raw = v.get("lista_punti", [])
-        if not p_raw: continue
-        perc = ottimizza_percorso(p_raw)
+        v_id = v.get("nome_giro", f"V{i+1:02d}")
+        # IMPORTANTE: Usiamo lista_punti così com'è (è già ottimizzata dal BAT 3)
+        perc = v.get("lista_punti", [])
+        if not perc: continue
         
-        km = round(sum(haversine(perc[j], perc[j+1]) for j in range(len(perc)-1)) * 1.25, 1)
+        # Statistiche di base (ora coerenti con l'ordine dell'ufficio)
+        km = round(sum(haversine(perc[j], perc[j+1]) for j in range(len(perc)-1)) * 1.25, 1) if len(perc)>1 else 0
         t_guida = int(km / 45 * 60)
         t_sosta = len(perc) * 7
         t_tot = t_guida + t_sosta
 
-        zone_list = sorted(list(set([str(p.get('zona', '0000')) for p in p_raw])))
+        zone_list = sorted(list(set([str(p.get('zona', '0000')) for p in perc])))
         z_str = "Zone: " + ", ".join(zone_list[:4])
         fname = f"{v_id}_Zone_{'_'.join(zone_list[:4])}.html"
 
@@ -265,7 +293,7 @@ def main():
             return f"https://www.google.com/maps/dir/?api=1&destination={query}&travelmode=driving"
 
         deliveries = [{"cliente": p.get("nome", "Cliente"), "indirizzo": p.get("indirizzo", "-"), "lat": p.get("lat"), "lon": p.get("lon")} for p in perc]
-        cards_html = "".join([f'<div class="card {"next" if idx == 0 else ""}" onclick="focusOn({idx})"><div class="stop-num">{idx+1}</div><div class="stop-info"><b class="name">{d["cliente"]}</b><span class="addr">{d["indirizzo"]}</span></div><a href="{get_nav_url(d)}" class="btn-nav">{svg_icon}</a></div>' for idx, d in enumerate(deliveries)])
+        cards_html = "".join([f'<div class="card {"next" if idx == 0 else ""}" onclick="focusOn({idx})"><div class="stop-num">{idx+1}</div><div class="stop-info"><b class="name">{d["cliente"]}</b><span class="addr">{d["indirizzo"]}</span></div><div class="actions"><button class="btn-done" onclick="toggleDone({idx}, event)"><span class="material-icons-round">radio_button_unchecked</span></button><a href="{get_nav_url(d)}" class="btn-nav">{svg_icon}</a></div></div>' for idx, d in enumerate(deliveries)])
 
         html = HTML_TEMPLATE.replace("{{ v_id }}", v_id).replace("{{ zone_str }}", z_str).replace("{{ api_key }}", GOOGLE_MAPS_API_KEY).replace("{{ km }}", str(km)).replace("{{ t_guida }}", format_time(t_guida)).replace("{{ t_sosta }}", format_time(t_sosta)).replace("{{ t_tot }}", format_time(t_tot)).replace("{{ cards_html|safe }}", cards_html).replace("{{ deliveries_js|safe }}", json.dumps(deliveries))
         (out_folder / fname).write_text(html, encoding="utf-8")

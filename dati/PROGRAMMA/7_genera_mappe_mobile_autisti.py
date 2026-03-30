@@ -137,11 +137,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .name { display: block; font-size: 0.85rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .addr { font-size: 0.68rem; color: #64748b; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         
-        .actions { display: flex; gap: 6px; }
-        .btn-nav { background: var(--accent); color: white; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; }
-        .btn-done { background: white; color: #64748b; width: 40px; height: 40px; border-radius: 8px; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; }
-        .btn-geo { background: var(--geo); color: white; width: 40px; height: 40px; border-radius: 8px; border: none; display: flex; align-items: center; justify-content: center; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 5px; }
+        .btn-nav, .btn-done, .btn-geo { 
+            height: 34px; border-radius: 8px; font-size: 0.65rem; font-weight: 800;
+            display: flex; align-items: center; justify-content: center; gap: 6px; 
+            padding: 0 10px; text-decoration: none; border: none; white-space: nowrap;
+        }
+        .btn-nav { background: var(--accent); color: white; }
+        .btn-done { background: white; color: #64748b; border: 1px solid #cbd5e1; }
+        .btn-geo { background: var(--geo); color: white; }
         .btn-geo.saved { background: #1e293b; }
+        .material-icons-round { font-size: 16px !important; }
 
         #gps-btn { position: absolute; bottom: 20px; right: 20px; background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; color: var(--p); border: none; }
         #geo-feedback { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 30px; font-size: 0.8rem; font-weight: 700; z-index: 2000; display: none; }
@@ -208,7 +214,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 });
 
                 btn.classList.add('saved');
-                btn.innerHTML = '<span class="material-icons-round">location_on</span>';
+                btn.innerHTML = '<span class="material-icons-round">location_on</span> GEOLOCALIZZA';
                 const f = document.getElementById('geo-feedback');
                 f.style.display = 'block';
                 setTimeout(() => f.style.display = 'none', 3000);
@@ -235,7 +241,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 if (saved.includes(i)) {
                     document.querySelectorAll('.card')[i].classList.add('done');
                     const btn = document.querySelectorAll('.btn-done')[i];
-                    if(btn) btn.innerHTML = '<span class="material-icons-round">check_circle</span>';
+                    if(btn) btn.innerHTML = '<span class="material-icons-round">check_circle</span> CONSEGNATO';
                 }
             });
         }
@@ -248,11 +254,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             const saved = JSON.parse(localStorage.getItem('done_' + v_id) || "[]");
             if (card.classList.contains('done')) {
                 if (!saved.includes(i)) saved.push(i);
-                if(btn) btn.innerHTML = '<span class="material-icons-round">check_circle</span>';
+                if(btn) btn.innerHTML = '<span class="material-icons-round">check_circle</span> CONSEGNATO';
             } else {
                 const idx = saved.indexOf(i);
                 if (idx > -1) saved.splice(idx, 1);
-                if(btn) btn.innerHTML = '<span class="material-icons-round">radio_button_unchecked</span>';
+                if(btn) btn.innerHTML = '<span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO';
             }
             localStorage.setItem('done_' + v_id, JSON.stringify(saved));
         }
@@ -367,7 +373,7 @@ def main():
             return f"https://www.google.com/maps/dir/?api=1&destination={query}&travelmode=driving"
 
         deliveries = [{"cliente": p.get("nome", "Cliente"), "indirizzo": p.get("indirizzo", "-"), "lat": p.get("lat"), "lon": p.get("lon"), "codice_frutta": p.get("codice_frutta", ""), "codice_latte": p.get("codice_latte", "")} for p in perc]
-        cards_html = "".join([f'<div class="card {"next" if idx == 0 else ""}" onclick="focusOn({idx})"><div class="stop-num">{idx+1}</div><div class="stop-info"><b class="name">{d["cliente"]}</b><span class="addr">{d["indirizzo"]}</span></div><div class="actions"><button class="btn-geo" onclick="saveRealCoords({idx}, event)"><span class="material-icons-round">location_searching</span></button><button class="btn-done" onclick="toggleDone({idx}, event)"><span class="material-icons-round">radio_button_unchecked</span></button><a href="{get_nav_url(d)}" class="btn-nav">{svg_icon}</a></div></div>' for idx, d in enumerate(deliveries)])
+        cards_html = "".join([f'<div class="card {"next" if idx == 0 else ""}" onclick="focusOn({idx})"><div class="stop-num">{idx+1}</div><div class="stop-info"><b class="name">{d["cliente"]}</b><span class="addr">{d["indirizzo"]}</span></div><div class="actions"><button class="btn-geo" onclick="saveRealCoords({idx}, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button><button class="btn-done" onclick="toggleDone({idx}, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button><a href="{get_nav_url(d)}" class="btn-nav"><span class="material-icons-round">navigation</span> NAVIGA</a></div></div>' for idx, d in enumerate(deliveries)])
 
         html = HTML_TEMPLATE.replace("{{ v_id }}", v_id).replace("{{ zone_str }}", z_str).replace("{{ api_key }}", GOOGLE_MAPS_API_KEY).replace("{{ km }}", str(km)).replace("{{ t_guida }}", format_time(t_guida)).replace("{{ t_sosta }}", format_time(t_sosta)).replace("{{ t_tot }}", format_time(t_tot)).replace("{{ cards_html|safe }}", cards_html).replace("{{ deliveries_js|safe }}", json.dumps(deliveries))
         (out_folder / fname).write_text(html, encoding="utf-8")

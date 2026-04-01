@@ -31,9 +31,9 @@ const IDB_STORE         = 'bufferedLogs'; // Nome dell'object store
 const IDB_VERSION       = 1;              // Versione schema IndexedDB
 const MAX_ACCURACY_M    = 50;   // Accuratezza GPS massima accettabile (metri)
 const MIN_SPEED_MS      = 0.5;  // Velocità minima per loggare (m/s ≈ 1.8 km/h)
-const MIN_DISTANCE_M    = 20;   // Distanza minima tra due log consecutivi (metri)
-const MIN_TIME_S        = 60;   // Intervallo minimo tra due log (secondi)
-const HEARTBEAT_S       = 120;  // Frequenza heartbeat forzato (secondi)
+const MIN_DISTANCE_M    = 0;    // Non utilizzato dal filtro temporale stretto, ma mantenuto per chiarezza
+const MIN_TIME_S        = 90;   // Intervallo minimo tra due log (secondi)
+const HEARTBEAT_S       = 90;   // Frequenza heartbeat forzato (secondi)
 const BATCH_SIZE        = 10;   // Numero di log per ogni batch Firestore
 const MAX_BUFFER_PER_TRIP = 500; // Limite massimo di log in buffer per singolo viaggio
 
@@ -351,12 +351,11 @@ async function processLocation(pos, km = null, isHeartbeat = false) {
 
     const currentPos = { lat, lng };
 
-    // FILTRO 3: Troppo vicino o troppo frequente (solo su log normali)
+    // FILTRO 3: Limita frequenza a MIN_TIME_S (es. 90 secondi)
     if (!isHeartbeat && lastPosition) {
-        const dist     = getDistance(lastPosition, currentPos);
         const timeDiff = (now - lastTimestamp) / 1000;
-        if (dist < MIN_DISTANCE_M && timeDiff < MIN_TIME_S) {
-            console.log(`[GPS] 🚫 Skip: dist=${dist.toFixed(1)}m timeDelta=${timeDiff.toFixed(0)}s`);
+        if (timeDiff < MIN_TIME_S) {
+            console.log(`[GPS] 🚫 Skip: timeDelta=${timeDiff.toFixed(0)}s < ${MIN_TIME_S}s`);
             return;
         }
     }
@@ -372,6 +371,11 @@ async function processLocation(pos, km = null, isHeartbeat = false) {
         speed:    speed !== null ? parseFloat((speed * 3.6).toFixed(1)) : null,
         km:       (km !== null && km !== '') ? Number(km) : null
     }, isHeartbeat);
+
+    // Resetta il timer dell'heartbeat per evitare accavallamenti
+    if (!isHeartbeat) {
+        startHeartbeat(km);
+    }
 }
 
 // ─── Heartbeat corretto: usa lastKnownPos da watchPosition ───────────────────
@@ -388,9 +392,13 @@ function startHeartbeat(km) {
                 lat:      lastKnownPos.lat,
                 lng:      lastKnownPos.lng,
                 accuracy: lastKnownPos.accuracy,
-                speed:    0, // Da fermo
+                speed:    lastKnownPos.speed !== null ? parseFloat((lastKnownPos.speed * 3.6).toFixed(1)) : 0,
                 km
             }, true);
+            
+            // Aggiorna stato locale per evitare log simultanei da watchPosition
+            lastPosition = { lat: lastKnownPos.lat, lng: lastKnownPos.lng };
+            lastTimestamp = Date.now();
         } else {
             // Fallback: richiedi posizione fresca via getCurrentPosition
             console.log('[GPS] 💓 Heartbeat: nessuna lastKnownPos, richiedo GPS...');

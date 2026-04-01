@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.33">
+    <link rel="stylesheet" href="styles.css?v=1.34">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -409,18 +409,48 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.33"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.33"></script>
+    <script src="script.js?v=1.34"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.34"></script>
     <script type="module">
-        import { saveTrip } from "./firestore-service.js?v=1.33";
-        import "./gps-tracker.js?v=1.33";
+        import { saveTrip } from "./firestore-service.js?v=1.34";
+        import "./gps-tracker.js?v=1.34";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
         const btnConfirmSend = document.getElementById('btnConfirmSend');
 
+        // Logic to show/hide Start Trip button based on inputs
+        const checkStep1 = () => {
+            const d1 = document.getElementById('automezzo').value;
+            const d2 = document.getElementById('clienteSelect').value;
+            const d3 = document.getElementById('viaggioSelect').value;
+            const d4 = document.getElementById('kmPartenza').value;
+            const d5 = document.getElementById('mattinaInizioHH').value;
+            const d6 = document.getElementById('mattinaInizioMM').value;
+            
+            // Show only if not already tracking (button text checked or disabled state)
+            if (!btnStartTrip.disabled) {
+                if (d1 && d2 && d3 && d4 && d5 && d6) {
+                    btnStartTrip.style.display = 'flex';
+                } else {
+                    btnStartTrip.style.display = 'none';
+                }
+            }
+        };
+
+        ['automezzo', 'clienteSelect', 'viaggioSelect', 'kmPartenza', 'mattinaInizioHH', 'mattinaInizioMM'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', checkStep1);
+                el.addEventListener('change', checkStep1);
+            }
+        });
+
         // Logic for Starting Trip
         btnStartTrip.onclick = async () => {
+            // Check HTML5 validity for required fields
+            if (!presenzeForm.reportValidity()) return;
+
             const targa = document.getElementById('automezzo').value;
             const kmPartenza = document.getElementById('kmPartenza').value;
             

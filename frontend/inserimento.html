@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.35">
+    <link rel="stylesheet" href="styles.css?v=1.36">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -201,9 +201,12 @@
                         <div class="input-group">
                             <label>Mattina Inizio *</label>
                             <div class="time-select-group">
-                                <select id="mattinaInizioHH" class="hour-select" required></select>
+                                <select id="mattinaInizioHH" class="hour-select" required>
+                                    <option value="">--</option>
+                                </select>
                                 <span class="time-separator">:</span>
                                 <select id="mattinaInizioMM" class="min-select" required>
+                                    <option value="">--</option>
                                     <option value="00">00</option>
                                     <option value="15">15</option>
                                     <option value="20">20</option>
@@ -409,11 +412,11 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.35"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.35"></script>
+    <script src="script.js?v=1.36"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.36"></script>
     <script type="module">
-        import { saveTrip } from "./firestore-service.js?v=1.35";
-        import "./gps-tracker.js?v=1.35";
+        import { saveTrip } from "./firestore-service.js?v=1.36";
+        import "./gps-tracker.js?v=1.36";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');

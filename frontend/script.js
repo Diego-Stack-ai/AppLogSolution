@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "1.40";
+const APP_VERSION = "1.42";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -104,8 +104,8 @@ function calcolaTutto() {
     if (deltaEl) deltaEl.value = (kmA - kmP) > 0 ? (kmA - kmP) : '-';
 
     // Calcolo ore: da Ora Inizio a Ora Fine (flusso semplificato a 2 step)
-    const oraInizio = window.getTimeValue('mattinaInizio');
-    const oraFine = window.getTimeValue('pomeriggioFine');
+    const oraInizio = window.getTimeValue('oraInizio');
+    const oraFine = window.getTimeValue('oraFine');
 
     let totalM = 0;
     if (oraInizio && oraFine) totalM = diffMin(oraInizio, oraFine);
@@ -136,7 +136,7 @@ function saveDraft() {
     const draft = { step: currentStep, data: {}, timestamp: Date.now() };
     const ids = ['data', 'automezzo', 'clienteSelect', 'viaggioSelect', 'kmPartenza', 'kmArrivo', 'importo', 'litri', 'nota'];
     ids.forEach(id => { const el = document.getElementById(id); if (el) draft.data[id] = el.value; });
-    ['mattinaInizio', 'pomeriggioFine'].forEach(id => { draft.data[id] = window.getTimeValue(id); });
+    ['oraInizio', 'oraFine'].forEach(id => { draft.data[id] = window.getTimeValue(id); });
     sessionStorage.setItem('currentDraft', JSON.stringify(draft));
 }
 
@@ -297,6 +297,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event Listeners
     document.getElementById('clienteSelect')?.addEventListener('change', window.updateViaggi);
     document.getElementById('kmArrivo')?.addEventListener('input', calcolaTutto);
+    document.getElementById('oraFineHH')?.addEventListener('change', calcolaTutto);
+    document.getElementById('oraFineMM')?.addEventListener('change', calcolaTutto);
     
     const dataInput = document.getElementById('data');
     if (dataInput && !dataInput.value) {

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.40">
+    <link rel="stylesheet" href="styles.css?v=1.42">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -221,11 +221,11 @@
                         <div class="input-group">
                             <label>Ora Inizio *</label>
                             <div class="time-select-group">
-                                <select id="mattinaInizioHH" class="hour-select" required>
+                                <select id="oraInizioHH" class="hour-select" required>
                                     <option value="">--</option>
                                 </select>
                                 <span class="time-separator">:</span>
-                                <select id="mattinaInizioMM" class="min-select" required>
+                                <select id="oraInizioMM" class="min-select" required>
                                     <option value="">--</option>
                                     <option value="00">00</option>
                                     <option value="15">15</option>
@@ -253,11 +253,11 @@
                         <div class="input-group">
                             <label>Ora Fine *</label>
                             <div class="time-select-group">
-                                <select id="pomeriggioFineHH" class="hour-select" required>
+                                <select id="oraFineHH" class="hour-select" required>
                                     <option value="">Ore</option>
                                 </select>
                                 <span class="time-separator">:</span>
-                                <select id="pomeriggioFineMM" class="min-select" required>
+                                <select id="oraFineMM" class="min-select" required>
                                     <option value="">Min</option>
                                     <option value="00">00</option>
                                     <option value="15">15</option>
@@ -390,11 +390,11 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.40"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.40"></script>
+    <script src="script.js?v=1.42"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.42"></script>
     <script type="module">
-        import { saveTrip } from "./firestore-service.js?v=1.40";
-        import "./gps-tracker.js?v=1.40";
+        import { saveTrip } from "./firestore-service.js?v=1.42";
+        import "./gps-tracker.js?v=1.42";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -407,15 +407,16 @@
             const d2 = document.getElementById('clienteSelect').value;
             const d3 = document.getElementById('viaggioSelect').value;
             const d4 = document.getElementById('kmPartenza').value;
-            const d5 = document.getElementById('mattinaInizioHH').value;
-            const d6 = document.getElementById('mattinaInizioMM').value;
+            const d5 = document.getElementById('oraInizioHH').value;
+            const d6 = document.getElementById('oraInizioMM').value;
 
             if (!btnStartTrip.disabled) {
-                btnStartTrip.style.display = (d1 && d2 && d3 && d4 && d5 && d6) ? 'flex' : 'none';
+                const isValid = (d1 && d2 && d3 && d4 && d5 && d6);
+                btnStartTrip.style.display = isValid ? 'flex' : 'none';
             }
         };
 
-        ['automezzo', 'clienteSelect', 'viaggioSelect', 'kmPartenza', 'mattinaInizioHH', 'mattinaInizioMM'].forEach(id => {
+        ['automezzo', 'clienteSelect', 'viaggioSelect', 'kmPartenza', 'oraInizioHH', 'oraInizioMM'].forEach(id => {
             const el = document.getElementById(id);
             if (el) {
                 el.addEventListener('input', checkStep1);
@@ -423,37 +424,47 @@
             }
         });
 
+        // FIX: Richiama checkStep1 dopo che i dati dinamici sono stati caricati
+        // (Firestore popola i menu in modo asincrono, quindi scheduliamo una verifica ritardata)
+        setTimeout(checkStep1, 800);
+        setTimeout(checkStep1, 2000);  // secondo tentativo per connessioni lente
+
         // === STEP 1: Avvio Viaggio → Salva su Firebase + GPS ===
         btnStartTrip.onclick = async () => {
+            if (btnStartTrip.disabled) return;
             if (!presenzeForm.reportValidity()) return;
+
+            // Feedback immediato
+            btnStartTrip.disabled = true;
+            const originalHTML = btnStartTrip.innerHTML;
+            btnStartTrip.innerHTML = '<span class="material-icons-round spinning">sync</span> Avvio...';
 
             const tripData = {
                 data: document.getElementById('data').value,
-                autista: window.appData.currentUser.nome,
+                autista: window.appData.currentUser.nome || 'Autista',
                 automezzo: document.getElementById('automezzo').value,
                 cliente: document.getElementById('clienteSelect').value,
                 viaggio: document.getElementById('viaggioSelect').value,
                 kmPartenza: Number(document.getElementById('kmPartenza').value),
-                oraInizio: window.getTimeValue('mattinaInizio'),
+                oraInizio: window.getTimeValue('oraInizio'),
                 stato: "in corso"
             };
 
             try {
                 const tripId = await saveTrip(tripData);
-                console.log(`[Viaggio] ✅ Creato su Firebase con ID: ${tripId}`);
                 sessionStorage.setItem('currentTripId', tripId);
 
-                // Avvia Tracking GPS
                 if (window.startGPSTracking) {
                     window.startGPSTracking(tripId, tripData.kmPartenza);
                 }
 
                 btnStartTrip.innerHTML = '<span class="material-icons-round">gps_fixed</span> Tracking Attivo';
-                btnStartTrip.disabled = true;
                 window.nextStep(2);
             } catch (e) {
                 console.error("[Viaggio] Errore avvio:", e);
                 alert("Errore avvio viaggio: " + e.message);
+                btnStartTrip.disabled = false;
+                btnStartTrip.innerHTML = originalHTML;
             }
         };
 
@@ -465,7 +476,7 @@
         // === STEP 2: Bottone "Salva e Invia Turno" → Apre il modale di conferma ===
         btnEndTrip.onclick = () => {
             // Validazione: controlla che ora fine e km arrivo siano compilati
-            const oraFine = window.getTimeValue('pomeriggioFine');
+            const oraFine = window.getTimeValue('oraFine');  // FIX: era 'pomeriggioFine' (ID inesistente)
             const kmArrivo = document.getElementById('kmArrivo').value;
 
             if (!oraFine) {
@@ -479,7 +490,7 @@
 
             // Prepara riepilogo nel modale
             const summary = document.getElementById('confirmSummary');
-            const oraInizio = window.getTimeValue('mattinaInizio');
+            const oraInizio = window.getTimeValue('oraInizio');  // FIX: era 'mattinaInizio' (ID inesistente)
             const deltaKm = document.getElementById('deltaKm')?.value || '-';
             const totOre = document.getElementById('totaleOre')?.value || '-';
 
@@ -492,7 +503,7 @@
                 <b>📏 Km:</b> ${deltaKm} km | <b>🕐 Ore:</b> ${totOre}
             `;
 
-            // APRE il modale di conferma (BUG FIX: prima non veniva mai aperto!)
+            // APRE il modale di conferma
             document.getElementById('confirmModal').classList.add('active');
         };
 
@@ -507,15 +518,15 @@
             const finalData = {
                 id: tripId,
                 data: document.getElementById('data').value,
-                autista: window.appData.currentUser.nome,
+                autista: window.appData.currentUser.nome || 'Autista',
                 automezzo: document.getElementById('automezzo').value,
                 cliente: document.getElementById('clienteSelect').value,
                 viaggio: document.getElementById('viaggioSelect').value,
                 kmPartenza: Number(document.getElementById('kmPartenza').value),
                 kmArrivo: Number(document.getElementById('kmArrivo').value),
                 delta_km: document.getElementById('deltaKm').value,
-                oraInizio: window.getTimeValue('mattinaInizio'),
-                oraFine: window.getTimeValue('pomeriggioFine'),
+                oraInizio: window.getTimeValue('oraInizio'),   // 'oraInizioHH' + 'oraInizioMM'
+                oraFine: window.getTimeValue('oraFine'),         // 'oraFineHH' + 'oraFineMM'
                 ore_ordinarie: document.getElementById('oreOrdinarie').value,
                 ore_straordinarie: document.getElementById('oreStraordinario').value,
                 ore_totali: document.getElementById('totaleOre').value,

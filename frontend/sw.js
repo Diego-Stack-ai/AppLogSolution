@@ -57,6 +57,9 @@ self.addEventListener('fetch', (event) => {
 
     const url = event.request.url;
 
+    // ── Previene errori su estensioni browser ────────────────────────────────
+    if (!url.startsWith('http')) return;
+
     // ── Bypass totale: Firebase, Firestore, autenticazione ─────────────────
     if (
         url.includes('firebaseio.com') ||

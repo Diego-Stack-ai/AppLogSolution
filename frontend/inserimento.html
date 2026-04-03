@@ -253,11 +253,11 @@
                         <div class="input-group">
                             <label>Ora Fine *</label>
                             <div class="time-select-group">
-                                <select id="oraFineHH" class="hour-select" required>
+                                <select id="oraFineHH" class="hour-select">
                                     <option value="">Ore</option>
                                 </select>
                                 <span class="time-separator">:</span>
-                                <select id="oraFineMM" class="min-select" required>
+                                <select id="oraFineMM" class="min-select">
                                     <option value="">Min</option>
                                     <option value="00">00</option>
                                     <option value="15">15</option>
@@ -270,7 +270,7 @@
                         </div>
                         <div class="input-group">
                             <label for="kmArrivo">Km Arrivo *</label>
-                            <input type="number" id="kmArrivo" placeholder="es. 120800" required>
+                            <input type="number" id="kmArrivo" placeholder="es. 120800">
                         </div>
                     </div>
 
@@ -390,11 +390,11 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.42"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.42"></script>
+    <script src="script.js?v=1.45"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.45"></script>
     <script type="module">
-        import { saveTrip } from "./firestore-service.js?v=1.42";
-        import "./gps-tracker.js?v=1.42";
+        import { saveTrip } from "./firestore-service.js?v=1.45";
+        import "./gps-tracker.js?v=1.45";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -432,7 +432,8 @@
         // === STEP 1: Avvio Viaggio → Salva su Firebase + GPS ===
         btnStartTrip.onclick = async () => {
             if (btnStartTrip.disabled) return;
-            if (!presenzeForm.reportValidity()) return;
+            // Solo verifica manuale form, reportValidity può bloccarsi su hidden inputs
+            // ma sappiamo già che i campi in step1 sono pieni grazie a checkStep1()
 
             // Feedback immediato
             btnStartTrip.disabled = true;

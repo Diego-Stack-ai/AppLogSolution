@@ -1,6 +1,4 @@
 import { 
-    initializeFirestore,
-    getFirestore, 
     collection, 
     doc, 
     addDoc, 
@@ -12,33 +10,9 @@ import {
     where, 
     orderBy, 
     serverTimestamp,
-    deleteDoc,
-    persistentLocalCache,
-    persistentMultipleTabManager
+    deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { firebaseConfig } from "./firebase-config.js";
-
-const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
-
-// ─── PERSISTENZA OFFLINE (IndexedDB) ─────────────────────────────────────────
-// Nuova API Firebase 10+: FirestoreSettings.cache con persistentLocalCache.
-// Supporta più tab aperti contemporaneamente senza errori (multi-tab manager).
-let db;
-try {
-    db = initializeFirestore(app, {
-        cache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-    });
-    console.log("[Firestore] ✅ Offline persistence attiva (IndexedDB, multi-tab).");
-} catch (e) {
-    // initializeFirestore lancia un errore se Firestore è già stato inizializzato
-    // (es. da gps-tracker.js) → usiamo getFirestore() come fallback
-    db = getFirestore(app);
-    console.log("[Firestore] ✅ Firestore già inizializzato, riuso istanza esistente.");
-}
-
-const auth = getAuth(app);
+import { db, auth } from "./firebase-config.js";
 
 // ─── SALVA VIAGGIO ────────────────────────────────────────────────────────────
 /**
@@ -62,6 +36,11 @@ export async function saveTrip(tripData) {
         autistaId: user.uid,
         updatedAt: serverTimestamp()
     };
+
+    // Sanificazione: Firebase non accetta "undefined" come valore
+    Object.keys(payload).forEach(key => {
+        if (payload[key] === undefined) payload[key] = "";
+    });
 
     if (tripId) {
         const tripRef = doc(db, "viaggi", tripId);

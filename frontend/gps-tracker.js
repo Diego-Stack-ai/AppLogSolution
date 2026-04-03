@@ -12,18 +12,13 @@
  */
 
 import {
-    getFirestore,
     collection,
     doc,
     writeBatch,
     serverTimestamp,
     Timestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { firebaseConfig } from "./firebase-config.js";
-
-const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
-const db  = getFirestore(app);
+import { db } from "./firebase-config.js";
 
 // ─── Costanti di configurazione ─────────────────────────────────────────────
 const IDB_NAME          = 'gpsLogsDB';   // Nome del database IndexedDB

@@ -20,3 +20,9 @@ venv/
 .env/
 __pycache__/
 *.pyc
+
+# Google Drive / Temp Excel files
+*.gsheet
+*.gdoc
+~$*.xlsx
+ ~$*.xls

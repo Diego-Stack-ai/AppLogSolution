@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2026-03-26 | VR MN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
+    <style>
+        :root { --p: #e91e63; --accent: #10b981; --done: #94a3b8; --geo: #3b82f6; } /* Tema Rosato/Rosso per distinguerlo da Scuole */
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: #f8fafc; overflow: hidden; }
+        .main-container { display: flex; flex-direction: column; height: 100vh; }
+        #map { height: 42vh; width: 100%; background: #dfe5eb; position: relative; }
+        #sidebar { flex: 1; display: flex; flex-direction: column; background: white; border-top: 2px solid #cbd5e1; overflow: hidden; }
+        .header { padding: 6px 12px; background: #1e293b; color: white; border-bottom: 2px solid var(--accent); position: relative; }
+        .trip-title { margin: 0; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
+        .reset-btn { position: absolute; right: 12px; top: 8px; font-size: 0.6rem; color: #94a3b8; text-decoration: underline; border: none; background: none; font-weight: 600; }
+        .stats-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 2px; }
+        .stat-item { flex: 1; display: flex; flex-direction: column; align-items: start; }
+        .stat-val { font-size: 0.82rem; font-weight: 800; color: white; line-height: 1; }
+        .stat-lbl { font-size: 0.52rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-top: 1px; }
+        #delivery-list { flex: 1; overflow-y: auto; padding: 8px; background: #f1f5f9; padding-bottom: 60px; }
+        
+        .card { 
+            background: white; border-radius: 12px; padding: 10px; margin-bottom: 8px; 
+            display: grid; grid-template-columns: 42px 1fr 52px; gap: 8px; align-items: center;
+            border: 1px solid #cbd5e1; position: relative; transition: all 0.2s; 
+        }
+        .card.done { opacity: 0.6; background: #e2e8f0; border-color: #cbd5e1; }
+        .card.done .stop-num { background: var(--done); }
+        .card.done .btn-done { color: var(--accent); background: white; border: 1px solid var(--accent); }
+        .card.next { border-color: var(--p); border-left: 5px solid var(--p); }
+        
+        .stop-num { width: 32px; height: 32px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
+        .stop-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+        .name { display: block; font-size: 0.85rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .addr { font-size: 0.78rem; color: #64748b; font-weight: 600; line-height: 1.1; display: block; }
+        
+        .actions { display: flex; gap: 6px; width: 100%; margin-bottom: 2px; }
+        .btn-done, .btn-geo { 
+            flex: 1; height: 32px; border-radius: 6px; font-size: 0.6rem; font-weight: 800;
+            display: flex; align-items: center; justify-content: center; gap: 4px; 
+            padding: 0 4px; text-decoration: none; border: none; white-space: nowrap;
+        }
+        .btn-nav { background: var(--accent); color: white; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+        .btn-done { background: white; color: #64748b; border: 1px solid #cbd5e1; }
+        .btn-geo { background: var(--geo); color: white; }
+        .btn-geo.saved { background: #1e293b; }
+        .material-icons-round { font-size: 16px !important; }
+
+        #gps-btn { position: absolute; bottom: 20px; right: 20px; background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; color: var(--p); border: none; }
+        #geo-feedback { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 30px; font-size: 0.8rem; font-weight: 700; z-index: 2000; display: none; }
+    </style>
+</head>
+<body>
+    <div id="geo-feedback">Coordinate salvate!</div>
+    <div class="main-container">
+        <div id="map">
+            <button id="gps-btn" onclick="centerOnMe()"><span class="material-icons-round">my_location</span></button>
+        </div>
+        <div id="sidebar">
+            <div class="header">
+                <div class="trip-title">🚚 FATTURAZIONE | 2026-03-26 | VR MN</div>
+                <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
+                <div class="stats-row">
+                    <div class="stat-item"><span class="stat-val">360.2km</span><span class="stat-lbl">Strada st.</span></div>
+                    <div class="stat-item"><span class="stat-val">8h 0m</span><span class="stat-lbl">Guida st.</span></div>
+                    <div class="stat-item"><span class="stat-val">3h 9m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">11h 9m</span><span class="stat-lbl">Totale</span></div>
+                </div>
+            </div>
+            <div id="delivery-list"><div class="card" onclick="focusOn(0)" style="background:#f8fafc;">
+                            <div class="stop-num" style="background:#475569;">H</div>
+                            <div class="stop-info"><b class="name">PARTENZA</b><span class="addr"><b>Via alessandro volta</b><br>25/a, 35030 Veggiano PD</span></div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.442805,11.714498&travelmode=driving" class="btn-nav" style="background:#475569;"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card next" onclick="focusOn(1)">
+                            <div class="stop-num">1</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(1, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(1, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">RISTORANTE PIZZERIA ALLE VIGNE</b>
+                                <span class="addr"><b>VIA S.ANNA 2</b><br>NEGRAR VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.52484459999999,10.9450158&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(2)">
+                            <div class="stop-num">2</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(2, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(2, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">LOCANDA BADIN</b>
+                                <span class="addr"><b>VIA BADIN 16</b><br>MARANO DI VALPOLICELLA VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.5235376,10.9127162&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(3)">
+                            <div class="stop-num">3</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(3, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(3, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">BYBLOS ART HOTEL VILLA AMISTA'</b>
+                                <span class="addr"><b>VIA CEDRARE BELVEDERE 78</b><br>CORRUBBIO VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.4888254,10.900481&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(4)">
+                            <div class="stop-num">4</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(4, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(4, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">CONTE FELISSE FMF</b>
+                                <span class="addr"><b>VIA PONTE 52</b><br>PESCANTINA VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.4810699,10.8663593&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(5)">
+                            <div class="stop-num">5</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(5, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(5, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">VILLA QUARANTA PARK HOTEL</b>
+                                <span class="addr"><b>VIA OSPEDALETTO 57</b><br>PESCANTINA VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.5055957,10.8446808&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(6)">
+                            <div class="stop-num">6</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(6, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(6, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">VILLA CORDEVIGO SRL UNIPERSONALE</b>
+                                <span class="addr"><b>LOC. CORDEVIGO 1</b><br>CAVAION VERONESE VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.5254249,10.7910647&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(7)">
+                            <div class="stop-num">7</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(7, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(7, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">QUELLENHOF LAZISE SRL</b>
+                                <span class="addr"><b>VIA DEL TERMINON 17</b><br>LAZISE VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.4907134,10.7405348&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(8)">
+                            <div class="stop-num">8</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(8, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(8, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">NATIIA RELAIS SOCIETA' AGRICOLA CINQUINA SRL</b>
+                                <span class="addr"><b>VIA FOSSALTA 17</b><br>LAZISE VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.4885189,10.7366772&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(9)">
+                            <div class="stop-num">9</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(9, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(9, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">DISPENSA UFFICIALI BISTROT & COCKTAIL BAR</b>
+                                <span class="addr"><b>VIA PARCO CATULLO 5</b><br>PESCHIERA DEL GARDA VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.439361,10.694702&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(10)">
+                            <div class="stop-num">10</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(10, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(10, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">AGRITURISMO ANTICA DIMORA DEL TURCO</b>
+                                <span class="addr"><b>LOCALITA  TURCO</b><br>SAN GIORGIO AI SALICI VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.4228487,10.7845707&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(11)">
+                            <div class="stop-num">11</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(11, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(11, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">TRATTORIA AI SALVI</b>
+                                <span class="addr"><b>VIA LUGAGNANO</b><br>160, SAN MASSIMO VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.4359855,10.9105163&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(12)">
+                            <div class="stop-num">12</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(12, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(12, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">RELAIS DEI MULINI SRL</b>
+                                <span class="addr"><b>VIA VOLTA 9</b><br>POZZOLO MN</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.30434169999999,10.7144506&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(13)">
+                            <div class="stop-num">13</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(13, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(13, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">AGRITURISMO CASINA RICCHI SOC.AGR.RICCHI F.LLI STEFANONI S.S.</b>
+                                <span class="addr"><b>VIA S. ROCCO 93</b><br>CAVRIANA MN</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.3597433,10.6074952&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(14)">
+                            <div class="stop-num">14</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(14, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(14, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">OSTERIA DA PIETRO DI FERRI GIAMPIETRO</b>
+                                <span class="addr"><b>VIA CHIASSI 19</b><br>CASTIGLIONE DELLE STIVIERE MN</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.392832,10.489835&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(15)">
+                            <div class="stop-num">15</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(15, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(15, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">HOTEL REGINA ADELAIDE</b>
+                                <span class="addr"><b>VIA SAN FRANCESCO D ASSISI NR.23</b><br>GARDA VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.5738522,10.7088842&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(16)">
+                            <div class="stop-num">16</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(16, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(16, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">LOCANDA PERBELLINI "AI BEATI" BOT SRL</b>
+                                <span class="addr"><b>VIA VAL MORA 57/59</b><br>GARDA VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.5859089,10.717467&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(17)">
+                            <div class="stop-num">17</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(17, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(17, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">MADRIGALE SRL</b>
+                                <span class="addr"><b>VIA GHIANDARE 1</b><br>MARCIAGA - COSTERMANO VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.5902227,10.7100906&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(18)">
+                            <div class="stop-num">18</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(18, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(18, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">MARGESIN STAFF</b>
+                                <span class="addr"><b>LOCALITA  LE SORTE</b><br>TORRI DEL BENACO VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.6002441,10.6956753&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(19)">
+                            <div class="stop-num">19</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(19, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(19, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">VILLA LEOPARDI</b>
+                                <span class="addr"><b>VIA GARDESANA 21 30</b><br>TORRI DEL BENACO VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.6081452,10.6864468&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(20)">
+                            <div class="stop-num">20</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(20, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(20, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">LA REGATA</b>
+                                <span class="addr"><b>VICOLO FOSSE 19</b><br>TORRI DEL BENACO VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.6089419,10.686612&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(21)">
+                            <div class="stop-num">21</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(21, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(21, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">LA CASA DEGLI SPIRITI SRL</b>
+                                <span class="addr"><b>VIA MONTE BALDO 28</b><br>COSTERMANO VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.6190688,10.716348&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(22)">
+                            <div class="stop-num">22</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(22, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(22, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">LOCANDA SAN VEROLO</b>
+                                <span class="addr"><b>LOC. SAN VEROLO 1</b><br>COSTERMANO SUL GARDA VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.6030869,10.7376245&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(23)">
+                            <div class="stop-num">23</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(23, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(23, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">BELFIORE M. & M. SRL</b>
+                                <span class="addr"><b>VIA GIUSEPPE ZANARDELLI 3</b><br>BRENZONE SUL GARDA VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.71545,10.7717052&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(24)">
+                            <div class="stop-num">24</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(24, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(24, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">DA MARIO & SONS</b>
+                                <span class="addr"><b>PIAZZA MARCONI 7</b><br>MALCESINE VR</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.7634887,10.8076231&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(25)">
+                            <div class="stop-num">25</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(25, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(25, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">BAR MIRO'</b>
+                                <span class="addr"><b>PIAZZA ANDREA MANTEGNA 13</b><br>MANTOVA MN</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.1584155,10.7937704&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(26)">
+                            <div class="stop-num">26</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(26, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(26, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">BOTTAZZI SILVANA</b>
+                                <span class="addr"><b>VIA MONTANARA E CURTATOTNE NR. 46</b><br>MANTOVA MN</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.1554315,10.7845248&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div><div class="card " onclick="focusOn(27)">
+                            <div class="stop-num">27</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords(27, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone(27, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">VILLA CAVRIANI</b>
+                                <span class="addr"><b>STRADA PROVINCIALE OSTIGLIESE 160</b><br>RONCOFERRARO MN</span>
+                            </div>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=45.0860878,10.9631416&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div></div>
+        </div>
+    </div>
+    
+    <!-- FIREBASE SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLnhP2Q4bz2ubYwcMLiD3-qq4c220eVKw",
+            authDomain: "log-solution-60007.firebaseapp.com",
+            projectId: "log-solution-60007"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.saveRealCoords = async function(i) {
+            if (!window.currentPos) { alert("GPS non pronto. Attendi il pallino blu."); return; }
+            const p = window.data[i];
+            const btn = document.querySelectorAll('.btn-geo')[i];
+            try {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-icons-round">sync</span>';
+                
+                await addDoc(collection(db, "coordinate_reali_fatturazione"), {
+                    nome: p.cliente,
+                    indirizzo: p.indirizzo,
+                    lat: window.currentPos.lat,
+                    lon: window.currentPos.lng,
+                    timestamp: serverTimestamp(),
+                    v_id: window.v_id
+                });
+
+                btn.classList.add('saved');
+                btn.innerHTML = '<span class="material-icons-round">location_on</span> GEOLOCALIZZA';
+                const f = document.getElementById('geo-feedback');
+                f.style.display = 'block'; setTimeout(() => f.style.display = 'none', 3000);
+            } catch (e) {
+                console.error(e); alert("Errore salvataggio!");
+                btn.disabled = false; btn.innerHTML = '<span class="material-icons-round">location_searching</span>';
+            }
+        };
+    </script>
+
+    <script>
+        const v_id = "2026-03-26 | VR MN";
+        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via alessandro volta, 25/a, 35030 Veggiano PD", "lat": 45.442805, "lon": 11.714498}, {"cliente": "RISTORANTE PIZZERIA ALLE VIGNE", "indirizzo": "VIA S.ANNA 2, NEGRAR VR", "lat": 45.52484459999999, "lon": 10.9450158}, {"cliente": "LOCANDA BADIN", "indirizzo": "VIA BADIN 16, MARANO DI VALPOLICELLA VR", "lat": 45.5235376, "lon": 10.9127162}, {"cliente": "BYBLOS ART HOTEL VILLA AMISTA'", "indirizzo": "VIA CEDRARE BELVEDERE 78, CORRUBBIO VR", "lat": 45.4888254, "lon": 10.900481}, {"cliente": "CONTE FELISSE FMF", "indirizzo": "VIA PONTE 52, PESCANTINA VR", "lat": 45.4810699, "lon": 10.8663593}, {"cliente": "VILLA QUARANTA PARK HOTEL", "indirizzo": "VIA OSPEDALETTO 57, PESCANTINA VR", "lat": 45.5055957, "lon": 10.8446808}, {"cliente": "VILLA CORDEVIGO SRL UNIPERSONALE", "indirizzo": "LOC. CORDEVIGO 1, CAVAION VERONESE VR", "lat": 45.5254249, "lon": 10.7910647}, {"cliente": "QUELLENHOF LAZISE SRL", "indirizzo": "VIA DEL TERMINON 17, LAZISE VR", "lat": 45.4907134, "lon": 10.7405348}, {"cliente": "NATIIA RELAIS SOCIETA' AGRICOLA CINQUINA SRL", "indirizzo": "VIA FOSSALTA 17, LAZISE VR", "lat": 45.4885189, "lon": 10.7366772}, {"cliente": "DISPENSA UFFICIALI BISTROT & COCKTAIL BAR", "indirizzo": "VIA PARCO CATULLO 5, PESCHIERA DEL GARDA VR", "lat": 45.439361, "lon": 10.694702}, {"cliente": "AGRITURISMO ANTICA DIMORA DEL TURCO", "indirizzo": "LOCALITA  TURCO, SAN GIORGIO AI SALICI VR", "lat": 45.4228487, "lon": 10.7845707}, {"cliente": "TRATTORIA AI SALVI", "indirizzo": "VIA LUGAGNANO, 160, SAN MASSIMO VR", "lat": 45.4359855, "lon": 10.9105163}, {"cliente": "RELAIS DEI MULINI SRL", "indirizzo": "VIA VOLTA 9, POZZOLO MN", "lat": 45.30434169999999, "lon": 10.7144506}, {"cliente": "AGRITURISMO CASINA RICCHI SOC.AGR.RICCHI F.LLI STEFANONI S.S.", "indirizzo": "VIA S. ROCCO 93, CAVRIANA MN", "lat": 45.3597433, "lon": 10.6074952}, {"cliente": "OSTERIA DA PIETRO DI FERRI GIAMPIETRO", "indirizzo": "VIA CHIASSI 19, CASTIGLIONE DELLE STIVIERE MN", "lat": 45.392832, "lon": 10.489835}, {"cliente": "HOTEL REGINA ADELAIDE", "indirizzo": "VIA SAN FRANCESCO D ASSISI NR.23, GARDA VR", "lat": 45.5738522, "lon": 10.7088842}, {"cliente": "LOCANDA PERBELLINI \"AI BEATI\" BOT SRL", "indirizzo": "VIA VAL MORA 57/59, GARDA VR", "lat": 45.5859089, "lon": 10.717467}, {"cliente": "MADRIGALE SRL", "indirizzo": "VIA GHIANDARE 1, MARCIAGA - COSTERMANO VR", "lat": 45.5902227, "lon": 10.7100906}, {"cliente": "MARGESIN STAFF", "indirizzo": "LOCALITA  LE SORTE, TORRI DEL BENACO VR", "lat": 45.6002441, "lon": 10.6956753}, {"cliente": "VILLA LEOPARDI", "indirizzo": "VIA GARDESANA 21 30, TORRI DEL BENACO VR", "lat": 45.6081452, "lon": 10.6864468}, {"cliente": "LA REGATA", "indirizzo": "VICOLO FOSSE 19, TORRI DEL BENACO VR", "lat": 45.6089419, "lon": 10.686612}, {"cliente": "LA CASA DEGLI SPIRITI SRL", "indirizzo": "VIA MONTE BALDO 28, COSTERMANO VR", "lat": 45.6190688, "lon": 10.716348}, {"cliente": "LOCANDA SAN VEROLO", "indirizzo": "LOC. SAN VEROLO 1, COSTERMANO SUL GARDA VR", "lat": 45.6030869, "lon": 10.7376245}, {"cliente": "BELFIORE M. & M. SRL", "indirizzo": "VIA GIUSEPPE ZANARDELLI 3, BRENZONE SUL GARDA VR", "lat": 45.71545, "lon": 10.7717052}, {"cliente": "DA MARIO & SONS", "indirizzo": "PIAZZA MARCONI 7, MALCESINE VR", "lat": 45.7634887, "lon": 10.8076231}, {"cliente": "BAR MIRO'", "indirizzo": "PIAZZA ANDREA MANTEGNA 13, MANTOVA MN", "lat": 45.1584155, "lon": 10.7937704}, {"cliente": "BOTTAZZI SILVANA", "indirizzo": "VIA MONTANARA E CURTATOTNE NR. 46, MANTOVA MN", "lat": 45.1554315, "lon": 10.7845248}, {"cliente": "VILLA CAVRIANI", "indirizzo": "STRADA PROVINCIALE OSTIGLIESE 160, RONCOFERRARO MN", "lat": 45.0860878, "lon": 10.9631416}];
+        window.data = data; window.v_id = v_id;
+        let map, markers = [], userMarker;
+        window.currentPos = null;
+        
+        function loadStatus() {
+            const saved = JSON.parse(localStorage.getItem('done_fat_' + v_id) || "[]");
+            data.forEach((p, i) => {
+                if (saved.includes(i)) {
+                    document.querySelectorAll('.card')[i].classList.add('done');
+                    const btn = document.querySelectorAll('.btn-done')[i];
+                    if(btn) btn.innerHTML = '<span class="material-icons-round">check_circle</span> CONSEGNATO';
+                }
+            });
+        }
+        function toggleDone(i, event) {
+            if(event) event.stopPropagation();
+            const card = document.querySelectorAll('.card')[i];
+            const btn = document.querySelectorAll('.btn-done')[i];
+            card.classList.toggle('done');
+            
+            const saved = JSON.parse(localStorage.getItem('done_fat_' + v_id) || "[]");
+            if (card.classList.contains('done')) {
+                if (!saved.includes(i)) saved.push(i);
+                if(btn) btn.innerHTML = '<span class="material-icons-round">check_circle</span> CONSEGNATO';
+            } else {
+                const idx = saved.indexOf(i); if (idx > -1) saved.splice(idx, 1);
+                if(btn) btn.innerHTML = '<span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO';
+            }
+            localStorage.setItem('done_fat_' + v_id, JSON.stringify(saved));
+        }
+        function resetDone() {
+            if(confirm("Vuoi azzerare tutte le consegne?")) {
+                localStorage.removeItem('done_fat_' + v_id); location.reload();
+            }
+        }
+
+        async function initMap() {
+            const centerPoint = data.find(p => p.lat && p.lon) || { lat: 45.4428, lng: 11.7145 };
+            map = new google.maps.Map(document.getElementById("map"), { zoom: 12, center: { lat: centerPoint.lat, lng: centerPoint.lon }, disableDefaultUI: true });
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(pos => {
+                    const myPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    window.currentPos = myPos;
+                    if (!userMarker) {
+                        userMarker = new google.maps.Marker({ position: myPos, map: map, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: "#4285F4", fillOpacity: 1, strokeColor: "white", strokeWeight: 2 }});
+                    } else { userMarker.setPosition(myPos); }
+                }, err => console.log("GPS Off"), { enableHighAccuracy: true });
+            }
+
+            const ds = new google.maps.DirectionsService();
+            const dr = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#e91e63", strokeOpacity: 0.7, strokeWeight: 5 } });
+            const waypts = data.slice(1, -1).filter(d => d.lat && d.lon).map(d => ({ location: { lat: d.lat, lng: d.lon }, stopover: true }));
+            
+            if (data[0].lat && data[data.length-1].lat) {
+                // In Fatturazione l'ordine è già stato ottimizzato rigidamente da Python
+                ds.route({ origin: { lat: data[0].lat, lng: data[0].lon }, destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, waypoints: waypts, travelMode: "DRIVING", optimizeWaypoints: false }, (res, st) => { if (st === "OK") dr.setDirections(res); });
+            }
+
+            const geocoder = new google.maps.Geocoder();
+            const bounds = new google.maps.LatLngBounds();
+            data.forEach((p, i) => {
+                if (p.lat && p.lon) { addMarker(p, i, bounds); } 
+                else {
+                    geocoder.geocode({ address: `${p.cliente}, ${p.indirizzo}` }, (res, st) => {
+                        if (st === "OK") { p.lat = res[0].geometry.location.lat(); p.lon = res[0].geometry.location.lng(); addMarker(p, i, bounds); }
+                    });
+                }
+            });
+            loadStatus();
+        }
+
+        function addMarker(p, i, bounds) {
+            const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i).toString(), color: "white", fontSize: "10px", fontWeight: "900" } });
+            if(i===0) m.setLabel("H");
+            markers[i] = m; bounds.extend(m.getPosition()); map.fitBounds(bounds);
+        }
+        function focusOn(i) { if(markers[i]) { map.panTo(markers[i].getPosition()); map.setZoom(17); } }
+        function centerOnMe() { if(userMarker) { map.panTo(userMarker.getPosition()); map.setZoom(16); } }
+    </script>
+</body>
+</html>

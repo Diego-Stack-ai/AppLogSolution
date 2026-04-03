@@ -8,6 +8,9 @@ import glob
 from datetime import datetime
 import math
 import sys
+import subprocess
+from pathlib import Path
+
 try:
     from ortools.constraint_solver import routing_enums_pb2
     from ortools.constraint_solver import pywrapcp
@@ -15,24 +18,30 @@ try:
 except ImportError:
     HAS_OR_TOOLS = False
 
-# CONFIGURAZIONE STRUTTURALE
-DRIVE_PATH = r"G:\Il mio Drive\Fatturazione"
-API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
-DEPOT_STR = "Via alessandro volta, 25/a, 35030 Veggiano PD"
-DEPOT_COORDS = {"lat": 45.442805, "lng": 11.714498}
+# --- CONFIGURAZIONE STRUTTURALE ---
+PROG_DIR = Path(__file__).resolve().parent
+ROOT_DIR = PROG_DIR.parent
+WEBAPP_FOLDER = ROOT_DIR / "frontend" / "fatturazione_mappe"
 
-CACHE_FILE = os.path.join(DRIVE_PATH, "CACHE_CONSEGNE_TOP.json")
-CONFIG_FILE = os.path.join(DRIVE_PATH, "MESE_IN_CORSO.txt")
+# Importante: Lasciamo i drive originali così come strutturati dal cliente
+DRIVE_PATH = Path(r"G:\Il mio Drive\Fatturazione")
+API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
+
+DEPOT_STR = "Via alessandro volta, 25/a, 35030 Veggiano PD"
+DEPOT_COORDS = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": DEPOT_STR}
+
+CACHE_FILE = DRIVE_PATH / "CACHE_CONSEGNE_TOP.json"
+CONFIG_FILE = DRIVE_PATH / "MESE_IN_CORSO.txt"
 
 def get_mese_in_corso():
-    if not os.path.exists(CONFIG_FILE):
+    if not CONFIG_FILE.exists():
         print("❌ ERRORE: MESE_IN_CORSO.txt non trovato. Esegui prima 1_Riepiloghi_Giornalieri.py!")
         sys.exit(1)
     with open(CONFIG_FILE, "r", encoding="utf-8") as f:
         return f.read().strip()
 
 def load_cache():
-    if os.path.exists(CACHE_FILE):
+    if CACHE_FILE.exists():
         with open(CACHE_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     return {}
@@ -51,7 +60,7 @@ def get_geocode(address, cache):
         r = requests.get(url).json()
         if r['status'] == 'OK':
             loc = r['results'][0]['geometry']['location']
-            coords = {"lat": loc['lat'], "lng": loc['lng']}
+            coords = {"lat": loc['lat'], "lng": loc['lng'], "lon": loc['lng']}
             cache[clean_addr] = coords
             return coords
     except Exception as e:
@@ -79,7 +88,6 @@ def normalize_viaggio(zone_str):
         if '5' in z: return 'BL 5'
         return 'BL 1'
     return z
-
 
 def haversine(p1, p2):
     try:
@@ -138,66 +146,253 @@ def ottimizza_percorso_ortools(locations, depot_coords):
     
     return locations
 
-def calcola_km_stradali(ordered_stops, depot_coords, api_key):
-    if not ordered_stops:
-        return 0.0
-    
-    punti_pieni = [depot_coords] + ordered_stops + [depot_coords]
-    km_tot = 0.0
-    chunk_size = 20
-    
-    for i in range(0, len(punti_pieni)-1, chunk_size):
-        sub = punti_pieni[i:i+chunk_size+1]
-        if len(sub) < 2: continue
-        
-        origin = f"{sub[0]['lat']},{sub[0]['lng']}"
-        dest = f"{sub[-1]['lat']},{sub[-1]['lng']}"
-        
-        if len(sub) > 2:
-            waypts = "|".join([f"{p['lat']},{p['lng']}" for p in sub[1:-1]])
-            way_str = f"&waypoints={waypts}"
-        else:
-            way_str = ""
-            
-        url = f"https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={dest}{way_str}&key={api_key}"
-        try:
-            r = requests.get(url).json()
-            if r.get('status') == 'OK':
-                for leg in r['routes'][0]['legs']:
-                    km_tot += leg['distance']['value']
-        except Exception:
-            pass
-            
-    return km_tot / 1000.0
+def format_time(minutes):
+    hh, mm = divmod(int(minutes), 60)
+    return f"{hh}h {mm}m" if hh > 0 else f"{mm}m"
 
+def deploy_online():
+    print("\n📦 Avvio deploy automatico Firebase per le mappe Fatturazione...")
+    try:
+        subprocess.run(["git", "add", "."], cwd=ROOT_DIR, check=True)
+        subprocess.run(["git", "commit", "-m", "Map deploy fatturazione autisti"], cwd=ROOT_DIR, check=True)
+        subprocess.run(["git", "push"], cwd=ROOT_DIR, check=True)
+        subprocess.run(["firebase", "deploy", "--only", "hosting"], cwd=ROOT_DIR, shell=True, check=True)
+        print("✅ Deploy Completato! Mappe live.")
+    except Exception as e:
+        print(f"\n⚠️ Note Deploy (potresti non essere loggato in Git o Firebase): {e}")
 
-def solve_tsp_google(locations):
-    ordered_stops = ottimizza_percorso_ortools(locations, DEPOT_COORDS)
-    km_totali = calcola_km_stradali(ordered_stops, DEPOT_COORDS, API_KEY)
-    return ordered_stops, km_totali
+# --- IL NUOVO TEMPLATE HTML (STILE SCUOLE) ---
+HTML_TEMPLATE = """<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ v_id }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&libraries=geometry,marker&callback=initMap" async defer></script>
+    <style>
+        :root { --p: #e91e63; --accent: #10b981; --done: #94a3b8; --geo: #3b82f6; } /* Tema Rosato/Rosso per distinguerlo da Scuole */
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: #f8fafc; overflow: hidden; }
+        .main-container { display: flex; flex-direction: column; height: 100vh; }
+        #map { height: 42vh; width: 100%; background: #dfe5eb; position: relative; }
+        #sidebar { flex: 1; display: flex; flex-direction: column; background: white; border-top: 2px solid #cbd5e1; overflow: hidden; }
+        .header { padding: 6px 12px; background: #1e293b; color: white; border-bottom: 2px solid var(--accent); position: relative; }
+        .trip-title { margin: 0; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
+        .reset-btn { position: absolute; right: 12px; top: 8px; font-size: 0.6rem; color: #94a3b8; text-decoration: underline; border: none; background: none; font-weight: 600; }
+        .stats-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 2px; }
+        .stat-item { flex: 1; display: flex; flex-direction: column; align-items: start; }
+        .stat-val { font-size: 0.82rem; font-weight: 800; color: white; line-height: 1; }
+        .stat-lbl { font-size: 0.52rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-top: 1px; }
+        #delivery-list { flex: 1; overflow-y: auto; padding: 8px; background: #f1f5f9; padding-bottom: 60px; }
+        
+        .card { 
+            background: white; border-radius: 12px; padding: 10px; margin-bottom: 8px; 
+            display: grid; grid-template-columns: 42px 1fr 52px; gap: 8px; align-items: center;
+            border: 1px solid #cbd5e1; position: relative; transition: all 0.2s; 
+        }
+        .card.done { opacity: 0.6; background: #e2e8f0; border-color: #cbd5e1; }
+        .card.done .stop-num { background: var(--done); }
+        .card.done .btn-done { color: var(--accent); background: white; border: 1px solid var(--accent); }
+        .card.next { border-color: var(--p); border-left: 5px solid var(--p); }
+        
+        .stop-num { width: 32px; height: 32px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
+        .stop-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+        .name { display: block; font-size: 0.85rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .addr { font-size: 0.78rem; color: #64748b; font-weight: 600; line-height: 1.1; display: block; }
+        
+        .actions { display: flex; gap: 6px; width: 100%; margin-bottom: 2px; }
+        .btn-done, .btn-geo { 
+            flex: 1; height: 32px; border-radius: 6px; font-size: 0.6rem; font-weight: 800;
+            display: flex; align-items: center; justify-content: center; gap: 4px; 
+            padding: 0 4px; text-decoration: none; border: none; white-space: nowrap;
+        }
+        .btn-nav { background: var(--accent); color: white; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+        .btn-done { background: white; color: #64748b; border: 1px solid #cbd5e1; }
+        .btn-geo { background: var(--geo); color: white; }
+        .btn-geo.saved { background: #1e293b; }
+        .material-icons-round { font-size: 16px !important; }
+
+        #gps-btn { position: absolute; bottom: 20px; right: 20px; background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; color: var(--p); border: none; }
+        #geo-feedback { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 30px; font-size: 0.8rem; font-weight: 700; z-index: 2000; display: none; }
+    </style>
+</head>
+<body>
+    <div id="geo-feedback">Coordinate salvate!</div>
+    <div class="main-container">
+        <div id="map">
+            <button id="gps-btn" onclick="centerOnMe()"><span class="material-icons-round">my_location</span></button>
+        </div>
+        <div id="sidebar">
+            <div class="header">
+                <div class="trip-title">🚚 FATTURAZIONE | {{ v_id }}</div>
+                <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
+                <div class="stats-row">
+                    <div class="stat-item"><span class="stat-val">{{ km }}km</span><span class="stat-lbl">Strada st.</span></div>
+                    <div class="stat-item"><span class="stat-val">{{ t_guida }}</span><span class="stat-lbl">Guida st.</span></div>
+                    <div class="stat-item"><span class="stat-val">{{ t_sosta }}</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">{{ t_tot }}</span><span class="stat-lbl">Totale</span></div>
+                </div>
+            </div>
+            <div id="delivery-list">{{ cards_html|safe }}</div>
+        </div>
+    </div>
+    
+    <!-- FIREBASE SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLnhP2Q4bz2ubYwcMLiD3-qq4c220eVKw",
+            authDomain: "log-solution-60007.firebaseapp.com",
+            projectId: "log-solution-60007"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.saveRealCoords = async function(i) {
+            if (!window.currentPos) { alert("GPS non pronto. Attendi il pallino blu."); return; }
+            const p = window.data[i];
+            const btn = document.querySelectorAll('.btn-geo')[i];
+            try {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-icons-round">sync</span>';
+                
+                await addDoc(collection(db, "coordinate_reali_fatturazione"), {
+                    nome: p.cliente,
+                    indirizzo: p.indirizzo,
+                    lat: window.currentPos.lat,
+                    lon: window.currentPos.lng,
+                    timestamp: serverTimestamp(),
+                    v_id: window.v_id
+                });
+
+                btn.classList.add('saved');
+                btn.innerHTML = '<span class="material-icons-round">location_on</span> GEOLOCALIZZA';
+                const f = document.getElementById('geo-feedback');
+                f.style.display = 'block'; setTimeout(() => f.style.display = 'none', 3000);
+            } catch (e) {
+                console.error(e); alert("Errore salvataggio!");
+                btn.disabled = false; btn.innerHTML = '<span class="material-icons-round">location_searching</span>';
+            }
+        };
+    </script>
+
+    <script>
+        const v_id = "{{ v_id }}";
+        const data = {{ deliveries_js|safe }};
+        window.data = data; window.v_id = v_id;
+        let map, markers = [], userMarker;
+        window.currentPos = null;
+        
+        function loadStatus() {
+            const saved = JSON.parse(localStorage.getItem('done_fat_' + v_id) || "[]");
+            data.forEach((p, i) => {
+                if (saved.includes(i)) {
+                    document.querySelectorAll('.card')[i].classList.add('done');
+                    const btn = document.querySelectorAll('.btn-done')[i];
+                    if(btn) btn.innerHTML = '<span class="material-icons-round">check_circle</span> CONSEGNATO';
+                }
+            });
+        }
+        function toggleDone(i, event) {
+            if(event) event.stopPropagation();
+            const card = document.querySelectorAll('.card')[i];
+            const btn = document.querySelectorAll('.btn-done')[i];
+            card.classList.toggle('done');
+            
+            const saved = JSON.parse(localStorage.getItem('done_fat_' + v_id) || "[]");
+            if (card.classList.contains('done')) {
+                if (!saved.includes(i)) saved.push(i);
+                if(btn) btn.innerHTML = '<span class="material-icons-round">check_circle</span> CONSEGNATO';
+            } else {
+                const idx = saved.indexOf(i); if (idx > -1) saved.splice(idx, 1);
+                if(btn) btn.innerHTML = '<span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO';
+            }
+            localStorage.setItem('done_fat_' + v_id, JSON.stringify(saved));
+        }
+        function resetDone() {
+            if(confirm("Vuoi azzerare tutte le consegne?")) {
+                localStorage.removeItem('done_fat_' + v_id); location.reload();
+            }
+        }
+
+        async function initMap() {
+            const centerPoint = data.find(p => p.lat && p.lon) || { lat: 45.4428, lng: 11.7145 };
+            map = new google.maps.Map(document.getElementById("map"), { zoom: 12, center: { lat: centerPoint.lat, lng: centerPoint.lon }, disableDefaultUI: true });
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(pos => {
+                    const myPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    window.currentPos = myPos;
+                    if (!userMarker) {
+                        userMarker = new google.maps.Marker({ position: myPos, map: map, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: "#4285F4", fillOpacity: 1, strokeColor: "white", strokeWeight: 2 }});
+                    } else { userMarker.setPosition(myPos); }
+                }, err => console.log("GPS Off"), { enableHighAccuracy: true });
+            }
+
+            const ds = new google.maps.DirectionsService();
+            const dr = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#e91e63", strokeOpacity: 0.7, strokeWeight: 5 } });
+            const waypts = data.slice(1, -1).filter(d => d.lat && d.lon).map(d => ({ location: { lat: d.lat, lng: d.lon }, stopover: true }));
+            
+            if (data[0].lat && data[data.length-1].lat) {
+                // In Fatturazione l'ordine è già stato ottimizzato rigidamente da Python
+                ds.route({ origin: { lat: data[0].lat, lng: data[0].lon }, destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, waypoints: waypts, travelMode: "DRIVING", optimizeWaypoints: false }, (res, st) => { if (st === "OK") dr.setDirections(res); });
+            }
+
+            const geocoder = new google.maps.Geocoder();
+            const bounds = new google.maps.LatLngBounds();
+            data.forEach((p, i) => {
+                if (p.lat && p.lon) { addMarker(p, i, bounds); } 
+                else {
+                    geocoder.geocode({ address: `${p.cliente}, ${p.indirizzo}` }, (res, st) => {
+                        if (st === "OK") { p.lat = res[0].geometry.location.lat(); p.lon = res[0].geometry.location.lng(); addMarker(p, i, bounds); }
+                    });
+                }
+            });
+            loadStatus();
+        }
+
+        function addMarker(p, i, bounds) {
+            const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i).toString(), color: "white", fontSize: "10px", fontWeight: "900" } });
+            if(i===0) m.setLabel("H");
+            markers[i] = m; bounds.extend(m.getPosition()); map.fitBounds(bounds);
+        }
+        function focusOn(i) { if(markers[i]) { map.panTo(markers[i].getPosition()); map.setZoom(17); } }
+        function centerOnMe() { if(userMarker) { map.panTo(userMarker.getPosition()); map.setZoom(16); } }
+    </script>
+</body>
+</html>"""
+
 
 def elabora_tutte_le_mappe_google():
     mese = get_mese_in_corso()
-    INPUT_DIR = os.path.join(DRIVE_PATH, "Riepiloghi_Giornalieri", mese)
-    OUTPUT_DIR = os.path.join(DRIVE_PATH, "Mappe_Complete_Google", mese)
+    INPUT_DIR = DRIVE_PATH / "Riepiloghi_Giornalieri" / mese
     
-    if not os.path.exists(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
+    # La nuova destinazione "mobile" locale per storico locale
+    OUTPUT_DIR_LOCAL = DRIVE_PATH / "Mappe_Complete_Google" / mese / "Mobile"
+    OUTPUT_DIR_LOCAL.mkdir(parents=True, exist_ok=True)
+    
+    # Cartella per Firebase
+    WEBAPP_FOLDER.mkdir(parents=True, exist_ok=True)
         
-    print(f"Avvio Mappe con Algoritmo OR-TOOLS/GOOGLE da {INPUT_DIR}...")
+    print(f"Avvio Mappe MOBILE stile Scuole da {INPUT_DIR}...")
     cache = load_cache()
-    files = glob.glob(os.path.join(INPUT_DIR, "*.xlsx"))
+    files = glob.glob(str(INPUT_DIR / "*.xlsx"))
     
     if not files:
         print(f"❌ Nessun file trovato nella cartella del mese: {INPUT_DIR}")
         return
+        
+    txt_links_content = "🚀 LINK MAPPE PER AUTISTI FATTURAZIONE\n------------------------------------------\n\n"
     
     for file_target in sorted(files):
         match = re.search(r'(\d{4}-\d{2}-\d{2})', os.path.basename(file_target))
         if not match: continue
         data_viaggio = match.group(1)
         
-        print(f"\nGenerazione Mappa Google: {data_viaggio}")
+        print(f"\nGenerazione Mappe Mobile per: {data_viaggio}")
         wb = openpyxl.load_workbook(file_target, data_only=True)
         ws = wb.active
         
@@ -249,7 +444,6 @@ def elabora_tutte_le_mappe_google():
                                 "indirizzo": full_a
                             })
                             
-        trips_output = []
         for code, original_stops in trips_stops.items():
             if not original_stops: continue
             
@@ -261,72 +455,88 @@ def elabora_tutte_le_mappe_google():
                         "nome": s["ragione_sociale"],
                         "indirizzo": s["indirizzo"],
                         "lat": coords['lat'],
-                        "lng": coords['lng']
+                        "lng": coords.get('lng') or coords.get('lon'),
+                        "lon": coords.get('lon') or coords.get('lng')
                     })
             
             if stops_with_coords:
-                ordered_stops, km_totali = solve_tsp_google(stops_with_coords)
+                ordered_stops = ottimizza_percorso_ortools(stops_with_coords, DEPOT_COORDS)
+                percorso_completo = [DEPOT_COORDS] + ordered_stops
                 
-                base_url = "https://www.google.com/maps/dir/?api=1"
-                origin = "&origin=" + urllib.parse.quote(DEPOT_STR)
-                destination = "&destination=" + urllib.parse.quote(DEPOT_STR)
+                # Statistiche stimate fisse
+                km = round(sum(haversine(percorso_completo[j], percorso_completo[j+1]) for j in range(len(percorso_completo)-1)) * 1.25, 1) if len(percorso_completo)>1 else 0
+                t_guida = int(km / 45 * 60)
+                t_sosta = len(ordered_stops) * 7
+                t_tot = t_guida + t_sosta
                 
-                wa_stops = []
-                for sp in ordered_stops:
-                    addr_wa = sp["indirizzo"]
-                    if "SAPPADA" in addr_wa.upper():
-                        addr_wa = addr_wa.replace("32047", "33012").replace("(BL)", "(UD)")
-                    wa_stops.append(urllib.parse.quote(addr_wa))
+                fname = f"{data_viaggio}_{code.replace(' ', '_')}.html"
                 
-                waypoints = "&waypoints=" + "|".join(wa_stops)
-                wa_link = f"{base_url}{origin}{destination}{waypoints}&travelmode=driving"
+                # --- STRUTTURAZIONE DELLE CARDS ---
+                # Aggiungiamo anche il deposito come prima tappa zero
+                deliveries = []
+                for sp in percorso_completo:
+                    deliveries.append({
+                        "cliente": sp["nome"],
+                        "indirizzo": sp["indirizzo"],
+                        "lat": sp.get("lat"),
+                        "lon": sp.get("lon") or sp.get("lng")
+                    })
                 
-                trips_output.append({
-                    "id": code,
-                    "stops": ordered_stops,
-                    "km_str": f"{km_totali:.1f} km calcolati",
-                    "wa": wa_link
-                })
+                cards_list = []
+                for idx, d in enumerate(deliveries):
+                    is_depot = (idx == 0)
+                    
+                    # Url di navigazione basato su Lat/Lon infallibile
+                    if d.get("lat") and d.get("lon"):
+                        nav_url = f"https://www.google.com/maps/dir/?api=1&destination={d['lat']},{d['lon']}&travelmode=driving"
+                    else:
+                        query = f"{d['cliente']} {d['indirizzo']}".replace(" ", "+")
+                        nav_url = f"https://www.google.com/maps/dir/?api=1&destination={query}&travelmode=driving"
+                        
+                    p_addr = d["indirizzo"].split(',', 1)
+                    via_parte = p_addr[0].strip()
+                    resto_parte = p_addr[1].strip() if len(p_addr) > 1 else ""
+                    addr_html = f'<span class="addr"><b>{via_parte}</b><br>{resto_parte}</span>'
+                    
+                    if is_depot:
+                        c = f'''<div class="card" onclick="focusOn({idx})" style="background:#f8fafc;">
+                            <div class="stop-num" style="background:#475569;">H</div>
+                            <div class="stop-info"><b class="name">PARTENZA</b>{addr_html}</div>
+                            <a href="{nav_url}" class="btn-nav" style="background:#475569;"><span class="material-icons-round">navigation</span></a>
+                        </div>'''
+                    else:
+                        c = f'''<div class="card {'next' if idx == 1 else ''}" onclick="focusOn({idx})">
+                            <div class="stop-num">{idx}</div>
+                            <div class="stop-info">
+                                <div class="actions">
+                                    <button class="btn-geo" onclick="saveRealCoords({idx}, event)"><span class="material-icons-round">location_searching</span> GEOLOCA</button>
+                                    <button class="btn-done" onclick="toggleDone({idx}, event)"><span class="material-icons-round">radio_button_unchecked</span> FATTO</button>
+                                </div>
+                                <b class="name">{d["cliente"]}</b>
+                                {addr_html}
+                            </div>
+                            <a href="{nav_url}" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                        </div>'''
+                    cards_list.append(c)
+                    
+                cards_html = "".join(cards_list)
                 
-        if trips_output:
-            html_filename = os.path.join(OUTPUT_DIR, f"3_Mappa_GMaps_{data_viaggio}.html")
-            
-            try:
-                date_obj = datetime.strptime(data_viaggio, "%Y-%m-%d")
-                data_bella = date_obj.strftime("%d/%m/%Y")
-            except:
-                data_bella = data_viaggio
+                html_fin = HTML_TEMPLATE.replace("{{ v_id }}", f"{data_viaggio} | {code}").replace("{{ api_key }}", API_KEY).replace("{{ km }}", str(km)).replace("{{ t_guida }}", format_time(t_guida)).replace("{{ t_sosta }}", format_time(t_sosta)).replace("{{ t_tot }}", format_time(t_tot)).replace("{{ cards_html|safe }}", cards_html).replace("{{ deliveries_js|safe }}", json.dumps(deliveries))
                 
-            HTML_CODE = f"""<!DOCTYPE html><html><head><title>Mappa Google Directions {data_bella}</title><meta charset='utf-8'><script src='https://maps.googleapis.com/maps/api/js?key={API_KEY}'></script>
-            <style>body,html{{height:100%;margin:0;font-family:sans-serif;background:#eff6ff;}}#map{{height:100%;width:100%;position:fixed;}}#side{{position:absolute;top:10px;left:10px;width:320px;background:white;padding:15px;border-radius:15px;box-shadow:0 10px 40px rgba(0,0,0,0.3);z-index:100;max-height:90vh;overflow-y:auto;}}.card{{border:2px solid #eee;border-radius:12px;padding:12px;margin-bottom:12px;cursor:pointer;}}.active-card{{border-color:#4f46e5;background:#f0f3ff;}}.wa-btn{{display:block;background:#3b82f6;color:white;text-align:center;padding:10px;border-radius:10px;font-weight:800;text-decoration:none;margin-top:10px;}}</style>
-            </head><body><div id='side'><h2 style='color:#4f46e5;margin:0;'>Log Solution</h2><p style='font-size:0.8rem;color:grey;'>Ottimizzazione Nativa Google - {data_bella}</p><div id='cards'></div></div><div id='map'></div><script>
-            const trips={json.dumps(trips_output)};
-            let map, ds, dr, markers=[];
-            function initMap(){{
-                map=new google.maps.Map(document.getElementById('map'),{{center:{{lat:45.8,lng:12.1}},zoom:9}});
-                ds=new google.maps.DirectionsService(); dr=new google.maps.DirectionsRenderer({{map:map, suppressMarkers:true}});
-                trips.forEach((t,i)=>{{
-                    const card=document.createElement('div'); card.className='card'; card.id='card-'+i;
-                    card.innerHTML=`<b>Furgone: ${{t.id}}</b><div id='km-${{i}}' style='font-weight:bold;color:#16a34a;margin:5px 0;'>${{t.km_str}}</div><div style='font-size:0.75rem;color:grey;'>${{t.stops.map((s,idx)=>(idx+1)+'. '+s.nome).join('<br>')}}</div><a href="${{t.wa}}" target="_blank" class='wa-btn'>Avvia Navigatore WhatsApp</a>`;
-                    card.onclick=()=>selectTrip(i); document.getElementById('cards').appendChild(card);
-                }});
-                if(trips.length > 0) selectTrip(0);
-            }}
-            function selectTrip(idx){{
-                document.querySelectorAll('.card').forEach(el=>el.classList.remove('active-card')); document.getElementById('card-'+idx).classList.add('active-card');
-                const t=trips[idx]; markers.forEach(m=>m.setMap(null)); markers=[];
-                markers.push(new google.maps.Marker({{position:{{lat:{DEPOT_COORDS['lat']},lng:{DEPOT_COORDS['lng']}}}, map:map, label:'H'}}));
-                t.stops.forEach((s, i) => {{ markers.push(new google.maps.Marker({{position: {{lat:s.lat, lng:s.lng}}, map:map, label: (i+1).toString()}})); }});
-                // CHIAVE: optimizeWaypoints ORA È FALSE PERCHE' I PUNTI SONO GIA' ORDINATI E DEVONO ESSERE RISPETTATI
-                ds.route({{origin:'{DEPOT_STR}',destination:'{DEPOT_STR}',waypoints:t.stops.map(s=>({{location:new google.maps.LatLng(s.lat,s.lng),stopover:true}})),travelMode:'DRIVING',optimizeWaypoints:false}},(res,stat)=>{{ if(stat==='OK') dr.setDirections(res); }});
-            }}google.maps.event.addDomListener(window,'load',initMap);</script></body></html>"""
-            
-            with open(html_filename, "w", encoding="utf-8") as f:
-                f.write(HTML_CODE)
-            print(f"  -> File HTML Google nativo salvato: {os.path.basename(html_filename)}")
+                (OUTPUT_DIR_LOCAL / fname).write_text(html_fin, encoding="utf-8")
+                (WEBAPP_FOLDER / fname).write_text(html_fin, encoding="utf-8")
+                
+                firebase_link = f"https://log-solution-60007.web.app/fatturazione_mappe/{fname}"
+                txt_links_content += f"🏎️ {data_viaggio} - {code}: {firebase_link}\n\n"
+                print(f"  -> Creato split: {fname}")
 
     save_cache(cache)
-    print("\n[SUCCESSO] Le mappe perfette Google Directions sono pronte.")
+    
+    (DRIVE_PATH / "Mappe_Complete_Google" / mese / "LINK_WHATSAPP_AUTISTI.txt").write_text(txt_links_content, encoding="utf-8")
+    (WEBAPP_FOLDER / "LINK_WHATSAPP_AUTISTI.txt").write_text(txt_links_content, encoding="utf-8")
+    
+    print("\n[SUCCESSO] Le mappe Mobile Fatturazione sono state splittate e ultimate.")
+    deploy_online()
 
 if __name__ == "__main__":
     elabora_tutte_le_mappe_google()

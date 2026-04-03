@@ -12,9 +12,6 @@ BASE_DIR = PROG_DIR.parent
 CONSEGNE_DIR = BASE_DIR / "CONSEGNE"
 GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
 
-# --- CONFIGURAZIONE OTTIMIZZAZIONE ---
-# Opzioni: "HAVERSINE" (Locale/Veloce) o "GOOGLE_MATRIX" (API/Preciso)
-MODO_DISTANZA = "HAVERSINE" 
 
 DEPOT = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"}
 TIME_OFFSET_PER_STOP = 8
@@ -49,43 +46,7 @@ def haversine(p1, p2):
 # --- LOGICA DI OTTIMIZZAZIONE AVANZATA (OR-TOOLS) ---
 
 def crea_matrice_distanze(punti_con_deposito):
-    """Crea la matrice delle distanze (in metri) tra tutti i punti."""
-    n = len(punti_con_deposito)
-    matrix = [[0] * n for _ in range(n)]
-    
-    if MODO_DISTANZA == "HAVERSINE":
-        for i in range(n):
-            for j in range(n):
-                if i == j: continue
-                matrix[i][j] = int(haversine(punti_con_deposito[i], punti_con_deposito[j]) * 1000)
-    
-    elif MODO_DISTANZA == "GOOGLE_MATRIX":
-        # Google Matrix API limit: 25 origins/destinations per request
-        if n > 25:
-            print("⚠️ Troppe tappe (>25) per Google Matrix API. Uso Haversine locale.")
-            return crea_matrice_distanze_haversine_internal(punti_con_deposito)
-            
-        coords = "|".join([f"{p['lat']},{p['lon']}" for p in punti_con_deposito])
-        url = f"https://maps.googleapis.com/maps/api/distancematrix/json?origins={coords}&destinations={coords}&key={GOOGLE_MAPS_API_KEY}"
-        try:
-            r = requests.get(url).json()
-            if r['status'] == 'OK':
-                for i, row in enumerate(r['rows']):
-                    for j, element in enumerate(row['elements']):
-                        if element['status'] == 'OK':
-                            matrix[i][j] = element['distance']['value']
-                        else:
-                            matrix[i][j] = int(haversine(punti_con_deposito[i], punti_con_deposito[j]) * 1000)
-            else:
-                print(f"⚠️ Errore Google Matrix status: {r['status']}. Uso Haversine.")
-                return crea_matrice_distanze_haversine_internal(punti_con_deposito)
-        except Exception as e:
-            print(f"⚠️ Errore connessione Matrix API: {e}. Uso Haversine.")
-            return crea_matrice_distanze_haversine_internal(punti_con_deposito)
-            
-    return matrix
-
-def crea_matrice_distanze_haversine_internal(punti_con_deposito):
+    """Crea la matrice delle distanze (in metri) tra tutti i punti usando la formula di Haversine (locale, costo zero)."""
     n = len(punti_con_deposito)
     return [[int(haversine(punti_con_deposito[i], punti_con_deposito[j]) * 1000) for j in range(n)] for i in range(n)]
 

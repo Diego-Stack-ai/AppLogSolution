@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "1.33";
+const APP_VERSION = "1.40";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -56,7 +56,7 @@ window.navigateWithState = (page) => window.location.href = page;
 
 // --- GESTIONE TURNI (WIZARD) ---
 let currentStep = 1;
-const totalSteps = 4;
+const totalSteps = 2;
 
 window.nextStep = (step) => {
     currentStep = step;
@@ -103,15 +103,12 @@ function calcolaTutto() {
     const deltaEl = document.getElementById('deltaKm');
     if (deltaEl) deltaEl.value = (kmA - kmP) > 0 ? (kmA - kmP) : '-';
 
-    const mI = window.getTimeValue('mattinaInizio');
-    const mF = window.getTimeValue('mattinaFine');
-    const pI = window.getTimeValue('pomeriggioInizio');
-    const pF = window.getTimeValue('pomeriggioFine');
+    // Calcolo ore: da Ora Inizio a Ora Fine (flusso semplificato a 2 step)
+    const oraInizio = window.getTimeValue('mattinaInizio');
+    const oraFine = window.getTimeValue('pomeriggioFine');
 
     let totalM = 0;
-    if (mI && mF) totalM += diffMin(mI, mF);
-    if (pI && pF) totalM += diffMin(pI, pF);
-    if (mI && pF && !mF && !pI) totalM = diffMin(mI, pF); // Turno unico
+    if (oraInizio && oraFine) totalM = diffMin(oraInizio, oraFine);
 
     if (totalM > 0) {
         const ordM = Math.min(totalM, 480);
@@ -139,7 +136,7 @@ function saveDraft() {
     const draft = { step: currentStep, data: {}, timestamp: Date.now() };
     const ids = ['data', 'automezzo', 'clienteSelect', 'viaggioSelect', 'kmPartenza', 'kmArrivo', 'importo', 'litri', 'nota'];
     ids.forEach(id => { const el = document.getElementById(id); if (el) draft.data[id] = el.value; });
-    ['mattinaInizio', 'mattinaFine', 'pomeriggioInizio', 'pomeriggioFine'].forEach(id => { draft.data[id] = window.getTimeValue(id); });
+    ['mattinaInizio', 'pomeriggioFine'].forEach(id => { draft.data[id] = window.getTimeValue(id); });
     sessionStorage.setItem('currentDraft', JSON.stringify(draft));
 }
 

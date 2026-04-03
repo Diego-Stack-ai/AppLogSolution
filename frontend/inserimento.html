@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.36">
+    <link rel="stylesheet" href="styles.css?v=1.40">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -71,14 +71,15 @@
 
     .wizard-step-indicator {
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
+        gap: 40px;
         margin-bottom: 30px;
         position: relative;
     }
 
     .step-dot {
-        width: 32px;
-        height: 32px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         background: #e2e8f0;
         display: flex;
@@ -86,14 +87,16 @@
         justify-content: center;
         font-weight: 700;
         color: #94a3b8;
-        font-size: 14px;
+        font-size: 16px;
         z-index: 2;
+        transition: all 0.3s ease;
     }
 
     .step-dot.active {
         background: var(--primary);
         color: white;
         box-shadow: 0 0 0 4px var(--primary-glow);
+        transform: scale(1.1);
     }
 
     .step-dot.completed {
@@ -105,6 +108,21 @@
         background: #f8fafc !important;
         color: #64748b !important;
         cursor: not-allowed !important;
+    }
+
+    .step-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #94a3b8;
+        text-align: center;
+        margin-top: 6px;
+        letter-spacing: 0.5px;
+    }
+
+    .step-dot.active + .step-label,
+    .step-dot.completed + .step-label {
+        color: var(--primary);
     }
 
     @keyframes fadeIn {
@@ -119,7 +137,6 @@
         }
     }
 </style>
-</head>
 
 <body>
     <nav class="glass-nav">
@@ -137,28 +154,30 @@
 
     <main class="main-container">
         <div class="glass-panel form-card">
-            <h2>Inizio Turno</h2>
+            <h2>Gestione Viaggio</h2>
 
-            <!-- Indicatori di progresso -->
+            <!-- Indicatori di progresso: solo 2 step -->
             <div class="wizard-step-indicator">
-                <div class="step-dot active" id="dot-1">1</div>
-                <div class="step-dot" id="dot-2">2</div>
-                <div class="step-dot" id="dot-3">3</div>
-                <div class="step-dot" id="dot-4">4</div>
-                <div
-                    style="position: absolute; top: 16px; left: 0; right: 0; height: 2px; background: #e2e8f0; z-index: 1;">
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <div class="step-dot active" id="dot-1">1</div>
+                    <div class="step-label">Partenza</div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <div class="step-dot" id="dot-2">2</div>
+                    <div class="step-label">Chiusura</div>
                 </div>
             </div>
 
             <form id="presenzeForm">
 
-                <!-- STEP 1: PARTENZA -->
+                <!-- STEP 1: PARTENZA (INIZIO VIAGGIO) -->
                 <div id="step-1" class="step-container active">
-                    <h3 class="section-title">Informazioni Generali</h3>
+                    <h3 class="section-title">Inizio Viaggio</h3>
                     <div class="form-grid">
                         <div class="input-group" style="grid-column: 1 / -1;">
                             <label for="autistaNome">Autista Connesso</label>
-                            <input type="text" id="autistaNome" readonly class="readonly-field" value="Caricamento...">
+                            <input type="text" id="autistaNome" readonly class="readonly-field"
+                                value="Caricamento...">
                         </div>
 
                         <div class="input-group">
@@ -177,8 +196,9 @@
                             </select>
                         </div>
 
-                        <!-- Nuova Sezione Menu Dinamici (Cliente + Viaggio) -->
-                        <div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                        <!-- Menu Dinamici (Cliente + Viaggio) -->
+                        <div
+                            style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
                             <div class="input-group">
                                 <label for="clienteSelect">Cliente / Progetto *</label>
                                 <select id="clienteSelect" required>
@@ -199,7 +219,7 @@
                         </div>
 
                         <div class="input-group">
-                            <label>Mattina Inizio *</label>
+                            <label>Ora Inizio *</label>
                             <div class="time-select-group">
                                 <select id="mattinaInizioHH" class="hour-select" required>
                                     <option value="">--</option>
@@ -221,80 +241,23 @@
                         <span class="material-icons-round">play_arrow</span>
                         Inizia Viaggio
                     </button>
-                    <div id="trackingStatus" style="font-size:12px; color:#64748b; margin-top:8px; text-align:center; min-height:18px;"></div>
+                    <div id="trackingStatus"
+                        style="font-size:12px; color:#64748b; margin-top:8px; text-align:center; min-height:18px;">
+                    </div>
                 </div>
 
-                <!-- STEP 2: FINE MATTINA -->
+                <!-- STEP 2: FINE VIAGGIO (CHIUSURA) -->
                 <div id="step-2" class="step-container">
-                    <h3 class="section-title">Sessione Mattutina</h3>
+                    <h3 class="section-title">Fine Viaggio</h3>
                     <div class="form-grid">
                         <div class="input-group">
-                            <label>Mattina Fine</label>
+                            <label>Ora Fine *</label>
                             <div class="time-select-group">
-                                <select id="mattinaFineHH" class="hour-select">
+                                <select id="pomeriggioFineHH" class="hour-select" required>
                                     <option value="">Ore</option>
                                 </select>
                                 <span class="time-separator">:</span>
-                                <select id="mattinaFineMM" class="min-select">
-                                    <option value="">Min</option>
-                                    <option value="00">00</option>
-                                    <option value="15">15</option>
-                                    <option value="20">20</option>
-                                    <option value="30">30</option>
-                                    <option value="45">45</option>
-                                    <option value="50">50</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:12px;">
-                        <button type="button" onclick="nextStep(3)" class="btn-wizard btn-next">Continua</button>
-                    </div>
-                </div>
-
-                <!-- STEP 3: INIZIO POMERIGGIO -->
-                <div id="step-3" class="step-container">
-                    <h3 class="section-title">Sessione Pomeridiana</h3>
-                    <div class="form-grid">
-                        <div class="input-group">
-                            <label>Pomeriggio Inizio</label>
-                            <div class="time-select-group">
-                                <select id="pomeriggioInizioHH" class="hour-select">
-                                    <option value="">Ore</option>
-                                </select>
-                                <span class="time-separator">:</span>
-                                <select id="pomeriggioInizioMM" class="min-select">
-                                    <option value="">Min</option>
-                                    <option value="00">00</option>
-                                    <option value="15">15</option>
-                                    <option value="20">20</option>
-                                    <option value="30">30</option>
-                                    <option value="45">45</option>
-                                    <option value="50">50</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:12px;">
-                        <button type="button" onclick="prevStep(2)" class="btn-wizard btn-back"
-                            style="flex:1;">Indietro</button>
-                        <button type="button" onclick="nextStep(4)" class="btn-wizard btn-next"
-                            style="flex:2;">Continua</button>
-                    </div>
-                </div>
-
-                <!-- STEP 4: CHIUSURA E RIEPILOGO -->
-                <div id="step-4" class="step-container">
-                    <h3 class="section-title">Chiusura Giornaliera</h3>
-                    <div class="form-grid">
-                        <div class="input-group">
-                            <label>Pomeriggio Fine *</label>
-                            <div class="time-select-group">
-                                <select id="pomeriggioFineHH" class="hour-select">
-                                    <option value="">Ore</option>
-                                </select>
-                                <span class="time-separator">:</span>
-                                <select id="pomeriggioFineMM" class="min-select">
+                                <select id="pomeriggioFineMM" class="min-select" required>
                                     <option value="">Min</option>
                                     <option value="00">00</option>
                                     <option value="15">15</option>
@@ -307,18 +270,25 @@
                         </div>
                         <div class="input-group">
                             <label for="kmArrivo">Km Arrivo *</label>
-                            <input type="number" id="kmArrivo" placeholder="es. 120800">
+                            <input type="number" id="kmArrivo" placeholder="es. 120800" required>
                         </div>
                     </div>
 
+                    <!-- Riepilogo calcolato -->
                     <div
                         style="background: #f8fafc; padding: 20px; border-radius: 16px; margin: 24px 0; border: 1px solid #e2e8f0;">
-                        <h4 style="margin: 0 0 16px 0; color: #475569; font-size: 14px; text-transform: uppercase;">
-                            Riepilogo Conoscenza</h4>
+                        <h4
+                            style="margin: 0 0 16px 0; color: #475569; font-size: 14px; text-transform: uppercase;">
+                            Riepilogo Viaggio</h4>
                         <div class="form-grid">
                             <div class="input-group">
                                 <label for="deltaKm">Delta Km</label>
                                 <input type="text" id="deltaKm" readonly class="readonly-field">
+                            </div>
+                            <div class="input-group">
+                                <label for="totaleOre">Ore Lavorate</label>
+                                <input type="text" id="totaleOre" readonly class="readonly-field"
+                                    style="color: var(--primary) !important;">
                             </div>
                             <div class="input-group">
                                 <label for="oreOrdinarie">Ore Ordinarie</label>
@@ -328,36 +298,38 @@
                                 <label for="oreStraordinario">Ore Straordinario</label>
                                 <input type="text" id="oreStraordinario" readonly class="readonly-field">
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Carburante e Note -->
+                    <div style="border-top: 2px solid #f1f5f9; padding-top: 20px; margin-top: 10px;">
+                        <h4
+                            style="margin: 0 0 16px 0; color: #475569; font-size: 14px; text-transform: uppercase;">
+                            Carburante e Note</h4>
+                        <div class="form-grid">
                             <div class="input-group">
-                                <label for="totaleOre">Totale Ore</label>
-                                <input type="text" id="totaleOre" readonly class="readonly-field"
-                                    style="color: var(--primary) !important;">
+                                <label for="importo">Importo (€)</label>
+                                <input type="number" id="importo" step="0.01" placeholder="es. 50.00">
+                            </div>
+                            <div class="input-group">
+                                <label for="litri">Litri Carburante</label>
+                                <input type="number" id="litri" step="0.01" placeholder="es. 40.50">
+                            </div>
+                            <div class="input-group" style="grid-column: 1 / -1;">
+                                <label for="nota">Note / Osservazioni</label>
+                                <textarea id="nota" rows="3"
+                                    placeholder="Aggiungi eventuali note sul viaggio, problemi al mezzo, ecc."></textarea>
                             </div>
                         </div>
                     </div>
-                    <div style="display:flex; gap:12px;">
-                        <button type="button" onclick="prevStep(3)" class="btn-wizard btn-back"
-                            style="flex:1;">Indietro</button>
-                        <button type="submit" class="btn-wizard btn-save" style="flex:2;">Salva e Invia Turno</button>
-                    </div>
-                </div>
 
-                <div style="margin-top: 40px; border-top: 2px solid #f1f5f9; padding-top: 30px;">
-                    <h3 class="section-title">Carburante e Note</h3>
-                    <div class="form-grid">
-                        <div class="input-group">
-                            <label for="importo">Importo (€)</label>
-                            <input type="number" id="importo" step="0.01" placeholder="es. 50.00">
-                        </div>
-                        <div class="input-group">
-                            <label for="litri">Litri Carburante</label>
-                            <input type="number" id="litri" step="0.01" placeholder="es. 40.50">
-                        </div>
-                        <div class="input-group" style="grid-column: 1 / -1;">
-                            <label for="nota">Note / Osservazioni</label>
-                            <textarea id="nota" rows="3"
-                                placeholder="Aggiungi eventuali note sul viaggio, problemi al mezzo, ecc."></textarea>
-                        </div>
+                    <div style="display:flex; gap:12px; margin-top: 20px;">
+                        <button type="button" onclick="prevStep(1)" class="btn-wizard btn-back"
+                            style="flex:1;">Indietro</button>
+                        <button type="button" id="btnEndTrip" class="btn-wizard btn-save" style="flex:2;">
+                            <span class="material-icons-round">check_circle</span>
+                            Salva e Invia Turno
+                        </button>
                     </div>
                 </div>
 
@@ -370,7 +342,8 @@
         <div class="modal-content">
             <div class="modal-icon material-icons-round">warning</div>
             <h2 style="font-size: 20px; color: #b45309; margin-bottom: 8px;">Attenzione!</h2>
-            <p style="margin-bottom: 24px; color: #475569; font-size: 15px; line-height: 1.5;">Stai scegliendo una data
+            <p style="margin-bottom: 24px; color: #475569; font-size: 15px; line-height: 1.5;">Stai scegliendo una
+                data
                 che non è <b>oggi</b>.<br>Sei sicuro di voler registrare il turno per questo giorno?</p>
             <div style="display: flex; gap: 12px; justify-content: center;">
                 <button type="button" class="btn-primary"
@@ -388,12 +361,14 @@
         <div class="modal-content">
             <span class="material-icons-round modal-icon" style="color: var(--primary);">history</span>
             <h3>Viaggio non concluso</h3>
-            <p>È stato rilevato un viaggio iniziato ma non terminato. Vuoi riprendere dall'ultima tappa o iniziare un
+            <p>È stato rilevato un viaggio iniziato ma non terminato. Vuoi riprendere dall'ultima tappa o iniziare
+                un
                 nuovo turno?</p>
             <div style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">
                 <button onclick="resumeDraft()" class="btn-primary">Riprendi Viaggio Precedente</button>
                 <button onclick="discardDraft()" class="btn-primary"
-                    style="background:#f1f5f9; color:#ef4444; box-shadow:none;">Elimina Bozze e Inizia Nuovo</button>
+                    style="background:#f1f5f9; color:#ef4444; box-shadow:none;">Elimina Bozze e Inizia
+                    Nuovo</button>
             </div>
         </div>
     </div>
@@ -403,26 +378,30 @@
         <div class="modal-content">
             <span class="material-icons-round modal-icon" style="color: var(--primary);">send</span>
             <h3>Conferma Invio</h3>
-            <p>Sei sicuro di voler inviare i dati del turno di oggi al Foglio Google?</p>
-            <div style="display:flex; gap:12px; margin-top:24px;">
-                <button onclick="closeConfirmModal()" class="btn-primary"
+            <p>Sei sicuro di voler inviare i dati del turno?</p>
+            <div id="confirmSummary"
+                style="background:#f8fafc; border-radius:12px; padding:14px; margin:16px 0; font-size:0.85rem; color:#475569; text-align:left;">
+            </div>
+            <div style="display:flex; gap:12px; margin-top:16px;">
+                <button type="button" onclick="closeConfirmModal()" class="btn-primary"
                     style="background:#f1f5f9; color:#334155; box-shadow:none;">Annulla</button>
-                <button id="btnConfirmSend" class="btn-primary">Sì, Invia Ora</button>
+                <button type="button" id="btnConfirmSend" class="btn-primary">Sì, Invia Ora</button>
             </div>
         </div>
     </div>
 
-    <script src="script.js?v=1.36"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.36"></script>
+    <script src="script.js?v=1.40"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.40"></script>
     <script type="module">
-        import { saveTrip } from "./firestore-service.js?v=1.36";
-        import "./gps-tracker.js?v=1.36";
+        import { saveTrip } from "./firestore-service.js?v=1.40";
+        import "./gps-tracker.js?v=1.40";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
+        const btnEndTrip = document.getElementById('btnEndTrip');
         const btnConfirmSend = document.getElementById('btnConfirmSend');
 
-        // Logic to show/hide Start Trip button based on inputs
+        // === STEP 1: Mostra/Nascondi il bottone "Inizia Viaggio" ===
         const checkStep1 = () => {
             const d1 = document.getElementById('automezzo').value;
             const d2 = document.getElementById('clienteSelect').value;
@@ -430,14 +409,9 @@
             const d4 = document.getElementById('kmPartenza').value;
             const d5 = document.getElementById('mattinaInizioHH').value;
             const d6 = document.getElementById('mattinaInizioMM').value;
-            
-            // Show only if not already tracking (button text checked or disabled state)
+
             if (!btnStartTrip.disabled) {
-                if (d1 && d2 && d3 && d4 && d5 && d6) {
-                    btnStartTrip.style.display = 'flex';
-                } else {
-                    btnStartTrip.style.display = 'none';
-                }
+                btnStartTrip.style.display = (d1 && d2 && d3 && d4 && d5 && d6) ? 'flex' : 'none';
             }
         };
 
@@ -449,50 +423,86 @@
             }
         });
 
-        // Logic for Starting Trip
+        // === STEP 1: Avvio Viaggio → Salva su Firebase + GPS ===
         btnStartTrip.onclick = async () => {
-            // Check HTML5 validity for required fields
             if (!presenzeForm.reportValidity()) return;
 
-            const targa = document.getElementById('automezzo').value;
-            const kmPartenza = document.getElementById('kmPartenza').value;
-            
             const tripData = {
                 data: document.getElementById('data').value,
                 autista: window.appData.currentUser.nome,
-                automezzo: targa,
+                automezzo: document.getElementById('automezzo').value,
                 cliente: document.getElementById('clienteSelect').value,
                 viaggio: document.getElementById('viaggioSelect').value,
-                kmPartenza: Number(kmPartenza),
-                mattinaInizio: window.getTimeValue('mattinaInizio'),
+                kmPartenza: Number(document.getElementById('kmPartenza').value),
+                oraInizio: window.getTimeValue('mattinaInizio'),
                 stato: "in corso"
             };
 
             try {
                 const tripId = await saveTrip(tripData);
+                console.log(`[Viaggio] ✅ Creato su Firebase con ID: ${tripId}`);
                 sessionStorage.setItem('currentTripId', tripId);
-                
-                // Avvia Tracking GPS (Modulo gps-tracker.js)
+
+                // Avvia Tracking GPS
                 if (window.startGPSTracking) {
-                    window.startGPSTracking(tripId, kmPartenza);
+                    window.startGPSTracking(tripId, tripData.kmPartenza);
                 }
 
                 btnStartTrip.innerHTML = '<span class="material-icons-round">gps_fixed</span> Tracking Attivo';
                 btnStartTrip.disabled = true;
                 window.nextStep(2);
             } catch (e) {
+                console.error("[Viaggio] Errore avvio:", e);
                 alert("Errore avvio viaggio: " + e.message);
             }
         };
 
-        // Final Submission
+        // === STEP 2: Blocca form submit nativo (BUG FIX CRITICO) ===
+        presenzeForm.addEventListener('submit', (e) => {
+            e.preventDefault();  // ← QUESTO MANCAVA! Impedisce il refresh della pagina
+        });
+
+        // === STEP 2: Bottone "Salva e Invia Turno" → Apre il modale di conferma ===
+        btnEndTrip.onclick = () => {
+            // Validazione: controlla che ora fine e km arrivo siano compilati
+            const oraFine = window.getTimeValue('pomeriggioFine');
+            const kmArrivo = document.getElementById('kmArrivo').value;
+
+            if (!oraFine) {
+                alert("Inserisci l'ora di fine viaggio!");
+                return;
+            }
+            if (!kmArrivo) {
+                alert("Inserisci i Km di arrivo!");
+                return;
+            }
+
+            // Prepara riepilogo nel modale
+            const summary = document.getElementById('confirmSummary');
+            const oraInizio = window.getTimeValue('mattinaInizio');
+            const deltaKm = document.getElementById('deltaKm')?.value || '-';
+            const totOre = document.getElementById('totaleOre')?.value || '-';
+
+            summary.innerHTML = `
+                <b>📅 Data:</b> ${document.getElementById('data').value}<br>
+                <b>🚛 Mezzo:</b> ${document.getElementById('automezzo').value}<br>
+                <b>🏢 Cliente:</b> ${document.getElementById('clienteSelect').value}<br>
+                <b>🛣️ Viaggio:</b> ${document.getElementById('viaggioSelect').value}<br>
+                <b>⏰ Orario:</b> ${oraInizio} → ${oraFine}<br>
+                <b>📏 Km:</b> ${deltaKm} km | <b>🕐 Ore:</b> ${totOre}
+            `;
+
+            // APRE il modale di conferma (BUG FIX: prima non veniva mai aperto!)
+            document.getElementById('confirmModal').classList.add('active');
+        };
+
+        // === Conferma Finale: Salva DAVVERO su Firebase ===
         btnConfirmSend.onclick = async () => {
-            const btn = presenzeForm.querySelector('.btn-save');
-            btn.innerHTML = 'Invio...'; btn.disabled = true;
+            btnConfirmSend.disabled = true;
+            btnConfirmSend.innerHTML = 'Invio in corso...';
             window.closeConfirmModal();
 
             const tripId = sessionStorage.getItem('currentTripId');
-            const kmArrivo = document.getElementById('kmArrivo').value;
 
             const finalData = {
                 id: tripId,
@@ -502,40 +512,43 @@
                 cliente: document.getElementById('clienteSelect').value,
                 viaggio: document.getElementById('viaggioSelect').value,
                 kmPartenza: Number(document.getElementById('kmPartenza').value),
-                kmArrivo: Number(kmArrivo),
+                kmArrivo: Number(document.getElementById('kmArrivo').value),
                 delta_km: document.getElementById('deltaKm').value,
-                mattinaInizio: window.getTimeValue('mattinaInizio'),
-                mattinaFine: window.getTimeValue('mattinaFine'),
-                pomeriggioInizio: window.getTimeValue('pomeriggioInizio'),
-                pomeriggioFine: window.getTimeValue('pomeriggioFine'),
+                oraInizio: window.getTimeValue('mattinaInizio'),
+                oraFine: window.getTimeValue('pomeriggioFine'),
                 ore_ordinarie: document.getElementById('oreOrdinarie').value,
                 ore_straordinarie: document.getElementById('oreStraordinario').value,
                 ore_totali: document.getElementById('totaleOre').value,
-                importo: document.getElementById('importo').value,
-                litri: document.getElementById('litri').value,
-                nota: document.getElementById('nota').value,
+                importo: document.getElementById('importo').value || '',
+                litri: document.getElementById('litri').value || '',
+                nota: document.getElementById('nota').value || '',
                 stato: "concluso"
             };
 
             try {
-                // Ferma tracking
+                // Ferma tracking GPS
                 if (window.stopGPSTracking) window.stopGPSTracking();
 
-                // Salva su Firebase
+                // Salva/aggiorna su Firebase
                 await saveTrip(finalData);
-                
+                console.log(`[Viaggio] ✅ Viaggio ${tripId} CONCLUSO e salvato su Firebase.`);
+
                 sessionStorage.removeItem('currentTripId');
                 sessionStorage.removeItem('currentDraft');
 
-                btn.innerHTML = 'Turno Inviato ✓';
-                btn.style.background = 'var(--success)';
+                // Feedback visivo
+                btnEndTrip.innerHTML = '<span class="material-icons-round">check_circle</span> Turno Inviato ✓';
+                btnEndTrip.style.background = 'var(--success)';
+                btnEndTrip.disabled = true;
+
                 setTimeout(() => {
                     window.location.reload();
-                }, 2000);
+                }, 2500);
             } catch (e) {
+                console.error("[Viaggio] Errore salvataggio finale:", e);
                 alert("Errore salvataggio: " + e.message);
-                btn.disabled = false;
-                btn.innerHTML = 'Salva e Invia Turno';
+                btnConfirmSend.disabled = false;
+                btnConfirmSend.innerHTML = 'Sì, Invia Ora';
             }
         };
     </script>

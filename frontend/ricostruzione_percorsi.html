@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ricostruzione Percorsi GPS - Log Solution</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry&callback=initMap" async defer></script>
+    <style>
+        :root {
+            --bg: #0f172a; --surface: #1e293b; --surface2: #334155;
+            --text: #f8fafc; --muted: #94a3b8;
+            --primary: #6366f1; --primary-glow: rgba(99,102,241,0.3);
+            --accent1: #10b981; --accent2: #f59e0b; --accent3: #ef4444;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html { height: 100%; font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+        
+        .app { display: flex; height: 100vh; }
+
+        /* Sidebar */
+        .sidebar { width: 420px; height: 100%; display: flex; flex-direction: column; background: var(--surface); border-right: 1px solid var(--surface2); z-index: 10; }
+        .sidebar-header { padding: 24px; background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%); }
+        .sidebar-header h1 { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.5px; }
+        .sidebar-header p { font-size: 0.8rem; color: rgba(255,255,255,0.7); margin-top: 4px; font-weight: 600; }
+        
+        .trip-list { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+        
+        .trip-card {
+            background: var(--bg); border-radius: 16px; padding: 18px; border: 1.5px solid var(--surface2);
+            cursor: pointer; transition: all 0.25s ease; position: relative; overflow: hidden;
+        }
+        .trip-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 5px; height: 100%;
+            background: var(--muted); transition: background 0.2s;
+        }
+        .trip-card:hover { border-color: var(--primary); transform: translateX(4px); }
+        .trip-card:hover::before { background: var(--primary); }
+        .trip-card.active { border-color: var(--primary); box-shadow: 0 0 20px var(--primary-glow); }
+        .trip-card.active::before { background: var(--primary); }
+        .trip-card.no-logs { opacity: 0.45; }
+        .trip-card.no-logs::before { background: var(--accent3); }
+        
+        .trip-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .trip-name { font-size: 1rem; font-weight: 800; color: var(--text); }
+        .trip-badge {
+            font-size: 0.65rem; font-weight: 800; padding: 4px 10px; border-radius: 20px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .badge-ok { background: rgba(16,185,129,0.15); color: var(--accent1); }
+        .badge-empty { background: rgba(239,68,68,0.15); color: var(--accent3); }
+        
+        .trip-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .meta-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+        .meta-item .material-icons-round { font-size: 16px; color: var(--primary); }
+
+        .stats-bar {
+            padding: 16px; background: var(--bg); border-top: 1px solid var(--surface2);
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+        }
+        .stat-box { text-align: center; }
+        .stat-val { font-size: 1.3rem; font-weight: 900; color: var(--primary); }
+        .stat-lbl { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+
+        /* Map */
+        #map { flex: 1; height: 100%; }
+
+        /* Detail Panel (overlay on map) */
+        .detail-panel {
+            position: absolute; bottom: 20px; left: 440px; right: 20px;
+            background: rgba(15,23,42,0.92); backdrop-filter: blur(20px);
+            border-radius: 20px; padding: 20px 24px; border: 1px solid var(--surface2);
+            display: none; z-index: 5;
+        }
+        .detail-panel.visible { display: flex; gap: 30px; align-items: center; }
+        .detail-title { font-weight: 800; font-size: 1rem; }
+        .detail-stats { display: flex; gap: 24px; }
+        .detail-stat { text-align: center; }
+        .detail-stat-val { font-size: 1.1rem; font-weight: 900; color: var(--accent1); }
+        .detail-stat-lbl { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+
+        @media (max-width: 900px) {
+            .app { flex-direction: column; }
+            .sidebar { width: 100%; height: 45%; }
+            #map { height: 55%; }
+            .detail-panel { left: 20px; bottom: 10px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>🛰️ Ricostruzione Percorsi GPS</h1>
+            <p>Dati estratti da Firebase Firestore - Viaggi di Prova</p>
+        </div>
+        <div class="trip-list" id="tripList"></div>
+        <div class="stats-bar">
+            <div class="stat-box"><div class="stat-val" id="totalTrips">0</div><div class="stat-lbl">Viaggi</div></div>
+            <div class="stat-box"><div class="stat-val" id="totalLogs">0</div><div class="stat-lbl">Punti GPS</div></div>
+            <div class="stat-box"><div class="stat-val" id="totalWithData">0</div><div class="stat-lbl">Con Traccia</div></div>
+        </div>
+    </div>
+    <div id="map"></div>
+    <div class="detail-panel" id="detailPanel">
+        <div style="flex:1;">
+            <div class="detail-title" id="detailTitle"></div>
+            <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;" id="detailSub"></div>
+        </div>
+        <div class="detail-stats">
+            <div class="detail-stat"><div class="detail-stat-val" id="dPunti">-</div><div class="detail-stat-lbl">Punti</div></div>
+            <div class="detail-stat"><div class="detail-stat-val" id="dDurata">-</div><div class="detail-stat-lbl">Durata</div></div>
+            <div class="detail-stat"><div class="detail-stat-val" id="dVelMax">-</div><div class="detail-stat-lbl">Vel. Max</div></div>
+            <div class="detail-stat"><div class="detail-stat-val" id="dAccuracy">-</div><div class="detail-stat-lbl">Precisione Media</div></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- DATI ESTRATTI DA FIREBASE ---
+const trips = [
+  {
+    id: "IGdxBut0vEMPXxxpOWWU", data: "2026-04-03", viaggio: "VIAGGIO 06", cliente: "PROGETTO SCUOLE",
+    automezzo: "EK832AW", mattinaInizio: "13:30", color: "#6366f1",
+    logs: [
+      {lat:45.451265588668306, lng:11.733133791139648, speed:null, accuracy:18.8, timestamp:"2026-04-03T11:24:56"},
+      {lat:45.451193075377304, lng:11.733262747734491, speed:6.2, accuracy:2.7, timestamp:"2026-04-03T11:26:26"},
+      {lat:45.45148658876628, lng:11.733162047683841, speed:null, accuracy:19, timestamp:"2026-04-03T11:26:27"},
+      {lat:45.45135760721616, lng:11.733348594302985, speed:0, accuracy:7.3, timestamp:"2026-04-03T11:28:06"},
+      {lat:45.45169318620695, lng:11.733467577796828, speed:null, accuracy:37.8, timestamp:"2026-04-03T11:28:06"},
+      {lat:45.450057961994645, lng:11.732865101561574, speed:43.8, accuracy:2.2, timestamp:"2026-04-03T11:29:51"},
+      {lat:45.44683231708264, lng:11.733565386988833, speed:38.9, accuracy:8, timestamp:"2026-04-03T11:29:51"},
+      {lat:45.446434935364024, lng:11.735785000607649, speed:4.4, accuracy:4.7, timestamp:"2026-04-03T11:31:23"},
+      {lat:45.44638337704298, lng:11.7358252070368, speed:0, accuracy:37.9, timestamp:"2026-04-03T11:32:57"},
+      {lat:45.44635901702384, lng:11.735765624552696, speed:null, accuracy:30.9, timestamp:"2026-04-03T11:32:57"},
+      {lat:45.44643096824307, lng:11.735555523653948, speed:null, accuracy:40, timestamp:"2026-04-03T11:33:45"},
+      {lat:45.44642084702772, lng:11.735732872218806, speed:null, accuracy:12.2, timestamp:"2026-04-03T11:34:48"},
+      {lat:45.446402760180405, lng:11.735707808222687, speed:null, accuracy:14.4, timestamp:"2026-04-03T11:35:09"},
+      {lat:45.44638174096455, lng:11.73574640056964, speed:null, accuracy:12.6, timestamp:"2026-04-03T11:35:16"}
+    ]
+  },
+  {
+    id: "jYIKYqx0tS6cOYzw4cf1", data: "2026-04-03", viaggio: "BL 3 * BELLUNO", cliente: "GRAN CHEF",
+    automezzo: "EN201DB", mattinaInizio: "14:45", color: "#10b981",
+    logs: [
+      {lat:45.44644471592506, lng:11.735750355442015, speed:null, accuracy:19.2, timestamp:"2026-04-03T12:03:28"},
+      {lat:45.4465649864281, lng:11.736227259234518, speed:0.4, accuracy:3.0, timestamp:"2026-04-03T12:04:58"},
+      {lat:45.44650188585035, lng:11.733632217450404, speed:21.5, accuracy:2.0, timestamp:"2026-04-03T12:08:08"},
+      {lat:45.45125847435983, lng:11.733141445225028, speed:null, accuracy:18.9, timestamp:"2026-04-03T12:08:08"},
+      {lat:45.45127084215374, lng:11.733068712095656, speed:null, accuracy:4.8, timestamp:"2026-04-03T12:09:14"}
+    ]
+  },
+  {
+    id: "sOS73o3RW26ms92V2I7B", data: "2026-04-03", viaggio: "VIAGGIO 06", cliente: "PROGETTO SCUOLE",
+    automezzo: "DS224AD", mattinaInizio: "02:30", color: "#f59e0b",
+    logs: [
+      {lat:45.45126558785217, lng:11.733133796196817, speed:null, accuracy:10.7, timestamp:"2026-04-03T09:53:58"},
+      {lat:45.45127457125606, lng:11.733053342275214, speed:0, accuracy:2.0, timestamp:"2026-04-03T10:05:45"},
+      {lat:45.45126559495159, lng:11.733133737303715, speed:null, accuracy:7.6, timestamp:"2026-04-03T10:05:45"},
+      {lat:45.45128358460837, lng:11.733206173868242, speed:null, accuracy:19.5, timestamp:"2026-04-03T10:16:09"}
+    ]
+  },
+  {
+    id: "hwlpEp8tOQdZpiB22MrX", data: "2026-04-01", viaggio: "LAGO", cliente: "CATTEL",
+    automezzo: "GH876XK", mattinaInizio: "16:15", color: "#ef4444",
+    logs: [
+      {lat:45.451538, lng:11.733321, speed:0, accuracy:212, timestamp:"2026-04-01T13:55:13"},
+      {lat:45.451538, lng:11.733321, speed:0, accuracy:212, timestamp:"2026-04-01T13:56:43"},
+      {lat:45.451538, lng:11.733321, speed:0, accuracy:212, timestamp:"2026-04-01T13:58:13"},
+      {lat:45.451538, lng:11.733321, speed:0, accuracy:212, timestamp:"2026-04-01T13:59:43"},
+      {lat:45.451538, lng:11.733321, speed:0, accuracy:212, timestamp:"2026-04-01T14:01:13"},
+      {lat:45.451538, lng:11.733321, speed:0, accuracy:212, timestamp:"2026-04-01T14:02:43"},
+      {lat:45.451538, lng:11.733321, speed:0, accuracy:212, timestamp:"2026-04-01T14:04:13"}
+    ]
+  },
+  // Viaggi SENZA log GPS
+  {id:"6KNDG02aCoGhqGtbwcon", data:"2026-04-01", viaggio:"LAGO BS 1", cliente:"GRAN CHEF", automezzo:"EN364DB", mattinaInizio:"16:45", color:"#64748b", logs:[]},
+  {id:"C5RqPvaGJBc5y48EV6MD", data:"2026-04-01", viaggio:"LAGO BS 1", cliente:"GRAN CHEF", automezzo:"EK832AW", mattinaInizio:"16:45", color:"#64748b", logs:[]},
+  {id:"ESfIPFm2jCVDCSoU3Le2", data:"2026-04-02", viaggio:"VIAGGIO 07", cliente:"PROGETTO SCUOLE", automezzo:"DS423SN", mattinaInizio:"04:30", color:"#64748b", logs:[]},
+  {id:"JzB6QHKYdxpUyQaa0kXg", data:"2026-04-01", viaggio:"VIAGGIO 05", cliente:"PROGETTO SCUOLE", automezzo:"EK832AW", mattinaInizio:"16:00", color:"#64748b", logs:[]},
+  {id:"M4eDKQoUQvUEEFloaDE3", data:"2026-04-01", viaggio:"LAGO BS 1", cliente:"GRAN CHEF", automezzo:"FD788RT", mattinaInizio:"16:45", color:"#64748b", logs:[]},
+  {id:"W3705wZ3jiTINKVTykvG", data:"2026-04-01", viaggio:"3 CA * CAMISANO", cliente:"BAUER", automezzo:"DS423SN", mattinaInizio:"17:00", color:"#64748b", logs:[]},
+  {id:"WabkuH3mKjQG4UicfdtL", data:"2026-04-01", viaggio:"LAGO BS 1", cliente:"GRAN CHEF", automezzo:"EK832AW", mattinaInizio:"16:30", color:"#64748b", logs:[]},
+  {id:"qhxJdQISAjOZgO44QAIo", data:"2026-04-01", viaggio:"VIAGGIO 07", cliente:"PROGETTO SCUOLE", automezzo:"EN364DB", mattinaInizio:"16:45", color:"#64748b", logs:[]},
+];
+
+let map, activePolylines = [], activeMarkers = [];
+
+// --- RENDER SIDEBAR ---
+function renderSidebar() {
+    const list = document.getElementById('tripList');
+    let totalLogs = 0, withData = 0;
+    
+    trips.forEach((t, i) => {
+        totalLogs += t.logs.length;
+        if (t.logs.length > 0) withData++;
+        
+        const card = document.createElement('div');
+        card.className = `trip-card ${t.logs.length === 0 ? 'no-logs' : ''}`;
+        card.onclick = () => showTrip(i);
+        card.innerHTML = `
+            <div class="trip-header">
+                <span class="trip-name">${t.viaggio}</span>
+                <span class="trip-badge ${t.logs.length > 0 ? 'badge-ok' : 'badge-empty'}">${t.logs.length > 0 ? t.logs.length + ' punti' : 'Nessun log'}</span>
+            </div>
+            <div class="trip-meta">
+                <div class="meta-item"><span class="material-icons-round">business</span>${t.cliente}</div>
+                <div class="meta-item"><span class="material-icons-round">calendar_today</span>${t.data}</div>
+                <div class="meta-item"><span class="material-icons-round">local_shipping</span>${t.automezzo}</div>
+                <div class="meta-item"><span class="material-icons-round">schedule</span>Inizio: ${t.mattinaInizio}</div>
+            </div>
+        `;
+        list.appendChild(card);
+    });
+    
+    document.getElementById('totalTrips').textContent = trips.length;
+    document.getElementById('totalLogs').textContent = totalLogs;
+    document.getElementById('totalWithData').textContent = withData;
+}
+
+// --- SHOW TRIP ON MAP ---
+function showTrip(idx) {
+    const t = trips[idx];
+    if (t.logs.length === 0) return;
+    
+    // Highlight card
+    document.querySelectorAll('.trip-card').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.trip-card')[idx].classList.add('active');
+    
+    // Clear previous
+    activePolylines.forEach(p => p.setMap(null));
+    activeMarkers.forEach(m => m.setMap(null));
+    activePolylines = []; activeMarkers = [];
+    
+    const bounds = new google.maps.LatLngBounds();
+    const path = t.logs.map(l => ({ lat: l.lat, lng: l.lng }));
+    
+    // Draw polyline
+    const poly = new google.maps.Polyline({
+        path, map,
+        strokeColor: t.color, strokeOpacity: 0.9, strokeWeight: 5,
+        geodesic: true
+    });
+    activePolylines.push(poly);
+    
+    // Draw markers for each GPS log
+    t.logs.forEach((l, i) => {
+        const pos = { lat: l.lat, lng: l.lng };
+        bounds.extend(pos);
+        
+        const isFirst = i === 0;
+        const isLast = i === t.logs.length - 1;
+        
+        const marker = new google.maps.Marker({
+            position: pos, map,
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: isFirst || isLast ? 10 : 6,
+                fillColor: isFirst ? '#10b981' : isLast ? '#ef4444' : t.color,
+                fillOpacity: 1,
+                strokeColor: 'white', strokeWeight: 2
+            },
+            title: `#${i+1} | ${l.timestamp?.split('T')[1] || ''} | Speed: ${l.speed ?? '?'} km/h | Acc: ${l.accuracy?.toFixed(1)}m`,
+            zIndex: isFirst || isLast ? 10 : 1
+        });
+
+        const infoWindow = new google.maps.InfoWindow({
+            content: `<div style="font-family:Outfit,sans-serif; padding:4px;">
+                <b style="color:${t.color};">Punto #${i+1}</b><br>
+                <b>Ora:</b> ${l.timestamp?.split('T')[1] || 'N/A'}<br>
+                <b>Velocità:</b> ${l.speed !== null ? l.speed + ' km/h' : 'N/A'}<br>
+                <b>Precisione:</b> ${l.accuracy?.toFixed(1)}m<br>
+                <b>Coordinate:</b> ${l.lat.toFixed(6)}, ${l.lng.toFixed(6)}
+            </div>`
+        });
+        marker.addListener('click', () => infoWindow.open(map, marker));
+        activeMarkers.push(marker);
+    });
+    
+    map.fitBounds(bounds, 80);
+    
+    // Detail panel
+    const panel = document.getElementById('detailPanel');
+    panel.classList.add('visible');
+    document.getElementById('detailTitle').textContent = `${t.viaggio} — ${t.cliente}`;
+    document.getElementById('detailSub').textContent = `${t.data} | Targa: ${t.automezzo} | Inizio: ${t.mattinaInizio}`;
+    document.getElementById('dPunti').textContent = t.logs.length;
+    
+    // Duration
+    if (t.logs.length >= 2) {
+        const t1 = new Date(t.logs[0].timestamp);
+        const t2 = new Date(t.logs[t.logs.length-1].timestamp);
+        const diffMin = Math.round((t2 - t1) / 60000);
+        document.getElementById('dDurata').textContent = diffMin + ' min';
+    } else {
+        document.getElementById('dDurata').textContent = '-';
+    }
+    
+    // Max speed
+    const speeds = t.logs.filter(l => l.speed !== null && l.speed > 0).map(l => l.speed);
+    document.getElementById('dVelMax').textContent = speeds.length > 0 ? Math.max(...speeds).toFixed(1) + ' km/h' : '-';
+    
+    // Avg accuracy
+    const accs = t.logs.filter(l => l.accuracy).map(l => l.accuracy);
+    document.getElementById('dAccuracy').textContent = accs.length > 0 ? (accs.reduce((a,b)=>a+b,0)/accs.length).toFixed(1) + 'm' : '-';
+}
+
+// --- INIT MAP ---
+function initMap() {
+    map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 15,
+        center: { lat: 45.4465, lng: 11.7340 },
+        styles: [
+            { elementType: "geometry", stylers: [{ color: "#1d2c4d" }] },
+            { elementType: "labels.text.fill", stylers: [{ color: "#8ec3b9" }] },
+            { elementType: "labels.text.stroke", stylers: [{ color: "#1a3646" }] },
+            { featureType: "road", elementType: "geometry", stylers: [{ color: "#304a7d" }] },
+            { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#255b6a" }] },
+            { featureType: "water", elementType: "geometry", stylers: [{ color: "#0e1626" }] },
+            { featureType: "poi", stylers: [{ visibility: "off" }] }
+        ],
+        disableDefaultUI: true,
+        zoomControl: true
+    });
+    
+    renderSidebar();
+    
+    // Auto-show first trip with data
+    const firstWithLogs = trips.findIndex(t => t.logs.length > 0);
+    if (firstWithLogs >= 0) showTrip(firstWithLogs);
+}
+</script>
+</body>
+</html>

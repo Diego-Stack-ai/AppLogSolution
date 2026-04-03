@@ -32,8 +32,8 @@ const IDB_VERSION       = 1;              // Versione schema IndexedDB
 const MAX_ACCURACY_M    = 50;   // Accuratezza GPS massima accettabile (metri)
 const MIN_SPEED_MS      = 0.5;  // Velocità minima per loggare (m/s ≈ 1.8 km/h)
 const MIN_DISTANCE_M    = 0;    // Non utilizzato dal filtro temporale stretto, ma mantenuto per chiarezza
-const MIN_TIME_S        = 90;   // Intervallo minimo tra due log (secondi)
-const HEARTBEAT_S       = 90;   // Frequenza heartbeat forzato (secondi)
+const MIN_TIME_S        = 60;   // Intervallo minimo tra due log (secondi)
+const HEARTBEAT_S       = 60;   // Frequenza heartbeat forzato (secondi)
 const BATCH_SIZE        = 10;   // Numero di log per ogni batch Firestore
 const MAX_BUFFER_PER_TRIP = 500; // Limite massimo di log in buffer per singolo viaggio
 

@@ -62,9 +62,27 @@ Si tratta dell'applicazione lato client ospitata integralmente su Google Firebas
 * `firebase.json`: Regole di hosting cloud.
 
 **Flusso Logico e File Funzionali**
-* **Autenticazione & Stato**: (`login.html` + `firebase-auth-sync.js`) Identifica l'utente/driver e il suo livello di accesso in sicurezza.
-* **Rilevazione in Background**: L'app vive di GPS (`gps-tracker.js`). Monitora posizione (`navigator.geolocation.watchPosition`), traccia latitudine e longitudine in streaming continuo (catturando un ping logico temporizzato) e logga su `Firestore database` per report in base-ufficio.
-* **Interfaccia Utente**: `dashboard.html` espone i cruscotti, `clienti.html`, `inserimento.html`, e `visualizzazione.html` operano e renderizzano tramite `script.js` e `ui-render.js` lo stato operativo in tempo reale. Le operazioni "Consegnato", "Foto", o "Fix Coordinata di Consegna" generano payload JSON direttamente nel Firestore di cloud o localStorage offline.
+* **Interfaccia Utente**: 
+    - `index.html`: Punto di ingresso e reindirizzamento.
+    - `login.html`: Accesso sicuro al sistema.
+    - `dashboard.html`: Menu principale con badge versione dinamico.
+    - `inserimento.html`: Wizard a 2 step (Inizio/Fine) per la registrazione operativa del viaggio.
+    - `clienti.html`: Gestione anagrafiche e percorsi.
+    - `visualizzazione.html`: Storico viaggi e reportistica.
+    - `mappa_consegne.html`: Visualizzazione geografica dei punti di consegna.
+    - `rimozione_percorsi.html`: Strumento di analisi GPS per ricostruire i tragitti effettuati.
+
+---
+
+## ☁️ Architettura Cloud & Calcolo Distribuito
+Per garantire autonomia totale da Tablet/Mobile senza dipendere da un PC fisico in ufficio, il progetto adotta la seguente logica:
+
+1. **Frontend Leggero (JS):** L'interfaccia HTML/JS gestisce solo l'input e la visualizzazione, chiamando "API" dedicate.
+2. **Backend Potente (Python in Cloud):** Sfruttiamo **Firebase Cloud Functions (Generation 2)** per eseguire codice Python 3.11+. Questo ci permette di:
+    - Usare **Google OR-Tools** per calcoli complessi di ottimizzazione (TSP/VRP) che Javascript non potrebbe gestire con la stessa precisione.
+    - Elaborare file PDF pesanti e tabelle Excel tramite **Pandas**.
+    - Eseguire algoritmi di routing istantanei (Haversine) senza costi API aggiuntivi.
+3. **Storage Intelligente:** I file vengono caricati temporaneamente su Firebase Storage, elaborati dal backend Python e infine spostati su **Google Drive** per l'archiviazione a lungo termine a costo zero, mantenendo Firebase leggero e veloce.
 
 ## Sintesi e Prossimi Passi
 L'App attualmente ha solide basi per la pianificazione server-side distribuendo mappe su Firebase per l'utilizzo mobile.

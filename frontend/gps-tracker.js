@@ -1,5 +1,5 @@
 /**
- * gps-tracker.js — v1.32
+ * gps-tracker.js — v1.40
  * Tracking GPS professionale con IndexedDB (buffer offline), batch Firestore,
  * idempotenza log, heartbeat corretto, retry automatico.
  *

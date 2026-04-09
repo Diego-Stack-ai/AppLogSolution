@@ -2,6 +2,19 @@ import json, sys, re, webbrowser, threading, time, logging
 import html as html_module
 import xml.etree.ElementTree as ET
 from pathlib import Path
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+def init_firebase():
+    import glob
+    import os
+    cred_files = glob.glob(os.path.join(os.path.dirname(__file__), '..', '..', 'backend', 'config', 'log-solution-*-firebase-adminsdk-*.json'))
+    if not firebase_admin._apps and cred_files:
+        cred = credentials.Certificate(cred_files[0])
+        firebase_admin.initialize_app(cred)
+    elif not cred_files:
+        return None
+    return firestore.client()
 
 # Flask e Flask-CORS verranno importati solo se serve avviare il server
 try:
@@ -44,53 +57,44 @@ def _get_color(idx):
 excel_lock = threading.Lock()
 
 def _aggiorna_entrambi_excel(nome, lat, lon, indirizzo=None):
-    """Sincronizzazione Atomica su Excel Master e Excel Giornaliero."""
+    """Sincronizzazione Atomica su Firebase e Excel Giornaliero."""
     import pandas as pd
     try:
         output_base = CONSEGNE_DIR / f"CONSEGNE_{DATA_GIORNO}"
-        targets = [PROG_DIR / "mappatura_destinazioni.xlsx", output_base / "punti_consegna.xlsx"]
+        target_excel = output_base / "punti_consegna.xlsx"
         
+        # 1. Aggiorna Firebase
+        db = init_firebase()
+        if db:
+            docs = db.collection("customers").document("DNR").collection("clienti").where("nome", "==", str(nome).strip()).stream()
+            for doc in docs:
+                doc.reference.update({"lat": lat, "lon": lon, "lng": lon})
+                logger.info(f"Aggiornato Firebase (DNR): {nome}")
+        
+        # 2. Aggiorna Excel Giornaliero (se esiste)
         success = True
-        for file_path in targets:
-            if not file_path.exists(): continue
+        if target_excel.exists():
             with excel_lock:
                 try:
-                    df = pd.read_excel(file_path)
-                    # Ricerca flessibile della colonna nome
-                    col_nome = next(
-                        (c for c in df.columns if str(c).strip().lower() in
-                         ["a chi va consegnato", "cliente", "nome", "destinatario"]),
-                        None
-                    )
-                    if not col_nome:
-                        logger.error(f"Colonna nome non trovata in {file_path.name} - colonne: {df.columns.tolist()}")
-                        success = False
-                        continue
-                    # Ricerca flessibile della colonna indirizzo
-                    col_ind = next(
-                        (c for c in df.columns if str(c).strip().lower() in
-                         ["indirizzo", "via", "via/piazza", "sede"]),
-                        None
-                    )
-                    mask = df[col_nome].astype(str).str.strip().str.lower() == str(nome).strip().lower()
-                    # Disambiguazione per nome duplicato (es. tre Marco Polo)
-                    if indirizzo and col_ind and mask.sum() > 1:
-                        mask_ind = df[col_ind].astype(str).str.strip().str.lower() == str(indirizzo).strip().lower()
-                        if (mask & mask_ind).any():
-                            mask = mask & mask_ind
-                    if mask.any():
-                        df.loc[mask, 'Latitudine'] = lat
-                        df.loc[mask, 'Longitudine'] = lon
-                        df.to_excel(file_path, index=False)
-                        logger.info(f"Aggiornato Excel: {file_path.name} → {nome}")
-                    else:
-                        logger.warning(f"Punto non trovato in {file_path.name}: {nome}")
+                    df = pd.read_excel(target_excel)
+                    col_nome = next((c for c in df.columns if str(c).strip().lower() in ["a chi va consegnato", "cliente", "nome", "destinatario"]), None)
+                    col_ind = next((c for c in df.columns if str(c).strip().lower() in ["indirizzo", "via", "via/piazza", "sede"]), None)
+                    if col_nome:
+                        mask = df[col_nome].astype(str).str.strip().str.lower() == str(nome).strip().lower()
+                        if indirizzo and col_ind and mask.sum() > 1:
+                            mask_ind = df[col_ind].astype(str).str.strip().str.lower() == str(indirizzo).strip().lower()
+                            if (mask & mask_ind).any():
+                                mask = mask & mask_ind
+                        if mask.any():
+                            df.loc[mask, 'Latitudine'] = lat
+                            df.loc[mask, 'Longitudine'] = lon
+                            df.to_excel(target_excel, index=False)
                 except Exception as e:
-                    logger.exception(f"Errore scrittura {file_path.name}")
+                    logger.exception(f"Errore scrittura {target_excel.name}")
                     success = False
         return success
     except Exception as e:
-        logger.exception("Errore globale Excel update")
+        logger.exception("Errore globale Firebase/Excel update")
         return False
 
 if HAS_FLASK:
@@ -120,25 +124,27 @@ if HAS_FLASK:
             ZONE_LIST_CACHE = data
             output_base = CONSEGNE_DIR / f"CONSEGNE_{DATA_GIORNO}"
 
-            # 1. Aggiorna Excel (Bulk)
+            # 1. Aggiorna Excel Giornaliero e Firebase (Bulk)
             import pandas as pd
-            for ex_p in [PROG_DIR / "mappatura_destinazioni.xlsx", output_base / "punti_consegna.xlsx"]:
-                if ex_p.exists():
-                    with excel_lock:
-                        df = pd.read_excel(ex_p)
-                        col_nome = next(
-                            (c for c in df.columns if str(c).strip().lower() in
-                             ["a chi va consegnato", "cliente", "nome", "destinatario"]),
-                            None
-                        )
-                        if col_nome:
-                            for z in data:
-                                for p in z.get("lista_punti", []):
-                                    mask = df[col_nome].astype(str).str.strip().str.lower() == str(p['nome']).strip().lower()
-                                    if mask.any():
-                                        df.loc[mask, 'Latitudine'] = p['lat']
-                                        df.loc[mask, 'Longitudine'] = p['lon']
-                        df.to_excel(ex_p, index=False)
+            db = init_firebase()
+            ex_p = output_base / "punti_consegna.xlsx"
+            if ex_p.exists():
+                with excel_lock:
+                    df = pd.read_excel(ex_p)
+                    col_nome = next((c for c in df.columns if str(c).strip().lower() in ["a chi va consegnato", "cliente", "nome", "destinatario"]), None)
+                    if col_nome:
+                        for z in data:
+                            for p in z.get("lista_punti", []):
+                                mask = df[col_nome].astype(str).str.strip().str.lower() == str(p['nome']).strip().lower()
+                                if mask.any():
+                                    df.loc[mask, 'Latitudine'] = p['lat']
+                                    df.loc[mask, 'Longitudine'] = p['lon']
+                                    
+                                if db:
+                                    # Bulk Firebase save per zone assignments / repins
+                                    docs = db.collection("customers").document("DNR").collection("clienti").where("nome", "==", str(p['nome']).strip()).stream()
+                                    for doc in docs: doc.reference.update({"lat": p['lat'], "lon": p['lon'], "lng": p['lon']})
+                    df.to_excel(ex_p, index=False)
 
             # 2. Aggiorna JSON Unificato
             if TARGET_FILE_UNIFICATO and TARGET_FILE_UNIFICATO.exists():

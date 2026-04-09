@@ -10,6 +10,13 @@ import math
 import sys
 import subprocess
 from pathlib import Path
+from dotenv import load_dotenv
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+# Carica variabili d'ambiente dal file .env nella root del progetto
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+
 
 try:
     from ortools.constraint_solver import routing_enums_pb2
@@ -25,7 +32,8 @@ WEBAPP_FOLDER = ROOT_DIR / "frontend" / "fatturazione_mappe"
 
 # Importante: Lasciamo i drive originali così come strutturati dal cliente
 DRIVE_PATH = Path(r"G:\Il mio Drive\Fatturazione")
-API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
+API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+
 
 DEPOT_STR = "Via alessandro volta, 25/a, 35030 Veggiano PD"
 DEPOT_COORDS = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": DEPOT_STR}
@@ -41,30 +49,50 @@ def get_mese_in_corso():
         return f.read().strip()
 
 def load_cache():
-    if CACHE_FILE.exists():
-        with open(CACHE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+    import glob
+    cred_files = glob.glob(os.path.join(os.path.dirname(__file__), '..', 'backend', 'config', 'log-solution-*-firebase-adminsdk-*.json'))
+    if not firebase_admin._apps and cred_files:
+        cred = credentials.Certificate(cred_files[0])
+        firebase_admin.initialize_app(cred)
+    elif not cred_files:
+        print("❌ Credenziali Firebase non trovate in backend/config/")
+        return {}
+        
+    db = firestore.client()
+    docs = db.collection("customers").document("GRAN CHEF").collection("clienti").stream()
+    
+    clients_cache = {}
+    for doc in docs:
+        d = doc.to_dict()
+        ind = str(d.get('indirizzo', '')).strip().lower()
+        loc = str(d.get('citta', '')).strip().lower()
+        pr = str(d.get('provincia', '')).strip().lower()
+        
+        key1 = f"{ind}, {loc} {pr}".strip(', ')
+        lat = d.get('lat')
+        lng = d.get('lon') or d.get('lng')
+        
+        if lat and lng:
+            clients_cache[key1] = {"lat": lat, "lng": lng, "lon": lng}
+            
+    print(f"📡 Sincronizzate {len(clients_cache)} coordinate da Firebase (GRAN CHEF) per la creazione itinerario autisti.")
+    return clients_cache
 
 def save_cache(cache):
-    with open(CACHE_FILE, "w", encoding="utf-8") as f:
-        json.dump(cache, f, indent=2)
+    pass # Disabilitato perché ora usiamo Firebase centralizzato
 
 def get_geocode(address, cache):
-    clean_addr = str(address).replace(".0", "").replace("nan", "").strip()
+    clean_addr = str(address).replace(".0", "").replace("nan", "").strip().lower()
     if not clean_addr: return None
-    if clean_addr in cache: return cache[clean_addr]
+    
+    if clean_addr in cache: 
+        return cache[clean_addr]
         
-    url = f"https://maps.googleapis.com/maps/api/geocode/json?address={urllib.parse.quote(clean_addr + ', Italia')}&key={API_KEY}"
-    try:
-        r = requests.get(url).json()
-        if r['status'] == 'OK':
-            loc = r['results'][0]['geometry']['location']
-            coords = {"lat": loc['lat'], "lng": loc['lng'], "lon": loc['lng']}
-            cache[clean_addr] = coords
-            return coords
-    except Exception as e:
-        pass
+    for k, v in cache.items():
+        if k and clean_addr in k:
+            return v
+            
+    print(f"⚠️ Coordinate mancanti in webapp (Firebase) per l'indirizzo: '{clean_addr}'")
     return None
 
 def normalize_viaggio(zone_str):
@@ -244,10 +272,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyDLnhP2Q4bz2ubYwcMLiD3-qq4c220eVKw",
-            authDomain: "log-solution-60007.firebaseapp.com",
-            projectId: "log-solution-60007"
+            apiKey: "{{ firebase_api_key }}",
+            authDomain: "{{ firebase_auth_domain }}",
+            projectId: "{{ firebase_project_id }}"
         };
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
@@ -521,7 +550,18 @@ def elabora_tutte_le_mappe_google():
                     
                 cards_html = "".join(cards_list)
                 
-                html_fin = HTML_TEMPLATE.replace("{{ v_id }}", f"{data_viaggio} | {code}").replace("{{ api_key }}", API_KEY).replace("{{ km }}", str(km)).replace("{{ t_guida }}", format_time(t_guida)).replace("{{ t_sosta }}", format_time(t_sosta)).replace("{{ t_tot }}", format_time(t_tot)).replace("{{ cards_html|safe }}", cards_html).replace("{{ deliveries_js|safe }}", json.dumps(deliveries))
+                html_fin = HTML_TEMPLATE.replace("{{ v_id }}", f"{data_viaggio} | {code}") \
+                    .replace("{{ api_key }}", API_KEY) \
+                    .replace("{{ km }}", str(km)) \
+                    .replace("{{ t_guida }}", format_time(t_guida)) \
+                    .replace("{{ t_sosta }}", format_time(t_sosta)) \
+                    .replace("{{ t_tot }}", format_time(t_tot)) \
+                    .replace("{{ cards_html|safe }}", cards_html) \
+                    .replace("{{ deliveries_js|safe }}", json.dumps(deliveries)) \
+                    .replace("{{ firebase_api_key }}", os.getenv("FIREBASE_API_KEY")) \
+                    .replace("{{ firebase_auth_domain }}", os.getenv("FIREBASE_AUTH_DOMAIN")) \
+                    .replace("{{ firebase_project_id }}", os.getenv("FIREBASE_PROJECT_ID"))
+
                 
                 (OUTPUT_DIR_LOCAL / fname).write_text(html_fin, encoding="utf-8")
                 (WEBAPP_FOLDER / fname).write_text(html_fin, encoding="utf-8")

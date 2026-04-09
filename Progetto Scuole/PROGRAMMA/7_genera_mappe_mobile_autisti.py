@@ -3,14 +3,21 @@ import math
 import re
 import requests
 import subprocess
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Carica variabili d'ambiente dal file .env nella root (salendo di 2 livelli)
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
+
 
 # --- CONFIGURAZIONE ---
 PROG_DIR = Path(__file__).resolve().parent
 ROOT_DIR = PROG_DIR.parent.parent
 CONSEGNE_DIR = PROG_DIR.parent / "CONSEGNE"
 WEBAPP_FOLDER = ROOT_DIR / "frontend" / "mappe_autisti"
-GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+
 
 DEPOT = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"}
 
@@ -192,13 +199,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyDLnhP2Q4bz2ubYwcMLiD3-qq4c220eVKw",
-            authDomain: "log-solution-60007.firebaseapp.com",
-            projectId: "log-solution-60007",
-            storageBucket: "log-solution-60007.appspot.com",
-            messagingSenderId: "343696844738",
-            appId: "1:343696844738:web:b8d4e10c71fb2c67bc7d20"
+            apiKey: "{{ firebase_api_key }}",
+            authDomain: "{{ firebase_auth_domain }}",
+            projectId: "{{ firebase_project_id }}",
+            storageBucket: "{{ firebase_storage_bucket }}",
+            messagingSenderId: "{{ firebase_messaging_sender_id }}",
+            appId: "{{ firebase_app_id }}"
         };
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
@@ -409,7 +417,21 @@ def main():
         
         cards_html = "".join(cards_list)
 
-        html = HTML_TEMPLATE.replace("{{ v_id }}", v_id).replace("{{ zone_str }}", z_str).replace("{{ api_key }}", GOOGLE_MAPS_API_KEY).replace("{{ km }}", str(km)).replace("{{ t_guida }}", format_time(t_guida)).replace("{{ t_sosta }}", format_time(t_sosta)).replace("{{ t_tot }}", format_time(t_tot)).replace("{{ cards_html|safe }}", cards_html).replace("{{ deliveries_js|safe }}", json.dumps(deliveries))
+        html = HTML_TEMPLATE.replace("{{ v_id }}", v_id).replace("{{ zone_str }}", z_str) \
+            .replace("{{ api_key }}", GOOGLE_MAPS_API_KEY) \
+            .replace("{{ km }}", str(km)) \
+            .replace("{{ t_guida }}", format_time(t_guida)) \
+            .replace("{{ t_sosta }}", format_time(t_sosta)) \
+            .replace("{{ t_tot }}", format_time(t_tot)) \
+            .replace("{{ cards_html|safe }}", cards_html) \
+            .replace("{{ deliveries_js|safe }}", json.dumps(deliveries)) \
+            .replace("{{ firebase_api_key }}", os.getenv("FIREBASE_API_KEY")) \
+            .replace("{{ firebase_auth_domain }}", os.getenv("FIREBASE_AUTH_DOMAIN")) \
+            .replace("{{ firebase_project_id }}", os.getenv("FIREBASE_PROJECT_ID")) \
+            .replace("{{ firebase_storage_bucket }}", os.getenv("FIREBASE_STORAGE_BUCKET")) \
+            .replace("{{ firebase_messaging_sender_id }}", os.getenv("FIREBASE_MESSAGING_SENDER_ID")) \
+            .replace("{{ firebase_app_id }}", os.getenv("FIREBASE_APP_ID"))
+
         (out_folder / fname).write_text(html, encoding="utf-8")
         (WEBAPP_FOLDER / fname).write_text(html, encoding="utf-8")
 

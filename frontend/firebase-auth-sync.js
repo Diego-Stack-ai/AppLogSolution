@@ -1,5 +1,5 @@
 import { db, auth } from "./firebase-config.js";
-import { collection, doc, getDoc, updateDoc, setDoc, deleteDoc, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, doc, getDoc, updateDoc, setDoc, deleteDoc, onSnapshot, addDoc, collectionGroup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, updatePassword, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Espone db globalmente per compatibilità con altri moduli non migrati
@@ -221,11 +221,13 @@ function startRealtimeSync(isAdmin) {
     activeListeners.forEach(unsub => unsub());
     activeListeners = [];
 
-    // Listener per Clienti (customers)
-    const unsubCustomers = onSnapshot(collection(db, "customers"), (snapshot) => {
+    // Listener per Clienti (struttura a Macroaree in 'clienti')
+    const unsubCustomers = onSnapshot(collectionGroup(db, "clienti"), (snapshot) => {
         const clienti = [];
         snapshot.forEach((d) => {
-            clienti.push({ id: d.id, ...d.data() });
+            const partnerRef = d.ref.parent.parent;
+            const partnerName = partnerRef ? partnerRef.id : 'Sconosciuto';
+            clienti.push({ id: d.id, partner: partnerName, ...d.data() });
         });
         window.appData.lista_clienti = clienti;
         if (typeof window.renderClienti === 'function') window.renderClienti();
@@ -301,12 +303,14 @@ window.deleteProgetto = async function(id) {
 // Funzione di salvataggio/creazione remoto per i clienti
 window.updateCustomer = async function(id, data) {
     try {
-        const { id: _, ...updateData } = data;
+        const { id: _, partner, ...updateData } = data;
+        const targetPartner = partner || "GRAN CHEF"; // Default sicuro
+        
         if (id) {
-            const docRef = doc(db, "customers", id);
+            const docRef = doc(db, "customers", targetPartner, "clienti", id);
             await updateDoc(docRef, updateData);
         } else {
-            await addDoc(collection(db, "customers"), updateData);
+            await addDoc(collection(db, "customers", targetPartner, "clienti"), updateData);
         }
         return true;
     } catch (e) {
@@ -364,6 +368,18 @@ window.deleteFromFirebase = async function(collectionName, id) {
         return true;
     } catch (e) {
         console.error("Errore eliminazione Firebase:", e);
+        throw e;
+    }
+}
+
+// Funzione specifica per cancellazione clienti con Macroarea
+window.deleteCustomer = async function(partner, id) {
+    try {
+        const docRef = doc(db, "customers", partner || "Sconosciuto", "clienti", id);
+        await deleteDoc(docRef);
+        return true;
+    } catch (e) {
+        console.error("Errore eliminazione Cliente Firebase:", e);
         throw e;
     }
 }

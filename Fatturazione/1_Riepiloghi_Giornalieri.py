@@ -8,9 +8,17 @@ import requests
 import urllib.parse
 import shutil
 from datetime import timedelta
+from dotenv import load_dotenv
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+# Carica variabili d'ambiente dal file .env nella root del progetto
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+
 
 # --- CONFIGURAZIONE ---
-API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
+API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+
 
 # --- MOTORE CRONOLOGICO FESTIVITÀ ---
 FESTIVITA_FISSE = {
@@ -79,30 +87,42 @@ def valida_indirizzo_nuovo(cliente, ind, loc, pr):
         if r['status'] == 'OK':
             loc_type = r['results'][0]['geometry']['location_type']
             formatted = r['results'][0].get('formatted_address', '')
+            lat = r['results'][0]['geometry']['location']['lat']
+            lng = r['results'][0]['geometry']['location']['lng']
             if loc_type == 'APPROXIMATE':
-                return False, f"APPROSSIMATIVO ({formatted})"
-            return True, "OK"
+                return False, f"APPROSSIMATIVO ({formatted})", None, None
+            return True, "OK", lat, lng
         else:
-            return False, f"NON TROVATO ({r['status']})"
+            return False, f"NON TROVATO ({r['status']})", None, None
     except Exception as e:
-        return False, f"ERRORE API ({e})"
+        return False, f"ERRORE API ({e})", None, None
+
+def init_firebase():
+    if firebase_admin._apps:
+        return firestore.client()
+    import glob
+    cred_files = glob.glob(os.path.join(os.path.dirname(__file__), '..', 'backend', 'config', 'log-solution-*-firebase-adminsdk-*.json'))
+    if cred_files:
+        cred = credentials.Certificate(cred_files[0])
+        firebase_admin.initialize_app(cred)
+        return firestore.client()
+    print("❌ Credenziali Firebase non trovate in backend/config/")
+    sys.exit(1)
 
 def filtra_e_valida_anagrafica(tutti_i_clienti_estratti, base_path):
-    anagrafica_file = os.path.join(base_path, "Anagrafica_Clienti_Master.xlsx")
-    if not os.path.exists(anagrafica_file):
-        print(f"❌ ERRORE CRITICO: {anagrafica_file} non trovato. Impossibile procedere.")
-        return False
-        
-    df_master = pd.read_excel(anagrafica_file)
+    db = init_firebase()
+    coll_ref = db.collection("customers").document("GRAN CHEF").collection("clienti")
     
-    # Controlliamo quali colonne ha. Se 'Indirizzo' manca fa eccezione, gestiamola
-    col_ind = 'Indirizzo' if 'Indirizzo' in df_master.columns else df_master.columns[2]
+    print("\n📡 Sincronizzazione con Firebase (GRAN CHEF) in corso...")
+    docs = coll_ref.stream()
     
-    master_indirizzi_norm = set(df_master[col_ind].apply(normalizza_indirizzo).dropna().tolist())
-    
-    indirizzi_da_aggiungere = []
-    errori_indirizzi = []
-    
+    master_indirizzi_norm = set()
+    for doc in docs:
+        d = doc.to_dict()
+        ind_norm = normalizza_indirizzo(d.get('indirizzo', ''))
+        if ind_norm:
+            master_indirizzi_norm.add(ind_norm)
+            
     clienti_unici = {}
     for c in tutti_i_clienti_estratti:
         key = normalizza_indirizzo(c['ind'])
@@ -111,24 +131,33 @@ def filtra_e_valida_anagrafica(tutti_i_clienti_estratti, base_path):
             
     print(f"\n🔍 Avvio Verifica Indirizzi su Google Maps per i NUOVI clienti rilevati...")
     
-    nuovi_validi = False
+    indirizzi_da_aggiungere = []
+    errori_indirizzi = []
     
     for key, c in clienti_unici.items():
         if key and key not in master_indirizzi_norm:
             print(f"   ❓ Nuovo indirizzo rilevato: {c['ind']} ({c['loc']}) - Controllo Google...")
-            esito_ok, msg = valida_indirizzo_nuovo(c['rs'], c['ind'], c['loc'], c['pr'])
+            esito_ok, msg, lat, lng = valida_indirizzo_nuovo(c['rs'], c['ind'], c['loc'], c['pr'])
             
             if esito_ok:
-                print(f"      ✅ Validato! Verrà aggiunto al Master.")
-                indirizzi_da_aggiungere.append({
-                    'Codice Cliente': c.get('codice', ''),
-                    'Ragione Sociale': c['rs'],
-                    'Indirizzo': c['ind'],
-                    'Località': c['loc'],
-                    'Provincia': c['pr']
-                })
+                print(f"      ✅ Validato! Creazione diretta su Firebase.")
+                cod = str(c.get('codice', '')).strip()
+                if not cod: cod = "SENZA_COD"
+                doc_id = f"GC_{cod}_{int(datetime.datetime.now().timestamp())}"
+                
+                nuovo_cliente = {
+                    "codice_cliente": c.get('codice', ''),
+                    "nome": c['rs'],
+                    "indirizzo": c['ind'],
+                    "citta": c['loc'],
+                    "provincia": c['pr'],
+                    "lat": lat,
+                    "lon": lng,
+                    "lng": lng
+                }
+                coll_ref.document(doc_id).set(nuovo_cliente)
                 master_indirizzi_norm.add(key)
-                nuovi_validi = True
+                indirizzi_da_aggiungere.append(c['rs'])
             else:
                 print(f"      ❌ Errore Google: {msg}")
                 errori_indirizzi.append({
@@ -148,16 +177,12 @@ def filtra_e_valida_anagrafica(tutti_i_clienti_estratti, base_path):
         print("⛔ PROCEDURA BLOCCATA: RILEVATI INDIRIZZI INAPPROPRIATI ⛔")
         print(f"Ho trovato {len(errori_indirizzi)} indirizzi non esatti. Creato il report:")
         print(f" -> {err_file}")
-        print("Sistemare gli esatti indirizzi aprendo MANUALMENTE Anagrafica Clienti Master, dopodichè rilanciare lo script.")
-        print("La cartella parziale del mese è stata cancellata e ripristinata a zero per sicurezza.")
+        print("Sistemare gli indirizzi correggendoli sulla Web App PWA o sull'ordine, e rilanciare lo script.")
         print("!"*60)
         return False
         
-    if nuovi_validi:
-        df_novi = pd.DataFrame(indirizzi_da_aggiungere)
-        df_master = pd.concat([df_master, df_novi], ignore_index=True)
-        df_master.to_excel(anagrafica_file, index=False)
-        print(f"💾 Aggiornata Anagrafica Master con {len(indirizzi_da_aggiungere)} nuovi clienti sicuri!")
+    if indirizzi_da_aggiungere:
+        print(f"💾 Inseriti in Firebase {len(indirizzi_da_aggiungere)} nuovi clienti!")
         
     return True
 

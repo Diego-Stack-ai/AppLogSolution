@@ -2,7 +2,13 @@ from flask import Flask, render_template, jsonify, request
 import json
 import socket
 import math
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Carica variabili d'ambiente dal file .env nella root (salendo di 2 livelli)
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
+
 
 app = Flask(__name__, template_folder='templates')
 
@@ -10,7 +16,8 @@ app = Flask(__name__, template_folder='templates')
 PROG_DIR = Path(__file__).resolve().parent
 BASE_DIR = PROG_DIR.parent
 CONSEGNE_DIR = BASE_DIR / "CONSEGNE"
-GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+
 
 DEPOT = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"}
 

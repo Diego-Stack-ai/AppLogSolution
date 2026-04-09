@@ -2,10 +2,10 @@
 # deploy.ps1 — Log Solutions | Script di versioning e deploy automatico
 # =============================================================================
 # Uso:
-#   .\deploy.ps1                          → incrementa versione e fa commit+push
-#   .\deploy.ps1 -Messaggio "Fix login"   → usa messaggio personalizzato
-#   .\deploy.ps1 -SoloBump                → solo bump versione, senza git
-#   .\deploy.ps1 -Major                   → incrementa versione major (es. 1.33 → 2.0)
+#   .\deploy.ps1                          -> incrementa versione e fa commit+push
+#   .\deploy.ps1 -Messaggio "Fix login"   -> usa messaggio personalizzato
+#   .\deploy.ps1 -SoloBump                -> solo bump versione, senza git
+#   .\deploy.ps1 -Major                   -> incrementa versione major (es. 1.33 -> 2.0)
 # =============================================================================
 
 param(
@@ -42,7 +42,7 @@ $newVersion = "$newMajor.$newMinor"
 Write-Host ""
 Write-Host "======================================================" -ForegroundColor Cyan
 Write-Host "  Log Solutions — Deploy automatico" -ForegroundColor Cyan
-Write-Host "  Versione: v$oldVersion  →  v$newVersion" -ForegroundColor Yellow
+Write-Host "  Versione: v$oldVersion  ->  v$newVersion" -ForegroundColor Yellow
 Write-Host "======================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -72,9 +72,7 @@ foreach ($f in $allFiles) {
 # ─── 4. AGGIORNA APP_VERSION IN script.js ────────────────────────────────────
 $scriptJs = Join-Path $frontendPath "script.js"
 $jsContent = Get-Content $scriptJs -Raw
-$jsUpdated = $jsContent `
-    -replace 'APP_VERSION = "' + $oldVersion + '"', 'APP_VERSION = "' + $newVersion + '"' `
-    -replace '// script\.js - v' + $oldVersion, '// script.js - v' + $newVersion
+$jsUpdated = $jsContent -replace "APP_VERSION = `"$oldVersion`"", "APP_VERSION = `"$newVersion`"" -replace "// script\.js - v$oldVersion", "// script.js - v$newVersion"
 Set-Content $scriptJs -Value $jsUpdated -NoNewline -Encoding UTF8
 
 Write-Host ""

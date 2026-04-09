@@ -1,6 +1,9 @@
 # Credenziali / segreti
 backend/config/log-solution-60007-firebase-adminsdk-fbsvc-2cf3d0c171.json
 backend/config/log-solution-60007-firebase-adminsdk-*.json
+firebase-service-account.json
+*firebase-adminsdk*.json
+
 webapp/config/ID_GESTIONE.txt
 webapp/config/ID_GESTIONE_IMPOSTAZIONI.txt
 docs/ID_GESTIONE.txt
@@ -18,6 +21,8 @@ Thumbs.db
 # Python (se usi ambienti virtuali)
 venv/
 .env/
+.env
+
 __pycache__/
 *.pyc
 
@@ -26,3 +31,6 @@ __pycache__/
 *.gdoc
 ~$*.xlsx
  ~$*.xls
+
+# Configurazione locale Frontend
+frontend/firebase-config-env.js

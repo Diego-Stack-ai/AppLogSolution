@@ -9,6 +9,8 @@ import urllib.parse
 from datetime import datetime
 import math
 import sys
+import firebase_admin
+from firebase_admin import credentials, firestore
 try:
     from ortools.constraint_solver import routing_enums_pb2
     from ortools.constraint_solver import pywrapcp
@@ -41,49 +43,57 @@ if os.path.exists(WARNING_FILE):
     os.remove(WARNING_FILE)
 
 def load_cache():
-    if os.path.exists(CACHE_FILE):
-        with open(CACHE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+    import glob
+    cred_files = glob.glob(os.path.join(os.path.dirname(__file__), '..', 'backend', 'config', 'log-solution-*-firebase-adminsdk-*.json'))
+    if not firebase_admin._apps and cred_files:
+        cred = credentials.Certificate(cred_files[0])
+        firebase_admin.initialize_app(cred)
+    elif not cred_files:
+        print("❌ Credenziali Firebase non trovate in backend/config/")
+        return {}
+        
+    db = firestore.client()
+    docs = db.collection("customers").document("GRAN CHEF").collection("clienti").stream()
+    
+    clients_cache = {}
+    for doc in docs:
+        d = doc.to_dict()
+        ind = str(d.get('indirizzo', '')).strip().lower()
+        loc = str(d.get('citta', '')).strip().lower()
+        pr = str(d.get('provincia', '')).strip().lower()
+        
+        key1 = f"{ind}, {loc} {pr}".strip(', ')
+        lat = d.get('lat')
+        lng = d.get('lon') or d.get('lng')
+        
+        if lat and lng:
+            clients_cache[key1] = {"lat": lat, "lng": lng}
+            
+    print(f"📡 Sincronizzate {len(clients_cache)} coordinate da Firebase (GRAN CHEF) per i calcoli KM.")
+    return clients_cache
 
 def save_cache(cache):
-    with open(CACHE_FILE, "w", encoding="utf-8") as f:
-        json.dump(cache, f, indent=2)
+    pass # Nessun salvataggio necessario, Firebase è SSoT
 
 def get_geocode(address, expected_pr, cache, date_str, trip_code, customer_name):
-    # Ripulisce l'indirizzo
-    clean_addr = str(address).replace(".0", "").replace("nan", "").strip()
+    # Cerca indirizzo su Firebase Cache 
+    clean_addr = str(address).replace(".0", "").replace("nan", "").strip().lower()
     if not clean_addr: return None
-    if clean_addr in cache: return cache[clean_addr]
+    
+    if clean_addr in cache: 
+        return cache[clean_addr]
         
-    url = f"https://maps.googleapis.com/maps/api/geocode/json?address={urllib.parse.quote(clean_addr + ', Italia')}&key={API_KEY}"
-    try:
-        r = requests.get(url).json()
-        if r['status'] == 'OK':
-            loc = r['results'][0]['geometry']['location']
-            coords = {"lat": loc['lat'], "lng": loc['lng']}
-            
-            # --- MANOVRA DI SICUREZZA PROVINCIA ---
-            pr_found = ""
-            formatted_address = r['results'][0].get('formatted_address', 'Sconosciuto')
-            
-            for comp in r['results'][0]['address_components']:
-                if 'administrative_area_level_2' in comp['types']:
-                    pr_found = comp['short_name'].upper()
-                    break
-            
-            expected_pr = str(expected_pr).upper().strip()
-            
-            if expected_pr and pr_found and expected_pr != pr_found:
-                with open(WARNING_FILE, "a", encoding="utf-8") as fw:
-                    fw.write(f"[{date_str} - {trip_code}] ATTENZIONE INCONGRUENZA per {customer_name}:\n")
-                    fw.write(f"   Indirizzo Excel: {clean_addr} (Provincia Dichiarata: {expected_pr})\n")
-                    fw.write(f"   Google Maps l'ha spedito in: {formatted_address} (Provincia Reale: {pr_found})\n\n")
-            
-            cache[clean_addr] = coords
-            return coords
-    except Exception as e:
-        print(f"Errore geocode {clean_addr}: {e}")
+    # Ricerca di fallback (se l'indirizzo contiene parti)
+    for k, v in cache.items():
+        if k and clean_addr in k:
+            return v
+    
+    print(f"[{date_str} - {trip_code}] ⚠️ Coord mancante su Firebase per: {customer_name} ({clean_addr})")
+    
+    with open(WARNING_FILE, "a", encoding="utf-8") as fw:
+        fw.write(f"[{date_str} - {trip_code}] MANCA COORDINATA in Firebase per {customer_name}:\n")
+        fw.write(f"   Indirizzo Viaggio: {clean_addr}. Aggiungi latitudine/longitudine su WebApp PWA!\n\n")
+        
     return None
 
 def normalize_viaggio(zone_str):

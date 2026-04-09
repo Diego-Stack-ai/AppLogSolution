@@ -11,10 +11,13 @@ Uso: py (1_2_3_4)_estrai_ddt_consegne.py [data]
 import re
 import sys
 import subprocess
+import subprocess
 import time
 import json
 from pathlib import Path
 from datetime import datetime
+import firebase_admin
+from firebase_admin import credentials, firestore
 
 try:
     from pypdf import PdfReader, PdfWriter
@@ -27,8 +30,20 @@ PROG_DIR = Path(__file__).resolve().parent
 BASE_DIR = PROG_DIR.parent
 CONSEGNE_DIR = BASE_DIR / "CONSEGNE"
 INPUT_FRUTTA = BASE_DIR / "FRUTTA"
+INPUT_FRUTTA = BASE_DIR / "FRUTTA"
 INPUT_LATTE = BASE_DIR / "LATTE"
-MAPPATURA_XLSX = PROG_DIR / "mappatura_destinazioni.xlsx"
+
+def init_firebase():
+    import glob
+    import os
+    cred_files = glob.glob(os.path.join(os.path.dirname(__file__), '..', '..', 'backend', 'config', 'log-solution-*-firebase-adminsdk-*.json'))
+    if not firebase_admin._apps and cred_files:
+        cred = credentials.Certificate(cred_files[0])
+        firebase_admin.initialize_app(cred)
+    elif not cred_files:
+        print("❌ Credenziali Firebase non trovate in backend/config/")
+        return None
+    return firestore.client()
 
 # Regex per estrazione dati
 DATA_DDT_RE = re.compile(r'del\s+(\d{2})/(\d{2})/(\d{4})', re.I)
@@ -126,20 +141,20 @@ def _ricava_date_da_pdf() -> list[str]:
 
 
 def _leggi_codici_mappatura():
-    if not MAPPATURA_XLSX.exists(): return set()
+    db = init_firebase()
+    if not db: return set()
     try:
-        from openpyxl import load_workbook
-        wb = load_workbook(MAPPATURA_XLSX, read_only=True, data_only=True)
-        ws = wb.active
+        docs = db.collection("customers").document("DNR").collection("clienti").stream()
         codici = set()
-        for row in ws.iter_rows(min_row=2, max_col=2):
-            for cell in row:
-                val = str(cell.value or "").strip().lower()
-                if val and val != "p00000": codici.add(val)
-        wb.close()
+        for doc in docs:
+            d = doc.to_dict()
+            cf = str(d.get("codiceFrutta", "p00000")).strip().lower()
+            cl = str(d.get("codiceLatte", "p00000")).strip().lower()
+            if cf and cf != "nan" and cf != "p00000": codici.add(cf)
+            if cl and cl != "nan" and cl != "p00000": codici.add(cl)
         return codici
     except Exception as e:
-        print(f"⚠️ Errore mappatura: {e}")
+        print(f"⚠️ Errore caricamento mappatura da Firebase: {e}")
         return set()
 
 
@@ -150,24 +165,38 @@ def _verifica_nuovi_clienti(dati_nuovi: dict):
     for cod, info in sorted(dati_nuovi.items()):
         print(f"   - {cod} ({info['tipo']}): {info['dest']} - {info['cit']}")
     print("!"*60 + "\n")
-    try:
-        from openpyxl import Workbook
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Nuovi Codici"
-        headers = ["Codice Frutta", "Codice Latte", "A chi va consegnato", "Tipologia grado", "Indirizzo", "CAP", "Città", "Provincia",
-                  "Tipologia consegna", "Tipologia consegna.1", "Email", "Sito web", "Orario min", "Orario max"]
-        ws.append(headers)
+    
+    db = init_firebase()
+    if db:
+        coll_ref = db.collection("customers").document("DNR").collection("clienti")
         for cod, info in sorted(dati_nuovi.items()):
-            row = [""] * 14
-            if info["tipo"] == "FRUTTA": row[0] = cod
-            else:                        row[1] = cod
-            row[2], row[4], row[5], row[6], row[7], row[12], row[13] = info["dest"], info["ind"], info["cap"], info["cit"], info["prov"], info["om"], info["oM"]
-            ws.append(row)
-        hp = BASE_DIR / "nuovi_codici_consegna.xlsx"
-        wb.save(hp)
-        print(f"📄 File generato: {hp.name}\n💡 Copia i dati in mappatura_destinazioni.xlsx per proseguire.\n")
-    except Exception as e: print(f"⚠️ Errore excel: {e}")
+            import time
+            doc_id = f"DNR_{cod.upper()}_{int(time.time() * 1000)}"
+            cf = cod if info["tipo"] == "FRUTTA" else ""
+            cl = cod if info["tipo"] == "LATTE" else ""
+            
+            nuovo_cliente = {
+                "codiceFrutta": cf,
+                "codiceLatte": cl,
+                "nome": info["dest"],
+                "indirizzo": info["ind"],
+                "cap": info["cap"],
+                "citta": info["cit"],
+                "provincia": info["prov"],
+                "orarioMin": info["om"],
+                "orarioMax": info["oM"],
+                "lat": None,
+                "lon": None,
+                "isProgetto": True
+            }
+            coll_ref.document(doc_id).set(nuovo_cliente)
+            
+        print(f"✅ Inseriti {len(dati_nuovi)} nuovi clienti direttamente su Firebase.")
+        print(f"💡 Apri la tua applicazione PWA alla voce 'Clienti', filtra per 'DNR'")
+        print(f"💡 Controlla gli indirizzi di questi {len(dati_nuovi)} clienti che vedrai 'Da Geolocalizzare'.")
+        print(f"💡 Basta premere la matita e poi 'Salva Modifiche' per fargli trovare la posizione esatta con Google.")
+        print(f"\nRILANCIA QUESTO SCRIPT UNA VOLTA CHE HAI CONFERMATO GLI INDIRIZZI IN APP.")
+    
     return False
 
 

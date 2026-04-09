@@ -261,12 +261,19 @@
     </nav>
 
     <main class="main-container">
-        <div class="search-bar-container" style="display: flex; gap: 10px; align-items: center;">
-            <div class="search-input-wrapper" style="flex: 1;">
+        <div class="search-bar-container" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <div class="search-input-wrapper" style="flex: 1; min-width: 250px;">
                 <span class="material-icons-round">search</span>
-                <input type="text" id="custSearch" placeholder="Cerca per nome, codice, città o indirizzo..." autocomplete="off">
+                <input type="text" id="custSearch" placeholder="Cerca per nome, codice, città..." autocomplete="off">
             </div>
-            <button onclick="window.openAddModal()" class="btn-primary" style="width: auto; height: 50px; padding: 0 20px; border-radius: 15px; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+            <select id="filterMacroarea" style="height: 50px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--border); background: white; font-weight: 600; color: var(--text-dark); cursor: pointer; border-right: 12px solid transparent;">
+                <option value="TUTTI">Tutte le Macroaree</option>
+                <option value="DNR">DNR</option>
+                <option value="GRAN CHEF">GRAN CHEF</option>
+                <option value="BAUER">BAUER</option>
+                <option value="CATTEL">CATTEL</option>
+            </select>
+            <button onclick="window.openAddModal()" class="btn-primary" style="width: auto; height: 50px; padding: 0 20px; border-radius: 12px; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
                 <span class="material-icons-round">person_add</span>
                 Nuovo Cliente
             </button>
@@ -293,16 +300,29 @@
             <form id="editCustForm" class="modal-body">
                 <input type="hidden" id="editId">
                 <div class="input-group" style="grid-column: 1 / -1;">
+                    <label>Partner / Macroarea *</label>
+                    <select id="editPartner" required style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border);">
+                        <option value="GRAN CHEF">GRAN CHEF</option>
+                        <option value="DNR">DNR</option>
+                        <option value="BAUER">BAUER</option>
+                        <option value="CATTEL">CATTEL</option>
+                    </select>
+                </div>
+                <div class="input-group" style="grid-column: 1 / -1;">
                     <label>Nome Destinatario *</label>
                     <input type="text" id="editNome" required>
                 </div>
-                <div class="input-group">
+                <div class="input-group dnr-field">
                     <label>Cod. Frutta</label>
                     <input type="text" id="editCodFrutta">
                 </div>
-                <div class="input-group">
+                <div class="input-group dnr-field">
                     <label>Cod. Latte</label>
                     <input type="text" id="editCodLatte">
+                </div>
+                <div class="input-group generic-field" style="display:none;">
+                    <label>Cod. Cliente / Esterno</label>
+                    <input type="text" id="editCodCliente">
                 </div>
                 <div class="input-group" style="grid-column: 1 / -1;">
                     <label>Indirizzo *</label>
@@ -393,8 +413,14 @@
 
             window.renderClienti = function(query = '') {
                 const q = query || (searchInput ? searchInput.value.trim().toLowerCase() : '');
+                const macroFilter = document.getElementById('filterMacroarea') ? document.getElementById('filterMacroarea').value : 'TUTTI';
+                
                 const clienti = window.appData.lista_clienti || [];
                 let filtered = clienti;
+
+                if (macroFilter !== 'TUTTI') {
+                    filtered = filtered.filter(c => c.partner === macroFilter);
+                }
 
                 if (q.length >= 2) {
                     filtered = clienti.filter(c => 
@@ -425,7 +451,7 @@
                             <div class="client-info">
                                 <h3>${c.nome || 'N/A'}</h3>
                                 <p>
-                                    <a href="${c.lat && c.lng ? `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}` : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((c.indirizzo || '') + ' ' + (c.citta || '') + ' ' + (c.provincia || ''))}`}" 
+                                    <a href="${c.lat && (c.lng || c.lon) ? `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng || c.lon}` : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((c.indirizzo || '') + ' ' + (c.citta || '') + ' ' + (c.provincia || ''))}`}" 
                                        target="_blank" 
                                        class="address-link" 
                                        style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 4px;">
@@ -433,17 +459,21 @@
                                         <span>${c.indirizzo || ''}${c.citta ? ', ' + (c.cap || '') + ' ' + (c.citta || '') : ''}${c.provincia ? ' (' + c.provincia + ')' : ''}</span>
                                     </a>
                                 </p>
-                                ${c.lat && c.lng 
-                                    ? `<div class="geo-badge geo-ok"><span class="material-icons-round" style="font-size:12px;">check_circle</span> Posizione Salvata (${parseFloat(c.lat).toFixed(4)}, ${parseFloat(c.lng).toFixed(4)})</div>`
+                                ${c.lat && (c.lng || c.lon) 
+                                    ? `<div class="geo-badge geo-ok"><span class="material-icons-round" style="font-size:12px;">check_circle</span> Posizione Salvata (${parseFloat(c.lat).toFixed(4)}, ${parseFloat(c.lng || c.lon).toFixed(4)})</div>`
                                     : `<div class="geo-badge geo-missing"><span class="material-icons-round" style="font-size:12px;">help_outline</span> Posizione da Geolocalizzare</div>`
                                 }
                             </div>
                             <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-                                <div style="display: flex; gap: 4px;">
+                                ${c.partner === 'DNR' ? `
                                     <span class="badge" style="background: #fdf2f2; color: #991b1b; border: 1px solid #fee2e2; font-size: 10px;">Cod. Frutta: <b>${c.codiceFrutta || '-'}</b></span>
                                     <span class="badge" style="background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; font-size: 10px;">Cod. Latte: <b>${c.codiceLatte || '-'}</b></span>
+                                    <span class="badge badge-secondary">${c.tipologiaGrado || '-'}</span>
+                                ` : `
+                                    <span class="badge" style="background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; font-size: 10px;">Cod. Cliente: <b>${c.codice_cliente || c.codiceCliente || '-'}</b></span>
+                                `}
+                                    <span class="badge" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; font-size: 10px;">Macroarea: <b>${c.partner || 'N/A'}</b></span>
                                 </div>
-                                <span class="badge badge-secondary">${c.tipologiaGrado || '-'}</span>
                                 <button onclick="openEditModal('${c.id || index}')" class="edit-fab" title="Modifica">
                                     <span class="material-icons-round" style="font-size: 18px;">edit</span>
                                 </button>
@@ -478,8 +508,14 @@
 
             if (searchInput) {
                 searchInput.addEventListener('input', () => {
-                    const query = searchInput.value.trim().toLowerCase();
-                    renderClienti(query);
+                    renderClienti();
+                });
+            }
+
+            const filterSelect = document.getElementById('filterMacroarea');
+            if (filterSelect) {
+                filterSelect.addEventListener('change', () => {
+                    renderClienti();
                 });
             }
 
@@ -488,10 +524,19 @@
             const modal = document.getElementById('editCustModal');
             const editForm = document.getElementById('editCustForm');
 
+            const updatePartnerFields = () => {
+                const isDnr = document.getElementById('editPartner').value === 'DNR';
+                document.querySelectorAll('.dnr-field').forEach(el => el.style.display = isDnr ? 'block' : 'none');
+                document.querySelectorAll('.generic-field').forEach(el => el.style.display = isDnr ? 'none' : 'block');
+            };
+            document.getElementById('editPartner').addEventListener('change', updatePartnerFields);
+
             window.openAddModal = () => {
                 document.getElementById('modalTitle').textContent = "Aggiungi Nuovo Cliente";
                 document.getElementById('editId').value = "";
                 editForm.reset();
+                document.getElementById('editPartner').value = "GRAN CHEF";
+                updatePartnerFields();
                 document.getElementById('editLat').value = "";
                 document.getElementById('editLng').value = "";
                 modal.classList.add('active');
@@ -505,9 +550,12 @@
                 if (!c) return;
 
                 document.getElementById('editId').value = id;
+                document.getElementById('editPartner').value = c.partner || "GRAN CHEF";
+                updatePartnerFields();
                 document.getElementById('editNome').value = c.nome || '';
                 document.getElementById('editCodFrutta').value = c.codiceFrutta || '';
                 document.getElementById('editCodLatte').value = c.codiceLatte || '';
+                document.getElementById('editCodCliente').value = c.codice_cliente || c.codiceCliente || '';
                 document.getElementById('editIndirizzo').value = c.indirizzo || '';
                 document.getElementById('editCitta').value = c.citta || '';
                 document.getElementById('editProv').value = c.provincia || '';
@@ -515,12 +563,12 @@
                 document.getElementById('editOrarioMax').value = c.orarioMax || '';
                 document.getElementById('editEmail').value = c.email || '';
                 document.getElementById('editLat').value = c.lat || '';
-                document.getElementById('editLng').value = c.lng || '';
+                document.getElementById('editLng').value = c.lng || c.lon || '';
                 document.getElementById('editIsProgetto').checked = !!c.isProgetto;
                 document.getElementById('editViaggi').value = Array.isArray(c.viaggi) ? c.viaggi.join(', ') : (c.viaggi || '');
 
                 modal.classList.add('active');
-                setTimeout(() => initEditMap(c.lat, c.lng), 300);
+                setTimeout(() => initEditMap(c.lat, c.lng || c.lon), 300);
             };
 
             let editMap, editMarker;
@@ -575,9 +623,11 @@
                 const id = document.getElementById('editId').value;
                 const isNew = !id;
                 const updatedData = {
+                    partner: document.getElementById('editPartner').value,
                     nome: document.getElementById('editNome').value,
                     codiceFrutta: document.getElementById('editCodFrutta').value,
                     codiceLatte: document.getElementById('editCodLatte').value,
+                    codice_cliente: document.getElementById('editCodCliente').value,
                     indirizzo: document.getElementById('editIndirizzo').value,
                     citta: document.getElementById('editCitta').value,
                     provincia: document.getElementById('editProv').value,
@@ -586,6 +636,7 @@
                     email: document.getElementById('editEmail').value,
                     lat: document.getElementById('editLat').value,
                     lng: document.getElementById('editLng').value,
+                    lon: document.getElementById('editLng').value,
                     isProgetto: document.getElementById('editIsProgetto').checked,
                     viaggi: document.getElementById('editViaggi').value.split(',').map(s => s.trim()).filter(s => s !== '')
                 };
@@ -606,7 +657,7 @@
                 if (idx === -1) return;
                 if (confirm('Eliminare ' + clienti[idx].nome + '?')) {
                     try {
-                        if (window.deleteFromFirebase && clienti[idx].id) await window.deleteFromFirebase("customers", clienti[idx].id);
+                        if (window.deleteCustomer && clienti[idx].id) await window.deleteCustomer(clienti[idx].partner, clienti[idx].id);
                         alert("Eliminato!"); renderClienti();
                     } catch (e) { alert("Errore: " + e.message); }
                 }

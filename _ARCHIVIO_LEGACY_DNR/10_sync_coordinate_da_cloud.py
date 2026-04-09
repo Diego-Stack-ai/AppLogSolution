@@ -59,15 +59,12 @@ def main():
     print(f"📂 Caricamento {EXCEL_PATH.name}...")
     df = pd.read_excel(EXCEL_PATH)
 
-    # Assicuriamoci che la colonna T (COORDINATE_REALI) esista
-    # Se il DF ha meno di 20 colonne, le creiamo
-    while len(df.columns) < 20:
-        df[f"Unnamed: {len(df.columns)}"] = None
-    
-    # Ridenominiamo la colonna T (indice 19)
-    cols = list(df.columns)
-    cols[19] = "COORDINATE_REALI_GPS"
-    df.columns = cols
+    # Assicuriamoci che la colonna COORDINATE_REALI_GPS esista — ricerca per NOME,
+    # non per indice. Elimina la dipendenza dalle 4 colonne "Unnamed" di padding.
+    COL_GPS = "COORDINATE_REALI_GPS"
+    if COL_GPS not in df.columns:
+        df[COL_GPS] = None
+        print(f"  ℹ️ Colonna '{COL_GPS}' creata.")
 
     applied_count = 0
     for c in new_coords:
@@ -77,7 +74,7 @@ def main():
         
         if mask.any():
             coord_str = f"{c['lat']}, {c['lon']}"
-            df.loc[mask, 'COORDINATE_REALI_GPS'] = coord_str
+            df.loc[mask, COL_GPS] = coord_str
             print(f"📍 Aggiornata: {c['nome']} -> {coord_str}")
             delete_from_cloud(c['doc_name'])
             applied_count += 1

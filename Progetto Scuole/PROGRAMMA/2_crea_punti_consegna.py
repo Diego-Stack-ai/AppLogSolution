@@ -16,7 +16,6 @@ from pathlib import Path
 PROG_DIR = Path(__file__).resolve().parent
 BASE_DIR = PROG_DIR.parent
 CONSEGNE_DIR = BASE_DIR / "CONSEGNE"
-MAPPATURA = PROG_DIR / "mappatura_destinazioni.xlsx"
 
 DATA_DDT_RE = re.compile(r'del\s+(\d{2})/(\d{2})/(\d{4})', re.I)
 LUOGO_RE = re.compile(r'[Ll]uogo [Dd]i [Dd]estinazione:\s*([pP]\d{4,5})')
@@ -69,49 +68,65 @@ def _build_indirizzo(vals, col_ind, col_cap, col_citta, col_prov):
 
 
 def _carica_mappatura():
-    """Carica mappatura: codice -> (row_idx, dato con cod_f, cod_l, nome, indirizzo, lat, lon, orari)."""
-    from openpyxl import load_workbook
-    wb = load_workbook(MAPPATURA, read_only=True, data_only=True)
-    ws = wb["Mappatura"] if "Mappatura" in wb.sheetnames else wb.active
-    headers = [c.value for c in ws[1]]
-    col_cod_f = next((i for i, h in enumerate(headers) if str(h or "").strip() == "Codice Frutta"), 0)
-    col_cod_l = next((i for i, h in enumerate(headers) if str(h or "").strip() == "Codice Latte"), 1)
-    col_nome = next((i for i, h in enumerate(headers) if "chi va" in str(h or "").lower()), 2)
-    col_ind = next((i for i, h in enumerate(headers) if h == "Indirizzo"), 4)
-    col_cap = next((i for i, h in enumerate(headers) if h == "CAP"), 5)
-    col_citta = next((i for i, h in enumerate(headers) if h == "Città"), 6)
-    col_prov = next((i for i, h in enumerate(headers) if h == "Provincia"), 7)
-    col_om = next((i for i, h in enumerate(headers) if h == "Orario min"), 10)
-    col_oM = next((i for i, h in enumerate(headers) if h == "Orario max"), 11)
-    col_lat = next((i for i, h in enumerate(headers) if h == "Latitudine"), 12)
-    col_lon = next((i for i, h in enumerate(headers) if h == "Longitudine"), 13)
+    import firebase_admin
+    from firebase_admin import credentials, firestore
+    import glob
+    import os
+
+    cred_files = glob.glob(os.path.join(os.path.dirname(__file__), '..', '..', 'backend', 'config', 'log-solution-*-firebase-adminsdk-*.json'))
+    if not firebase_admin._apps and cred_files:
+        cred = credentials.Certificate(cred_files[0])
+        firebase_admin.initialize_app(cred)
+    elif not cred_files:
+        print("❌ Credenziali Firebase non trovate in backend/config/")
+        return {}
+
+    db = firestore.client()
+    docs = db.collection("customers").document("DNR").collection("clienti").stream()
 
     map_codice = {}
-    for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
-        vals = [c.value for c in row]
-        try:
-            lat = float(vals[col_lat]) if col_lat < len(vals) and vals[col_lat] is not None else None
-            lon = float(vals[col_lon]) if col_lon < len(vals) and vals[col_lon] is not None else None
-        except (TypeError, ValueError, IndexError):
-            lat, lon = None, None
-        cod_f = _val(vals[col_cod_f]) if col_cod_f < len(vals) else ""
-        cod_l = _val(vals[col_cod_l]) if col_cod_l < len(vals) else ""
+    row_idx = 2
+    for doc in docs:
+        d = doc.to_dict()
+        cod_f = str(d.get("codiceFrutta", "")).strip().lower()
+        cod_l = str(d.get("codiceLatte", "")).strip().lower()
+        if cod_f == "nan": cod_f = ""
+        if cod_l == "nan": cod_l = ""
+        
+        ind = str(d.get("indirizzo", "")).strip()
+        cap = str(d.get("cap", "")).strip()
+        citta = str(d.get("citta", "")).strip()
+        prov = str(d.get("provincia", "")).strip()
+        
+        parts = []
+        if ind: parts.append(ind)
+        if cap or citta:
+            loc = f"{cap} {citta}".strip()
+            if prov: loc = f"{loc} ({prov})"
+            parts.append(loc)
+        indirizzo_full = ", ".join(parts) if parts else ""
+        
+        # Gestione compatibilità float/int
+        lat = d.get("lat")
+        lon = d.get("lon") or d.get("lng")
+        
         dato = {
-            "codice_frutta": cod_f.lower() if cod_f else "",
-            "codice_latte": cod_l.lower() if cod_l else "",
-            "nome": _val(vals[col_nome]) if col_nome < len(vals) else "",
-            "indirizzo": _build_indirizzo(vals, col_ind, col_cap, col_citta, col_prov),
-            "orario_min": _val(vals[col_om]) if col_om < len(vals) else "",
-            "orario_max": _val(vals[col_oM]) if col_oM < len(vals) else "",
+            "codice_frutta": cod_f,
+            "codice_latte": cod_l,
+            "nome": d.get("nome", ""),
+            "indirizzo": indirizzo_full,
+            "orario_min": d.get("orarioMin", ""),
+            "orario_max": d.get("orarioMax", ""),
             "lat": lat,
             "lon": lon,
         }
+        
         for cod in (cod_f, cod_l):
             if cod:
-                c = cod.lower()
-                if c not in map_codice:
-                    map_codice[c] = (row_idx, dato)
-    wb.close()
+                if cod not in map_codice:
+                    map_codice[cod] = (row_idx, dato)
+        row_idx += 1
+        
     return map_codice
 
 
@@ -221,10 +236,6 @@ def main():
     output_file = output_base / "punti_consegna.xlsx"
 
     print(f"\n--- Creazione punti consegna unificati ---\nCartella: {output_base}\n")
-
-    if not MAPPATURA.exists():
-        print(f"Mappatura non trovata: {MAPPATURA}")
-        return 1
 
     map_codice = _carica_mappatura()
     print(f"Mappatura caricata: {len(map_codice)} codici\n")

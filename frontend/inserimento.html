@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 
 <head>
@@ -308,7 +308,7 @@
                             Carburante e Note</h4>
                         <div class="form-grid">
                             <div class="input-group">
-                                <label for="importo">Importo (€)</label>
+                                <label for="importo">Importo (â‚¬)</label>
                                 <input type="number" id="importo" step="0.01" placeholder="es. 50.00">
                             </div>
                             <div class="input-group">
@@ -344,14 +344,14 @@
             <h2 style="font-size: 20px; color: #b45309; margin-bottom: 8px;">Attenzione!</h2>
             <p style="margin-bottom: 24px; color: #475569; font-size: 15px; line-height: 1.5;">Stai scegliendo una
                 data
-                che non è <b>oggi</b>.<br>Sei sicuro di voler registrare il turno per questo giorno?</p>
+                che non Ã¨ <b>oggi</b>.<br>Sei sicuro di voler registrare il turno per questo giorno?</p>
             <div style="display: flex; gap: 12px; justify-content: center;">
                 <button type="button" class="btn-primary"
                     style="background:#f1f5f9; color:#334155; box-shadow:none; padding: 12px;"
                     onclick="chiudiModalData('annulla')">Annulla</button>
                 <button type="button" class="btn-primary"
                     style="background:#f59e0b; box-shadow:0 10px 20px -10px #f59e0b; padding: 12px;"
-                    onclick="chiudiModalData('conferma')">Sì, prosegui</button>
+                    onclick="chiudiModalData('conferma')">SÃ¬, prosegui</button>
             </div>
         </div>
     </div>
@@ -361,7 +361,7 @@
         <div class="modal-content">
             <span class="material-icons-round modal-icon" style="color: var(--primary);">history</span>
             <h3>Viaggio non concluso</h3>
-            <p>È stato rilevato un viaggio iniziato ma non terminato. Vuoi riprendere dall'ultima tappa o iniziare
+            <p>Ãˆ stato rilevato un viaggio iniziato ma non terminato. Vuoi riprendere dall'ultima tappa o iniziare
                 un
                 nuovo turno?</p>
             <div style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">
@@ -385,16 +385,16 @@
             <div style="display:flex; gap:12px; margin-top:16px;">
                 <button type="button" onclick="closeConfirmModal()" class="btn-primary"
                     style="background:#f1f5f9; color:#334155; box-shadow:none;">Annulla</button>
-                <button type="button" id="btnConfirmSend" class="btn-primary">Sì, Invia Ora</button>
+                <button type="button" id="btnConfirmSend" class="btn-primary">SÃ¬, Invia Ora</button>
             </div>
         </div>
     </div>
 
-    <script src="script.js?v=1.49"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.49"></script>
+    <script src="script.js?v=1.50"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.50"></script>
     <script type="module">
-        import { saveTrip } from "./firestore-service.js?v=1.49";
-        import "./gps-tracker.js?v=1.49";
+        import { saveTrip } from "./firestore-service.js?v=1.50";
+        import "./gps-tracker.js?v=1.50";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -429,11 +429,11 @@
         setTimeout(checkStep1, 800);
         setTimeout(checkStep1, 2000);  // secondo tentativo per connessioni lente
 
-        // === STEP 1: Avvio Viaggio → Salva su Firebase + GPS ===
+        // === STEP 1: Avvio Viaggio â†’ Salva su Firebase + GPS ===
         btnStartTrip.onclick = async () => {
             if (btnStartTrip.disabled) return;
-            // Solo verifica manuale form, reportValidity può bloccarsi su hidden inputs
-            // ma sappiamo già che i campi in step1 sono pieni grazie a checkStep1()
+            // Solo verifica manuale form, reportValidity puÃ² bloccarsi su hidden inputs
+            // ma sappiamo giÃ  che i campi in step1 sono pieni grazie a checkStep1()
 
             // Feedback immediato
             btnStartTrip.disabled = true;
@@ -471,10 +471,10 @@
 
         // === STEP 2: Blocca form submit nativo (BUG FIX CRITICO) ===
         presenzeForm.addEventListener('submit', (e) => {
-            e.preventDefault();  // ← QUESTO MANCAVA! Impedisce il refresh della pagina
+            e.preventDefault();  // â† QUESTO MANCAVA! Impedisce il refresh della pagina
         });
 
-        // === STEP 2: Bottone "Salva e Invia Turno" → Apre il modale di conferma ===
+        // === STEP 2: Bottone "Salva e Invia Turno" â†’ Apre il modale di conferma ===
         btnEndTrip.onclick = () => {
             // Validazione: controlla che ora fine e km arrivo siano compilati
             const oraFine = window.getTimeValue('oraFine');  // FIX: era 'pomeriggioFine' (ID inesistente)
@@ -496,12 +496,12 @@
             const totOre = document.getElementById('totaleOre')?.value || '-';
 
             summary.innerHTML = `
-                <b>📅 Data:</b> ${document.getElementById('data').value}<br>
-                <b>🚛 Mezzo:</b> ${document.getElementById('automezzo').value}<br>
-                <b>🏢 Cliente:</b> ${document.getElementById('clienteSelect').value}<br>
-                <b>🛣️ Viaggio:</b> ${document.getElementById('viaggioSelect').value}<br>
-                <b>⏰ Orario:</b> ${oraInizio} → ${oraFine}<br>
-                <b>📏 Km:</b> ${deltaKm} km | <b>🕐 Ore:</b> ${totOre}
+                <b>ðŸ“… Data:</b> ${document.getElementById('data').value}<br>
+                <b>ðŸš› Mezzo:</b> ${document.getElementById('automezzo').value}<br>
+                <b>ðŸ¢ Cliente:</b> ${document.getElementById('clienteSelect').value}<br>
+                <b>ðŸ›£ï¸ Viaggio:</b> ${document.getElementById('viaggioSelect').value}<br>
+                <b>â° Orario:</b> ${oraInizio} â†’ ${oraFine}<br>
+                <b>ðŸ“ Km:</b> ${deltaKm} km | <b>ðŸ• Ore:</b> ${totOre}
             `;
 
             // APRE il modale di conferma
@@ -543,13 +543,13 @@
 
                 // Salva/aggiorna su Firebase
                 await saveTrip(finalData);
-                console.log(`[Viaggio] ✅ Viaggio ${tripId} CONCLUSO e salvato su Firebase.`);
+                console.log(`[Viaggio] âœ… Viaggio ${tripId} CONCLUSO e salvato su Firebase.`);
 
                 sessionStorage.removeItem('currentTripId');
                 sessionStorage.removeItem('currentDraft');
 
                 // Feedback visivo
-                btnEndTrip.innerHTML = '<span class="material-icons-round">check_circle</span> Turno Inviato ✓';
+                btnEndTrip.innerHTML = '<span class="material-icons-round">check_circle</span> Turno Inviato âœ“';
                 btnEndTrip.style.background = 'var(--success)';
                 btnEndTrip.disabled = true;
 
@@ -560,7 +560,7 @@
                 console.error("[Viaggio] Errore salvataggio finale:", e);
                 alert("Errore salvataggio: " + e.message);
                 btnConfirmSend.disabled = false;
-                btnConfirmSend.innerHTML = 'Sì, Invia Ora';
+                btnConfirmSend.innerHTML = 'SÃ¬, Invia Ora';
             }
         };
     </script>

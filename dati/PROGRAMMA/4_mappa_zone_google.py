@@ -224,7 +224,7 @@ def _aggiorna_rientri_dopo_salvataggio(zone_data: list, data_giorno: str):
         ws = wb.active
         
         # Mappatura Codice -> Stato finale desiderato
-        status_map = {} # {codice_ddt: "allegato..." o ""}
+        status_map = {} # {codice_ddt: "in lavorazione..." o ""}
         
         for z in zone_data:
             zid = z.get("id_zona", "")
@@ -239,8 +239,9 @@ def _aggiorna_rientri_dopo_salvataggio(zone_data: list, data_giorno: str):
                     if c_f and c_f != "p00000": codici.append(c_f)
                     if c_l and c_l != "p00000": codici.append(c_l)
                 
-                # Determiniamo lo stato in base a dove si trova il punto ora
-                final_status = "" if zid == "DDT_DA_INSERIRE" else f"allegato DDT {data_giorno}"
+                # Determiniamo lo stato: "in lavorazione" quando assegnato in mappa.
+                # Lo step 9 (distinte) modifichera' "in lavorazione" in "allegato ...".
+                final_status = "" if zid == "DDT_DA_INSERIRE" else f"in lavorazione"
                 
                 for c in codici:
                     status_map[str(c).strip().lower()] = final_status
@@ -250,13 +251,22 @@ def _aggiorna_rientri_dopo_salvataggio(zone_data: list, data_giorno: str):
         modifiche = 0
         for row in ws.iter_rows(min_row=2):
             cod_excel = str(row[0].value or '').strip().lower()
+            stato_attuale = str(row[2].value or '').strip().lower()
+            
             if cod_excel in status_map:
-                row[2].value = status_map[cod_excel]
-                modifiche += 1
+                # SE LA RIGA E' GIA' IN STATO "ALLEGATO" DEFINITIVO (DI GIORNI PASSATI),
+                # NON DOBBIAMO ASSOLUTAMENTE TOCCARLA NE' SOVRASCRIVERLA!
+                if "allegato" in stato_attuale and "lavorazione" not in stato_attuale:
+                    continue
+                
+                # Applica il nuovo stato solo su righe vuote o "in lavorazione"
+                if row[2].value != status_map[cod_excel]:
+                    row[2].value = status_map[cod_excel]
+                    modifiche += 1
         
         if modifiche:
             wb.save(rientri_path)
-            logger.info(f"📂 Excel Rientri aggiornato: {modifiche} righe modificate.")
+            logger.info(f"📂 Excel Rientri aggiornato: {modifiche} righe modificate (saltate quelle gia' allegate).")
     except Exception as e:
         logger.exception("Errore aggiornamento rientri_ddt.xlsx")
 

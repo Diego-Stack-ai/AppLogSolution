@@ -352,20 +352,26 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .zone-card.speciale .zone-title span:first-child { color: #92400e; }
         .zone-card.speciale .zone-title span:last-child { color: #b45309; }
         .badge-speciale { display:inline-block; background:#f59e0b; color:white; font-size:0.55rem; font-weight:800; padding:1px 6px; border-radius:10px; margin-left:6px; vertical-align:middle; letter-spacing:0.03em; }
+        
+        /* Utility */
+        .hidden { display: none !important; }
+        .btn-verifica { background: #6366f1; color: white; border: none; flex: 1; }
+        .btn-verifica.active { background: #1e293b; border: 2px solid #10b981; }
     </style>
 </head>
 <body>
     <div id="sidebar">
         <div id="header">
             <h1 style="margin:0; font-size:1.2rem;">Gestione Zone <span id="tot-points" style="font-size:0.7rem; opacity:0.7;">0 Punti</span></h1>
-            <div style="margin-top:10px; display:flex; justify-content: space-between; align-items:center;">
-                <button onclick="saveAllToServer()" style="background:var(--accent); color:white; border:none; padding:8px 15px; border-radius:8px; font-weight:800; cursor:pointer;">SALVA TUTTO</button>
-                <div style="text-align:right;"><small style="opacity:0.6;">{{DATA_GIORNO}}</small></div>
+            <div style="margin-top:10px; display:flex; justify-content: space-between; align-items:center; gap:8px;">
+                <button onclick="saveAllToServer()" style="background:var(--accent); color:white; border:none; padding:8px 15px; border-radius:8px; font-weight:800; cursor:pointer; flex: 1;">SALVA TUTTO</button>
+                <button onclick="toggleVerificaViaggi()" id="btn-verifica" class="btn btn-verifica" style="padding:8px 10px; height: 35px;">VERIFICA VIAGGI</button>
             </div>
             <div style="display:flex; gap:5px; margin-top:10px;">
                 <button onclick="toggleLockMap()" id="btn-lock-map" class="btn btn-lock">CARICAMENTO...</button>
                 <button id="btn-toggle-drag" onclick="toggleDragging()" class="btn" style="flex:1;">🔒 SPOSTA PUNTI (OFF)</button>
             </div>
+            <div style="text-align:right; margin-top:5px;"><small style="opacity:0.6;">{{DATA_GIORNO}}</small></div>
         </div>
         <div id="zone-list"></div>
     </div>
@@ -376,7 +382,21 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         let DATA_ZONE = {{JSON_ZONE | safe}};
         let map, gMarkers = [], DRAGGING_ENABLED = false, isLockedGlobal = {{IS_LOCKED_JS}};
         let activeExpandedZid = null, activeAction = null, activeSourceZid = null;
-        let _hasUnsavedChanges = false;
+        let _hasUnsavedChanges = false, VIEW_MODE_PULITA = false;
+
+        function toggleVerificaViaggi() {
+            VIEW_MODE_PULITA = !VIEW_MODE_PULITA;
+            const btn = document.getElementById('btn-verifica');
+            if (VIEW_MODE_PULITA) {
+                btn.classList.add('active');
+                btn.textContent = 'VISTA PULITA ON';
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = 'VERIFICA VIAGGI';
+            }
+            renderMarkers();
+            renderSidebar();
+        }
 
         window.addEventListener('beforeunload', function(e) {
             if (_hasUnsavedChanges) {
@@ -426,6 +446,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
             const coordCounts = {};
             DATA_ZONE.forEach(z => {
+                const isSpeciale = (z.id_zona === 'DDT_DA_INSERIRE');
+                if (VIEW_MODE_PULITA && isSpeciale) return;
+
                 z.lista_punti.forEach((p, idx) => {
                     if (!p.lat) return;
                     const key = `${p.lat.toFixed(6)}_${p.lon.toFixed(6)}`;
@@ -481,8 +504,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         function renderSidebar() {
             const list = document.getElementById('zone-list');
             list.innerHTML = DATA_ZONE.filter(z => z.lista_punti.length > 0).map(z => {
-                const isSelected = (activeExpandedZid === z.id_zona) || (activeSourceZid === z.id_zona);
                 const isSpeciale = (z.id_zona === 'DDT_DA_INSERIRE');
+                if (VIEW_MODE_PULITA && isSpeciale) return '';
+                
+                const isSelected = (activeExpandedZid === z.id_zona) || (activeSourceZid === z.id_zona);
                 return `
                 <div class="zone-card ${isSelected ? 'selected' : ''} ${isSpeciale ? 'speciale' : ''}" onclick="focusZone('${z.id_zona}')">
                     <div class="zone-header">

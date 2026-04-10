@@ -232,6 +232,9 @@ ARTICOLI_NOTI = {"ME-T-DI-V0-NA", "PE-T-DI-L3-NA", "10-GEL", "10-FLYER", "10-MAN
                  # Aggiunti 26/03/2026
                  "FI-Z-BI-L3-NA",   # Finocchio biologico da porzionare in classe
                  "ME-S-BI-L3-NA",   # Mela biologica del territorio per estratto
+                 # Aggiunti 09/04/2026
+                 "10-AT-01", "LNS-04-GADGET", "LNS-04-POSTER", "FVNS-03-FOLDER", "FVNS-03-MAGAZINE",
+                 "FR-M-BI-L3-NI",
                  }
 
 def _verifica_nuovi_articoli(base):
@@ -244,9 +247,15 @@ def _verifica_nuovi_articoli(base):
         try:
             with pdfplumber.open(p) as pdf:
                 for pg in pdf.pages:
-                    for m in art_re.finditer(pg.extract_text() or ""):
+                    txt = pg.extract_text() or ""
+                    for m in art_re.finditer(txt):
                         c = m.group(1).strip()
-                        if c == "FVNS-03-": c = "FVNS-03-POSTER"
+                        # Gestione codici multi-riga (es. FVNS-03- o LNS-04- spezzati su due righe)
+                        if c.endswith('-') and not re.match(r'^--\d{6}$', c):
+                            la = txt[m.end():].split('\n')
+                            if len(la) > 1:
+                                m2 = re.match(r'^([A-Z]+)', la[1].strip())
+                                if m2: c += m2.group(1)
                         # Normalizza codici data flyer (--NNNNNN) → 10-FLYER
                         if re.match(r'^--\d{6}$', c): c = "10-FLYER"
                         trovati.add(c)

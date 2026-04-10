@@ -305,33 +305,52 @@ def _carica_rientri(data_attuale: str = None) -> dict:
         from openpyxl import load_workbook
         wb = load_workbook(RIENTRI_XLSX, read_only=True, data_only=True)
         ws = wb.active
-        rientri = {}
-        for row in ws.iter_rows(min_row=2, values_only=True):
-            codice = row[0]
-            data_b = row[1]
-            if not codice or not data_b:
+        rientri = defaultdict(list)
+        all_rientri_rows = [] # (r_idx, codice, data_str, status)
+        for r_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
+            codice_raw = row[0].value
+            data_b = row[1].value
+            if not codice_raw or not data_b:
                 continue
 
-            # ── Filtro colonna C: salta i rientri già consegnati ──────────
-            stato = str(row[2] or "").strip().lower() if len(row) > 2 else ""
-            if "allegato" in stato and "lavorazione" not in stato:
-                # Se data_attuale è nel testo dello stato, significa che lo abbiamo 
-                # appena contrassegnato noi in questa sessione. In tal caso NO saltiamo.
-                if not data_attuale or data_attuale.lower() not in stato:
-                    continue   # già consegnato in una sessione precedente
-
-            codice = str(codice).strip().lower()
+            stato = str(row[2].value or "").strip().lower()
+            codice = str(codice_raw).strip().lower()
+            
             if hasattr(data_b, 'strftime'):
                 data_str = data_b.strftime("%d-%m-%Y")
             else:
                 data_str = str(data_b).strip()
+
+            all_rientri_rows.append((r_idx, codice, data_str, stato))
+
+            # Filtro per il caricamento nel dizionario di ricerca PDF
+            if "allegato" in stato and "lavorazione" not in stato:
+                if not data_attuale or data_attuale.lower() not in stato:
+                    continue
+
             if codice and data_str:
-                rientri[codice] = data_str
+                rientri[codice].append(data_str)
         wb.close()
-        return rientri
+        return rientri, all_rientri_rows
     except Exception as e:
         print(f"  ⚠️  Errore lettura rientri_ddt.xlsx: {e}")
-        return {}
+        return {}, []
+
+def _aggiorna_stato_rientri_excel(aggiornamenti: list):
+    """aggiornamenti: list of (r_idx, nuovo_testo)"""
+    if not aggiornamenti: return
+    from openpyxl import load_workbook
+    try:
+        wb = load_workbook(RIENTRI_XLSX)
+        ws = wb.active
+        for r_idx, testo in aggiornamenti:
+            ws.cell(row=r_idx, column=3).value = testo
+        wb.save(RIENTRI_XLSX)
+        print(f"  💾 Excel Rientri aggiornato ({len(aggiornamenti)} modifiche).")
+    except PermissionError:
+        print(f"  ⚠️  ERRORE: Impossibile aggiornare Excel Rientri. Chiudi il file!")
+    except Exception as e:
+        print(f"  ⚠️  Errore salvataggio rientri: {e}")
 
 
 
@@ -580,13 +599,14 @@ def main():
     print(f"  9_GENERA_DISTINTE - {data_ddt}  ({len(viaggi)} giri)")
     print(f"{'='*65}\n")
 
-    # Carica mappa rientri: { codice: data_originale }
-    rientri = _carica_rientri(data_ddt)
+    # Carica mappa rientri: { codice: [date...] } e lista righe
+    rientri, all_rientri_rows = _carica_rientri(data_ddt)
     if rientri:
         print(f"  [RIENTRI] Caricati da rientri_ddt.xlsx: {len(rientri)} codici mappati")
 
-    # Traccia i PDF usati (per verifica orfani)
+    # Traccia i PDF usati (per verifica orfani e finalizzazione stati)
     pdf_usati: set[Path] = set()
+    rientri_usati: set[tuple] = set() # (codice, data_str)
     pdf_generati: list[Path] = []
 
     for viaggio in viaggi:
@@ -631,16 +651,18 @@ def main():
                 tipo_trovato = tipo
 
                 if codice.lower() in rientri:
-                    # ── RIENTRO: cerca SOLO nella cartella della data storica (col. B) ──
-                    # Mai nella cartella corrente: il DDT di rientro è per definizione
-                    # archiviato nella cartella della sua data originale.
-                    data_rientro = rientri[codice.lower()]
-                    cart_storica = CONSEGNE_DIR / f"CONSEGNE_{data_rientro}" / "DDT-ORIGINALI-DIVISI"
-                    for sotto in ["FRUTTA", "LATTE"]:
-                        pdf = _trova_pdf(codice, data_rientro, cart_storica / sotto)
-                        if pdf:
-                            tipo_trovato = sotto
-                            break
+                    # ── RIENTRO: cerca nei PDF delle date storiche (col. B) ──
+                    date_rientro = rientri[codice.lower()]
+                    for d_r in date_rientro:
+                        cart_storica = CONSEGNE_DIR / f"CONSEGNE_{d_r}" / "DDT-ORIGINALI-DIVISI"
+                        for sotto in ["FRUTTA", "LATTE"]:
+                            pdf = _trova_pdf(codice, d_r, cart_storica / sotto)
+                            if pdf:
+                                data_rientro = d_r # per log
+                                rientri_usati.add((codice.lower(), d_r))
+                                tipo_trovato = sotto
+                                break
+                        if pdf: break
                 else:
                     # ── CONSEGNA NORMALE: cerca nella cartella della sessione corrente ──
                     cart_tipo = dir_frutta_r if tipo == "FRUTTA" else dir_latte_r
@@ -706,6 +728,30 @@ def main():
             print(f"       - {p.parent.name}/{p.name}")
     else:
         print(f"  OK Tutti i PDF DDT sono stati assegnati a un viaggio.")
+
+    # ── Finalizzazione stati Rientri (Punto 6 workflow) ──
+    print(f"\n  FIN Finalizzazione stati in rientri_ddt.xlsx...")
+    aggiornamenti_excel = []
+    for r_idx, cod, d_str, stato in all_rientri_rows:
+        is_usato = (cod, d_str) in rientri_usati
+        
+        # Se era in lavorazione
+        if "lavorazione" in stato:
+            if is_usato:
+                # Promosso ad allegato
+                aggiornamenti_excel.append((r_idx, f"allegato DDT {data_ddt}"))
+            else:
+                # Rimandato: sbianca la cella
+                aggiornamenti_excel.append((r_idx, ""))
+        
+        # Se non era in lavorazione ma è stato usato comunque oggi (es. abbinamento automatico)
+        elif is_usato and "allegato" not in stato:
+            aggiornamenti_excel.append((r_idx, f"allegato DDT {data_ddt}"))
+
+    if aggiornamenti_excel:
+        _aggiorna_stato_rientri_excel(aggiornamenti_excel)
+    else:
+        print("    OK Nessuno stato da aggiornare.")
 
     # ── Riepilogo finale ──
     print(f"\n{'='*65}")

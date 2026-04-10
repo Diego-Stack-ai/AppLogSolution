@@ -202,11 +202,15 @@ def _carica_rientri(map_codice: dict):
             row_idx_mappa, _ = map_codice[c]
             if row_idx_mappa not in rientri_per_riga:
                 rientri_per_riga[row_idx_mappa] = []
-            if not any(x[0] == c for x in rientri_per_riga[row_idx_mappa]):
-                rientri_per_riga[row_idx_mappa].append((c, data_orig))
-                righe_da_lavorare.append((c, r_idx, data_orig))
+            
+            # Aggiunge il DDT con il suo riferimento alla riga Excel
+            rientri_per_riga[row_idx_mappa].append({
+                "codice": c, 
+                "data": data_orig, 
+                "r_idx": r_idx
+            })
     wb.close()
-    return rientri_per_riga, righe_da_lavorare
+    return rientri_per_riga, []
 
 def _aggiorna_stato_rientri_excel(righe_validate: list[int], testo: str):
     """Scrive `testo` nella col C per le righe specificate di rientri_ddt.xlsx."""
@@ -260,7 +264,7 @@ def main():
 
     punti = _carica_excel(file_punti)
     map_codice = _carica_mappatura_veloce()
-    rientri_globale, righe_excel_rientri = _carica_rientri(map_codice)
+    rientri_globale, _ = _carica_rientri(map_codice)
     
     righe_rientri_da_marcare = []       # matched → scriverò data consegna
     righe_rientri_in_lavorazione = []   # unmatched → scriverò 'In lavorazione'
@@ -322,12 +326,14 @@ def main():
             # Abbina il rientro ai punti di consegna esistenti (cliente presente oggi)
             for up in map_idx_mappa_to_punti[idx_mappa]:
                 current_codes = (up.get("codici_ddt_frutta") or []) + (up.get("codici_ddt_latte") or [])
-                for cr, data_orig in codici_con_date:
+                for obj_r in codici_con_date:
+                    cr = obj_r["codice"]
+                    data_orig = obj_r["data"]
+                    r_idx = obj_r["r_idx"]
                     status = "yellow" if cr in current_codes else "red"
-                    if not any(a["codice"] == cr for a in up["rientri_alert"]):
+                    if not any(a["codice"] == cr and a["data_ddt"] == data_orig for a in up["rientri_alert"]):
                         up["rientri_alert"].append({"codice": cr, "status": status, "data_ddt": data_orig})
-                        r_excel = next((r for c, r, d in righe_excel_rientri if c == cr), None)
-                        if r_excel: righe_rientri_da_marcare.append(r_excel)
+                        righe_rientri_da_marcare.append(r_idx)
         else:
             # DDT non abbinato ad alcuna consegna oggi → zona speciale sulla mappa
             path_m = PROG_DIR / "mappatura_destinazioni.xlsx"
@@ -335,8 +341,10 @@ def main():
             wb_m = load_workbook(path_m, read_only=True, data_only=True)
             ws_m = wb_m.active
             row = list(ws_m.iter_rows(min_row=idx_mappa, max_row=idx_mappa))[0]
-            # Usa il primo codice per il nome fallback
-            primo_codice, primo_data_orig = codici_con_date[0]
+            # Prende i dati dal primo DDT della lista
+            primo_entry = codici_con_date[0]
+            primo_codice = primo_entry["codice"]
+            primo_data_orig = primo_entry["data"]
             nome_r = _val(row[2].value) or f"Rientro {primo_codice}"
             ind_r  = _val(row[4].value)
             lat_r  = row[12].value
@@ -356,11 +364,12 @@ def main():
                 "zona": "DDT_DA_INSERIRE",
                 "codici_ddt_frutta": [],
                 "codici_ddt_latte":  [],
-                "rientri_alert": [{"codice": cr, "status": "red", "data_ddt": d} for cr, d in codici_con_date],
+                "rientri_alert": [{"codice": dr["codice"], "status": "red", "data_ddt": dr["data"]} for dr in codici_con_date],
                 "row_idx_mappatura": idx_mappa,
                 "_is_rientro_speciale": True
             }
-            for cr, data_orig in codici_con_date:
+            for dr in codici_con_date:
+                cr = dr["codice"]
                 tipo = _val(row[0].value).lower()
                 if tipo:
                     punto_r["codici_ddt_frutta"].append(cr)
@@ -368,10 +377,9 @@ def main():
                     punto_r["codici_ddt_latte"].append(cr)
             unificati.append(punto_r)
             wb_m.close()
-            # Marca come 'In lavorazione'
-            for cr, _ in codici_con_date:
-                r_excel = next((r for c, r, d in righe_excel_rientri if c == cr), None)
-                if r_excel: righe_rientri_in_lavorazione.append(r_excel)
+            # Marca come 'In lavorazione' diretto usando la riga già salvata
+            for dr in codici_con_date:
+                righe_rientri_in_lavorazione.append(dr["r_idx"])
 
     lista_finale = unificati
     mappati = sum(1 for p in lista_finale if p.get("row_idx_mappatura") is not None)

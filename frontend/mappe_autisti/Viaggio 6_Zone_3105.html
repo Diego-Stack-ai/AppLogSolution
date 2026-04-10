@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Viaggio 6</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
+    <style>
+        :root { --p: #4f46e5; --accent: #10b981; --done: #94a3b8; --geo: #3b82f6; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: #f8fafc; overflow: hidden; }
+        .main-container { display: flex; flex-direction: column; height: 100vh; }
+        #map { height: 42vh; width: 100%; background: #dfe5eb; position: relative; }
+        #sidebar { flex: 1; display: flex; flex-direction: column; background: white; border-top: 2px solid #cbd5e1; overflow: hidden; }
+        .header { padding: 6px 12px; background: #1e293b; color: white; border-bottom: 2px solid var(--accent); position: relative; }
+        .trip-title { margin: 0; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
+        .reset-btn { position: absolute; right: 12px; top: 8px; font-size: 0.6rem; color: #94a3b8; text-decoration: underline; border: none; background: none; font-weight: 600; }
+        .stats-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 2px; }
+        .stat-item { flex: 1; display: flex; flex-direction: column; align-items: start; }
+        .stat-val { font-size: 0.82rem; font-weight: 800; color: white; line-height: 1; }
+        .stat-lbl { font-size: 0.52rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-top: 1px; }
+        #delivery-list { flex: 1; overflow-y: auto; padding: 8px; background: #f1f5f9; padding-bottom: 60px; }
+        
+        .card { 
+            background: white; border-radius: 12px; padding: 10px; margin-bottom: 8px; 
+            display: grid; grid-template-columns: 42px 1fr 52px; gap: 8px; align-items: center;
+            border: 1px solid #cbd5e1; position: relative; transition: all 0.2s; 
+        }
+        .card.done { opacity: 0.6; background: #e2e8f0; border-color: #cbd5e1; }
+        .card.done .stop-num { background: var(--done); }
+        .card.done .btn-done { color: var(--accent); background: white; border: 1px solid var(--accent); }
+        .card.next { border-color: var(--p); border-left: 5px solid var(--p); }
+        
+        .stop-num { width: 32px; height: 32px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
+        .stop-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+        .name { display: block; font-size: 0.85rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .addr { font-size: 0.78rem; color: #64748b; font-weight: 600; line-height: 1.1; display: block; }
+        
+        .actions { display: flex; gap: 6px; width: 100%; margin-bottom: 2px; }
+        .btn-done, .btn-geo { 
+            flex: 1; height: 32px; border-radius: 6px; font-size: 0.6rem; font-weight: 800;
+            display: flex; align-items: center; justify-content: center; gap: 4px; 
+            padding: 0 4px; text-decoration: none; border: none; white-space: nowrap;
+        }
+        .btn-nav { 
+            background: var(--accent); color: white; width: 44px; height: 44px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; text-decoration: none;
+        }
+        .btn-done { background: white; color: #64748b; border: 1px solid #cbd5e1; }
+        .btn-geo { background: var(--geo); color: white; }
+        .btn-geo.saved { background: #1e293b; }
+        .material-icons-round { font-size: 16px !important; }
+        .btn-nav { background: var(--accent); color: white; }
+        .btn-done { background: white; color: #64748b; border: 1px solid #cbd5e1; }
+        .btn-geo { background: var(--geo); color: white; }
+        .btn-geo.saved { background: #1e293b; }
+        .material-icons-round { font-size: 16px !important; }
+
+        #gps-btn { position: absolute; bottom: 20px; right: 20px; background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; color: var(--p); border: none; }
+        #geo-feedback { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 30px; font-size: 0.8rem; font-weight: 700; z-index: 2000; display: none; }
+    </style>
+</head>
+<body>
+    <div id="geo-feedback">Coordinate salvate!</div>
+    <div class="main-container">
+        <div id="map">
+            <button id="gps-btn" onclick="centerOnMe()"><span class="material-icons-round">my_location</span></button>
+        </div>
+        <div id="sidebar">
+            <div class="header">
+                <div class="trip-title">🏎️ Viaggio 6 | Zone: 3105</div>
+                <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
+                <div class="stats-row">
+                    <div class="stat-item"><span class="stat-val">204.5km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">4h 32m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 55m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">7h 27m</span><span class="stat-lbl">Totale</span></div>
+                </div>
+            </div>
+            <div id="delivery-list"><div class="card next" onclick="focusOn(0)">
+                <div class="stop-num">1</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(0, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(0, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">SCUOLA INTERNAZIONALE ITALO-CINESE (SIIC)</b>
+                    <span class="addr"><b>VIA PALLADIO 51B</b><br>35134 PADOVA (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.3609833,11.794445&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(1)">
+                <div class="stop-num">2</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(1, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(1, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Deledda -Pd-</b>
+                    <span class="addr"><b>Via Cortivo 25</b><br>35133 Padova (PD)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4430794,11.8983503&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(2)">
+                <div class="stop-num">3</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(2, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(2, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Scuola Primaria Sacro Cuore</b>
+                    <span class="addr"><b>Via Marconi</b><br>9, 35010 Cadoneghe (PD)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.456696,11.9037821&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(3)">
+                <div class="stop-num">4</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(3, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(3, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Davila-Pd</b>
+                    <span class="addr"><b>Via L. Calabresi</b><br>5, 35129 Padova (PD)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4220317,11.9132295&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(4)">
+                <div class="stop-num">5</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(4, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(4, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Tommaseo</b>
+                    <span class="addr"><b>Via Fiorazzo</b><br>1/A, 35129 Padova (PD)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4233751,11.9488692&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(5)">
+                <div class="stop-num">6</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(5, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(5, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">A. Da Tremignon</b>
+                    <span class="addr"><b>Via Borsellino</b><br>25, 35016 Piazzola Sul Brenta (PD)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5184479,11.8079308&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(6)">
+                <div class="stop-num">7</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(6, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(6, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Piazzola S. Brenta Camerini</b>
+                    <span class="addr"><b>Via Dei Contarini</b><br>65, 35016 Piazzola Sul Brenta (PD)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5416519,11.785254&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(7)">
+                <div class="stop-num">8</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(7, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(7, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Scuola Primaria Bronzola</b>
+                    <span class="addr"><b>Via Straelle</b><br>2, 35011 Campodarsego (PD)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5143082,11.9470709&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(8)">
+                <div class="stop-num">9</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(8, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(8, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Scuola Primaria Monsignor A. G. Longhin Di Fiumicello</b>
+                    <span class="addr"><b>Via Bassa Ii</b><br>70, 35011 Campodarsego (PD)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5045037,11.9456258&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(9)">
+                <div class="stop-num">10</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(9, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(9, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Scuola Primaria Silvio Pellico Di Reschigliano</b>
+                    <span class="addr"><b>Via Bassa I</b><br>79, 35011 Campodarsego (PD)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4877902,11.9359026&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(10)">
+                <div class="stop-num">11</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(10, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(10, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Scuola Primaria Dante Alighieri Di Sant'Andrea</b>
+                    <span class="addr"><b>Via Caltana</b><br>151, 35011 Campodarsego (PD)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4942723,11.9422216&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(11)">
+                <div class="stop-num">12</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(11, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(11, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Scuola Primaria Via Moro</b>
+                    <span class="addr"><b>Via Aldo Moro</b><br>10, 35010 Campodarsego (PD)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5073467,11.9031727&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(12)">
+                <div class="stop-num">13</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(12, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(12, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">CURTAROLO-LOC. S.MARIA DI NON</b>
+                    <span class="addr"><b>VIA SANTA MARIA DI NON 33</b><br>35010 CURTAROLO (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5123574,11.8514545&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(13)">
+                <div class="stop-num">14</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(13, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(13, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">CURTAROLO-ANNA FRANK</b>
+                    <span class="addr"><b>PIAZZETTA UNICEF 1</b><br>35010 CURTAROLO (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.518701,11.8313461&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(14)">
+                <div class="stop-num">15</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(14, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(14, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">GESU' MARIA</b>
+                    <span class="addr"><b>VIA BERNARDI 14</b><br>35135 PADOVA (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.423036,11.8760703&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(15)">
+                <div class="stop-num">16</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(15, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(15, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">MONTESSORI</b>
+                    <span class="addr"><b>VIA MUNICIPIO N.22</b><br>35010 CAMPODORO (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4943005,11.748805&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(16)">
+                <div class="stop-num">17</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(16, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(16, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">LIMENA-MANZONI</b>
+                    <span class="addr"><b>VIA GAROLLA 44</b><br>35010 LIMENA (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4809306,11.8395684&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(17)">
+                <div class="stop-num">18</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(17, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(17, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">ANDREA MANTEGNA - PD</b>
+                    <span class="addr"><b>VIA ZANCHI 28 - 30</b><br>35133 PADOVA (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4300149,11.8906676&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(18)">
+                <div class="stop-num">19</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(18, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(18, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">DELEDDA -PD-</b>
+                    <span class="addr"><b>VIA CORTIVO 19</b><br>35133 PADOVA (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.443486,11.8972781&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(19)">
+                <div class="stop-num">20</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(19, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(19, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">SALVO D'ACQUISTO (EX IV IC)</b>
+                    <span class="addr"><b>VIA BACH 1</b><br>35132 PADOVA (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4223293,11.8959893&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(20)">
+                <div class="stop-num">21</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(20, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(20, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">VO' - NEGRI</b>
+                    <span class="addr"><b>VIA MAZZINI 208</b><br>35030 VO' (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.3302167,11.6427066&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(21)">
+                <div class="stop-num">22</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(21, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(21, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Rosa Agazzi Loc. Villaguattera</b>
+                    <span class="addr"><b>Via Boschetta</b><br>2, 35030 Rubano (PD)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4450496,11.8156772&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(22)">
+                <div class="stop-num">23</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(22, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(22, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Scuola Primaria Manzoni</b>
+                    <span class="addr"><b>Via Giuseppe Garolla</b><br>44 - Limena Cap 35010, 35010 Limena (PD)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4603082,11.8565567&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(23)">
+                <div class="stop-num">24</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(23, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(23, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">MESTRINO-"DON BOSCO"</b>
+                    <span class="addr"><b>VIA DE GASPERI 15</b><br>35035 MESTRINO (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.442324,11.7626563&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(24)">
+                <div class="stop-num">25</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(24, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(24, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">G. Allegri - Taggi Di Sopra Villafranca Padovana</b>
+                    <span class="addr"><b>Via Taggi Di Sopra</b><br>12, 35010 Villafranca Padovana (PD)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.467861,11.808217&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div></div>
+        </div>
+    </div>
+    
+    <!-- FIREBASE SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLnhP2Q4bz2ubYwcMLiD3-qq4c220eVKw",
+            authDomain: "log-solution-60007.firebaseapp.com",
+            projectId: "log-solution-60007",
+            storageBucket: "log-solution-60007.appspot.com",
+            messagingSenderId: "343696844738",
+            appId: "1:343696844738:web:b8d4e10c71fb2c67bc7d20"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.saveRealCoords = async function(i) {
+            if (!window.currentPos) {
+                alert("GPS non pronto. Attendi il pallino blu.");
+                return;
+            }
+            const p = window.data[i];
+            const btn = document.querySelectorAll('.btn-geo')[i];
+            
+            try {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-icons-round">sync</span>';
+                
+                await addDoc(collection(db, "coordinate_reali"), {
+                    codice_frutta: p.codice_frutta || "",
+                    codice_latte: p.codice_latte || "",
+                    nome: p.cliente,
+                    indirizzo: p.indirizzo,
+                    lat: window.currentPos.lat,
+                    lon: window.currentPos.lng,
+                    timestamp: serverTimestamp(),
+                    v_id: window.v_id
+                });
+
+                btn.classList.add('saved');
+                btn.innerHTML = '<span class="material-icons-round">location_on</span> GEOLOCALIZZA';
+                const f = document.getElementById('geo-feedback');
+                f.style.display = 'block';
+                setTimeout(() => f.style.display = 'none', 3000);
+            } catch (e) {
+                console.error(e);
+                alert("Errore salvataggio!");
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-icons-round">location_searching</span>';
+            }
+        };
+    </script>
+
+    <script>
+        const v_id = "Viaggio 6";
+        const data = [{"cliente": "SCUOLA INTERNAZIONALE ITALO-CINESE (SIIC)", "indirizzo": "VIA PALLADIO 51B, 35134 PADOVA (PADOVA)", "lat": 45.3609833, "lon": 11.794445, "codice_frutta": "p11146", "codice_latte": "p00000"}, {"cliente": "Deledda -Pd-", "indirizzo": "Via Cortivo 25, 35133 Padova (PD)", "lat": 45.4430794, "lon": 11.8983503, "codice_frutta": "p14101", "codice_latte": "p00000"}, {"cliente": "Scuola Primaria Sacro Cuore", "indirizzo": "Via Marconi, 9, 35010 Cadoneghe (PD)", "lat": 45.456696, "lon": 11.9037821, "codice_frutta": "p2111", "codice_latte": "p00000"}, {"cliente": "Davila-Pd", "indirizzo": "Via L. Calabresi, 5, 35129 Padova (PD)", "lat": 45.4220317, "lon": 11.9132295, "codice_frutta": "p2115", "codice_latte": "p00000"}, {"cliente": "Tommaseo", "indirizzo": "Via Fiorazzo, 1/A, 35129 Padova (PD)", "lat": 45.4233751, "lon": 11.9488692, "codice_frutta": "p2116", "codice_latte": "p00000"}, {"cliente": "A. Da Tremignon", "indirizzo": "Via Borsellino, 25, 35016 Piazzola Sul Brenta (PD)", "lat": 45.5184479, "lon": 11.8079308, "codice_frutta": "p2128", "codice_latte": "p00000"}, {"cliente": "Piazzola S. Brenta Camerini", "indirizzo": "Via Dei Contarini, 65, 35016 Piazzola Sul Brenta (PD)", "lat": 45.5416519, "lon": 11.785254, "codice_frutta": "p2129", "codice_latte": "p1796"}, {"cliente": "Scuola Primaria Bronzola", "indirizzo": "Via Straelle, 2, 35011 Campodarsego (PD)", "lat": 45.5143082, "lon": 11.9470709, "codice_frutta": "p2164", "codice_latte": "p00000"}, {"cliente": "Scuola Primaria Monsignor A. G. Longhin Di Fiumicello", "indirizzo": "Via Bassa Ii, 70, 35011 Campodarsego (PD)", "lat": 45.5045037, "lon": 11.9456258, "codice_frutta": "p2165", "codice_latte": "p00000"}, {"cliente": "Scuola Primaria Silvio Pellico Di Reschigliano", "indirizzo": "Via Bassa I, 79, 35011 Campodarsego (PD)", "lat": 45.4877902, "lon": 11.9359026, "codice_frutta": "p2166", "codice_latte": "p00000"}, {"cliente": "Scuola Primaria Dante Alighieri Di Sant'Andrea", "indirizzo": "Via Caltana, 151, 35011 Campodarsego (PD)", "lat": 45.4942723, "lon": 11.9422216, "codice_frutta": "p2167", "codice_latte": "p1805"}, {"cliente": "Scuola Primaria Via Moro", "indirizzo": "Via Aldo Moro, 10, 35010 Campodarsego (PD)", "lat": 45.5073467, "lon": 11.9031727, "codice_frutta": "p2168", "codice_latte": "p00000"}, {"cliente": "CURTAROLO-LOC. S.MARIA DI NON", "indirizzo": "VIA SANTA MARIA DI NON 33, 35010 CURTAROLO (PADOVA)", "lat": 45.5123574, "lon": 11.8514545, "codice_frutta": "p2241", "codice_latte": "p00000"}, {"cliente": "CURTAROLO-ANNA FRANK", "indirizzo": "PIAZZETTA UNICEF 1, 35010 CURTAROLO (PADOVA)", "lat": 45.518701, "lon": 11.8313461, "codice_frutta": "p2245", "codice_latte": "p00000"}, {"cliente": "GESU' MARIA", "indirizzo": "VIA BERNARDI 14, 35135 PADOVA (PADOVA)", "lat": 45.423036, "lon": 11.8760703, "codice_frutta": "p2255", "codice_latte": "p1802"}, {"cliente": "MONTESSORI", "indirizzo": "VIA MUNICIPIO N.22, 35010 CAMPODORO (PADOVA)", "lat": 45.4943005, "lon": 11.748805, "codice_frutta": "p2291", "codice_latte": "p00000"}, {"cliente": "LIMENA-MANZONI", "indirizzo": "VIA GAROLLA 44, 35010 LIMENA (PADOVA)", "lat": 45.4809306, "lon": 11.8395684, "codice_frutta": "p2292", "codice_latte": "p00000"}, {"cliente": "ANDREA MANTEGNA - PD", "indirizzo": "VIA ZANCHI 28 - 30, 35133 PADOVA (PADOVA)", "lat": 45.4300149, "lon": 11.8906676, "codice_frutta": "p2342", "codice_latte": "p1860"}, {"cliente": "DELEDDA -PD-", "indirizzo": "VIA CORTIVO 19, 35133 PADOVA (PADOVA)", "lat": 45.443486, "lon": 11.8972781, "codice_frutta": "p2343", "codice_latte": "p1808"}, {"cliente": "SALVO D'ACQUISTO (EX IV IC)", "indirizzo": "VIA BACH 1, 35132 PADOVA (PADOVA)", "lat": 45.4223293, "lon": 11.8959893, "codice_frutta": "p2344", "codice_latte": "p00000"}, {"cliente": "VO' - NEGRI", "indirizzo": "VIA MAZZINI 208, 35030 VO' (PADOVA)", "lat": 45.3302167, "lon": 11.6427066, "codice_frutta": "p2366", "codice_latte": "p00000"}, {"cliente": "Rosa Agazzi Loc. Villaguattera", "indirizzo": "Via Boschetta, 2, 35030 Rubano (PD)", "lat": 45.4450496, "lon": 11.8156772, "codice_frutta": "p2386", "codice_latte": "p1984"}, {"cliente": "Scuola Primaria Manzoni", "indirizzo": "Via Giuseppe Garolla, 44 - Limena Cap 35010, 35010 Limena (PD)", "lat": 45.4603082, "lon": 11.8565567, "codice_frutta": "p00000", "codice_latte": "p1736"}, {"cliente": "MESTRINO-\"DON BOSCO\"", "indirizzo": "VIA DE GASPERI 15, 35035 MESTRINO (PADOVA)", "lat": 45.442324, "lon": 11.7626563, "codice_frutta": "p00000", "codice_latte": "p1759"}, {"cliente": "G. Allegri - Taggi Di Sopra Villafranca Padovana", "indirizzo": "Via Taggi Di Sopra, 12, 35010 Villafranca Padovana (PD)", "lat": 45.467861, "lon": 11.808217, "codice_frutta": "p00000", "codice_latte": "p2022"}];
+        window.data = data; window.v_id = v_id;
+        let map, markers = [], userMarker;
+        window.currentPos = null;
+        
+        // --- GESTIONE STATO CONSEGNE ---
+        function loadStatus() {
+            const saved = JSON.parse(localStorage.getItem('done_' + v_id) || "[]");
+            data.forEach((p, i) => {
+                if (saved.includes(i)) {
+                    document.querySelectorAll('.card')[i].classList.add('done');
+                    const btn = document.querySelectorAll('.btn-done')[i];
+                    if(btn) btn.innerHTML = '<span class="material-icons-round">check_circle</span> CONSEGNATO';
+                }
+            });
+        }
+        function toggleDone(i, event) {
+            if(event) event.stopPropagation();
+            const card = document.querySelectorAll('.card')[i];
+            const btn = document.querySelectorAll('.btn-done')[i];
+            card.classList.toggle('done');
+            
+            const saved = JSON.parse(localStorage.getItem('done_' + v_id) || "[]");
+            if (card.classList.contains('done')) {
+                if (!saved.includes(i)) saved.push(i);
+                if(btn) btn.innerHTML = '<span class="material-icons-round">check_circle</span> CONSEGNATO';
+            } else {
+                const idx = saved.indexOf(i);
+                if (idx > -1) saved.splice(idx, 1);
+                if(btn) btn.innerHTML = '<span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO';
+            }
+            localStorage.setItem('done_' + v_id, JSON.stringify(saved));
+        }
+        function resetDone() {
+            if(confirm("Vuoi azzerare tutte le consegne di questo giro?")) {
+                localStorage.removeItem('done_' + v_id);
+                location.reload();
+            }
+        }
+
+        // --- MAPPA E GPS ---
+        async function initMap() {
+            const centerPoint = data.find(p => p.lat && p.lon) || { lat: 45.4428, lon: 11.7145 };
+            map = new google.maps.Map(document.getElementById("map"), { zoom: 12, center: { lat: centerPoint.lat, lng: centerPoint.lon }, disableDefaultUI: true });
+            
+            // GPS Real-time
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(pos => {
+                    const myPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    window.currentPos = myPos;
+                    if (!userMarker) {
+                        userMarker = new google.maps.Marker({
+                            position: myPos, map: map,
+                            icon: { path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: "#4285F4", fillOpacity: 1, strokeColor: "white", strokeWeight: 2 }
+                        });
+                    } else { userMarker.setPosition(myPos); }
+                }, err => console.log("GPS Off"), { enableHighAccuracy: true });
+            }
+
+            const ds = new google.maps.DirectionsService();
+            const dr = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.7, strokeWeight: 5 } });
+            const waypts = data.slice(1, -1).filter(d => d.lat && d.lon).map(d => ({ location: { lat: d.lat, lng: d.lon }, stopover: true }));
+            
+            if (data[0].lat && data[data.length-1].lat) {
+                ds.route({ origin: { lat: data[0].lat, lng: data[0].lon }, destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, waypoints: waypts, travelMode: "DRIVING" }, (res, st) => { if (st === "OK") dr.setDirections(res); });
+            }
+
+            const geocoder = new google.maps.Geocoder();
+            const bounds = new google.maps.LatLngBounds();
+            data.forEach((p, i) => {
+                if (p.lat && p.lon) { addMarker(p, i, bounds); } 
+                else {
+                    geocoder.geocode({ address: `${p.cliente}, ${p.indirizzo}` }, (res, st) => {
+                        if (st === "OK") { p.lat = res[0].geometry.location.lat(); p.lon = res[0].geometry.location.lng(); addMarker(p, i, bounds); }
+                    });
+                }
+            });
+            loadStatus();
+        }
+
+        function addMarker(p, i, bounds) {
+            const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i+1).toString(), color: "white", fontSize: "10px", fontWeight: "900" } });
+            markers[i] = m; bounds.extend(m.getPosition()); map.fitBounds(bounds);
+        }
+
+        function focusOn(i) { if(markers[i]) { map.panTo(markers[i].getPosition()); map.setZoom(17); } }
+        function centerOnMe() { if(userMarker) { map.panTo(userMarker.getPosition()); map.setZoom(16); } }
+    </script>
+</body>
+</html>

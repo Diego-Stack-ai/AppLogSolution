@@ -3,25 +3,7 @@ setlocal
 cd /d "%~dp0"
 
 echo ---------------------------------------------------------
-echo   FASE 1: CONSOLIDAMENTO ORDINE CONSEGNE (OTTIMIZZATO)
-echo ---------------------------------------------------------
-echo.
-echo Analisi file HTML in PERCORSI_VEGGIANO...
-echo.
-
-python "PROGRAMMA\8_genera_json_ottimizzato.py"
-
-if %ERRORLEVEL% neq 0 (
-    echo.
-    echo ❌ ERRORE nella generazione del JSON ottimizzato!
-    echo L'operazione e' stata interrotta.
-    pause
-    exit /b %ERRORLEVEL%
-)
-
-echo.
-echo ---------------------------------------------------------
-echo   FASE 2: GENERAZIONE DISTINTE PDF PER IL MAGAZZINO
+echo   GENERAZIONE DISTINTE PDF PER IL MAGAZZINO
 echo ---------------------------------------------------------
 echo.
 echo Creazione fascicoli [Distinta + DDT] in doppia copia...

@@ -38,11 +38,12 @@ def ottimizza_percorso(punti):
 def get_latest_data():
     dirs = [d for d in CONSEGNE_DIR.iterdir() if d.is_dir() and d.name.startswith("CONSEGNE_")]
     if not dirs: return None
-    latest = max(dirs, key=lambda d: d.name)
+    latest = max(dirs, key=lambda d: d.stat().st_ctime)
     json_path = latest / "viaggi_giornalieri.json"
     if not json_path.exists(): return None
     with open(json_path, "r", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+        return [z for z in data if z.get("id_zona", "") != "DDT_DA_INSERIRE"]
 
 def get_local_ip():
     try:

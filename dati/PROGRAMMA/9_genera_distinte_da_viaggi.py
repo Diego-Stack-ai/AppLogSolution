@@ -259,7 +259,7 @@ def _raccogli_articoli_da_pdf(pdf_path: Path, tipo: str) -> list:
                     arts = _estrai_articoli_da_pagina_testo(text.split("\n"), tipo)
                 tutti.extend(arts or [])
     except Exception as e:
-        print(f"    ⚠️  Errore lettura {pdf_path.name}: {e}")
+        print(f"    WARN  Errore lettura {pdf_path.name}: {e}")
     return tutti
 
 
@@ -294,7 +294,7 @@ def _carica_rientri(data_attuale: str = None) -> dict:
         { codice_lower: 'DD-MM-YYYY' }
     Colonna A = codice consegna (es. 'p1745')
     Colonna B = data DDT originale (datetime o stringa)
-    Colonna C = stato: se contiene 'allegato' (senza 'lavorazione') → già consegnato, salta.
+    Colonna C = stato: se contiene 'allegato' (senza 'lavorazione') -> già consegnato, salta.
 
     Il PDF fisico va cercato in:
         CONSEGNE_{data}/DDT-ORIGINALI-DIVISI/{FRUTTA o LATTE}/{codice}_{data}.pdf
@@ -333,7 +333,7 @@ def _carica_rientri(data_attuale: str = None) -> dict:
         wb.close()
         return rientri, all_rientri_rows
     except Exception as e:
-        print(f"  ⚠️  Errore lettura rientri_ddt.xlsx: {e}")
+        print(f"  WARN  Errore lettura rientri_ddt.xlsx: {e}")
         return {}, []
 
 def _aggiorna_stato_rientri_excel(aggiornamenti: list):
@@ -346,11 +346,11 @@ def _aggiorna_stato_rientri_excel(aggiornamenti: list):
         for r_idx, testo in aggiornamenti:
             ws.cell(row=r_idx, column=3).value = testo
         wb.save(RIENTRI_XLSX)
-        print(f"  💾 Excel Rientri aggiornato ({len(aggiornamenti)} modifiche).")
+        print(f"   Excel Rientri aggiornato ({len(aggiornamenti)} modifiche).")
     except PermissionError:
-        print(f"  ⚠️  ERRORE: Impossibile aggiornare Excel Rientri. Chiudi il file!")
+        print(f"  WARN  ERRORE: Impossibile aggiornare Excel Rientri. Chiudi il file!")
     except Exception as e:
-        print(f"  ⚠️  Errore salvataggio rientri: {e}")
+        print(f"  WARN  Errore salvataggio rientri: {e}")
 
 
 
@@ -374,7 +374,7 @@ def _trova_pdf(codice: str, data: str, cartella: Path) -> Path | None:
 
     # 2. Se la data è multi-data (contiene "_" che separa due date DD-MM-YYYY_DD-MM-YYYY),
     #    prova ogni singola data estratta
-    #    Formato atteso: "30-03-2026_31-03-2026" → ['30-03-2026', '31-03-2026']
+    #    Formato atteso: "30-03-2026_31-03-2026" -> ['30-03-2026', '31-03-2026']
     parti_data = re.findall(r"\d{2}-\d{2}-\d{4}", data)
     if len(parti_data) > 1:
         for d in parti_data:
@@ -400,7 +400,7 @@ def _trova_cartella(data_arg: str | None) -> Path:
         return p
     folders = sorted(
         [d for d in CONSEGNE_DIR.iterdir() if d.is_dir() and d.name.startswith("CONSEGNE_")],
-        key=lambda d: d.name
+        key=lambda d: d.stat().st_ctime
     )
     if not folders:
         raise FileNotFoundError("Nessuna cartella CONSEGNE_* trovata.")
@@ -522,8 +522,8 @@ def _genera_distinta_pdf(viaggio: dict, articoli_viaggio: dict, out_path: Path, 
 
     # --- Assembla fascicoli: [Distinta Copy 1 + DDTs] + [Distinta Copy 2 + DDTs] ---
     # I DDT vengono allegati in ordine INVERSO rispetto al percorso:
-    # → Nel PDF: stop N, stop N-1, ..., stop 1
-    # → Dopo la stampa (i fogli escono impilati): stop 1 è in CIMA alla pila ✅
+    # -> Nel PDF: stop N, stop N-1, ..., stop 1
+    # -> Dopo la stampa (i fogli escono impilati): stop 1 è in CIMA alla pila OK
     # Così l'autista trova subito il DDT della prima consegna senza sfogliare.
     pdf_ddt_inv = list(reversed(pdf_ddt))
 
@@ -558,7 +558,7 @@ def _genera_distinta_pdf(viaggio: dict, articoli_viaggio: dict, out_path: Path, 
         # Fallback se pypdf fallisce
         import shutil
         shutil.move(str(tmp), str(out_path))
-        print(f"    ⚠️  Errore assiemaggio pypdf: {e}")
+        print(f"    WARN  Errore assiemaggio pypdf: {e}")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -570,25 +570,26 @@ def main():
         import pdfplumber
         from reportlab.lib.pagesizes import A4
     except ImportError as e:
-        print(f"❌ Libreria mancante: {e}  →  pip install pdfplumber reportlab")
+        print(f"ERR Libreria mancante: {e}  ->  pip install pdfplumber reportlab")
         sys.exit(1)
 
     data_arg = sys.argv[1].strip() if len(sys.argv) > 1 else None
     try:
         cartella = _trova_cartella(data_arg)
     except FileNotFoundError as e:
-        print(f"❌ {e}")
+        print(f"ERR {e}")
         sys.exit(1)
 
     data_ddt = cartella.name.replace("CONSEGNE_", "")
     json_path = cartella / "viaggi_giornalieri_OTTIMIZZATO.json"
 
     if not json_path.exists():
-        print(f"❌ File non trovato: {json_path.name}")
+        print(f"ERR File non trovato: {json_path.name}")
         print("   Esegui prima: py 8_genera_json_ottimizzato.py")
         sys.exit(1)
 
     viaggi = json.loads(json_path.read_text(encoding="utf-8"))
+    viaggi = [v for v in viaggi if v.get("id_zona", "") != "DDT_DA_INSERIRE"]
     divisi_dir   = cartella / "DDT-ORIGINALI-DIVISI"
     dir_frutta   = divisi_dir / "FRUTTA"
     dir_latte    = divisi_dir / "LATTE"
@@ -710,9 +711,9 @@ def main():
                 writer.write(f)
             print(f"  BIB Master PDF: {master_path.name}")
         except ImportError:
-            print("  ⚠️  pypdf non installato — Master PDF non generato (pip install pypdf)")
+            print("  WARN  pypdf non installato — Master PDF non generato (pip install pypdf)")
         except Exception as e:
-            print(f"  ⚠️  Errore Master PDF: {e}")
+            print(f"  WARN  Errore Master PDF: {e}")
 
     # ── Verifica orfani ──
     print(f"\n  FIN Verifica DDT orfani...")

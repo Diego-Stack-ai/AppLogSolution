@@ -1,0 +1,683 @@
+{
+  "data": "30-03-2026_31-03-2026",
+  "punti": [
+    {
+      "nome": "SCUOLA PARITARIA PRIMARIA \"LUIGI CABURLOTTO\"",
+      "indirizzo": "VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)",
+      "codice_frutta": "p10949",
+      "codice_latte": "p00000",
+      "codice_univoco": "p10949_p00000",
+      "zona": "3211",
+      "data_consegna": "",
+      "orario_min": "07:30",
+      "orario_max": "10:00",
+      "lat": 45.4994935,
+      "lon": 12.2373604,
+      "codici_ddt_frutta": [
+        "p10949"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 375,
+      "geo_query_nome_indirizzo": "SCUOLA PARITARIA PRIMARIA \"LUIGI CABURLOTTO\" VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)",
+      "geo_query_indirizzo": "VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)"
+    },
+    {
+      "nome": "Fondazione Levis Plona",
+      "indirizzo": "Porta S. Croce N.55, 36100 Vicenza (VI)",
+      "codice_frutta": "p11205",
+      "codice_latte": "p00000",
+      "codice_univoco": "p11205_p00000",
+      "zona": "3103",
+      "data_consegna": "",
+      "orario_min": "07:30",
+      "orario_max": "10:00",
+      "lat": 45.5521980922683,
+      "lon": 11.5371475374494,
+      "codici_ddt_frutta": [
+        "p11205"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 157,
+      "geo_query_nome_indirizzo": "Fondazione Levis Plona Porta S. Croce N.55, 36100 Vicenza (VI)",
+      "geo_query_indirizzo": "Porta S. Croce N.55, 36100 Vicenza (VI)"
+    },
+    {
+      "nome": "MUSSOLENTE - CASONI",
+      "indirizzo": "VIA FRANCESCO BARACCA 2, 36060 MUSSOLENTE (VICENZA)",
+      "codice_frutta": "p11969",
+      "codice_latte": "p00000",
+      "codice_univoco": "p11969_p00000",
+      "zona": "3103",
+      "data_consegna": "",
+      "orario_min": "07:15",
+      "orario_max": "10:00",
+      "lat": 45.7553727,
+      "lon": 11.810372,
+      "codici_ddt_frutta": [
+        "p11969"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 286,
+      "geo_query_nome_indirizzo": "MUSSOLENTE - CASONI VIA FRANCESCO BARACCA 2, 36060 MUSSOLENTE (VICENZA)",
+      "geo_query_indirizzo": "VIA FRANCESCO BARACCA 2, 36060 MUSSOLENTE (VICENZA)"
+    },
+    {
+      "nome": "EROI DEL PIAVE - SALETTO",
+      "indirizzo": "VIA SERG.MAGG.D'AVANZO 67, 31030 BREDA DI PIAVE (TREVISO)",
+      "codice_frutta": "p13474",
+      "codice_latte": "p00000",
+      "codice_univoco": "p13474_p00000",
+      "zona": "3211",
+      "data_consegna": "",
+      "orario_min": "08:30",
+      "orario_max": "10:00",
+      "lat": 45.7201101392011,
+      "lon": 12.3984965383125,
+      "codici_ddt_frutta": [
+        "p13474"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 146,
+      "geo_query_nome_indirizzo": "EROI DEL PIAVE - SALETTO VIA SERG.MAGG.D'AVANZO 67, 31030 BREDA DI PIAVE (TREVISO)",
+      "geo_query_indirizzo": "VIA SERG.MAGG.D'AVANZO 67, 31030 BREDA DI PIAVE (TREVISO)"
+    },
+    {
+      "nome": "Ic Vicenza 2 E 4 - G.B. Tiepolo",
+      "indirizzo": "Via Palemone, 14, 36100 Vicenza (VI)",
+      "codice_frutta": "p2044",
+      "codice_latte": "p00000",
+      "codice_univoco": "p2044_p00000",
+      "zona": "3103",
+      "data_consegna": "",
+      "orario_min": "08:00",
+      "orario_max": "10:00",
+      "lat": 45.54721178499754,
+      "lon": 11.5727163920713,
+      "codici_ddt_frutta": [
+        "p2044"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 227,
+      "geo_query_nome_indirizzo": "Ic Vicenza 2 E 4 - G.B. Tiepolo Via Palemone, 14, 36100 Vicenza (VI)",
+      "geo_query_indirizzo": "Via Palemone, 14, 36100 Vicenza (VI)"
+    },
+    {
+      "nome": "Scuola Primaria Agosti",
+      "indirizzo": "Piazza S.Giovanni Bosco,12, 32100 Belluno (BL)",
+      "codice_frutta": "p2061",
+      "codice_latte": "p00000",
+      "codice_univoco": "p2061_p00000",
+      "zona": "3202",
+      "data_consegna": "",
+      "orario_min": "07:30",
+      "orario_max": "10:00",
+      "lat": 46.3746098,
+      "lon": 12.1211294,
+      "codici_ddt_frutta": [
+        "p2061"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 389,
+      "geo_query_nome_indirizzo": "Scuola Primaria Agosti Piazza S.Giovanni Bosco,12, 32100 Belluno (BL)",
+      "geo_query_indirizzo": "Piazza S.Giovanni Bosco,12, 32100 Belluno (BL)"
+    },
+    {
+      "nome": "Scuola Primaria D. Alighieri Grisignano Di",
+      "indirizzo": "Via Pavese, 36040 Grisignano Di Zocco (VI)",
+      "codice_frutta": "p2063",
+      "codice_latte": "p00000",
+      "codice_univoco": "p2063_p00000",
+      "zona": "3103",
+      "data_consegna": "",
+      "orario_min": "08:00",
+      "orario_max": "10:00",
+      "lat": 45.4747764,
+      "lon": 11.694348,
+      "codici_ddt_frutta": [
+        "p2063"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 393,
+      "geo_query_nome_indirizzo": "Scuola Primaria D. Alighieri Grisignano Di Via Pavese, 36040 Grisignano Di Zocco (VI)",
+      "geo_query_indirizzo": "Via Pavese, 36040 Grisignano Di Zocco (VI)"
+    },
+    {
+      "nome": "Scuola Primaria G. Zanella",
+      "indirizzo": "Via Rossini, 2/4, 36010 Monticello Conte Otto (VI)",
+      "codice_frutta": "p2124",
+      "codice_latte": "p00000",
+      "codice_univoco": "p2124_p00000",
+      "zona": "3103",
+      "data_consegna": "",
+      "orario_min": "07:45",
+      "orario_max": "10:00",
+      "lat": 45.6037003,
+      "lon": 11.5708813,
+      "codici_ddt_frutta": [
+        "p2124"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 401,
+      "geo_query_nome_indirizzo": "Scuola Primaria G. Zanella Via Rossini, 2/4, 36010 Monticello Conte Otto (VI)",
+      "geo_query_indirizzo": "Via Rossini, 2/4, 36010 Monticello Conte Otto (VI)"
+    },
+    {
+      "nome": "A. Da Tremignon",
+      "indirizzo": "Via Borsellino, 25, 35016 Piazzola Sul Brenta (PD)",
+      "codice_frutta": "p2128",
+      "codice_latte": "p00000",
+      "codice_univoco": "p2128_p00000",
+      "zona": "3103",
+      "data_consegna": "",
+      "orario_min": "08:00",
+      "orario_max": "10:00",
+      "lat": 45.5184479,
+      "lon": 11.8079308,
+      "codici_ddt_frutta": [
+        "p2128"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 32,
+      "geo_query_nome_indirizzo": "A. Da Tremignon Via Borsellino, 25, 35016 Piazzola Sul Brenta (PD)",
+      "geo_query_indirizzo": "Via Borsellino, 25, 35016 Piazzola Sul Brenta (PD)"
+    },
+    {
+      "nome": "Scuola Primaria G. Marconi Di Padernello",
+      "indirizzo": "Via Giusti, 19, 31038 Padernello (TV)",
+      "codice_frutta": "p2140",
+      "codice_latte": "p00000",
+      "codice_univoco": "p2140_p00000",
+      "zona": "3211",
+      "data_consegna": "",
+      "orario_min": "07:45",
+      "orario_max": "10:00",
+      "lat": 45.6817259,
+      "lon": 12.1253065,
+      "codici_ddt_frutta": [
+        "p2140"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 399,
+      "geo_query_nome_indirizzo": "Scuola Primaria G. Marconi Di Padernello Via Giusti, 19, 31038 Padernello (TV)",
+      "geo_query_indirizzo": "Via Giusti, 19, 31038 Padernello (TV)"
+    },
+    {
+      "nome": "Gianni Rodari - Barcon",
+      "indirizzo": "Via Pola, 19, 31050 Vedelago (TV)",
+      "codice_frutta": "p2153",
+      "codice_latte": "p00000",
+      "codice_univoco": "p2153_p00000",
+      "zona": "3211",
+      "data_consegna": "",
+      "orario_min": "08:15",
+      "orario_max": "10:00",
+      "lat": 45.7211921,
+      "lon": 12.004646,
+      "codici_ddt_frutta": [
+        "p2153"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 198,
+      "geo_query_nome_indirizzo": "Gianni Rodari - Barcon Via Pola, 19, 31050 Vedelago (TV)",
+      "geo_query_indirizzo": "Via Pola, 19, 31050 Vedelago (TV)"
+    },
+    {
+      "nome": "S. Pertini - Tempo Pieno",
+      "indirizzo": "Via Vallio, 5, 30013 Cavallino Treporti (VE)",
+      "codice_frutta": "p2155",
+      "codice_latte": "p00000",
+      "codice_univoco": "p2155_p00000",
+      "zona": "3211",
+      "data_consegna": "",
+      "orario_min": "07:30",
+      "orario_max": "10:00",
+      "lat": 45.4521302,
+      "lon": 12.4414766,
+      "codici_ddt_frutta": [
+        "p2155"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 340,
+      "geo_query_nome_indirizzo": "S. Pertini - Tempo Pieno Via Vallio, 5, 30013 Cavallino Treporti (VE)",
+      "geo_query_indirizzo": "Via Vallio, 5, 30013 Cavallino Treporti (VE)"
+    },
+    {
+      "nome": "A.Gabelli Belluno",
+      "indirizzo": "Piazzale Cesare Battisti, 32100 Belluno (BL)",
+      "codice_frutta": "p2169",
+      "codice_latte": "p00000",
+      "codice_univoco": "p2169_p00000",
+      "zona": "3202",
+      "data_consegna": "",
+      "orario_min": "07:45",
+      "orario_max": "10:00",
+      "lat": 46.14158552214177,
+      "lon": 12.21280275292396,
+      "codici_ddt_frutta": [
+        "p2169"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 45,
+      "geo_query_nome_indirizzo": "A.Gabelli Belluno Piazzale Cesare Battisti, 32100 Belluno (BL)",
+      "geo_query_indirizzo": "Piazzale Cesare Battisti, 32100 Belluno (BL)"
+    },
+    {
+      "nome": "Istituto Farina",
+      "indirizzo": "Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)",
+      "codice_frutta": "p2233",
+      "codice_latte": "p00000",
+      "codice_univoco": "p2233_p00000",
+      "zona": "3211",
+      "data_consegna": "",
+      "orario_min": "07:30",
+      "orario_max": "10:00",
+      "lat": 45.4991227,
+      "lon": 12.2384022,
+      "codici_ddt_frutta": [
+        "p2233"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 241,
+      "geo_query_nome_indirizzo": "Istituto Farina Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)",
+      "geo_query_indirizzo": "Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)"
+    },
+    {
+      "nome": "Istituto Canossiano",
+      "indirizzo": "Piazza Cesare Battisti, 27 -Entrare Dal Cancello Di Via Verdi, 35026 Conselve (PD)",
+      "codice_frutta": "p2256",
+      "codice_latte": "p00000",
+      "codice_univoco": "p2256_p00000",
+      "zona": "3106",
+      "data_consegna": "",
+      "orario_min": "08:00",
+      "orario_max": "10:00",
+      "lat": 45.2291757,
+      "lon": 11.8774862,
+      "codici_ddt_frutta": [
+        "p2256"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 239,
+      "geo_query_nome_indirizzo": "Istituto Canossiano Piazza Cesare Battisti, 27 -Entrare Dal Cancello Di Via Verdi, 35026 Conselve (PD)",
+      "geo_query_indirizzo": "Piazza Cesare Battisti, 27 -Entrare Dal Cancello Di Via Verdi, 35026 Conselve (PD)"
+    },
+    {
+      "nome": "\"BIANCHI BUGGIANI\"",
+      "indirizzo": "VIA BUGGIANI2, 35043 MONSELICE (PADOVA)",
+      "codice_frutta": "p2320",
+      "codice_latte": "p00000",
+      "codice_univoco": "p2320_p00000",
+      "zona": "3106",
+      "data_consegna": "",
+      "orario_min": "07:00",
+      "orario_max": "10:00",
+      "lat": 45.2369022,
+      "lon": 11.7504738,
+      "codici_ddt_frutta": [
+        "p2320"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 7,
+      "geo_query_nome_indirizzo": "\"BIANCHI BUGGIANI\" VIA BUGGIANI2, 35043 MONSELICE (PADOVA)",
+      "geo_query_indirizzo": "VIA BUGGIANI2, 35043 MONSELICE (PADOVA)"
+    },
+    {
+      "nome": "\"SACRO CUORE\"",
+      "indirizzo": "LARGO CARDINAL PALTANIERI 2, 35043 MONSELICE (PADOVA)",
+      "codice_frutta": "p2321",
+      "codice_latte": "p00000",
+      "codice_univoco": "p2321_p00000",
+      "zona": "3106",
+      "data_consegna": "",
+      "orario_min": "07:30",
+      "orario_max": "10:00",
+      "lat": 45.2369022,
+      "lon": 11.7504738,
+      "codici_ddt_frutta": [
+        "p2321"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 28,
+      "geo_query_nome_indirizzo": "\"SACRO CUORE\" LARGO CARDINAL PALTANIERI 2, 35043 MONSELICE (PADOVA)",
+      "geo_query_indirizzo": "LARGO CARDINAL PALTANIERI 2, 35043 MONSELICE (PADOVA)"
+    },
+    {
+      "nome": "SCUOLA PRIMARIA \"E. DE AMICIS\"",
+      "indirizzo": "VIA ROMA 103, 35020 ARRE (PADOVA)",
+      "codice_frutta": "p6917",
+      "codice_latte": "p00000",
+      "codice_univoco": "p6917_p00000",
+      "zona": "3106",
+      "data_consegna": "",
+      "orario_min": "08:00",
+      "orario_max": "10:00",
+      "lat": 45.2162494,
+      "lon": 11.9323501,
+      "codici_ddt_frutta": [
+        "p6917"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 382,
+      "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"E. DE AMICIS\" VIA ROMA 103, 35020 ARRE (PADOVA)",
+      "geo_query_indirizzo": "VIA ROMA 103, 35020 ARRE (PADOVA)"
+    },
+    {
+      "nome": "\"ANDREA MUSALO\" - BIANCADE",
+      "indirizzo": "VIA DARY 17, 31030 RONCADE (TREVISO)",
+      "codice_frutta": "p8720",
+      "codice_latte": "p00000",
+      "codice_univoco": "p8720_p00000",
+      "zona": "3211",
+      "data_consegna": "",
+      "orario_min": "08:00",
+      "orario_max": "14:00",
+      "lat": 45.6478559,
+      "lon": 12.3609891,
+      "codici_ddt_frutta": [
+        "p8720"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 5,
+      "geo_query_nome_indirizzo": "\"ANDREA MUSALO\" - BIANCADE VIA DARY 17, 31030 RONCADE (TREVISO)",
+      "geo_query_indirizzo": "VIA DARY 17, 31030 RONCADE (TREVISO)"
+    },
+    {
+      "nome": "CURTAROLO-LOC. PIEVE",
+      "indirizzo": "VIA MONTE PASUBIO3",
+      "codice_frutta": "p2240",
+      "codice_latte": "p1811",
+      "data_consegna": "26-03-2026",
+      "orario_min": "07:30",
+      "orario_max": "10:00",
+      "lat": 45.518701,
+      "lon": 11.8313461,
+      "zona": "3103",
+      "codici_ddt_frutta": [
+        "p2240",
+        "p1811"
+      ],
+      "codici_ddt_latte": [],
+      "rientri_alert": [
+        {
+          "codice": "p2240",
+          "status": "red",
+          "data_ddt": "26-03-2026"
+        },
+        {
+          "codice": "p1811",
+          "status": "red",
+          "data_ddt": "26-03-2026"
+        }
+      ],
+      "row_idx_mappatura": 97,
+      "_is_rientro_speciale": true,
+      "geo_query_nome_indirizzo": "CURTAROLO-LOC. PIEVE VIA MONTE PASUBIO3",
+      "geo_query_indirizzo": "VIA MONTE PASUBIO3"
+    },
+    {
+      "nome": "CAMPO S.MARTINO-LOC. MARSANGO",
+      "indirizzo": "VIA ALCIDE DE GASPERI 43",
+      "codice_frutta": "p2243",
+      "codice_latte": "P1807",
+      "data_consegna": "26-03-2026",
+      "orario_min": "07:30",
+      "orario_max": "10:00",
+      "lat": 45.5516149,
+      "lon": 11.8348171,
+      "zona": "3103",
+      "codici_ddt_frutta": [
+        "p2243",
+        "p1807"
+      ],
+      "codici_ddt_latte": [],
+      "rientri_alert": [
+        {
+          "codice": "p2243",
+          "status": "red",
+          "data_ddt": "26-03-2026"
+        },
+        {
+          "codice": "p1807",
+          "status": "red",
+          "data_ddt": "26-03-2026"
+        }
+      ],
+      "row_idx_mappatura": 76,
+      "_is_rientro_speciale": true,
+      "geo_query_nome_indirizzo": "CAMPO S.MARTINO-LOC. MARSANGO VIA ALCIDE DE GASPERI 43",
+      "geo_query_indirizzo": "VIA ALCIDE DE GASPERI 43"
+    },
+    {
+      "nome": "CAMPO S.MARTINO-LOC. BUSIAGO",
+      "indirizzo": "VIA S.LORENZO 83",
+      "codice_frutta": "p2244",
+      "codice_latte": "p1810",
+      "data_consegna": "26-03-2026",
+      "orario_min": "07:30",
+      "orario_max": "10:00",
+      "lat": 45.5622293,
+      "lon": 11.8243292,
+      "zona": "3103",
+      "codici_ddt_frutta": [
+        "p2244",
+        "p1810"
+      ],
+      "codici_ddt_latte": [],
+      "rientri_alert": [
+        {
+          "codice": "p2244",
+          "status": "red",
+          "data_ddt": "26-03-2026"
+        },
+        {
+          "codice": "p1810",
+          "status": "red",
+          "data_ddt": "26-03-2026"
+        }
+      ],
+      "row_idx_mappatura": 75,
+      "_is_rientro_speciale": true,
+      "geo_query_nome_indirizzo": "CAMPO S.MARTINO-LOC. BUSIAGO VIA S.LORENZO 83",
+      "geo_query_indirizzo": "VIA S.LORENZO 83"
+    },
+    {
+      "nome": "MASI-ZONARO",
+      "indirizzo": "VIA MONS.G. MASIERO 1",
+      "codice_frutta": "p8992",
+      "codice_latte": "p2023",
+      "data_consegna": "26-03-2026",
+      "orario_min": "08:00",
+      "orario_max": "10:00",
+      "lat": 45.1088186,
+      "lon": 11.4919124,
+      "zona": "3106",
+      "codici_ddt_frutta": [
+        "p8992",
+        "p2023"
+      ],
+      "codici_ddt_latte": [],
+      "rientri_alert": [
+        {
+          "codice": "p8992",
+          "status": "red",
+          "data_ddt": "26-03-2026"
+        },
+        {
+          "codice": "p2023",
+          "status": "red",
+          "data_ddt": "26-03-2026"
+        }
+      ],
+      "row_idx_mappatura": 274,
+      "_is_rientro_speciale": true,
+      "geo_query_nome_indirizzo": "MASI-ZONARO VIA MONS.G. MASIERO 1",
+      "geo_query_indirizzo": "VIA MONS.G. MASIERO 1"
+    },
+    {
+      "nome": "SCUOLA PRIMARIA \"DON L. MILANI\"",
+      "indirizzo": "VIA AMPELIO DE FAVERI 1",
+      "codice_frutta": "p2389",
+      "codice_latte": "p00000",
+      "data_consegna": "25-03-2026",
+      "orario_min": "08:00",
+      "orario_max": "10:00",
+      "lat": 45.7315669,
+      "lon": 12.4391757,
+      "zona": "3211",
+      "codici_ddt_frutta": [
+        "p2389"
+      ],
+      "codici_ddt_latte": [],
+      "rientri_alert": [
+        {
+          "codice": "p2389",
+          "status": "red",
+          "data_ddt": "25-03-2026"
+        }
+      ],
+      "row_idx_mappatura": 381,
+      "_is_rientro_speciale": true,
+      "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"DON L. MILANI\" VIA AMPELIO DE FAVERI 1",
+      "geo_query_indirizzo": "VIA AMPELIO DE FAVERI 1"
+    },
+    {
+      "nome": "\"A. DORIGUZZI ROSSIN\" - DANTA",
+      "indirizzo": "VIA ROMA 21",
+      "codice_frutta": "p6032",
+      "codice_latte": "p2001",
+      "data_consegna": "25-03-2026",
+      "orario_min": "08:00",
+      "orario_max": "14:00",
+      "lat": 46.5666887,
+      "lon": 12.5217516,
+      "zona": "3202",
+      "codici_ddt_frutta": [
+        "p6032"
+      ],
+      "codici_ddt_latte": [],
+      "rientri_alert": [
+        {
+          "codice": "p6032",
+          "status": "red",
+          "data_ddt": "25-03-2026"
+        }
+      ],
+      "row_idx_mappatura": 2,
+      "_is_rientro_speciale": true,
+      "geo_query_nome_indirizzo": "\"A. DORIGUZZI ROSSIN\" - DANTA VIA ROMA 21",
+      "geo_query_indirizzo": "VIA ROMA 21"
+    },
+    {
+      "nome": "PRIMARIA COMELICO SUPERIORE",
+      "indirizzo": "VIA DI PIANO 30",
+      "codice_frutta": "p8840",
+      "codice_latte": "p1895",
+      "data_consegna": "25-03-2026",
+      "orario_min": "08:00",
+      "orario_max": "14:00",
+      "lat": 46.5989587,
+      "lon": 12.4935433,
+      "zona": "3202",
+      "codici_ddt_frutta": [
+        "p8840"
+      ],
+      "codici_ddt_latte": [],
+      "rientri_alert": [
+        {
+          "codice": "p8840",
+          "status": "red",
+          "data_ddt": "25-03-2026"
+        }
+      ],
+      "row_idx_mappatura": 312,
+      "_is_rientro_speciale": true,
+      "geo_query_nome_indirizzo": "PRIMARIA COMELICO SUPERIORE VIA DI PIANO 30",
+      "geo_query_indirizzo": "VIA DI PIANO 30"
+    },
+    {
+      "nome": "Don Talamini- Selva Di Cadore",
+      "indirizzo": "Via Dei Denever, 21 - S.Fosca",
+      "codice_frutta": "p2108",
+      "codice_latte": "p2655",
+      "data_consegna": "25-03-2026",
+      "orario_min": "07:45",
+      "orario_max": "10:00",
+      "lat": 46.4445552,
+      "lon": 12.0611814,
+      "zona": "3202",
+      "codici_ddt_frutta": [
+        "p2108"
+      ],
+      "codici_ddt_latte": [],
+      "rientri_alert": [
+        {
+          "codice": "p2108",
+          "status": "red",
+          "data_ddt": "25-03-2026"
+        }
+      ],
+      "row_idx_mappatura": 129,
+      "_is_rientro_speciale": true,
+      "geo_query_nome_indirizzo": "Don Talamini- Selva Di Cadore Via Dei Denever, 21 - S.Fosca",
+      "geo_query_indirizzo": "Via Dei Denever, 21 - S.Fosca"
+    }
+  ],
+  "is_locked": true
+}

@@ -31,7 +31,7 @@ except ImportError:
 def get_latest_consegne_dir():
     dirs = [d for d in CONSEGNE_DIR.iterdir() if d.is_dir() and d.name.startswith("CONSEGNE_")]
     if not dirs: return None
-    return max(dirs, key=lambda d: d.name)
+    return max(dirs, key=lambda d: d.stat().st_ctime)
 
 def sanitize_filename(filename):
     return re.sub(r'[\\/*?:"<>|]', '_', filename)
@@ -62,7 +62,7 @@ def crea_matrice_distanze(punti_con_deposito):
     elif MODO_DISTANZA == "GOOGLE_MATRIX":
         # Google Matrix API limit: 25 origins/destinations per request
         if n > 25:
-            print("⚠️ Troppe tappe (>25) per Google Matrix API. Uso Haversine locale.")
+            print("WARN Troppe tappe (>25) per Google Matrix API. Uso Haversine locale.")
             return crea_matrice_distanze_haversine_internal(punti_con_deposito)
             
         coords = "|".join([f"{p['lat']},{p['lon']}" for p in punti_con_deposito])
@@ -77,10 +77,10 @@ def crea_matrice_distanze(punti_con_deposito):
                         else:
                             matrix[i][j] = int(haversine(punti_con_deposito[i], punti_con_deposito[j]) * 1000)
             else:
-                print(f"⚠️ Errore Google Matrix status: {r['status']}. Uso Haversine.")
+                print(f"WARN Errore Google Matrix status: {r['status']}. Uso Haversine.")
                 return crea_matrice_distanze_haversine_internal(punti_con_deposito)
         except Exception as e:
-            print(f"⚠️ Errore connessione Matrix API: {e}. Uso Haversine.")
+            print(f"WARN Errore connessione Matrix API: {e}. Uso Haversine.")
             return crea_matrice_distanze_haversine_internal(punti_con_deposito)
             
     return matrix
@@ -326,7 +326,7 @@ def gera_riepilogo(summary_data, output_path):
             <div style="font-size:0.85rem; font-weight:700; color:#10b981; margin-top:5px;">💰 Fatturato: € {z['fatturato']} ({z['tot_ddt']} DDT)</div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin:20px 0; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:15px;">
                 <span>🛣️ <b>{z['km']} km</b></span><span>🕒 Guida: {fmt_min(z['t_guida'])}</span>
-                <span>📦 {z['punti']} tappe</span><span style="font-weight:900; color:#4f46e5;">🏁 TOT: {fmt_min(z['t_tot'])}</span>
+                <span> {z['punti']} tappe</span><span style="font-weight:900; color:#4f46e5;">🏁 TOT: {fmt_min(z['t_tot'])}</span>
             </div>
             <a href="{z['fname']}" style="display:block; background:#4f46e5; color:white; text-align:center; padding:15px; border-radius:14px; text-decoration:none; font-weight:800; font-size:0.85rem;">APRI MAPPA</a>
         </div>
@@ -363,10 +363,11 @@ def gera_riepilogo(summary_data, output_path):
 
 def main():
     target_dir = get_latest_consegne_dir()
-    if not target_dir: return print("❌ Nessuna cartella.")
+    if not target_dir: return print("ERR Nessuna cartella.")
     json_f = target_dir / "viaggi_giornalieri.json"
-    if not json_f.exists(): return print(f"❌ Salva la mappa!")
+    if not json_f.exists(): return print(f"ERR Salva la mappa!")
     with open(json_f, "r", encoding="utf-8") as f: data_zone = json.load(f)
+    data_zone = [z for z in data_zone if z.get("id_zona", "") != "DDT_DA_INSERIRE"]
     out_dir = target_dir / "PERCORSI_VEGGIANO"
     out_dir.mkdir(exist_ok=True)
     summary = []
@@ -403,11 +404,11 @@ def main():
         summary.append(info)
         
         genera_html_giro(v_id, z_str, perc, (km, t_guida, t_sosta, t_tot), polylines, out_dir / fname)
-        print(f"  ✅ {v_id} (Zone: {z_str:<12}) -> {km:>5} km | {fmt_min(t_tot)}")
+        print(f"  OK {v_id} (Zone: {z_str:<12}) -> {km:>5} km | {fmt_min(t_tot)}")
 
     riepilogo_fname = sanitize_filename("RIEPILOGO_GIRI.html")
     gera_riepilogo(summary, out_dir / riepilogo_fname)
-    print(f"\n🚀 COMPLETATO! Linee visibili con OR-Tools.")
+    print(f"\n COMPLETATO! Linee visibili con OR-Tools.")
 
 if __name__ == "__main__": 
     if not HAS_OR_TOOLS:

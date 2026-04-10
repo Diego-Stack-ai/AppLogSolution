@@ -56,7 +56,7 @@ def _trova_cartella(data_arg: str | None) -> Path:
     # Ultima cartella disponibile
     folders = sorted(
         [d for d in CONSEGNE_DIR.iterdir() if d.is_dir() and d.name.startswith("CONSEGNE_")],
-        key=lambda d: d.name
+        key=lambda d: d.stat().st_ctime
     )
     if not folders:
         raise FileNotFoundError("Nessuna cartella CONSEGNE_* trovata.")
@@ -71,12 +71,12 @@ def _estrai_data_da_html(html_path: Path) -> list[dict]:
     content = html_path.read_text(encoding="utf-8")
     m = DATA_RE.search(content)
     if not m:
-        print(f"  ⚠️  Array 'data' non trovato in {html_path.name}")
+        print(f"  WARN  Array 'data' non trovato in {html_path.name}")
         return []
     try:
         raw = json.loads(m.group(1))
     except json.JSONDecodeError as e:
-        print(f"  ⚠️  Errore parsing JSON in {html_path.name}: {e}")
+        print(f"  WARN  Errore parsing JSON in {html_path.name}: {e}")
         return []
 
     # Rimuove le entry del deposito (prima e ultima)
@@ -87,7 +87,7 @@ def _estrai_data_da_html(html_path: Path) -> list[dict]:
 def _parse_filename(filename: str) -> tuple[str, list[str]]:
     """
     Estrae nome giro e lista zone dal nome file.
-    Es. 'V01_Zone_3110_4110.html' → ('V01', ['3110', '4110'])
+    Es. 'V01_Zone_3110_4110.html' -> ('V01', ['3110', '4110'])
     """
     m = FILE_RE.match(filename)
     if not m:
@@ -104,15 +104,15 @@ def main():
     try:
         cartella = _trova_cartella(data_arg)
     except FileNotFoundError as e:
-        print(f"❌ {e}")
+        print(f"ERR {e}")
         sys.exit(1)
 
-    # Estrae la data dalla cartella (es. CONSEGNE_26-03-2026 → 26-03-2026)
+    # Estrae la data dalla cartella (es. CONSEGNE_26-03-2026 -> 26-03-2026)
     data_ddt = cartella.name.replace("CONSEGNE_", "")
     percorsi_dir = cartella / "PERCORSI_VEGGIANO"
 
     if not percorsi_dir.exists():
-        print(f"❌ Cartella PERCORSI_VEGGIANO non trovata in: {cartella.name}")
+        print(f"ERR Cartella PERCORSI_VEGGIANO non trovata in: {cartella.name}")
         print("   Assicurati di aver eseguito prima lo script 6_genera_percorsi_veggiano.py")
         sys.exit(1)
 
@@ -122,7 +122,7 @@ def main():
     )
 
     if not html_files:
-        print(f"❌ Nessun file V*.html trovato in {percorsi_dir}")
+        print(f"ERR Nessun file V*.html trovato in {percorsi_dir}")
         sys.exit(1)
 
     print(f"\n{'='*60}")
@@ -138,7 +138,7 @@ def main():
 
         # Aggiunge data_ddt a ogni punto per la ricerca PDF
         for p in punti:
-            # Se data_consegna è vuota → usa la data del DDT (non oggi!)
+            # Se data_consegna è vuota -> usa la data del DDT (non oggi!)
             if not p.get("data_consegna"):
                 p["data_consegna"] = data_ddt
 
@@ -153,7 +153,7 @@ def main():
         viaggi_ottimizzati.append(viaggio)
 
         # Riepilogo fermate per questo giro
-        print(f"  ✅ {nome_giro} (zone: {', '.join(zone)}) → {len(punti)} fermate")
+        print(f"  OK {nome_giro} (zone: {', '.join(zone)}) -> {len(punti)} fermate")
         for i, p in enumerate(punti, 1):
             cf = p.get("codice_frutta", "p00000")
             cl = p.get("codice_latte",  "p00000")
@@ -170,7 +170,7 @@ def main():
     # Statistiche finali
     tot_fermate = sum(v["num_fermate"] for v in viaggi_ottimizzati)
     print(f"\n{'='*60}")
-    print(f"  ✅ JSON Ottimizzato generato!")
+    print(f"  OK JSON Ottimizzato generato!")
     print(f"     File:      {out_path.name}")
     print(f"     Giri:      {len(viaggi_ottimizzati)}")
     print(f"     Fermate:   {tot_fermate} totali")

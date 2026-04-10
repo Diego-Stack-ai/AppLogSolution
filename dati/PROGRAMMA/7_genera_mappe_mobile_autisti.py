@@ -25,7 +25,7 @@ except ImportError:
 def get_latest_consegne_dir():
     dirs = [d for d in CONSEGNE_DIR.iterdir() if d.is_dir() and d.name.startswith("CONSEGNE_")]
     if not dirs: return None
-    return max(dirs, key=lambda d: d.name)
+    return max(dirs, key=lambda d: d.stat().st_ctime)
 
 def haversine(p1, p2):
     try:
@@ -84,19 +84,19 @@ def ottimizza_percorso_legacy(punti):
 
 def deploy_online():
     """Esegue il push su GitHub e il deploy su Firebase."""
-    print("\n📦 Avvio deploy automatico su GitHub e Firebase...")
+    print("\n Avvio deploy automatico su GitHub e Firebase...")
     try:
         # Push su GitHub
         subprocess.run(["git", "add", "."], cwd=ROOT_DIR, check=True)
         subprocess.run(["git", "commit", "-m", "Aggiornamento mappe autisti (auto-publish)"], cwd=ROOT_DIR, check=True)
         subprocess.run(["git", "push"], cwd=ROOT_DIR, check=True)
-        print("✅ Push GitHub completato.")
+        print("OK Push GitHub completato.")
         
         # Deploy Firebase
         subprocess.run(["firebase", "deploy", "--only", "hosting"], cwd=ROOT_DIR, shell=True, check=True)
-        print("✅ Deploy Firebase completato.")
+        print("OK Deploy Firebase completato.")
     except Exception as e:
-        print(f"\n⚠️ Nota Deploy: {e}")
+        print(f"\nWARN Nota Deploy: {e}")
 
 def format_time(minutes):
     hh, mm = divmod(int(minutes), 60)
@@ -334,7 +334,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
 def cleanup_webapp_folder():
     if WEBAPP_FOLDER.exists():
-        print(f"🧹 Pulizia cartella webapp '{WEBAPP_FOLDER.name}'...")
+        print(f" Pulizia cartella webapp '{WEBAPP_FOLDER.name}'...")
         for f in WEBAPP_FOLDER.glob("*.html"):
             try: f.unlink()
             except: pass
@@ -351,9 +351,13 @@ def main():
     
     json_path = target_dir / "viaggi_giornalieri_OTTIMIZZATO.json"
     if not json_path.exists():
-        print(f"⚠️ File ottimizzato non trovato: {json_path.name}. Esegui prima il BAT 3!")
+        json_path = target_dir / "viaggi_giornalieri.json"
+        
+    if not json_path.exists():
+        print("ERR Nessun file viaggi trovato. Esegui la mappa (BAT 2)!")
         return
     with open(json_path, "r", encoding="utf-8") as f: viaggi = json.load(f)
+    viaggi = [v for v in viaggi if v.get("id_zona", "") != "DDT_DA_INSERIRE"]
 
     out_folder = target_dir / "MAPPE_MOBILE_WHATSAPP"
     out_folder.mkdir(exist_ok=True)
@@ -413,7 +417,7 @@ def main():
         (out_folder / fname).write_text(html, encoding="utf-8")
         (WEBAPP_FOLDER / fname).write_text(html, encoding="utf-8")
 
-    txt_content = "🚀 LINK MAPPE PER AUTISTI (GIORNO CORRENTE)\n------------------------------------------\n\n"
+    txt_content = " LINK MAPPE PER AUTISTI (GIORNO CORRENTE)\n------------------------------------------\n\n"
     for i, v in enumerate(viaggi):
         v_id = v.get("nome_giro", f"V{i+1:02d}")
         # IMPORTANTE: Usiamo il nome del file già generato sopra
@@ -428,7 +432,7 @@ def main():
     (out_folder / "LINK_WHATSAPP_AUTISTI.txt").write_text(txt_content, encoding="utf-8")
     (WEBAPP_FOLDER / "LINK_WHATSAPP_AUTISTI.txt").write_text(txt_content, encoding="utf-8")
 
-    print(f"\n✅ Generation completa con OR-Tools.")
+    print(f"\nOK Generation completa con OR-Tools.")
     deploy_online()
 
 if __name__ == "__main__": main()

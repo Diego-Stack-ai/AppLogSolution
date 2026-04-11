@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Viaggio 1</title>
+    <title>V08</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
@@ -69,13 +69,13 @@
         </div>
         <div id="sidebar">
             <div class="header">
-                <div class="trip-title">🏎️ Viaggio 1 | Zone: 3208, 3211</div>
+                <div class="trip-title">🏎️ V08 | Zone: 3208, 3211</div>
                 <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
                 <div class="stats-row">
-                    <div class="stat-item"><span class="stat-val">164.3km</span><span class="stat-lbl">Strada</span></div>
-                    <div class="stat-item"><span class="stat-val">3h 39m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">96.3km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 8m</span><span class="stat-lbl">Guida</span></div>
                     <div class="stat-item"><span class="stat-val">1h 24m</span><span class="stat-lbl">Soste</span></div>
-                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">5h 3m</span><span class="stat-lbl">Totale</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">3h 32m</span><span class="stat-lbl">Totale</span></div>
                 </div>
             </div>
             <div id="delivery-list"><div class="card next" onclick="focusOn(0)">
@@ -85,10 +85,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(0, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(0, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">G. MARCONI - MONASTIER</b>
-                    <span class="addr"><b>VIA 25 APRILE 2</b><br>31050 MONASTIER DI TREVISO (TREVISO)</span>
+                    <b class="name">"G.B. TIEPOLO" - LANZAGO</b>
+                    <span class="addr"><b>VIA TIEPOLO N. 4</b><br>31057 SILEA (TREVISO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6484277,12.440065&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6617178,12.2920986&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(1)">
                 <div class="stop-num">2</div>
                 <div class="stop-info">
@@ -96,10 +96,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(1, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(1, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">"G.B. TIEPOLO" - LANZAGO</b>
-                    <span class="addr"><b>VIA TIEPOLO N. 4</b><br>31057 SILEA (TREVISO)</span>
+                    <b class="name">Antonio Vivaldi-Silea Cap.</b>
+                    <span class="addr"><b>Via Roma N. 79</b><br>31057 Silea (TV)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6617178,12.2920986&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6536253,12.3012308&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(2)">
                 <div class="stop-num">3</div>
                 <div class="stop-info">
@@ -118,10 +118,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(3, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(3, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Antonio Vivaldi-Silea Cap.</b>
-                    <span class="addr"><b>Via Roma N. 79</b><br>31057 Silea (TV)</span>
+                    <b class="name">"ANDREA MUSALO" - BIANCADE</b>
+                    <span class="addr"><b>VIA DARY 17</b><br>31030 RONCADE (TREVISO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6536253,12.3012308&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6478559,12.3609891&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(4)">
                 <div class="stop-num">5</div>
                 <div class="stop-info">
@@ -129,10 +129,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(4, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(4, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">MARCO POLO</b>
-                    <span class="addr"><b>VIA F. PETRARCA 5</b><br>30016 JESOLO (VENEZIA)</span>
+                    <b class="name">RICCARDO SELVATICO -RONCADE CAP</b>
+                    <span class="addr"><b>VIA VIVALDI 24</b><br>31056 RONCADE (TREVISO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6511298,12.6057277&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6302199,12.3790565&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(5)">
                 <div class="stop-num">6</div>
                 <div class="stop-info">
@@ -140,10 +140,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(5, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(5, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">S. Pertini - Tempo Pieno</b>
-                    <span class="addr"><b>Via Vallio</b><br>5, 30013 Cavallino Treporti (VE)</span>
+                    <b class="name">G. MARCONI - MONASTIER</b>
+                    <span class="addr"><b>VIA 25 APRILE 2</b><br>31050 MONASTIER DI TREVISO (TREVISO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4521302,12.4414766&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6484277,12.440065&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(6)">
                 <div class="stop-num">7</div>
                 <div class="stop-info">
@@ -151,10 +151,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(6, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(6, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">EMILIO SALGARI</b>
-                    <span class="addr"><b>VIALE DEL BERSAGLIERE 10</b><br>30016 JESOLO (VENEZIA)</span>
+                    <b class="name">EROI DEL PIAVE - SALETTO</b>
+                    <span class="addr"><b>VIA SERG.MAGG.D'AVANZO 67</b><br>31030 BREDA DI PIAVE (TREVISO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5039452,12.6319608&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7201101392011,12.3984965383125&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(7)">
                 <div class="stop-num">8</div>
                 <div class="stop-info">
@@ -162,10 +162,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(7, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(7, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Giovanni Verga</b>
-                    <span class="addr"><b>Via Aldo Moro 1</b><br>30016 Jesolo (VE)</span>
+                    <b class="name">MARCO POLO</b>
+                    <span class="addr"><b>VIA F. PETRARCA 5</b><br>30016 JESOLO (VENEZIA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.515335,12.6680289&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6511298,12.6057277&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(8)">
                 <div class="stop-num">9</div>
                 <div class="stop-info">
@@ -173,10 +173,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(8, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(8, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Cristoforo Colombo</b>
-                    <span class="addr"><b>Viale Del Bersagliere 10</b><br>30016 Jesolo (VE)</span>
+                    <b class="name">Giovanni Verga</b>
+                    <span class="addr"><b>Via Aldo Moro 1</b><br>30016 Jesolo (VE)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5039452,12.6319608&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.515335,12.6680289&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(9)">
                 <div class="stop-num">10</div>
                 <div class="stop-info">
@@ -184,10 +184,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(9, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(9, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">"ANDREA MUSALO" - BIANCADE</b>
-                    <span class="addr"><b>VIA DARY 17</b><br>31030 RONCADE (TREVISO)</span>
+                    <b class="name">Cristoforo Colombo</b>
+                    <span class="addr"><b>Viale Del Bersagliere 10</b><br>30016 Jesolo (VE)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6478559,12.3609891&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5039452,12.6319608&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(10)">
                 <div class="stop-num">11</div>
                 <div class="stop-info">
@@ -195,10 +195,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(10, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(10, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">RICCARDO SELVATICO -RONCADE CAP</b>
-                    <span class="addr"><b>VIA VIVALDI 24</b><br>31056 RONCADE (TREVISO)</span>
+                    <b class="name">EMILIO SALGARI</b>
+                    <span class="addr"><b>VIALE DEL BERSAGLIERE 10</b><br>30016 JESOLO (VENEZIA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6302199,12.3790565&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5039452,12.6319608&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(11)">
                 <div class="stop-num">12</div>
                 <div class="stop-info">
@@ -206,10 +206,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(11, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(11, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">EROI DEL PIAVE - SALETTO</b>
-                    <span class="addr"><b>VIA SERG.MAGG.D'AVANZO 67</b><br>31030 BREDA DI PIAVE (TREVISO)</span>
+                    <b class="name">S. Pertini - Tempo Pieno</b>
+                    <span class="addr"><b>Via Vallio</b><br>5, 30013 Cavallino Treporti (VE)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7201101392011,12.3984965383125&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4521302,12.4414766&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div></div>
         </div>
     </div>
@@ -268,8 +268,8 @@
     </script>
 
     <script>
-        const v_id = "Viaggio 1";
-        const data = [{"cliente": "G. MARCONI - MONASTIER", "indirizzo": "VIA 25 APRILE 2, 31050 MONASTIER DI TREVISO (TREVISO)", "lat": 45.6484277, "lon": 12.440065, "codice_frutta": "p10047", "codice_latte": "p00000"}, {"cliente": "\"G.B. TIEPOLO\" - LANZAGO", "indirizzo": "VIA TIEPOLO N. 4, 31057 SILEA (TREVISO)", "lat": 45.6617178, "lon": 12.2920986, "codice_frutta": "p11380", "codice_latte": "p00000"}, {"cliente": "ELENA LUCREZIA CORNARO-S.ELENA", "indirizzo": "VIA POZZETTO 19/B, 31057 SILEA (TREVISO)", "lat": 45.6270896, "lon": 12.3398366, "codice_frutta": "p11381", "codice_latte": "p00000"}, {"cliente": "Antonio Vivaldi-Silea Cap.", "indirizzo": "Via Roma N. 79, 31057 Silea (TV)", "lat": 45.6536253, "lon": 12.3012308, "codice_frutta": "p13491", "codice_latte": "p00000"}, {"cliente": "MARCO POLO", "indirizzo": "VIA F. PETRARCA 5, 30016 JESOLO (VENEZIA)", "lat": 45.6511298, "lon": 12.6057277, "codice_frutta": "p14011", "codice_latte": "p00000"}, {"cliente": "S. Pertini - Tempo Pieno", "indirizzo": "Via Vallio, 5, 30013 Cavallino Treporti (VE)", "lat": 45.4521302, "lon": 12.4414766, "codice_frutta": "p2155", "codice_latte": "p1840"}, {"cliente": "EMILIO SALGARI", "indirizzo": "VIALE DEL BERSAGLIERE 10, 30016 JESOLO (VENEZIA)", "lat": 45.5039452, "lon": 12.6319608, "codice_frutta": "p2229", "codice_latte": "p1702"}, {"cliente": "Giovanni Verga", "indirizzo": "Via Aldo Moro 1, 30016 Jesolo (VE)", "lat": 45.515335, "lon": 12.6680289, "codice_frutta": "p2230", "codice_latte": "p1739"}, {"cliente": "Cristoforo Colombo", "indirizzo": "Viale Del Bersagliere 10, 30016 Jesolo (VE)", "lat": 45.5039452, "lon": 12.6319608, "codice_frutta": "p2231", "codice_latte": "p1740"}, {"cliente": "\"ANDREA MUSALO\" - BIANCADE", "indirizzo": "VIA DARY 17, 31030 RONCADE (TREVISO)", "lat": 45.6478559, "lon": 12.3609891, "codice_frutta": "p8720", "codice_latte": "p00000"}, {"cliente": "RICCARDO SELVATICO -RONCADE CAP", "indirizzo": "VIA VIVALDI 24, 31056 RONCADE (TREVISO)", "lat": 45.6302199, "lon": 12.3790565, "codice_frutta": "p9867", "codice_latte": "p00000"}, {"cliente": "EROI DEL PIAVE - SALETTO", "indirizzo": "VIA SERG.MAGG.D'AVANZO 67, 31030 BREDA DI PIAVE (TREVISO)", "lat": 45.7201101392011, "lon": 12.3984965383125, "codice_frutta": "p13474", "codice_latte": "p00000"}];
+        const v_id = "V08";
+        const data = [{"cliente": "\"G.B. TIEPOLO\" - LANZAGO", "indirizzo": "VIA TIEPOLO N. 4, 31057 SILEA (TREVISO)", "lat": 45.6617178, "lon": 12.2920986, "codice_frutta": "p11380", "codice_latte": "p00000"}, {"cliente": "Antonio Vivaldi-Silea Cap.", "indirizzo": "Via Roma N. 79, 31057 Silea (TV)", "lat": 45.6536253, "lon": 12.3012308, "codice_frutta": "p13491", "codice_latte": "p00000"}, {"cliente": "ELENA LUCREZIA CORNARO-S.ELENA", "indirizzo": "VIA POZZETTO 19/B, 31057 SILEA (TREVISO)", "lat": 45.6270896, "lon": 12.3398366, "codice_frutta": "p11381", "codice_latte": "p00000"}, {"cliente": "\"ANDREA MUSALO\" - BIANCADE", "indirizzo": "VIA DARY 17, 31030 RONCADE (TREVISO)", "lat": 45.6478559, "lon": 12.3609891, "codice_frutta": "p8720", "codice_latte": "p00000"}, {"cliente": "RICCARDO SELVATICO -RONCADE CAP", "indirizzo": "VIA VIVALDI 24, 31056 RONCADE (TREVISO)", "lat": 45.6302199, "lon": 12.3790565, "codice_frutta": "p9867", "codice_latte": "p00000"}, {"cliente": "G. MARCONI - MONASTIER", "indirizzo": "VIA 25 APRILE 2, 31050 MONASTIER DI TREVISO (TREVISO)", "lat": 45.6484277, "lon": 12.440065, "codice_frutta": "p10047", "codice_latte": "p00000"}, {"cliente": "EROI DEL PIAVE - SALETTO", "indirizzo": "VIA SERG.MAGG.D'AVANZO 67, 31030 BREDA DI PIAVE (TREVISO)", "lat": 45.7201101392011, "lon": 12.3984965383125, "codice_frutta": "p13474", "codice_latte": "p00000"}, {"cliente": "MARCO POLO", "indirizzo": "VIA F. PETRARCA 5, 30016 JESOLO (VENEZIA)", "lat": 45.6511298, "lon": 12.6057277, "codice_frutta": "p14011", "codice_latte": "p00000"}, {"cliente": "Giovanni Verga", "indirizzo": "Via Aldo Moro 1, 30016 Jesolo (VE)", "lat": 45.515335, "lon": 12.6680289, "codice_frutta": "p2230", "codice_latte": "p1739"}, {"cliente": "Cristoforo Colombo", "indirizzo": "Viale Del Bersagliere 10, 30016 Jesolo (VE)", "lat": 45.5039452, "lon": 12.6319608, "codice_frutta": "p2231", "codice_latte": "p1740"}, {"cliente": "EMILIO SALGARI", "indirizzo": "VIALE DEL BERSAGLIERE 10, 30016 JESOLO (VENEZIA)", "lat": 45.5039452, "lon": 12.6319608, "codice_frutta": "p2229", "codice_latte": "p1702"}, {"cliente": "S. Pertini - Tempo Pieno", "indirizzo": "Via Vallio, 5, 30013 Cavallino Treporti (VE)", "lat": 45.4521302, "lon": 12.4414766, "codice_frutta": "p2155", "codice_latte": "p1840"}];
         window.data = data; window.v_id = v_id;
         let map, markers = [], userMarker;
         window.currentPos = null;

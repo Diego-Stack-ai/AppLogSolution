@@ -85,15 +85,27 @@ def _carica_mappatura():
     col_oM = next((i for i, h in enumerate(headers) if h == "Orario max"), 11)
     col_lat = next((i for i, h in enumerate(headers) if h == "Latitudine"), 12)
     col_lon = next((i for i, h in enumerate(headers) if h == "Longitudine"), 13)
+    col_reali = next((i for i, h in enumerate(headers) if h == "COORDINATE_REALI_GPS"), 19)
 
     map_codice = {}
     for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
         vals = [c.value for c in row]
         try:
-            lat = float(vals[col_lat]) if col_lat < len(vals) and vals[col_lat] is not None else None
-            lon = float(vals[col_lon]) if col_lon < len(vals) and vals[col_lon] is not None else None
+            # 1. Tenta prima di usare le coordinate esatte fornite dal driver nel Cloud
+            if col_reali < len(vals) and vals[col_reali] is not None and str(vals[col_reali]).strip() != "":
+                real_str = str(vals[col_reali]).strip()
+                if "," in real_str:
+                    lat, lon = [float(x.strip()) for x in real_str.split(",")]
+                else:
+                    lat = float(vals[col_lat]) if col_lat < len(vals) and vals[col_lat] is not None else None
+                    lon = float(vals[col_lon]) if col_lon < len(vals) and vals[col_lon] is not None else None
+            else:
+                # 2. Ripiega sulle coordinate classiche da geocoding
+                lat = float(vals[col_lat]) if col_lat < len(vals) and vals[col_lat] is not None else None
+                lon = float(vals[col_lon]) if col_lon < len(vals) and vals[col_lon] is not None else None
         except (TypeError, ValueError, IndexError):
             lat, lon = None, None
+            
         cod_f = _val(vals[col_cod_f]) if col_cod_f < len(vals) else ""
         cod_l = _val(vals[col_cod_l]) if col_cod_l < len(vals) else ""
         dato = {

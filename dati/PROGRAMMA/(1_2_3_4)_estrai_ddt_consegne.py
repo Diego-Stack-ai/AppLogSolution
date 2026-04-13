@@ -225,52 +225,92 @@ def _pulisci_output(base: Path, data_v: str):
             except: pass
 
 
-# --- ARTICOLI NOTI ---
-ARTICOLI_NOTI = {"ME-T-DI-V0-NA", "PE-T-DI-L3-NA", "10-GEL", "10-FLYER", "10-MANIFESTO", "LT-DL-02-LC", "LT-ES-04-LS",
-                 "LT-ESL-IN-LB", "LT-AQ-04-LV", "YO-BI-MN-04-LB", "YO-DL-02-LC", "AP-SU-PC", "FO-DI-PV-04-LB",
-                 "CA-Z-BI-L3-NA", "FO-DI-GP-01-NI", "FVNS-03-GADGET", "KI-S-BI-L3-NA", "FVNS-03-POSTER",
-                 # Aggiunti 26/03/2026
-                 "FI-Z-BI-L3-NA",   # Finocchio biologico da porzionare in classe
-                 "ME-S-BI-L3-NA",   # Mela biologica del territorio per estratto
-                 # Aggiunti 09/04/2026
-                 "10-AT-01", "LNS-04-GADGET", "LNS-04-POSTER", "FVNS-03-FOLDER", "FVNS-03-MAGAZINE",
-                 "FR-M-BI-L3-NI",
-                 }
+# --- ARTICOLI NOTI (SORGENTE DI VERITÀ) ---
+ARTICOLI_NOTI = {
+    "10-FLYER", "10-GEL", "10-MANIFESTO", "10-AT-01", "10-BICC", "10-CUCCH", "10-PIATTO",
+    "AP-SU-PC", "FO-DI-PV-04-LB", "FO-DI-GP-01-NI", "FVNS-03", "FVNS-03-", 
+    "LT-AQ-04-LV", "LT-AQ-04-LB", "LT-AQ-04-LS", "LT-DL-02-LC", "LT-ES-04-LS", "LT-ESL-IN-LB", 
+    "MA-T-LI-L3-NA", "ME-T-DI-V0-NA", "ME-S-BI-L3-NA", "PE-T-DI-L3-NA",
+    "YO-BI-MN-04-LB", "YO-DL-02-LC", "FI-Z-BI-L3-NA", "FR-M-BI-L3-NI",
+    "LNS-04-GADGET", "LNS-04-", "CA-Z-BI-L3-NA", "KI-S-BI-L3-NA"
+}
+
+def _is_primary_code(text: str) -> bool:
+    """Verifica se una stringa corrisponde a un codice base noto (Sorgente di Verità)."""
+    if not text: return False
+    t = text.strip().upper()
+    if t in ARTICOLI_NOTI: return True
+    for prefix in ARTICOLI_NOTI:
+        if prefix.endswith('-') and t.startswith(prefix.upper()):
+            return True
+    return False
+
+
+def _normalizza_cella_codice_base(raw: str) -> str:
+    """
+    Dato il contenuto grezzo di una cella Cod. Articolo,
+    restituisce SOLO il codice_base (prima riga significativa, filtro metadati).
+    Uguale alla logica in 9_genera_distinte_da_viaggi.py.
+    """
+    righe = [l.strip() for l in raw.split('\n')
+             if l.strip() and not l.strip().startswith("Codice:")]
+    if not righe: return ""
+    # La prima riga è sempre il codice base
+    return righe[0]
+
 
 def _verifica_nuovi_articoli(base):
-    print("Verifica articoli..."); import pdfplumber; trovati = set()
-    # Regex: cattura codici standard (es. 10-FLYER) e codici data flyer (es. --300326)
-    art_re = re.compile(r'^([A-Z0-9]{2,}-[A-Z0-9\-]+|FVNS-\d+-|--\d{6})', re.M)
+    """
+    Verifica la presenza di codici articolo non presenti in ARTICOLI_NOTI.
+    Usa logica column-based: estrae la colonna Cod. Articolo dalle tabelle PDF
+    e confronta il codice_base (NON la variante) con la Sorgente di Verita'.
+    Questo evita falsi positivi per varianti note (es. FVNS-03-FOLDER e' noto
+    perche' il suo codice_base FVNS-03- e' in ARTICOLI_NOTI).
+    """
+    print("Verifica articoli (logica column-based)...")
+    import pdfplumber
+
+    codici_base_trovati = set()
     divisi = base / "DDT-ORIGINALI-DIVISI"
     if not divisi.exists(): return True
+
     for p in divisi.rglob("*.pdf"):
         try:
             with pdfplumber.open(p) as pdf:
                 for pg in pdf.pages:
-                    txt = pg.extract_text() or ""
-                    for m in art_re.finditer(txt):
-                        c = m.group(1).strip()
-                        # Gestione codici multi-riga (es. FVNS-03- o LNS-04- spezzati su due righe)
-                        if c.endswith('-') and not re.match(r'^--\d{6}$', c):
-                            la = txt[m.end():].split('\n')
-                            if len(la) > 1:
-                                m2 = re.match(r'^([A-Z]+)', la[1].strip())
-                                if m2: c += m2.group(1)
-                        # Normalizza codici data flyer (--NNNNNN) → 10-FLYER
-                        if re.match(r'^--\d{6}$', c): c = "10-FLYER"
-                        trovati.add(c)
+                    tables = pg.extract_tables()
+                    if not tables: continue
+                    # Cerca la tabella con "Cod. Articolo"
+                    tab = next((t for t in tables if t and len(t) > 1
+                                and "Cod. Articolo" in " ".join(str(c or "") for c in t[0])), None)
+                    if not tab: continue
+                    for row in tab[1:]:
+                        if not row or not row[0]: continue
+                        codice_base = _normalizza_cella_codice_base(str(row[0]))
+                        if codice_base:
+                            codici_base_trovati.add(codice_base)
         except: continue
-    nuovi = trovati - ARTICOLI_NOTI
+
+    # Confronta i codici_base trovati con ARTICOLI_NOTI
+    nuovi = {c for c in codici_base_trovati if not _is_primary_code(c)}
+
     if nuovi:
-        print("\n" + "!"*60 + f"\n🛑 NUOVI ARTICOLI: {', '.join(sorted(nuovi))}\n" + "!"*60 + "\n")
+        print("\n" + "!"*60 + f"\n[!] NUOVI ARTICOLI RILEVATI: {', '.join(sorted(nuovi))}\n" + "!"*60 + "\n")
         try:
             from openpyxl import Workbook
-            wb = Workbook(); ws = wb.active; ws.title = "Nuovi Articoli"; ws.append(["Codice Articolo", "Data", "Note"])
-            for c in sorted(nuovi): ws.append([c, datetime.now().strftime("%d/%m/%Y"), "Aggiungi a ARTICOLI_NOTI"])
-            rp = BASE_DIR / "nuovi_articoli_rilevati.xlsx"; wb.save(rp); print(f"📄 Report: {rp.name}")
-        except Exception as e: print(f"⚠️ Errore: {e}")
+            wb = Workbook(); ws = wb.active; ws.title = "Nuovi Articoli"
+            ws.append(["Codice Articolo", "Data Rilevamento", "Azione"])
+            for c in sorted(nuovi):
+                ws.append([c, datetime.now().strftime("%d/%m/%Y"), "Aggiungere a ARTICOLI_NOTI"])
+            rp = BASE_DIR / "nuovi_articoli_rilevati.xlsx"
+            wb.save(rp)
+            print(f"Report salvato: {rp.name}")
+        except Exception as e:
+            print(f"Errore salvataggio report: {e}")
         return False
-    print("✓ Articoli OK.\n"); return True
+
+    print(f"Articoli OK. ({len(codici_base_trovati)} codici base verificati)\n")
+    return True
 
 
 def main():

@@ -38,21 +38,39 @@ CODICE_VUOTO = "p00000"
 # Importa logica estrazione articoli da crea_distinta_magazzino
 DISTINTA_MOD = BASE_DIR / "crea_distinta_magazzino.py"
 
-# --- DATABASE ARTICOLI (allineato a crea_distinta_magazzino) ---
-ARTICOLI_NOTI = frozenset({
-    "ME-T-DI-V0-NA", "PE-T-DI-L3-NA", "10-GEL", "10-FLYER", "10-MANIFESTO", "LT-DL-02-LC", "LT-ES-04-LS",
-    "LT-ESL-IN-LB", "LT-AQ-04-LV", "YO-BI-MN-04-LB", "YO-DL-02-LC", "AP-SU-PC", "FO-DI-PV-04-LB",
-    "CA-Z-BI-L3-NA", "FO-DI-GP-01-NI", "FVNS-03-GADGET", "KI-S-BI-L3-NA", "FVNS-03-POSTER",
-    "FI-Z-BI-L3-NA", "ME-S-BI-L3-NA"
+# --- DATABASE ARTICOLI (SORGENTE DI VERITÀ) ---
+ARTICOLI_NOTI_SET = frozenset({
+    "10-FLYER", "10-GEL", "10-MANIFESTO", "10-AT-01", "10-BICC", "10-CUCCH", "10-PIATTO",
+    "AP-SU-PC", "FO-DI-PV-04-LB", "FO-DI-GP-01-NI", "FVNS-03", "FVNS-03-", 
+    "LT-AQ-04-LV", "LT-AQ-04-LB", "LT-AQ-04-LS", "LT-DL-02-LC", "LT-ES-04-LS", "LT-ESL-IN-LB", 
+    "MA-T-LI-L3-NA", "ME-T-DI-V0-NA", "ME-S-BI-L3-NA", "PE-T-DI-L3-NA",
+    "YO-BI-MN-04-LB", "YO-DL-02-LC", "FI-Z-BI-L3-NA", "FR-M-BI-L3-NI",
+    "LNS-04-GADGET", "LNS-04-", "CA-Z-BI-L3-NA", "KI-S-BI-L3-NA"
 })
 
+def _is_primary_code(text):
+    """Rileva se una stringa è un codice primario noto (RIGA 1)."""
+    if not text: return False
+    text = text.strip().upper()
+    # Controllo esatto o se inizia con uno dei prefissi noti
+    if text in ARTICOLI_NOTI_SET: return True
+    # Caso speciale per prefissi come FVNS-03- o LNS-04-
+    for prefix in ARTICOLI_NOTI_SET:
+        if prefix.endswith('-') and text.startswith(prefix):
+            return True
+    # Pattern generico di sicurezza per codici standard
+    return bool(re.match(r'^([A-Z0-9]{2,}-[A-Z0-9\-]+|--\d{6})', text))
+
 CODICE_MAP = {
-    "FVNS-03-POSTER": ("10-MANIFESTO", "Manifesto programma"),
+    "FVNS-03-": "FVNS-03", # Normalizzazione base
 }
 
 CONSOLIDAMENTO = {
     "LT-ES-04-LS":   ("Fardelli",  "Bottiglie", 10),
     "LT-ESL-IN-LB":  ("Fardelli",  "Bottiglie",  6),
+    "LT-AQ-04-LB":   ("Fardelli",  "Bottiglie", 10),
+    "LT-AQ-04-LS":   ("Fardelli",  "Bottiglie", 10),
+    "LT-AQ-04-LV":   ("Fardelli",  "Bottiglie",  6),
     "YO-BI-MN-04-LB":("Cartoni",   "Cluster",   10),
     "YO-DL-02-LC":   ("Cartoni",   "Porzioni",   6),
     "AP-SU-PC":      ("Cartoni",   "Porzioni",  24),
@@ -132,119 +150,108 @@ def _parse_quantita_da_cella(cell) -> list:
     return quantita
 
 
-def _estrai_articoli_da_tabella(page) -> list | None:
-    tables = page.extract_tables()
-    if not tables:
-        return None
-    tab = None
-    for t in tables:
-        if not t or len(t) < 2:
-            continue
-        header = " ".join(str(c or "") for c in (t[0] or []))
-        if "Cod. Articolo" in header:
-            tab = t
+def _normalizza_cella_codice(raw: str) -> tuple[str, str]:
+    """
+    Dato il contenuto grezzo di una cella "Cod. Articolo" (possibilmente multi-riga),
+    restituisce (codice_base, variante_raw) senza alcuna interpretazione semantica.
+
+    Regole:
+    - Splitta per \n
+    - Filtra righe vuote e righe che iniziano con "Codice:" (metadati PDF interni)
+    - La PRIMA riga che corrisponde ad ARTICOLI_NOTI diventa codice_base
+    - Tutte le righe successive (nella stessa cella) diventano variante_raw
+    - variante_raw è normalizzata SOLO: spazi multipli -> spazio, trattini multipli -> uno
+    """
+    righe = [l.strip() for l in raw.split('\n')
+             if l.strip() and not l.strip().startswith("Codice:")]
+
+    if not righe:
+        return "", ""
+
+    # Cerca il codice base nella prima riga (idealmente riga 0)
+    codice_base = ""
+    idx_base = -1
+    for i, riga in enumerate(righe):
+        if _is_primary_code(riga):
+            codice_base = riga.strip()
+            idx_base = i
             break
-    if not tab:
-        return None
 
-    articoli = []
+    if not codice_base:
+        # Nessun codice base riconosciuto: trattiamo la prima riga come base grezza
+        codice_base = righe[0]
+        idx_base = 0
+
+    # Variante = righe successive alla base, nella stessa cella
+    righe_variante = righe[idx_base + 1:]
+    variante_raw = " ".join(righe_variante).strip()
+    # Normalizzazione minima: spazi multipli e trattini doppi
+    variante_raw = re.sub(r'\s+', ' ', variante_raw)
+    variante_raw = re.sub(r'-{2,}', '-', variante_raw).strip('-').strip()
+
+    return codice_base, variante_raw
+
+
+def _estrai_articoli_da_tabella(page) -> list | None:
+    """
+    Logica column-based stabile: OGNI RIGA della tabella = UN articolo indipendente.
+    Nessuna state machine tra righe diverse. Nessuna interpretazione semantica.
+    """
+    tables = page.extract_tables()
+    if not tables: return None
+    tab = next((t for t in tables if t and len(t) > 1
+                and "Cod. Articolo" in " ".join(str(c or "") for c in t[0])), None)
+    if not tab: return None
+
+    risultato = []
+
     for row in tab[1:]:
-        if not row or len(row) < 4:
-            continue
-        cell0 = str(row[0] or "").strip()
-        if not cell0:
-            continue
-        codice_raw = None
-        for linea in cell0.split("\n"):
-            linea = linea.strip()
-            if linea.startswith("Codice:"):
-                continue
-            if re.match(r"^[A-Z0-9]{2,}-[A-Z0-9\-]+", linea):
-                codice_raw = re.match(r"^([A-Z0-9]{2,}-[A-Z0-9\-]+)", linea).group(1).strip()
-                break
-        if not codice_raw:
-            continue
-        if codice_raw == "FVNS-03-":
-            codice_raw = "FVNS-03-POSTER"
-        codice, _ = CODICE_MAP.get(codice_raw, (codice_raw, ""))
+        # Filtra righe troppo corte o vuote
+        if not row or len(row) < 4: continue
 
+        # ── Colonna 0: Cod. Articolo ──────────────────────────────────────────
+        raw_codice = str(row[0] or "").strip()
+        if not raw_codice: continue
+
+        codice_base, variante_raw = _normalizza_cella_codice(raw_codice)
+        if not codice_base: continue
+
+        # ── Colonna 1: Descrizione ────────────────────────────────────────────
+        # Multi-riga nella cella → unita con spazio, nessuna altra modifica
+        descrizione = re.sub(r'\s+', ' ', str(row[1] or "").replace('\n', ' ')).strip()
+
+        # ── Colonna 2: Peso/Kg ────────────────────────────────────────────────
         try:
-            kg_val = str(row[2] or "0").replace(",", ".").strip()
-            kg = Decimal(kg_val) if kg_val else Decimal("0")
+            kg = Decimal(str(row[2] or "0").replace(",", ".").strip() or "0")
         except Exception:
             kg = Decimal("0")
 
-        cell3 = row[3] if len(row) > 3 else ""
-        quantita = _parse_quantita_da_cella(cell3)
-        if not quantita and codice == "10-GEL":
-            porz = str(row[4] or "") if len(row) > 4 else ""
+        # ── Colonna 3: Quantità ───────────────────────────────────────────────
+        quantita_raw = str(row[3] or "").strip()
+        quantita = _parse_quantita_da_cella(quantita_raw)
+
+        # Caso speciale 10-GEL: la quantità è in colonna 4 (porzioni)
+        if not quantita and "10-GEL" in codice_base:
+            porz = str(row[4] or "").strip() if len(row) > 4 else ""
             if porz.isdigit():
                 quantita = [(int(porz), "pz")]
-        if not quantita:
-            continue
 
-        cell1 = str(row[1] or "").strip()
-        scad_m = SCAD_RE.search(cell1)
-        scadenza = scad_m.group(1) if scad_m else ""
+        if not quantita: continue
+
+        # ── Colonna 5: Confezionamento (opzionale) ────────────────────────────
         confezionamento = str(row[5] or "").strip() if len(row) > 5 else ""
 
-        articoli.append({
-            "codice": codice, "descrizione": cell1 or codice,
-            "scadenza": scadenza, "kg": kg,
-            "quantita": quantita, "confezionamento": confezionamento,
+        risultato.append({
+            "codice_base": codice_base,
+            "variante_raw": variante_raw,
+            "descrizione": descrizione,
+            "scadenza": SCAD_RE.search(descrizione).group(1) if SCAD_RE.search(descrizione) else "",
+            "kg": kg,
+            "quantita": quantita,
+            "confezionamento": confezionamento,
         })
-    return articoli if articoli else None
 
-
-def _estrai_articoli_da_pagina_testo(lines: list, tipo: str) -> list:
-    articoli = []
-    i = 0
-    while i < len(lines) and "Cod. Articolo" not in lines[i] and "Confezionamento" not in lines[i]:
-        i += 1
-    i += 2
-
-    while i < len(lines):
-        line = lines[i]
-        if "___" in line or "Scadenza" in line:
-            break
-        code_m = re.match(r"^([A-Z0-9]{2,}-[A-Z0-9\-]*)", line)
-        if not code_m or len(code_m.group(1)) < 4:
-            i += 1
-            continue
-        codice_raw = code_m.group(1).strip()
-        if codice_raw == "FVNS-03-":
-            codice_raw = "FVNS-03-POSTER"
-        codice, _ = CODICE_MAP.get(codice_raw, (codice_raw, ""))
-
-        next_lines = []
-        for k in range(i + 1, min(i + 6, len(lines))):
-            stripped = lines[k].strip()
-            if stripped and re.match(r"^[A-Z0-9]{2,}-[A-Z0-9\-]", stripped):
-                break
-            next_lines.append(lines[k])
-
-        # Quantita dalla riga principale
-        quantita = _parse_quantita_da_cella(line)
-        if not quantita:
-            for nl in next_lines[:3]:
-                quantita = _parse_quantita_da_cella(nl)
-                if quantita:
-                    break
-
-        if not quantita:
-            i += 1
-            continue
-
-        scad_m = re.search(r"Scad\.\s*min\.\s*(\d{2}/\d{2}/\d{4})", " ".join([line] + next_lines), re.I)
-        scadenza = scad_m.group(1) if scad_m else ""
-
-        articoli.append({
-            "codice": codice, "descrizione": codice,
-            "scadenza": scadenza, "kg": Decimal("0"),
-            "quantita": quantita, "confezionamento": "",
-        })
-        i += 1
-    return articoli
+    return risultato if risultato else None
 
 
 def _raccogli_articoli_da_pdf(pdf_path: Path, tipo: str) -> list:
@@ -254,9 +261,6 @@ def _raccogli_articoli_da_pdf(pdf_path: Path, tipo: str) -> list:
         with pdfplumber.open(pdf_path) as pdf:
             for page in pdf.pages:
                 arts = _estrai_articoli_da_tabella(page)
-                if arts is None:
-                    text = page.extract_text() or ""
-                    arts = _estrai_articoli_da_pagina_testo(text.split("\n"), tipo)
                 tutti.extend(arts or [])
     except Exception as e:
         print(f"    WARN  Errore lettura {pdf_path.name}: {e}")
@@ -264,17 +268,23 @@ def _raccogli_articoli_da_pdf(pdf_path: Path, tipo: str) -> list:
 
 
 def _aggrega_articoli(lista: list) -> dict:
-    """Aggrega articoli con lo stesso codice+scadenza sommando kg e quantita."""
+    """
+    Aggrega articoli con la stessa chiave (codice_base, variante_raw), sommando kg e quantita.
+    Questa chiave è stabile perché proviene dalla cella originale, solo normalizzata
+    (spazi e trattini), senza alcuna interpretazione semantica.
+    """
     agg = {}
     for art in lista:
-        chiave = (art["codice"], art["scadenza"])
+        # Chiave = (codice_base, variante_raw) — entrambi estratti direttamente dalla cella
+        chiave = (art["codice_base"], art["variante_raw"])
         if chiave not in agg:
             agg[chiave] = {
-                "codice": art["codice"],
-                "descrizione": art["descrizione"],
-                "scadenza": art["scadenza"],
-                "kg": Decimal("0"),
-                "quantita": [],
+                "codice_base":  art["codice_base"],
+                "variante_raw": art["variante_raw"],
+                "descrizione":  art["descrizione"],
+                "scadenza":     art["scadenza"],
+                "kg":           Decimal("0"),
+                "quantita":     [],
                 "confezionamento": art["confezionamento"],
             }
         agg[chiave]["kg"] += art["kg"]
@@ -406,11 +416,6 @@ def _trova_cartella(data_arg: str | None) -> Path:
         raise FileNotFoundError("Nessuna cartella CONSEGNE_* trovata.")
     return folders[-1]
 
-
-# ──────────────────────────────────────────────────────────────────────────────
-# GENERAZIONE PDF DISTINTE
-# ──────────────────────────────────────────────────────────────────────────────
-
 def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia: int, styles, colors, mm, Paragraph, Spacer, Table, TableStyle, PageBreak):
     """Restituisce la lista di elementi Flowable per una singola copia della distinta."""
     from reportlab.lib.styles import ParagraphStyle
@@ -431,15 +436,22 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
     elementi.append(Paragraph("PERICOLO: Caricare nell'ordine inverso: l'ULTIMA fermata va caricata PER PRIMA.", st_warn))
     elementi.append(Spacer(1, 4*mm))
 
-    # ── SEZIONE 1: ARTICOLI (RICHIESTA: PRIMA IL RIEPILOGO ARTICOLI) ──
+    # ── SEZIONE 1: ARTICOLI ──
     elementi.append(Paragraph("RIEPILOGO ARTICOLI DA CARICARE PER GIRO:", st_body))
     dati_art = [["Codice Articolo", "Descrizione Natura Qualità", "Quantità Consolidata", "Confezionamento", "Note"]]
-    for (codice, scadenza), art in sorted(articoli_viaggio.items(), key=lambda x: x[0][0]):
-        qty_cons, display = _consolida_quantita(codice, art["quantita"])
-        nota = "" if codice in ARTICOLI_NOTI else "[!] NUOVO"
+    
+    # Ordiniamo per (codice_base, variante_raw) — coerente con la chiave di aggregazione
+    for chiave, art in sorted(articoli_viaggio.items(), key=lambda x: (x[0][0], x[0][1])):
+        qty_cons, display = _consolida_quantita(art["codice_base"], art["quantita"])
+        nota = "" if art["codice_base"] in ARTICOLI_NOTI_SET else "[!] NUOVO"
+
+        # Codice stampato = base + variante raw (es. "FVNS-03-" + "FOLDER" → "FVNS-03- FOLDER")
+        variante = art.get("variante_raw", "")
+        codice_stampato = f"{art['codice_base']} {variante}".strip() if variante else art["codice_base"]
+
         dati_art.append([
-            codice,
-            art.get("descrizione", codice)[:45],
+            codice_stampato,
+            art.get("descrizione", "")[:45],
             display or "—",
             art.get("confezionamento", "")[:30] or "—",
             nota,

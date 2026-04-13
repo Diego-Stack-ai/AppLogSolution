@@ -8,18 +8,25 @@ from pathlib import Path
 INPUT_DIR = Path(r"g:\Il mio Drive\App\AppLogSolution\dati\CONSEGNE")
 OUTPUT_FILE = Path(r"g:\Il mio Drive\App\AppLogSolution\dati\analisi_codici.xlsx")
 
-def is_new_article_code(text):
-    """
-    Rileva se una stringa sembra l'inizio di un nuovo codice articolo.
-    Logica basata su pattern: lettere/numeri, lunghezza, trattini.
-    """
-    if not text:
-        return False
-    
-    # Pattern comuni: FVNS-03-, 10-FLYER, LT-DL-02-LC, --130426
-    # Inizia con almeno 2 lettere, 2 numeri o doppio trattino
-    pattern = re.compile(r'^([A-Z]{2,}|[0-9]{2,}|--)')
-    return bool(pattern.match(text.strip()))
+# --- ARTICOLI NOTI (SORGENTE DI VERITÀ) ---
+ARTICOLI_NOTI = {
+    "10-FLYER", "10-GEL", "10-MANIFESTO", "10-AT-01", "10-BICC", "10-CUCCH", "10-PIATTO",
+    "AP-SU-PC", "FO-DI-PV-04-LB", "FO-DI-GP-01-NI", "FVNS-03", "FVNS-03-", 
+    "LT-AQ-04-LV", "LT-AQ-04-LB", "LT-AQ-04-LS", "LT-DL-02-LC", "LT-ES-04-LS", "LT-ESL-IN-LB", 
+    "MA-T-LI-L3-NA", "ME-T-DI-V0-NA", "ME-S-BI-L3-NA", "PE-T-DI-L3-NA",
+    "YO-BI-MN-04-LB", "YO-DL-02-LC", "FI-Z-BI-L3-NA", "FR-M-BI-L3-NI",
+    "LNS-04-GADGET", "LNS-04-", "CA-Z-BI-L3-NA", "KI-S-BI-L3-NA"
+}
+
+def is_primary_code(text):
+    """Rileva se una stringa è l'inizio di un nuovo blocco articolo (RIGA 1)."""
+    if not text: return False
+    text = text.strip().upper()
+    if text in ARTICOLI_NOTI: return True
+    for prefix in ARTICOLI_NOTI:
+        if prefix.endswith('-') and text.startswith(prefix):
+            return True
+    return False
 
 def process_pdf(pdf_path):
     """
@@ -41,41 +48,29 @@ def process_pdf(pdf_path):
                     
                     current_block = []
                     
-                    for row in table[start_row:]:
-                        if not row or not row[0]:
-                            continue
-                            
-                        # Estraiamo il contenuto della prima colonna (Cod. Articolo)
-                        # Spesso il PDF potrebbe avere a capo nella cella stessa
-                        cell_content = str(row[0]).strip().split('\n')
+                    for row in tab[start_row:]:
+                        if not row or not row[0]: continue
                         
-                        for line in cell_content:
-                            line = line.strip()
-                            if not line:
-                                continue
-                                
-                            if is_new_article_code(line):
-                                # Se abbiamo un blocco in corso, lo salviamo prima di iniziarne uno nuovo
-                                if current_block:
-                                    blocks.append(current_block)
-                                current_block = [line]
+                        # Estraggo e filtro le righe della cella
+                        cell_content = str(row[0]).strip().split('\n')
+                        filtered = [l.strip() for l in cell_content 
+                                    if l.strip() and not l.strip().startswith("Codice:")]
+                        
+                        if not filtered: continue
+
+                        if is_primary_code(filtered[0]):
+                            # Salva blocco precedente
+                            if current_block: blocks.append(current_block)
+                            current_block = filtered
+                        else:
+                            # Accoda a blocco esistente
+                            if current_block:
+                                current_block.extend(filtered)
                             else:
-                                # Se non è un nuovo codice, lo accodiamo al blocco corrente (max 3 righe)
-                                if current_block:
-                                    if len(current_block) < 3:
-                                        current_block.append(line)
-                                    else:
-                                        # Se superiamo le 3 righe, chiudiamo questo e iniziamo uno nuovo
-                                        # (Caso limite per evitare blocchi infiniti se la logica fallisce)
-                                        blocks.append(current_block)
-                                        current_block = [line]
-                                else:
-                                    # Caso riga orfana all'inizio
-                                    current_block = [line]
+                                current_block = filtered
                     
-                    # Salva l'ultimo blocco della tabella
-                    if current_block:
-                        blocks.append(current_block)
+                    # Salva l'ultimo blocco
+                    if current_block: blocks.append(current_block)
                         
     except Exception as e:
         print(f"Errore processando {pdf_path.name}: {e}")
@@ -100,35 +95,50 @@ def main():
     pdf_files = list(INPUT_DIR.rglob("*.pdf"))
     print(f"Trovati {len(pdf_files)} file PDF da analizzare.")
     
+    # Analisi TOTALE come richiesto
+    total = len(pdf_files)
     all_data = []
     
-    # Analizziamo un campione se sono troppi, o tutti se ragionevole
-    # Per analisi strutturale, 100-200 file sono sufficienti
+    # Utilizziamo il multiprocessing per velocizzare drasticamente l'analisi dei 2600+ file
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+    import os
+    
+    # Numero di processori da usare (lasciamo un core libero per stabilità)
+    max_workers = max(1, os.cpu_count() - 1)
+    print(f"Avvio elaborazione parallela su {max_workers} core...")
+
     count = 0
-    for pdf in pdf_files:
-        count += 1
-        if count % 50 == 0:
-            print(f"Elaborazione file {count}/{len(pdf_files)}...")
-            
-        # Saltiamo file master pesanti se vogliamo velocità, o analizziamo tutto
-        # In questo caso analizziamo tutto per avere il quadro completo
-        data = process_pdf(pdf)
-        all_data.extend(data)
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        # Sottomettiamo tutti i compiti
+        futures = {executor.submit(process_pdf, pdf): pdf for pdf in pdf_files}
         
+        for future in as_completed(futures):
+            count += 1
+            if count % 10 == 0:
+                print(f"Avanzamento: {count}/{total} file processati ({(count/total)*100:.1f}%)")
+            
+            try:
+                data = future.result()
+                all_data.extend(data)
+            except Exception as e:
+                pdf_name = futures[future].name
+                print(f"Errore critico su {pdf_name}: {e}")
+
     if not all_data:
         print("Nessun dato estratto.")
         return
 
     # Creazione Excel con Pandas
-    print(f"Generazione Excel: {OUTPUT_FILE.name}")
+    print(f"Generazione Excel finale: {OUTPUT_FILE.name}")
     df = pd.DataFrame(all_data)
     
-    # Rimuovi eventuali duplicati esatti per pulire l'analisi
-    df = df.drop_duplicates(subset=["Riga_1", "Riga_2", "Riga_3"])
+    # Rimuovi eventuali duplicati esatti per pulire l'analisi (stesso codice nello stesso rigo)
+    # È normale che lo stesso codice appaia in PDF diversi
+    df = df.drop_duplicates(subset=["PDF_Filename", "Riga_1", "Riga_2", "Riga_3"])
     
     try:
         df.to_excel(OUTPUT_FILE, index=False)
-        print(f"COMPLETATO! Analisi salvata in: {OUTPUT_FILE}")
+        print(f"COMPLETATO! Analisi TOTALE salvata in: {OUTPUT_FILE}")
     except Exception as e:
         print(f"Errore nel salvataggio Excel: {e}")
 

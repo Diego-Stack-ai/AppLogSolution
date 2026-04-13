@@ -1,41 +1,43 @@
-# REGOLE E WORKFLOW DELLA PIPELINE LOGISTICA (SCRIPT DA 1 A 9)
-*Aggiornamento: Gestione Rientri Multipli e Automazione Stati - Aprile 2026*
+# REGOLE E WORKFLOW DELLA PIPELINE LOGISTICA (AGGIORNATO)
 
-Ecco la copia completa e aggiornata delle regole (workflow) seguite dal programma attraverso l'esecuzione dei vari file Python `.py`.
+Ecco la copia completa e aggiornata delle regole (workflow) seguite dal programma in ordine cronologico.
+Tutto il sistema è architettato per funzionare dal "Bat 1" al "Bat 6" (Script Python dal numero 1 al numero 10), garantendo tracciabilità, precisione e ottimizzazione automatica dei percorsi.
 
 ---
 
 ### STEP 1: Estrazione e Preparazione dei Dati Originali
 **Script:** `(1_2_3_4)_estrai_ddt_consegne.py` (Script Master Integrato)
-**Regola base:** Questo è l'orchestratore. Elimina i file delle sessioni precedenti sporche, dopodiché entra nelle cartelle `FRUTTA` e `LATTE`, scansiona i PDF originali multipagina e divide ogni singola pagina rinominandola in un file autonomo (es. `p1234_data.pdf`).
+**Regola base:** Questo è l'orchestratore iniziale. Pulisce i file delle sessioni precedenti sporche, si inoltra nelle cartelle dei documenti `FRUTTA` e `LATTE`, scansiona le maxibolle in PDF e le fa a fette: estrae ogni singola pagina cliente e la salva come file autonomo (es. `p1234_data.pdf`).
 
-### STEP 2: Creazione Base Punti Consegna
+### STEP 2: Incrocio coi Clienti e Precedenza GPS Autisti (★ AGGIORNATO)
 **Script:** `2_crea_punti_consegna.py`
-**Regola base:** Legge i PDF appena suddivisi e incrocia i codici cliente con il file `mappatura_destinazioni.xlsx`. 
-**Azione:** Restituisce un'indicazione geografica sommaria creando due file excel per la giornata (uno frutta, uno latte) che contengono l'effettiva presenza in bolla delle merci filtrate.
+**Regola base:** Incrocia le singole bollette generate dal punto precedente con il foglio centrale `mappatura_destinazioni.xlsx`. 
+**Nuova Regola di Sicurezza (GPS):** Quando assegna la posizione geografica a un cliente, controlla PER PRIMA COSA la colonna `COORDINATE_REALI_GPS` in fondo all'Excel. Se trova un salvataggio fatto dall'autista sul campo, usa esclusivamente quello annullando l'indirizzo testuale, garantendo la precisione al millimetro in autostrada. Se non c'è, ripiega sulle coordinate standard di fallback (Lat/Lon). 
 
-### STEP 3: Unificazione e Rilevamento Anomalie (★ AGGIORNATO)
+### STEP 3: Unificazione Bolle e Rilevamento Anomalie (★ AGGIORNATO)
 **Script:** `3_crea_lista_unificata.py`
-**Regola base:** Unisce le consegne di Frutta e Latte dirette a un medesimo indirizzo in un unico punto finale calcolandone le coordinate (salvato in `punti_consegna_unificati.json`).
-**NUOVA REGOLA (Rientri Multipli):** Il sistema non si ferma più alla prima data trovata per il rientro. Entra in `.items()` della rubrica rientri e incamera una **lista multipla** (`rientri = defaultdict(list)`). Se uno stesso codice cliente si aspetta indietro 3 DDT arretrati, lo script li accorpa tutti sull'indirizzo e genera allarmi rossi combinati in mappa!
+**Regola base:** Fonde le consegne della Frutta e del Latte che hanno la stessa destinazione in un'unica fermata.
+**Nuova Regola (Resi Multipli):** Interroga il registro rientri tramite logica estesa `defaultdict(list)`. Se un cliente ha due o tre diversi DDT storici rimasti "appesi" e mai rientrati, li cataloga tutti insieme facendo scattare allerte multiple combinate sia sulla Mappa che sui fascicoli finali.
 
-### STEP 4: Assegnazione Zone (★ AGGIORNATO OGGI)
+### STEP 4: Assegnazione Zone (La Mappa Dispatcher)
 **Script:** `4_mappa_zone_google.py`
-**Regola base:** Crea il server web locale (su porta 5000) permettendo di assegnare comodamente sulla mappa interattiva i punti alle vetture e autisti tramite selezione a poligono.
-**NUOVA REGOLA (Automazione Excel Sicura):** Quando si salva sulla mappa o si muove un punto, lo script apre i `rientri_ddt.xlsx` e imposta automaticamente lo stato di base provvisorio su `"in lavorazione"` (oppure sposta all'indietro se si annulla). Altrimenti, tramite il blocco di sicurezza odierno, **se una riga del passato storicizzata presenta già la scritta `allegato`, la scavalca rendendola fisicamente intoccabile!**
+**Regola base:** Avvia il software di controllo locale (la WebApp gestionale Map). L'utente seleziona i "secchielli" dei punti e li lancia ai vari veicoli in partenza. Chiudendo la pagina salva tutto nel JSON base grezzo.
+**Regola di Sicurezza (Storicizzazione):** Appena si assegna un punto a un furgone, il programma incide tempestivamente la scritta temporanea `"in lavorazione"` nell'Excel storico `rientri_ddt`. Se incontra una casella passata in cui c'è già il sigillo `"allegato"`, la ignora per sicurezza impedendo sovrascritture distruttive sui rientri vecchi chiusi!
 
-### STEP 5, 6 e 7: Generazione Moduli di Deposito e Mobile
-**Script:** `6_genera_percorsi_veggiano.py` / `7_genera_mappe_mobile_autisti.py`
-**Regole base:** Usano l'assegnazione json creata dal dispatcher nello step 4 per i riepiloghi.
-* **6_genera (Veggiano):** Costruisce gli HTML stampabili a blocchi per chi deve preparare i bancali nel magazzino.
-* **7_genera (WhatsApp App):** Genera la "Mappa Autisti" rapida con i file HTML minimali inviabili via messaggio agli autisti per l'operatività base.
+### STEP 5: Intelligenza Artificiale e Consolidamento Ordine (★ AGGIORNATO)
+**Script:** `6_genera_percorsi_veggiano.py` E SUBITO DOPO `8_genera_json_ottimizzato.py` (dentro il *Bat 3*)
+**Regola base:** Genera gli HTML stampabili della Mappa a blocchi di Veggiano. Nel farlo affida immediatamente il ricalcolo chilometrico all'Intelligenza Artificiale "Google OR-Tools" per generare la tratta ineguagliabile (con partenza/arrivo dal Deposito). 
+**Nuova Regola di Sincronizzazione Pura:** Prima che si chiuda il Bat 3, interviene lo script 8 che incamera questa magnifica sequenza formale creata dal cervellone e la salva indelebilmente in `viaggi_giornalieri_OTTIMIZZATO.json`. In questo modo l'ordine non potrà mai più divergere e farà da Re per tutti i prossimi software. E soprattutto **ignora i punti a vuoto (come DDT_DA_INSERIRE)** estrapolandoli dal giro viaggiabile.
 
-### STEP 8: Ottimizzazione Logistica Cloud e Autisti Avanzati
-**Script:** `8_genera_json_ottimizzato.py` e `8_server_mobile_autisti.py` 
-**Regola base:** File che alleggeriscono la stringa JSON e avviano l'infrastruttura di connettività verso la Progressive Web App (PWA) e verso Firebase. Permette la pre-carica off-line in assenza di rete dei conducenti e assicura l'operatività dei pulsanti via smartphone.
+### STEP 6: Interfaccia Mobile Autisti (WhatsApp App)
+**Script:** `7_genera_mappe_mobile_autisti.py` (Il *Bat 4*)
+**Regola base:** Attinge ciecamente solo al file Re (`OTTIMIZZATO.json`) letto al punto precedente. Compone in pochi secondi la WebApp da cellulare da inoltrare via Whatsapp contenente: ordine di fermata fedelissimo, Link per G-Maps, pulsante "Consegnato" e abilita il tastino segreto **"Geolocalizza"** per far comunicare il telefono con il cloud Firebase di ritorno.
 
-### STEP 9: Generazione Distinte PDF (★ AGGIORNATO)
-**Script:** `9_genera_distinte_da_viaggi.py`
-**Regola base:** Genera i fogli PDF estetici finali e cartacei ("Distinte Viaggio"), unendo l'intestazione all'ordine preciso dei clienti serviti con relativo peso, colli, fermate e orari.
-**NUOVA REGOLA 1 (Etichette rientri dinamiche):** Nei moduli di consegna stampati, l'autista capirà al volo se ritirare più resi unificati. Invece di "[RIENTRO]", troverà label dinamiche (es. `[RIENTRO<-['13-04-2026', '10-04-2026']]`).
-**NUOVA REGOLA 2 (Chiusura Excel Definitiva):** Gira l'ultima validazione ("Finalizzazione Stati"). Tutte le celle provvisorie create in fase 4 con scritto `"in lavorazione"`, ora vengono formalmente cristallizzate, marcate internamente nell'Excel da solo come  `"allegato DDT + {data odierna}"`. Questa ultima firma impedirà automaticamente (vedi regola passo 4 di oggi) qualunque modifica futura sul cliente chiuso.
+### STEP 7: Generazione Fascicoli Cartacei e Chiusura Contabile
+**Script:** `9_genera_distinte_da_viaggi.py` (Il *Bat 5*)
+**Regola base:** Attinge anch'esso esclusivamente al file Re unificato. Invece degli HTML sforna i PDF cartacei. 
+**Regole Finali:** Cuce e impagina gli originali in due Master PDF. Scrive sulle etichette le specifiche date concatenate del ritiro (es. `[RIENTRO<-['13-04-2026']]`). Poi compie la mossa definitiva: apre il registro Excel, cerca le scritte provvisorie `"in lavorazione"` che aveva lasciato al Punto 4, le vernicia indelebilmente con **"Allegato DDT + la data di oggi"** e chiude l'Excel.
+
+### STEP 8: Rete di Ritorno Punti Precisi (Il Sync di Fine Giornata)
+**Script:** `10_sync_coordinate_da_cloud.py` (Il *Bat 6*)
+**Regola base:** È il "Ponte Sensoriale". Si autentica in modo sicuro e criptato verso Firebase usando la chiave Service Account. Scarica la posta (cioè rintraccia i nuovi ping GPS perfetti mandati in giornata dai tasti degli autisti di cui al Punto 6). Quando li trova, li incide fisicamente permanentemente in fondo alla colonna T (`COORDINATE_REALI_GPS`) dell'anagrafica clienti del PC in ufficio, preparando il terreno immacolato e perfezionato per il giorno successivo, quando ripartirà il Punto 2!

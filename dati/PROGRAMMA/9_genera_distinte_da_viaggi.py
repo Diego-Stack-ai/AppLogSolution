@@ -68,7 +68,7 @@ CODICE_MAP = {
 CONSOLIDAMENTO = {
     "LT-ES-04-LS":   ("Fardelli",  "Bottiglie", 10),
     "LT-ESL-IN-LB":  ("Fardelli",  "Bottiglie",  6),
-    "LT-AQ-04-LB":   ("Fardelli",  "Bottiglie", 10),
+    "LT-AQ-04-LB":   ("Fardelli",  "Bottiglie", 12),
     "LT-AQ-04-LS":   ("Fardelli",  "Bottiglie", 10),
     "LT-AQ-04-LV":   ("Fardelli",  "Bottiglie",  6),
     "YO-BI-MN-04-LB":("Cartoni",   "Cluster",   10),

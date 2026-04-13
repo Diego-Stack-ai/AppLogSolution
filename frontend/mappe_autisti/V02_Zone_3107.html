@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V05</title>
+    <title>V02</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
@@ -69,13 +69,13 @@
         </div>
         <div id="sidebar">
             <div class="header">
-                <div class="trip-title">🏎️ V05 | Zone: 3123, 3207, 4123</div>
+                <div class="trip-title">🏎️ V02 | Zone: 3107</div>
                 <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
                 <div class="stats-row">
-                    <div class="stat-item"><span class="stat-val">106.7km</span><span class="stat-lbl">Strada</span></div>
-                    <div class="stat-item"><span class="stat-val">2h 22m</span><span class="stat-lbl">Guida</span></div>
-                    <div class="stat-item"><span class="stat-val">2h 34m</span><span class="stat-lbl">Soste</span></div>
-                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">4h 56m</span><span class="stat-lbl">Totale</span></div>
+                    <div class="stat-item"><span class="stat-val">131.7km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 55m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">3h 16m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">6h 11m</span><span class="stat-lbl">Totale</span></div>
                 </div>
             </div>
             <div id="delivery-list"><div class="card next" onclick="focusOn(0)">
@@ -85,10 +85,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(0, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(0, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">SCUOLA PRIMARIA CORLETTO</b>
-                    <span class="addr"><b>VIA PRIULI 72</b><br>31033 CASTELFRANCO VENETO (TREVISO)</span>
+                    <b class="name">Pasini</b>
+                    <span class="addr"><b>Via Ospedaletto-S.S.53 Postumia</b><br>165, 36100 Vicenza (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6489197,11.8972368&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.548855,11.5495137&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(1)">
                 <div class="stop-num">2</div>
                 <div class="stop-info">
@@ -96,10 +96,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(1, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(1, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">"S.MARIA DELLA PIEVE"</b>
-                    <span class="addr"><b>BORGO PIEVE 80</b><br>31033 CASTELFRANCO VENETO (TREVISO)</span>
+                    <b class="name">IC VICENZA 6-7 - DE AMICIS</b>
+                    <span class="addr"><b>VIALE FIUME 97</b><br>36100 VICENZA (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6679725,11.9305332&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5643524,11.5602111&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(2)">
                 <div class="stop-num">3</div>
                 <div class="stop-info">
@@ -107,10 +107,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(2, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(2, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">SCUOLA PRIMARIA"MASACCIO"</b>
-                    <span class="addr"><b>VIA MONFENERA 23</b><br>31033 CASTELFRANCO VENETO (TREVISO)</span>
+                    <b class="name">SCUOLA PRIMARIA G. ZANELLA</b>
+                    <span class="addr"><b>VIA ROSSINI 2/4</b><br>36010 MONTICELLO CONTE OTTO (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6743672,11.9189079&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6037003,11.5708813&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(3)">
                 <div class="stop-num">4</div>
                 <div class="stop-info">
@@ -118,10 +118,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(3, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(3, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">GIUSEPPINA BIANCO - CASTELLO G.</b>
-                    <span class="addr"><b>VIA PAOLO PIAZZA 3</b><br>31030 CASTELLO DI GODEGO (TREVISO)</span>
+                    <b class="name">Scuola Primaria G. Zanella</b>
+                    <span class="addr"><b>Via Rossini</b><br>2/4, 36010 Monticello Conte Otto (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6931681,11.8835511&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6037003,11.5708813&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(4)">
                 <div class="stop-num">5</div>
                 <div class="stop-info">
@@ -129,10 +129,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(4, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(4, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">ANGELO MARCHESAN - RAMON</b>
-                    <span class="addr"><b>VIA MARCHESAN 1</b><br>31037 LORIA (TREVISO)</span>
+                    <b class="name">LAMPERTICO</b>
+                    <span class="addr"><b>VIA DANTE 7</b><br>36030 COSTABISSARA (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7139815,11.8652845&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.578573,11.4892955&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(5)">
                 <div class="stop-num">6</div>
                 <div class="stop-info">
@@ -140,10 +140,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(5, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(5, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Don Bosco - Valla</b>
-                    <span class="addr"><b>Via Enrico Toti 8</b><br>31039 Riese Pio X (TV)</span>
+                    <b class="name">DE AMICIS</b>
+                    <span class="addr"><b>STRADA ST.PASUBIO 50</b><br>36030 COSTABISSARA (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7072531,11.9300784&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5998845598298,11.4956954336298&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(6)">
                 <div class="stop-num">7</div>
                 <div class="stop-info">
@@ -151,10 +151,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(6, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(6, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">MARGHERITA SARTO SANSON - CAP.</b>
-                    <span class="addr"><b>VIA MERRY DEL VAL 25</b><br>31039 RIESE PIO X (TREVISO)</span>
+                    <b class="name">MALO - SAN TOMIO</b>
+                    <span class="addr"><b>VIA S. TOMMASO 15</b><br>36034 MALO (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7303283,11.9194384&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6594164,11.4098526&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(7)">
                 <div class="stop-num">8</div>
                 <div class="stop-info">
@@ -162,10 +162,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(7, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(7, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">S. PIO X - SAN VITO</b>
-                    <span class="addr"><b>PIAZZA SAN VITO 6</b><br>31030 ALTIVOLE (TREVISO)</span>
+                    <b class="name">SAN GIOVANNI BOSCO</b>
+                    <span class="addr"><b>VIA ROZZAMPIA 73</b><br>36016 THIENE (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7558039,11.9117124&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.67898086660827,11.50217561555479&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(8)">
                 <div class="stop-num">9</div>
                 <div class="stop-info">
@@ -173,10 +173,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(8, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(8, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">MADONNINA DEL GRAPPA- SPINEDA</b>
-                    <span class="addr"><b>VIA CENDROLE 68</b><br>31039 RIESE PIO X (TREVISO)</span>
+                    <b class="name">ALFREDO TALIN</b>
+                    <span class="addr"><b>VIA MANTEGNA 2</b><br>36016 THIENE (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7499828,11.8836609&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7132944,11.4880853&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(9)">
                 <div class="stop-num">10</div>
                 <div class="stop-info">
@@ -184,10 +184,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(9, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(9, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">General Giardino ( Semonzo)</b>
-                    <span class="addr"><b>Via Martiri Del Grappa N°24</b><br>31030 Borso Del Grappa (TV)</span>
+                    <b class="name">Lugo Di Vicenza - Capoluogo</b>
+                    <span class="addr"><b>Via Matteotti</b><br>26, 36030 Lugo Di Vicenza (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8186168,11.8007262&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7473376,11.5275499&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(10)">
                 <div class="stop-num">11</div>
                 <div class="stop-info">
@@ -195,10 +195,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(10, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(10, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">MONTE GRAPPA - BORSO DEL GRAPPA</b>
-                    <span class="addr"><b>VIA MARTIRI DEL GRAPPAN. 24</b><br>31030 BORSO DEL GRAPPA (TREVISO)</span>
+                    <b class="name">FARA VICENTINO - CAP.</b>
+                    <span class="addr"><b>VIA MARCONI 31</b><br>36030 FARA VICENTINO (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8210248,11.7993161&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7389035,11.5494574&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(11)">
                 <div class="stop-num">12</div>
                 <div class="stop-info">
@@ -206,10 +206,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(11, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(11, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">M.FILIPPIN FERRARESE - PADERNO</b>
-                    <span class="addr"><b>VIA ROMA N. 5</b><br>31017 PIEVE DEL GRAPPA (TREVISO)</span>
+                    <b class="name">Dante Alighieri Fara Vic.No Fraz.S.Giorgio</b>
+                    <span class="addr"><b>Via Perlena 76</b><br>36030 Fara Vicentino (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8273409,11.8562764&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7270533,11.5836439&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(12)">
                 <div class="stop-num">13</div>
                 <div class="stop-info">
@@ -217,10 +217,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(12, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(12, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">SCUOLA PRIMARIA PARITARIA "FILIPPIN"</b>
-                    <span class="addr"><b>VIA S.GIACOMO 4</b><br>31017 PIEVE DEL GRAPPA (TREVISO)</span>
+                    <b class="name">Ic Breganze - Maragnole</b>
+                    <span class="addr"><b>Piazza Mons. Faresin 15</b><br>36042 Breganze (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8299919,11.8610041&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7035986,11.5703868&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(13)">
                 <div class="stop-num">14</div>
                 <div class="stop-info">
@@ -228,10 +228,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(13, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(13, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Sc.Elementare Paritaria Collegio Canova</b>
-                    <span class="addr"><b>Via Degli Impianti Sportivi 8</b><br>31054 Possagno (TV)</span>
+                    <b class="name">MONTECCHIO PREC. - CAP.</b>
+                    <span class="addr"><b>VIA MAGANZA 19</b><br>36030 MONTECCHIO PRECALCINO (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.854879,11.8815695&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6741134,11.5578313&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(14)">
                 <div class="stop-num">15</div>
                 <div class="stop-info">
@@ -239,10 +239,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(14, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(14, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">ALDO FANTINA - POSSAGNO</b>
-                    <span class="addr"><b>VIA STRADONE DEL TEMPIO N. 21</b><br>31054 POSSAGNO (TREVISO)</span>
+                    <b class="name">CD SANDRIGO -CAPOLUOGO</b>
+                    <span class="addr"><b>VIA CHILESOTTI</b><br>36066 SANDRIGO (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8561165,11.8799611&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6599705,11.5933162&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(15)">
                 <div class="stop-num">16</div>
                 <div class="stop-info">
@@ -250,10 +250,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(15, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(15, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Francesco Sartor - Cavaso Del Tomba</b>
-                    <span class="addr"><b>Via Stradone Del Tempio N°21</b><br>31034 Cavaso Del Tomba (TV)</span>
+                    <b class="name">Scuola Primaia Tecchio</b>
+                    <span class="addr"><b>Via Chiesa Lupia</b><br>36066 Sandrigo (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8656383,11.9126347&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6409043,11.6092197&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(16)">
                 <div class="stop-num">17</div>
                 <div class="stop-info">
@@ -261,10 +261,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(16, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(16, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">F.Lli Stramare - Pederobba Cap.</b>
-                    <span class="addr"><b>Via Roma 102</b><br>31040 Pederobba (TV)</span>
+                    <b class="name">Scuola Primaria Le Risorgive</b>
+                    <span class="addr"><b>Piazza Iv Novembre 4</b><br>36050 Bressanvido (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.877235,11.951834&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6341966,11.628092&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(17)">
                 <div class="stop-num">18</div>
                 <div class="stop-info">
@@ -272,10 +272,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(17, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(17, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">ISTITUTO SCOLASTICO "MARIA AUSILIATRICE"</b>
-                    <span class="addr"><b>VIA RISORGIMENTO 113</b><br>31044 MONTEBELLUNA (TREVISO)</span>
+                    <b class="name">S.D. Savio</b>
+                    <span class="addr"><b>Via S. Teresa 5</b><br>36060 Schiavon (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.77225911543582,12.05885922631987&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6925971,11.6448404&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(18)">
                 <div class="stop-num">19</div>
                 <div class="stop-info">
@@ -283,10 +283,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(18, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(18, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">VIA BARCO - ALTIVOLE CAP.</b>
-                    <span class="addr"><b>VIA BARCO 22</b><br>31030 ALTIVOLE (TREVISO)</span>
+                    <b class="name">SCUOLA PRIMARIA SCHIAVON</b>
+                    <span class="addr"><b>VIA S. TERESA 5</b><br>36060 SCHIAVON (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7554893,11.9560703&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6925971,11.6448404&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(19)">
                 <div class="stop-num">20</div>
                 <div class="stop-info">
@@ -294,10 +294,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(19, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(19, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">GIOVANNI XXIII - CASELLE</b>
-                    <span class="addr"><b>VIA J. KENNEDY 1/1</b><br>31030 ALTIVOLE (TREVISO)</span>
+                    <b class="name">SAN GIOVANNI BOSCO</b>
+                    <span class="addr"><b>VIA ROMA 2</b><br>36060 PIANEZZE (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7464156,11.975021&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.73896665823806,11.625374740491736&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(20)">
                 <div class="stop-num">21</div>
                 <div class="stop-info">
@@ -305,10 +305,10 @@
                         <button class="btn-geo" onclick="saveRealCoords(20, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(20, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Gianni Rodari - Barcon</b>
-                    <span class="addr"><b>Via Pola</b><br>19, 31050 Vedelago (TV)</span>
+                    <b class="name">O. GUGELMO</b>
+                    <span class="addr"><b>VIA PEROZZI 11</b><br>36063 MAROSTICA (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7211921,12.004646&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7613048,11.6054128&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(21)">
                 <div class="stop-num">22</div>
                 <div class="stop-info">
@@ -316,10 +316,76 @@
                         <button class="btn-geo" onclick="saveRealCoords(21, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
                         <button class="btn-done" onclick="toggleDone(21, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">R.Pezzani - Istrana Cap.</b>
-                    <span class="addr"><b>Via Bertilla Boscardin</b><br>1, 31036 Istrana (TV)</span>
+                    <b class="name">Scuola Primaria Pio Xii</b>
+                    <span class="addr"><b>Via Sette Comuni</b><br>16, 36046 Lusiana Conco (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6773652,12.1050772&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7856519,11.5756333&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(22)">
+                <div class="stop-num">23</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(22, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(22, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Scuola Primaria Monsignor Girardi</b>
+                    <span class="addr"><b>Via Marco Poli</b><br>2, 36046 Lusiana Conco (VI)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7996042,11.6129678&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(23)">
+                <div class="stop-num">24</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(23, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(23, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">A.C. Pertile</b>
+                    <span class="addr"><b>Via N. Dalle Laste</b><br>2, 36063 Marostica (VI)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7473711,11.6597885&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(24)">
+                <div class="stop-num">25</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(24, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(24, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">A. CANOVA</b>
+                    <span class="addr"><b>VIA S. CROCE</b><br>36061 BASSANO DEL GRAPPA (VICENZA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.755753,11.7336855&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(25)">
+                <div class="stop-num">26</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(25, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(25, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">ROSA' E. MARANGONI</b>
+                    <span class="addr"><b>VIA CONCORDIA 3</b><br>36027 ROSA' (VICENZA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7309724,11.7295282&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(26)">
+                <div class="stop-num">27</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(26, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(26, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">SC. ELEM. J.FERRAZZI</b>
+                    <span class="addr"><b>VIA B.MONTAGNA 7</b><br>36050 CARTIGLIANO (VICENZA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7130543,11.6940642&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(27)">
+                <div class="stop-num">28</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(27, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(27, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">MONTEGRAPPA - TEZZE SUL BRENTA</b>
+                    <span class="addr"><b>VIA DON ANTONIO BELLUZZO 7</b><br>36056 TEZZE SUL BRENTA (VICENZA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6842851,11.7417891&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div></div>
         </div>
     </div>
@@ -378,8 +444,8 @@
     </script>
 
     <script>
-        const v_id = "V05";
-        const data = [{"cliente": "SCUOLA PRIMARIA CORLETTO", "indirizzo": "VIA PRIULI 72, 31033 CASTELFRANCO VENETO (TREVISO)", "lat": 45.6489197, "lon": 11.8972368, "codice_frutta": "p7729", "codice_latte": "p00000"}, {"cliente": "\"S.MARIA DELLA PIEVE\"", "indirizzo": "BORGO PIEVE 80, 31033 CASTELFRANCO VENETO (TREVISO)", "lat": 45.6679725, "lon": 11.9305332, "codice_frutta": "p2058", "codice_latte": "p2003"}, {"cliente": "SCUOLA PRIMARIA\"MASACCIO\"", "indirizzo": "VIA MONFENERA 23, 31033 CASTELFRANCO VENETO (TREVISO)", "lat": 45.6743672, "lon": 11.9189079, "codice_frutta": "p7732", "codice_latte": "p00000"}, {"cliente": "GIUSEPPINA BIANCO - CASTELLO G.", "indirizzo": "VIA PAOLO PIAZZA 3, 31030 CASTELLO DI GODEGO (TREVISO)", "lat": 45.6931681, "lon": 11.8835511, "codice_frutta": "p2331", "codice_latte": "p1776"}, {"cliente": "ANGELO MARCHESAN - RAMON", "indirizzo": "VIA MARCHESAN 1, 31037 LORIA (TREVISO)", "lat": 45.7139815, "lon": 11.8652845, "codice_frutta": "p2330", "codice_latte": "p00000"}, {"cliente": "Don Bosco - Valla", "indirizzo": "Via Enrico Toti 8, 31039 Riese Pio X (TV)", "lat": 45.7072531, "lon": 11.9300784, "codice_frutta": "p2175", "codice_latte": "p1920"}, {"cliente": "MARGHERITA SARTO SANSON - CAP.", "indirizzo": "VIA MERRY DEL VAL 25, 31039 RIESE PIO X (TREVISO)", "lat": 45.7303283, "lon": 11.9194384, "codice_frutta": "p2173", "codice_latte": "p1917"}, {"cliente": "S. PIO X - SAN VITO", "indirizzo": "PIAZZA SAN VITO 6, 31030 ALTIVOLE (TREVISO)", "lat": 45.7558039, "lon": 11.9117124, "codice_frutta": "p2413", "codice_latte": "p1936"}, {"cliente": "MADONNINA DEL GRAPPA- SPINEDA", "indirizzo": "VIA CENDROLE 68, 31039 RIESE PIO X (TREVISO)", "lat": 45.7499828, "lon": 11.8836609, "codice_frutta": "p2174", "codice_latte": "p1918"}, {"cliente": "General Giardino ( Semonzo)", "indirizzo": "Via Martiri Del Grappa N\u00b024, 31030 Borso Del Grappa (TV)", "lat": 45.8186168, "lon": 11.8007262, "codice_frutta": "p2272", "codice_latte": "p00000"}, {"cliente": "MONTE GRAPPA - BORSO DEL GRAPPA", "indirizzo": "VIA MARTIRI DEL GRAPPAN. 24, 31030 BORSO DEL GRAPPA (TREVISO)", "lat": 45.8210248, "lon": 11.7993161, "codice_frutta": "p2273", "codice_latte": "p00000"}, {"cliente": "M.FILIPPIN FERRARESE - PADERNO", "indirizzo": "VIA ROMA N. 5, 31017 PIEVE DEL GRAPPA (TREVISO)", "lat": 45.8273409, "lon": 11.8562764, "codice_frutta": "p2270", "codice_latte": "p00000"}, {"cliente": "SCUOLA PRIMARIA PARITARIA \"FILIPPIN\"", "indirizzo": "VIA S.GIACOMO 4, 31017 PIEVE DEL GRAPPA (TREVISO)", "lat": 45.8299919, "lon": 11.8610041, "codice_frutta": "p11119", "codice_latte": "p00000"}, {"cliente": "Sc.Elementare Paritaria Collegio Canova", "indirizzo": "Via Degli Impianti Sportivi 8, 31054 Possagno (TV)", "lat": 45.854879, "lon": 11.8815695, "codice_frutta": "p2293", "codice_latte": "p00000"}, {"cliente": "ALDO FANTINA - POSSAGNO", "indirizzo": "VIA STRADONE DEL TEMPIO N. 21, 31054 POSSAGNO (TREVISO)", "lat": 45.8561165, "lon": 11.8799611, "codice_frutta": "p2269", "codice_latte": "p00000"}, {"cliente": "Francesco Sartor - Cavaso Del Tomba", "indirizzo": "Via Stradone Del Tempio N\u00b021, 31034 Cavaso Del Tomba (TV)", "lat": 45.8656383, "lon": 11.9126347, "codice_frutta": "p2271", "codice_latte": "p00000"}, {"cliente": "F.Lli Stramare - Pederobba Cap.", "indirizzo": "Via Roma 102, 31040 Pederobba (TV)", "lat": 45.877235, "lon": 11.951834, "codice_frutta": "p00000", "codice_latte": "p2025"}, {"cliente": "ISTITUTO SCOLASTICO \"MARIA AUSILIATRICE\"", "indirizzo": "VIA RISORGIMENTO 113, 31044 MONTEBELLUNA (TREVISO)", "lat": 45.77225911543582, "lon": 12.05885922631987, "codice_frutta": "p2246", "codice_latte": "p00000"}, {"cliente": "VIA BARCO - ALTIVOLE CAP.", "indirizzo": "VIA BARCO 22, 31030 ALTIVOLE (TREVISO)", "lat": 45.7554893, "lon": 11.9560703, "codice_frutta": "p2411", "codice_latte": "p1934"}, {"cliente": "GIOVANNI XXIII - CASELLE", "indirizzo": "VIA J. KENNEDY 1/1, 31030 ALTIVOLE (TREVISO)", "lat": 45.7464156, "lon": 11.975021, "codice_frutta": "p2412", "codice_latte": "p1935"}, {"cliente": "Gianni Rodari - Barcon", "indirizzo": "Via Pola, 19, 31050 Vedelago (TV)", "lat": 45.7211921, "lon": 12.004646, "codice_frutta": "p2153", "codice_latte": "p00000"}, {"cliente": "R.Pezzani - Istrana Cap.", "indirizzo": "Via Bertilla Boscardin, 1, 31036 Istrana (TV)", "lat": 45.6773652, "lon": 12.1050772, "codice_frutta": "p2056", "codice_latte": "p1748"}];
+        const v_id = "V02";
+        const data = [{"cliente": "Pasini", "indirizzo": "Via Ospedaletto-S.S.53 Postumia, 165, 36100 Vicenza (VI)", "lat": 45.548855, "lon": 11.5495137, "codice_frutta": "p00000", "codice_latte": "p1960"}, {"cliente": "IC VICENZA 6-7 - DE AMICIS", "indirizzo": "VIALE FIUME 97, 36100 VICENZA (VICENZA)", "lat": 45.5643524, "lon": 11.5602111, "codice_frutta": "p00000", "codice_latte": "p1962"}, {"cliente": "SCUOLA PRIMARIA G. ZANELLA", "indirizzo": "VIA ROSSINI 2/4, 36010 MONTICELLO CONTE OTTO (VICENZA)", "lat": 45.6037003, "lon": 11.5708813, "codice_frutta": "p00000", "codice_latte": "p1769"}, {"cliente": "Scuola Primaria G. Zanella", "indirizzo": "Via Rossini, 2/4, 36010 Monticello Conte Otto (VI)", "lat": 45.6037003, "lon": 11.5708813, "codice_frutta": "p2124", "codice_latte": "p00000"}, {"cliente": "LAMPERTICO", "indirizzo": "VIA DANTE 7, 36030 COSTABISSARA (VICENZA)", "lat": 45.578573, "lon": 11.4892955, "codice_frutta": "p12858", "codice_latte": "p2028"}, {"cliente": "DE AMICIS", "indirizzo": "STRADA ST.PASUBIO 50, 36030 COSTABISSARA (VICENZA)", "lat": 45.5998845598298, "lon": 11.4956954336298, "codice_frutta": "p00000", "codice_latte": "p1839"}, {"cliente": "MALO - SAN TOMIO", "indirizzo": "VIA S. TOMMASO 15, 36034 MALO (VICENZA)", "lat": 45.6594164, "lon": 11.4098526, "codice_frutta": "p2258", "codice_latte": "p00000"}, {"cliente": "SAN GIOVANNI BOSCO", "indirizzo": "VIA ROZZAMPIA 73, 36016 THIENE (VICENZA)", "lat": 45.67898086660827, "lon": 11.50217561555479, "codice_frutta": "p2352", "codice_latte": "p00000"}, {"cliente": "ALFREDO TALIN", "indirizzo": "VIA MANTEGNA 2, 36016 THIENE (VICENZA)", "lat": 45.7132944, "lon": 11.4880853, "codice_frutta": "p2351", "codice_latte": "p00000"}, {"cliente": "Lugo Di Vicenza - Capoluogo", "indirizzo": "Via Matteotti, 26, 36030 Lugo Di Vicenza (VI)", "lat": 45.7473376, "lon": 11.5275499, "codice_frutta": "p2071", "codice_latte": "p00000"}, {"cliente": "FARA VICENTINO - CAP.", "indirizzo": "VIA MARCONI 31, 36030 FARA VICENTINO (VICENZA)", "lat": 45.7389035, "lon": 11.5494574, "codice_frutta": "p2072", "codice_latte": "p00000"}, {"cliente": "Dante Alighieri Fara Vic.No Fraz.S.Giorgio", "indirizzo": "Via Perlena 76, 36030 Fara Vicentino (VI)", "lat": 45.7270533, "lon": 11.5836439, "codice_frutta": "p00000", "codice_latte": "p1940"}, {"cliente": "Ic Breganze - Maragnole", "indirizzo": "Piazza Mons. Faresin 15, 36042 Breganze (VI)", "lat": 45.7035986, "lon": 11.5703868, "codice_frutta": "p00000", "codice_latte": "p2016"}, {"cliente": "MONTECCHIO PREC. - CAP.", "indirizzo": "VIA MAGANZA 19, 36030 MONTECCHIO PRECALCINO (VICENZA)", "lat": 45.6741134, "lon": 11.5578313, "codice_frutta": "p00000", "codice_latte": "p1909"}, {"cliente": "CD SANDRIGO -CAPOLUOGO", "indirizzo": "VIA CHILESOTTI, 36066 SANDRIGO (VICENZA)", "lat": 45.6599705, "lon": 11.5933162, "codice_frutta": "p2312", "codice_latte": "p00000"}, {"cliente": "Scuola Primaia Tecchio", "indirizzo": "Via Chiesa Lupia, 36066 Sandrigo (VI)", "lat": 45.6409043, "lon": 11.6092197, "codice_frutta": "p2313", "codice_latte": "p1925"}, {"cliente": "Scuola Primaria Le Risorgive", "indirizzo": "Piazza Iv Novembre 4, 36050 Bressanvido (VI)", "lat": 45.6341966, "lon": 11.628092, "codice_frutta": "p00000", "codice_latte": "p1926"}, {"cliente": "S.D. Savio", "indirizzo": "Via S. Teresa 5, 36060 Schiavon (VI)", "lat": 45.6925971, "lon": 11.6448404, "codice_frutta": "p00000", "codice_latte": "p1873"}, {"cliente": "SCUOLA PRIMARIA SCHIAVON", "indirizzo": "VIA S. TERESA 5, 36060 SCHIAVON (VICENZA)", "lat": 45.6925971, "lon": 11.6448404, "codice_frutta": "p2196", "codice_latte": "p00000"}, {"cliente": "SAN GIOVANNI BOSCO", "indirizzo": "VIA ROMA 2, 36060 PIANEZZE (VICENZA)", "lat": 45.73896665823806, "lon": 11.625374740491736, "codice_frutta": "p2198", "codice_latte": "p00000"}, {"cliente": "O. GUGELMO", "indirizzo": "VIA PEROZZI 11, 36063 MAROSTICA (VICENZA)", "lat": 45.7613048, "lon": 11.6054128, "codice_frutta": "p2197", "codice_latte": "p2638"}, {"cliente": "Scuola Primaria Pio Xii", "indirizzo": "Via Sette Comuni, 16, 36046 Lusiana Conco (VI)", "lat": 45.7856519, "lon": 11.5756333, "codice_frutta": "p2091", "codice_latte": "p00000"}, {"cliente": "Scuola Primaria Monsignor Girardi", "indirizzo": "Via Marco Poli, 2, 36046 Lusiana Conco (VI)", "lat": 45.7996042, "lon": 11.6129678, "codice_frutta": "p2090", "codice_latte": "p00000"}, {"cliente": "A.C. Pertile", "indirizzo": "Via N. Dalle Laste,2, 36063 Marostica (VI)", "lat": 45.7473711, "lon": 11.6597885, "codice_frutta": "p2194", "codice_latte": "p00000"}, {"cliente": "A. CANOVA", "indirizzo": "VIA S. CROCE, 36061 BASSANO DEL GRAPPA (VICENZA)", "lat": 45.755753, "lon": 11.7336855, "codice_frutta": "p00000", "codice_latte": "p1830"}, {"cliente": "ROSA' E. MARANGONI", "indirizzo": "VIA CONCORDIA 3, 36027 ROSA' (VICENZA)", "lat": 45.7309724, "lon": 11.7295282, "codice_frutta": "p00000", "codice_latte": "p1859"}, {"cliente": "SC. ELEM. J.FERRAZZI", "indirizzo": "VIA B.MONTAGNA 7, 36050 CARTIGLIANO (VICENZA)", "lat": 45.7130543, "lon": 11.6940642, "codice_frutta": "p2226", "codice_latte": "p2658"}, {"cliente": "MONTEGRAPPA - TEZZE SUL BRENTA", "indirizzo": "VIA DON ANTONIO BELLUZZO 7, 36056 TEZZE SUL BRENTA (VICENZA)", "lat": 45.6842851, "lon": 11.7417891, "codice_frutta": "p2414", "codice_latte": "p2644"}];
         window.data = data; window.v_id = v_id;
         let map, markers = [], userMarker;
         window.currentPos = null;

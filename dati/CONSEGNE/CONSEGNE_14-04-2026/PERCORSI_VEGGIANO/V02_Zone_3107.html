@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>V02 - Zone: 3107, 4107, 4120</title>
+    <title>V02 - Zone: 3107</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry&v=weekly" defer></script>
@@ -34,20 +34,20 @@
             <div class="header">
                 <div style="font-size:0.75rem; opacity:0.8; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Logistica Operativa</div>
                 <h1 style="margin:0; font-size:1.5rem; letter-spacing:-0.01em;">V02</h1>
-                <div style="margin-top:6px; font-size:0.85rem; font-weight:600; color: #a5b4fc;">Zone: 3107, 4107, 4120</div>
+                <div style="margin-top:6px; font-size:0.85rem; font-weight:600; color: #a5b4fc;">Zone: 3107</div>
             </div>
             <div class="stats-grid">
                 <div class="stat-card"><span class="stat-val">28</span><span class="stat-lbl">Tappe</span></div>
-                <div class="stat-card"><span class="stat-val">272.6 km</span><span class="stat-lbl">Distanza</span></div>
-                <div class="stat-card"><span class="stat-val">5h 59m</span><span class="stat-lbl">Guida</span></div>
+                <div class="stat-card"><span class="stat-val">225.7 km</span><span class="stat-lbl">Distanza</span></div>
+                <div class="stat-card"><span class="stat-val">5h 8m</span><span class="stat-lbl">Guida</span></div>
                 <div class="stat-card"><span class="stat-val">3h 44m</span><span class="stat-lbl">Scarico</span></div>
-                <div class="stat-card tot-card"><span class="stat-val" style="font-size:1.3rem;">9h 43m</span><span class="stat-lbl">TEMPO TOTALE STIMATO</span></div>
+                <div class="stat-card tot-card"><span class="stat-val" style="font-size:1.3rem;">8h 52m</span><span class="stat-lbl">TEMPO TOTALE STIMATO</span></div>
             </div>
             <div id="stop-list">
                 <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">home</span></div>
                     <div class="stop-info"><span class="depot-tag">PARTENZA</span><br><b style="font-size:0.9rem;">Deposito Veggiano</b></div>
                 </div>
-                <div class="stop-card" onclick="panTo(1)"><div class="stop-num">1</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Pasini</b><br><small style="color:#64748b; font-size:0.75rem;">Via Ospedaletto-S.S.53 Postumia, 165, 36100 Vicenza (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.548855,11.5495137&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(2)"><div class="stop-num">2</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">IC VICENZA 6-7 - DE AMICIS</b><br><small style="color:#64748b; font-size:0.75rem;">VIALE FIUME 97, 36100 VICENZA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5643524,11.5602111&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(3)"><div class="stop-num">3</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SCUOLA PRIMARIA G. ZANELLA</b><br><small style="color:#64748b; font-size:0.75rem;">VIA ROSSINI 2/4, 36010 MONTICELLO CONTE OTTO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6037003,11.5708813&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(4)"><div class="stop-num">4</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria G. Zanella</b><br><small style="color:#64748b; font-size:0.75rem;">Via Rossini, 2/4, 36010 Monticello Conte Otto (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6037003,11.5708813&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(5)"><div class="stop-num">5</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">LAMPERTICO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA DANTE 7, 36030 COSTABISSARA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.578573,11.4892955&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(6)"><div class="stop-num">6</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">DE AMICIS</b><br><small style="color:#64748b; font-size:0.75rem;">STRADA ST.PASUBIO 50, 36030 COSTABISSARA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5998845598298,11.4956954336298&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(7)"><div class="stop-num">7</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">MALO - SAN TOMIO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA S. TOMMASO 15, 36034 MALO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6594164,11.4098526&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(8)"><div class="stop-num">8</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">ALFREDO TALIN</b><br><small style="color:#64748b; font-size:0.75rem;">VIA MANTEGNA 2, 36016 THIENE (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7132944,11.4880853&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(9)"><div class="stop-num">9</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Lugo Di Vicenza - Capoluogo</b><br><small style="color:#64748b; font-size:0.75rem;">Via Matteotti, 26, 36030 Lugo Di Vicenza (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7473376,11.5275499&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(10)"><div class="stop-num">10</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">FARA VICENTINO - CAP.</b><br><small style="color:#64748b; font-size:0.75rem;">VIA MARCONI 31, 36030 FARA VICENTINO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7389035,11.5494574&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(11)"><div class="stop-num">11</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Dante Alighieri Fara Vic.No Fraz.S.Giorgio</b><br><small style="color:#64748b; font-size:0.75rem;">Via Perlena 76, 36030 Fara Vicentino (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7270533,11.5836439&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(12)"><div class="stop-num">12</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Ic Breganze - Maragnole</b><br><small style="color:#64748b; font-size:0.75rem;">Piazza Mons. Faresin 15, 36042 Breganze (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7035986,11.5703868&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(13)"><div class="stop-num">13</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">MONTECCHIO PREC. - CAP.</b><br><small style="color:#64748b; font-size:0.75rem;">VIA MAGANZA 19, 36030 MONTECCHIO PRECALCINO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6741134,11.5578313&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(14)"><div class="stop-num">14</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">CD SANDRIGO -CAPOLUOGO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA CHILESOTTI, 36066 SANDRIGO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6599705,11.5933162&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(15)"><div class="stop-num">15</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaia Tecchio</b><br><small style="color:#64748b; font-size:0.75rem;">Via Chiesa Lupia, 36066 Sandrigo (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6409043,11.6092197&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(16)"><div class="stop-num">16</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Le Risorgive</b><br><small style="color:#64748b; font-size:0.75rem;">Piazza Iv Novembre 4, 36050 Bressanvido (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6341966,11.628092&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(17)"><div class="stop-num">17</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">S.D. Savio</b><br><small style="color:#64748b; font-size:0.75rem;">Via S. Teresa 5, 36060 Schiavon (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6925971,11.6448404&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(18)"><div class="stop-num">18</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SCUOLA PRIMARIA SCHIAVON</b><br><small style="color:#64748b; font-size:0.75rem;">VIA S. TERESA 5, 36060 SCHIAVON (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6925971,11.6448404&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(19)"><div class="stop-num">19</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">O. GUGELMO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA PEROZZI 11, 36063 MAROSTICA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7613048,11.6054128&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(20)"><div class="stop-num">20</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Pio Xii</b><br><small style="color:#64748b; font-size:0.75rem;">Via Sette Comuni, 16, 36046 Lusiana Conco (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7856519,11.5756333&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(21)"><div class="stop-num">21</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Monsignor Girardi</b><br><small style="color:#64748b; font-size:0.75rem;">Via Marco Poli, 2, 36046 Lusiana Conco (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7996042,11.6129678&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(22)"><div class="stop-num">22</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">A.C. Pertile</b><br><small style="color:#64748b; font-size:0.75rem;">Via N. Dalle Laste,2, 36063 Marostica (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7473711,11.6597885&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(23)"><div class="stop-num">23</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">A. CANOVA</b><br><small style="color:#64748b; font-size:0.75rem;">VIA S. CROCE, 36061 BASSANO DEL GRAPPA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.755753,11.7336855&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(24)"><div class="stop-num">24</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">ROSA' E. MARANGONI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA CONCORDIA 3, 36027 ROSA' (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7309724,11.7295282&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(25)"><div class="stop-num">25</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SC. ELEM. J.FERRAZZI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA B.MONTAGNA 7, 36050 CARTIGLIANO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7130543,11.6940642&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(26)"><div class="stop-num">26</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">MONTEGRAPPA - TEZZE SUL BRENTA</b><br><small style="color:#64748b; font-size:0.75rem;">VIA DON ANTONIO BELLUZZO 7, 36056 TEZZE SUL BRENTA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6842851,11.7417891&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(27)"><div class="stop-num">27</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SAN GIOVANNI BOSCO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA ROZZAMPIA 73, 36016 THIENE (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4256448,12.0713225&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(28)"><div class="stop-num">28</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SAN GIOVANNI BOSCO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA ROMA 2, 36060 PIANEZZE (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4256448,12.0713225&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div>
+                <div class="stop-card" onclick="panTo(1)"><div class="stop-num">1</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Pasini</b><br><small style="color:#64748b; font-size:0.75rem;">Via Ospedaletto-S.S.53 Postumia, 165, 36100 Vicenza (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.548855,11.5495137&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(2)"><div class="stop-num">2</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">IC VICENZA 6-7 - DE AMICIS</b><br><small style="color:#64748b; font-size:0.75rem;">VIALE FIUME 97, 36100 VICENZA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5643524,11.5602111&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(3)"><div class="stop-num">3</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SCUOLA PRIMARIA G. ZANELLA</b><br><small style="color:#64748b; font-size:0.75rem;">VIA ROSSINI 2/4, 36010 MONTICELLO CONTE OTTO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6037003,11.5708813&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(4)"><div class="stop-num">4</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria G. Zanella</b><br><small style="color:#64748b; font-size:0.75rem;">Via Rossini, 2/4, 36010 Monticello Conte Otto (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6037003,11.5708813&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(5)"><div class="stop-num">5</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">LAMPERTICO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA DANTE 7, 36030 COSTABISSARA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.578573,11.4892955&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(6)"><div class="stop-num">6</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">DE AMICIS</b><br><small style="color:#64748b; font-size:0.75rem;">STRADA ST.PASUBIO 50, 36030 COSTABISSARA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5998845598298,11.4956954336298&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(7)"><div class="stop-num">7</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">MALO - SAN TOMIO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA S. TOMMASO 15, 36034 MALO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6594164,11.4098526&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(8)"><div class="stop-num">8</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SAN GIOVANNI BOSCO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA ROZZAMPIA 73, 36016 THIENE (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.67898086660827,11.50217561555479&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(9)"><div class="stop-num">9</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">ALFREDO TALIN</b><br><small style="color:#64748b; font-size:0.75rem;">VIA MANTEGNA 2, 36016 THIENE (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7132944,11.4880853&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(10)"><div class="stop-num">10</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Lugo Di Vicenza - Capoluogo</b><br><small style="color:#64748b; font-size:0.75rem;">Via Matteotti, 26, 36030 Lugo Di Vicenza (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7473376,11.5275499&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(11)"><div class="stop-num">11</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">FARA VICENTINO - CAP.</b><br><small style="color:#64748b; font-size:0.75rem;">VIA MARCONI 31, 36030 FARA VICENTINO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7389035,11.5494574&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(12)"><div class="stop-num">12</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Dante Alighieri Fara Vic.No Fraz.S.Giorgio</b><br><small style="color:#64748b; font-size:0.75rem;">Via Perlena 76, 36030 Fara Vicentino (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7270533,11.5836439&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(13)"><div class="stop-num">13</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Ic Breganze - Maragnole</b><br><small style="color:#64748b; font-size:0.75rem;">Piazza Mons. Faresin 15, 36042 Breganze (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7035986,11.5703868&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(14)"><div class="stop-num">14</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">MONTECCHIO PREC. - CAP.</b><br><small style="color:#64748b; font-size:0.75rem;">VIA MAGANZA 19, 36030 MONTECCHIO PRECALCINO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6741134,11.5578313&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(15)"><div class="stop-num">15</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">CD SANDRIGO -CAPOLUOGO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA CHILESOTTI, 36066 SANDRIGO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6599705,11.5933162&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(16)"><div class="stop-num">16</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaia Tecchio</b><br><small style="color:#64748b; font-size:0.75rem;">Via Chiesa Lupia, 36066 Sandrigo (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6409043,11.6092197&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(17)"><div class="stop-num">17</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Le Risorgive</b><br><small style="color:#64748b; font-size:0.75rem;">Piazza Iv Novembre 4, 36050 Bressanvido (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6341966,11.628092&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(18)"><div class="stop-num">18</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">S.D. Savio</b><br><small style="color:#64748b; font-size:0.75rem;">Via S. Teresa 5, 36060 Schiavon (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6925971,11.6448404&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(19)"><div class="stop-num">19</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SCUOLA PRIMARIA SCHIAVON</b><br><small style="color:#64748b; font-size:0.75rem;">VIA S. TERESA 5, 36060 SCHIAVON (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6925971,11.6448404&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(20)"><div class="stop-num">20</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SAN GIOVANNI BOSCO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA ROMA 2, 36060 PIANEZZE (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.73896665823806,11.625374740491736&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(21)"><div class="stop-num">21</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">O. GUGELMO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA PEROZZI 11, 36063 MAROSTICA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7613048,11.6054128&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(22)"><div class="stop-num">22</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Pio Xii</b><br><small style="color:#64748b; font-size:0.75rem;">Via Sette Comuni, 16, 36046 Lusiana Conco (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7856519,11.5756333&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(23)"><div class="stop-num">23</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Monsignor Girardi</b><br><small style="color:#64748b; font-size:0.75rem;">Via Marco Poli, 2, 36046 Lusiana Conco (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7996042,11.6129678&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(24)"><div class="stop-num">24</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">A.C. Pertile</b><br><small style="color:#64748b; font-size:0.75rem;">Via N. Dalle Laste,2, 36063 Marostica (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7473711,11.6597885&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(25)"><div class="stop-num">25</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">A. CANOVA</b><br><small style="color:#64748b; font-size:0.75rem;">VIA S. CROCE, 36061 BASSANO DEL GRAPPA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.755753,11.7336855&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(26)"><div class="stop-num">26</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">ROSA' E. MARANGONI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA CONCORDIA 3, 36027 ROSA' (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7309724,11.7295282&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(27)"><div class="stop-num">27</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SC. ELEM. J.FERRAZZI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA B.MONTAGNA 7, 36050 CARTIGLIANO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7130543,11.6940642&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(28)"><div class="stop-num">28</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">MONTEGRAPPA - TEZZE SUL BRENTA</b><br><small style="color:#64748b; font-size:0.75rem;">VIA DON ANTONIO BELLUZZO 7, 36056 TEZZE SUL BRENTA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6842851,11.7417891&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div>
             </div>
         </div>
         <div id="map"></div>
@@ -66,7 +66,7 @@
     "codice_frutta": "p00000",
     "codice_latte": "p1960",
     "codice_univoco": "p00000_p1960",
-    "zona": "4120",
+    "zona": "3107",
     "data_consegna": "",
     "orario_min": "False",
     "orario_max": "10:00",
@@ -89,7 +89,7 @@
     "codice_frutta": "p00000",
     "codice_latte": "p1962",
     "codice_univoco": "p00000_p1962",
-    "zona": "4107",
+    "zona": "3107",
     "data_consegna": "",
     "orario_min": "false",
     "orario_max": "10:00",
@@ -112,7 +112,7 @@
     "codice_frutta": "p00000",
     "codice_latte": "p1769",
     "codice_univoco": "p00000_p1769",
-    "zona": "4120",
+    "zona": "3107",
     "data_consegna": "",
     "orario_min": "07:45",
     "orario_max": "10:00",
@@ -181,7 +181,7 @@
     "codice_frutta": "p00000",
     "codice_latte": "p1839",
     "codice_univoco": "p00000_p1839",
-    "zona": "4120",
+    "zona": "3107",
     "data_consegna": "",
     "orario_min": "08:00",
     "orario_max": "10:00",
@@ -220,6 +220,29 @@
     "row_idx_mappatura": 262,
     "geo_query_nome_indirizzo": "MALO - SAN TOMIO VIA S. TOMMASO 15, 36034 MALO (VICENZA)",
     "geo_query_indirizzo": "VIA S. TOMMASO 15, 36034 MALO (VICENZA)"
+  },
+  {
+    "nome": "SAN GIOVANNI BOSCO",
+    "indirizzo": "VIA ROZZAMPIA 73, 36016 THIENE (VICENZA)",
+    "codice_frutta": "p2352",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2352_p00000",
+    "zona": "3107",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.67898086660827,
+    "lon": 11.50217561555479,
+    "codici_ddt_frutta": [
+      "p2352"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 354,
+    "geo_query_nome_indirizzo": "SAN GIOVANNI BOSCO VIA ROZZAMPIA 73, 36016 THIENE (VICENZA)",
+    "geo_query_indirizzo": "VIA ROZZAMPIA 73, 36016 THIENE (VICENZA)"
   },
   {
     "nome": "ALFREDO TALIN",
@@ -296,7 +319,7 @@
     "codice_frutta": "p00000",
     "codice_latte": "p1940",
     "codice_univoco": "p00000_p1940",
-    "zona": "4120",
+    "zona": "3107",
     "data_consegna": "",
     "orario_min": "07:30",
     "orario_max": "10:00",
@@ -319,7 +342,7 @@
     "codice_frutta": "p00000",
     "codice_latte": "p2016",
     "codice_univoco": "p00000_p2016",
-    "zona": "4120",
+    "zona": "3107",
     "data_consegna": "",
     "orario_min": "08:15",
     "orario_max": "10:00",
@@ -342,7 +365,7 @@
     "codice_frutta": "p00000",
     "codice_latte": "p1909",
     "codice_univoco": "p00000_p1909",
-    "zona": "4120",
+    "zona": "3107",
     "data_consegna": "",
     "orario_min": "07:30",
     "orario_max": "10:00",
@@ -411,7 +434,7 @@
     "codice_frutta": "p00000",
     "codice_latte": "p1926",
     "codice_univoco": "p00000_p1926",
-    "zona": "4120",
+    "zona": "3107",
     "data_consegna": "",
     "orario_min": "08:00",
     "orario_max": "10:00",
@@ -434,7 +457,7 @@
     "codice_frutta": "p00000",
     "codice_latte": "p1873",
     "codice_univoco": "p00000_p1873",
-    "zona": "4107",
+    "zona": "3107",
     "data_consegna": "",
     "orario_min": "07:30",
     "orario_max": "10:00",
@@ -473,6 +496,29 @@
     "row_idx_mappatura": 423,
     "geo_query_nome_indirizzo": "SCUOLA PRIMARIA SCHIAVON VIA S. TERESA 5, 36060 SCHIAVON (VICENZA)",
     "geo_query_indirizzo": "VIA S. TERESA 5, 36060 SCHIAVON (VICENZA)"
+  },
+  {
+    "nome": "SAN GIOVANNI BOSCO",
+    "indirizzo": "VIA ROMA 2, 36060 PIANEZZE (VICENZA)",
+    "codice_frutta": "p2198",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2198_p00000",
+    "zona": "3107",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.73896665823806,
+    "lon": 11.625374740491736,
+    "codici_ddt_frutta": [
+      "p2198"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 353,
+    "geo_query_nome_indirizzo": "SAN GIOVANNI BOSCO VIA ROMA 2, 36060 PIANEZZE (VICENZA)",
+    "geo_query_indirizzo": "VIA ROMA 2, 36060 PIANEZZE (VICENZA)"
   },
   {
     "nome": "O. GUGELMO",
@@ -572,7 +618,7 @@
     "codice_frutta": "p00000",
     "codice_latte": "p1830",
     "codice_univoco": "p00000_p1830",
-    "zona": "4120",
+    "zona": "3107",
     "data_consegna": "",
     "orario_min": "07:45",
     "orario_max": "10:00",
@@ -595,7 +641,7 @@
     "codice_frutta": "p00000",
     "codice_latte": "p1859",
     "codice_univoco": "p00000_p1859",
-    "zona": "4107",
+    "zona": "3107",
     "data_consegna": "",
     "orario_min": "07:30",
     "orario_max": "10:00",
@@ -659,58 +705,12 @@
     "geo_query_indirizzo": "VIA DON ANTONIO BELLUZZO 7, 36056 TEZZE SUL BRENTA (VICENZA)"
   },
   {
-    "nome": "SAN GIOVANNI BOSCO",
-    "indirizzo": "VIA ROZZAMPIA 73, 36016 THIENE (VICENZA)",
-    "codice_frutta": "p2352",
-    "codice_latte": "p00000",
-    "codice_univoco": "p2352_p00000",
-    "zona": "3107",
-    "data_consegna": "",
-    "orario_min": "07:30",
-    "orario_max": "14:00",
-    "lat": 45.4256448,
-    "lon": 12.0713225,
-    "codici_ddt_frutta": [
-      "p2352"
-    ],
-    "codici_ddt_latte": [
-      "p00000"
-    ],
-    "rientri_alert": [],
-    "row_idx_mappatura": 354,
-    "geo_query_nome_indirizzo": "SAN GIOVANNI BOSCO VIA ROZZAMPIA 73, 36016 THIENE (VICENZA)",
-    "geo_query_indirizzo": "VIA ROZZAMPIA 73, 36016 THIENE (VICENZA)"
-  },
-  {
-    "nome": "SAN GIOVANNI BOSCO",
-    "indirizzo": "VIA ROMA 2, 36060 PIANEZZE (VICENZA)",
-    "codice_frutta": "p2198",
-    "codice_latte": "p00000",
-    "codice_univoco": "p2198_p00000",
-    "zona": "3107",
-    "data_consegna": "",
-    "orario_min": "08:00",
-    "orario_max": "14:00",
-    "lat": 45.4256448,
-    "lon": 12.0713225,
-    "codici_ddt_frutta": [
-      "p2198"
-    ],
-    "codici_ddt_latte": [
-      "p00000"
-    ],
-    "rientri_alert": [],
-    "row_idx_mappatura": 353,
-    "geo_query_nome_indirizzo": "SAN GIOVANNI BOSCO VIA ROMA 2, 36060 PIANEZZE (VICENZA)",
-    "geo_query_indirizzo": "VIA ROMA 2, 36060 PIANEZZE (VICENZA)"
-  },
-  {
     "lat": 45.442805,
     "lon": 11.714498,
     "nome": "DEPOSITO VEGGIANO",
     "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"
   }
-]; const polys = ["ytjtGi~nfAgNuOpBeWwAi{@gJwWgl@rhAi_@rR}\\|_@ck@nb@iNbSoP}BgK_NqDxg@}eCbzKe|@vkEiXtNqSnFes@`c@qR|LwHkBek@n\\kFdNsFfn@oNjr@gFlUmA|XfFlIsL|b@uBvCdG`@_K~NeE`DDr@oJiF{MwQqOkMwXg`@kSoTCXaGtRw@hCbBwFrE}MV[FG?Yc`@g^{JcNgDcPeGcDuQmAyYwDuX}Ea@?m`AyJmFwAGNgE~G}UpC{Jf@aA^}Qt`@vChCbFTkBnDnDzBjD_@pBkM|CxId@zPjJtDfMdIdNxC~K~UjBvUMToXhBgHjNoBfVoIfq@oErcAzAtRxObIpLfDvGvVjPr@AZbI``@qBpHg@hk@yQfJ}HpHmAfW]fUIv@tKu@ha@lh@h@KbJaHnEzEzAlJFZjWp@jHmBkHlBeLdCmIuE}GqTeLpJm[el@qQxCsz@|Zia@ddCyb@pd@s_@tf@aR~i@sVtf@YNFd@iTt\\yg@h_@aa@to@yLxB_IpOgdAr{@e@rAcEdTaBjKlG{JBCBIxBaJqFw[e|@qtFsYu~@q|@{{AyGyQo^xHgk@k@m_@cWya@}g@kQhAo@jA}]t^\\LrFbBgF}BEW_@Aw[qMec@aWoMwRoJwx@y@}]Huk@_Gg]qP}Eub@pHk\\nCeLaIyBmBfGwp@rOaLuAkXdHcPs@gWlPiO~FmAIw\\XwVEoV}MoQwHwAgAuSvQwHjEeEvBuT~FeGPmKfIyZvFcKvMbB|E{FzOtM~C{DJ_IbIxFnO|Rtd@hZ~UEjKe@hC~KbSfKlB~Sx@vHrAeGrBaHRFsEjRfG`G|Q`AnC|BZ\\n[nAzOjDwHxc@hJ|fBQxE~KQjYcDtEia@bn@mj@rTsQhKkQrE{NpU{LpRmBnf@iQnR{e@ld@od@oDgIwo@w}A_ItHv@b@_@mExEuCrAzDlCrJhMz@hRwJrGwSx@{i@t}@oXAoO`L}VzM}y@tFcIlFGWkKXzFcBtDqIcA}a@{OmVyU{TgTgf@ea@md@_D_LgA}DtUu@pUe{AgP}g@mRye@gLeO}C{J]yc@_FydAcYioAwKg}AeX}P@rCbL}LrFy@zDkEtDqAzA}AeH}DhHnAxQrEnb@wFbm@gA``@aV|^sIzTkKfCgEbVwJxN{ItSv@n`@_DjDwIaGgY{Pse@}^{GxZsCjRRiUkEtVyDcFcIzNwK`DaLfUwf@hWqGnQfGvf@|B~NpFhFsExMvEmGtHbC}IjBjJt@dIvIlA{B\\~SfC~LsDcJ}EoJd@xE_A{@DxA", "comvGyzseAuCeBmH|M}FxB}L}IgHgFgCvCgLjOcApFqBaFqH_]gNwVeRov@cR{m@sDm^oAy\\vAqPvH_@p@{DdF`FzHrFhMjUtJdBs@iIuEaXuOib@jAeQ`Lh@uIjDzEbP`OzXiHiXT}HzKhEvFlJtLsAxGnFaF|AsFjD|GfHjPtEjP|JtHrOfNw@lFlFmAjVeL`FlEK`NyMF}KtMzAxLySbEtFbCoLv@mJqAxY~ByNhFyb@~B}t@rAez@zG|Q?_Mc@e^fFK`AsJh@cJfJaEpEsIjF|@zIpAzJ{TnGkPzHgBfKyI~E_PfMou@d_@cDjH]RvHVtKdH]?m@BSUWyGsRqD{Yum@_bB_[}k@|CidAnBq[gWuv@nw@yc@hCyPCg\\_HmLy@aImFeHwD}AjMiFrKcEjDxBMLBh@jKL|GtHbBhd@|S{OxFgBhPC~AmDzK_Ar[uKzVcB{Fd_@iAfCm@oEl@nErEdHh@nJjH~FvXnCjSnDjKzIbFjl@pFhu@zGjy@\\VB]fK`ClG_FB_KzE{L|Ji\\nMgu@dN_|@pBuHpM}@sAq`@t@mThWbBlLz@lAc@hQ}AoDmc@IgBfo@iCtEuEU_BxEoGNes@m@ap@sAiWaFkr@gAuHzHmCpPoCvCEd@VhAiAlfAmUbKwFe^wnEaBsYzQoE~TkEwJek@Lsh@mBmpCqBoStAkq@fI{yBn@gj@aUgo@}BgHhGqGbQk_@bRmr@z`@}]bf@qZ`cAqMl^k[hSmH`r@_Wr[kQ`UqR|EoMpNer@vKyLfPsB~mAdMnw@eB`s@dA~aAfUfdB`Y|vBph@jiBle@tYvLcJvAzGuUvVeqBTMvf@dM`b@`LxDwV|H_t@hFgf@fOswA|Po_BzFgW`g@lLndAfYpDaMhDy[z@cITSIa@tUqzBtSgnBvDk^vAkF|GdBzMfDpEcEpMaFpGQtCzQ`e@xItI}GcAaWzu@}L|O}f@P}j@NsKfGJXb@l@]Mg@Cy@GoHByECxEFnHMr@MFKd@j@^dN`JnIpXpFRnDbD~BnYs@|YjC~F`H|~B|G|q@nZ|t@hRhDlBvJkH~[uIlNeMlEeSbx@mWv|@aRhm@cW`aBkJ`h@aIjE{EoTwAbG`Ndw@bPzvACbk@ge@rwAmZ|xAqWvnA}JfeAf@|f@{@zN}UpKvBuQfDjC_[|jD{Tr_DyHvgAgP~rAcb@jsBqc@vhEwv@zcDoE|A`AxGxSlJlM}Cd@{KpIaB|w@gq@zIwNlTqLlR}Sp]ij@zH}OdEpE|Dnv@}@zi@hBhElJtGBpB"]; let map, markers = [];
+]; const polys = ["ytjtGi~nfAgAkI}Gy@aCoCpBeWwAi{@gJwWgl@rhAi_@rR}\\|_@ck@nb@iNbSoP}BgK_NlCa@_Izh@efAf{Ew~@z}De|@vkEiXtNqSnFes@`c@qR|LwHkBek@n\\kFdNsFfn@oNjr@gFlUmA|XfFlIsL|b@uBvCdG`@_K~NeE`DDr@oJiF{MwQqOkMwXg`@kSoTCXaGtRw@hCbBwFrE}MV[FG?Yc`@g^{JcNgDcPeGcDuQmAyYwDuX}Ea@?m`AyJmFwAGNgE~GaGhE{Mw@qJh@IAaA^}Qt`@vChCbFTkBnDnDzBjD_@pBkM|CxId@zPjJtDfMdIdNxC~K~UjBvUMToXhBgHjNoBfVoIfq@oErcAzAtRxObIpLfDhBtMlD`HrNgCv@zDAZbI``@qBpHg@hk@yQfJ}HpHmAfW]fUIv@tKu@pXzZvGpLh@KbJaHN}@~DxGzAlJFZjWp@jHmBkHlBeLdCmIuE}GqTeLpJm[el@qQxCsz@|Zia@ddCyb@pd@s_@tf@aR~i@sVtf@YNFd@aH|TgKvFmc@d[kCbCaa@to@yLxB_IpOgdAr{@e@rAjAbIoG`JaBjKlG{JBCBIxBaJqFw[e|@qtFsYu~@o`@cl@uNk[ba@yXkCyVhUsIzDcQS}VaAqLF_IkGwQsKwAyTp@}z@rTcQzQmFuCgGgBuAf@c_@de@qMbR{OyRiZwVeGvDc_@``@jKTeWkDk|@ck@uLa^_Fu}@RqDHg`AiUaNoMSaf@xJqTJmHcJKU~@iYhAkHfRiX@kc@`HoNeBiTzZuQ_Cud@tByOgE{YcQaGkC{RzDmEtNaIjBaGz@sNrE{DtEePqAqFjKuXzB}EvMpCnFkGdF~BpLhK~@sPzL|L|b@rb@xRxEp[qCbHjSrSbJEvIhAdLbCcMdFoAkGjImAdLnLbEdQtCr@h@j_@jBxJl@a@jIoGjRt@d]h@fRxGtfApSoBdLoA~GkExGkf@h_@cXtOaMxImCbH_VnEsAzEoLpJaMfbAuUz@cA`GeW|b@ef@rLsJBsAia@kv@qRoc@qBwIyEtCPvDHn@Ai@\\eK`GhIpEpJnXwDvKaT]wPpAyVfC}IvKwCl_@}JbMyGaCoJnLoQdJiNpCs\\dC}XbFqDjFaAEsHAIqBtK_d@gMag@eb@qXcXab@yXed@eAaFdC{D`VKjHVnGaOeB}|@wKsSeG_o@qP_`@uJy[cBsl@mN}^oOqJn[gCz^eKtTkGeGgBpAaDfScHvYgKtJkKmCuW?}MbEoIqIeHtAuHl@oJvOmKpFyGeD", "{kdvG{q}eA{IwLeCfEsIbQmGfEcFgFaAcBqB|Du@}PeB~Hm@wGwA~@cB[cJmAy@{DkArDaI~N_JrGIfLiKdDsEzUcJpMuJvSiDxNbBhLNnI}HkCuY_RqQkLuRkP{BwB[fEmEjSmD|Uh@kWkDxWeEwFaHzJmC`HyDh@_H_ClAfF}HbPkPlLsTfJaI|Ee@lFrGhh@dAnQ|@z@zDVdB~CkHxLl@nA~D}HxIxBuIzAhIr@pHxKrBeDZjRvClNaC_FqGwN\\jEJdCcAgDi@sAcGnGgEtIaH|@yS_QwLnKkE`O}DiY_PwY}I_[eP{n@qP}l@{Ccc@zA{TCmIvEn@xAsEnKnFfPbR~BlIrKBqEeS{IiZiHk[FcG|Fp@hGmDuFxFsCXh@fHxHxMbKfPmJe`@tQvIhE|E|GKpByAhD~FvDbB_MfCsBtAxPpIxT~EjI|StU^`EdVmQfObO{DrEgRLgBvInD|HgPrF_ExD|EzCgXgApYlE}[fG}Zr@}u@xAg]CoPQsCvBxIbD~F]oG\\qPuA}SfFnBl@gUlJiDvFmLzPdGrVek@~KqCfHeMhO{i@xCgWjNKpVwCnAzMLxF|Cj@pAm@t@[Ga@DGBG?SIOcHgRMc@kI_k@{\\a}@}\\eo@gI_S|@gYjEoaALw@yUqq@EaEnWcMxVkObLuM_Ck]lAkEkJePEoFwIuIbRaJ`E}AfDx@?`AKNAT\\Rt@w@dHVr@jCjClD|CpEdAh^Ch@|ZuSxRmArl@ePvA}@tM]x@pFaCtRw@xFeCwFdCvFtCdPf@pFxPpD~R|BzXpJ`CxCzHxqAlLp`AGrH`@MhNvAvDoGYmTvIaFdI}_@fGoSdJ_p@lIyi@~N{Cg@yRs@qUfAsL`ENhK`AbHTnI~@^?zCcArEM~Fw@MoDwBuW}@{FLYnTcCt`@y@KeIbAM~@`JPdYPla@?XzAn\\uExu@rHtn@eDvb@zR~g@bPri@~BzSbBnZtfAiCf`@yHtCoBxAs@zIjUjDnGdKjAhS`AzS_@hAyBzLtBzLZzj@iPfo@}Zl_@oG`Da@lAvInCn[~B`MjB`\\^t@VYjEcEbR_BpZfCDNV?FMdKVfKjE~Qjo@|J|\\t`@ttA|m@f`Cjc@vuAxHjwAgCvHn@uEhKjCzEyErJiWvg@_h@tf@gUjy@aKbz@ij@|zA}[fUx@xo@jT`j@nTfJtJvKvOhGwCvd@uiCtr@ouCb\\_hBzz@yeD|RnEpIqFhEcNxDBxz@ss@zJmPzVuJlM_Th_@gn@tEuHzG`JrBd|@PjJaAdZjLtAJ|H"]; let map, markers = [];
         async function initMap() {
             const { Map } = await google.maps.importLibrary("maps");
             const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");

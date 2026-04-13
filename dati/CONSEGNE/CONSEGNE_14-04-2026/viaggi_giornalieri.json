@@ -468,7 +468,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1900",
         "codice_univoco": "p00000_p1900",
-        "zona": "4106",
+        "zona": "3106",
         "data_consegna": "",
         "orario_min": "08:00",
         "orario_max": "10:00",
@@ -709,8 +709,8 @@
         "data_consegna": "",
         "orario_min": "08:00",
         "orario_max": "14:00",
-        "lat": 45.4256448,
-        "lon": 12.0713225,
+        "lat": 45.73896665823806,
+        "lon": 11.625374740491736,
         "codici_ddt_frutta": [
           "p2198"
         ],
@@ -847,8 +847,8 @@
         "data_consegna": "",
         "orario_min": "07:30",
         "orario_max": "14:00",
-        "lat": 45.4256448,
-        "lon": 12.0713225,
+        "lat": 45.67898086660827,
+        "lon": 11.50217561555479,
         "codici_ddt_frutta": [
           "p2352"
         ],
@@ -889,7 +889,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1769",
         "codice_univoco": "p00000_p1769",
-        "zona": "4120",
+        "zona": "3107",
         "data_consegna": "",
         "orario_min": "07:45",
         "orario_max": "10:00",
@@ -912,7 +912,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1830",
         "codice_univoco": "p00000_p1830",
-        "zona": "4120",
+        "zona": "3107",
         "data_consegna": "",
         "orario_min": "07:45",
         "orario_max": "10:00",
@@ -935,7 +935,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1839",
         "codice_univoco": "p00000_p1839",
-        "zona": "4120",
+        "zona": "3107",
         "data_consegna": "",
         "orario_min": "08:00",
         "orario_max": "10:00",
@@ -953,127 +953,12 @@
         "geo_query_indirizzo": "STRADA ST.PASUBIO 50, 36030 COSTABISSARA (VICENZA)"
       },
       {
-        "nome": "MONTECCHIO PREC. - CAP.",
-        "indirizzo": "VIA MAGANZA 19, 36030 MONTECCHIO PRECALCINO (VICENZA)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1909",
-        "codice_univoco": "p00000_p1909",
-        "zona": "4120",
-        "data_consegna": "",
-        "orario_min": "07:30",
-        "orario_max": "10:00",
-        "lat": 45.6741134,
-        "lon": 11.5578313,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1909"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "MONTECCHIO PREC. - CAP. VIA MAGANZA 19, 36030 MONTECCHIO PRECALCINO (VICENZA)",
-        "geo_query_indirizzo": "VIA MAGANZA 19, 36030 MONTECCHIO PRECALCINO (VICENZA)"
-      },
-      {
-        "nome": "Scuola Primaria Le Risorgive",
-        "indirizzo": "Piazza Iv Novembre 4, 36050 Bressanvido (VI)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1926",
-        "codice_univoco": "p00000_p1926",
-        "zona": "4120",
-        "data_consegna": "",
-        "orario_min": "08:00",
-        "orario_max": "10:00",
-        "lat": 45.6341966,
-        "lon": 11.628092,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1926"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "Scuola Primaria Le Risorgive Piazza Iv Novembre 4, 36050 Bressanvido (VI)",
-        "geo_query_indirizzo": "Piazza Iv Novembre 4, 36050 Bressanvido (VI)"
-      },
-      {
-        "nome": "Dante Alighieri Fara Vic.No Fraz.S.Giorgio",
-        "indirizzo": "Via Perlena 76, 36030 Fara Vicentino (VI)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1940",
-        "codice_univoco": "p00000_p1940",
-        "zona": "4120",
-        "data_consegna": "",
-        "orario_min": "07:30",
-        "orario_max": "10:00",
-        "lat": 45.7270533,
-        "lon": 11.5836439,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1940"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "Dante Alighieri Fara Vic.No Fraz.S.Giorgio Via Perlena 76, 36030 Fara Vicentino (VI)",
-        "geo_query_indirizzo": "Via Perlena 76, 36030 Fara Vicentino (VI)"
-      },
-      {
-        "nome": "Pasini",
-        "indirizzo": "Via Ospedaletto-S.S.53 Postumia, 165, 36100 Vicenza (VI)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1960",
-        "codice_univoco": "p00000_p1960",
-        "zona": "4120",
-        "data_consegna": "",
-        "orario_min": "False",
-        "orario_max": "10:00",
-        "lat": 45.548855,
-        "lon": 11.5495137,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1960"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "Pasini Via Ospedaletto-S.S.53 Postumia, 165, 36100 Vicenza (VI)",
-        "geo_query_indirizzo": "Via Ospedaletto-S.S.53 Postumia, 165, 36100 Vicenza (VI)"
-      },
-      {
-        "nome": "Ic Breganze - Maragnole",
-        "indirizzo": "Piazza Mons. Faresin 15, 36042 Breganze (VI)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p2016",
-        "codice_univoco": "p00000_p2016",
-        "zona": "4120",
-        "data_consegna": "",
-        "orario_min": "08:15",
-        "orario_max": "10:00",
-        "lat": 45.7035986,
-        "lon": 11.5703868,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p2016"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "Ic Breganze - Maragnole Piazza Mons. Faresin 15, 36042 Breganze (VI)",
-        "geo_query_indirizzo": "Piazza Mons. Faresin 15, 36042 Breganze (VI)"
-      },
-      {
         "nome": "ROSA' E. MARANGONI",
         "indirizzo": "VIA CONCORDIA 3, 36027 ROSA' (VICENZA)",
         "codice_frutta": "p00000",
         "codice_latte": "p1859",
         "codice_univoco": "p00000_p1859",
-        "zona": "4107",
+        "zona": "3107",
         "data_consegna": "",
         "orario_min": "07:30",
         "orario_max": "10:00",
@@ -1096,7 +981,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1873",
         "codice_univoco": "p00000_p1873",
-        "zona": "4107",
+        "zona": "3107",
         "data_consegna": "",
         "orario_min": "07:30",
         "orario_max": "10:00",
@@ -1114,12 +999,104 @@
         "geo_query_indirizzo": "Via S. Teresa 5, 36060 Schiavon (VI)"
       },
       {
+        "nome": "MONTECCHIO PREC. - CAP.",
+        "indirizzo": "VIA MAGANZA 19, 36030 MONTECCHIO PRECALCINO (VICENZA)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1909",
+        "codice_univoco": "p00000_p1909",
+        "zona": "3107",
+        "data_consegna": "",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.6741134,
+        "lon": 11.5578313,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1909"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "MONTECCHIO PREC. - CAP. VIA MAGANZA 19, 36030 MONTECCHIO PRECALCINO (VICENZA)",
+        "geo_query_indirizzo": "VIA MAGANZA 19, 36030 MONTECCHIO PRECALCINO (VICENZA)"
+      },
+      {
+        "nome": "Scuola Primaria Le Risorgive",
+        "indirizzo": "Piazza Iv Novembre 4, 36050 Bressanvido (VI)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1926",
+        "codice_univoco": "p00000_p1926",
+        "zona": "3107",
+        "data_consegna": "",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.6341966,
+        "lon": 11.628092,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1926"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "Scuola Primaria Le Risorgive Piazza Iv Novembre 4, 36050 Bressanvido (VI)",
+        "geo_query_indirizzo": "Piazza Iv Novembre 4, 36050 Bressanvido (VI)"
+      },
+      {
+        "nome": "Dante Alighieri Fara Vic.No Fraz.S.Giorgio",
+        "indirizzo": "Via Perlena 76, 36030 Fara Vicentino (VI)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1940",
+        "codice_univoco": "p00000_p1940",
+        "zona": "3107",
+        "data_consegna": "",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.7270533,
+        "lon": 11.5836439,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1940"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "Dante Alighieri Fara Vic.No Fraz.S.Giorgio Via Perlena 76, 36030 Fara Vicentino (VI)",
+        "geo_query_indirizzo": "Via Perlena 76, 36030 Fara Vicentino (VI)"
+      },
+      {
+        "nome": "Pasini",
+        "indirizzo": "Via Ospedaletto-S.S.53 Postumia, 165, 36100 Vicenza (VI)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1960",
+        "codice_univoco": "p00000_p1960",
+        "zona": "3107",
+        "data_consegna": "",
+        "orario_min": "False",
+        "orario_max": "10:00",
+        "lat": 45.548855,
+        "lon": 11.5495137,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1960"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "Pasini Via Ospedaletto-S.S.53 Postumia, 165, 36100 Vicenza (VI)",
+        "geo_query_indirizzo": "Via Ospedaletto-S.S.53 Postumia, 165, 36100 Vicenza (VI)"
+      },
+      {
         "nome": "IC VICENZA 6-7 - DE AMICIS",
         "indirizzo": "VIALE FIUME 97, 36100 VICENZA (VICENZA)",
         "codice_frutta": "p00000",
         "codice_latte": "p1962",
         "codice_univoco": "p00000_p1962",
-        "zona": "4107",
+        "zona": "3107",
         "data_consegna": "",
         "orario_min": "false",
         "orario_max": "10:00",
@@ -1135,6 +1112,29 @@
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "IC VICENZA 6-7 - DE AMICIS VIALE FIUME 97, 36100 VICENZA (VICENZA)",
         "geo_query_indirizzo": "VIALE FIUME 97, 36100 VICENZA (VICENZA)"
+      },
+      {
+        "nome": "Ic Breganze - Maragnole",
+        "indirizzo": "Piazza Mons. Faresin 15, 36042 Breganze (VI)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p2016",
+        "codice_univoco": "p00000_p2016",
+        "zona": "3107",
+        "data_consegna": "",
+        "orario_min": "08:15",
+        "orario_max": "10:00",
+        "lat": 45.7035986,
+        "lon": 11.5703868,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p2016"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "Ic Breganze - Maragnole Piazza Mons. Faresin 15, 36042 Breganze (VI)",
+        "geo_query_indirizzo": "Piazza Mons. Faresin 15, 36042 Breganze (VI)"
       }
     ],
     "color": "#ef4444",
@@ -1143,6 +1143,52 @@
   {
     "id_zona": "3202",
     "lista_punti": [
+      {
+        "nome": "FARRA",
+        "indirizzo": "VIA BOSCARIZ 1, 32032 FELTRE (BELLUNO)",
+        "codice_frutta": "p10238",
+        "codice_latte": "p00000",
+        "codice_univoco": "p10238_p00000",
+        "zona": "3202",
+        "data_consegna": "",
+        "orario_min": "07:45",
+        "orario_max": "14:00",
+        "lat": 46.0222931,
+        "lon": 11.9026738,
+        "codici_ddt_frutta": [
+          "p10238"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 154,
+        "geo_query_nome_indirizzo": "FARRA VIA BOSCARIZ 1, 32032 FELTRE (BELLUNO)",
+        "geo_query_indirizzo": "VIA BOSCARIZ 1, 32032 FELTRE (BELLUNO)"
+      },
+      {
+        "nome": "SC. ELEM. STATALE DI SOVRAMONTE",
+        "indirizzo": "PIANA DI SORRIVA 332, 32030 SOVRAMONTE (BELLUNO)",
+        "codice_frutta": "p11826",
+        "codice_latte": "p00000",
+        "codice_univoco": "p11826_p00000",
+        "zona": "3202",
+        "data_consegna": "",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 46.0555732641349,
+        "lon": 11.7762608155279,
+        "codici_ddt_frutta": [
+          "p11826"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 369,
+        "geo_query_nome_indirizzo": "SC. ELEM. STATALE DI SOVRAMONTE PIANA DI SORRIVA 332, 32030 SOVRAMONTE (BELLUNO)",
+        "geo_query_indirizzo": "PIANA DI SORRIVA 332, 32030 SOVRAMONTE (BELLUNO)"
+      },
       {
         "nome": "Scuola Primaria Agosti",
         "indirizzo": "Piazza S.Giovanni Bosco,12, 32100 Belluno (BL)",
@@ -1236,6 +1282,29 @@
         "geo_query_indirizzo": "Piazza Martiri, 3, 32038 Alano Di Piave Del Comune Di Setteville (BL)"
       },
       {
+        "nome": "Scuola Primaria Parificata Paritaria Istituto Canossiano",
+        "indirizzo": "Viale Montegrappa, 1, 32032 Feltre (BL)",
+        "codice_frutta": "p2154",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2154_p00000",
+        "zona": "3202",
+        "data_consegna": "",
+        "orario_min": "07:00",
+        "orario_max": "14:00",
+        "lat": 46.0204785,
+        "lon": 11.9048061,
+        "codici_ddt_frutta": [
+          "p2154"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 413,
+        "geo_query_nome_indirizzo": "Scuola Primaria Parificata Paritaria Istituto Canossiano Viale Montegrappa, 1, 32032 Feltre (BL)",
+        "geo_query_indirizzo": "Viale Montegrappa, 1, 32032 Feltre (BL)"
+      },
+      {
         "nome": "A.Gabelli Belluno",
         "indirizzo": "Piazzale Cesare Battisti, 32100 Belluno (BL)",
         "codice_frutta": "p2169",
@@ -1305,311 +1374,12 @@
         "geo_query_indirizzo": "VIA CATISANA 10, 32010 ALPAGO (BELLUNO)"
       },
       {
-        "nome": "\"BRUSTOLON\" BADILET",
-        "indirizzo": "VIA CIRVOI N. 11/A, 32100 BELLUNO (BELLUNO)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1719",
-        "codice_univoco": "p00000_p1719",
-        "zona": "4113",
-        "data_consegna": "",
-        "orario_min": "07:45",
-        "orario_max": "10:00",
-        "lat": 46.1069811,
-        "lon": 12.2387756,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1719"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "\"BRUSTOLON\" BADILET VIA CIRVOI N. 11/A, 32100 BELLUNO (BELLUNO)",
-        "geo_query_indirizzo": "VIA CIRVOI N. 11/A, 32100 BELLUNO (BELLUNO)"
-      },
-      {
-        "nome": "Dante Alighieri - Mel",
-        "indirizzo": "Via D. R. Zannoni, 37, 32026 Borgo Valbelluna (BL)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1922",
-        "codice_univoco": "p00000_p1922",
-        "zona": "4113",
-        "data_consegna": "",
-        "orario_min": "08:00",
-        "orario_max": "10:00",
-        "lat": 46.0265703,
-        "lon": 12.1062758,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1922"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "Dante Alighieri - Mel Via D. R. Zannoni, 37, 32026 Borgo Valbelluna (BL)",
-        "geo_query_indirizzo": "Via D. R. Zannoni, 37, 32026 Borgo Valbelluna (BL)"
-      },
-      {
-        "nome": "Fraz. Oltrerai",
-        "indirizzo": "Via I Novembre,1 -Paiane, 32014 Ponte Nelle Alpi (BL)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1948",
-        "codice_univoco": "p00000_p1948",
-        "zona": "4113",
-        "data_consegna": "",
-        "orario_min": "08:00",
-        "orario_max": "10:00",
-        "lat": 46.1752179,
-        "lon": 12.3105973,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1948"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "Fraz. Oltrerai Via I Novembre,1 -Paiane, 32014 Ponte Nelle Alpi (BL)",
-        "geo_query_indirizzo": "Via I Novembre,1 -Paiane, 32014 Ponte Nelle Alpi (BL)"
-      },
-      {
-        "nome": "SAN GREGORIO NELLE ALPI",
-        "indirizzo": "VIA MONTE PIZZOCCO 2, 32030 SAN GREGORIO NELLE ALPI (BELLUNO)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1988",
-        "codice_univoco": "p00000_p1988",
-        "zona": "4113",
-        "data_consegna": "",
-        "orario_min": "07:45",
-        "orario_max": "10:00",
-        "lat": 46.1042624,
-        "lon": 12.026965,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1988"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "SAN GREGORIO NELLE ALPI VIA MONTE PIZZOCCO 2, 32030 SAN GREGORIO NELLE ALPI (BELLUNO)",
-        "geo_query_indirizzo": "VIA MONTE PIZZOCCO 2, 32030 SAN GREGORIO NELLE ALPI (BELLUNO)"
-      },
-      {
-        "nome": "\"ROMANO OCRI\" CESIOM.-SORANZEN",
-        "indirizzo": "VIA SCUOLE 14, 32030 CESIOMAGGIORE (BELLUNO)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p2009",
-        "codice_univoco": "p00000_p2009",
-        "zona": "4113",
-        "data_consegna": "",
-        "orario_min": "07:45",
-        "orario_max": "10:00",
-        "lat": 46.0735862,
-        "lon": 11.9461291,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p2009"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "\"ROMANO OCRI\" CESIOM.-SORANZEN VIA SCUOLE 14, 32030 CESIOMAGGIORE (BELLUNO)",
-        "geo_query_indirizzo": "VIA SCUOLE 14, 32030 CESIOMAGGIORE (BELLUNO)"
-      },
-      {
-        "nome": "Arsie",
-        "indirizzo": "Piazza Marconi 1, 32030 Arsie (BL)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1798",
-        "codice_univoco": "p00000_p1798",
-        "zona": "4123",
-        "data_consegna": "",
-        "orario_min": "07:30",
-        "orario_max": "10:00",
-        "lat": 45.9835806,
-        "lon": 11.75812,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1798"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "Arsie Piazza Marconi 1, 32030 Arsie (BL)",
-        "geo_query_indirizzo": "Piazza Marconi 1, 32030 Arsie (BL)"
-      },
-      {
-        "nome": "SC. ELEM. \"A.RECH\" PEDAVENA",
-        "indirizzo": "VIA U. FOSCOLO 1, 32034 PEDAVENA (BELLUNO)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1854",
-        "codice_univoco": "p00000_p1854",
-        "zona": "4123",
-        "data_consegna": "",
-        "orario_min": "07:45",
-        "orario_max": "10:00",
-        "lat": 46.0392158388291,
-        "lon": 11.8763582167109,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1854"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "SC. ELEM. \"A.RECH\" PEDAVENA VIA U. FOSCOLO 1, 32034 PEDAVENA (BELLUNO)",
-        "geo_query_indirizzo": "VIA U. FOSCOLO 1, 32034 PEDAVENA (BELLUNO)"
-      },
-      {
-        "nome": "\"MARGHERITA RUSCONI\" SEREN D.G.",
-        "indirizzo": "VIA G. MARCONI 26, 32030 SEREN DEL GRAPPA (BELLUNO)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1907",
-        "codice_univoco": "p00000_p1907",
-        "zona": "4123",
-        "data_consegna": "",
-        "orario_min": "07:45",
-        "orario_max": "10:00",
-        "lat": 45.989930888098,
-        "lon": 11.840620078698,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1907"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "\"MARGHERITA RUSCONI\" SEREN D.G. VIA G. MARCONI 26, 32030 SEREN DEL GRAPPA (BELLUNO)",
-        "geo_query_indirizzo": "VIA G. MARCONI 26, 32030 SEREN DEL GRAPPA (BELLUNO)"
-      },
-      {
-        "nome": "Scuola Elementare Santa Giustina",
-        "indirizzo": "Via Cal De Formiga 29, 32035 Santa Giustina (BL)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1985",
-        "codice_univoco": "p00000_p1985",
-        "zona": "4123",
-        "data_consegna": "",
-        "orario_min": "07:45",
-        "orario_max": "10:00",
-        "lat": 46.0818587,
-        "lon": 12.0373294,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1985"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "Scuola Elementare Santa Giustina Via Cal De Formiga 29, 32035 Santa Giustina (BL)",
-        "geo_query_indirizzo": "Via Cal De Formiga 29, 32035 Santa Giustina (BL)"
-      },
-      {
-        "nome": "Fraz. Meano",
-        "indirizzo": "Piazza Alvisi 17, 32035 Santa Giustina (BL)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1986",
-        "codice_univoco": "p00000_p1986",
-        "zona": "4123",
-        "data_consegna": "",
-        "orario_min": "07:45",
-        "orario_max": "10:00",
-        "lat": 46.1021459,
-        "lon": 12.0661448,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1986"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "Fraz. Meano Piazza Alvisi 17, 32035 Santa Giustina (BL)",
-        "geo_query_indirizzo": "Piazza Alvisi 17, 32035 Santa Giustina (BL)"
-      },
-      {
-        "nome": "FARRA",
-        "indirizzo": "VIA BOSCARIZ 1, 32032 FELTRE (BELLUNO)",
-        "codice_frutta": "p10238",
-        "codice_latte": "p00000",
-        "codice_univoco": "p10238_p00000",
-        "zona": "3123",
-        "data_consegna": "",
-        "orario_min": "07:45",
-        "orario_max": "14:00",
-        "lat": 46.0222931,
-        "lon": 11.9026738,
-        "codici_ddt_frutta": [
-          "p10238"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 154,
-        "geo_query_nome_indirizzo": "FARRA VIA BOSCARIZ 1, 32032 FELTRE (BELLUNO)",
-        "geo_query_indirizzo": "VIA BOSCARIZ 1, 32032 FELTRE (BELLUNO)"
-      },
-      {
-        "nome": "SC. ELEM. STATALE DI SOVRAMONTE",
-        "indirizzo": "PIANA DI SORRIVA 332, 32030 SOVRAMONTE (BELLUNO)",
-        "codice_frutta": "p11826",
-        "codice_latte": "p00000",
-        "codice_univoco": "p11826_p00000",
-        "zona": "3123",
-        "data_consegna": "",
-        "orario_min": "07:30",
-        "orario_max": "14:00",
-        "lat": 46.0555732641349,
-        "lon": 11.7762608155279,
-        "codici_ddt_frutta": [
-          "p11826"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 369,
-        "geo_query_nome_indirizzo": "SC. ELEM. STATALE DI SOVRAMONTE PIANA DI SORRIVA 332, 32030 SOVRAMONTE (BELLUNO)",
-        "geo_query_indirizzo": "PIANA DI SORRIVA 332, 32030 SOVRAMONTE (BELLUNO)"
-      },
-      {
-        "nome": "Scuola Primaria Parificata Paritaria Istituto Canossiano",
-        "indirizzo": "Viale Montegrappa, 1, 32032 Feltre (BL)",
-        "codice_frutta": "p2154",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2154_p00000",
-        "zona": "3123",
-        "data_consegna": "",
-        "orario_min": "07:00",
-        "orario_max": "14:00",
-        "lat": 46.0204785,
-        "lon": 11.9048061,
-        "codici_ddt_frutta": [
-          "p2154"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 413,
-        "geo_query_nome_indirizzo": "Scuola Primaria Parificata Paritaria Istituto Canossiano Viale Montegrappa, 1, 32032 Feltre (BL)",
-        "geo_query_indirizzo": "Viale Montegrappa, 1, 32032 Feltre (BL)"
-      },
-      {
         "nome": "FOEN",
         "indirizzo": "VIA VALLINA 1, 32032 FELTRE (BELLUNO)",
         "codice_frutta": "p7473",
         "codice_latte": "p00000",
         "codice_univoco": "p7473_p00000",
-        "zona": "3123",
+        "zona": "3202",
         "data_consegna": "",
         "orario_min": "07:45",
         "orario_max": "14:00",
@@ -1632,7 +1402,7 @@
         "codice_frutta": "p9804",
         "codice_latte": "p00000",
         "codice_univoco": "p9804_p00000",
-        "zona": "3123",
+        "zona": "3202",
         "data_consegna": "",
         "orario_min": "08:00",
         "orario_max": "14:00",
@@ -1655,7 +1425,7 @@
         "codice_frutta": "p9960",
         "codice_latte": "p00000",
         "codice_univoco": "p9960_p00000",
-        "zona": "3123",
+        "zona": "3202",
         "data_consegna": "",
         "orario_min": "07:45",
         "orario_max": "14:00",
@@ -1671,10 +1441,240 @@
         "row_idx_mappatura": 284,
         "geo_query_nome_indirizzo": "MUGNAI VIA SCUOLE 53, 32032 FELTRE (BELLUNO)",
         "geo_query_indirizzo": "VIA SCUOLE 53, 32032 FELTRE (BELLUNO)"
+      },
+      {
+        "nome": "\"BRUSTOLON\" BADILET",
+        "indirizzo": "VIA CIRVOI N. 11/A, 32100 BELLUNO (BELLUNO)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1719",
+        "codice_univoco": "p00000_p1719",
+        "zona": "3202",
+        "data_consegna": "",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 46.1069811,
+        "lon": 12.2387756,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1719"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "\"BRUSTOLON\" BADILET VIA CIRVOI N. 11/A, 32100 BELLUNO (BELLUNO)",
+        "geo_query_indirizzo": "VIA CIRVOI N. 11/A, 32100 BELLUNO (BELLUNO)"
+      },
+      {
+        "nome": "Arsie",
+        "indirizzo": "Piazza Marconi 1, 32030 Arsie (BL)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1798",
+        "codice_univoco": "p00000_p1798",
+        "zona": "3202",
+        "data_consegna": "",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.9835806,
+        "lon": 11.75812,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1798"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "Arsie Piazza Marconi 1, 32030 Arsie (BL)",
+        "geo_query_indirizzo": "Piazza Marconi 1, 32030 Arsie (BL)"
+      },
+      {
+        "nome": "SC. ELEM. \"A.RECH\" PEDAVENA",
+        "indirizzo": "VIA U. FOSCOLO 1, 32034 PEDAVENA (BELLUNO)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1854",
+        "codice_univoco": "p00000_p1854",
+        "zona": "3202",
+        "data_consegna": "",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 46.0392158388291,
+        "lon": 11.8763582167109,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1854"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "SC. ELEM. \"A.RECH\" PEDAVENA VIA U. FOSCOLO 1, 32034 PEDAVENA (BELLUNO)",
+        "geo_query_indirizzo": "VIA U. FOSCOLO 1, 32034 PEDAVENA (BELLUNO)"
+      },
+      {
+        "nome": "\"MARGHERITA RUSCONI\" SEREN D.G.",
+        "indirizzo": "VIA G. MARCONI 26, 32030 SEREN DEL GRAPPA (BELLUNO)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1907",
+        "codice_univoco": "p00000_p1907",
+        "zona": "3202",
+        "data_consegna": "",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 45.989930888098,
+        "lon": 11.840620078698,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1907"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "\"MARGHERITA RUSCONI\" SEREN D.G. VIA G. MARCONI 26, 32030 SEREN DEL GRAPPA (BELLUNO)",
+        "geo_query_indirizzo": "VIA G. MARCONI 26, 32030 SEREN DEL GRAPPA (BELLUNO)"
+      },
+      {
+        "nome": "Dante Alighieri - Mel",
+        "indirizzo": "Via D. R. Zannoni, 37, 32026 Borgo Valbelluna (BL)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1922",
+        "codice_univoco": "p00000_p1922",
+        "zona": "3202",
+        "data_consegna": "",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 46.0265703,
+        "lon": 12.1062758,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1922"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "Dante Alighieri - Mel Via D. R. Zannoni, 37, 32026 Borgo Valbelluna (BL)",
+        "geo_query_indirizzo": "Via D. R. Zannoni, 37, 32026 Borgo Valbelluna (BL)"
+      },
+      {
+        "nome": "Fraz. Oltrerai",
+        "indirizzo": "Via I Novembre,1 -Paiane, 32014 Ponte Nelle Alpi (BL)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1948",
+        "codice_univoco": "p00000_p1948",
+        "zona": "3202",
+        "data_consegna": "",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 46.1752179,
+        "lon": 12.3105973,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1948"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "Fraz. Oltrerai Via I Novembre,1 -Paiane, 32014 Ponte Nelle Alpi (BL)",
+        "geo_query_indirizzo": "Via I Novembre,1 -Paiane, 32014 Ponte Nelle Alpi (BL)"
+      },
+      {
+        "nome": "Scuola Elementare Santa Giustina",
+        "indirizzo": "Via Cal De Formiga 29, 32035 Santa Giustina (BL)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1985",
+        "codice_univoco": "p00000_p1985",
+        "zona": "3202",
+        "data_consegna": "",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 46.0818587,
+        "lon": 12.0373294,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1985"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "Scuola Elementare Santa Giustina Via Cal De Formiga 29, 32035 Santa Giustina (BL)",
+        "geo_query_indirizzo": "Via Cal De Formiga 29, 32035 Santa Giustina (BL)"
+      },
+      {
+        "nome": "Fraz. Meano",
+        "indirizzo": "Piazza Alvisi 17, 32035 Santa Giustina (BL)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1986",
+        "codice_univoco": "p00000_p1986",
+        "zona": "3202",
+        "data_consegna": "",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 46.1021459,
+        "lon": 12.0661448,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1986"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "Fraz. Meano Piazza Alvisi 17, 32035 Santa Giustina (BL)",
+        "geo_query_indirizzo": "Piazza Alvisi 17, 32035 Santa Giustina (BL)"
+      },
+      {
+        "nome": "SAN GREGORIO NELLE ALPI",
+        "indirizzo": "VIA MONTE PIZZOCCO 2, 32030 SAN GREGORIO NELLE ALPI (BELLUNO)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1988",
+        "codice_univoco": "p00000_p1988",
+        "zona": "3202",
+        "data_consegna": "",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 46.1042624,
+        "lon": 12.026965,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1988"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "SAN GREGORIO NELLE ALPI VIA MONTE PIZZOCCO 2, 32030 SAN GREGORIO NELLE ALPI (BELLUNO)",
+        "geo_query_indirizzo": "VIA MONTE PIZZOCCO 2, 32030 SAN GREGORIO NELLE ALPI (BELLUNO)"
+      },
+      {
+        "nome": "\"ROMANO OCRI\" CESIOM.-SORANZEN",
+        "indirizzo": "VIA SCUOLE 14, 32030 CESIOMAGGIORE (BELLUNO)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p2009",
+        "codice_univoco": "p00000_p2009",
+        "zona": "3202",
+        "data_consegna": "",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 46.0735862,
+        "lon": 11.9461291,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p2009"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "\"ROMANO OCRI\" CESIOM.-SORANZEN VIA SCUOLE 14, 32030 CESIOMAGGIORE (BELLUNO)",
+        "geo_query_indirizzo": "VIA SCUOLE 14, 32030 CESIOMAGGIORE (BELLUNO)"
       }
     ],
-    "color": "#8b5cf6",
-    "nome_giro": "Viaggio 5"
+    "color": "#4f46e5",
+    "nome_giro": "Viaggio 1"
   },
   {
     "id_zona": "3207",
@@ -1839,6 +1839,29 @@
         "row_idx_mappatura": 120,
         "geo_query_nome_indirizzo": "Don Bosco - Valla Via Enrico Toti 8, 31039 Riese Pio X (TV)",
         "geo_query_indirizzo": "Via Enrico Toti 8, 31039 Riese Pio X (TV)"
+      },
+      {
+        "nome": "ISTITUTO SCOLASTICO \"MARIA AUSILIATRICE\"",
+        "indirizzo": "VIA RISORGIMENTO 113, 31044 MONTEBELLUNA (TREVISO)",
+        "codice_frutta": "p2246",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2246_p00000",
+        "zona": "3207",
+        "data_consegna": "",
+        "orario_min": "09:00",
+        "orario_max": "14:00",
+        "lat": 45.77225911543582,
+        "lon": 12.05885922631987,
+        "codici_ddt_frutta": [
+          "p2246"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 242,
+        "geo_query_nome_indirizzo": "ISTITUTO SCOLASTICO \"MARIA AUSILIATRICE\" VIA RISORGIMENTO 113, 31044 MONTEBELLUNA (TREVISO)",
+        "geo_query_indirizzo": "VIA RISORGIMENTO 113, 31044 MONTEBELLUNA (TREVISO)"
       },
       {
         "nome": "ALDO FANTINA - POSSAGNO",
@@ -2145,7 +2168,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p2025",
         "codice_univoco": "p00000_p2025",
-        "zona": "4123",
+        "zona": "3207",
         "data_consegna": "",
         "orario_min": "07:30",
         "orario_max": "10:00",
@@ -2162,36 +2185,6 @@
         "geo_query_nome_indirizzo": "F.Lli Stramare - Pederobba Cap. Via Roma 102, 31040 Pederobba (TV)",
         "geo_query_indirizzo": "Via Roma 102, 31040 Pederobba (TV)"
       },
-      {
-        "nome": "ISTITUTO SCOLASTICO \"MARIA AUSILIATRICE\"",
-        "indirizzo": "VIA RISORGIMENTO 113, 31044 MONTEBELLUNA (TREVISO)",
-        "codice_frutta": "p2246",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2246_p00000",
-        "zona": "3123",
-        "data_consegna": "",
-        "orario_min": "09:00",
-        "orario_max": "14:00",
-        "lat": 45.77225911543582,
-        "lon": 12.05885922631987,
-        "codici_ddt_frutta": [
-          "p2246"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 242,
-        "geo_query_nome_indirizzo": "ISTITUTO SCOLASTICO \"MARIA AUSILIATRICE\" VIA RISORGIMENTO 113, 31044 MONTEBELLUNA (TREVISO)",
-        "geo_query_indirizzo": "VIA RISORGIMENTO 113, 31044 MONTEBELLUNA (TREVISO)"
-      }
-    ],
-    "color": "#f59e0b",
-    "nome_giro": "Viaggio 3"
-  },
-  {
-    "id_zona": "4118",
-    "lista_punti": [
       {
         "nome": "GIACOMO ZANELLA - CASTIONE",
         "indirizzo": "VIA CASTIGLIONE, 7, 31037 LORIA (TREVISO)",
@@ -2271,8 +2264,8 @@
         "data_consegna": "",
         "orario_min": "08:00",
         "orario_max": "10:00",
-        "lat": 45.7035986,
-        "lon": 11.5703868,
+        "lat": 45.67425448117051,
+        "lon": 11.918873734326509,
         "codici_ddt_frutta": [
           "p00000"
         ],
@@ -2283,10 +2276,33 @@
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "Zona Ovest Masaccio Via Monfenera 23, 31033 Castelfranco Veneto (TV)",
         "geo_query_indirizzo": "Via Monfenera 23, 31033 Castelfranco Veneto (TV)"
+      },
+      {
+        "nome": "SCUOLA PRIMARIA S. MARIA ASSUNTA",
+        "indirizzo": "VIA PIVA 10, 31049 VALDOBBIADENE (TREVISO)",
+        "codice_frutta": "p2286",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2286_p00000",
+        "zona": "3123_B",
+        "data_consegna": "",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.90164055489511,
+        "lon": 11.99638002114868,
+        "codici_ddt_frutta": [
+          "p2286"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 420,
+        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA S. MARIA ASSUNTA VIA PIVA 10, 31049 VALDOBBIADENE (TREVISO)",
+        "geo_query_indirizzo": "VIA PIVA 10, 31049 VALDOBBIADENE (TREVISO)"
       }
     ],
-    "color": "#f97316",
-    "nome_giro": "Viaggio 8"
+    "color": "#f59e0b",
+    "nome_giro": "Viaggio 3"
   },
   {
     "id_zona": "DDT_DA_INSERIRE",
@@ -2414,35 +2430,5 @@
     ],
     "color": "#f59e0b",
     "nome_giro": "⚠️ DDT DA INSERIRE"
-  },
-  {
-    "id_zona": "3123_B",
-    "nome_giro": "Viaggio 1/B",
-    "color": "#427c82",
-    "lista_punti": [
-      {
-        "nome": "SCUOLA PRIMARIA S. MARIA ASSUNTA",
-        "indirizzo": "VIA PIVA 10, 31049 VALDOBBIADENE (TREVISO)",
-        "codice_frutta": "p2286",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2286_p00000",
-        "zona": "3123",
-        "data_consegna": "",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 45.90164055489511,
-        "lon": 11.99638002114868,
-        "codici_ddt_frutta": [
-          "p2286"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 420,
-        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA S. MARIA ASSUNTA VIA PIVA 10, 31049 VALDOBBIADENE (TREVISO)",
-        "geo_query_indirizzo": "VIA PIVA 10, 31049 VALDOBBIADENE (TREVISO)"
-      }
-    ]
   }
 ]

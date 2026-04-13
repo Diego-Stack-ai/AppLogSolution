@@ -1,10 +1,9 @@
 [
   {
     "nome_giro": "V01",
-    "file_sorgente": "V01_Zone_3106_4106.html",
+    "file_sorgente": "V01_Zone_3106.html",
     "zone": [
-      "3106",
-      "4106"
+      "3106"
     ],
     "num_fermate": 21,
     "data_ddt": "14-04-2026",
@@ -199,7 +198,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1900",
         "codice_univoco": "p00000_p1900",
-        "zona": "4106",
+        "zona": "3106",
         "data_consegna": "14-04-2026",
         "orario_min": "08:00",
         "orario_max": "10:00",
@@ -496,11 +495,9 @@
   },
   {
     "nome_giro": "V02",
-    "file_sorgente": "V02_Zone_3107_4107_4120.html",
+    "file_sorgente": "V02_Zone_3107.html",
     "zone": [
-      "3107",
-      "4107",
-      "4120"
+      "3107"
     ],
     "num_fermate": 28,
     "data_ddt": "14-04-2026",
@@ -511,7 +508,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1960",
         "codice_univoco": "p00000_p1960",
-        "zona": "4120",
+        "zona": "3107",
         "data_consegna": "14-04-2026",
         "orario_min": "False",
         "orario_max": "10:00",
@@ -534,7 +531,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1962",
         "codice_univoco": "p00000_p1962",
-        "zona": "4107",
+        "zona": "3107",
         "data_consegna": "14-04-2026",
         "orario_min": "false",
         "orario_max": "10:00",
@@ -557,7 +554,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1769",
         "codice_univoco": "p00000_p1769",
-        "zona": "4120",
+        "zona": "3107",
         "data_consegna": "14-04-2026",
         "orario_min": "07:45",
         "orario_max": "10:00",
@@ -626,7 +623,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1839",
         "codice_univoco": "p00000_p1839",
-        "zona": "4120",
+        "zona": "3107",
         "data_consegna": "14-04-2026",
         "orario_min": "08:00",
         "orario_max": "10:00",
@@ -665,6 +662,29 @@
         "row_idx_mappatura": 262,
         "geo_query_nome_indirizzo": "MALO - SAN TOMIO VIA S. TOMMASO 15, 36034 MALO (VICENZA)",
         "geo_query_indirizzo": "VIA S. TOMMASO 15, 36034 MALO (VICENZA)"
+      },
+      {
+        "nome": "SAN GIOVANNI BOSCO",
+        "indirizzo": "VIA ROZZAMPIA 73, 36016 THIENE (VICENZA)",
+        "codice_frutta": "p2352",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2352_p00000",
+        "zona": "3107",
+        "data_consegna": "14-04-2026",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.67898086660827,
+        "lon": 11.50217561555479,
+        "codici_ddt_frutta": [
+          "p2352"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 354,
+        "geo_query_nome_indirizzo": "SAN GIOVANNI BOSCO VIA ROZZAMPIA 73, 36016 THIENE (VICENZA)",
+        "geo_query_indirizzo": "VIA ROZZAMPIA 73, 36016 THIENE (VICENZA)"
       },
       {
         "nome": "ALFREDO TALIN",
@@ -741,7 +761,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1940",
         "codice_univoco": "p00000_p1940",
-        "zona": "4120",
+        "zona": "3107",
         "data_consegna": "14-04-2026",
         "orario_min": "07:30",
         "orario_max": "10:00",
@@ -764,7 +784,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p2016",
         "codice_univoco": "p00000_p2016",
-        "zona": "4120",
+        "zona": "3107",
         "data_consegna": "14-04-2026",
         "orario_min": "08:15",
         "orario_max": "10:00",
@@ -787,7 +807,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1909",
         "codice_univoco": "p00000_p1909",
-        "zona": "4120",
+        "zona": "3107",
         "data_consegna": "14-04-2026",
         "orario_min": "07:30",
         "orario_max": "10:00",
@@ -856,7 +876,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1926",
         "codice_univoco": "p00000_p1926",
-        "zona": "4120",
+        "zona": "3107",
         "data_consegna": "14-04-2026",
         "orario_min": "08:00",
         "orario_max": "10:00",
@@ -879,7 +899,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1873",
         "codice_univoco": "p00000_p1873",
-        "zona": "4107",
+        "zona": "3107",
         "data_consegna": "14-04-2026",
         "orario_min": "07:30",
         "orario_max": "10:00",
@@ -918,6 +938,29 @@
         "row_idx_mappatura": 423,
         "geo_query_nome_indirizzo": "SCUOLA PRIMARIA SCHIAVON VIA S. TERESA 5, 36060 SCHIAVON (VICENZA)",
         "geo_query_indirizzo": "VIA S. TERESA 5, 36060 SCHIAVON (VICENZA)"
+      },
+      {
+        "nome": "SAN GIOVANNI BOSCO",
+        "indirizzo": "VIA ROMA 2, 36060 PIANEZZE (VICENZA)",
+        "codice_frutta": "p2198",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2198_p00000",
+        "zona": "3107",
+        "data_consegna": "14-04-2026",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.73896665823806,
+        "lon": 11.625374740491736,
+        "codici_ddt_frutta": [
+          "p2198"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 353,
+        "geo_query_nome_indirizzo": "SAN GIOVANNI BOSCO VIA ROMA 2, 36060 PIANEZZE (VICENZA)",
+        "geo_query_indirizzo": "VIA ROMA 2, 36060 PIANEZZE (VICENZA)"
       },
       {
         "nome": "O. GUGELMO",
@@ -1017,7 +1060,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1830",
         "codice_univoco": "p00000_p1830",
-        "zona": "4120",
+        "zona": "3107",
         "data_consegna": "14-04-2026",
         "orario_min": "07:45",
         "orario_max": "10:00",
@@ -1040,7 +1083,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1859",
         "codice_univoco": "p00000_p1859",
-        "zona": "4107",
+        "zona": "3107",
         "data_consegna": "14-04-2026",
         "orario_min": "07:30",
         "orario_max": "10:00",
@@ -1102,96 +1145,14 @@
         "row_idx_mappatura": 282,
         "geo_query_nome_indirizzo": "MONTEGRAPPA - TEZZE SUL BRENTA VIA DON ANTONIO BELLUZZO 7, 36056 TEZZE SUL BRENTA (VICENZA)",
         "geo_query_indirizzo": "VIA DON ANTONIO BELLUZZO 7, 36056 TEZZE SUL BRENTA (VICENZA)"
-      },
-      {
-        "nome": "SAN GIOVANNI BOSCO",
-        "indirizzo": "VIA ROZZAMPIA 73, 36016 THIENE (VICENZA)",
-        "codice_frutta": "p2352",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2352_p00000",
-        "zona": "3107",
-        "data_consegna": "14-04-2026",
-        "orario_min": "07:30",
-        "orario_max": "14:00",
-        "lat": 45.4256448,
-        "lon": 12.0713225,
-        "codici_ddt_frutta": [
-          "p2352"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 354,
-        "geo_query_nome_indirizzo": "SAN GIOVANNI BOSCO VIA ROZZAMPIA 73, 36016 THIENE (VICENZA)",
-        "geo_query_indirizzo": "VIA ROZZAMPIA 73, 36016 THIENE (VICENZA)"
-      },
-      {
-        "nome": "SAN GIOVANNI BOSCO",
-        "indirizzo": "VIA ROMA 2, 36060 PIANEZZE (VICENZA)",
-        "codice_frutta": "p2198",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2198_p00000",
-        "zona": "3107",
-        "data_consegna": "14-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 45.4256448,
-        "lon": 12.0713225,
-        "codici_ddt_frutta": [
-          "p2198"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 353,
-        "geo_query_nome_indirizzo": "SAN GIOVANNI BOSCO VIA ROMA 2, 36060 PIANEZZE (VICENZA)",
-        "geo_query_indirizzo": "VIA ROMA 2, 36060 PIANEZZE (VICENZA)"
       }
     ]
   },
   {
     "nome_giro": "V03",
-    "file_sorgente": "V03_Zone_3123.html",
+    "file_sorgente": "V03_Zone_3202.html",
     "zone": [
-      "3123"
-    ],
-    "num_fermate": 1,
-    "data_ddt": "14-04-2026",
-    "lista_punti": [
-      {
-        "nome": "SCUOLA PRIMARIA S. MARIA ASSUNTA",
-        "indirizzo": "VIA PIVA 10, 31049 VALDOBBIADENE (TREVISO)",
-        "codice_frutta": "p2286",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2286_p00000",
-        "zona": "3123",
-        "data_consegna": "14-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 45.90164055489511,
-        "lon": 11.99638002114868,
-        "codici_ddt_frutta": [
-          "p2286"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 420,
-        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA S. MARIA ASSUNTA VIA PIVA 10, 31049 VALDOBBIADENE (TREVISO)",
-        "geo_query_indirizzo": "VIA PIVA 10, 31049 VALDOBBIADENE (TREVISO)"
-      }
-    ]
-  },
-  {
-    "nome_giro": "V04",
-    "file_sorgente": "V04_Zone_3123_3202_4113.html",
-    "zone": [
-      "3123",
-      "3202",
-      "4113"
+      "3202"
     ],
     "num_fermate": 23,
     "data_ddt": "14-04-2026",
@@ -1202,7 +1163,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1798",
         "codice_univoco": "p00000_p1798",
-        "zona": "4123",
+        "zona": "3202",
         "data_consegna": "14-04-2026",
         "orario_min": "07:30",
         "orario_max": "10:00",
@@ -1225,7 +1186,7 @@
         "codice_frutta": "p11826",
         "codice_latte": "p00000",
         "codice_univoco": "p11826_p00000",
-        "zona": "3123",
+        "zona": "3202",
         "data_consegna": "14-04-2026",
         "orario_min": "07:30",
         "orario_max": "14:00",
@@ -1248,7 +1209,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1907",
         "codice_univoco": "p00000_p1907",
-        "zona": "4123",
+        "zona": "3202",
         "data_consegna": "14-04-2026",
         "orario_min": "07:45",
         "orario_max": "10:00",
@@ -1271,7 +1232,7 @@
         "codice_frutta": "p9960",
         "codice_latte": "p00000",
         "codice_univoco": "p9960_p00000",
-        "zona": "3123",
+        "zona": "3202",
         "data_consegna": "14-04-2026",
         "orario_min": "07:45",
         "orario_max": "14:00",
@@ -1294,7 +1255,7 @@
         "codice_frutta": "p9804",
         "codice_latte": "p00000",
         "codice_univoco": "p9804_p00000",
-        "zona": "3123",
+        "zona": "3202",
         "data_consegna": "14-04-2026",
         "orario_min": "08:00",
         "orario_max": "14:00",
@@ -1317,7 +1278,7 @@
         "codice_frutta": "p2154",
         "codice_latte": "p00000",
         "codice_univoco": "p2154_p00000",
-        "zona": "3123",
+        "zona": "3202",
         "data_consegna": "14-04-2026",
         "orario_min": "07:00",
         "orario_max": "14:00",
@@ -1340,7 +1301,7 @@
         "codice_frutta": "p10238",
         "codice_latte": "p00000",
         "codice_univoco": "p10238_p00000",
-        "zona": "3123",
+        "zona": "3202",
         "data_consegna": "14-04-2026",
         "orario_min": "07:45",
         "orario_max": "14:00",
@@ -1363,7 +1324,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1854",
         "codice_univoco": "p00000_p1854",
-        "zona": "4123",
+        "zona": "3202",
         "data_consegna": "14-04-2026",
         "orario_min": "07:45",
         "orario_max": "10:00",
@@ -1386,7 +1347,7 @@
         "codice_frutta": "p7473",
         "codice_latte": "p00000",
         "codice_univoco": "p7473_p00000",
-        "zona": "3123",
+        "zona": "3202",
         "data_consegna": "14-04-2026",
         "orario_min": "07:45",
         "orario_max": "14:00",
@@ -1409,7 +1370,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p2009",
         "codice_univoco": "p00000_p2009",
-        "zona": "4113",
+        "zona": "3202",
         "data_consegna": "14-04-2026",
         "orario_min": "07:45",
         "orario_max": "10:00",
@@ -1432,7 +1393,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1988",
         "codice_univoco": "p00000_p1988",
-        "zona": "4113",
+        "zona": "3202",
         "data_consegna": "14-04-2026",
         "orario_min": "07:45",
         "orario_max": "10:00",
@@ -1455,7 +1416,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1986",
         "codice_univoco": "p00000_p1986",
-        "zona": "4123",
+        "zona": "3202",
         "data_consegna": "14-04-2026",
         "orario_min": "07:45",
         "orario_max": "10:00",
@@ -1478,7 +1439,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1985",
         "codice_univoco": "p00000_p1985",
-        "zona": "4123",
+        "zona": "3202",
         "data_consegna": "14-04-2026",
         "orario_min": "07:45",
         "orario_max": "10:00",
@@ -1501,7 +1462,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1922",
         "codice_univoco": "p00000_p1922",
-        "zona": "4113",
+        "zona": "3202",
         "data_consegna": "14-04-2026",
         "orario_min": "08:00",
         "orario_max": "10:00",
@@ -1524,7 +1485,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1719",
         "codice_univoco": "p00000_p1719",
-        "zona": "4113",
+        "zona": "3202",
         "data_consegna": "14-04-2026",
         "orario_min": "07:45",
         "orario_max": "10:00",
@@ -1639,7 +1600,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1948",
         "codice_univoco": "p00000_p1948",
-        "zona": "4113",
+        "zona": "3202",
         "data_consegna": "14-04-2026",
         "orario_min": "08:00",
         "orario_max": "10:00",
@@ -1728,14 +1689,15 @@
     ]
   },
   {
-    "nome_giro": "V05",
-    "file_sorgente": "V05_Zone_3123_3207_4123.html",
+    "nome_giro": "V04",
+    "file_sorgente": "V04_Zone_3123_B_3207_4118.html",
     "zone": [
       "3123",
+      "B",
       "3207",
-      "4123"
+      "4118"
     ],
-    "num_fermate": 22,
+    "num_fermate": 27,
     "data_ddt": "14-04-2026",
     "lista_punti": [
       {
@@ -1785,6 +1747,29 @@
         "geo_query_indirizzo": "BORGO PIEVE 80, 31033 CASTELFRANCO VENETO (TREVISO)"
       },
       {
+        "nome": "Zona Ovest Masaccio",
+        "indirizzo": "Via Monfenera 23, 31033 Castelfranco Veneto (TV)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1921",
+        "codice_univoco": "p00000_p1921",
+        "zona": "4118",
+        "data_consegna": "14-04-2026",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.67425448117051,
+        "lon": 11.918873734326509,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1921"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "Zona Ovest Masaccio Via Monfenera 23, 31033 Castelfranco Veneto (TV)",
+        "geo_query_indirizzo": "Via Monfenera 23, 31033 Castelfranco Veneto (TV)"
+      },
+      {
         "nome": "SCUOLA PRIMARIA\"MASACCIO\"",
         "indirizzo": "VIA MONFENERA 23, 31033 CASTELFRANCO VENETO (TREVISO)",
         "codice_frutta": "p7732",
@@ -1806,52 +1791,6 @@
         "row_idx_mappatura": 433,
         "geo_query_nome_indirizzo": "SCUOLA PRIMARIA\"MASACCIO\" VIA MONFENERA 23, 31033 CASTELFRANCO VENETO (TREVISO)",
         "geo_query_indirizzo": "VIA MONFENERA 23, 31033 CASTELFRANCO VENETO (TREVISO)"
-      },
-      {
-        "nome": "GIUSEPPINA BIANCO - CASTELLO G.",
-        "indirizzo": "VIA PAOLO PIAZZA 3, 31030 CASTELLO DI GODEGO (TREVISO)",
-        "codice_frutta": "p2331",
-        "codice_latte": "p1776",
-        "codice_univoco": "p2331_p1776",
-        "zona": "3207",
-        "data_consegna": "14-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "10:00",
-        "lat": 45.6931681,
-        "lon": 11.8835511,
-        "codici_ddt_frutta": [
-          "p2331"
-        ],
-        "codici_ddt_latte": [
-          "p1776"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 210,
-        "geo_query_nome_indirizzo": "GIUSEPPINA BIANCO - CASTELLO G. VIA PAOLO PIAZZA 3, 31030 CASTELLO DI GODEGO (TREVISO)",
-        "geo_query_indirizzo": "VIA PAOLO PIAZZA 3, 31030 CASTELLO DI GODEGO (TREVISO)"
-      },
-      {
-        "nome": "ANGELO MARCHESAN - RAMON",
-        "indirizzo": "VIA MARCHESAN 1, 31037 LORIA (TREVISO)",
-        "codice_frutta": "p2330",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2330_p00000",
-        "zona": "3207",
-        "data_consegna": "14-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 45.7139815,
-        "lon": 11.8652845,
-        "codici_ddt_frutta": [
-          "p2330"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 58,
-        "geo_query_nome_indirizzo": "ANGELO MARCHESAN - RAMON VIA MARCHESAN 1, 31037 LORIA (TREVISO)",
-        "geo_query_indirizzo": "VIA MARCHESAN 1, 31037 LORIA (TREVISO)"
       },
       {
         "nome": "Don Bosco - Valla",
@@ -1944,6 +1883,121 @@
         "row_idx_mappatura": 260,
         "geo_query_nome_indirizzo": "MADONNINA DEL GRAPPA- SPINEDA VIA CENDROLE 68, 31039 RIESE PIO X (TREVISO)",
         "geo_query_indirizzo": "VIA CENDROLE 68, 31039 RIESE PIO X (TREVISO)"
+      },
+      {
+        "nome": "MONSIGNOR BERNARDI - POGGIANA",
+        "indirizzo": "VIA BRIGATA MARTIRI DEL GRAPPA 5, 31039 RIESE PIO X (TREVISO)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1919",
+        "codice_univoco": "p00000_p1919",
+        "zona": "4118",
+        "data_consegna": "14-04-2026",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.7292228,
+        "lon": 11.8826846,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1919"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "MONSIGNOR BERNARDI - POGGIANA VIA BRIGATA MARTIRI DEL GRAPPA 5, 31039 RIESE PIO X (TREVISO)",
+        "geo_query_indirizzo": "VIA BRIGATA MARTIRI DEL GRAPPA 5, 31039 RIESE PIO X (TREVISO)"
+      },
+      {
+        "nome": "ANGELO MARCHESAN - RAMON",
+        "indirizzo": "VIA MARCHESAN 1, 31037 LORIA (TREVISO)",
+        "codice_frutta": "p2330",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2330_p00000",
+        "zona": "3207",
+        "data_consegna": "14-04-2026",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.7139815,
+        "lon": 11.8652845,
+        "codici_ddt_frutta": [
+          "p2330"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 58,
+        "geo_query_nome_indirizzo": "ANGELO MARCHESAN - RAMON VIA MARCHESAN 1, 31037 LORIA (TREVISO)",
+        "geo_query_indirizzo": "VIA MARCHESAN 1, 31037 LORIA (TREVISO)"
+      },
+      {
+        "nome": "GIUSEPPINA BIANCO - CASTELLO G.",
+        "indirizzo": "VIA PAOLO PIAZZA 3, 31030 CASTELLO DI GODEGO (TREVISO)",
+        "codice_frutta": "p2331",
+        "codice_latte": "p1776",
+        "codice_univoco": "p2331_p1776",
+        "zona": "3207",
+        "data_consegna": "14-04-2026",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.6931681,
+        "lon": 11.8835511,
+        "codici_ddt_frutta": [
+          "p2331"
+        ],
+        "codici_ddt_latte": [
+          "p1776"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 210,
+        "geo_query_nome_indirizzo": "GIUSEPPINA BIANCO - CASTELLO G. VIA PAOLO PIAZZA 3, 31030 CASTELLO DI GODEGO (TREVISO)",
+        "geo_query_indirizzo": "VIA PAOLO PIAZZA 3, 31030 CASTELLO DI GODEGO (TREVISO)"
+      },
+      {
+        "nome": "GIACOMO ZANELLA - CASTIONE",
+        "indirizzo": "VIA CASTIGLIONE, 7, 31037 LORIA (TREVISO)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1778",
+        "codice_univoco": "p00000_p1778",
+        "zona": "4118",
+        "data_consegna": "14-04-2026",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.6916427,
+        "lon": 11.8323124,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1778"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "GIACOMO ZANELLA - CASTIONE VIA CASTIGLIONE, 7, 31037 LORIA (TREVISO)",
+        "geo_query_indirizzo": "VIA CASTIGLIONE, 7, 31037 LORIA (TREVISO)"
+      },
+      {
+        "nome": "GIOVANNI XXIII - BESSICA",
+        "indirizzo": "VIA DANTE ALIGHIERI, 46, 31037 LORIA (TREVISO)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1779",
+        "codice_univoco": "p00000_p1779",
+        "zona": "4118",
+        "data_consegna": "14-04-2026",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.7362559,
+        "lon": 11.8391598,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1779"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "GIOVANNI XXIII - BESSICA VIA DANTE ALIGHIERI, 46, 31037 LORIA (TREVISO)",
+        "geo_query_indirizzo": "VIA DANTE ALIGHIERI, 46, 31037 LORIA (TREVISO)"
       },
       {
         "nome": "General Giardino ( Semonzo)",
@@ -2112,7 +2166,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p2025",
         "codice_univoco": "p00000_p2025",
-        "zona": "4123",
+        "zona": "3207",
         "data_consegna": "14-04-2026",
         "orario_min": "07:30",
         "orario_max": "10:00",
@@ -2130,12 +2184,35 @@
         "geo_query_indirizzo": "Via Roma 102, 31040 Pederobba (TV)"
       },
       {
+        "nome": "SCUOLA PRIMARIA S. MARIA ASSUNTA",
+        "indirizzo": "VIA PIVA 10, 31049 VALDOBBIADENE (TREVISO)",
+        "codice_frutta": "p2286",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2286_p00000",
+        "zona": "3123_B",
+        "data_consegna": "14-04-2026",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.90164055489511,
+        "lon": 11.99638002114868,
+        "codici_ddt_frutta": [
+          "p2286"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 420,
+        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA S. MARIA ASSUNTA VIA PIVA 10, 31049 VALDOBBIADENE (TREVISO)",
+        "geo_query_indirizzo": "VIA PIVA 10, 31049 VALDOBBIADENE (TREVISO)"
+      },
+      {
         "nome": "ISTITUTO SCOLASTICO \"MARIA AUSILIATRICE\"",
         "indirizzo": "VIA RISORGIMENTO 113, 31044 MONTEBELLUNA (TREVISO)",
         "codice_frutta": "p2246",
         "codice_latte": "p00000",
         "codice_univoco": "p2246_p00000",
-        "zona": "3123",
+        "zona": "3207",
         "data_consegna": "14-04-2026",
         "orario_min": "09:00",
         "orario_max": "14:00",
@@ -2243,109 +2320,6 @@
         "row_idx_mappatura": 329,
         "geo_query_nome_indirizzo": "R.Pezzani - Istrana Cap. Via Bertilla Boscardin, 1, 31036 Istrana (TV)",
         "geo_query_indirizzo": "Via Bertilla Boscardin, 1, 31036 Istrana (TV)"
-      }
-    ]
-  },
-  {
-    "nome_giro": "V06",
-    "file_sorgente": "V06_Zone_4118.html",
-    "zone": [
-      "4118"
-    ],
-    "num_fermate": 4,
-    "data_ddt": "14-04-2026",
-    "lista_punti": [
-      {
-        "nome": "GIACOMO ZANELLA - CASTIONE",
-        "indirizzo": "VIA CASTIGLIONE, 7, 31037 LORIA (TREVISO)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1778",
-        "codice_univoco": "p00000_p1778",
-        "zona": "4118",
-        "data_consegna": "14-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "10:00",
-        "lat": 45.6916427,
-        "lon": 11.8323124,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1778"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "GIACOMO ZANELLA - CASTIONE VIA CASTIGLIONE, 7, 31037 LORIA (TREVISO)",
-        "geo_query_indirizzo": "VIA CASTIGLIONE, 7, 31037 LORIA (TREVISO)"
-      },
-      {
-        "nome": "MONSIGNOR BERNARDI - POGGIANA",
-        "indirizzo": "VIA BRIGATA MARTIRI DEL GRAPPA 5, 31039 RIESE PIO X (TREVISO)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1919",
-        "codice_univoco": "p00000_p1919",
-        "zona": "4118",
-        "data_consegna": "14-04-2026",
-        "orario_min": "07:30",
-        "orario_max": "10:00",
-        "lat": 45.7292228,
-        "lon": 11.8826846,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1919"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "MONSIGNOR BERNARDI - POGGIANA VIA BRIGATA MARTIRI DEL GRAPPA 5, 31039 RIESE PIO X (TREVISO)",
-        "geo_query_indirizzo": "VIA BRIGATA MARTIRI DEL GRAPPA 5, 31039 RIESE PIO X (TREVISO)"
-      },
-      {
-        "nome": "GIOVANNI XXIII - BESSICA",
-        "indirizzo": "VIA DANTE ALIGHIERI, 46, 31037 LORIA (TREVISO)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1779",
-        "codice_univoco": "p00000_p1779",
-        "zona": "4118",
-        "data_consegna": "14-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "10:00",
-        "lat": 45.7362559,
-        "lon": 11.8391598,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1779"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "GIOVANNI XXIII - BESSICA VIA DANTE ALIGHIERI, 46, 31037 LORIA (TREVISO)",
-        "geo_query_indirizzo": "VIA DANTE ALIGHIERI, 46, 31037 LORIA (TREVISO)"
-      },
-      {
-        "nome": "Zona Ovest Masaccio",
-        "indirizzo": "Via Monfenera 23, 31033 Castelfranco Veneto (TV)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1921",
-        "codice_univoco": "p00000_p1921",
-        "zona": "4118",
-        "data_consegna": "14-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "10:00",
-        "lat": 45.7035986,
-        "lon": 11.5703868,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1921"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "Zona Ovest Masaccio Via Monfenera 23, 31033 Castelfranco Veneto (TV)",
-        "geo_query_indirizzo": "Via Monfenera 23, 31033 Castelfranco Veneto (TV)"
       }
     ]
   }

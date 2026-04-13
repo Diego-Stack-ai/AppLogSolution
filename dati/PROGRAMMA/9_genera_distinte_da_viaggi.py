@@ -438,23 +438,21 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
 
     # ── SEZIONE 1: ARTICOLI ──
     elementi.append(Paragraph("RIEPILOGO ARTICOLI DA CARICARE PER GIRO:", st_body))
-    dati_art = [["Codice Articolo", "Descrizione Natura Qualità", "Quantità Consolidata", "Confezionamento", "Note"]]
+    dati_art = [["Codice Articolo", "Descrizione Natura Qualità", "Quantità Consolidata", "Confezionamento"]]
     
     # Ordiniamo per (codice_base, variante_raw) — coerente con la chiave di aggregazione
     for chiave, art in sorted(articoli_viaggio.items(), key=lambda x: (x[0][0], x[0][1])):
         qty_cons, display = _consolida_quantita(art["codice_base"], art["quantita"])
-        nota = "" if art["codice_base"] in ARTICOLI_NOTI_SET else "[!] NUOVO"
-
+        
         # Codice stampato = base + variante raw (es. "FVNS-03-" + "FOLDER" → "FVNS-03- FOLDER")
         variante = art.get("variante_raw", "")
         codice_stampato = f"{art['codice_base']} {variante}".strip() if variante else art["codice_base"]
 
         dati_art.append([
             codice_stampato,
-            art.get("descrizione", "")[:45],
+            art.get("descrizione", "")[:55], # Aumentato limite caratteri visto lo spazio extra
             display or "—",
             art.get("confezionamento", "")[:30] or "—",
-            nota,
         ])
     ts_art = TableStyle([
         ("BACKGROUND",     (0, 0), (-1, 0),  colors.HexColor("#10b981")),
@@ -466,7 +464,7 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
         ("LEFTPADDING",    (0, 0), (-1, -1), 3),
         ("RIGHTPADDING",   (0, 0), (-1, -1), 3),
     ])
-    t_art = Table(dati_art, colWidths=[25*mm, 65*mm, 35*mm, 35*mm, 20*mm])
+    t_art = Table(dati_art, colWidths=[35*mm, 75*mm, 35*mm, 35*mm])
     t_art.setStyle(ts_art)
     elementi.append(t_art)
     elementi.append(Spacer(1, 10*mm))

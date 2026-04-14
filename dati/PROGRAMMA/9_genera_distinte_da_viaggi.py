@@ -71,6 +71,7 @@ CONSOLIDAMENTO = {
     "LT-AQ-04-LB":   ("Fardelli",  "Bottiglie", 12),
     "LT-AQ-04-LS":   ("Fardelli",  "Bottiglie", 10),
     "LT-AQ-04-LV":   ("Fardelli",  "Bottiglie",  6),
+    "LT-DL-02-LC":   ("Cartoni",   "Brick",     12),
     "YO-BI-MN-04-LB":("Cartoni",   "Cluster",   10),
     "YO-DL-02-LC":   ("Cartoni",   "Porzioni",   6),
     "AP-SU-PC":      ("Cartoni",   "Porzioni",  24),
@@ -738,11 +739,6 @@ def main():
             z = punto.get("zona", "").strip()
             if z:
                 zone_punti.add(z)
-                # Deduce la zona equivalente per il latte o frutta in base ai prodotti richiesti
-                if cl and cl.lower() != "p00000" and z.startswith("3"):
-                    zone_punti.add("4" + z[1:])
-                if cf and cf.lower() != "p00000" and z.startswith("4"):
-                    zone_punti.add("3" + z[1:])
 
             # Cerca nella cartella corretta per data (supporta rientri di altre date)
             if d_p != data_v:

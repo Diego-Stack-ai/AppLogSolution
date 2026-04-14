@@ -542,24 +542,25 @@ def _genera_distinta_pdf(viaggio: dict, articoli_viaggio: dict, out_path: Path, 
         writer = PdfWriter()
         reader_tmp = PdfReader(str(tmp))
 
-        # --- ASSEMBLAGGIO INTERFOGLIATO (DOPPIA COPIA CONSECUTIVA) ---
-        # L'obiettivo è avere: [Distinta C1, Distinta C2, DDT 1, DDT 1 copia, DDT 2, DDT 2 copia, ...]
+        # ── FIX DOPPIA COPIA MULTI-PAGINA ────────────────────────────────────
+        # Il PDF temporaneo contiene: [Copia1_pag1, Copia1_pagN, PageBreak, Copia2_pag1, Copia2_pagN]
+        # Le due copie occupano lo stesso numero di pagine (n_pagine_copia).
+        # Per trovare il confine, le pagin totali si dividono in metà.
+        n_tot = len(reader_tmp.pages)
+        n_per_copia = n_tot // 2  # ogni copia occupa esattamente metà delle pagine totali
 
-        # 1. Le due copie della Distinta di Carico (Pagina 1 e 2)
-        if len(reader_tmp.pages) > 0:
-            writer.add_page(reader_tmp.pages[0])
-        
-        if len(reader_tmp.pages) > 1:
-            writer.add_page(reader_tmp.pages[1])
-        else:
-            # Fallback se ne è stata generata solo una (non dovrebbe succedere)
-            writer.add_page(reader_tmp.pages[0])
+        # Copia 1 (AUTISTA): pagine da 0 a n_per_copia-1
+        for i in range(n_per_copia):
+            writer.add_page(reader_tmp.pages[i])
+
+        # Copia 2 (UFFICIO): pagine da n_per_copia in poi
+        for i in range(n_per_copia, n_tot):
+            writer.add_page(reader_tmp.pages[i])
 
         # 2. Ogni DDT viene aggiunto in doppia copia consecutiva
         for pdf in pdf_ddt_inv:
-            # Ordine inverso rispetto al percorso -> Stop 1 in cima alla pila dopo stampa
-            writer.append(str(pdf)) # Primo giro
-            writer.append(str(pdf)) # Secondo giro (copia)
+            writer.append(str(pdf)) # Prima copia (autista)
+            writer.append(str(pdf)) # Seconda copia (ufficio)
 
         with open(out_path, "wb") as f:
             writer.write(f)
@@ -568,7 +569,103 @@ def _genera_distinta_pdf(viaggio: dict, articoli_viaggio: dict, out_path: Path, 
         # Fallback se pypdf fallisce
         import shutil
         shutil.move(str(tmp), str(out_path))
-        print(f"    WARN  Errore assiemaggio pypdf: {e}")
+        print(f"    WARN  Errore assemblaggio pypdf: {e}")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# RIEPILOGO ZONE
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _genera_pagina_riepilogo_zone(viaggi: list, out_path: Path, data_ddt: str) -> Path | None:
+    """
+    Genera un PDF a COPIA UNICA con l'elenco di tutte le zone trovate
+    nei DDT di tutti i viaggi del giorno. Va come prima pagina del Master PDF.
+    Contiene: elenco zone in grande (leggibile a colpo d'occhio) + tabella
+    riepilogativa Giro -> Zone.
+    """
+    try:
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import mm
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    except ImportError:
+        return None
+
+    # Raccoglie zone filtrando valori vuoti o privi di senso (es. "B" singola lettera)
+    def _zona_valida(z: str) -> bool:
+        return len(z.strip()) >= 2
+
+    def _zona_base(z: str) -> str:
+        """Rimuove suffissi/prefissi non numerici: '3109_B' → '3109', '!_3109' → '3109'."""
+        z = z.strip()
+        z = re.sub(r'^[^0-9]+', '', z)  # Rimuove prefissi non numerici
+        z = re.sub(r'[^0-9]+$', '', z)  # Rimuove suffissi non numerici
+        return z
+
+    tutte_le_zone: set[str] = set()   # set con codici BASE (solo numeri) per elenco grande
+    giri_con_zone: list[tuple[str, list[str]]] = []
+    for v in viaggi:
+        zone_v = [z for z in v.get("zone", []) if _zona_valida(z)]
+        nome_v = v.get("nome_giro", "?")
+        giri_con_zone.append((nome_v, zone_v))           # tabella: codici completi (con B)
+        tutte_le_zone.update(_zona_base(z) for z in zone_v if _zona_base(z))  # elenco grande: pulito
+
+    try:
+        doc = SimpleDocTemplate(
+            str(out_path), pagesize=A4,
+            leftMargin=20*mm, rightMargin=20*mm,
+            topMargin=20*mm, bottomMargin=20*mm
+        )
+        styles = getSampleStyleSheet()
+        st_titolo = ParagraphStyle("zt", parent=styles["Heading1"], fontSize=16, spaceAfter=6)
+        st_sub    = ParagraphStyle("zs", parent=styles["Normal"],   fontSize=10, spaceAfter=4,
+                                   textColor=colors.HexColor("#475569"))
+        st_zona   = ParagraphStyle("zz", parent=styles["Normal"],   fontSize=16,
+                                   spaceBefore=6, spaceAfter=6,
+                                   leading=22,
+                                   textColor=colors.HexColor("#1e293b"),
+                                   fontName="Helvetica-Bold")
+
+        elementi = []
+        elementi.append(Paragraph(f"RIEPILOGO ZONE — {data_ddt}", st_titolo))
+        elementi.append(Paragraph("Zone coperte da tutti i giri di oggi:", st_sub))
+        elementi.append(Spacer(1, 8*mm))
+
+        # Elenco zone in grande (leggibile a colpo d'occhio)
+        for zona in sorted(tutte_le_zone):
+            elementi.append(Paragraph(f"&#x25cf;  {zona}", st_zona))
+
+        elementi.append(Spacer(1, 12*mm))
+        elementi.append(Paragraph("— Dettaglio per giro:", st_sub))
+        elementi.append(Spacer(1, 4*mm))
+
+        # Tabella riepilogativa: Giro | Zone
+        dati_tab = [["Giro", "Zone"]]
+        for nome_v, zone_v in giri_con_zone:
+            zone_display = ", ".join(sorted(zone_v)) if zone_v else "—"
+            dati_tab.append([nome_v, zone_display])
+
+        ts = TableStyle([
+            ("BACKGROUND",     (0, 0), (-1, 0),  colors.HexColor("#1e293b")),
+            ("TEXTCOLOR",      (0, 0), (-1, 0),  colors.white),
+            ("FONTSIZE",       (0, 0), (-1, -1), 10),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f1f5f9")]),
+            ("GRID",           (0, 0), (-1, -1), 0.4, colors.HexColor("#cbd5e1")),
+            ("LEFTPADDING",    (0, 0), (-1, -1), 6),
+            ("RIGHTPADDING",   (0, 0), (-1, -1), 6),
+            ("TOPPADDING",     (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING",  (0, 0), (-1, -1), 5),
+        ])
+        t = Table(dati_tab, colWidths=[70*mm, 100*mm])
+        t.setStyle(ts)
+        elementi.append(t)
+
+        doc.build(elementi)
+        return out_path
+    except Exception as e:
+        print(f"  WARN  Errore generazione riepilogo zone: {e}")
+        return None
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -631,12 +728,21 @@ def main():
         articoli_giro: list[dict] = []
         pdf_non_trovati: list[str] = []
         pdf_usati_viaggio: list[Path] = []  # PDF di questo viaggio specifico
+        zone_punti: set[str] = set()        # Zone raccolte dai singoli punti
 
         for punto in punti:
             cf   = punto.get("codice_frutta", "") or ""
             cl   = punto.get("codice_latte",  "") or ""
             d_p  = punto.get("data_consegna", data_v) or data_v
             nome = punto.get("nome", "?")[:40]
+            z = punto.get("zona", "").strip()
+            if z:
+                zone_punti.add(z)
+                # Deduce la zona equivalente per il latte o frutta in base ai prodotti richiesti
+                if cl and cl.lower() != "p00000" and z.startswith("3"):
+                    zone_punti.add("4" + z[1:])
+                if cf and cf.lower() != "p00000" and z.startswith("4"):
+                    zone_punti.add("3" + z[1:])
 
             # Cerca nella cartella corretta per data (supporta rientri di altre date)
             if d_p != data_v:
@@ -658,8 +764,7 @@ def main():
                     # recuperati via Mappatura Master.
                     continue
 
-                pdf = None
-                tipo_trovato = tipo
+                pdfs_da_processare = []
 
                 if codice.lower() in rientri:
                     # ── RIENTRO: cerca nei PDF delle date storiche (col. B) ──
@@ -667,30 +772,32 @@ def main():
                     for d_r in date_rientro:
                         cart_storica = CONSEGNE_DIR / f"CONSEGNE_{d_r}" / "DDT-ORIGINALI-DIVISI"
                         for sotto in ["FRUTTA", "LATTE"]:
-                            pdf = _trova_pdf(codice, d_r, cart_storica / sotto)
-                            if pdf:
-                                data_rientro = d_r # per log
-                                rientri_usati.add((codice.lower(), d_r))
-                                tipo_trovato = sotto
+                            pdf_found = _trova_pdf(codice, d_r, cart_storica / sotto)
+                            if pdf_found:
+                                pdfs_da_processare.append((pdf_found, sotto, d_r))
                                 break
-                        if pdf: break
                 else:
                     # ── CONSEGNA NORMALE: cerca nella cartella della sessione corrente ──
                     cart_tipo = dir_frutta_r if tipo == "FRUTTA" else dir_latte_r
-                    pdf = _trova_pdf(codice, d_p, cart_tipo)
+                    pdf_found = _trova_pdf(codice, d_p, cart_tipo)
+                    if pdf_found:
+                        pdfs_da_processare.append((pdf_found, tipo, d_p))
 
-                if pdf:
-                    pdf_usati.add(pdf)
-                    pdf_usati_viaggio.append(pdf)
-                    articoli = _raccogli_articoli_da_pdf(pdf, tipo_trovato)
-                    articoli_giro.extend(articoli)
-                    n_art = len(articoli)
-                    is_rientro = codice.lower() in rientri
-                    tag = f" [RIENTRO<-{rientri[codice.lower()]}]" if is_rientro else ""
-                    print(f"       OK {nome:<40} {codice} ({tipo_trovato}){tag} -> {n_art} art.")
-                else:
+                if not pdfs_da_processare:
                     pdf_non_trovati.append(f"{codice} ({tipo})")
                     print(f"       !! {nome:<40} {codice} ({tipo}) -> PDF non trovato")
+                else:
+                    for pdf_obj, tp, d_r in pdfs_da_processare:
+                        pdf_usati.add(pdf_obj)
+                        pdf_usati_viaggio.append(pdf_obj)
+                        articoli = _raccogli_articoli_da_pdf(pdf_obj, tp)
+                        articoli_giro.extend(articoli)
+                        n_art = len(articoli)
+                        is_rientro = (codice.lower() in rientri) and (d_r != d_p)
+                        tag = f" [RIENTRO<-{d_r}]" if is_rientro else ""
+                        print(f"       OK {nome:<40} {codice} ({tp}){tag} -> {n_art} art.")
+                        if is_rientro:
+                            rientri_usati.add((codice.lower(), d_r))
 
         # Aggrega articoli del viaggio
         articoli_agg = _aggrega_articoli(articoli_giro)
@@ -698,7 +805,11 @@ def main():
 
         # Genera PDF distinta
         sanitized = re.sub(r'[\\/*?:"<>|]', '_', nome_giro)
-        zone_str  = "_".join(viaggio.get("zone", []))
+        # Zone = unione di quelle nel JSON + quelle dai punti reali (garanzia completezza)
+        tutte_zone = sorted(set(viaggio.get("zone", [])) | zone_punti)
+        zone_str   = "_".join(tutte_zone)
+        # Aggiorna anche il dict viaggio in memoria (usato da _blocco_distinta e riepilogo)
+        viaggio["zone"] = tutte_zone
         pdf_name  = f"DISTINTA_{sanitized}_Zone_{zone_str}.pdf"
         out_pdf   = out_dir / pdf_name
 
@@ -709,12 +820,22 @@ def main():
         except Exception as e:
             print(f"       ERR Errore PDF: {e}\n")
 
-    # ── Assembla Master PDF ──
+    # ── Genera Pagina Riepilogo Zone (COPIA UNICA, va in TESTA al Master) ──
+    riepilogo_zone_path = out_dir / f"00_RIEPILOGO_ZONE_{data_ddt}.pdf"
+    rz = _genera_pagina_riepilogo_zone(viaggi, riepilogo_zone_path, data_ddt)
+    if rz:
+        print(f"  ZON Riepilogo zone: {riepilogo_zone_path.name}")
+
+    # ── Assembla Master PDF (Riepilogo Zone + tutte le distinte) ──
     if pdf_generati:
         try:
             from pypdf import PdfWriter
             master_path = cartella / f"MASTER_DISTINTE_{data_ddt}.pdf"
             writer = PdfWriter()
+            # 1. Prima pagina: riepilogo zone (copia unica)
+            if rz and riepilogo_zone_path.exists():
+                writer.append(str(riepilogo_zone_path))
+            # 2. Poi tutte le distinte viaggio (doppia copia ciascuna)
             for p in pdf_generati:
                 writer.append(str(p))
             with open(master_path, "wb") as f:

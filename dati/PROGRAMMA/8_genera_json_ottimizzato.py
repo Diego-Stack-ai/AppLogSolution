@@ -116,6 +116,19 @@ def main():
         print("   Assicurati di aver eseguito prima lo script 6_genera_percorsi_veggiano.py")
         sys.exit(1)
 
+    # Carica la mappa delle zone ORIGINALI da punti_consegna_unificati.json
+    unificati_path = cartella / "punti_consegna_unificati.json"
+    mappa_zone_originali = {}
+    if unificati_path.exists():
+        try:
+            dati_orig = json.loads(unificati_path.read_text(encoding="utf-8"))
+            for po in dati_orig.get("punti", []):
+                chiave = po.get("codice_univoco", "")
+                if chiave:
+                    mappa_zone_originali[chiave] = po.get("zona", "")
+        except Exception as e:
+            print(f"  WARN impossibile leggere {unificati_path.name}: {e}")
+
     # Trova tutti gli HTML dei viaggi in ordine
     html_files = sorted(
         [f for f in percorsi_dir.glob("V*.html") if FILE_RE.match(f.name)]
@@ -133,19 +146,31 @@ def main():
     viaggi_ottimizzati = []
 
     for html_path in html_files:
-        nome_giro, zone = _parse_filename(html_path.name)
+        nome_giro, _ = _parse_filename(html_path.name)
         punti = _estrai_data_da_html(html_path)
 
-        # Aggiunge data_ddt a ogni punto per la ricerca PDF
+        zone_reali_giro = set()
+
+        # Aggiunge data_ddt a ogni punto per la ricerca PDF e ripristina la ZONA ORIGINALE
         for p in punti:
             # Se data_consegna è vuota -> usa la data del DDT (non oggi!)
             if not p.get("data_consegna"):
                 p["data_consegna"] = data_ddt
+            
+            # Ripristina zona originale
+            chiave = p.get("codice_univoco", "")
+            zona_orig = mappa_zone_originali.get(chiave, p.get("zona", "0000"))
+            p["zona"] = zona_orig
+            if zona_orig and zona_orig != "0000" and zona_orig != "DDT_DA_INSERIRE":
+                zone_reali_giro.add(zona_orig)
+
+        # Invece di usare le zone dal nome del file, usiamo le zone reali dei punti in esso contenuti
+        zone_effettive = sorted(list(zone_reali_giro))
 
         viaggio = {
             "nome_giro": nome_giro,
             "file_sorgente": html_path.name,
-            "zone": zone,
+            "zone": zone_effettive,
             "num_fermate": len(punti),
             "data_ddt": data_ddt,
             "lista_punti": punti
@@ -153,7 +178,7 @@ def main():
         viaggi_ottimizzati.append(viaggio)
 
         # Riepilogo fermate per questo giro
-        print(f"  OK {nome_giro} (zone: {', '.join(zone)}) -> {len(punti)} fermate")
+        print(f"  OK {nome_giro} (zone originali: {', '.join(zone_effettive)}) -> {len(punti)} fermate")
         for i, p in enumerate(punti, 1):
             cf = p.get("codice_frutta", "p00000")
             cl = p.get("codice_latte",  "p00000")

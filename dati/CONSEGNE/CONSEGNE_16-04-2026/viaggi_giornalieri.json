@@ -491,7 +491,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1911",
         "codice_univoco": "p00000_p1911",
-        "zona": "4110",
+        "zona": "3110",
         "data_consegna": "",
         "orario_min": "08:00",
         "orario_max": "10:00",
@@ -514,7 +514,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p2011",
         "codice_univoco": "p00000_p2011",
-        "zona": "4110",
+        "zona": "3110",
         "data_consegna": "",
         "orario_min": "08:00",
         "orario_max": "10:00",
@@ -1027,7 +1027,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1706",
         "codice_univoco": "p00000_p1706",
-        "zona": "4111",
+        "zona": "3111",
         "data_consegna": "",
         "orario_min": "07:30",
         "orario_max": "10:00",
@@ -1050,7 +1050,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1708",
         "codice_univoco": "p00000_p1708",
-        "zona": "4111",
+        "zona": "3111",
         "data_consegna": "",
         "orario_min": "07:30",
         "orario_max": "10:00",
@@ -1073,7 +1073,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1797",
         "codice_univoco": "p00000_p1797",
-        "zona": "4111",
+        "zona": "3111",
         "data_consegna": "",
         "orario_min": "08:00",
         "orario_max": "10:00",
@@ -1096,7 +1096,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1819",
         "codice_univoco": "p00000_p1819",
-        "zona": "4111",
+        "zona": "3111",
         "data_consegna": "",
         "orario_min": "07:30",
         "orario_max": "10:00",
@@ -1119,7 +1119,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1901",
         "codice_univoco": "p00000_p1901",
-        "zona": "4111",
+        "zona": "3111",
         "data_consegna": "",
         "orario_min": "07:30",
         "orario_max": "10:00",
@@ -1395,14 +1395,7 @@
         "row_idx_mappatura": 252,
         "geo_query_nome_indirizzo": "LORENZO MILANI - FARRA CAP. VIA DEI PATRIOTI 29, 31010 FARRA DI SOLIGO (TREVISO)",
         "geo_query_indirizzo": "VIA DEI PATRIOTI 29, 31010 FARRA DI SOLIGO (TREVISO)"
-      }
-    ],
-    "color": "#4f46e5",
-    "nome_giro": "Viaggio 1"
-  },
-  {
-    "id_zona": "3206",
-    "lista_punti": [
+      },
       {
         "nome": "A. MANZONI - SERRAVALLE",
         "indirizzo": "VIA MARCINELLE 10, 31029 VITTORIO VENETO (TREVISO)",
@@ -1864,8 +1857,8 @@
         "geo_query_indirizzo": "VIA COSTA ALTA, 31015 CONEGLIANO (TREVISO)"
       }
     ],
-    "color": "#ef4444",
-    "nome_giro": "Viaggio 4"
+    "color": "#4f46e5",
+    "nome_giro": "Viaggio 1"
   },
   {
     "id_zona": "3209",
@@ -2267,7 +2260,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1791",
         "codice_univoco": "p00000_p1791",
-        "zona": "4119",
+        "zona": "3209",
         "data_consegna": "",
         "orario_min": "07:30",
         "orario_max": "10:00",
@@ -2290,7 +2283,7 @@
         "codice_frutta": "p00000",
         "codice_latte": "p1795",
         "codice_univoco": "p00000_p1795",
-        "zona": "4119",
+        "zona": "3209",
         "data_consegna": "",
         "orario_min": "07:30",
         "orario_max": "10:00",

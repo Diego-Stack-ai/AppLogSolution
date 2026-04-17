@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>V09</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
+    <style>
+        :root { --p: #4f46e5; --accent: #10b981; --done: #94a3b8; --geo: #3b82f6; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: #f8fafc; overflow: hidden; }
+        .main-container { display: flex; flex-direction: column; height: 100vh; }
+        #map { height: 42vh; width: 100%; background: #dfe5eb; position: relative; }
+        #sidebar { flex: 1; display: flex; flex-direction: column; background: white; border-top: 2px solid #cbd5e1; overflow: hidden; }
+        .header { padding: 6px 12px; background: #1e293b; color: white; border-bottom: 2px solid var(--accent); position: relative; }
+        .trip-title { margin: 0; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
+        .reset-btn { position: absolute; right: 12px; top: 8px; font-size: 0.6rem; color: #94a3b8; text-decoration: underline; border: none; background: none; font-weight: 600; }
+        .stats-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 2px; }
+        .stat-item { flex: 1; display: flex; flex-direction: column; align-items: start; }
+        .stat-val { font-size: 0.82rem; font-weight: 800; color: white; line-height: 1; }
+        .stat-lbl { font-size: 0.52rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-top: 1px; }
+        #delivery-list { flex: 1; overflow-y: auto; padding: 8px; background: #f1f5f9; padding-bottom: 60px; }
+        
+        .card { 
+            background: white; border-radius: 12px; padding: 10px; margin-bottom: 8px; 
+            display: grid; grid-template-columns: 42px 1fr 52px; gap: 8px; align-items: center;
+            border: 1px solid #cbd5e1; position: relative; transition: all 0.2s; 
+        }
+        .card.done { opacity: 0.6; background: #e2e8f0; border-color: #cbd5e1; }
+        .card.done .stop-num { background: var(--done); }
+        .card.done .btn-done { color: var(--accent); background: white; border: 1px solid var(--accent); }
+        .card.next { border-color: var(--p); border-left: 5px solid var(--p); }
+        
+        .stop-num { width: 32px; height: 32px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
+        .stop-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+        .name { display: block; font-size: 0.85rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .addr { font-size: 0.78rem; color: #64748b; font-weight: 600; line-height: 1.1; display: block; }
+        
+        .actions { display: flex; gap: 6px; width: 100%; margin-bottom: 2px; }
+        .btn-done, .btn-geo { 
+            flex: 1; height: 32px; border-radius: 6px; font-size: 0.6rem; font-weight: 800;
+            display: flex; align-items: center; justify-content: center; gap: 4px; 
+            padding: 0 4px; text-decoration: none; border: none; white-space: nowrap;
+        }
+        .btn-nav { 
+            background: var(--accent); color: white; width: 44px; height: 44px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; text-decoration: none;
+        }
+        .btn-done { background: white; color: #64748b; border: 1px solid #cbd5e1; }
+        .btn-geo { background: var(--geo); color: white; }
+        .btn-geo.saved { background: #1e293b; }
+        .material-icons-round { font-size: 16px !important; }
+        .btn-nav { background: var(--accent); color: white; }
+        .btn-done { background: white; color: #64748b; border: 1px solid #cbd5e1; }
+        .btn-geo { background: var(--geo); color: white; }
+        .btn-geo.saved { background: #1e293b; }
+        .material-icons-round { font-size: 16px !important; }
+
+        #gps-btn { position: absolute; bottom: 20px; right: 20px; background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; color: var(--p); border: none; }
+        #geo-feedback { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 30px; font-size: 0.8rem; font-weight: 700; z-index: 2000; display: none; }
+    </style>
+</head>
+<body>
+    <div id="geo-feedback">Coordinate salvate!</div>
+    <div class="main-container">
+        <div id="map">
+            <button id="gps-btn" onclick="centerOnMe()"><span class="material-icons-round">my_location</span></button>
+        </div>
+        <div id="sidebar">
+            <div class="header">
+                <div class="trip-title">🏎️ V09 | Zone: 3211</div>
+                <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
+                <div class="stats-row">
+                    <div class="stat-item"><span class="stat-val">57.8km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">1h 17m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 20m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">3h 37m</span><span class="stat-lbl">Totale</span></div>
+                </div>
+            </div>
+            <div id="delivery-list"><div class="card next" onclick="focusOn(0)">
+                <div class="stop-num">1</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(0, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(0, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Scuola Primaria G. Marconi Di Padernello</b>
+                    <span class="addr"><b>Via Giusti</b><br>19, 31038 Padernello (TV)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6817259,12.1253065&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(1)">
+                <div class="stop-num">2</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(1, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(1, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Scuola Primaria G. Carducci Di Porcellengo</b>
+                    <span class="addr"><b>Via Francesco Baracca</b><br>3, 31038 Porcellengo (TV)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7070291,12.1452939&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(2)">
+                <div class="stop-num">3</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(2, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(2, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Scuola Primaria Onorevole Visentin Di Postioma</b>
+                    <span class="addr"><b>Via Europa Unita</b><br>31, 31038 Postioma (TV)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7171636,12.1494057&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(3)">
+                <div class="stop-num">4</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(3, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(3, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">MARIO FIORE - CAMALO'</b>
+                    <span class="addr"><b>PIAZZA S. MATTEO 2</b><br>31050 POVEGLIANO (TREVISO)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7519944,12.1707098&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(4)">
+                <div class="stop-num">5</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(4, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(4, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">PLACIDO FABRIS - POVEGLIANO</b>
+                    <span class="addr"><b>VIA MASETTO 5</b><br>31050 POVEGLIANO (TREVISO)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7578398,12.2027331&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(5)">
+                <div class="stop-num">6</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(5, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(5, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Giovanni Battista Cicogna</b>
+                    <span class="addr"><b>Via G. B. Cicogna</b><br>50, 31050 Ponzano Veneto (TV)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7181594,12.2011213&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(6)">
+                <div class="stop-num">7</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(6, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(6, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">DE AMICIS - FONTANE</b>
+                    <span class="addr"><b>VIA FONTANE 42</b><br>31020 VILLORBA (TREVISO)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.70325370439111,12.246349617089969&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(7)">
+                <div class="stop-num">8</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(7, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(7, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">I MAGGIO - SAN BARTOLOMEO</b>
+                    <span class="addr"><b>VIA S.BARTOLOMEO 46/B</b><br>31100 TREVISO (TREVISO)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.677927,12.24199&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(8)">
+                <div class="stop-num">9</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(8, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(8, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">GIOVANNI XXIII - VIA FEDERICI</b>
+                    <span class="addr"><b>VIA FEDERICI 12</b><br>31100 TREVISO (TREVISO)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6723834,12.2380837&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(9)">
+                <div class="stop-num">10</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(9, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(9, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Carmen Frova_Collegio Pio X</b>
+                    <span class="addr"><b>Borgo Cavour</b><br>40, 31100 Treviso (TV)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6679011,12.2364577&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(10)">
+                <div class="stop-num">11</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(10, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(10, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">E.De Amicis - Via Caccianiga</b>
+                    <span class="addr"><b>Via Caccianiga 16</b><br>31100 Treviso (TV)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6683746,12.2392965&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(11)">
+                <div class="stop-num">12</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(11, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(11, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">A. GABELLI - VIALE CADORNA</b>
+                    <span class="addr"><b>VIALE CADORNA 21</b><br>31100 TREVISO (TREVISO)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6628472,12.2429047&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(12)">
+                <div class="stop-num">13</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(12, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(12, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">"G.B. TIEPOLO" - LANZAGO</b>
+                    <span class="addr"><b>VIA TIEPOLO N. 4</b><br>31057 SILEA (TREVISO)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6617178,12.2920986&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(13)">
+                <div class="stop-num">14</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(13, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(13, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Antonio Vivaldi-Silea Cap.</b>
+                    <span class="addr"><b>Via Roma N. 79</b><br>31057 Silea (TV)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6536253,12.3012308&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(14)">
+                <div class="stop-num">15</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(14, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(14, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">G. PRATI - VIA DEI MILLE</b>
+                    <span class="addr"><b>VIA DEI MILLE 7</b><br>31100 TREVISO (TREVISO)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6362262,12.2378641&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(15)">
+                <div class="stop-num">16</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(15, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(15, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">R. Degli Azzoni - San Giuseppe</b>
+                    <span class="addr"><b>Via Paludetti 11</b><br>31100 Treviso (TV)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6625053,12.216445&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(16)">
+                <div class="stop-num">17</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(16, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(16, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">"MADDALENA DI CANOSSA"</b>
+                    <span class="addr"><b>VIALE EUROPA 20</b><br>31100 TREVISO (TREVISO)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6745788,12.2255846&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(17)">
+                <div class="stop-num">18</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(17, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(17, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Scuola Primaria G. Pascoli Di</b>
+                    <span class="addr"><b>Via Grotta</b><br>1, 31038 Castagnole (TV)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6855208,12.1855819&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(18)">
+                <div class="stop-num">19</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(18, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(18, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Scuola Primaria Treforni Di Paese</b>
+                    <span class="addr"><b>Via Treforni N. 4</b><br>31038 Paese (TV)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6721991,12.1823073&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(19)">
+                <div class="stop-num">20</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-geo" onclick="saveRealCoords(19, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
+                        <button class="btn-done" onclick="toggleDone(19, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Scuola Primaria L. Pravato Di Paese</b>
+                    <span class="addr"><b>Via Della Costituzione N.1</b><br>31038 Paese (TV)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6754328,12.1585365&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div></div>
+        </div>
+    </div>
+    
+    <!-- FIREBASE SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLnhP2Q4bz2ubYwcMLiD3-qq4c220eVKw",
+            authDomain: "log-solution-60007.firebaseapp.com",
+            projectId: "log-solution-60007",
+            storageBucket: "log-solution-60007.appspot.com",
+            messagingSenderId: "343696844738",
+            appId: "1:343696844738:web:b8d4e10c71fb2c67bc7d20"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.saveRealCoords = async function(i) {
+            if (!window.currentPos) {
+                alert("GPS non pronto. Attendi il pallino blu.");
+                return;
+            }
+            const p = window.data[i];
+            const btn = document.querySelectorAll('.btn-geo')[i];
+            
+            try {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-icons-round">sync</span>';
+                
+                await addDoc(collection(db, "coordinate_reali"), {
+                    codice_frutta: p.codice_frutta || "",
+                    codice_latte: p.codice_latte || "",
+                    nome: p.cliente,
+                    indirizzo: p.indirizzo,
+                    lat: window.currentPos.lat,
+                    lon: window.currentPos.lng,
+                    timestamp: serverTimestamp(),
+                    v_id: window.v_id
+                });
+
+                btn.classList.add('saved');
+                btn.innerHTML = '<span class="material-icons-round">location_on</span> GEOLOCALIZZA';
+                const f = document.getElementById('geo-feedback');
+                f.style.display = 'block';
+                setTimeout(() => f.style.display = 'none', 3000);
+            } catch (e) {
+                console.error(e);
+                alert("Errore salvataggio!");
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-icons-round">location_searching</span>';
+            }
+        };
+    </script>
+
+    <script>
+        const v_id = "V09";
+        const data = [{"cliente": "Scuola Primaria G. Marconi Di Padernello", "indirizzo": "Via Giusti, 19, 31038 Padernello (TV)", "lat": 45.6817259, "lon": 12.1253065, "codice_frutta": "p2140", "codice_latte": "p1764"}, {"cliente": "Scuola Primaria G. Carducci Di Porcellengo", "indirizzo": "Via Francesco Baracca, 3, 31038 Porcellengo (TV)", "lat": 45.7070291, "lon": 12.1452939, "codice_frutta": "p2141", "codice_latte": "p1766"}, {"cliente": "Scuola Primaria Onorevole Visentin Di Postioma", "indirizzo": "Via Europa Unita, 31, 31038 Postioma (TV)", "lat": 45.7171636, "lon": 12.1494057, "codice_frutta": "p2142", "codice_latte": "p1765"}, {"cliente": "MARIO FIORE - CAMALO'", "indirizzo": "PIAZZA S. MATTEO 2, 31050 POVEGLIANO (TREVISO)", "lat": 45.7519944, "lon": 12.1707098, "codice_frutta": "p2287", "codice_latte": "p1735"}, {"cliente": "PLACIDO FABRIS - POVEGLIANO", "indirizzo": "VIA MASETTO 5, 31050 POVEGLIANO (TREVISO)", "lat": 45.7578398, "lon": 12.2027331, "codice_frutta": "p2288", "codice_latte": "p1712"}, {"cliente": "Giovanni Battista Cicogna", "indirizzo": "Via G. B. Cicogna, 50, 31050 Ponzano Veneto (TV)", "lat": 45.7181594, "lon": 12.2011213, "codice_frutta": "p2065", "codice_latte": "p00000"}, {"cliente": "DE AMICIS - FONTANE", "indirizzo": "VIA FONTANE 42, 31020 VILLORBA (TREVISO)", "lat": 45.70325370439111, "lon": 12.246349617089969, "codice_frutta": "p00000", "codice_latte": "p1711"}, {"cliente": "I MAGGIO - SAN BARTOLOMEO", "indirizzo": "VIA S.BARTOLOMEO 46/B, 31100 TREVISO (TREVISO)", "lat": 45.677927, "lon": 12.24199, "codice_frutta": "p13179", "codice_latte": "p00000"}, {"cliente": "GIOVANNI XXIII - VIA FEDERICI", "indirizzo": "VIA FEDERICI 12, 31100 TREVISO (TREVISO)", "lat": 45.6723834, "lon": 12.2380837, "codice_frutta": "p6231", "codice_latte": "p00000"}, {"cliente": "Carmen Frova_Collegio Pio X", "indirizzo": "Borgo Cavour, 40, 31100 Treviso (TV)", "lat": 45.6679011, "lon": 12.2364577, "codice_frutta": "p2075", "codice_latte": "p00000"}, {"cliente": "E.De Amicis - Via Caccianiga", "indirizzo": "Via Caccianiga 16, 31100 Treviso (TV)", "lat": 45.6683746, "lon": 12.2392965, "codice_frutta": "p13810", "codice_latte": "p00000"}, {"cliente": "A. GABELLI - VIALE CADORNA", "indirizzo": "VIALE CADORNA 21, 31100 TREVISO (TREVISO)", "lat": 45.6628472, "lon": 12.2429047, "codice_frutta": "p13987", "codice_latte": "p00000"}, {"cliente": "\"G.B. TIEPOLO\" - LANZAGO", "indirizzo": "VIA TIEPOLO N. 4, 31057 SILEA (TREVISO)", "lat": 45.6617178, "lon": 12.2920986, "codice_frutta": "p11380", "codice_latte": "p00000"}, {"cliente": "Antonio Vivaldi-Silea Cap.", "indirizzo": "Via Roma N. 79, 31057 Silea (TV)", "lat": 45.6536253, "lon": 12.3012308, "codice_frutta": "p13491", "codice_latte": "p00000"}, {"cliente": "G. PRATI - VIA DEI MILLE", "indirizzo": "VIA DEI MILLE 7, 31100 TREVISO (TREVISO)", "lat": 45.6362262, "lon": 12.2378641, "codice_frutta": "p2279", "codice_latte": "p00000"}, {"cliente": "R. Degli Azzoni - San Giuseppe", "indirizzo": "Via Paludetti 11, 31100 Treviso (TV)", "lat": 45.6625053, "lon": 12.216445, "codice_frutta": "p13834", "codice_latte": "p00000"}, {"cliente": "\"MADDALENA DI CANOSSA\"", "indirizzo": "VIALE EUROPA 20, 31100 TREVISO (TREVISO)", "lat": 45.6745788, "lon": 12.2255846, "codice_frutta": "p2341", "codice_latte": "p00000"}, {"cliente": "Scuola Primaria G. Pascoli Di", "indirizzo": "Via Grotta, 1, 31038 Castagnole (TV)", "lat": 45.6855208, "lon": 12.1855819, "codice_frutta": "p2139", "codice_latte": "p1763"}, {"cliente": "Scuola Primaria Treforni Di Paese", "indirizzo": "Via Treforni N. 4, 31038 Paese (TV)", "lat": 45.6721991, "lon": 12.1823073, "codice_frutta": "p2143", "codice_latte": "p1762"}, {"cliente": "Scuola Primaria L. Pravato Di Paese", "indirizzo": "Via Della Costituzione N.1, 31038 Paese (TV)", "lat": 45.6754328, "lon": 12.1585365, "codice_frutta": "p2138", "codice_latte": "p1761"}];
+        window.data = data; window.v_id = v_id;
+        let map, markers = [], userMarker;
+        window.currentPos = null;
+        
+        // --- GESTIONE STATO CONSEGNE ---
+        function loadStatus() {
+            const saved = JSON.parse(localStorage.getItem('done_' + v_id) || "[]");
+            data.forEach((p, i) => {
+                if (saved.includes(i)) {
+                    document.querySelectorAll('.card')[i].classList.add('done');
+                    const btn = document.querySelectorAll('.btn-done')[i];
+                    if(btn) btn.innerHTML = '<span class="material-icons-round">check_circle</span> CONSEGNATO';
+                }
+            });
+        }
+        function toggleDone(i, event) {
+            if(event) event.stopPropagation();
+            const card = document.querySelectorAll('.card')[i];
+            const btn = document.querySelectorAll('.btn-done')[i];
+            card.classList.toggle('done');
+            
+            const saved = JSON.parse(localStorage.getItem('done_' + v_id) || "[]");
+            if (card.classList.contains('done')) {
+                if (!saved.includes(i)) saved.push(i);
+                if(btn) btn.innerHTML = '<span class="material-icons-round">check_circle</span> CONSEGNATO';
+            } else {
+                const idx = saved.indexOf(i);
+                if (idx > -1) saved.splice(idx, 1);
+                if(btn) btn.innerHTML = '<span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO';
+            }
+            localStorage.setItem('done_' + v_id, JSON.stringify(saved));
+        }
+        function resetDone() {
+            if(confirm("Vuoi azzerare tutte le consegne di questo giro?")) {
+                localStorage.removeItem('done_' + v_id);
+                location.reload();
+            }
+        }
+
+        // --- MAPPA E GPS ---
+        async function initMap() {
+            const centerPoint = data.find(p => p.lat && p.lon) || { lat: 45.4428, lon: 11.7145 };
+            map = new google.maps.Map(document.getElementById("map"), { zoom: 12, center: { lat: centerPoint.lat, lng: centerPoint.lon }, disableDefaultUI: true });
+            
+            // GPS Real-time
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(pos => {
+                    const myPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    window.currentPos = myPos;
+                    if (!userMarker) {
+                        userMarker = new google.maps.Marker({
+                            position: myPos, map: map,
+                            icon: { path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: "#4285F4", fillOpacity: 1, strokeColor: "white", strokeWeight: 2 }
+                        });
+                    } else { userMarker.setPosition(myPos); }
+                }, err => console.log("GPS Off"), { enableHighAccuracy: true });
+            }
+
+            const ds = new google.maps.DirectionsService();
+            const dr = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.7, strokeWeight: 5 } });
+            const waypts = data.slice(1, -1).filter(d => d.lat && d.lon).map(d => ({ location: { lat: d.lat, lng: d.lon }, stopover: true }));
+            
+            if (data[0].lat && data[data.length-1].lat) {
+                ds.route({ origin: { lat: data[0].lat, lng: data[0].lon }, destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, waypoints: waypts, travelMode: "DRIVING" }, (res, st) => { if (st === "OK") dr.setDirections(res); });
+            }
+
+            const geocoder = new google.maps.Geocoder();
+            const bounds = new google.maps.LatLngBounds();
+            data.forEach((p, i) => {
+                if (p.lat && p.lon) { addMarker(p, i, bounds); } 
+                else {
+                    geocoder.geocode({ address: `${p.cliente}, ${p.indirizzo}` }, (res, st) => {
+                        if (st === "OK") { p.lat = res[0].geometry.location.lat(); p.lon = res[0].geometry.location.lng(); addMarker(p, i, bounds); }
+                    });
+                }
+            });
+            loadStatus();
+        }
+
+        function addMarker(p, i, bounds) {
+            const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i+1).toString(), color: "white", fontSize: "10px", fontWeight: "900" } });
+            markers[i] = m; bounds.extend(m.getPosition()); map.fitBounds(bounds);
+        }
+
+        function focusOn(i) { if(markers[i]) { map.panTo(markers[i].getPosition()); map.setZoom(17); } }
+        function centerOnMe() { if(userMarker) { map.panTo(userMarker.getPosition()); map.setZoom(16); } }
+    </script>
+</body>
+</html>

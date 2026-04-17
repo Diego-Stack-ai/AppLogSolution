@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V01 - Zone: 3101, 3102, 3122</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry&v=weekly" defer></script>
+    <style>
+        :root { --p: #4f46e5; --sidebar-w: 400px; }
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .main-container { display: flex; height: 100vh; }
+        #sidebar { width: var(--sidebar-w); height: 100%; background: white; display: flex; flex-direction: column; z-index: 100; box-shadow: 10px 0 30px rgba(0,0,0,0.1); }
+        .header { padding: 24px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; padding: 15px; gap: 8px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+        .stat-card { background: white; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center; }
+        .stat-val { display: block; font-weight: 800; font-size: 1rem; color: var(--p); }
+        .stat-lbl { font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 700; }
+        .tot-card { grid-column: span 2; background: #f5f3ff; border-color: #c7d2fe; }
+        #stop-list { flex: 1; overflow-y: auto; padding: 15px; background: #f1f5f9; }
+        .stop-card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 12px; display: flex; gap: 14px; align-items: center; border: 1.5px solid #e2e8f0; cursor: pointer; transition: 0.2s; }
+        .stop-card:hover { border-color: var(--p); transform: translateX(5px); }
+        .stop-num { width: 30px; height: 30px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0; }
+        .nav-btn { background: #22c55e; color: white; width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+        #map { flex: 1; height: 100%; }
+        .depot-tag { background: #475569; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; }
+        @media (max-width: 800px) { .main-container { flex-direction: column; } #sidebar { width: 100%; height: 50%; } #map { height: 50%; } }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div id="sidebar">
+            <div class="header">
+                <div style="font-size:0.75rem; opacity:0.8; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Logistica Operativa</div>
+                <h1 style="margin:0; font-size:1.5rem; letter-spacing:-0.01em;">V01</h1>
+                <div style="margin-top:6px; font-size:0.85rem; font-weight:600; color: #a5b4fc;">Zone: 3101, 3102, 3122</div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card"><span class="stat-val">25</span><span class="stat-lbl">Tappe</span></div>
+                <div class="stat-card"><span class="stat-val">155.8 km</span><span class="stat-lbl">Distanza</span></div>
+                <div class="stat-card"><span class="stat-val">3h 2m</span><span class="stat-lbl">Guida</span></div>
+                <div class="stat-card"><span class="stat-val">3h 20m</span><span class="stat-lbl">Scarico</span></div>
+                <div class="stat-card tot-card"><span class="stat-val" style="font-size:1.3rem;">6h 22m</span><span class="stat-lbl">TEMPO TOTALE STIMATO</span></div>
+            </div>
+            <div id="stop-list">
+                <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">home</span></div>
+                    <div class="stop-info"><span class="depot-tag">PARTENZA</span><br><b style="font-size:0.9rem;">Deposito Veggiano</b></div>
+                </div>
+                <div class="stop-card" onclick="panTo(1)"><div class="stop-num">1</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">EDMONDO DE AMICIS</b><br><small style="color:#64748b; font-size:0.75rem;">VIA BATTISTI 52, 30030 VIGONOVO (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.46527050981497,12.11488789812301&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(2)"><div class="stop-num">2</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">EDMONDO DE AMICIS</b><br><small style="color:#64748b; font-size:0.75rem;">VIA VITTORIO VENETO 27, 30031 DOLO (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.46527050981497,12.11488789812301&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(3)"><div class="stop-num">3</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Edmondo De Amicis</b><br><small style="color:#64748b; font-size:0.75rem;">Via Caltana 36/B, 30034 Mira (VE)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.46527050981497,12.11488789812301&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(4)"><div class="stop-num">4</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">ELSA MORANTE</b><br><small style="color:#64748b; font-size:0.75rem;">VIA LAGO DI VARANO8, 30034 MIRA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4550138,12.1445839&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(5)"><div class="stop-num">5</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">GIUSEPPE PARINI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA PISA 2, 30034 MIRA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4572551,12.1561673&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(6)"><div class="stop-num">6</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">S.G.BOSCO- CA' SABBIONI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA ORTOLAN 17, 30175 VENEZIA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4571202,12.1827523&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(7)"><div class="stop-num">7</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">MANTEGNA - TEMPO PIENO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA BOTTICELLI 4, 30038 SPINEA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4825325,12.176948&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(8)"><div class="stop-num">8</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">A. Vivaldi- Tempo Pieno</b><br><small style="color:#64748b; font-size:0.75rem;">Via Fornase 53/D, 30038 Spinea (VE)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.476921,12.1614235&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(9)"><div class="stop-num">9</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">"ANNA FRANK"</b><br><small style="color:#64748b; font-size:0.75rem;">VIA FREGENE 15, 30038 SPINEA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4884291,12.1551743&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(10)"><div class="stop-num">10</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">"MARCO POLO"</b><br><small style="color:#64748b; font-size:0.75rem;">VIA M. POLO 2, 30038 SPINEA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4903028,12.1605515&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(11)"><div class="stop-num">11</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">I. Nievo</b><br><small style="color:#64748b; font-size:0.75rem;">Via Buonarroti 48, 30038 Spinea (VE)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4935168,12.1645742&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(12)"><div class="stop-num">12</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">ADAMO VOLPATO</b><br><small style="color:#64748b; font-size:0.75rem;">PIAZZA IV NOVEMBRE N.49, 30030 MARTELLAGO (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.52340716459872,12.15691687338835&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(13)"><div class="stop-num">13</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Villa Medico - Zelarino</b><br><small style="color:#64748b; font-size:0.75rem;">Via Castellana, 154/B, 30174 Venezia (VE)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5177485,12.2027857&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(14)"><div class="stop-num">14</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria D. A. Munaretto - Cipressina</b><br><small style="color:#64748b; font-size:0.75rem;">Via Del Gazzato, 6, 30174 Venezia (VE)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5036089,12.2301046&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(15)"><div class="stop-num">15</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SCUOLA PARITARIA PRIMARIA "LUIGI CABURLOTTO"</b><br><small style="color:#64748b; font-size:0.75rem;">VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4994935,12.2373604&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(16)"><div class="stop-num">16</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Istituto Farina</b><br><small style="color:#64748b; font-size:0.75rem;">Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4991227,12.2384022&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(17)"><div class="stop-num">17</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Paritaria Berna</b><br><small style="color:#64748b; font-size:0.75rem;">Via Bissuola,93, 30173 Venezia (VE)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.493752643177764,12.2579634034979&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(18)"><div class="stop-num">18</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">LEONARDO DA VINCI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA BISSUOLA N. 95, 30173 VENEZIA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.49352284190952,12.258995925377056&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(19)"><div class="stop-num">19</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">VIA VIRGILIO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA VIRGILIO N. 1, 30173 VENEZIA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.495666734625495,12.262948312303159&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(20)"><div class="stop-num">20</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">LOMBARDO RADICE</b><br><small style="color:#64748b; font-size:0.75rem;">QUARTIERE S. GIUSEPPE 1, 30173 VENEZIA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.479841,12.2640964&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(21)"><div class="stop-num">21</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">CAPUOZZO-CATENE</b><br><small style="color:#64748b; font-size:0.75rem;">VIA SCATTOLIN 6, 30175 VENEZIA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4773866,12.2122583&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(22)"><div class="stop-num">22</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">F.LLI BANDIERA-MALCONTENTA</b><br><small style="color:#64748b; font-size:0.75rem;">VIA MORANZANI 2, 30176 VENEZIA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.43496632954766,12.20917352657644&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(23)"><div class="stop-num">23</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">IPPOLITO NIEVO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA BASSA GAMBARARE N. 16, 30030 MIRA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4209939,12.1521347&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(24)"><div class="stop-num">24</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">G. Leopardi</b><br><small style="color:#64748b; font-size:0.75rem;">Via Bernini,1, 30030 Mira (VE)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.435385,12.1424074&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(25)"><div class="stop-num">25</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">UGO FOSCOLO- TEMPO PIENO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA OBERDAN 6, 30034 MIRA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4387349,12.1267244&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+    <script>
+        const data = [
+  {
+    "lat": 45.442805,
+    "lon": 11.714498,
+    "nome": "DEPOSITO VEGGIANO",
+    "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"
+  },
+  {
+    "nome": "EDMONDO DE AMICIS",
+    "indirizzo": "VIA BATTISTI 52, 30030 VIGONOVO (VENEZIA)",
+    "codice_frutta": "p2380",
+    "codice_latte": "p1894",
+    "codice_univoco": "p2380_p1894",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "10:00",
+    "lat": 45.46527050981497,
+    "lon": 12.11488789812301,
+    "codici_ddt_frutta": [
+      "p2380"
+    ],
+    "codici_ddt_latte": [
+      "p1894"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 140,
+    "geo_query_nome_indirizzo": "EDMONDO DE AMICIS VIA BATTISTI 52, 30030 VIGONOVO (VENEZIA)",
+    "geo_query_indirizzo": "VIA BATTISTI 52, 30030 VIGONOVO (VENEZIA)"
+  },
+  {
+    "nome": "EDMONDO DE AMICIS",
+    "indirizzo": "VIA VITTORIO VENETO 27, 30031 DOLO (VENEZIA)",
+    "codice_frutta": "p2314",
+    "codice_latte": "p1754",
+    "codice_univoco": "p2314_p1754",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.46527050981497,
+    "lon": 12.11488789812301,
+    "codici_ddt_frutta": [
+      "p2314"
+    ],
+    "codici_ddt_latte": [
+      "p1754"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 137,
+    "geo_query_nome_indirizzo": "EDMONDO DE AMICIS VIA VITTORIO VENETO 27, 30031 DOLO (VENEZIA)",
+    "geo_query_indirizzo": "VIA VITTORIO VENETO 27, 30031 DOLO (VENEZIA)"
+  },
+  {
+    "nome": "Edmondo De Amicis",
+    "indirizzo": "Via Caltana 36/B, 30034 Mira (VE)",
+    "codice_frutta": "p13277",
+    "codice_latte": "p00000",
+    "codice_univoco": "p13277_p00000",
+    "zona": "3122",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "14:00",
+    "lat": 45.46527050981497,
+    "lon": 12.11488789812301,
+    "codici_ddt_frutta": [
+      "p13277"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 138,
+    "geo_query_nome_indirizzo": "Edmondo De Amicis Via Caltana 36/B, 30034 Mira (VE)",
+    "geo_query_indirizzo": "Via Caltana 36/B, 30034 Mira (VE)"
+  },
+  {
+    "nome": "ELSA MORANTE",
+    "indirizzo": "VIA LAGO DI VARANO8, 30034 MIRA (VENEZIA)",
+    "codice_frutta": "p9925",
+    "codice_latte": "p00000",
+    "codice_univoco": "p9925_p00000",
+    "zona": "3122",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "14:00",
+    "lat": 45.4550138,
+    "lon": 12.1445839,
+    "codici_ddt_frutta": [
+      "p9925"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 143,
+    "geo_query_nome_indirizzo": "ELSA MORANTE VIA LAGO DI VARANO8, 30034 MIRA (VENEZIA)",
+    "geo_query_indirizzo": "VIA LAGO DI VARANO8, 30034 MIRA (VENEZIA)"
+  },
+  {
+    "nome": "GIUSEPPE PARINI",
+    "indirizzo": "VIA PISA 2, 30034 MIRA (VENEZIA)",
+    "codice_frutta": "p10131",
+    "codice_latte": "p00000",
+    "codice_univoco": "p10131_p00000",
+    "zona": "3122",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "14:00",
+    "lat": 45.4572551,
+    "lon": 12.1561673,
+    "codici_ddt_frutta": [
+      "p10131"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 209,
+    "geo_query_nome_indirizzo": "GIUSEPPE PARINI VIA PISA 2, 30034 MIRA (VENEZIA)",
+    "geo_query_indirizzo": "VIA PISA 2, 30034 MIRA (VENEZIA)"
+  },
+  {
+    "nome": "S.G.BOSCO- CA' SABBIONI",
+    "indirizzo": "VIA ORTOLAN 17, 30175 VENEZIA (VENEZIA)",
+    "codice_frutta": "p2276",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2276_p00000",
+    "zona": "3101",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.4571202,
+    "lon": 12.1827523,
+    "codici_ddt_frutta": [
+      "p2276"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 346,
+    "geo_query_nome_indirizzo": "S.G.BOSCO- CA' SABBIONI VIA ORTOLAN 17, 30175 VENEZIA (VENEZIA)",
+    "geo_query_indirizzo": "VIA ORTOLAN 17, 30175 VENEZIA (VENEZIA)"
+  },
+  {
+    "nome": "MANTEGNA - TEMPO PIENO",
+    "indirizzo": "VIA BOTTICELLI 4, 30038 SPINEA (VENEZIA)",
+    "codice_frutta": "p7412",
+    "codice_latte": "p00000",
+    "codice_univoco": "p7412_p00000",
+    "zona": "3122",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.4825325,
+    "lon": 12.176948,
+    "codici_ddt_frutta": [
+      "p7412"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 263,
+    "geo_query_nome_indirizzo": "MANTEGNA - TEMPO PIENO VIA BOTTICELLI 4, 30038 SPINEA (VENEZIA)",
+    "geo_query_indirizzo": "VIA BOTTICELLI 4, 30038 SPINEA (VENEZIA)"
+  },
+  {
+    "nome": "A. Vivaldi- Tempo Pieno",
+    "indirizzo": "Via Fornase 53/D, 30038 Spinea (VE)",
+    "codice_frutta": "p13729",
+    "codice_latte": "p00000",
+    "codice_univoco": "p13729_p00000",
+    "zona": "3122",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.476921,
+    "lon": 12.1614235,
+    "codici_ddt_frutta": [
+      "p13729"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 41,
+    "geo_query_nome_indirizzo": "A. Vivaldi- Tempo Pieno Via Fornase 53/D, 30038 Spinea (VE)",
+    "geo_query_indirizzo": "Via Fornase 53/D, 30038 Spinea (VE)"
+  },
+  {
+    "nome": "\"ANNA FRANK\"",
+    "indirizzo": "VIA FREGENE 15, 30038 SPINEA (VENEZIA)",
+    "codice_frutta": "p2277",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2277_p00000",
+    "zona": "3122",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.4884291,
+    "lon": 12.1551743,
+    "codici_ddt_frutta": [
+      "p2277"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 6,
+    "geo_query_nome_indirizzo": "\"ANNA FRANK\" VIA FREGENE 15, 30038 SPINEA (VENEZIA)",
+    "geo_query_indirizzo": "VIA FREGENE 15, 30038 SPINEA (VENEZIA)"
+  },
+  {
+    "nome": "\"MARCO POLO\"",
+    "indirizzo": "VIA M. POLO 2, 30038 SPINEA (VENEZIA)",
+    "codice_frutta": "p2278",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2278_p00000",
+    "zona": "3122",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.4903028,
+    "lon": 12.1605515,
+    "codici_ddt_frutta": [
+      "p2278"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 265,
+    "geo_query_nome_indirizzo": "\"MARCO POLO\" VIA M. POLO 2, 30038 SPINEA (VENEZIA)",
+    "geo_query_indirizzo": "VIA M. POLO 2, 30038 SPINEA (VENEZIA)"
+  },
+  {
+    "nome": "I. Nievo",
+    "indirizzo": "Via Buonarroti 48, 30038 Spinea (VE)",
+    "codice_frutta": "p13569",
+    "codice_latte": "p00000",
+    "codice_univoco": "p13569_p00000",
+    "zona": "3122",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.4935168,
+    "lon": 12.1645742,
+    "codici_ddt_frutta": [
+      "p13569"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 217,
+    "geo_query_nome_indirizzo": "I. Nievo Via Buonarroti 48, 30038 Spinea (VE)",
+    "geo_query_indirizzo": "Via Buonarroti 48, 30038 Spinea (VE)"
+  },
+  {
+    "nome": "ADAMO VOLPATO",
+    "indirizzo": "PIAZZA IV NOVEMBRE N.49, 30030 MARTELLAGO (VENEZIA)",
+    "codice_frutta": "p2309",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2309_p00000",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "14:00",
+    "lat": 45.52340716459872,
+    "lon": 12.15691687338835,
+    "codici_ddt_frutta": [
+      "p2309"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 49,
+    "geo_query_nome_indirizzo": "ADAMO VOLPATO PIAZZA IV NOVEMBRE N.49, 30030 MARTELLAGO (VENEZIA)",
+    "geo_query_indirizzo": "PIAZZA IV NOVEMBRE N.49, 30030 MARTELLAGO (VENEZIA)"
+  },
+  {
+    "nome": "Scuola Primaria Villa Medico - Zelarino",
+    "indirizzo": "Via Castellana, 154/B, 30174 Venezia (VE)",
+    "codice_frutta": "p7026",
+    "codice_latte": "p00000",
+    "codice_univoco": "p7026_p00000",
+    "zona": "3101",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.5177485,
+    "lon": 12.2027857,
+    "codici_ddt_frutta": [
+      "p7026"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 431,
+    "geo_query_nome_indirizzo": "Scuola Primaria Villa Medico - Zelarino Via Castellana, 154/B, 30174 Venezia (VE)",
+    "geo_query_indirizzo": "Via Castellana, 154/B, 30174 Venezia (VE)"
+  },
+  {
+    "nome": "Scuola Primaria D. A. Munaretto - Cipressina",
+    "indirizzo": "Via Del Gazzato, 6, 30174 Venezia (VE)",
+    "codice_frutta": "p7025",
+    "codice_latte": "p00000",
+    "codice_univoco": "p7025_p00000",
+    "zona": "3101",
+    "data_consegna": "",
+    "orario_min": "08:30",
+    "orario_max": "14:00",
+    "lat": 45.5036089,
+    "lon": 12.2301046,
+    "codici_ddt_frutta": [
+      "p7025"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 392,
+    "geo_query_nome_indirizzo": "Scuola Primaria D. A. Munaretto - Cipressina Via Del Gazzato, 6, 30174 Venezia (VE)",
+    "geo_query_indirizzo": "Via Del Gazzato, 6, 30174 Venezia (VE)"
+  },
+  {
+    "nome": "SCUOLA PARITARIA PRIMARIA \"LUIGI CABURLOTTO\"",
+    "indirizzo": "VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)",
+    "codice_frutta": "p10949",
+    "codice_latte": "p1937",
+    "codice_univoco": "p10949_p1937",
+    "zona": "3101",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.4994935,
+    "lon": 12.2373604,
+    "codici_ddt_frutta": [
+      "p10949"
+    ],
+    "codici_ddt_latte": [
+      "p1937"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 375,
+    "geo_query_nome_indirizzo": "SCUOLA PARITARIA PRIMARIA \"LUIGI CABURLOTTO\" VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)",
+    "geo_query_indirizzo": "VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)"
+  },
+  {
+    "nome": "Istituto Farina",
+    "indirizzo": "Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)",
+    "codice_frutta": "p2233",
+    "codice_latte": "p1700",
+    "codice_univoco": "p2233_p1700",
+    "zona": "3101",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.4991227,
+    "lon": 12.2384022,
+    "codici_ddt_frutta": [
+      "p2233"
+    ],
+    "codici_ddt_latte": [
+      "p1700"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 241,
+    "geo_query_nome_indirizzo": "Istituto Farina Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)",
+    "geo_query_indirizzo": "Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)"
+  },
+  {
+    "nome": "Scuola Primaria Paritaria Berna",
+    "indirizzo": "Via Bissuola,93, 30173 Venezia (VE)",
+    "codice_frutta": "p2235",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2235_p00000",
+    "zona": "3101",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "10:00",
+    "lat": 45.493752643177764,
+    "lon": 12.2579634034979,
+    "codici_ddt_frutta": [
+      "p2235"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 416,
+    "geo_query_nome_indirizzo": "Scuola Primaria Paritaria Berna Via Bissuola,93, 30173 Venezia (VE)",
+    "geo_query_indirizzo": "Via Bissuola,93, 30173 Venezia (VE)"
+  },
+  {
+    "nome": "LEONARDO DA VINCI",
+    "indirizzo": "VIA BISSUOLA N. 95, 30173 VENEZIA (VENEZIA)",
+    "codice_frutta": "p2161",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2161_p00000",
+    "zona": "3101",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "10:00",
+    "lat": 45.49352284190952,
+    "lon": 12.258995925377056,
+    "codici_ddt_frutta": [
+      "p2161"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 248,
+    "geo_query_nome_indirizzo": "LEONARDO DA VINCI VIA BISSUOLA N. 95, 30173 VENEZIA (VENEZIA)",
+    "geo_query_indirizzo": "VIA BISSUOLA N. 95, 30173 VENEZIA (VENEZIA)"
+  },
+  {
+    "nome": "VIA VIRGILIO",
+    "indirizzo": "VIA VIRGILIO N. 1, 30173 VENEZIA (VENEZIA)",
+    "codice_frutta": "p2162",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2162_p00000",
+    "zona": "3101",
+    "data_consegna": "",
+    "orario_min": "08:30",
+    "orario_max": "10:00",
+    "lat": 45.495666734625495,
+    "lon": 12.262948312303159,
+    "codici_ddt_frutta": [
+      "p2162"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 450,
+    "geo_query_nome_indirizzo": "VIA VIRGILIO VIA VIRGILIO N. 1, 30173 VENEZIA (VENEZIA)",
+    "geo_query_indirizzo": "VIA VIRGILIO N. 1, 30173 VENEZIA (VENEZIA)"
+  },
+  {
+    "nome": "LOMBARDO RADICE",
+    "indirizzo": "QUARTIERE S. GIUSEPPE 1, 30173 VENEZIA (VENEZIA)",
+    "codice_frutta": "p8200",
+    "codice_latte": "p00000",
+    "codice_univoco": "p8200_p00000",
+    "zona": "3101",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.479841,
+    "lon": 12.2640964,
+    "codici_ddt_frutta": [
+      "p8200"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 251,
+    "geo_query_nome_indirizzo": "LOMBARDO RADICE QUARTIERE S. GIUSEPPE 1, 30173 VENEZIA (VENEZIA)",
+    "geo_query_indirizzo": "QUARTIERE S. GIUSEPPE 1, 30173 VENEZIA (VENEZIA)"
+  },
+  {
+    "nome": "CAPUOZZO-CATENE",
+    "indirizzo": "VIA SCATTOLIN 6, 30175 VENEZIA (VENEZIA)",
+    "codice_frutta": "p2274",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2274_p00000",
+    "zona": "3101",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.4773866,
+    "lon": 12.2122583,
+    "codici_ddt_frutta": [
+      "p2274"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 79,
+    "geo_query_nome_indirizzo": "CAPUOZZO-CATENE VIA SCATTOLIN 6, 30175 VENEZIA (VENEZIA)",
+    "geo_query_indirizzo": "VIA SCATTOLIN 6, 30175 VENEZIA (VENEZIA)"
+  },
+  {
+    "nome": "F.LLI BANDIERA-MALCONTENTA",
+    "indirizzo": "VIA MORANZANI 2, 30176 VENEZIA (VENEZIA)",
+    "codice_frutta": "p2275",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2275_p00000",
+    "zona": "3101",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.43496632954766,
+    "lon": 12.20917352657644,
+    "codici_ddt_frutta": [
+      "p2275"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 151,
+    "geo_query_nome_indirizzo": "F.LLI BANDIERA-MALCONTENTA VIA MORANZANI 2, 30176 VENEZIA (VENEZIA)",
+    "geo_query_indirizzo": "VIA MORANZANI 2, 30176 VENEZIA (VENEZIA)"
+  },
+  {
+    "nome": "IPPOLITO NIEVO",
+    "indirizzo": "VIA BASSA GAMBARARE N. 16, 30030 MIRA (VENEZIA)",
+    "codice_frutta": "p2177",
+    "codice_latte": "p2673",
+    "codice_univoco": "p2177_p2673",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.4209939,
+    "lon": 12.1521347,
+    "codici_ddt_frutta": [
+      "p2177"
+    ],
+    "codici_ddt_latte": [
+      "p2673"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 237,
+    "geo_query_nome_indirizzo": "IPPOLITO NIEVO VIA BASSA GAMBARARE N. 16, 30030 MIRA (VENEZIA)",
+    "geo_query_indirizzo": "VIA BASSA GAMBARARE N. 16, 30030 MIRA (VENEZIA)"
+  },
+  {
+    "nome": "G. Leopardi",
+    "indirizzo": "Via Bernini,1, 30030 Mira (VE)",
+    "codice_frutta": "p2178",
+    "codice_latte": "p2672",
+    "codice_univoco": "p2178_p2672",
+    "zona": "3122",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.435385,
+    "lon": 12.1424074,
+    "codici_ddt_frutta": [
+      "p2178"
+    ],
+    "codici_ddt_latte": [
+      "p2672"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 171,
+    "geo_query_nome_indirizzo": "G. Leopardi Via Bernini,1, 30030 Mira (VE)",
+    "geo_query_indirizzo": "Via Bernini,1, 30030 Mira (VE)"
+  },
+  {
+    "nome": "UGO FOSCOLO- TEMPO PIENO",
+    "indirizzo": "VIA OBERDAN 6, 30034 MIRA (VENEZIA)",
+    "codice_frutta": "p2176",
+    "codice_latte": "p1931",
+    "codice_univoco": "p2176_p1931",
+    "zona": "3122",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.4387349,
+    "lon": 12.1267244,
+    "codici_ddt_frutta": [
+      "p2176"
+    ],
+    "codici_ddt_latte": [
+      "p1931"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 447,
+    "geo_query_nome_indirizzo": "UGO FOSCOLO- TEMPO PIENO VIA OBERDAN 6, 30034 MIRA (VENEZIA)",
+    "geo_query_indirizzo": "VIA OBERDAN 6, 30034 MIRA (VENEZIA)"
+  },
+  {
+    "lat": 45.442805,
+    "lon": 11.714498,
+    "nome": "DEPOSITO VEGGIANO",
+    "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"
+  }
+]; const polys = ["ytjtGi~nfAgAkI}Gy@{AOe@_CtA_PZeF_@wOw@qj@gBuMyD{GeAe@mUbf@yUna@mHxF{UxJqJfPkQtNoe@r^sDzB_JnGiCrJcDv@cJmEyDqFz[s{AhXenAnSmwBzFqo@~Hef@dP{w@dOmt@pHq`@tEui@hHqcA|ImoAjUqaD~YipCfPszAfUagAp[mkAng@mxA~c@{cArH{^o@yYoMudAwPqtA_n@ccFakAspJqe@izD{Qi{AoD{]n@qBnBM|@dEmEdDsMzDa\\tV}FfDuAs@iAp@kBfAgJgAyJsBp@uDlGoYvAmK\\eErEhBYdEiCbAw@EEgG`@{GhAwCBKKOB^rQcf@jEmKrLqNvGsBfCgJjKw[jFkd@TkDH{C_EOO?eBHtBI~DGDiCBkFAaDw@gMuFsZkDkOaB{EgCJqBx@zEwB}DgMcD}Kj@eDuAgAa@|@yB@iGeEuEwJwIyZ}CcIz@eZp@cDxD_QjIwQhO_\\v@}CX`KjHfDs@pLwB]aCiBV}DBiDNiUm@k@yCtNaUzg@yJdVsP}FuAeKaAqB_C|@qAdHoQiCeKu@eHl@yF`@cBg@c@GwLeGkDcBuBeAw@zCKb@cBrGoAbFuCpCtCqCnAcFbBsGJc@v@{CtBdAn@\\zBdA`D`BpB~@bDbBH`@DPbB`BdIhb@X|F`A|DoCxHgFte@iD~FGpBC?GD@RwBnJ?TsA|LsBhBsFI_EtBcKiEyKaI{DEv@xJZtKkL~D{@XC?}Bv@R}HJeAOCGqA^kE}@oFoF}E_KkAsIkHrAoG~AaDvK|FCpBBqBcE}A}DcDIe@KOKEwE_FZ_C[~BnDxDmLeAcF@}IdAgDj@qG}@qCAgDfGsIvPcMj[}Kld@qEQkNoGoAaBaKUyS_E{K{E{PqKqEuCiDy@y@mD`AmELdBMeBq@oA?k@B_LrAaIdEsPjDiP~MifAdBgTxE}NR[dAiVcPmU_NaD{JyJhD_GnSgStJkN~DkTKoJJkKxGeSx@cAvDkIl@y@vImWpGwMdDmJ`GjCfI|HxHmd@fD_FGeDDsCzAaH`Cx@gC_BHkAfAyE`AoFxDgYp[jA}Di@f@yFjDd@pA|AKvBS`@YNcJo@uQaBtE_NrNoTvDtAzA~@p@mD~@wFjCoFpBuAFO`AiGrD{_@bDuPYkGd@iAp@pCdAaGYiE_ByGAOqBgKJ}@s@@yAw@q@i@}@rC|@sCp@h@hAv@TNNFDBH@HGd@aB`FeQyCsE^aDxFnEf@VrE~G|IzLiDxLBt@`O`RtIgIlYc_@fCmBnFtGVO", "_xqtGqiziAWN_AFi@_AeC}EAgAnB{BvAmAdDwA`CKxAVZn@z@xAlAXZYj@iAnAk@pCWvIoDnLcGrFQdIlDkDp_@cBxO}AbIwEzOkJ`QsMrRoGbPmElUiFfa@sBpSNnD`BtAfHpDTnAiAbKm@nB[JYdAd@|C_Gpe@Bf@xM`Sz@tBGXJdAbAbA`AdOIvUGNqBq@JoAKnApBp@FOXgGtDKtARb@rAd@zBv@zAfBh@bBw@d@}@jA_EhD{@zESzD\\lr@~PdBd@~@xAvAjB|@G|@aAdAe@`Ed@r`@lFfGhAdE|ALxFVnAhBbCbDXfAdElDhk@Y`[?jBl@aA`CgEd^kWlGgGfDuBjCgDbC}@bC\\~AqD~AcG`DqArA{@j@kB{@_IAaE~@kGx@eBfCuDDmAIzAgDvEkBbOtArFPt@~@BrCl@`FZr@`AQvBoDo@eB[KfBIpAEv@Y|ENpJInHKzLd@xE@lAe@He@|@vFfKXbBZnClCp@xb@lq@xXpg@|KbSlEdJsAzBqAbGL~D`AnEpAvND~H@jM{@lJuChSWtBaFuAmBk@mA`GtLnDt@^u@_@mDkAeGuA}CbCe@lAkD_@gBrDcD~TwB`Pa@vGiAjHuFpF_DvBcCL_MjBMcEGqDC_Ag@BaCBoC@kE@BoBG|C?fGqCHfCxEtEhKfBr]zBjr@BjD{@DIeCe@_OYuB{CoHoA}A}A`AcKaAg@GeBEVxDLnC@bAm@@yAHCx@By@xAIl@ADfBB`A@rBKfN?vKlJAtAC@`AuFZaCH]BoZhAo]tAkj@vBsKL}B`@_GIkBoEuA{FsImJ{DqDaAiAOMiDnKqAbFcAxAeEbMcAjAEVy@|CuBnUqGjZuBrDQTJ\\TItN~BhL~@`A_ArC{@fJuHbGcFzGyCbDwCfD{AhD[vBnAnC`NhC`T`NphApGfm@[vMZ|DhDjKrDnQ|CfTlIvq@hJzu@pl@n|EnpAfjKjKlz@`Gxe@~@nTk@xK}ChPoV`k@cWjl@_KdVuFpQ_ZzbAmKra@_Svy@mF`a@}Ffi@mOvuA}MbnAyMbgBqTt}C{HzgAqApQwCjVmI|a@gQf{@aQd{@gHnp@uIz`AcG|p@{Er^wd@fsBwHb]cCnHgBDoBPy@zBXfDbDxClFnBvFhC|Dz@pCItCsAh@sCc@sCL{B~EsEfAKZXX`@z@k@Eq@tB{BdRgMvDmDbGmGtCwAtJqHzEwE`FqJxC{DzVuJlCaBnB_DnE}KfUy[`ImQtEuHzG`Jp@~GKjGlAxj@PjJu@tJeAtKQlAjAJbCVfH|@J|H"]; let map, markers = [];
+        async function initMap() {
+            const { Map } = await google.maps.importLibrary("maps");
+            const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+            
+            // Trova primo punto per centrare
+            const centerP = data.find(p => p.lat && p.lon) || {lat: 45.4428, lon: 11.7145};
+            map = new Map(document.getElementById("map"), { zoom: 12, center: { lat: centerP.lat, lng: centerP.lon }, mapId: 'DEMO_MAP_ID' });
+            
+            const geocoder = new google.maps.Geocoder();
+            const bounds = new google.maps.LatLngBounds();
+
+            data.forEach((p, i) => {
+                const isD = (i === 0 || i === data.length - 1);
+                if (p.lat && p.lon) {
+                    addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                } else {
+                    // Geocoding di backup
+                    const query = `${p.nome}, ${p.indirizzo}`;
+                    geocoder.geocode({ address: query }, (results, status) => {
+                        if (status === "OK") {
+                            const loc = results[0].geometry.location;
+                            p.lat = loc.lat(); p.lon = loc.lng();
+                            addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                        } else {
+                            geocoder.geocode({ address: p.indirizzo }, (res2, st2) => {
+                                if (st2 === "OK") {
+                                    const loc2 = res2[0].geometry.location;
+                                    p.lat = loc2.lat(); p.lon = loc2.lng();
+                                    addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            if (polys.length > 0) {
+                polys.forEach(pString => {
+                    const p = google.maps.geometry.encoding.decodePath(pString);
+                    new google.maps.Polyline({ path: p, strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6, map });
+                });
+            } else {
+                new google.maps.Polyline({ 
+                    path: data.filter(p => p.lat).map(p => ({ lat: p.lat, lng: p.lon })), 
+                    strokeColor: "#4f46e5", strokeOpacity: 0.6, strokeWeight: 4, map 
+                });
+            }
+        }
+
+        function addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement) {
+            const m = new AdvancedMarkerElement({
+                map,
+                position: { lat: p.lat, lng: p.lon },
+                content: createPin(i, isD),
+                title: p.nome
+            });
+            markers[i] = m;
+            bounds.extend(m.position);
+            map.fitBounds(bounds);
+        }
+
+        function createPin(idx, isD) {
+            const d = document.createElement("div"); d.style.background = isD ? "#475569" : "#4f46e5";
+            d.style.color = "white"; d.style.width = "26px"; d.style.height = "26px"; d.style.borderRadius = "50%"; 
+            d.style.display = "flex"; d.style.alignItems = "center"; d.style.justifyContent = "center";
+            d.style.fontSize = "11px"; d.style.fontWeight = "900"; d.style.border = "3px solid white";
+            d.innerText = isD ? "" : idx; if(isD) d.innerHTML = '<span class="material-icons-round" style="font-size:14px">home</span>';
+            return d;
+        }
+
+        function panTo(i) { if(markers[i]) { map.panTo(markers[i].position); map.setZoom(17); } }
+        window.addEventListener('load', initMap);
+    </script>
+</body></html>

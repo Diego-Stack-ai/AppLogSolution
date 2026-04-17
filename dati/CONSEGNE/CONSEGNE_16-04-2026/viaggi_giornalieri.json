@@ -81,8 +81,8 @@
         "data_consegna": "",
         "orario_min": "07:30",
         "orario_max": "10:00",
-        "lat": 45.3887674,
-        "lon": 11.6501101,
+        "lat": 45.38758191504752,
+        "lon": 11.651147220382514,
         "codici_ddt_frutta": [
           "p2068"
         ],
@@ -1137,8 +1137,8 @@
         "geo_query_indirizzo": "VIA G.B.ROSSI 25, 30033 NOALE (VENEZIA)"
       }
     ],
-    "color": "#8b5cf6",
-    "nome_giro": "Viaggio 5"
+    "color": "#ef4444",
+    "nome_giro": "Viaggio 4"
   },
   {
     "id_zona": "3205",
@@ -1167,6 +1167,144 @@
         "geo_query_indirizzo": "Via Sartori, N.47, 31053 Pieve Di Soligo (TV)"
       },
       {
+        "nome": "A. MANZONI - SERRAVALLE",
+        "indirizzo": "VIA MARCINELLE 10, 31029 VITTORIO VENETO (TREVISO)",
+        "codice_frutta": "p12400",
+        "codice_latte": "p00000",
+        "codice_univoco": "p12400_p00000",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 46.0091068,
+        "lon": 12.2811319,
+        "codici_ddt_frutta": [
+          "p12400"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 40,
+        "geo_query_nome_indirizzo": "A. MANZONI - SERRAVALLE VIA MARCINELLE 10, 31029 VITTORIO VENETO (TREVISO)",
+        "geo_query_indirizzo": "VIA MARCINELLE 10, 31029 VITTORIO VENETO (TREVISO)"
+      },
+      {
+        "nome": "PARRAVICINI - SERRAVALLE",
+        "indirizzo": "VIA PARRAVICINI 18, 31029 VITTORIO VENETO (TREVISO)",
+        "codice_frutta": "p12472",
+        "codice_latte": "p1855",
+        "codice_univoco": "p12472_p1855",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 45.9985007,
+        "lon": 12.2943275,
+        "codici_ddt_frutta": [
+          "p12472"
+        ],
+        "codici_ddt_latte": [
+          "p1855"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 296,
+        "geo_query_nome_indirizzo": "PARRAVICINI - SERRAVALLE VIA PARRAVICINI 18, 31029 VITTORIO VENETO (TREVISO)",
+        "geo_query_indirizzo": "VIA PARRAVICINI 18, 31029 VITTORIO VENETO (TREVISO)"
+      },
+      {
+        "nome": "G.Pascoli",
+        "indirizzo": "Viale Istria 36, 31015 Conegliano (TV)",
+        "codice_frutta": "p13231",
+        "codice_latte": "p00000",
+        "codice_univoco": "p13231_p00000",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.88361658272463,
+        "lon": 12.3035714265497,
+        "codici_ddt_frutta": [
+          "p13231"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 183,
+        "geo_query_nome_indirizzo": "G.Pascoli Viale Istria 36, 31015 Conegliano (TV)",
+        "geo_query_indirizzo": "Viale Istria 36, 31015 Conegliano (TV)"
+      },
+      {
+        "nome": "CAMPOLONGO",
+        "indirizzo": "VIA VITAL 120, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p13495",
+        "codice_latte": "p00000",
+        "codice_univoco": "p13495_p00000",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.8663868,
+        "lon": 12.3071656,
+        "codici_ddt_frutta": [
+          "p13495"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 78,
+        "geo_query_nome_indirizzo": "CAMPOLONGO VIA VITAL 120, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA VITAL 120, 31015 CONEGLIANO (TREVISO)"
+      },
+      {
+        "nome": "\"G. SCARABELLOTTO\" ORSAGO",
+        "indirizzo": "VIA DON MILANI 4, 31010 ORSAGO (TREVISO)",
+        "codice_frutta": "p13590",
+        "codice_latte": "p00000",
+        "codice_univoco": "p13590_p00000",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.92764000555744,
+        "lon": 12.42423503042802,
+        "codici_ddt_frutta": [
+          "p13590"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 13,
+        "geo_query_nome_indirizzo": "\"G. SCARABELLOTTO\" ORSAGO VIA DON MILANI 4, 31010 ORSAGO (TREVISO)",
+        "geo_query_indirizzo": "VIA DON MILANI 4, 31010 ORSAGO (TREVISO)"
+      },
+      {
+        "nome": "F.CRISPI - VIA DIAZ",
+        "indirizzo": "VIA A.DIAZ 30, 31029 VITTORIO VENETO (TREVISO)",
+        "codice_frutta": "p13927",
+        "codice_latte": "p1853",
+        "codice_univoco": "p13927_p1853",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "07:45",
+        "orario_max": "14:00",
+        "lat": 45.980237866388,
+        "lon": 12.3013241255646,
+        "codici_ddt_frutta": [
+          "p13927"
+        ],
+        "codici_ddt_latte": [
+          "p1853"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 148,
+        "geo_query_nome_indirizzo": "F.CRISPI - VIA DIAZ VIA A.DIAZ 30, 31029 VITTORIO VENETO (TREVISO)",
+        "geo_query_indirizzo": "VIA A.DIAZ 30, 31029 VITTORIO VENETO (TREVISO)"
+      },
+      {
         "nome": "Gianni Rodari - Col San Martino",
         "indirizzo": "Via Giarentine 2, 31010 Farra Di Soligo (TV)",
         "codice_frutta": "p13947",
@@ -1188,6 +1326,75 @@
         "row_idx_mappatura": 199,
         "geo_query_nome_indirizzo": "Gianni Rodari - Col San Martino Via Giarentine 2, 31010 Farra Di Soligo (TV)",
         "geo_query_indirizzo": "Via Giarentine 2, 31010 Farra Di Soligo (TV)"
+      },
+      {
+        "nome": "SCUOLA PRIMARIA \"SANTA GIOVANNA D'ARCO\"",
+        "indirizzo": "VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)",
+        "codice_frutta": "p2099",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2099_p00000",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.9736809,
+        "lon": 12.2932122,
+        "codici_ddt_frutta": [
+          "p2099"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 387,
+        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"SANTA GIOVANNA D'ARCO\" VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)",
+        "geo_query_indirizzo": "VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)"
+      },
+      {
+        "nome": "SCUOLA PRIMARIA \" PIANCA SCHOOL \"",
+        "indirizzo": "VIA GIUNTI N°12/A, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p2254",
+        "codice_latte": "p1861",
+        "codice_univoco": "p2254_p1861",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.8780224,
+        "lon": 12.2770314,
+        "codici_ddt_frutta": [
+          "p2254"
+        ],
+        "codici_ddt_latte": [
+          "p1861"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 378,
+        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \" PIANCA SCHOOL \" VIA GIUNTI N°12/A, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA GIUNTI N°12/A, 31015 CONEGLIANO (TREVISO)"
+      },
+      {
+        "nome": "SCUOLA PRIMARIA \"IMMACOLATA\"",
+        "indirizzo": "VIA MADONNA20, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p2267",
+        "codice_latte": "p1929",
+        "codice_univoco": "p2267_p1929",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.8870121,
+        "lon": 12.2970496,
+        "codici_ddt_frutta": [
+          "p2267"
+        ],
+        "codici_ddt_latte": [
+          "p1929"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 385,
+        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"IMMACOLATA\" VIA MADONNA20, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA MADONNA20, 31015 CONEGLIANO (TREVISO)"
       },
       {
         "nome": "E. DE AMICIS MORIAGO D.B.",
@@ -1234,6 +1441,52 @@
         "row_idx_mappatura": 289,
         "geo_query_nome_indirizzo": "O.DE GASPARI FALZE' DI P. VIA DONATORI DEL SANGUE 4, 31020 SERNAGLIA DELLA BATTAGLIA (TREVISO)",
         "geo_query_indirizzo": "VIA DONATORI DEL SANGUE 4, 31020 SERNAGLIA DELLA BATTAGLIA (TREVISO)"
+      },
+      {
+        "nome": "\"GIANNI RODARI\" - PARE'",
+        "indirizzo": "VIA EINAUDI 110, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p2353",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2353_p00000",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.8717147,
+        "lon": 12.2731564,
+        "codici_ddt_frutta": [
+          "p2353"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 15,
+        "geo_query_nome_indirizzo": "\"GIANNI RODARI\" - PARE' VIA EINAUDI 110, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA EINAUDI 110, 31015 CONEGLIANO (TREVISO)"
+      },
+      {
+        "nome": "DON ORFEO MANTOVANI-V.DEI MILLE",
+        "indirizzo": "VIA DEI MILLE 42, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p2354",
+        "codice_latte": "p1793",
+        "codice_univoco": "p2354_p1793",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.8726659,
+        "lon": 12.2846529,
+        "codici_ddt_frutta": [
+          "p2354"
+        ],
+        "codici_ddt_latte": [
+          "p1793"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 126,
+        "geo_query_nome_indirizzo": "DON ORFEO MANTOVANI-V.DEI MILLE VIA DEI MILLE 42, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA DEI MILLE 42, 31015 CONEGLIANO (TREVISO)"
       },
       {
         "nome": "S. PELLICO - RUA DI F.",
@@ -1305,6 +1558,121 @@
         "geo_query_indirizzo": "PIAZZA DONATORI DI SANGUE 1, 31020 SAN PIETRO DI FELETTO (TREVISO)"
       },
       {
+        "nome": "UGO COSTELLA - B.GO VENDRAN",
+        "indirizzo": "VIA P. MASCAGNI 16, 31029 VITTORIO VENETO (TREVISO)",
+        "codice_frutta": "p2396",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2396_p00000",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.9663573,
+        "lon": 12.2945747,
+        "codici_ddt_frutta": [
+          "p2396"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 445,
+        "geo_query_nome_indirizzo": "UGO COSTELLA - B.GO VENDRAN VIA P. MASCAGNI 16, 31029 VITTORIO VENETO (TREVISO)",
+        "geo_query_indirizzo": "VIA P. MASCAGNI 16, 31029 VITTORIO VENETO (TREVISO)"
+      },
+      {
+        "nome": "UGO FOSCOLO - CENEDA",
+        "indirizzo": "VIA U. FOSCOLO 80, 31029 VITTORIO VENETO (TREVISO)",
+        "codice_frutta": "p2397",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2397_p00000",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.9788716,
+        "lon": 12.2971424,
+        "codici_ddt_frutta": [
+          "p2397"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 446,
+        "geo_query_nome_indirizzo": "UGO FOSCOLO - CENEDA VIA U. FOSCOLO 80, 31029 VITTORIO VENETO (TREVISO)",
+        "geo_query_indirizzo": "VIA U. FOSCOLO 80, 31029 VITTORIO VENETO (TREVISO)"
+      },
+      {
+        "nome": "SAN FRANCESCO",
+        "indirizzo": "VIA F. FENZI 28, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p6524",
+        "codice_latte": "p00000",
+        "codice_univoco": "p6524_p00000",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.8870121,
+        "lon": 12.2970496,
+        "codici_ddt_frutta": [
+          "p6524"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 350,
+        "geo_query_nome_indirizzo": "SAN FRANCESCO VIA F. FENZI 28, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA F. FENZI 28, 31015 CONEGLIANO (TREVISO)"
+      },
+      {
+        "nome": "D. ALIGHIERI",
+        "indirizzo": "VIA ZANDONAI 14, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p6525",
+        "codice_latte": "p00000",
+        "codice_univoco": "p6525_p00000",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.8991163,
+        "lon": 12.2924438,
+        "codici_ddt_frutta": [
+          "p6525"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 99,
+        "geo_query_nome_indirizzo": "D. ALIGHIERI VIA ZANDONAI 14, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA ZANDONAI 14, 31015 CONEGLIANO (TREVISO)"
+      },
+      {
+        "nome": "G. MAZZINI",
+        "indirizzo": "VIA T. VECELLIO 13/15, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p6526",
+        "codice_latte": "p00000",
+        "codice_univoco": "p6526_p00000",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.8870121,
+        "lon": 12.2970496,
+        "codici_ddt_frutta": [
+          "p6526"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 174,
+        "geo_query_nome_indirizzo": "G. MAZZINI VIA T. VECELLIO 13/15, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA T. VECELLIO 13/15, 31015 CONEGLIANO (TREVISO)"
+      },
+      {
         "nome": "P. Maset - Scomigo - Loc. Scomigo",
         "indirizzo": "Via Pastin Santin 5, 31015 Conegliano (TV)",
         "codice_frutta": "p6527",
@@ -1328,6 +1696,29 @@
         "geo_query_indirizzo": "Via Pastin Santin 5, 31015 Conegliano (TV)"
       },
       {
+        "nome": "\"J.F. KENNEDY\" - CONEGLIANO CAP",
+        "indirizzo": "VIA KENNEDY 10, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p6528",
+        "codice_latte": "p00000",
+        "codice_univoco": "p6528_p00000",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.8899507,
+        "lon": 12.3066424,
+        "codici_ddt_frutta": [
+          "p6528"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 18,
+        "geo_query_nome_indirizzo": "\"J.F. KENNEDY\" - CONEGLIANO CAP VIA KENNEDY 10, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA KENNEDY 10, 31015 CONEGLIANO (TREVISO)"
+      },
+      {
         "nome": "MARCO POLO - COLFOSCO",
         "indirizzo": "VIA F.BARACCA 11, 31030 SUSEGANA (TREVISO)",
         "codice_frutta": "p7719",
@@ -1349,6 +1740,52 @@
         "row_idx_mappatura": 267,
         "geo_query_nome_indirizzo": "MARCO POLO - COLFOSCO VIA F.BARACCA 11, 31030 SUSEGANA (TREVISO)",
         "geo_query_indirizzo": "VIA F.BARACCA 11, 31030 SUSEGANA (TREVISO)"
+      },
+      {
+        "nome": "G.PASCOLI - VITTORIO CENTRO",
+        "indirizzo": "VIA DIV.NINO NANNETTI 128, 31029 VITTORIO VENETO (TREVISO)",
+        "codice_frutta": "p8652",
+        "codice_latte": "p1856",
+        "codice_univoco": "p8652_p1856",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "07:45",
+        "orario_max": "14:00",
+        "lat": 45.9788716,
+        "lon": 12.2971424,
+        "codici_ddt_frutta": [
+          "p8652"
+        ],
+        "codici_ddt_latte": [
+          "p1856"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 185,
+        "geo_query_nome_indirizzo": "G.PASCOLI - VITTORIO CENTRO VIA DIV.NINO NANNETTI 128, 31029 VITTORIO VENETO (TREVISO)",
+        "geo_query_indirizzo": "VIA DIV.NINO NANNETTI 128, 31029 VITTORIO VENETO (TREVISO)"
+      },
+      {
+        "nome": "MARCO POLO PRIMARIA - COSTA",
+        "indirizzo": "PIAZZA ZANETTE 11, 31029 VITTORIO VENETO (TREVISO)",
+        "codice_frutta": "p8678",
+        "codice_latte": "p1858",
+        "codice_univoco": "p8678_p1858",
+        "zona": "3205",
+        "data_consegna": "",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 45.9849141,
+        "lon": 12.3085564,
+        "codici_ddt_frutta": [
+          "p8678"
+        ],
+        "codici_ddt_latte": [
+          "p1858"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 268,
+        "geo_query_nome_indirizzo": "MARCO POLO PRIMARIA - COSTA PIAZZA ZANETTE 11, 31029 VITTORIO VENETO (TREVISO)",
+        "geo_query_indirizzo": "PIAZZA ZANETTE 11, 31029 VITTORIO VENETO (TREVISO)"
       },
       {
         "nome": "G.ANCILLOTTO - SOLIGO",
@@ -1397,449 +1834,12 @@
         "geo_query_indirizzo": "VIA DEI PATRIOTI 29, 31010 FARRA DI SOLIGO (TREVISO)"
       },
       {
-        "nome": "A. MANZONI - SERRAVALLE",
-        "indirizzo": "VIA MARCINELLE 10, 31029 VITTORIO VENETO (TREVISO)",
-        "codice_frutta": "p12400",
-        "codice_latte": "p00000",
-        "codice_univoco": "p12400_p00000",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "07:45",
-        "orario_max": "10:00",
-        "lat": 46.0091068,
-        "lon": 12.2811319,
-        "codici_ddt_frutta": [
-          "p12400"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 40,
-        "geo_query_nome_indirizzo": "A. MANZONI - SERRAVALLE VIA MARCINELLE 10, 31029 VITTORIO VENETO (TREVISO)",
-        "geo_query_indirizzo": "VIA MARCINELLE 10, 31029 VITTORIO VENETO (TREVISO)"
-      },
-      {
-        "nome": "PARRAVICINI - SERRAVALLE",
-        "indirizzo": "VIA PARRAVICINI 18, 31029 VITTORIO VENETO (TREVISO)",
-        "codice_frutta": "p12472",
-        "codice_latte": "p1855",
-        "codice_univoco": "p12472_p1855",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "07:45",
-        "orario_max": "10:00",
-        "lat": 45.9985007,
-        "lon": 12.2943275,
-        "codici_ddt_frutta": [
-          "p12472"
-        ],
-        "codici_ddt_latte": [
-          "p1855"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 296,
-        "geo_query_nome_indirizzo": "PARRAVICINI - SERRAVALLE VIA PARRAVICINI 18, 31029 VITTORIO VENETO (TREVISO)",
-        "geo_query_indirizzo": "VIA PARRAVICINI 18, 31029 VITTORIO VENETO (TREVISO)"
-      },
-      {
-        "nome": "G.Pascoli",
-        "indirizzo": "Viale Istria 36, 31015 Conegliano (TV)",
-        "codice_frutta": "p13231",
-        "codice_latte": "p00000",
-        "codice_univoco": "p13231_p00000",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "08:00",
-        "orario_max": "10:00",
-        "lat": 45.88361658272463,
-        "lon": 12.3035714265497,
-        "codici_ddt_frutta": [
-          "p13231"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 183,
-        "geo_query_nome_indirizzo": "G.Pascoli Viale Istria 36, 31015 Conegliano (TV)",
-        "geo_query_indirizzo": "Viale Istria 36, 31015 Conegliano (TV)"
-      },
-      {
-        "nome": "CAMPOLONGO",
-        "indirizzo": "VIA VITAL 120, 31015 CONEGLIANO (TREVISO)",
-        "codice_frutta": "p13495",
-        "codice_latte": "p00000",
-        "codice_univoco": "p13495_p00000",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "07:30",
-        "orario_max": "14:00",
-        "lat": 45.8663868,
-        "lon": 12.3071656,
-        "codici_ddt_frutta": [
-          "p13495"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 78,
-        "geo_query_nome_indirizzo": "CAMPOLONGO VIA VITAL 120, 31015 CONEGLIANO (TREVISO)",
-        "geo_query_indirizzo": "VIA VITAL 120, 31015 CONEGLIANO (TREVISO)"
-      },
-      {
-        "nome": "\"G. SCARABELLOTTO\" ORSAGO",
-        "indirizzo": "VIA DON MILANI 4, 31010 ORSAGO (TREVISO)",
-        "codice_frutta": "p13590",
-        "codice_latte": "p00000",
-        "codice_univoco": "p13590_p00000",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "07:30",
-        "orario_max": "10:00",
-        "lat": 45.92764000555744,
-        "lon": 12.42423503042802,
-        "codici_ddt_frutta": [
-          "p13590"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 13,
-        "geo_query_nome_indirizzo": "\"G. SCARABELLOTTO\" ORSAGO VIA DON MILANI 4, 31010 ORSAGO (TREVISO)",
-        "geo_query_indirizzo": "VIA DON MILANI 4, 31010 ORSAGO (TREVISO)"
-      },
-      {
-        "nome": "F.CRISPI - VIA DIAZ",
-        "indirizzo": "VIA A.DIAZ 30, 31029 VITTORIO VENETO (TREVISO)",
-        "codice_frutta": "p13927",
-        "codice_latte": "p1853",
-        "codice_univoco": "p13927_p1853",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "07:45",
-        "orario_max": "14:00",
-        "lat": 45.980237866388,
-        "lon": 12.3013241255646,
-        "codici_ddt_frutta": [
-          "p13927"
-        ],
-        "codici_ddt_latte": [
-          "p1853"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 148,
-        "geo_query_nome_indirizzo": "F.CRISPI - VIA DIAZ VIA A.DIAZ 30, 31029 VITTORIO VENETO (TREVISO)",
-        "geo_query_indirizzo": "VIA A.DIAZ 30, 31029 VITTORIO VENETO (TREVISO)"
-      },
-      {
-        "nome": "SCUOLA PRIMARIA \"SANTA GIOVANNA D'ARCO\"",
-        "indirizzo": "VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)",
-        "codice_frutta": "p2099",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2099_p00000",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "08:00",
-        "orario_max": "10:00",
-        "lat": 45.9736809,
-        "lon": 12.2932122,
-        "codici_ddt_frutta": [
-          "p2099"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 387,
-        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"SANTA GIOVANNA D'ARCO\" VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)",
-        "geo_query_indirizzo": "VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)"
-      },
-      {
-        "nome": "SCUOLA PRIMARIA \" PIANCA SCHOOL \"",
-        "indirizzo": "VIA GIUNTI N°12/A, 31015 CONEGLIANO (TREVISO)",
-        "codice_frutta": "p2254",
-        "codice_latte": "p1861",
-        "codice_univoco": "p2254_p1861",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 45.8780224,
-        "lon": 12.2770314,
-        "codici_ddt_frutta": [
-          "p2254"
-        ],
-        "codici_ddt_latte": [
-          "p1861"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 378,
-        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \" PIANCA SCHOOL \" VIA GIUNTI N°12/A, 31015 CONEGLIANO (TREVISO)",
-        "geo_query_indirizzo": "VIA GIUNTI N°12/A, 31015 CONEGLIANO (TREVISO)"
-      },
-      {
-        "nome": "SCUOLA PRIMARIA \"IMMACOLATA\"",
-        "indirizzo": "VIA MADONNA20, 31015 CONEGLIANO (TREVISO)",
-        "codice_frutta": "p2267",
-        "codice_latte": "p1929",
-        "codice_univoco": "p2267_p1929",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "08:00",
-        "orario_max": "10:00",
-        "lat": 45.8870121,
-        "lon": 12.2970496,
-        "codici_ddt_frutta": [
-          "p2267"
-        ],
-        "codici_ddt_latte": [
-          "p1929"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 385,
-        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"IMMACOLATA\" VIA MADONNA20, 31015 CONEGLIANO (TREVISO)",
-        "geo_query_indirizzo": "VIA MADONNA20, 31015 CONEGLIANO (TREVISO)"
-      },
-      {
-        "nome": "\"GIANNI RODARI\" - PARE'",
-        "indirizzo": "VIA EINAUDI 110, 31015 CONEGLIANO (TREVISO)",
-        "codice_frutta": "p2353",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2353_p00000",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 45.8717147,
-        "lon": 12.2731564,
-        "codici_ddt_frutta": [
-          "p2353"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 15,
-        "geo_query_nome_indirizzo": "\"GIANNI RODARI\" - PARE' VIA EINAUDI 110, 31015 CONEGLIANO (TREVISO)",
-        "geo_query_indirizzo": "VIA EINAUDI 110, 31015 CONEGLIANO (TREVISO)"
-      },
-      {
-        "nome": "DON ORFEO MANTOVANI-V.DEI MILLE",
-        "indirizzo": "VIA DEI MILLE 42, 31015 CONEGLIANO (TREVISO)",
-        "codice_frutta": "p2354",
-        "codice_latte": "p1793",
-        "codice_univoco": "p2354_p1793",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 45.8726659,
-        "lon": 12.2846529,
-        "codici_ddt_frutta": [
-          "p2354"
-        ],
-        "codici_ddt_latte": [
-          "p1793"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 126,
-        "geo_query_nome_indirizzo": "DON ORFEO MANTOVANI-V.DEI MILLE VIA DEI MILLE 42, 31015 CONEGLIANO (TREVISO)",
-        "geo_query_indirizzo": "VIA DEI MILLE 42, 31015 CONEGLIANO (TREVISO)"
-      },
-      {
-        "nome": "UGO COSTELLA - B.GO VENDRAN",
-        "indirizzo": "VIA P. MASCAGNI 16, 31029 VITTORIO VENETO (TREVISO)",
-        "codice_frutta": "p2396",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2396_p00000",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 45.9663573,
-        "lon": 12.2945747,
-        "codici_ddt_frutta": [
-          "p2396"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 445,
-        "geo_query_nome_indirizzo": "UGO COSTELLA - B.GO VENDRAN VIA P. MASCAGNI 16, 31029 VITTORIO VENETO (TREVISO)",
-        "geo_query_indirizzo": "VIA P. MASCAGNI 16, 31029 VITTORIO VENETO (TREVISO)"
-      },
-      {
-        "nome": "UGO FOSCOLO - CENEDA",
-        "indirizzo": "VIA U. FOSCOLO 80, 31029 VITTORIO VENETO (TREVISO)",
-        "codice_frutta": "p2397",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2397_p00000",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 45.9788716,
-        "lon": 12.2971424,
-        "codici_ddt_frutta": [
-          "p2397"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 446,
-        "geo_query_nome_indirizzo": "UGO FOSCOLO - CENEDA VIA U. FOSCOLO 80, 31029 VITTORIO VENETO (TREVISO)",
-        "geo_query_indirizzo": "VIA U. FOSCOLO 80, 31029 VITTORIO VENETO (TREVISO)"
-      },
-      {
-        "nome": "SAN FRANCESCO",
-        "indirizzo": "VIA F. FENZI 28, 31015 CONEGLIANO (TREVISO)",
-        "codice_frutta": "p6524",
-        "codice_latte": "p00000",
-        "codice_univoco": "p6524_p00000",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "07:30",
-        "orario_max": "10:00",
-        "lat": 45.8870121,
-        "lon": 12.2970496,
-        "codici_ddt_frutta": [
-          "p6524"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 350,
-        "geo_query_nome_indirizzo": "SAN FRANCESCO VIA F. FENZI 28, 31015 CONEGLIANO (TREVISO)",
-        "geo_query_indirizzo": "VIA F. FENZI 28, 31015 CONEGLIANO (TREVISO)"
-      },
-      {
-        "nome": "D. ALIGHIERI",
-        "indirizzo": "VIA ZANDONAI 14, 31015 CONEGLIANO (TREVISO)",
-        "codice_frutta": "p6525",
-        "codice_latte": "p00000",
-        "codice_univoco": "p6525_p00000",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "07:30",
-        "orario_max": "14:00",
-        "lat": 45.8991163,
-        "lon": 12.2924438,
-        "codici_ddt_frutta": [
-          "p6525"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 99,
-        "geo_query_nome_indirizzo": "D. ALIGHIERI VIA ZANDONAI 14, 31015 CONEGLIANO (TREVISO)",
-        "geo_query_indirizzo": "VIA ZANDONAI 14, 31015 CONEGLIANO (TREVISO)"
-      },
-      {
-        "nome": "G. MAZZINI",
-        "indirizzo": "VIA T. VECELLIO 13/15, 31015 CONEGLIANO (TREVISO)",
-        "codice_frutta": "p6526",
-        "codice_latte": "p00000",
-        "codice_univoco": "p6526_p00000",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "07:30",
-        "orario_max": "10:00",
-        "lat": 45.8870121,
-        "lon": 12.2970496,
-        "codici_ddt_frutta": [
-          "p6526"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 174,
-        "geo_query_nome_indirizzo": "G. MAZZINI VIA T. VECELLIO 13/15, 31015 CONEGLIANO (TREVISO)",
-        "geo_query_indirizzo": "VIA T. VECELLIO 13/15, 31015 CONEGLIANO (TREVISO)"
-      },
-      {
-        "nome": "\"J.F. KENNEDY\" - CONEGLIANO CAP",
-        "indirizzo": "VIA KENNEDY 10, 31015 CONEGLIANO (TREVISO)",
-        "codice_frutta": "p6528",
-        "codice_latte": "p00000",
-        "codice_univoco": "p6528_p00000",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "07:30",
-        "orario_max": "10:00",
-        "lat": 45.8899507,
-        "lon": 12.3066424,
-        "codici_ddt_frutta": [
-          "p6528"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 18,
-        "geo_query_nome_indirizzo": "\"J.F. KENNEDY\" - CONEGLIANO CAP VIA KENNEDY 10, 31015 CONEGLIANO (TREVISO)",
-        "geo_query_indirizzo": "VIA KENNEDY 10, 31015 CONEGLIANO (TREVISO)"
-      },
-      {
-        "nome": "G.PASCOLI - VITTORIO CENTRO",
-        "indirizzo": "VIA DIV.NINO NANNETTI 128, 31029 VITTORIO VENETO (TREVISO)",
-        "codice_frutta": "p8652",
-        "codice_latte": "p1856",
-        "codice_univoco": "p8652_p1856",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "07:45",
-        "orario_max": "14:00",
-        "lat": 45.9788716,
-        "lon": 12.2971424,
-        "codici_ddt_frutta": [
-          "p8652"
-        ],
-        "codici_ddt_latte": [
-          "p1856"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 185,
-        "geo_query_nome_indirizzo": "G.PASCOLI - VITTORIO CENTRO VIA DIV.NINO NANNETTI 128, 31029 VITTORIO VENETO (TREVISO)",
-        "geo_query_indirizzo": "VIA DIV.NINO NANNETTI 128, 31029 VITTORIO VENETO (TREVISO)"
-      },
-      {
-        "nome": "MARCO POLO PRIMARIA - COSTA",
-        "indirizzo": "PIAZZA ZANETTE 11, 31029 VITTORIO VENETO (TREVISO)",
-        "codice_frutta": "p8678",
-        "codice_latte": "p1858",
-        "codice_univoco": "p8678_p1858",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min": "07:45",
-        "orario_max": "10:00",
-        "lat": 45.9849141,
-        "lon": 12.3085564,
-        "codici_ddt_frutta": [
-          "p8678"
-        ],
-        "codici_ddt_latte": [
-          "p1858"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 268,
-        "geo_query_nome_indirizzo": "MARCO POLO PRIMARIA - COSTA PIAZZA ZANETTE 11, 31029 VITTORIO VENETO (TREVISO)",
-        "geo_query_indirizzo": "PIAZZA ZANETTE 11, 31029 VITTORIO VENETO (TREVISO)"
-      },
-      {
         "nome": "LA NOSTRA FAMIGLIA",
         "indirizzo": "VIA COSTA ALTA, 31015 CONEGLIANO (TREVISO)",
         "codice_frutta": "p8847",
         "codice_latte": "p00000",
         "codice_univoco": "p8847_p00000",
-        "zona": "3206",
+        "zona": "3205",
         "data_consegna": "",
         "orario_min": "07:30",
         "orario_max": "14:00",

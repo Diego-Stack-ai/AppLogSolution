@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V05 - Zone: 3103, 3105, 4103, 4105</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry&v=weekly" defer></script>
+    <style>
+        :root { --p: #4f46e5; --sidebar-w: 400px; }
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .main-container { display: flex; height: 100vh; }
+        #sidebar { width: var(--sidebar-w); height: 100%; background: white; display: flex; flex-direction: column; z-index: 100; box-shadow: 10px 0 30px rgba(0,0,0,0.1); }
+        .header { padding: 24px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; padding: 15px; gap: 8px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+        .stat-card { background: white; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center; }
+        .stat-val { display: block; font-weight: 800; font-size: 1rem; color: var(--p); }
+        .stat-lbl { font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 700; }
+        .tot-card { grid-column: span 2; background: #f5f3ff; border-color: #c7d2fe; }
+        #stop-list { flex: 1; overflow-y: auto; padding: 15px; background: #f1f5f9; }
+        .stop-card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 12px; display: flex; gap: 14px; align-items: center; border: 1.5px solid #e2e8f0; cursor: pointer; transition: 0.2s; }
+        .stop-card:hover { border-color: var(--p); transform: translateX(5px); }
+        .stop-num { width: 30px; height: 30px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0; }
+        .nav-btn { background: #22c55e; color: white; width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+        #map { flex: 1; height: 100%; }
+        .depot-tag { background: #475569; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; }
+        @media (max-width: 800px) { .main-container { flex-direction: column; } #sidebar { width: 100%; height: 50%; } #map { height: 50%; } }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div id="sidebar">
+            <div class="header">
+                <div style="font-size:0.75rem; opacity:0.8; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Logistica Operativa</div>
+                <h1 style="margin:0; font-size:1.5rem; letter-spacing:-0.01em;">V05</h1>
+                <div style="margin-top:6px; font-size:0.85rem; font-weight:600; color: #a5b4fc;">Zone: 3103, 3105, 4103, 4105</div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card"><span class="stat-val">24</span><span class="stat-lbl">Tappe</span></div>
+                <div class="stat-card"><span class="stat-val">106.5 km</span><span class="stat-lbl">Distanza</span></div>
+                <div class="stat-card"><span class="stat-val">2h 33m</span><span class="stat-lbl">Guida</span></div>
+                <div class="stat-card"><span class="stat-val">3h 12m</span><span class="stat-lbl">Scarico</span></div>
+                <div class="stat-card tot-card"><span class="stat-val" style="font-size:1.3rem;">5h 45m</span><span class="stat-lbl">TEMPO TOTALE STIMATO</span></div>
+            </div>
+            <div id="stop-list">
+                <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">home</span></div>
+                    <div class="stop-info"><span class="depot-tag">PARTENZA</span><br><b style="font-size:0.9rem;">Deposito Veggiano</b></div>
+                </div>
+                <div class="stop-card" onclick="panTo(1)"><div class="stop-num">1</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Lampertico Di Montegaldella</b><br><small style="color:#64748b; font-size:0.75rem;">Via Lampertico 4, 36047 Montegaldella (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.43713320563928,11.67130950982453&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(2)"><div class="stop-num">2</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria D. Alighieri Grisignano Di</b><br><small style="color:#64748b; font-size:0.75rem;">Via Pavese, 36040 Grisignano Di Zocco (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4747764,11.694348&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(3)"><div class="stop-num">3</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">MONTESSORI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA MUNICIPIO N.22, 35010 CAMPODORO (PADOVA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4943005,11.748805&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(4)"><div class="stop-num">4</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Piazzola S. Brenta Camerini</b><br><small style="color:#64748b; font-size:0.75rem;">Via Dei Contarini, 65, 35016 Piazzola Sul Brenta (PD)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5416519,11.785254&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(5)"><div class="stop-num">5</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">A. Da Tremignon</b><br><small style="color:#64748b; font-size:0.75rem;">Via Borsellino, 25, 35016 Piazzola Sul Brenta (PD)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5184479,11.8079308&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(6)"><div class="stop-num">6</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">CURTAROLO-ANNA FRANK</b><br><small style="color:#64748b; font-size:0.75rem;">PIAZZETTA UNICEF 1, 35010 CURTAROLO (PADOVA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.518701,11.8313461&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(7)"><div class="stop-num">7</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">CURTAROLO-LOC. S.MARIA DI NON</b><br><small style="color:#64748b; font-size:0.75rem;">VIA SANTA MARIA DI NON 33, 35010 CURTAROLO (PADOVA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5123574,11.8514545&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(8)"><div class="stop-num">8</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Via Moro</b><br><small style="color:#64748b; font-size:0.75rem;">Via Aldo Moro, 10, 35010 Campodarsego (PD)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5073467,11.9031727&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(9)"><div class="stop-num">9</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Bronzola</b><br><small style="color:#64748b; font-size:0.75rem;">Via Straelle, 2, 35011 Campodarsego (PD)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5143082,11.9470709&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(10)"><div class="stop-num">10</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Monsignor A. G. Longhin Di Fiumicello</b><br><small style="color:#64748b; font-size:0.75rem;">Via Bassa Ii, 70, 35011 Campodarsego (PD)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5045037,11.9456258&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(11)"><div class="stop-num">11</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Dante Alighieri Di Sant'Andrea</b><br><small style="color:#64748b; font-size:0.75rem;">Via Caltana, 151, 35011 Campodarsego (PD)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4942723,11.9422216&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(12)"><div class="stop-num">12</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Silvio Pellico Di Reschigliano</b><br><small style="color:#64748b; font-size:0.75rem;">Via Bassa I, 79, 35011 Campodarsego (PD)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4877902,11.9359026&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(13)"><div class="stop-num">13</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Sacro Cuore</b><br><small style="color:#64748b; font-size:0.75rem;">Via Marconi, 9, 35010 Cadoneghe (PD)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.456696,11.9037821&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(14)"><div class="stop-num">14</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">DELEDDA -PD-</b><br><small style="color:#64748b; font-size:0.75rem;">VIA CORTIVO 19, 35133 PADOVA (PADOVA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.443486,11.8972781&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(15)"><div class="stop-num">15</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Davila-Pd</b><br><small style="color:#64748b; font-size:0.75rem;">Via L. Calabresi, 5, 35129 Padova (PD)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4220317,11.9132295&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(16)"><div class="stop-num">16</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SALVO D'ACQUISTO (EX IV IC)</b><br><small style="color:#64748b; font-size:0.75rem;">VIA BACH 1, 35132 PADOVA (PADOVA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4223293,11.8959893&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(17)"><div class="stop-num">17</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">ANDREA MANTEGNA - PD</b><br><small style="color:#64748b; font-size:0.75rem;">VIA ZANCHI 28 - 30, 35133 PADOVA (PADOVA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4300149,11.8906676&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(18)"><div class="stop-num">18</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SCUOLA INTERNAZIONALE ITALO-CINESE (SIIC)</b><br><small style="color:#64748b; font-size:0.75rem;">VIA PALLADIO 51B, 35134 PADOVA (PADOVA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4260868917016,11.88117467574968&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(19)"><div class="stop-num">19</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">GESU' MARIA</b><br><small style="color:#64748b; font-size:0.75rem;">VIA BERNARDI 14, 35135 PADOVA (PADOVA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.423036,11.8760703&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(20)"><div class="stop-num">20</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Manzoni</b><br><small style="color:#64748b; font-size:0.75rem;">Via Giuseppe Garolla, 44 - Limena Cap 35010, 35010 Limena (PD)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.48151535403009,11.84099273886698&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(21)"><div class="stop-num">21</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">LIMENA-MANZONI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA GAROLLA 44, 35010 LIMENA (PADOVA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.48153741072637,11.84096493671796&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(22)"><div class="stop-num">22</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">G. Allegri - Taggi Di Sopra Villafranca Padovana</b><br><small style="color:#64748b; font-size:0.75rem;">Via Taggi Di Sopra, 12, 35010 Villafranca Padovana (PD)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.46957379474215,11.81304765884508&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(23)"><div class="stop-num">23</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Rosa Agazzi Loc. Villaguattera</b><br><small style="color:#64748b; font-size:0.75rem;">Via Boschetta, 2, 35030 Rubano (PD)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4450496,11.8156772&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(24)"><div class="stop-num">24</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">MESTRINO-"DON BOSCO"</b><br><small style="color:#64748b; font-size:0.75rem;">VIA DE GASPERI 15, 35035 MESTRINO (PADOVA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.442324,11.7626563&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+    <script>
+        const data = [
+  {
+    "lat": 45.442805,
+    "lon": 11.714498,
+    "nome": "DEPOSITO VEGGIANO",
+    "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"
+  },
+  {
+    "nome": "Scuola Primaria Lampertico Di Montegaldella",
+    "indirizzo": "Via Lampertico 4, 36047 Montegaldella (VI)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1816",
+    "codice_univoco": "p00000_p1816",
+    "zona": "4103",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "10:00",
+    "lat": 45.43713320563928,
+    "lon": 11.67130950982453,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1816"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "Scuola Primaria Lampertico Di Montegaldella Via Lampertico 4, 36047 Montegaldella (VI)",
+    "geo_query_indirizzo": "Via Lampertico 4, 36047 Montegaldella (VI)"
+  },
+  {
+    "nome": "Scuola Primaria D. Alighieri Grisignano Di",
+    "indirizzo": "Via Pavese, 36040 Grisignano Di Zocco (VI)",
+    "codice_frutta": "p2063",
+    "codice_latte": "p1745",
+    "codice_univoco": "p2063_p1745",
+    "zona": "3103",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "10:00",
+    "lat": 45.4747764,
+    "lon": 11.694348,
+    "codici_ddt_frutta": [
+      "p2063"
+    ],
+    "codici_ddt_latte": [
+      "p1745"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 393,
+    "geo_query_nome_indirizzo": "Scuola Primaria D. Alighieri Grisignano Di Via Pavese, 36040 Grisignano Di Zocco (VI)",
+    "geo_query_indirizzo": "Via Pavese, 36040 Grisignano Di Zocco (VI)"
+  },
+  {
+    "nome": "MONTESSORI",
+    "indirizzo": "VIA MUNICIPIO N.22, 35010 CAMPODORO (PADOVA)",
+    "codice_frutta": "p2291",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2291_p00000",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "10:00",
+    "lat": 45.4943005,
+    "lon": 11.748805,
+    "codici_ddt_frutta": [
+      "p2291"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 283,
+    "geo_query_nome_indirizzo": "MONTESSORI VIA MUNICIPIO N.22, 35010 CAMPODORO (PADOVA)",
+    "geo_query_indirizzo": "VIA MUNICIPIO N.22, 35010 CAMPODORO (PADOVA)"
+  },
+  {
+    "nome": "Piazzola S. Brenta Camerini",
+    "indirizzo": "Via Dei Contarini, 65, 35016 Piazzola Sul Brenta (PD)",
+    "codice_frutta": "p2129",
+    "codice_latte": "p1796",
+    "codice_univoco": "p2129_p1796",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.5416519,
+    "lon": 11.785254,
+    "codici_ddt_frutta": [
+      "p2129"
+    ],
+    "codici_ddt_latte": [
+      "p1796"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 298,
+    "geo_query_nome_indirizzo": "Piazzola S. Brenta Camerini Via Dei Contarini, 65, 35016 Piazzola Sul Brenta (PD)",
+    "geo_query_indirizzo": "Via Dei Contarini, 65, 35016 Piazzola Sul Brenta (PD)"
+  },
+  {
+    "nome": "A. Da Tremignon",
+    "indirizzo": "Via Borsellino, 25, 35016 Piazzola Sul Brenta (PD)",
+    "codice_frutta": "p2128",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2128_p00000",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "10:00",
+    "lat": 45.5184479,
+    "lon": 11.8079308,
+    "codici_ddt_frutta": [
+      "p2128"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 32,
+    "geo_query_nome_indirizzo": "A. Da Tremignon Via Borsellino, 25, 35016 Piazzola Sul Brenta (PD)",
+    "geo_query_indirizzo": "Via Borsellino, 25, 35016 Piazzola Sul Brenta (PD)"
+  },
+  {
+    "nome": "CURTAROLO-ANNA FRANK",
+    "indirizzo": "PIAZZETTA UNICEF 1, 35010 CURTAROLO (PADOVA)",
+    "codice_frutta": "p2245",
+    "codice_latte": "p1805",
+    "codice_univoco": "p2245_p1805",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.518701,
+    "lon": 11.8313461,
+    "codici_ddt_frutta": [
+      "p2245"
+    ],
+    "codici_ddt_latte": [
+      "p1805"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 96,
+    "geo_query_nome_indirizzo": "CURTAROLO-ANNA FRANK PIAZZETTA UNICEF 1, 35010 CURTAROLO (PADOVA)",
+    "geo_query_indirizzo": "PIAZZETTA UNICEF 1, 35010 CURTAROLO (PADOVA)"
+  },
+  {
+    "nome": "CURTAROLO-LOC. S.MARIA DI NON",
+    "indirizzo": "VIA SANTA MARIA DI NON 33, 35010 CURTAROLO (PADOVA)",
+    "codice_frutta": "p2241",
+    "codice_latte": "p1808",
+    "codice_univoco": "p2241_p1808",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.5123574,
+    "lon": 11.8514545,
+    "codici_ddt_frutta": [
+      "p2241"
+    ],
+    "codici_ddt_latte": [
+      "p1808"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 98,
+    "geo_query_nome_indirizzo": "CURTAROLO-LOC. S.MARIA DI NON VIA SANTA MARIA DI NON 33, 35010 CURTAROLO (PADOVA)",
+    "geo_query_indirizzo": "VIA SANTA MARIA DI NON 33, 35010 CURTAROLO (PADOVA)"
+  },
+  {
+    "nome": "Scuola Primaria Via Moro",
+    "indirizzo": "Via Aldo Moro, 10, 35010 Campodarsego (PD)",
+    "codice_frutta": "p2168",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2168_p00000",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.5073467,
+    "lon": 11.9031727,
+    "codici_ddt_frutta": [
+      "p2168"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 429,
+    "geo_query_nome_indirizzo": "Scuola Primaria Via Moro Via Aldo Moro, 10, 35010 Campodarsego (PD)",
+    "geo_query_indirizzo": "Via Aldo Moro, 10, 35010 Campodarsego (PD)"
+  },
+  {
+    "nome": "Scuola Primaria Bronzola",
+    "indirizzo": "Via Straelle, 2, 35011 Campodarsego (PD)",
+    "codice_frutta": "p2164",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2164_p00000",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.5143082,
+    "lon": 11.9470709,
+    "codici_ddt_frutta": [
+      "p2164"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 390,
+    "geo_query_nome_indirizzo": "Scuola Primaria Bronzola Via Straelle, 2, 35011 Campodarsego (PD)",
+    "geo_query_indirizzo": "Via Straelle, 2, 35011 Campodarsego (PD)"
+  },
+  {
+    "nome": "Scuola Primaria Monsignor A. G. Longhin Di Fiumicello",
+    "indirizzo": "Via Bassa Ii, 70, 35011 Campodarsego (PD)",
+    "codice_frutta": "p2165",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2165_p00000",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.5045037,
+    "lon": 11.9456258,
+    "codici_ddt_frutta": [
+      "p2165"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 408,
+    "geo_query_nome_indirizzo": "Scuola Primaria Monsignor A. G. Longhin Di Fiumicello Via Bassa Ii, 70, 35011 Campodarsego (PD)",
+    "geo_query_indirizzo": "Via Bassa Ii, 70, 35011 Campodarsego (PD)"
+  },
+  {
+    "nome": "Scuola Primaria Dante Alighieri Di Sant'Andrea",
+    "indirizzo": "Via Caltana, 151, 35011 Campodarsego (PD)",
+    "codice_frutta": "p2167",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2167_p00000",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.4942723,
+    "lon": 11.9422216,
+    "codici_ddt_frutta": [
+      "p2167"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 394,
+    "geo_query_nome_indirizzo": "Scuola Primaria Dante Alighieri Di Sant'Andrea Via Caltana, 151, 35011 Campodarsego (PD)",
+    "geo_query_indirizzo": "Via Caltana, 151, 35011 Campodarsego (PD)"
+  },
+  {
+    "nome": "Scuola Primaria Silvio Pellico Di Reschigliano",
+    "indirizzo": "Via Bassa I, 79, 35011 Campodarsego (PD)",
+    "codice_frutta": "p2166",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2166_p00000",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.4877902,
+    "lon": 11.9359026,
+    "codici_ddt_frutta": [
+      "p2166"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 424,
+    "geo_query_nome_indirizzo": "Scuola Primaria Silvio Pellico Di Reschigliano Via Bassa I, 79, 35011 Campodarsego (PD)",
+    "geo_query_indirizzo": "Via Bassa I, 79, 35011 Campodarsego (PD)"
+  },
+  {
+    "nome": "Scuola Primaria Sacro Cuore",
+    "indirizzo": "Via Marconi, 9, 35010 Cadoneghe (PD)",
+    "codice_frutta": "p2111",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2111_p00000",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.456696,
+    "lon": 11.9037821,
+    "codici_ddt_frutta": [
+      "p2111"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 421,
+    "geo_query_nome_indirizzo": "Scuola Primaria Sacro Cuore Via Marconi, 9, 35010 Cadoneghe (PD)",
+    "geo_query_indirizzo": "Via Marconi, 9, 35010 Cadoneghe (PD)"
+  },
+  {
+    "nome": "DELEDDA -PD-",
+    "indirizzo": "VIA CORTIVO 19, 35133 PADOVA (PADOVA)",
+    "codice_frutta": "p2343",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2343_p00000",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.443486,
+    "lon": 11.8972781,
+    "codici_ddt_frutta": [
+      "p2343"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 115,
+    "geo_query_nome_indirizzo": "DELEDDA -PD- VIA CORTIVO 19, 35133 PADOVA (PADOVA)",
+    "geo_query_indirizzo": "VIA CORTIVO 19, 35133 PADOVA (PADOVA)"
+  },
+  {
+    "nome": "Davila-Pd",
+    "indirizzo": "Via L. Calabresi, 5, 35129 Padova (PD)",
+    "codice_frutta": "p2115",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2115_p00000",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.4220317,
+    "lon": 11.9132295,
+    "codici_ddt_frutta": [
+      "p2115"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 111,
+    "geo_query_nome_indirizzo": "Davila-Pd Via L. Calabresi, 5, 35129 Padova (PD)",
+    "geo_query_indirizzo": "Via L. Calabresi, 5, 35129 Padova (PD)"
+  },
+  {
+    "nome": "SALVO D'ACQUISTO (EX IV IC)",
+    "indirizzo": "VIA BACH 1, 35132 PADOVA (PADOVA)",
+    "codice_frutta": "p2344",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2344_p00000",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.4223293,
+    "lon": 11.8959893,
+    "codici_ddt_frutta": [
+      "p2344"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 349,
+    "geo_query_nome_indirizzo": "SALVO D'ACQUISTO (EX IV IC) VIA BACH 1, 35132 PADOVA (PADOVA)",
+    "geo_query_indirizzo": "VIA BACH 1, 35132 PADOVA (PADOVA)"
+  },
+  {
+    "nome": "ANDREA MANTEGNA - PD",
+    "indirizzo": "VIA ZANCHI 28 - 30, 35133 PADOVA (PADOVA)",
+    "codice_frutta": "p2342",
+    "codice_latte": "p1860",
+    "codice_univoco": "p2342_p1860",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.4300149,
+    "lon": 11.8906676,
+    "codici_ddt_frutta": [
+      "p2342"
+    ],
+    "codici_ddt_latte": [
+      "p1860"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 57,
+    "geo_query_nome_indirizzo": "ANDREA MANTEGNA - PD VIA ZANCHI 28 - 30, 35133 PADOVA (PADOVA)",
+    "geo_query_indirizzo": "VIA ZANCHI 28 - 30, 35133 PADOVA (PADOVA)"
+  },
+  {
+    "nome": "SCUOLA INTERNAZIONALE ITALO-CINESE (SIIC)",
+    "indirizzo": "VIA PALLADIO 51B, 35134 PADOVA (PADOVA)",
+    "codice_frutta": "p11146",
+    "codice_latte": "p00000",
+    "codice_univoco": "p11146_p00000",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "08:30",
+    "orario_max": "14:00",
+    "lat": 45.4260868917016,
+    "lon": 11.88117467574968,
+    "codici_ddt_frutta": [
+      "p11146"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 374,
+    "geo_query_nome_indirizzo": "SCUOLA INTERNAZIONALE ITALO-CINESE (SIIC) VIA PALLADIO 51B, 35134 PADOVA (PADOVA)",
+    "geo_query_indirizzo": "VIA PALLADIO 51B, 35134 PADOVA (PADOVA)"
+  },
+  {
+    "nome": "GESU' MARIA",
+    "indirizzo": "VIA BERNARDI 14, 35135 PADOVA (PADOVA)",
+    "codice_frutta": "p2255",
+    "codice_latte": "p1802",
+    "codice_univoco": "p2255_p1802",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.423036,
+    "lon": 11.8760703,
+    "codici_ddt_frutta": [
+      "p2255"
+    ],
+    "codici_ddt_latte": [
+      "p1802"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 195,
+    "geo_query_nome_indirizzo": "GESU' MARIA VIA BERNARDI 14, 35135 PADOVA (PADOVA)",
+    "geo_query_indirizzo": "VIA BERNARDI 14, 35135 PADOVA (PADOVA)"
+  },
+  {
+    "nome": "Scuola Primaria Manzoni",
+    "indirizzo": "Via Giuseppe Garolla, 44 - Limena Cap 35010, 35010 Limena (PD)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1736",
+    "codice_univoco": "p00000_p1736",
+    "zona": "4105",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "10:00",
+    "lat": 45.48151535403009,
+    "lon": 11.84099273886698,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1736"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "Scuola Primaria Manzoni Via Giuseppe Garolla, 44 - Limena Cap 35010, 35010 Limena (PD)",
+    "geo_query_indirizzo": "Via Giuseppe Garolla, 44 - Limena Cap 35010, 35010 Limena (PD)"
+  },
+  {
+    "nome": "LIMENA-MANZONI",
+    "indirizzo": "VIA GAROLLA 44, 35010 LIMENA (PADOVA)",
+    "codice_frutta": "p2292",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2292_p00000",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "10:00",
+    "lat": 45.48153741072637,
+    "lon": 11.84096493671796,
+    "codici_ddt_frutta": [
+      "p2292"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 250,
+    "geo_query_nome_indirizzo": "LIMENA-MANZONI VIA GAROLLA 44, 35010 LIMENA (PADOVA)",
+    "geo_query_indirizzo": "VIA GAROLLA 44, 35010 LIMENA (PADOVA)"
+  },
+  {
+    "nome": "G. Allegri - Taggi Di Sopra Villafranca Padovana",
+    "indirizzo": "Via Taggi Di Sopra, 12, 35010 Villafranca Padovana (PD)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p2022",
+    "codice_univoco": "p00000_p2022",
+    "zona": "4105",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.46957379474215,
+    "lon": 11.81304765884508,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p2022"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "G. Allegri - Taggi Di Sopra Villafranca Padovana Via Taggi Di Sopra, 12, 35010 Villafranca Padovana (PD)",
+    "geo_query_indirizzo": "Via Taggi Di Sopra, 12, 35010 Villafranca Padovana (PD)"
+  },
+  {
+    "nome": "Rosa Agazzi Loc. Villaguattera",
+    "indirizzo": "Via Boschetta, 2, 35030 Rubano (PD)",
+    "codice_frutta": "p2386",
+    "codice_latte": "p1984",
+    "codice_univoco": "p2386_p1984",
+    "zona": "3105",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.4450496,
+    "lon": 11.8156772,
+    "codici_ddt_frutta": [
+      "p2386"
+    ],
+    "codici_ddt_latte": [
+      "p1984"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 335,
+    "geo_query_nome_indirizzo": "Rosa Agazzi Loc. Villaguattera Via Boschetta, 2, 35030 Rubano (PD)",
+    "geo_query_indirizzo": "Via Boschetta, 2, 35030 Rubano (PD)"
+  },
+  {
+    "nome": "MESTRINO-\"DON BOSCO\"",
+    "indirizzo": "VIA DE GASPERI 15, 35035 MESTRINO (PADOVA)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1759",
+    "codice_univoco": "p00000_p1759",
+    "zona": "4105",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.442324,
+    "lon": 11.7626563,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1759"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "MESTRINO-\"DON BOSCO\" VIA DE GASPERI 15, 35035 MESTRINO (PADOVA)",
+    "geo_query_indirizzo": "VIA DE GASPERI 15, 35035 MESTRINO (PADOVA)"
+  },
+  {
+    "lat": 45.442805,
+    "lon": 11.714498,
+    "nome": "DEPOSITO VEGGIANO",
+    "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"
+  }
+]; const polys = ["ytjtGi~nfAPwHxXjH|HtAhKsBsD|`@mNx_AkBvR`CnFcAlRc@ly@cDtQ_SxZcAjGjLlHlNrHp@e@HY`BwEnD}D`A|BXp@Yq@aA}BoD|DqApAmArAWJ{@EiDwAyLqEuDeE[}Ax@cFsOkDkFeCoPae@u@uAeq@_o@iv@sg@kAo@cOgAmMqB_I@sBtExBvHaB`EbByDgCkHjB}DoEyGIqDF}@C]qEqGaAsEuMqFaPuOeLqp@cEia@cOwt@cBkb@jBeYCaOwD{IcFqg@}@mHSoAiD}CqFhAsFvCmA|DeGlPcMbJwSjNsS|AmOf@gQ`EwPpCaHpKqDlX}FxUsElE_V`J}EqDcKeReQ{Zkk@kcA_L_]aOu}@}]wxBUcE~CqAbFqBs@sDeAgGtNcGrMeF|o@iX`QyPrx@}|@BcAsB_CgCkGhAtC|CjGANJVTDPYZy@pDaElAsAvBcImA}C_FiLwGwOqEgPdPiv@hCiXwCeEqM_EoU~Bar@zE{@Vt@j@dp@qGfWcBX~Cx@eDfQ~F~d@rNfOrDbAfCuGzEsGlHyF|CKaEaA_MSkKyDyCi\\cLcMkDiF|@_DVoCoAtAiGJuEgBaYxKeg@`Q}MfEwLpDyMrLhCsLiCpAwT|A}TBcEyEcW\\gJmCk~@`OkaBRcAnJ{K|]uMzCsInAiMu@eJiTyF}K_AZiEbDuZ@wBaLwCgW_Ha]aJr@}L|KmdAjLahAtJ{_AxBoRbI{@rMnBfI~BhCfDIv@q@tGDfAdMbEpBrD_@rAVj@F_CzQbI`OdD`LpGzAdIh@e@n@kAfFoC`@NeDqAcCbGUHUOSNLx@`GnOxm@pPre@pb@lAl@bbA`hAzy@t}@lw@h{@bEpGbJ`C_@nJbSlD|GZtEDhAwE~BcENuDg@OiEcAhEbAf@NBn@e@jCgJ{AjDaS}BuERsBdCaGbMySjIaTrBeCjDhBfBbFnIv@zH|CjIwWnFqQ`DYbPm@RDFDtDnAb@t@fQdLrW|MrCuOkD}PqA`BoKpC~@hAlKyFtBzFNrGuBlNdMlHqGl_@kNfCpIna@XtHaNcWkDlF|AlF|Cx@~BeG{GaM{E_IdJy@jAb@WyBcg@rIkOrEgBfSVPJK|Du@pEdA}CjQaDxPx@nEnKfFvKdI|ErCqA`KyFlO[~AfIfIJNHOdU~A~@`AeIhGkC|Ap@vGVlA?@A@AHkS`JeHsPaG|@gTbXulAln@wa@rTkJdTeLlg@{Qxl@aMxWiSl`@q]~PsU~BwVaDw~@kHuT_B_CsBdRkSlWed@lDtD", "wcrtGcvggAuAbBqAtA{@eCOi@Ca@Bi@r@cBPQLM@?BCDCZD\\ZvAtAj@d@zAn@RLb@BlBDnABXFf@PjBzADRRNFPBXERKd@KNKJCJDRFJXj@JPNb@bDjJnBrFfHjS~@vDf@zCVrCJxAJhG_@pJ[zHs@jSC|BBbBDdBLbBf@jIfApMdAzLPrBT~A?b@?RA@CFAPBVJNFBH?HCHMFYHSHOZSVQ^WjJqGhD{B`EkCjCyA`@jCTnAF`AGxACVEJOv@YSU_@T^XRN?Hu@CMJwAAu@MiAo@wDbC{AdHkE`FyC|H{EpFgDrFsDlBqAhBiAbCuAn@a@dBeA^UNCB@@@F?DAHODOn@c@lFgDjAu@nJsFpDyBpEmCpBkAzDmBzAcAf@]tA_AhHyE`BcAn@Oh@A~@V^Pl@Fb@Dz@JRFz@`@PFxAJX@`AEnAGh@?f@BVBn@Rh@l@PZRx@RxAPjC|@pKd@fGPnAXfAVh@n@bAh@j@V`@JVHFBBLr@?ZEP_@|Cc@rC[~AaA~CSbAa@tCWn@Yb@iDW_@?]JIH_@h@gAtBST~@z@_A{@qBjBa@~@Qr@M\\K|@[bAOZQNcBtA{AlAo@`@o@Zi@Zi@d@g@j@c@`@q@b@TlCJnAAnAK`AQn@KN{@jAq@`AS\\Ut@]nBWxAO|AAp@EdAMfAeA`DeAxCu@fB[b@s@pA_@`Am@zBM|@FhAXdA\\z@Pd@\\~@f@p@JPbArA\\ZNHfD|AvErBrBt@bGfAnAh@d@T|@d@dEvBvDvBvDvB?FFJ@@oBpJkCbL}CzMyBfKiCxKeAfFcAzEUzAGrAGrEObGG`@cDbLc@fBShBAz@L~EFjCHdDDfAC\\Ij@oAfE_@XODsDP?IGMKIK?KFGN?RBNHJJBN~HAXGVEAE?KFGN?PBNFJJDJCHI@C`BfA~@^fBj@dEj@x@Ll@RdExAjRjGrD|ATP?FDNDD?b@KdC?j@BjANxBTbDA@?@AFFHFE@GtAZl@b@Vf@Nl@x@|DDLm@hA}A~CwCnFsAhCi@fASp@SfA{@jIIhAEvAEtECdCBb@Cz@CbDCtC?nB?pBEZIfDG^EDGLCJ?d@DJ@DBh@EdAAj@_AtK]xCi@fDu@jEmAlF]fBWhBi@fEgAxHa@zBa@dB_AzCa@hAe@fAa@x@UTE@IJIZB^DLHJNBPNjAtAvAdB\\d@h@v@b@nARjALbAFlA?~@IrCArBD|Cl@pXZtLNhG?l@Cf@yAfRi@hEET`AHl@FzFp@nANz@LF|CB~C"]; let map, markers = [];
+        async function initMap() {
+            const { Map } = await google.maps.importLibrary("maps");
+            const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+            
+            // Trova primo punto per centrare
+            const centerP = data.find(p => p.lat && p.lon) || {lat: 45.4428, lon: 11.7145};
+            map = new Map(document.getElementById("map"), { zoom: 12, center: { lat: centerP.lat, lng: centerP.lon }, mapId: 'DEMO_MAP_ID' });
+            
+            const geocoder = new google.maps.Geocoder();
+            const bounds = new google.maps.LatLngBounds();
+
+            data.forEach((p, i) => {
+                const isD = (i === 0 || i === data.length - 1);
+                if (p.lat && p.lon) {
+                    addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                } else {
+                    // Geocoding di backup
+                    const query = `${p.nome}, ${p.indirizzo}`;
+                    geocoder.geocode({ address: query }, (results, status) => {
+                        if (status === "OK") {
+                            const loc = results[0].geometry.location;
+                            p.lat = loc.lat(); p.lon = loc.lng();
+                            addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                        } else {
+                            geocoder.geocode({ address: p.indirizzo }, (res2, st2) => {
+                                if (st2 === "OK") {
+                                    const loc2 = res2[0].geometry.location;
+                                    p.lat = loc2.lat(); p.lon = loc2.lng();
+                                    addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            if (polys.length > 0) {
+                polys.forEach(pString => {
+                    const p = google.maps.geometry.encoding.decodePath(pString);
+                    new google.maps.Polyline({ path: p, strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6, map });
+                });
+            } else {
+                new google.maps.Polyline({ 
+                    path: data.filter(p => p.lat).map(p => ({ lat: p.lat, lng: p.lon })), 
+                    strokeColor: "#4f46e5", strokeOpacity: 0.6, strokeWeight: 4, map 
+                });
+            }
+        }
+
+        function addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement) {
+            const m = new AdvancedMarkerElement({
+                map,
+                position: { lat: p.lat, lng: p.lon },
+                content: createPin(i, isD),
+                title: p.nome
+            });
+            markers[i] = m;
+            bounds.extend(m.position);
+            map.fitBounds(bounds);
+        }
+
+        function createPin(idx, isD) {
+            const d = document.createElement("div"); d.style.background = isD ? "#475569" : "#4f46e5";
+            d.style.color = "white"; d.style.width = "26px"; d.style.height = "26px"; d.style.borderRadius = "50%"; 
+            d.style.display = "flex"; d.style.alignItems = "center"; d.style.justifyContent = "center";
+            d.style.fontSize = "11px"; d.style.fontWeight = "900"; d.style.border = "3px solid white";
+            d.innerText = isD ? "" : idx; if(isD) d.innerHTML = '<span class="material-icons-round" style="font-size:14px">home</span>';
+            return d;
+        }
+
+        function panTo(i) { if(markers[i]) { map.panTo(markers[i].position); map.setZoom(17); } }
+        window.addEventListener('load', initMap);
+    </script>
+</body></html>

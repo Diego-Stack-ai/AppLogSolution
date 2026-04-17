@@ -313,9 +313,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             data.forEach((p, i) => {
                 if (p.lat && p.lon) { addMarker(p, i, bounds); } 
                 else {
-                    geocoder.geocode({ address: `${p.cliente}, ${p.indirizzo}` }, (res, st) => {
-                        if (st === "OK") { p.lat = res[0].geometry.location.lat(); p.lon = res[0].geometry.location.lng(); addMarker(p, i, bounds); }
-                    });
+                    // GEOLOCALIZZAZIONE DISABILITATA PER TEST
+                    // geocoder.geocode({ address: `${p.cliente}, ${p.indirizzo}` }, (res, st) => {
+                    //     if (st === "OK") { p.lat = res[0].geometry.location.lat(); p.lon = res[0].geometry.location.lng(); addMarker(p, i, bounds); }
+                    // });
+                    console.log("Geocoding saltato per test:", p.cliente);
                 }
             });
             loadStatus();

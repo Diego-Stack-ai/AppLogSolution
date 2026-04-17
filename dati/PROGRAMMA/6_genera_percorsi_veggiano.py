@@ -387,17 +387,17 @@ def main():
         km, t_guida, t_sosta, t_tot, polylines = get_google_trip_data(perc)
         
         
-        # Calcolo Fatturato DDT (18.50 Euro ciascuno)
+        # Calcolo Fatturato DDT (16.50 Euro ciascuno)
         tot_ddt = 0
         for p in punti:
-            tot_ddt += len(p.get("codici_ddt_frutta") or [])
-            tot_ddt += len(p.get("codici_ddt_latte") or [])
+            tot_ddt += len([c for c in p.get("codici_ddt_frutta", []) if c and c != "p00000"])
+            tot_ddt += len([c for c in p.get("codici_ddt_latte", []) if c and c != "p00000"])
             # Fallback per punti caricati senza liste esplicite
             if not p.get("codici_ddt_frutta") and not p.get("codici_ddt_latte"):
                 if p.get("codice_frutta") and p.get("codice_frutta") != "p00000": tot_ddt += 1
                 if p.get("codice_latte") and p.get("codice_latte") != "p00000": tot_ddt += 1
         
-        fatturato = f"{tot_ddt * 18.50:.2f}"
+        fatturato = f"{tot_ddt * 16.50:.2f}"
         
         fname = sanitize_filename(f"{v_id}_Zone_{'_'.join(zone_coinvolte[:3])}.html")
         info = {'v_id': v_id, 'zone_str': z_str, 'fname': fname, 'km': km, 't_guida': t_guida, 't_sosta': t_sosta, 't_tot': t_tot, 'punti': len(punti), 'tot_ddt': tot_ddt, 'fatturato': fatturato}

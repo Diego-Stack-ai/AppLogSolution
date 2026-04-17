@@ -1,0 +1,32 @@
+: ''}" onclick="focusZone('${z.id_zona}')">
+                    <div class="zone-header">
+                        <div class="color-pill" style="background: ${z.color}"></div>
+                        <div class="zone-title">
+                            <span style="display:block; font-size:0.95rem; font-weight:800;">${z.nome_giro || z.id_zona}${isSpeciale ? '<span class="badge-speciale">RIENTRI</span>' : ''}</span>
+                            <span style="display:block; font-size:0.65rem; font-weight:600; color:#94a3b8;">${isSpeciale ? 'Assegna a un viaggio' : 'Zona ' + z.id_zona}</span>
+                        </div>
+                        <div style="text-align:right; flex-shrink:0;">
+                            <div style="font-size:0.72rem; font-weight:800; background:${isSpeciale?'#fde68a':'#e2e8f0'}; padding:2px 7px; border-radius:20px; color:${isSpeciale?'#92400e':'#475569'}; white-space:nowrap;">${z.lista_punti.length} pt</div>
+                            ${(() => { const s = calcolaValoreZona(z); return s.tot_ddt > 0 ? `<div style="font-size:0.65rem; font-weight:700; color:#10b981; margin-top:2px; white-space:nowrap;">${s.tot_ddt} DDT · € ${s.valore}</div>` : ''; })()}
+                        </div>
+                    </div>
+                    ${isSelected ? `
+                        <div style="margin-top:10px; border-top:1px solid #e2e8f0; padding-top:10px; max-height:320px; overflow-y:auto;">
+                            ${z.lista_punti.map((p, idx) => {
+                                const pid = (p.codice_frutta + "_" + p.nome).replace(/[^a-zA-Z0-9]/g, '_');
+                                const parts = (p.indirizzo || '').split(',');
+                                const via = parts[0] || '';
+                                const comune = parts.slice(1).join(',').trim();
+                                const codiceDDT = [...(p.codici_ddt_frutta||[]), ...(p.codici_ddt_latte||[])].join(', ');
+                                let ctrl = '';
+                                if (activeAction === 'dividi' && !isSpeciale) ctrl = `<input type="checkbox" id="chk-${pid}" class="chk-box dividi-chk" value="${pid}" onclick="event.stopPropagation()"><label for="chk-${pid}" class="chk-lbl" onclick="event.stopPropagation()">✓</label>`;
+                                else if (activeAction === 'sposta') ctrl = `<div class="zone-chips" data-pid="${pid}" style="padding-left:26px; margin-top:4px;">${DATA_ZONE.filter(o=>o.id_zona!==z.id_zona && o.id_zona!=='DDT_DA_INSERIRE').map(o=>`<span class="zone-chip" data-zone="${o.id_zona}" style="" onclick="event.stopPropagation(); _selChip(this,'${o.color}')">${o.nome_giro||o.id_zona}</span>`).join('')}</div>`;
+                                return `<div class="point-card">
+                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
+                                        <div style="display:flex; align-items:center; flex:1; min-width:0; gap:0;">
+                                            <span class="point-num" style="background:${z.color};">${idx+1}</span>
+                                            <span class="point-name" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.nome}</span>
+                                        </div>
+                                         ${activeAction === 'dividi' ? ctrl : ''}
+                                    </div>
+                                    ${codiceDDT ? `<div s

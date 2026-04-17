@@ -612,12 +612,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             document.getElementById('tot-points').textContent = `${total} Punti`;
         }
 
-        const VALORE_DDT = 18.50;
+        const VALORE_DDT = 16.50;
         function calcolaValoreZona(z) {
             let totDdt = 0;
             z.lista_punti.forEach(p => {
-                totDdt += (p.codici_ddt_frutta || []).length;
-                totDdt += (p.codici_ddt_latte  || []).length;
+                totDdt += (p.codici_ddt_frutta || []).filter(c => c && c !== 'p00000').length;
+                totDdt += (p.codici_ddt_latte  || []).filter(c => c && c !== 'p00000').length;
                 // fallback: se le liste non ci sono, conta 1 DDT se ha almeno un codice
                 if (!(p.codici_ddt_frutta) && !(p.codici_ddt_latte)) {
                     if (p.codice_frutta && p.codice_frutta !== 'p00000') totDdt++;

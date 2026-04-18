@@ -403,8 +403,10 @@ def main():
                 <div class="stop-num">{idx+1}</div>
                 <div class="stop-info">
                     <div class="actions">
+                        <!-- DISATTIVATO TEMPORANEAMENTE PER IL TEST DEL CLIENTE
                         <button class="btn-geo" onclick="saveRealCoords({idx}, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
-                        <button class="btn-done" onclick="toggleDone({idx}, event)"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                        -->
+                        <button class="btn-done" onclick="toggleDone({idx}, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
                     <b class="name">{d["cliente"]}</b>
                     {addr_html}

@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V02 - Zone: 3102</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry&v=weekly" defer></script>
+    <style>
+        :root { --p: #4f46e5; --sidebar-w: 400px; }
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .main-container { display: flex; height: 100vh; }
+        #sidebar { width: var(--sidebar-w); height: 100%; background: white; display: flex; flex-direction: column; z-index: 100; box-shadow: 10px 0 30px rgba(0,0,0,0.1); }
+        .header { padding: 24px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; padding: 15px; gap: 8px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+        .stat-card { background: white; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center; }
+        .stat-val { display: block; font-weight: 800; font-size: 1rem; color: var(--p); }
+        .stat-lbl { font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 700; }
+        .tot-card { grid-column: span 2; background: #f5f3ff; border-color: #c7d2fe; }
+        #stop-list { flex: 1; overflow-y: auto; padding: 15px; background: #f1f5f9; }
+        .stop-card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 12px; display: flex; gap: 14px; align-items: center; border: 1.5px solid #e2e8f0; cursor: pointer; transition: 0.2s; }
+        .stop-card:hover { border-color: var(--p); transform: translateX(5px); }
+        .stop-num { width: 30px; height: 30px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0; }
+        .nav-btn { background: #22c55e; color: white; width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+        #map { flex: 1; height: 100%; }
+        .depot-tag { background: #475569; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; }
+        @media (max-width: 800px) { .main-container { flex-direction: column; } #sidebar { width: 100%; height: 50%; } #map { height: 50%; } }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div id="sidebar">
+            <div class="header">
+                <div style="font-size:0.75rem; opacity:0.8; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Logistica Operativa</div>
+                <h1 style="margin:0; font-size:1.5rem; letter-spacing:-0.01em;">V02</h1>
+                <div style="margin-top:6px; font-size:0.85rem; font-weight:600; color: #a5b4fc;">Zone: 3102</div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card"><span class="stat-val">23</span><span class="stat-lbl">Tappe</span></div>
+                <div class="stat-card"><span class="stat-val">243.0 km</span><span class="stat-lbl">Distanza</span></div>
+                <div class="stat-card"><span class="stat-val">4h 24m</span><span class="stat-lbl">Guida</span></div>
+                <div class="stat-card"><span class="stat-val">3h 4m</span><span class="stat-lbl">Scarico</span></div>
+                <div class="stat-card tot-card"><span class="stat-val" style="font-size:1.3rem;">7h 28m</span><span class="stat-lbl">TEMPO TOTALE STIMATO</span></div>
+            </div>
+            <div id="stop-list">
+                <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">home</span></div>
+                    <div class="stop-info"><span class="depot-tag">PARTENZA</span><br><b style="font-size:0.9rem;">Deposito Veggiano</b></div>
+                </div>
+                <div class="stop-card" onclick="panTo(1)"><div class="stop-num">1</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Tommaseo</b><br><small style="color:#64748b; font-size:0.75rem;">Via Fiorazzo, 1/A, 35129 Padova (PD)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4233751,11.9488692&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(2)"><div class="stop-num">2</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Don Orione</b><br><small style="color:#64748b; font-size:0.75rem;">Via Matteotti, 1, 30039 Stra (VE)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4158368,12.00487&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(3)"><div class="stop-num">3</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">GUGLIELMO MARCONI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA MARTIRI 1, 30030 VIGONOVO (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.39755345129717,11.97958568514077&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(4)"><div class="stop-num">4</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SAONARA-BORGATO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA V. BACHELET 12, 35020 SAONARA (PADOVA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.37018676042065,11.987518022476186&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(5)"><div class="stop-num">5</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">LEONARDO DA VINCI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA MONTALE 2, 30030 VIGONOVO (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.3880594,12.0101781&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(6)"><div class="stop-num">6</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">DON MILANI-TEMPO PIENO</b><br><small style="color:#64748b; font-size:0.75rem;">PIAZZA MAZZINI 2, 30010 CAMPONOGARA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.38490459770534,12.07312955022219&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(7)"><div class="stop-num">7</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">A. MANZONI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA A. VOLTA 3, 30010 CAMPONOGARA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.38598554635713,12.09969167683369&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(8)"><div class="stop-num">8</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">GIUSEPPE MARCHETTI</b><br><small style="color:#64748b; font-size:0.75rem;">VIALE REPUBBLICA 2, 30015 CHIOGGIA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.21698319742546,12.27442214014839&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(9)"><div class="stop-num">9</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">MARIO CHIEREGHIN</b><br><small style="color:#64748b; font-size:0.75rem;">VIA PALMIRO TOGLIATTI 831, 30015 CHIOGGIA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.20236597256202,12.27840426997528&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(10)"><div class="stop-num">10</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Mario Merlin - Tempo Pieno</b><br><small style="color:#64748b; font-size:0.75rem;">Via Ridotto Madonna, 30015 Chioggia (VE)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.1973468,12.2771434&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(11)"><div class="stop-num">11</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">P.E. Venturini</b><br><small style="color:#64748b; font-size:0.75rem;">Via P. Cicogna , 2, 30015 Chioggia (VE)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.19517221412497,12.28312224746856&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(12)"><div class="stop-num">12</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Paolo Vi</b><br><small style="color:#64748b; font-size:0.75rem;">Via Acacia, N.18, 30015 Chioggia (VE)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.19936549942545,12.28654304563345&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(13)"><div class="stop-num">13</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">DON MILANI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA DOMENICO SCHIAVO, 30015 CHIOGGIA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.19902387104506,12.28924665740635&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(14)"><div class="stop-num">14</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">S. Todaro</b><br><small style="color:#64748b; font-size:0.75rem;">Via S. Marco 25, 30015 Chioggia (VE)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.21608554944397,12.29205677061084&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(15)"><div class="stop-num">15</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">PIER ANTONIO GREGORUTTI</b><br><small style="color:#64748b; font-size:0.75rem;">CALLE SANTA CROCE 1222, 30015 CHIOGGIA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.2229552,12.2821142&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(16)"><div class="stop-num">16</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">F.LLI BANDIERA</b><br><small style="color:#64748b; font-size:0.75rem;">VIA MARZABOTTO 68, 30010 CAMPAGNA LUPIA (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.38277650401248,12.12948354196295&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(17)"><div class="stop-num">17</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">DANIELE MANIN</b><br><small style="color:#64748b; font-size:0.75rem;">VIA BRUSAURA 12, 30030 DOLO (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.41410059946288,12.09468421106318&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(18)"><div class="stop-num">18</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">GIOTTO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA TINTORETTO 3, 30031 DOLO (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.42661711426619,12.070218149073781&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(19)"><div class="stop-num">19</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SAN GIOVANNI BOSCO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA ARINO 40, 30031 DOLO (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.43915681502232,12.0509591285591&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(20)"><div class="stop-num">20</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">ALESSANDRO MANZONI-BALLO'</b><br><small style="color:#64748b; font-size:0.75rem;">VIA E. TOTI 1, 30035 MIRANO (VENEZIA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.45896684514413,12.07165193403706&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(21)"><div class="stop-num">21</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Primaria Leonardo Da Vinci Pianiga</b><br><small style="color:#64748b; font-size:0.75rem;">Via Patriarcato, 22, 30030 Pianiga (VE)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.457056,12.0311559&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(22)"><div class="stop-num">22</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Primaria Edmondo De Amicis Mellaredo</b><br><small style="color:#64748b; font-size:0.75rem;">Via Noalese Nord, 55, 30030 Pianiga (VE)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.46240131953417,11.99497957165023&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(23)"><div class="stop-num">23</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">DON MILANI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA CIRCONVALLAZIONE 38-40, 36075 MONTECCHIO MAGGIORE (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.50311539552625,11.422554974438413&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+    <script>
+        const data = [
+  {
+    "lat": 45.442805,
+    "lon": 11.714498,
+    "nome": "DEPOSITO VEGGIANO",
+    "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"
+  },
+  {
+    "nome": "Tommaseo",
+    "indirizzo": "Via Fiorazzo, 1/A, 35129 Padova (PD)",
+    "codice_frutta": "p2116",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2116_p00000",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.4233751,
+    "lon": 11.9488692,
+    "codici_ddt_frutta": [
+      "p2116"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 443,
+    "geo_query_nome_indirizzo": "Tommaseo Via Fiorazzo, 1/A, 35129 Padova (PD)",
+    "geo_query_indirizzo": "Via Fiorazzo, 1/A, 35129 Padova (PD)"
+  },
+  {
+    "nome": "Don Orione",
+    "indirizzo": "Via Matteotti, 1, 30039 Stra (VE)",
+    "codice_frutta": "p11501",
+    "codice_latte": "p00000",
+    "codice_univoco": "p11501_p00000",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "10:00",
+    "lat": 45.4158368,
+    "lon": 12.00487,
+    "codici_ddt_frutta": [
+      "p11501"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 127,
+    "geo_query_nome_indirizzo": "Don Orione Via Matteotti, 1, 30039 Stra (VE)",
+    "geo_query_indirizzo": "Via Matteotti, 1, 30039 Stra (VE)"
+  },
+  {
+    "nome": "GUGLIELMO MARCONI",
+    "indirizzo": "VIA MARTIRI 1, 30030 VIGONOVO (VENEZIA)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1892",
+    "codice_univoco": "p00000_p1892",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "10:00",
+    "lat": 45.39755345129717,
+    "lon": 11.97958568514077,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1892"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "GUGLIELMO MARCONI VIA MARTIRI 1, 30030 VIGONOVO (VENEZIA)",
+    "geo_query_indirizzo": "VIA MARTIRI 1, 30030 VIGONOVO (VENEZIA)"
+  },
+  {
+    "nome": "SAONARA-BORGATO",
+    "indirizzo": "VIA V. BACHELET 12, 35020 SAONARA (PADOVA)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1749",
+    "codice_univoco": "p00000_p1749",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.37018676042065,
+    "lon": 11.987518022476186,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1749"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "SAONARA-BORGATO VIA V. BACHELET 12, 35020 SAONARA (PADOVA)",
+    "geo_query_indirizzo": "VIA V. BACHELET 12, 35020 SAONARA (PADOVA)"
+  },
+  {
+    "nome": "LEONARDO DA VINCI",
+    "indirizzo": "VIA MONTALE 2, 30030 VIGONOVO (VENEZIA)",
+    "codice_frutta": "p2381",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2381_p00000",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "10:00",
+    "lat": 45.3880594,
+    "lon": 12.0101781,
+    "codici_ddt_frutta": [
+      "p2381"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 249,
+    "geo_query_nome_indirizzo": "LEONARDO DA VINCI VIA MONTALE 2, 30030 VIGONOVO (VENEZIA)",
+    "geo_query_indirizzo": "VIA MONTALE 2, 30030 VIGONOVO (VENEZIA)"
+  },
+  {
+    "nome": "DON MILANI-TEMPO PIENO",
+    "indirizzo": "PIAZZA MAZZINI 2, 30010 CAMPONOGARA (VENEZIA)",
+    "codice_frutta": "p6894",
+    "codice_latte": "p1881",
+    "codice_univoco": "p6894_p1881",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "08:30",
+    "orario_max": "10:00",
+    "lat": 45.38490459770534,
+    "lon": 12.07312955022219,
+    "codici_ddt_frutta": [
+      "p6894"
+    ],
+    "codici_ddt_latte": [
+      "p1881"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 125,
+    "geo_query_nome_indirizzo": "DON MILANI-TEMPO PIENO PIAZZA MAZZINI 2, 30010 CAMPONOGARA (VENEZIA)",
+    "geo_query_indirizzo": "PIAZZA MAZZINI 2, 30010 CAMPONOGARA (VENEZIA)"
+  },
+  {
+    "nome": "A. MANZONI",
+    "indirizzo": "VIA A. VOLTA 3, 30010 CAMPONOGARA (VENEZIA)",
+    "codice_frutta": "p6895",
+    "codice_latte": "p1902",
+    "codice_univoco": "p6895_p1902",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "10:00",
+    "lat": 45.38598554635713,
+    "lon": 12.09969167683369,
+    "codici_ddt_frutta": [
+      "p6895"
+    ],
+    "codici_ddt_latte": [
+      "p1902"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 38,
+    "geo_query_nome_indirizzo": "A. MANZONI VIA A. VOLTA 3, 30010 CAMPONOGARA (VENEZIA)",
+    "geo_query_indirizzo": "VIA A. VOLTA 3, 30010 CAMPONOGARA (VENEZIA)"
+  },
+  {
+    "nome": "GIUSEPPE MARCHETTI",
+    "indirizzo": "VIALE REPUBBLICA 2, 30015 CHIOGGIA (VENEZIA)",
+    "codice_frutta": "p8994",
+    "codice_latte": "p00000",
+    "codice_univoco": "p8994_p00000",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.21698319742546,
+    "lon": 12.27442214014839,
+    "codici_ddt_frutta": [
+      "p8994"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 208,
+    "geo_query_nome_indirizzo": "GIUSEPPE MARCHETTI VIALE REPUBBLICA 2, 30015 CHIOGGIA (VENEZIA)",
+    "geo_query_indirizzo": "VIALE REPUBBLICA 2, 30015 CHIOGGIA (VENEZIA)"
+  },
+  {
+    "nome": "MARIO CHIEREGHIN",
+    "indirizzo": "VIA PALMIRO TOGLIATTI 831, 30015 CHIOGGIA (VENEZIA)",
+    "codice_frutta": "p8936",
+    "codice_latte": "p00000",
+    "codice_univoco": "p8936_p00000",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.20236597256202,
+    "lon": 12.27840426997528,
+    "codici_ddt_frutta": [
+      "p8936"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 271,
+    "geo_query_nome_indirizzo": "MARIO CHIEREGHIN VIA PALMIRO TOGLIATTI 831, 30015 CHIOGGIA (VENEZIA)",
+    "geo_query_indirizzo": "VIA PALMIRO TOGLIATTI 831, 30015 CHIOGGIA (VENEZIA)"
+  },
+  {
+    "nome": "Mario Merlin - Tempo Pieno",
+    "indirizzo": "Via Ridotto Madonna, 30015 Chioggia (VE)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1721",
+    "codice_univoco": "p00000_p1721",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.1973468,
+    "lon": 12.2771434,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1721"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "Mario Merlin - Tempo Pieno Via Ridotto Madonna, 30015 Chioggia (VE)",
+    "geo_query_indirizzo": "Via Ridotto Madonna, 30015 Chioggia (VE)"
+  },
+  {
+    "nome": "P.E. Venturini",
+    "indirizzo": "Via P. Cicogna , 2, 30015 Chioggia (VE)",
+    "codice_frutta": "p2101",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2101_p00000",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.19517221412497,
+    "lon": 12.28312224746856,
+    "codici_ddt_frutta": [
+      "p2101"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 294,
+    "geo_query_nome_indirizzo": "P.E. Venturini Via P. Cicogna , 2, 30015 Chioggia (VE)",
+    "geo_query_indirizzo": "Via P. Cicogna , 2, 30015 Chioggia (VE)"
+  },
+  {
+    "nome": "Paolo Vi",
+    "indirizzo": "Via Acacia, N.18, 30015 Chioggia (VE)",
+    "codice_frutta": "p2110",
+    "codice_latte": "p1835",
+    "codice_univoco": "p2110_p1835",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.19936549942545,
+    "lon": 12.28654304563345,
+    "codici_ddt_frutta": [
+      "p2110"
+    ],
+    "codici_ddt_latte": [
+      "p1835"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 295,
+    "geo_query_nome_indirizzo": "Paolo Vi Via Acacia, N.18, 30015 Chioggia (VE)",
+    "geo_query_indirizzo": "Via Acacia, N.18, 30015 Chioggia (VE)"
+  },
+  {
+    "nome": "DON MILANI",
+    "indirizzo": "VIA DOMENICO SCHIAVO, 30015 CHIOGGIA (VENEZIA)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1720",
+    "codice_univoco": "p00000_p1720",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.19902387104506,
+    "lon": 12.28924665740635,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1720"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "DON MILANI VIA DOMENICO SCHIAVO, 30015 CHIOGGIA (VENEZIA)",
+    "geo_query_indirizzo": "VIA DOMENICO SCHIAVO, 30015 CHIOGGIA (VENEZIA)"
+  },
+  {
+    "nome": "S. Todaro",
+    "indirizzo": "Via S. Marco 25, 30015 Chioggia (VE)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1723",
+    "codice_univoco": "p00000_p1723",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "14:00",
+    "lat": 45.21608554944397,
+    "lon": 12.29205677061084,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1723"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "S. Todaro Via S. Marco 25, 30015 Chioggia (VE)",
+    "geo_query_indirizzo": "Via S. Marco 25, 30015 Chioggia (VE)"
+  },
+  {
+    "nome": "PIER ANTONIO GREGORUTTI",
+    "indirizzo": "CALLE SANTA CROCE 1222, 30015 CHIOGGIA (VENEZIA)",
+    "codice_frutta": "p8640",
+    "codice_latte": "p00000",
+    "codice_univoco": "p8640_p00000",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.2229552,
+    "lon": 12.2821142,
+    "codici_ddt_frutta": [
+      "p8640"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 299,
+    "geo_query_nome_indirizzo": "PIER ANTONIO GREGORUTTI CALLE SANTA CROCE 1222, 30015 CHIOGGIA (VENEZIA)",
+    "geo_query_indirizzo": "CALLE SANTA CROCE 1222, 30015 CHIOGGIA (VENEZIA)"
+  },
+  {
+    "nome": "F.LLI BANDIERA",
+    "indirizzo": "VIA MARZABOTTO 68, 30010 CAMPAGNA LUPIA (VENEZIA)",
+    "codice_frutta": "p2127",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2127_p00000",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "14:00",
+    "lat": 45.38277650401248,
+    "lon": 12.12948354196295,
+    "codici_ddt_frutta": [
+      "p2127"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 150,
+    "geo_query_nome_indirizzo": "F.LLI BANDIERA VIA MARZABOTTO 68, 30010 CAMPAGNA LUPIA (VENEZIA)",
+    "geo_query_indirizzo": "VIA MARZABOTTO 68, 30010 CAMPAGNA LUPIA (VENEZIA)"
+  },
+  {
+    "nome": "DANIELE MANIN",
+    "indirizzo": "VIA BRUSAURA 12, 30030 DOLO (VENEZIA)",
+    "codice_frutta": "p2315",
+    "codice_latte": "p1755",
+    "codice_univoco": "p2315_p1755",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.41410059946288,
+    "lon": 12.09468421106318,
+    "codici_ddt_frutta": [
+      "p2315"
+    ],
+    "codici_ddt_latte": [
+      "p1755"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 101,
+    "geo_query_nome_indirizzo": "DANIELE MANIN VIA BRUSAURA 12, 30030 DOLO (VENEZIA)",
+    "geo_query_indirizzo": "VIA BRUSAURA 12, 30030 DOLO (VENEZIA)"
+  },
+  {
+    "nome": "GIOTTO",
+    "indirizzo": "VIA TINTORETTO 3, 30031 DOLO (VENEZIA)",
+    "codice_frutta": "p2316",
+    "codice_latte": "p1752",
+    "codice_univoco": "p2316_p1752",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.42661711426619,
+    "lon": 12.070218149073781,
+    "codici_ddt_frutta": [
+      "p2316"
+    ],
+    "codici_ddt_latte": [
+      "p1752"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 200,
+    "geo_query_nome_indirizzo": "GIOTTO VIA TINTORETTO 3, 30031 DOLO (VENEZIA)",
+    "geo_query_indirizzo": "VIA TINTORETTO 3, 30031 DOLO (VENEZIA)"
+  },
+  {
+    "nome": "SAN GIOVANNI BOSCO",
+    "indirizzo": "VIA ARINO 40, 30031 DOLO (VENEZIA)",
+    "codice_frutta": "p2317",
+    "codice_latte": "p1756",
+    "codice_univoco": "p2317_p1756",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.43915681502232,
+    "lon": 12.0509591285591,
+    "codici_ddt_frutta": [
+      "p2317"
+    ],
+    "codici_ddt_latte": [
+      "p1756"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 352,
+    "geo_query_nome_indirizzo": "SAN GIOVANNI BOSCO VIA ARINO 40, 30031 DOLO (VENEZIA)",
+    "geo_query_indirizzo": "VIA ARINO 40, 30031 DOLO (VENEZIA)"
+  },
+  {
+    "nome": "ALESSANDRO MANZONI-BALLO'",
+    "indirizzo": "VIA E. TOTI 1, 30035 MIRANO (VENEZIA)",
+    "codice_frutta": "p2431",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2431_p00000",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.45896684514413,
+    "lon": 12.07165193403706,
+    "codici_ddt_frutta": [
+      "p2431"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 55,
+    "geo_query_nome_indirizzo": "ALESSANDRO MANZONI-BALLO' VIA E. TOTI 1, 30035 MIRANO (VENEZIA)",
+    "geo_query_indirizzo": "VIA E. TOTI 1, 30035 MIRANO (VENEZIA)"
+  },
+  {
+    "nome": "Primaria Leonardo Da Vinci Pianiga",
+    "indirizzo": "Via Patriarcato, 22, 30030 Pianiga (VE)",
+    "codice_frutta": "p2311",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2311_p00000",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "14:00",
+    "lat": 45.457056,
+    "lon": 12.0311559,
+    "codici_ddt_frutta": [
+      "p2311"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 318,
+    "geo_query_nome_indirizzo": "Primaria Leonardo Da Vinci Pianiga Via Patriarcato, 22, 30030 Pianiga (VE)",
+    "geo_query_indirizzo": "Via Patriarcato, 22, 30030 Pianiga (VE)"
+  },
+  {
+    "nome": "Primaria Edmondo De Amicis Mellaredo",
+    "indirizzo": "Via Noalese Nord, 55, 30030 Pianiga (VE)",
+    "codice_frutta": "p2310",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2310_p00000",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "14:00",
+    "lat": 45.46240131953417,
+    "lon": 11.99497957165023,
+    "codici_ddt_frutta": [
+      "p2310"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 315,
+    "geo_query_nome_indirizzo": "Primaria Edmondo De Amicis Mellaredo Via Noalese Nord, 55, 30030 Pianiga (VE)",
+    "geo_query_indirizzo": "Via Noalese Nord, 55, 30030 Pianiga (VE)"
+  },
+  {
+    "nome": "DON MILANI",
+    "indirizzo": "VIA CIRCONVALLAZIONE 38-40, 36075 MONTECCHIO MAGGIORE (VICENZA)",
+    "codice_frutta": "p2083",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2083_p00000",
+    "zona": "3102",
+    "data_consegna": "",
+    "orario_min": "07:15",
+    "orario_max": "14:00",
+    "lat": 45.50311539552625,
+    "lon": 11.422554974438413,
+    "codici_ddt_frutta": [
+      "p2083"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 123,
+    "geo_query_nome_indirizzo": "DON MILANI VIA CIRCONVALLAZIONE 38-40, 36075 MONTECCHIO MAGGIORE (VICENZA)",
+    "geo_query_indirizzo": "VIA CIRCONVALLAZIONE 38-40, 36075 MONTECCHIO MAGGIORE (VICENZA)"
+  },
+  {
+    "lat": 45.442805,
+    "lon": 11.714498,
+    "nome": "DEPOSITO VEGGIANO",
+    "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"
+  }
+]; const polys = ["ytjtGi~nfAgAkI}Gy@aCoCpBeWwAi{@gJwWgl@rhAi_@rR}\\|_@ck@nb@_JnGiCrJgOuCyDqFz[s{AhXenAnSmwBzPwvAdP{w@dOmt@fOgkAfS_tCjUqaD~YipCfPszAfUagAp[mkAng@mxA`p@}tAvGh_@oJdJ}Kcc@kJa_@kBmD{HqVnK{Jk@rAgGlEsB@k@gDyAqHoBkFyEmJcEoL~AiIvFm_@hLgt@~`AwzD|AaKiI{GmCiCBECQEAl@_Eq@`ECF?H|A~A`MdDlFuFnF|D`@|DxMrb@xBpBLcF|DuCr@tA~HvHxT|HfGkE`@}ClEyDRCrDs@fHj[pBxWMdz@iD[eBsJfF|A\\_FzG\\dAn@?PRPdYxNhB`DxF}BtD{RbRuQ`Pgk@`CmFfKjH|GxDhOhGxHnI`DxDLBDE`CfBlF_HnJoN~HpW{SrHoAuBwDeE{B_CiBcDiGuEoBqDcNmD_H}DsI{FbBiLfLuV|CuNHoAAKOEgt@{e@[UiH}@i@cI@\\\\n@c@nFpE|AhCNPCzDcTaJgh@|CkRbBua@tHkt@yBge@uIwM|@ga@f@uEtTckAiJgbAWAg@j@oBbA}B{DfA`EnEgAXEjGad@eJejAaMevAz@u|@q@_[cIsVTmXwJow@y@wY`Wv@dmApEjbAxDjtFfWhcFtTdxBjJnz@XzU{L|c@{i@rWi[dk@qw@rZo_BlZgn@jHkUd[ctCdNw_AlUax@ln@mtBxc@azAlS{gA`HcOy@uIyRyI_OcKih@\\kW|FiFa@T}DkCcDh@lGzCfCvZaGpSS~C`BtBoF|AgJfH_AhNwAp@iNpFh@|@hH`E~BbJz@xCd@PdE}B}@zDec@zBiC\\BlByBwBbAqCgDsIeHGCgAc@yDaGrDv@xCuE@iDoEwBuDHuLoEsCb@{DpIq_@iNmJeFyWkIa@KwLn@dDtE|@eFtEz@qGv]gFdTeBjGoCfHoGkCuKcDaDlC~A{CpL`DnFlBb@nNrChEzFtAzFlAHJza@`G|O`@vBlDCrDtGpBjEUhDtC|AlInOnBhD~F_MhfAay@foCgu@leCka@fsCkPnuAeOhZaKxQqJbg@qZ`sA{i@lp@_~@`gAe]vE{mA{CwjD_Ou{EkTkyCkN__@kBaK`BmiAlg@mv@~\\}hAvl@od@|j@yLhPmPfb@cNt\\kH~T|AD{KnS_JrZaRxo@_@jH_EnA{LbAf@zGiBnF{Ave@qBJqDHMjLUrk@}Ppf@yu@~KwF{s@~Cez@m@y`@E]iHM_RkCgJfJqPKou@dAgGaBKrJ", "wumtGiuthAcAGw@tCa@~CIhFv@zH[bM_Etb@oCvWgBnPc@dEdBd@lJlC|Cz@pOhD|K|BtEjAlAZIp@u@nG[jC{CdYwAvMaDjZy@vHEF@HgB~P}QcFqH`r@o@|ALnByHhs@mIjt@Gb@yEhg@_@zDq@jGn@LfHlBnI~BtOpE@BDDF@DExE|AzRrJha@xRzZfOtCfBl@vA@P@Xl@nAdMv_@xI|WtSzg@pLlXNlB\\BdCbF|AjIh@tEzAdKt@lI|DbQpEjXlN~jAnFtf@\\vLS`IaAxIqCdLiQ`d@s[rfAcJd\\gAnN}@nUuB~OkJvSkD~NeLzeAaAzRXb[h@jLc@dFkCnC_HtDiHtCq@E]q@hBcM`BcCbBbALjBu@bKsDv\\{G`n@}Fnw@{LvbBiRhmCcDzd@aBbTeDdUsIfb@qI~a@uMho@eKfj@gFti@mQzpBeCjSoCjNmPxt@}g@b}BiZvrAmQhp@oGvVgDtQwMrt@sNft@ij@f{B{Jrd@_Pdz@cMlo@yUllAw_@poBuBpOc@jJt@ba@dEfkAZbYS`XRfWqAfc@aEtlAaBnZqAbTQdXHdy@Rzk@ZfN|BzQxKhd@rTj{@b]dtAnLhr@xFxSnLhWpTfXxW`[hs@|y@~b@vg@fMjOpAfDMrC_DjC}Cl@mDi@mDmCgG_FoEeAgEn@eBtA_CpAcA|Ay@bHmBxAaAlBJzDyJvN{F|JuC`DeAAyBcBoFkBmDA}JUsOuRUmAq@E?f@cB`JsBtHEAEBeJkGcKuJm@iBx@wBy@vBOZtE`FnEnEbExBvDjD@RJFH]lAcFdCuJx@QjN|QrDbAxHMfDRhFnChChBxCnBzEeIvAoB~GeKx@uEvA}Dp@_@n@yDlA}DtBuCFaClCcC~Ba@pDr@dEhCzBv@~EpBfDHjEs@dCJ|EpC~@Uv@sAJ_Cc@cBuCsBqGqFw[c_@uv@u}@in@gt@eLiNmKgRwEmMiGgWcKkm@eR}u@ki@cvBiCaNaAyMKaOM{WCsRGwf@De^dCua@zBch@xEg~A_@}VRy^sEgxAcA{_@VgLpAcMlK_j@|Jgh@dQo}@nQu}@hRabA|Qk}@b\\krApUcbAbOsy@~Kkm@bOsj@lPkp@rUkcAjAsCh@YfEf@vFjB|Dz@pCItCsAh@sCc@sCL{B~EsEfAKZXX`@z@k@Eq@tB{BdRgMvDmDbGmGtCwAtJqHzEwE`FqJxC{DzVuJlCaBnB_DnE}KfUy[`ImQtEuHzG`Jp@~GKjGlAxj@PjJu@tJeAtKQlAjAJbCVfH|@J|H"]; let map, markers = [];
+        async function initMap() {
+            const { Map } = await google.maps.importLibrary("maps");
+            const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+            
+            // Trova primo punto per centrare
+            const centerP = data.find(p => p.lat && p.lon) || {lat: 45.4428, lon: 11.7145};
+            map = new Map(document.getElementById("map"), { zoom: 12, center: { lat: centerP.lat, lng: centerP.lon }, mapId: 'DEMO_MAP_ID' });
+            
+            const geocoder = new google.maps.Geocoder();
+            const bounds = new google.maps.LatLngBounds();
+
+            data.forEach((p, i) => {
+                const isD = (i === 0 || i === data.length - 1);
+                if (p.lat && p.lon) {
+                    addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                } else {
+                    // Geocoding di backup
+                    const query = `${p.nome}, ${p.indirizzo}`;
+                    geocoder.geocode({ address: query }, (results, status) => {
+                        if (status === "OK") {
+                            const loc = results[0].geometry.location;
+                            p.lat = loc.lat(); p.lon = loc.lng();
+                            addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                        } else {
+                            geocoder.geocode({ address: p.indirizzo }, (res2, st2) => {
+                                if (st2 === "OK") {
+                                    const loc2 = res2[0].geometry.location;
+                                    p.lat = loc2.lat(); p.lon = loc2.lng();
+                                    addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            if (polys.length > 0) {
+                polys.forEach(pString => {
+                    const p = google.maps.geometry.encoding.decodePath(pString);
+                    new google.maps.Polyline({ path: p, strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6, map });
+                });
+            } else {
+                new google.maps.Polyline({ 
+                    path: data.filter(p => p.lat).map(p => ({ lat: p.lat, lng: p.lon })), 
+                    strokeColor: "#4f46e5", strokeOpacity: 0.6, strokeWeight: 4, map 
+                });
+            }
+        }
+
+        function addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement) {
+            const m = new AdvancedMarkerElement({
+                map,
+                position: { lat: p.lat, lng: p.lon },
+                content: createPin(i, isD),
+                title: p.nome
+            });
+            markers[i] = m;
+            bounds.extend(m.position);
+            map.fitBounds(bounds);
+        }
+
+        function createPin(idx, isD) {
+            const d = document.createElement("div"); d.style.background = isD ? "#475569" : "#4f46e5";
+            d.style.color = "white"; d.style.width = "26px"; d.style.height = "26px"; d.style.borderRadius = "50%"; 
+            d.style.display = "flex"; d.style.alignItems = "center"; d.style.justifyContent = "center";
+            d.style.fontSize = "11px"; d.style.fontWeight = "900"; d.style.border = "3px solid white";
+            d.innerText = isD ? "" : idx; if(isD) d.innerHTML = '<span class="material-icons-round" style="font-size:14px">home</span>';
+            return d;
+        }
+
+        function panTo(i) { if(markers[i]) { map.panTo(markers[i].position); map.setZoom(17); } }
+        window.addEventListener('load', initMap);
+    </script>
+</body></html>

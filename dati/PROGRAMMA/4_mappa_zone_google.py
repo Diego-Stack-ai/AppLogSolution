@@ -43,10 +43,10 @@ def _get_color(idx):
 
 excel_lock = threading.Lock()
 
-def _aggiorna_entrambi_excel(nome, lat, lon, indirizzo=None):
-    """Sincronizzazione Atomica su Excel Master e Excel Giornaliero."""
-    import pandas as pd
+def _aggiorna_entrambi_excel(cod_f, cod_l, lat, lon, nome=None):
+    """Sincronizzazione Atomica su Excel Master e Excel Giornaliero tramite Codice Frutta e Codice Latte."""
     try:
+        from openpyxl import load_workbook
         output_base = CONSEGNE_DIR / f"CONSEGNE_{DATA_GIORNO}"
         targets = [PROG_DIR / "mappatura_destinazioni.xlsx", output_base / "punti_consegna.xlsx"]
         
@@ -55,36 +55,56 @@ def _aggiorna_entrambi_excel(nome, lat, lon, indirizzo=None):
             if not file_path.exists(): continue
             with excel_lock:
                 try:
-                    df = pd.read_excel(file_path)
-                    # Ricerca flessibile della colonna nome
-                    col_nome = next(
-                        (c for c in df.columns if str(c).strip().lower() in
-                         ["a chi va consegnato", "cliente", "nome", "destinatario"]),
-                        None
-                    )
-                    if not col_nome:
-                        logger.error(f"Colonna nome non trovata in {file_path.name} - colonne: {df.columns.tolist()}")
-                        success = False
-                        continue
-                    # Ricerca flessibile della colonna indirizzo
-                    col_ind = next(
-                        (c for c in df.columns if str(c).strip().lower() in
-                         ["indirizzo", "via", "via/piazza", "sede"]),
-                        None
-                    )
-                    mask = df[col_nome].astype(str).str.strip().str.lower() == str(nome).strip().lower()
-                    # Disambiguazione per nome duplicato (es. tre Marco Polo)
-                    if indirizzo and col_ind and mask.sum() > 1:
-                        mask_ind = df[col_ind].astype(str).str.strip().str.lower() == str(indirizzo).strip().lower()
-                        if (mask & mask_ind).any():
-                            mask = mask & mask_ind
-                    if mask.any():
-                        df.loc[mask, 'Latitudine'] = lat
-                        df.loc[mask, 'Longitudine'] = lon
-                        df.to_excel(file_path, index=False)
-                        logger.info(f"Aggiornato Excel: {file_path.name} → {nome}")
+                    wb = load_workbook(file_path)
+                    ws = wb.active
+                    headers = [str(c.value or "").strip().lower() for c in ws[1]]
+                    
+                    col_f_idx = -1
+                    col_l_idx = -1
+                    for i, h in enumerate(headers):
+                        if "frutta" in h or "cod. fr" in h: col_f_idx = i
+                        elif "latte" in h or "cod. la" in h: col_l_idx = i
+                    if col_f_idx == -1 and col_l_idx == -1:
+                        col_f_idx, col_l_idx = 0, 1
+                    
+                    # Cerca o crea colonne lat e lon
+                    col_lat_idx = -1
+                    col_lon_idx = -1
+                    for i, h in enumerate(headers):
+                        if h == "latitudine": col_lat_idx = i
+                        elif h == "longitudine": col_lon_idx = i
+                        
+                    if col_lat_idx == -1:
+                        col_lat_idx = len(headers)
+                        ws.cell(row=1, column=col_lat_idx+1, value="Latitudine")
+                        headers.append("latitudine")
+                    if col_lon_idx == -1:
+                        col_lon_idx = len(headers)
+                        ws.cell(row=1, column=col_lon_idx+1, value="Longitudine")
+                        headers.append("longitudine")
+
+                    c_f = str(cod_f).strip().lower() if cod_f and str(cod_f)!="p00000" else ""
+                    c_l = str(cod_l).strip().lower() if cod_l and str(cod_l)!="p00000" else ""
+                    if not c_f and not c_l: return True
+                    trovato = False
+
+                    for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
+                        rf = str(row[col_f_idx].value or "").strip().lower() if col_f_idx>=0 else ""
+                        rl = str(row[col_l_idx].value or "").strip().lower() if col_l_idx>=0 else ""
+                        match_f = (c_f and rf == c_f)
+                        match_l = (c_l and rl == c_l)
+                        
+                        if match_f or match_l:
+                            ws.cell(row=row_idx, column=col_lat_idx+1, value=lat)
+                            ws.cell(row=row_idx, column=col_lon_idx+1, value=lon)
+                            trovato = True
+                    
+                    if trovato:
+                        wb.save(file_path)
+                        logger.info(f"Aggiornato Excel ({file_path.name}) per {nome}")
                     else:
                         logger.warning(f"Punto non trovato in {file_path.name}: {nome}")
+                    wb.close()
                 except Exception as e:
                     logger.exception(f"Errore scrittura {file_path.name}")
                     success = False
@@ -121,24 +141,68 @@ if HAS_FLASK:
             output_base = CONSEGNE_DIR / f"CONSEGNE_{DATA_GIORNO}"
 
             # 1. Aggiorna Excel (Bulk)
-            import pandas as pd
+            from openpyxl import load_workbook
             for ex_p in [PROG_DIR / "mappatura_destinazioni.xlsx", output_base / "punti_consegna.xlsx"]:
                 if ex_p.exists():
                     with excel_lock:
-                        df = pd.read_excel(ex_p)
-                        col_nome = next(
-                            (c for c in df.columns if str(c).strip().lower() in
-                             ["a chi va consegnato", "cliente", "nome", "destinatario"]),
-                            None
-                        )
-                        if col_nome:
+                        try:
+                            wb = load_workbook(ex_p)
+                            ws = wb.active
+                            headers = [str(c.value or "").strip().lower() for c in ws[1]]
+                            
+                            col_f_idx = -1
+                            col_l_idx = -1
+                            for i, h in enumerate(headers):
+                                if "frutta" in h or "cod. fr" in h:
+                                    col_f_idx = i
+                                elif "latte" in h or "cod. la" in h:
+                                    col_l_idx = i
+                                    
+                            if col_f_idx == -1 and col_l_idx == -1:
+                                col_f_idx, col_l_idx = 0, 1
+                                    
+                            col_lat_idx, col_lon_idx = -1, -1
+                            for i, h in enumerate(headers):
+                                if h == "latitudine": col_lat_idx = i
+                                elif h == "longitudine": col_lon_idx = i
+                                
+                            if col_lat_idx == -1:
+                                col_lat_idx = len(headers)
+                                ws.cell(row=1, column=col_lat_idx+1, value="Latitudine")
+                                headers.append("latitudine")
+                            if col_lon_idx == -1:
+                                col_lon_idx = len(headers)
+                                ws.cell(row=1, column=col_lon_idx+1, value="Longitudine")
+                                headers.append("longitudine")
+                            
+                            mappa_punti = {}
                             for z in data:
                                 for p in z.get("lista_punti", []):
-                                    mask = df[col_nome].astype(str).str.strip().str.lower() == str(p['nome']).strip().lower()
-                                    if mask.any():
-                                        df.loc[mask, 'Latitudine'] = p['lat']
-                                        df.loc[mask, 'Longitudine'] = p['lon']
-                        df.to_excel(ex_p, index=False)
+                                    c_f = str(p.get('codice_frutta', '')).strip().lower()
+                                    c_l = str(p.get('codice_latte', '')).strip().lower()
+                                    if c_f == "p00000": c_f = ""
+                                    if c_l == "p00000": c_l = ""
+                                    if c_f or c_l:
+                                        mappa_punti[(c_f, c_l)] = (p['lat'], p['lon'])
+                                    
+                            changed = False
+                            for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
+                                # read file values
+                                rf = str(row[col_f_idx].value or "").strip().lower() if col_f_idx>=0 else ""
+                                rl = str(row[col_l_idx].value or "").strip().lower() if col_l_idx>=0 else ""
+                                
+                                for (cf, cl), (lt, ln) in mappa_punti.items():
+                                    if (cf and cf == rf) or (cl and cl == rl):
+                                        ws.cell(row=row_idx, column=col_lat_idx+1, value=lt)
+                                        ws.cell(row=row_idx, column=col_lon_idx+1, value=ln)
+                                        changed = True
+                                        break
+                                    
+                            if changed:
+                                wb.save(ex_p)
+                            wb.close()
+                        except Exception as e:
+                            logger.exception(f"Errore scrittura bulk su {ex_p.name}")
 
             # 2. Aggiorna JSON Unificato
             if TARGET_FILE_UNIFICATO and TARGET_FILE_UNIFICATO.exists():
@@ -169,19 +233,20 @@ if HAS_FLASK:
     def save_coord():
         """Salvataggio atomico al movimento di un singolo punto."""
         try:
-            p = request.json  # {nome, indirizzo, lat, lon}
+            p = request.json
+            cod_f = p.get('cod_f', '')
+            cod_l = p.get('cod_l', '')
             nome = p.get('nome', '')
-            indirizzo = p.get('indirizzo', '')
             lat = p['lat']
             lon = p['lon']
 
-            res = _aggiorna_entrambi_excel(nome, lat, lon, indirizzo=indirizzo)
+            res = _aggiorna_entrambi_excel(cod_f, cod_l, lat, lon, nome=nome)
             if res is True:
                 global ZONE_LIST_CACHE
                 for z in ZONE_LIST_CACHE:
                     for pt in z.get("lista_punti", []):
-                        if pt.get("nome", "").lower() == nome.lower() and \
-                           (not indirizzo or pt.get("indirizzo", "").lower() == indirizzo.lower()):
+                        if (cod_f and str(pt.get("codice_frutta", "")).strip().lower() == cod_f.strip().lower()) or \
+                           (cod_l and str(pt.get("codice_latte", "")).strip().lower() == cod_l.strip().lower()):
                             pt['lat'], pt['lon'] = lat, lon
 
                 # Aggiorna JSON Unificato e Viaggi al volo
@@ -190,8 +255,8 @@ if HAS_FLASK:
                         d = json.loads(f_path.read_text(encoding='utf-8'))
                         lista = d.get('punti', []) if is_unif else [x for zz in d for x in zz.get('lista_punti', [])]
                         for pt in lista:
-                            if pt.get('nome', '').lower() == nome.lower() and \
-                               (not indirizzo or pt.get('indirizzo', '').lower() == indirizzo.lower()):
+                            if (cod_f and str(pt.get("codice_frutta", "")).strip().lower() == cod_f.strip().lower()) or \
+                               (cod_l and str(pt.get("codice_latte", "")).strip().lower() == cod_l.strip().lower()):
                                 pt['lat'], pt['lon'] = lat, lon
                         f_path.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding='utf-8')
                 return jsonify({"status": "ok", "msg": "Sincronizzazione completata!"})
@@ -476,7 +541,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     m.addListener("dragend", () => {
                         p.lat = m.position.lat; p.lon = m.position.lng;
                         _hasUnsavedChanges = true;
-                        _salvaSingolo(p.nome, p.indirizzo || '', p.lat, p.lon);
+                        _salvaSingolo(p.codice_frutta || '', p.codice_latte || '', p.nome || '', p.lat, p.lon);
                     });
                     m.addListener("gmp-click", () => {
                         new google.maps.InfoWindow({ content: `<div style="padding:10px;"><b>${p.nome}</b><br>${p.indirizzo}<br><br><button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}')" style="width:100%; cursor:pointer;">VEDI SU GOOGLE</button></div>` }).open(map, m);
@@ -486,8 +551,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             });
         }
 
-        function _salvaSingolo(nome, indirizzo, lat, lon) {
-            fetch('/save_coord', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({nome, indirizzo, lat, lon}) })
+        function _salvaSingolo(cod_f, cod_l, nome, lat, lon) {
+            fetch('/save_coord', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cod_f, cod_l, nome, lat, lon}) })
             .then(r => r.json())
             .then(d => { 
                 let st = document.getElementById('save-status');

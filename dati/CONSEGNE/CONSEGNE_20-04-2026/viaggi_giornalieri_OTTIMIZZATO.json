@@ -5,537 +5,31 @@
     "zone": [
       "3101"
     ],
-    "num_fermate": 25,
+    "num_fermate": 23,
     "data_ddt": "20-04-2026",
     "lista_punti": [
       {
-        "nome": "EDMONDO DE AMICIS",
-        "indirizzo": "VIA BATTISTI 52, 30030 VIGONOVO (VENEZIA)",
-        "codice_frutta": "p2380",
-        "codice_latte": "p1894",
-        "codice_univoco": "p2380_p1894",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "10:00",
-        "lat": 45.39191463806938,
-        "lon": 12.022580558576914,
-        "codici_ddt_frutta": [
-          "p2380"
-        ],
-        "codici_ddt_latte": [
-          "p1894"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 140,
-        "geo_query_nome_indirizzo": "EDMONDO DE AMICIS VIA BATTISTI 52, 30030 VIGONOVO (VENEZIA)",
-        "geo_query_indirizzo": "VIA BATTISTI 52, 30030 VIGONOVO (VENEZIA)"
-      },
-      {
-        "nome": "EDMONDO DE AMICIS",
-        "indirizzo": "VIA VITTORIO VENETO 27, 30031 DOLO (VENEZIA)",
-        "codice_frutta": "p2314",
-        "codice_latte": "p1754",
-        "codice_univoco": "p2314_p1754",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "07:30",
-        "orario_max": "14:00",
-        "lat": 45.42695237766134,
-        "lon": 12.077898433043623,
-        "codici_ddt_frutta": [
-          "p2314"
-        ],
-        "codici_ddt_latte": [
-          "p1754"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 137,
-        "geo_query_nome_indirizzo": "EDMONDO DE AMICIS VIA VITTORIO VENETO 27, 30031 DOLO (VENEZIA)",
-        "geo_query_indirizzo": "VIA VITTORIO VENETO 27, 30031 DOLO (VENEZIA)"
-      },
-      {
-        "nome": "UGO FOSCOLO- TEMPO PIENO",
-        "indirizzo": "VIA OBERDAN 6, 30034 MIRA (VENEZIA)",
-        "codice_frutta": "p2176",
-        "codice_latte": "p1931",
-        "codice_univoco": "p2176_p1931",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "07:30",
-        "orario_max": "14:00",
-        "lat": 45.4387349,
-        "lon": 12.1267244,
-        "codici_ddt_frutta": [
-          "p2176"
-        ],
-        "codici_ddt_latte": [
-          "p1931"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 447,
-        "geo_query_nome_indirizzo": "UGO FOSCOLO- TEMPO PIENO VIA OBERDAN 6, 30034 MIRA (VENEZIA)",
-        "geo_query_indirizzo": "VIA OBERDAN 6, 30034 MIRA (VENEZIA)"
-      },
-      {
-        "nome": "G. Leopardi",
-        "indirizzo": "Via Bernini,1, 30030 Mira (VE)",
-        "codice_frutta": "p2178",
-        "codice_latte": "p2672",
-        "codice_univoco": "p2178_p2672",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "07:30",
-        "orario_max": "14:00",
-        "lat": 45.435385,
-        "lon": 12.1424074,
-        "codici_ddt_frutta": [
-          "p2178"
-        ],
-        "codici_ddt_latte": [
-          "p2672"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 171,
-        "geo_query_nome_indirizzo": "G. Leopardi Via Bernini,1, 30030 Mira (VE)",
-        "geo_query_indirizzo": "Via Bernini,1, 30030 Mira (VE)"
-      },
-      {
-        "nome": "IPPOLITO NIEVO",
-        "indirizzo": "VIA BASSA GAMBARARE N. 16, 30030 MIRA (VENEZIA)",
-        "codice_frutta": "p2177",
-        "codice_latte": "p2673",
-        "codice_univoco": "p2177_p2673",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "07:30",
-        "orario_max": "14:00",
-        "lat": 45.4209939,
-        "lon": 12.1521347,
-        "codici_ddt_frutta": [
-          "p2177"
-        ],
-        "codici_ddt_latte": [
-          "p2673"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 237,
-        "geo_query_nome_indirizzo": "IPPOLITO NIEVO VIA BASSA GAMBARARE N. 16, 30030 MIRA (VENEZIA)",
-        "geo_query_indirizzo": "VIA BASSA GAMBARARE N. 16, 30030 MIRA (VENEZIA)"
-      },
-      {
-        "nome": "F.LLI BANDIERA-MALCONTENTA",
-        "indirizzo": "VIA MORANZANI 2, 30176 VENEZIA (VENEZIA)",
-        "codice_frutta": "p2275",
+        "nome": "Edmondo De Amicis",
+        "indirizzo": "Via Caltana 36/B, 30034 Mira (VE)",
+        "codice_frutta": "p13277",
         "codice_latte": "p00000",
-        "codice_univoco": "p2275_p00000",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "07:30",
-        "orario_max": "14:00",
-        "lat": 45.43496632954766,
-        "lon": 12.20917352657644,
-        "codici_ddt_frutta": [
-          "p2275"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 151,
-        "geo_query_nome_indirizzo": "F.LLI BANDIERA-MALCONTENTA VIA MORANZANI 2, 30176 VENEZIA (VENEZIA)",
-        "geo_query_indirizzo": "VIA MORANZANI 2, 30176 VENEZIA (VENEZIA)"
-      },
-      {
-        "nome": "CAPUOZZO-CATENE",
-        "indirizzo": "VIA SCATTOLIN 6, 30175 VENEZIA (VENEZIA)",
-        "codice_frutta": "p2274",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2274_p00000",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "07:30",
-        "orario_max": "10:00",
-        "lat": 45.4773866,
-        "lon": 12.2122583,
-        "codici_ddt_frutta": [
-          "p2274"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 79,
-        "geo_query_nome_indirizzo": "CAPUOZZO-CATENE VIA SCATTOLIN 6, 30175 VENEZIA (VENEZIA)",
-        "geo_query_indirizzo": "VIA SCATTOLIN 6, 30175 VENEZIA (VENEZIA)"
-      },
-      {
-        "nome": "LOMBARDO RADICE",
-        "indirizzo": "QUARTIERE S. GIUSEPPE 1, 30173 VENEZIA (VENEZIA)",
-        "codice_frutta": "p8200",
-        "codice_latte": "p00000",
-        "codice_univoco": "p8200_p00000",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "07:30",
-        "orario_max": "10:00",
-        "lat": 45.479841,
-        "lon": 12.2640964,
-        "codici_ddt_frutta": [
-          "p8200"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 251,
-        "geo_query_nome_indirizzo": "LOMBARDO RADICE QUARTIERE S. GIUSEPPE 1, 30173 VENEZIA (VENEZIA)",
-        "geo_query_indirizzo": "QUARTIERE S. GIUSEPPE 1, 30173 VENEZIA (VENEZIA)"
-      },
-      {
-        "nome": "VIA VIRGILIO",
-        "indirizzo": "VIA VIRGILIO N. 1, 30173 VENEZIA (VENEZIA)",
-        "codice_frutta": "p2162",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2162_p00000",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "08:30",
-        "orario_max": "10:00",
-        "lat": 45.495666734625495,
-        "lon": 12.262948312303159,
-        "codici_ddt_frutta": [
-          "p2162"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 450,
-        "geo_query_nome_indirizzo": "VIA VIRGILIO VIA VIRGILIO N. 1, 30173 VENEZIA (VENEZIA)",
-        "geo_query_indirizzo": "VIA VIRGILIO N. 1, 30173 VENEZIA (VENEZIA)"
-      },
-      {
-        "nome": "LEONARDO DA VINCI",
-        "indirizzo": "VIA BISSUOLA N. 95, 30173 VENEZIA (VENEZIA)",
-        "codice_frutta": "p2161",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2161_p00000",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "08:15",
-        "orario_max": "10:00",
-        "lat": 45.49352284190952,
-        "lon": 12.258995925377056,
-        "codici_ddt_frutta": [
-          "p2161"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 248,
-        "geo_query_nome_indirizzo": "LEONARDO DA VINCI VIA BISSUOLA N. 95, 30173 VENEZIA (VENEZIA)",
-        "geo_query_indirizzo": "VIA BISSUOLA N. 95, 30173 VENEZIA (VENEZIA)"
-      },
-      {
-        "nome": "Scuola Primaria Paritaria Berna",
-        "indirizzo": "Via Bissuola,93, 30173 Venezia (VE)",
-        "codice_frutta": "p2235",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2235_p00000",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "10:00",
-        "lat": 45.493752643177764,
-        "lon": 12.2579634034979,
-        "codici_ddt_frutta": [
-          "p2235"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 416,
-        "geo_query_nome_indirizzo": "Scuola Primaria Paritaria Berna Via Bissuola,93, 30173 Venezia (VE)",
-        "geo_query_indirizzo": "Via Bissuola,93, 30173 Venezia (VE)"
-      },
-      {
-        "nome": "Istituto Farina",
-        "indirizzo": "Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)",
-        "codice_frutta": "p2233",
-        "codice_latte": "p1700",
-        "codice_univoco": "p2233_p1700",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "07:30",
-        "orario_max": "10:00",
-        "lat": 45.4991227,
-        "lon": 12.2384022,
-        "codici_ddt_frutta": [
-          "p2233"
-        ],
-        "codici_ddt_latte": [
-          "p1700"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 241,
-        "geo_query_nome_indirizzo": "Istituto Farina Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)",
-        "geo_query_indirizzo": "Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)"
-      },
-      {
-        "nome": "SCUOLA PARITARIA PRIMARIA \"LUIGI CABURLOTTO\"",
-        "indirizzo": "VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)",
-        "codice_frutta": "p10949",
-        "codice_latte": "p1937",
-        "codice_univoco": "p10949_p1937",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "07:30",
-        "orario_max": "10:00",
-        "lat": 45.4994935,
-        "lon": 12.2373604,
-        "codici_ddt_frutta": [
-          "p10949"
-        ],
-        "codici_ddt_latte": [
-          "p1937"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 375,
-        "geo_query_nome_indirizzo": "SCUOLA PARITARIA PRIMARIA \"LUIGI CABURLOTTO\" VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)",
-        "geo_query_indirizzo": "VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)"
-      },
-      {
-        "nome": "Scuola Primaria D. A. Munaretto - Cipressina",
-        "indirizzo": "Via Del Gazzato, 6, 30174 Venezia (VE)",
-        "codice_frutta": "p7025",
-        "codice_latte": "p00000",
-        "codice_univoco": "p7025_p00000",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "08:30",
-        "orario_max": "14:00",
-        "lat": 45.5036089,
-        "lon": 12.2301046,
-        "codici_ddt_frutta": [
-          "p7025"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 392,
-        "geo_query_nome_indirizzo": "Scuola Primaria D. A. Munaretto - Cipressina Via Del Gazzato, 6, 30174 Venezia (VE)",
-        "geo_query_indirizzo": "Via Del Gazzato, 6, 30174 Venezia (VE)"
-      },
-      {
-        "nome": "Scuola Primaria Villa Medico - Zelarino",
-        "indirizzo": "Via Castellana, 154/B, 30174 Venezia (VE)",
-        "codice_frutta": "p7026",
-        "codice_latte": "p00000",
-        "codice_univoco": "p7026_p00000",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 45.5177485,
-        "lon": 12.2027857,
-        "codici_ddt_frutta": [
-          "p7026"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 431,
-        "geo_query_nome_indirizzo": "Scuola Primaria Villa Medico - Zelarino Via Castellana, 154/B, 30174 Venezia (VE)",
-        "geo_query_indirizzo": "Via Castellana, 154/B, 30174 Venezia (VE)"
-      },
-      {
-        "nome": "ADAMO VOLPATO",
-        "indirizzo": "PIAZZA IV NOVEMBRE N.49, 30030 MARTELLAGO (VENEZIA)",
-        "codice_frutta": "p2309",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2309_p00000",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "07:45",
-        "orario_max": "14:00",
-        "lat": 45.52340716459872,
-        "lon": 12.15691687338835,
-        "codici_ddt_frutta": [
-          "p2309"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 49,
-        "geo_query_nome_indirizzo": "ADAMO VOLPATO PIAZZA IV NOVEMBRE N.49, 30030 MARTELLAGO (VENEZIA)",
-        "geo_query_indirizzo": "PIAZZA IV NOVEMBRE N.49, 30030 MARTELLAGO (VENEZIA)"
-      },
-      {
-        "nome": "I. Nievo",
-        "indirizzo": "Via Buonarroti 48, 30038 Spinea (VE)",
-        "codice_frutta": "p13569",
-        "codice_latte": "p00000",
-        "codice_univoco": "p13569_p00000",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 45.4935168,
-        "lon": 12.1645742,
-        "codici_ddt_frutta": [
-          "p13569"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 217,
-        "geo_query_nome_indirizzo": "I. Nievo Via Buonarroti 48, 30038 Spinea (VE)",
-        "geo_query_indirizzo": "Via Buonarroti 48, 30038 Spinea (VE)"
-      },
-      {
-        "nome": "\"MARCO POLO\"",
-        "indirizzo": "VIA M. POLO 2, 30038 SPINEA (VENEZIA)",
-        "codice_frutta": "p2278",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2278_p00000",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 45.4903028,
-        "lon": 12.1605515,
-        "codici_ddt_frutta": [
-          "p2278"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 265,
-        "geo_query_nome_indirizzo": "\"MARCO POLO\" VIA M. POLO 2, 30038 SPINEA (VENEZIA)",
-        "geo_query_indirizzo": "VIA M. POLO 2, 30038 SPINEA (VENEZIA)"
-      },
-      {
-        "nome": "\"ANNA FRANK\"",
-        "indirizzo": "VIA FREGENE 15, 30038 SPINEA (VENEZIA)",
-        "codice_frutta": "p2277",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2277_p00000",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 45.4884291,
-        "lon": 12.1551743,
-        "codici_ddt_frutta": [
-          "p2277"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 6,
-        "geo_query_nome_indirizzo": "\"ANNA FRANK\" VIA FREGENE 15, 30038 SPINEA (VENEZIA)",
-        "geo_query_indirizzo": "VIA FREGENE 15, 30038 SPINEA (VENEZIA)"
-      },
-      {
-        "nome": "A. Vivaldi- Tempo Pieno",
-        "indirizzo": "Via Fornase 53/D, 30038 Spinea (VE)",
-        "codice_frutta": "p13729",
-        "codice_latte": "p00000",
-        "codice_univoco": "p13729_p00000",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 45.476921,
-        "lon": 12.1614235,
-        "codici_ddt_frutta": [
-          "p13729"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 41,
-        "geo_query_nome_indirizzo": "A. Vivaldi- Tempo Pieno Via Fornase 53/D, 30038 Spinea (VE)",
-        "geo_query_indirizzo": "Via Fornase 53/D, 30038 Spinea (VE)"
-      },
-      {
-        "nome": "MANTEGNA - TEMPO PIENO",
-        "indirizzo": "VIA BOTTICELLI 4, 30038 SPINEA (VENEZIA)",
-        "codice_frutta": "p7412",
-        "codice_latte": "p00000",
-        "codice_univoco": "p7412_p00000",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 45.4825325,
-        "lon": 12.176948,
-        "codici_ddt_frutta": [
-          "p7412"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 263,
-        "geo_query_nome_indirizzo": "MANTEGNA - TEMPO PIENO VIA BOTTICELLI 4, 30038 SPINEA (VENEZIA)",
-        "geo_query_indirizzo": "VIA BOTTICELLI 4, 30038 SPINEA (VENEZIA)"
-      },
-      {
-        "nome": "S.G.BOSCO- CA' SABBIONI",
-        "indirizzo": "VIA ORTOLAN 17, 30175 VENEZIA (VENEZIA)",
-        "codice_frutta": "p2276",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2276_p00000",
-        "zona": "3101",
-        "data_consegna": "20-04-2026",
-        "orario_min": "07:30",
-        "orario_max": "14:00",
-        "lat": 45.4571202,
-        "lon": 12.1827523,
-        "codici_ddt_frutta": [
-          "p2276"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 346,
-        "geo_query_nome_indirizzo": "S.G.BOSCO- CA' SABBIONI VIA ORTOLAN 17, 30175 VENEZIA (VENEZIA)",
-        "geo_query_indirizzo": "VIA ORTOLAN 17, 30175 VENEZIA (VENEZIA)"
-      },
-      {
-        "nome": "GIUSEPPE PARINI",
-        "indirizzo": "VIA PISA 2, 30034 MIRA (VENEZIA)",
-        "codice_frutta": "p10131",
-        "codice_latte": "p00000",
-        "codice_univoco": "p10131_p00000",
+        "codice_univoco": "p13277_p00000",
         "zona": "3101",
         "data_consegna": "20-04-2026",
         "orario_min": "08:15",
         "orario_max": "14:00",
-        "lat": 45.4572551,
-        "lon": 12.1561673,
+        "lat": 45.46527050981497,
+        "lon": 12.11488789812301,
         "codici_ddt_frutta": [
-          "p10131"
+          "p13277"
         ],
         "codici_ddt_latte": [
           "p00000"
         ],
         "rientri_alert": [],
-        "row_idx_mappatura": 209,
-        "geo_query_nome_indirizzo": "GIUSEPPE PARINI VIA PISA 2, 30034 MIRA (VENEZIA)",
-        "geo_query_indirizzo": "VIA PISA 2, 30034 MIRA (VENEZIA)"
+        "row_idx_mappatura": 138,
+        "geo_query_nome_indirizzo": "Edmondo De Amicis Via Caltana 36/B, 30034 Mira (VE)",
+        "geo_query_indirizzo": "Via Caltana 36/B, 30034 Mira (VE)"
       },
       {
         "nome": "ELSA MORANTE",
@@ -561,37 +55,497 @@
         "geo_query_indirizzo": "VIA LAGO DI VARANO8, 30034 MIRA (VENEZIA)"
       },
       {
-        "nome": "Edmondo De Amicis",
-        "indirizzo": "Via Caltana 36/B, 30034 Mira (VE)",
-        "codice_frutta": "p13277",
+        "nome": "GIUSEPPE PARINI",
+        "indirizzo": "VIA PISA 2, 30034 MIRA (VENEZIA)",
+        "codice_frutta": "p10131",
         "codice_latte": "p00000",
-        "codice_univoco": "p13277_p00000",
+        "codice_univoco": "p10131_p00000",
         "zona": "3101",
         "data_consegna": "20-04-2026",
         "orario_min": "08:15",
         "orario_max": "14:00",
-        "lat": 45.46527050981497,
-        "lon": 12.11488789812301,
+        "lat": 45.4572551,
+        "lon": 12.1561673,
         "codici_ddt_frutta": [
-          "p13277"
+          "p10131"
         ],
         "codici_ddt_latte": [
           "p00000"
         ],
         "rientri_alert": [],
-        "row_idx_mappatura": 138,
-        "geo_query_nome_indirizzo": "Edmondo De Amicis Via Caltana 36/B, 30034 Mira (VE)",
-        "geo_query_indirizzo": "Via Caltana 36/B, 30034 Mira (VE)"
+        "row_idx_mappatura": 209,
+        "geo_query_nome_indirizzo": "GIUSEPPE PARINI VIA PISA 2, 30034 MIRA (VENEZIA)",
+        "geo_query_indirizzo": "VIA PISA 2, 30034 MIRA (VENEZIA)"
+      },
+      {
+        "nome": "S.G.BOSCO- CA' SABBIONI",
+        "indirizzo": "VIA ORTOLAN 17, 30175 VENEZIA (VENEZIA)",
+        "codice_frutta": "p2276",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2276_p00000",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.4571202,
+        "lon": 12.1827523,
+        "codici_ddt_frutta": [
+          "p2276"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 346,
+        "geo_query_nome_indirizzo": "S.G.BOSCO- CA' SABBIONI VIA ORTOLAN 17, 30175 VENEZIA (VENEZIA)",
+        "geo_query_indirizzo": "VIA ORTOLAN 17, 30175 VENEZIA (VENEZIA)"
+      },
+      {
+        "nome": "MANTEGNA - TEMPO PIENO",
+        "indirizzo": "VIA BOTTICELLI 4, 30038 SPINEA (VENEZIA)",
+        "codice_frutta": "p7412",
+        "codice_latte": "p00000",
+        "codice_univoco": "p7412_p00000",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.4825325,
+        "lon": 12.176948,
+        "codici_ddt_frutta": [
+          "p7412"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 263,
+        "geo_query_nome_indirizzo": "MANTEGNA - TEMPO PIENO VIA BOTTICELLI 4, 30038 SPINEA (VENEZIA)",
+        "geo_query_indirizzo": "VIA BOTTICELLI 4, 30038 SPINEA (VENEZIA)"
+      },
+      {
+        "nome": "A. Vivaldi- Tempo Pieno",
+        "indirizzo": "Via Fornase 53/D, 30038 Spinea (VE)",
+        "codice_frutta": "p13729",
+        "codice_latte": "p00000",
+        "codice_univoco": "p13729_p00000",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.476921,
+        "lon": 12.1614235,
+        "codici_ddt_frutta": [
+          "p13729"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 41,
+        "geo_query_nome_indirizzo": "A. Vivaldi- Tempo Pieno Via Fornase 53/D, 30038 Spinea (VE)",
+        "geo_query_indirizzo": "Via Fornase 53/D, 30038 Spinea (VE)"
+      },
+      {
+        "nome": "\"ANNA FRANK\"",
+        "indirizzo": "VIA FREGENE 15, 30038 SPINEA (VENEZIA)",
+        "codice_frutta": "p2277",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2277_p00000",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.4884291,
+        "lon": 12.1551743,
+        "codici_ddt_frutta": [
+          "p2277"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 6,
+        "geo_query_nome_indirizzo": "\"ANNA FRANK\" VIA FREGENE 15, 30038 SPINEA (VENEZIA)",
+        "geo_query_indirizzo": "VIA FREGENE 15, 30038 SPINEA (VENEZIA)"
+      },
+      {
+        "nome": "\"MARCO POLO\"",
+        "indirizzo": "VIA M. POLO 2, 30038 SPINEA (VENEZIA)",
+        "codice_frutta": "p2278",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2278_p00000",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.4903028,
+        "lon": 12.1605515,
+        "codici_ddt_frutta": [
+          "p2278"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 265,
+        "geo_query_nome_indirizzo": "\"MARCO POLO\" VIA M. POLO 2, 30038 SPINEA (VENEZIA)",
+        "geo_query_indirizzo": "VIA M. POLO 2, 30038 SPINEA (VENEZIA)"
+      },
+      {
+        "nome": "I. Nievo",
+        "indirizzo": "Via Buonarroti 48, 30038 Spinea (VE)",
+        "codice_frutta": "p13569",
+        "codice_latte": "p00000",
+        "codice_univoco": "p13569_p00000",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.4935168,
+        "lon": 12.1645742,
+        "codici_ddt_frutta": [
+          "p13569"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 217,
+        "geo_query_nome_indirizzo": "I. Nievo Via Buonarroti 48, 30038 Spinea (VE)",
+        "geo_query_indirizzo": "Via Buonarroti 48, 30038 Spinea (VE)"
+      },
+      {
+        "nome": "ADAMO VOLPATO",
+        "indirizzo": "PIAZZA IV NOVEMBRE N.49, 30030 MARTELLAGO (VENEZIA)",
+        "codice_frutta": "p2309",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2309_p00000",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "07:45",
+        "orario_max": "14:00",
+        "lat": 45.52340716459872,
+        "lon": 12.15691687338835,
+        "codici_ddt_frutta": [
+          "p2309"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 49,
+        "geo_query_nome_indirizzo": "ADAMO VOLPATO PIAZZA IV NOVEMBRE N.49, 30030 MARTELLAGO (VENEZIA)",
+        "geo_query_indirizzo": "PIAZZA IV NOVEMBRE N.49, 30030 MARTELLAGO (VENEZIA)"
+      },
+      {
+        "nome": "Scuola Primaria Villa Medico - Zelarino",
+        "indirizzo": "Via Castellana, 154/B, 30174 Venezia (VE)",
+        "codice_frutta": "p7026",
+        "codice_latte": "p00000",
+        "codice_univoco": "p7026_p00000",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.5177485,
+        "lon": 12.2027857,
+        "codici_ddt_frutta": [
+          "p7026"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 431,
+        "geo_query_nome_indirizzo": "Scuola Primaria Villa Medico - Zelarino Via Castellana, 154/B, 30174 Venezia (VE)",
+        "geo_query_indirizzo": "Via Castellana, 154/B, 30174 Venezia (VE)"
+      },
+      {
+        "nome": "Scuola Primaria D. A. Munaretto - Cipressina",
+        "indirizzo": "Via Del Gazzato, 6, 30174 Venezia (VE)",
+        "codice_frutta": "p7025",
+        "codice_latte": "p00000",
+        "codice_univoco": "p7025_p00000",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "08:30",
+        "orario_max": "14:00",
+        "lat": 45.5036089,
+        "lon": 12.2301046,
+        "codici_ddt_frutta": [
+          "p7025"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 392,
+        "geo_query_nome_indirizzo": "Scuola Primaria D. A. Munaretto - Cipressina Via Del Gazzato, 6, 30174 Venezia (VE)",
+        "geo_query_indirizzo": "Via Del Gazzato, 6, 30174 Venezia (VE)"
+      },
+      {
+        "nome": "SCUOLA PARITARIA PRIMARIA \"LUIGI CABURLOTTO\"",
+        "indirizzo": "VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)",
+        "codice_frutta": "p10949",
+        "codice_latte": "p1937",
+        "codice_univoco": "p10949_p1937",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.4994935,
+        "lon": 12.2373604,
+        "codici_ddt_frutta": [
+          "p10949"
+        ],
+        "codici_ddt_latte": [
+          "p1937"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 375,
+        "geo_query_nome_indirizzo": "SCUOLA PARITARIA PRIMARIA \"LUIGI CABURLOTTO\" VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)",
+        "geo_query_indirizzo": "VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)"
+      },
+      {
+        "nome": "Istituto Farina",
+        "indirizzo": "Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)",
+        "codice_frutta": "p2233",
+        "codice_latte": "p1700",
+        "codice_univoco": "p2233_p1700",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.4991227,
+        "lon": 12.2384022,
+        "codici_ddt_frutta": [
+          "p2233"
+        ],
+        "codici_ddt_latte": [
+          "p1700"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 241,
+        "geo_query_nome_indirizzo": "Istituto Farina Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)",
+        "geo_query_indirizzo": "Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VE)"
+      },
+      {
+        "nome": "Scuola Primaria Paritaria Berna",
+        "indirizzo": "Via Bissuola,93, 30173 Venezia (VE)",
+        "codice_frutta": "p2235",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2235_p00000",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.493752643177764,
+        "lon": 12.2579634034979,
+        "codici_ddt_frutta": [
+          "p2235"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 416,
+        "geo_query_nome_indirizzo": "Scuola Primaria Paritaria Berna Via Bissuola,93, 30173 Venezia (VE)",
+        "geo_query_indirizzo": "Via Bissuola,93, 30173 Venezia (VE)"
+      },
+      {
+        "nome": "LEONARDO DA VINCI",
+        "indirizzo": "VIA BISSUOLA N. 95, 30173 VENEZIA (VENEZIA)",
+        "codice_frutta": "p2161",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2161_p00000",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "08:15",
+        "orario_max": "10:00",
+        "lat": 45.49352284190952,
+        "lon": 12.258995925377056,
+        "codici_ddt_frutta": [
+          "p2161"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 248,
+        "geo_query_nome_indirizzo": "LEONARDO DA VINCI VIA BISSUOLA N. 95, 30173 VENEZIA (VENEZIA)",
+        "geo_query_indirizzo": "VIA BISSUOLA N. 95, 30173 VENEZIA (VENEZIA)"
+      },
+      {
+        "nome": "VIA VIRGILIO",
+        "indirizzo": "VIA VIRGILIO N. 1, 30173 VENEZIA (VENEZIA)",
+        "codice_frutta": "p2162",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2162_p00000",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "08:30",
+        "orario_max": "10:00",
+        "lat": 45.495666734625495,
+        "lon": 12.262948312303159,
+        "codici_ddt_frutta": [
+          "p2162"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 450,
+        "geo_query_nome_indirizzo": "VIA VIRGILIO VIA VIRGILIO N. 1, 30173 VENEZIA (VENEZIA)",
+        "geo_query_indirizzo": "VIA VIRGILIO N. 1, 30173 VENEZIA (VENEZIA)"
+      },
+      {
+        "nome": "LOMBARDO RADICE",
+        "indirizzo": "QUARTIERE S. GIUSEPPE 1, 30173 VENEZIA (VENEZIA)",
+        "codice_frutta": "p8200",
+        "codice_latte": "p00000",
+        "codice_univoco": "p8200_p00000",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.479841,
+        "lon": 12.2640964,
+        "codici_ddt_frutta": [
+          "p8200"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 251,
+        "geo_query_nome_indirizzo": "LOMBARDO RADICE QUARTIERE S. GIUSEPPE 1, 30173 VENEZIA (VENEZIA)",
+        "geo_query_indirizzo": "QUARTIERE S. GIUSEPPE 1, 30173 VENEZIA (VENEZIA)"
+      },
+      {
+        "nome": "CAPUOZZO-CATENE",
+        "indirizzo": "VIA SCATTOLIN 6, 30175 VENEZIA (VENEZIA)",
+        "codice_frutta": "p2274",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2274_p00000",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.4773866,
+        "lon": 12.2122583,
+        "codici_ddt_frutta": [
+          "p2274"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 79,
+        "geo_query_nome_indirizzo": "CAPUOZZO-CATENE VIA SCATTOLIN 6, 30175 VENEZIA (VENEZIA)",
+        "geo_query_indirizzo": "VIA SCATTOLIN 6, 30175 VENEZIA (VENEZIA)"
+      },
+      {
+        "nome": "F.LLI BANDIERA-MALCONTENTA",
+        "indirizzo": "VIA MORANZANI 2, 30176 VENEZIA (VENEZIA)",
+        "codice_frutta": "p2275",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2275_p00000",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.43496632954766,
+        "lon": 12.20917352657644,
+        "codici_ddt_frutta": [
+          "p2275"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 151,
+        "geo_query_nome_indirizzo": "F.LLI BANDIERA-MALCONTENTA VIA MORANZANI 2, 30176 VENEZIA (VENEZIA)",
+        "geo_query_indirizzo": "VIA MORANZANI 2, 30176 VENEZIA (VENEZIA)"
+      },
+      {
+        "nome": "IPPOLITO NIEVO",
+        "indirizzo": "VIA BASSA GAMBARARE N. 16, 30030 MIRA (VENEZIA)",
+        "codice_frutta": "p2177",
+        "codice_latte": "p2673",
+        "codice_univoco": "p2177_p2673",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.4209939,
+        "lon": 12.1521347,
+        "codici_ddt_frutta": [
+          "p2177"
+        ],
+        "codici_ddt_latte": [
+          "p2673"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 237,
+        "geo_query_nome_indirizzo": "IPPOLITO NIEVO VIA BASSA GAMBARARE N. 16, 30030 MIRA (VENEZIA)",
+        "geo_query_indirizzo": "VIA BASSA GAMBARARE N. 16, 30030 MIRA (VENEZIA)"
+      },
+      {
+        "nome": "G. Leopardi",
+        "indirizzo": "Via Bernini,1, 30030 Mira (VE)",
+        "codice_frutta": "p2178",
+        "codice_latte": "p2672",
+        "codice_univoco": "p2178_p2672",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.435385,
+        "lon": 12.1424074,
+        "codici_ddt_frutta": [
+          "p2178"
+        ],
+        "codici_ddt_latte": [
+          "p2672"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 171,
+        "geo_query_nome_indirizzo": "G. Leopardi Via Bernini,1, 30030 Mira (VE)",
+        "geo_query_indirizzo": "Via Bernini,1, 30030 Mira (VE)"
+      },
+      {
+        "nome": "UGO FOSCOLO- TEMPO PIENO",
+        "indirizzo": "VIA OBERDAN 6, 30034 MIRA (VENEZIA)",
+        "codice_frutta": "p2176",
+        "codice_latte": "p1931",
+        "codice_univoco": "p2176_p1931",
+        "zona": "3101",
+        "data_consegna": "20-04-2026",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.4387349,
+        "lon": 12.1267244,
+        "codici_ddt_frutta": [
+          "p2176"
+        ],
+        "codici_ddt_latte": [
+          "p1931"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 447,
+        "geo_query_nome_indirizzo": "UGO FOSCOLO- TEMPO PIENO VIA OBERDAN 6, 30034 MIRA (VENEZIA)",
+        "geo_query_indirizzo": "VIA OBERDAN 6, 30034 MIRA (VENEZIA)"
       }
     ]
   },
   {
     "nome_giro": "V02",
-    "file_sorgente": "V02_Zone_3102.html",
+    "file_sorgente": "V02_Zone_3101_3102.html",
     "zone": [
       "3102"
     ],
-    "num_fermate": 23,
+    "num_fermate": 24,
     "data_ddt": "20-04-2026",
     "lista_punti": [
       {
@@ -708,6 +662,29 @@
         "row_idx_mappatura": 249,
         "geo_query_nome_indirizzo": "LEONARDO DA VINCI VIA MONTALE 2, 30030 VIGONOVO (VENEZIA)",
         "geo_query_indirizzo": "VIA MONTALE 2, 30030 VIGONOVO (VENEZIA)"
+      },
+      {
+        "nome": "EDMONDO DE AMICIS",
+        "indirizzo": "VIA BATTISTI 52, 30030 VIGONOVO (VENEZIA)",
+        "codice_frutta": "p2380",
+        "codice_latte": "p1894",
+        "codice_univoco": "p2380_p1894",
+        "zona": "3102",
+        "data_consegna": "20-04-2026",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.39191463806938,
+        "lon": 12.022580558576914,
+        "codici_ddt_frutta": [
+          "p2380"
+        ],
+        "codici_ddt_latte": [
+          "p1894"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 140,
+        "geo_query_nome_indirizzo": "EDMONDO DE AMICIS VIA BATTISTI 52, 30030 VIGONOVO (VENEZIA)",
+        "geo_query_indirizzo": "VIA BATTISTI 52, 30030 VIGONOVO (VENEZIA)"
       },
       {
         "nome": "DON MILANI-TEMPO PIENO",
@@ -986,6 +963,29 @@
         "geo_query_indirizzo": "VIA BRUSAURA 12, 30030 DOLO (VENEZIA)"
       },
       {
+        "nome": "EDMONDO DE AMICIS",
+        "indirizzo": "VIA VITTORIO VENETO 27, 30031 DOLO (VENEZIA)",
+        "codice_frutta": "p2314",
+        "codice_latte": "p1754",
+        "codice_univoco": "p2314_p1754",
+        "zona": "3102",
+        "data_consegna": "20-04-2026",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.42695237766134,
+        "lon": 12.077898433043623,
+        "codici_ddt_frutta": [
+          "p2314"
+        ],
+        "codici_ddt_latte": [
+          "p1754"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 137,
+        "geo_query_nome_indirizzo": "EDMONDO DE AMICIS VIA VITTORIO VENETO 27, 30031 DOLO (VENEZIA)",
+        "geo_query_indirizzo": "VIA VITTORIO VENETO 27, 30031 DOLO (VENEZIA)"
+      },
+      {
         "nome": "GIOTTO",
         "indirizzo": "VIA TINTORETTO 3, 30031 DOLO (VENEZIA)",
         "codice_frutta": "p2316",
@@ -1099,39 +1099,16 @@
         "row_idx_mappatura": 315,
         "geo_query_nome_indirizzo": "Primaria Edmondo De Amicis Mellaredo Via Noalese Nord, 55, 30030 Pianiga (VE)",
         "geo_query_indirizzo": "Via Noalese Nord, 55, 30030 Pianiga (VE)"
-      },
-      {
-        "nome": "DON MILANI",
-        "indirizzo": "VIA CIRCONVALLAZIONE 38-40, 36075 MONTECCHIO MAGGIORE (VICENZA)",
-        "codice_frutta": "p2083",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2083_p00000",
-        "zona": "3102",
-        "data_consegna": "20-04-2026",
-        "orario_min": "07:15",
-        "orario_max": "14:00",
-        "lat": 45.50311539552625,
-        "lon": 11.422554974438413,
-        "codici_ddt_frutta": [
-          "p2083"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 123,
-        "geo_query_nome_indirizzo": "DON MILANI VIA CIRCONVALLAZIONE 38-40, 36075 MONTECCHIO MAGGIORE (VICENZA)",
-        "geo_query_indirizzo": "VIA CIRCONVALLAZIONE 38-40, 36075 MONTECCHIO MAGGIORE (VICENZA)"
       }
     ]
   },
   {
     "nome_giro": "V03",
-    "file_sorgente": "V03_Zone_3103.html",
+    "file_sorgente": "V03_Zone_3102_3103.html",
     "zone": [
       "3103"
     ],
-    "num_fermate": 21,
+    "num_fermate": 22,
     "data_ddt": "20-04-2026",
     "lista_punti": [
       {
@@ -1227,29 +1204,6 @@
         "geo_query_indirizzo": "Via Palemone, 14, 36100 Vicenza (VI)"
       },
       {
-        "nome": "Ic Vicenza 6-7 Riello",
-        "indirizzo": "Via Riello 59, 36100 Vicenza (VI)",
-        "codice_frutta": "p00000",
-        "codice_latte": "p1804",
-        "codice_univoco": "p00000_p1804",
-        "zona": "3103",
-        "data_consegna": "20-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "10:00",
-        "lat": 45.5545883,
-        "lon": 11.5616639,
-        "codici_ddt_frutta": [
-          "p00000"
-        ],
-        "codici_ddt_latte": [
-          "p1804"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 461,
-        "geo_query_nome_indirizzo": "Ic Vicenza 6-7 Riello Via Riello 59, 36100 Vicenza (VI)",
-        "geo_query_indirizzo": "Via Riello 59, 36100 Vicenza (VI)"
-      },
-      {
         "nome": "Scuola Primaria Pertile",
         "indirizzo": "Via Mainardi Giorgio, 14, 36100 Vicenza (VI)",
         "codice_frutta": "p00000",
@@ -1273,119 +1227,27 @@
         "geo_query_indirizzo": "Via Mainardi Giorgio, 14, 36100 Vicenza (VI)"
       },
       {
-        "nome": "IC VICENZA 10 - J. CABIANCA",
-        "indirizzo": "STRADA DEL PASUBIO 238, 36100 VICENZA (VICENZA)",
-        "codice_frutta": "p2050",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2050_p00000",
+        "nome": "Ic Vicenza 6-7 Riello",
+        "indirizzo": "Via Riello 59, 36100 Vicenza (VI)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1804",
+        "codice_univoco": "p00000_p1804",
         "zona": "3103",
         "data_consegna": "20-04-2026",
-        "orario_min": "07:30",
-        "orario_max": "14:00",
-        "lat": 45.5836474,
-        "lon": 11.5049174,
-        "codici_ddt_frutta": [
-          "p2050"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 226,
-        "geo_query_nome_indirizzo": "IC VICENZA 10 - J. CABIANCA STRADA DEL PASUBIO 238, 36100 VICENZA (VICENZA)",
-        "geo_query_indirizzo": "STRADA DEL PASUBIO 238, 36100 VICENZA (VICENZA)"
-      },
-      {
-        "nome": "T.F. Fraccon",
-        "indirizzo": "Via Mameli 137, 36100 Vicenza (VI)",
-        "codice_frutta": "p2051",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2051_p00000",
-        "zona": "3103",
-        "data_consegna": "20-04-2026",
-        "orario_min": "07:30",
-        "orario_max": "14:00",
-        "lat": 45.5521135,
-        "lon": 11.5252457,
-        "codici_ddt_frutta": [
-          "p2051"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 437,
-        "geo_query_nome_indirizzo": "T.F. Fraccon Via Mameli 137, 36100 Vicenza (VI)",
-        "geo_query_indirizzo": "Via Mameli 137, 36100 Vicenza (VI)"
-      },
-      {
-        "nome": "IC VICENZA 5 - 2 GIUGNO",
-        "indirizzo": "VIA CAPPUCCINI 65, 36100 VICENZA (VICENZA)",
-        "codice_frutta": "p13812",
-        "codice_latte": "p00000",
-        "codice_univoco": "p13812_p00000",
-        "zona": "3103",
-        "data_consegna": "20-04-2026",
-        "orario_min": "07:45",
-        "orario_max": "14:00",
-        "lat": 45.5516917,
-        "lon": 11.5294147,
-        "codici_ddt_frutta": [
-          "p13812"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 232,
-        "geo_query_nome_indirizzo": "IC VICENZA 5 - 2 GIUGNO VIA CAPPUCCINI 65, 36100 VICENZA (VICENZA)",
-        "geo_query_indirizzo": "VIA CAPPUCCINI 65, 36100 VICENZA (VICENZA)"
-      },
-      {
-        "nome": "Fondazione Levis Plona",
-        "indirizzo": "Porta S. Croce N.55, 36100 Vicenza (VI)",
-        "codice_frutta": "p11205",
-        "codice_latte": "p1831",
-        "codice_univoco": "p11205_p1831",
-        "zona": "3103",
-        "data_consegna": "20-04-2026",
-        "orario_min": "07:30",
+        "orario_min": "08:00",
         "orario_max": "10:00",
-        "lat": 45.5521980922683,
-        "lon": 11.5371475374494,
+        "lat": 45.5545883,
+        "lon": 11.5616639,
         "codici_ddt_frutta": [
-          "p11205"
+          "p00000"
         ],
         "codici_ddt_latte": [
-          "p1831"
+          "p1804"
         ],
         "rientri_alert": [],
-        "row_idx_mappatura": 157,
-        "geo_query_nome_indirizzo": "Fondazione Levis Plona Porta S. Croce N.55, 36100 Vicenza (VI)",
-        "geo_query_indirizzo": "Porta S. Croce N.55, 36100 Vicenza (VI)"
-      },
-      {
-        "nome": "Scuola Dame Inglesi - Fondazione - Mary Ward - Ets - Paritaria",
-        "indirizzo": "Contra Misericordia, 1, 36100 Vicenza (VI)",
-        "codice_frutta": "p2117",
-        "codice_latte": "p1818",
-        "codice_univoco": "p2117_p1818",
-        "zona": "3103",
-        "data_consegna": "20-04-2026",
-        "orario_min": "08:15",
-        "orario_max": "14:00",
-        "lat": 45.5524746,
-        "lon": 11.5422556,
-        "codici_ddt_frutta": [
-          "p2117"
-        ],
-        "codici_ddt_latte": [
-          "p1818"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 371,
-        "geo_query_nome_indirizzo": "Scuola Dame Inglesi - Fondazione - Mary Ward - Ets - Paritaria Contra Misericordia, 1, 36100 Vicenza (VI)",
-        "geo_query_indirizzo": "Contra Misericordia, 1, 36100 Vicenza (VI)"
+        "row_idx_mappatura": 461,
+        "geo_query_nome_indirizzo": "Ic Vicenza 6-7 Riello Via Riello 59, 36100 Vicenza (VI)",
+        "geo_query_indirizzo": "Via Riello 59, 36100 Vicenza (VI)"
       },
       {
         "nome": "SCUOLA SEC. I GRADO - IST.FARINA",
@@ -1503,6 +1365,52 @@
         "geo_query_indirizzo": "Piazza G. Marconi 11, 36100 Vicenza (VI)"
       },
       {
+        "nome": "Scuola Dame Inglesi - Fondazione - Mary Ward - Ets - Paritaria",
+        "indirizzo": "Contra Misericordia, 1, 36100 Vicenza (VI)",
+        "codice_frutta": "p2117",
+        "codice_latte": "p1818",
+        "codice_univoco": "p2117_p1818",
+        "zona": "3103",
+        "data_consegna": "20-04-2026",
+        "orario_min": "08:15",
+        "orario_max": "14:00",
+        "lat": 45.5524746,
+        "lon": 11.5422556,
+        "codici_ddt_frutta": [
+          "p2117"
+        ],
+        "codici_ddt_latte": [
+          "p1818"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 371,
+        "geo_query_nome_indirizzo": "Scuola Dame Inglesi - Fondazione - Mary Ward - Ets - Paritaria Contra Misericordia, 1, 36100 Vicenza (VI)",
+        "geo_query_indirizzo": "Contra Misericordia, 1, 36100 Vicenza (VI)"
+      },
+      {
+        "nome": "Fondazione Levis Plona",
+        "indirizzo": "Porta S. Croce N.55, 36100 Vicenza (VI)",
+        "codice_frutta": "p11205",
+        "codice_latte": "p1831",
+        "codice_univoco": "p11205_p1831",
+        "zona": "3103",
+        "data_consegna": "20-04-2026",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.5521980922683,
+        "lon": 11.5371475374494,
+        "codici_ddt_frutta": [
+          "p11205"
+        ],
+        "codici_ddt_latte": [
+          "p1831"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 157,
+        "geo_query_nome_indirizzo": "Fondazione Levis Plona Porta S. Croce N.55, 36100 Vicenza (VI)",
+        "geo_query_indirizzo": "Porta S. Croce N.55, 36100 Vicenza (VI)"
+      },
+      {
         "nome": "IC VICENZA5 - G. GIUSTI",
         "indirizzo": "CONTRA S. MARIA NOVA 7, 36100 VICENZA (VICENZA)",
         "codice_frutta": "p8366",
@@ -1549,27 +1457,96 @@
         "geo_query_indirizzo": "Via Faccio 20, 36100 Vicenza (VI)"
       },
       {
-        "nome": "Anna Frank",
-        "indirizzo": "Via G.Marconi,42, 36077 Altavilla Vicentina (VI)",
-        "codice_frutta": "p2070",
+        "nome": "IC VICENZA 5 - 2 GIUGNO",
+        "indirizzo": "VIA CAPPUCCINI 65, 36100 VICENZA (VICENZA)",
+        "codice_frutta": "p13812",
         "codice_latte": "p00000",
-        "codice_univoco": "p2070_p00000",
+        "codice_univoco": "p13812_p00000",
         "zona": "3103",
         "data_consegna": "20-04-2026",
         "orario_min": "07:45",
         "orario_max": "14:00",
-        "lat": 45.5106192,
-        "lon": 11.4629933,
+        "lat": 45.5516917,
+        "lon": 11.5294147,
         "codici_ddt_frutta": [
-          "p2070"
+          "p13812"
         ],
         "codici_ddt_latte": [
           "p00000"
         ],
         "rientri_alert": [],
-        "row_idx_mappatura": 60,
-        "geo_query_nome_indirizzo": "Anna Frank Via G.Marconi,42, 36077 Altavilla Vicentina (VI)",
-        "geo_query_indirizzo": "Via G.Marconi,42, 36077 Altavilla Vicentina (VI)"
+        "row_idx_mappatura": 232,
+        "geo_query_nome_indirizzo": "IC VICENZA 5 - 2 GIUGNO VIA CAPPUCCINI 65, 36100 VICENZA (VICENZA)",
+        "geo_query_indirizzo": "VIA CAPPUCCINI 65, 36100 VICENZA (VICENZA)"
+      },
+      {
+        "nome": "T.F. Fraccon",
+        "indirizzo": "Via Mameli 137, 36100 Vicenza (VI)",
+        "codice_frutta": "p2051",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2051_p00000",
+        "zona": "3103",
+        "data_consegna": "20-04-2026",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.5521135,
+        "lon": 11.5252457,
+        "codici_ddt_frutta": [
+          "p2051"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 437,
+        "geo_query_nome_indirizzo": "T.F. Fraccon Via Mameli 137, 36100 Vicenza (VI)",
+        "geo_query_indirizzo": "Via Mameli 137, 36100 Vicenza (VI)"
+      },
+      {
+        "nome": "IC VICENZA 10 - J. CABIANCA",
+        "indirizzo": "STRADA DEL PASUBIO 238, 36100 VICENZA (VICENZA)",
+        "codice_frutta": "p2050",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2050_p00000",
+        "zona": "3103",
+        "data_consegna": "20-04-2026",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.5836474,
+        "lon": 11.5049174,
+        "codici_ddt_frutta": [
+          "p2050"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 226,
+        "geo_query_nome_indirizzo": "IC VICENZA 10 - J. CABIANCA STRADA DEL PASUBIO 238, 36100 VICENZA (VICENZA)",
+        "geo_query_indirizzo": "STRADA DEL PASUBIO 238, 36100 VICENZA (VICENZA)"
+      },
+      {
+        "nome": "DON MILANI",
+        "indirizzo": "VIA CIRCONVALLAZIONE 38-40, 36075 MONTECCHIO MAGGIORE (VICENZA)",
+        "codice_frutta": "p2083",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2083_p00000",
+        "zona": "3103",
+        "data_consegna": "20-04-2026",
+        "orario_min": "07:15",
+        "orario_max": "14:00",
+        "lat": 45.50311539552625,
+        "lon": 11.422554974438413,
+        "codici_ddt_frutta": [
+          "p2083"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 123,
+        "geo_query_nome_indirizzo": "DON MILANI VIA CIRCONVALLAZIONE 38-40, 36075 MONTECCHIO MAGGIORE (VICENZA)",
+        "geo_query_indirizzo": "VIA CIRCONVALLAZIONE 38-40, 36075 MONTECCHIO MAGGIORE (VICENZA)"
       },
       {
         "nome": "G.ZANELLA",
@@ -1593,6 +1570,29 @@
         "row_idx_mappatura": 188,
         "geo_query_nome_indirizzo": "G.ZANELLA VIA ARCHIMEDE 38, 36075 MONTECCHIO MAGGIORE (VICENZA)",
         "geo_query_indirizzo": "VIA ARCHIMEDE 38, 36075 MONTECCHIO MAGGIORE (VICENZA)"
+      },
+      {
+        "nome": "Anna Frank",
+        "indirizzo": "Via G.Marconi,42, 36077 Altavilla Vicentina (VI)",
+        "codice_frutta": "p2070",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2070_p00000",
+        "zona": "3103",
+        "data_consegna": "20-04-2026",
+        "orario_min": "07:45",
+        "orario_max": "14:00",
+        "lat": 45.5106192,
+        "lon": 11.4629933,
+        "codici_ddt_frutta": [
+          "p2070"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 60,
+        "geo_query_nome_indirizzo": "Anna Frank Via G.Marconi,42, 36077 Altavilla Vicentina (VI)",
+        "geo_query_indirizzo": "Via G.Marconi,42, 36077 Altavilla Vicentina (VI)"
       },
       {
         "nome": "Ic Vicenza 3 - Pertini",

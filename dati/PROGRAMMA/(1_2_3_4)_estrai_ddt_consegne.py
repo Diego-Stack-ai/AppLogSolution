@@ -353,11 +353,16 @@ def main():
     _pulisci_sorgenti(INPUT_LATTE,  date_valide)
     time.sleep(1)
 
-    for s in ["2_crea_punti_consegna.py", "3_crea_lista_unificata.py", "4_mappa_zone_google.py"]:
+    for s in ["2_crea_punti_consegna.py", "3_crea_lista_unificata.py"]:
         p = PROG_DIR / s
         if p.exists():
             print(f"⚙️ {s}...")
             subprocess.run([sys.executable, str(p), data_label], cwd=BASE_DIR)
+
+    p_mappa = PROG_DIR / "4_mappa_zone_google.py"
+    if p_mappa.exists():
+        print(f"⚙️ 4_mappa_zone_google.py (generazione file, server disabilitato)...")
+        subprocess.run([sys.executable, str(p_mappa), data_label, "--no-serve"], cwd=BASE_DIR)
 
     print(f"\n✅ COMPLETATO ({data_label})!")
 

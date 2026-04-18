@@ -417,52 +417,6 @@
         "geo_query_indirizzo": "PIAZZA IV NOVEMBRE N.49, 30030 MARTELLAGO (VENEZIA)"
       },
       {
-        "nome": "EDMONDO DE AMICIS",
-        "indirizzo": "VIA VITTORIO VENETO 27, 30031 DOLO (VENEZIA)",
-        "codice_frutta": "p2314",
-        "codice_latte": "p1754",
-        "codice_univoco": "p2314_p1754",
-        "zona": "3101",
-        "data_consegna": "",
-        "orario_min": "07:30",
-        "orario_max": "14:00",
-        "lat": 45.42695237766134,
-        "lon": 12.077898433043623,
-        "codici_ddt_frutta": [
-          "p2314"
-        ],
-        "codici_ddt_latte": [
-          "p1754"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 137,
-        "geo_query_nome_indirizzo": "EDMONDO DE AMICIS VIA VITTORIO VENETO 27, 30031 DOLO (VENEZIA)",
-        "geo_query_indirizzo": "VIA VITTORIO VENETO 27, 30031 DOLO (VENEZIA)"
-      },
-      {
-        "nome": "EDMONDO DE AMICIS",
-        "indirizzo": "VIA BATTISTI 52, 30030 VIGONOVO (VENEZIA)",
-        "codice_frutta": "p2380",
-        "codice_latte": "p1894",
-        "codice_univoco": "p2380_p1894",
-        "zona": "3101",
-        "data_consegna": "",
-        "orario_min": "08:00",
-        "orario_max": "10:00",
-        "lat": 45.39191463806938,
-        "lon": 12.022580558576914,
-        "codici_ddt_frutta": [
-          "p2380"
-        ],
-        "codici_ddt_latte": [
-          "p1894"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 140,
-        "geo_query_nome_indirizzo": "EDMONDO DE AMICIS VIA BATTISTI 52, 30030 VIGONOVO (VENEZIA)",
-        "geo_query_indirizzo": "VIA BATTISTI 52, 30030 VIGONOVO (VENEZIA)"
-      },
-      {
         "nome": "Scuola Primaria D. A. Munaretto - Cipressina",
         "indirizzo": "Via Del Gazzato, 6, 30174 Venezia (VE)",
         "codice_frutta": "p7025",
@@ -606,29 +560,6 @@
         "row_idx_mappatura": 127,
         "geo_query_nome_indirizzo": "Don Orione Via Matteotti, 1, 30039 Stra (VE)",
         "geo_query_indirizzo": "Via Matteotti, 1, 30039 Stra (VE)"
-      },
-      {
-        "nome": "DON MILANI",
-        "indirizzo": "VIA CIRCONVALLAZIONE 38-40, 36075 MONTECCHIO MAGGIORE (VICENZA)",
-        "codice_frutta": "p2083",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2083_p00000",
-        "zona": "3102",
-        "data_consegna": "",
-        "orario_min": "07:15",
-        "orario_max": "14:00",
-        "lat": 45.50311539552625,
-        "lon": 11.422554974438413,
-        "codici_ddt_frutta": [
-          "p2083"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "row_idx_mappatura": 123,
-        "geo_query_nome_indirizzo": "DON MILANI VIA CIRCONVALLAZIONE 38-40, 36075 MONTECCHIO MAGGIORE (VICENZA)",
-        "geo_query_indirizzo": "VIA CIRCONVALLAZIONE 38-40, 36075 MONTECCHIO MAGGIORE (VICENZA)"
       },
       {
         "nome": "P.E. Venturini",
@@ -1112,6 +1043,52 @@
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "GUGLIELMO MARCONI VIA MARTIRI 1, 30030 VIGONOVO (VENEZIA)",
         "geo_query_indirizzo": "VIA MARTIRI 1, 30030 VIGONOVO (VENEZIA)"
+      },
+      {
+        "nome": "EDMONDO DE AMICIS",
+        "indirizzo": "VIA VITTORIO VENETO 27, 30031 DOLO (VENEZIA)",
+        "codice_frutta": "p2314",
+        "codice_latte": "p1754",
+        "codice_univoco": "p2314_p1754",
+        "zona": "3101",
+        "data_consegna": "",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.42695237766134,
+        "lon": 12.077898433043623,
+        "codici_ddt_frutta": [
+          "p2314"
+        ],
+        "codici_ddt_latte": [
+          "p1754"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 137,
+        "geo_query_nome_indirizzo": "EDMONDO DE AMICIS VIA VITTORIO VENETO 27, 30031 DOLO (VENEZIA)",
+        "geo_query_indirizzo": "VIA VITTORIO VENETO 27, 30031 DOLO (VENEZIA)"
+      },
+      {
+        "nome": "EDMONDO DE AMICIS",
+        "indirizzo": "VIA BATTISTI 52, 30030 VIGONOVO (VENEZIA)",
+        "codice_frutta": "p2380",
+        "codice_latte": "p1894",
+        "codice_univoco": "p2380_p1894",
+        "zona": "3101",
+        "data_consegna": "",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.39191463806938,
+        "lon": 12.022580558576914,
+        "codici_ddt_frutta": [
+          "p2380"
+        ],
+        "codici_ddt_latte": [
+          "p1894"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 140,
+        "geo_query_nome_indirizzo": "EDMONDO DE AMICIS VIA BATTISTI 52, 30030 VIGONOVO (VENEZIA)",
+        "geo_query_indirizzo": "VIA BATTISTI 52, 30030 VIGONOVO (VENEZIA)"
       }
     ],
     "color": "#06b6d4",
@@ -1602,6 +1579,29 @@
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "Scuola Primaria Pertile Via Mainardi Giorgio, 14, 36100 Vicenza (VI)",
         "geo_query_indirizzo": "Via Mainardi Giorgio, 14, 36100 Vicenza (VI)"
+      },
+      {
+        "nome": "DON MILANI",
+        "indirizzo": "VIA CIRCONVALLAZIONE 38-40, 36075 MONTECCHIO MAGGIORE (VICENZA)",
+        "codice_frutta": "p2083",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2083_p00000",
+        "zona": "3102",
+        "data_consegna": "",
+        "orario_min": "07:15",
+        "orario_max": "14:00",
+        "lat": 45.50311539552625,
+        "lon": 11.422554974438413,
+        "codici_ddt_frutta": [
+          "p2083"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 123,
+        "geo_query_nome_indirizzo": "DON MILANI VIA CIRCONVALLAZIONE 38-40, 36075 MONTECCHIO MAGGIORE (VICENZA)",
+        "geo_query_indirizzo": "VIA CIRCONVALLAZIONE 38-40, 36075 MONTECCHIO MAGGIORE (VICENZA)"
       }
     ],
     "color": "#ef4444",

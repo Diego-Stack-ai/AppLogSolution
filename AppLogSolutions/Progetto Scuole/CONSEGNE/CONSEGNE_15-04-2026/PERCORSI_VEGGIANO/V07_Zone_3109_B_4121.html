@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V07 - Zone: 3109_B, 4121</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry&v=weekly" defer></script>
+    <style>
+        :root { --p: #4f46e5; --sidebar-w: 400px; }
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .main-container { display: flex; height: 100vh; }
+        #sidebar { width: var(--sidebar-w); height: 100%; background: white; display: flex; flex-direction: column; z-index: 100; box-shadow: 10px 0 30px rgba(0,0,0,0.1); }
+        .header { padding: 24px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; padding: 15px; gap: 8px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+        .stat-card { background: white; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center; }
+        .stat-val { display: block; font-weight: 800; font-size: 1rem; color: var(--p); }
+        .stat-lbl { font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 700; }
+        .tot-card { grid-column: span 2; background: #f5f3ff; border-color: #c7d2fe; }
+        #stop-list { flex: 1; overflow-y: auto; padding: 15px; background: #f1f5f9; }
+        .stop-card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 12px; display: flex; gap: 14px; align-items: center; border: 1.5px solid #e2e8f0; cursor: pointer; transition: 0.2s; }
+        .stop-card:hover { border-color: var(--p); transform: translateX(5px); }
+        .stop-num { width: 30px; height: 30px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0; }
+        .nav-btn { background: #22c55e; color: white; width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+        #map { flex: 1; height: 100%; }
+        .depot-tag { background: #475569; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; }
+        @media (max-width: 800px) { .main-container { flex-direction: column; } #sidebar { width: 100%; height: 50%; } #map { height: 50%; } }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div id="sidebar">
+            <div class="header">
+                <div style="font-size:0.75rem; opacity:0.8; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Logistica Operativa</div>
+                <h1 style="margin:0; font-size:1.5rem; letter-spacing:-0.01em;">V07</h1>
+                <div style="margin-top:6px; font-size:0.85rem; font-weight:600; color: #a5b4fc;">Zone: 3109_B, 4121</div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card"><span class="stat-val">11</span><span class="stat-lbl">Tappe</span></div>
+                <div class="stat-card"><span class="stat-val">242.3 km</span><span class="stat-lbl">Distanza</span></div>
+                <div class="stat-card"><span class="stat-val">4h 21m</span><span class="stat-lbl">Guida</span></div>
+                <div class="stat-card"><span class="stat-val">1h 28m</span><span class="stat-lbl">Scarico</span></div>
+                <div class="stat-card tot-card"><span class="stat-val" style="font-size:1.3rem;">5h 49m</span><span class="stat-lbl">TEMPO TOTALE STIMATO</span></div>
+            </div>
+            <div id="stop-list">
+                <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">home</span></div>
+                    <div class="stop-info"><span class="depot-tag">PARTENZA</span><br><b style="font-size:0.9rem;">Deposito Veggiano</b></div>
+                </div>
+                <div class="stop-card" onclick="panTo(1)"><div class="stop-num">1</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Caduti Per La Liberta Calvene</b><br><small style="color:#64748b; font-size:0.75rem;">Piazza Resistenza 5, 36030 Calvene (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7660779,11.5117007&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(2)"><div class="stop-num">2</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">"E. DE AMICIS"</b><br><small style="color:#64748b; font-size:0.75rem;">VIA DIV. JULIA, 36030 CALTRANO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7706147,11.4608005&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(3)"><div class="stop-num">3</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">DON P. COSTA</b><br><small style="color:#64748b; font-size:0.75rem;">VIA LENGORE 6, 36013 PIOVENE ROCCHETTE (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7479583,11.4276845&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(4)"><div class="stop-num">4</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">G.Pascoli</b><br><small style="color:#64748b; font-size:0.75rem;">Piazza Vittoria 1, 36013 Piovene Rocchette (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.76215019586976,11.430326410867515&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(5)"><div class="stop-num">5</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">"GRANATIERI DI SARDEGNA"</b><br><small style="color:#64748b; font-size:0.75rem;">VIA DAL ZOTTO, 36010 COGOLLO DEL CENGIO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7875247,11.4181171&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(6)"><div class="stop-num">6</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">IC ARSIERO -ARSIERO CAP.</b><br><small style="color:#64748b; font-size:0.75rem;">VIA MONTE PRIAFORA' 2, 36011 ARSIERO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.8043265,11.3576692&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(7)"><div class="stop-num">7</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">IC ARSIERO -TONEZZA</b><br><small style="color:#64748b; font-size:0.75rem;">VIA DELLA CASARA 4/A, 36040 TONEZZA DEL CIMONE (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.8611248238137,11.3465198424174&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(8)"><div class="stop-num">8</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">IC ARSIERO -VALDASTICO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA VITTORIO VENETO 2/A, 36040 VALDASTICO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.8890259,11.3596093&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(9)"><div class="stop-num">9</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">IC ARSIERO -PEDEMONTE</b><br><small style="color:#64748b; font-size:0.75rem;">VIA BRANCAFORA 15, 36040 PEDEMONTE (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.9143343,11.3031069&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(10)"><div class="stop-num">10</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">IC ARSIERO -POSINA</b><br><small style="color:#64748b; font-size:0.75rem;">VIA SAREO 10/A, 36010 POSINA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7905612852718,11.2608420309622&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(11)"><div class="stop-num">11</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Bruno Brandellero</b><br><small style="color:#64748b; font-size:0.75rem;">Via Mons. P. Bicego 2, 36030 Valli Del Pasubio (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7399296,11.2608845&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+    <script>
+        const data = [
+  {
+    "lat": 45.442805,
+    "lon": 11.714498,
+    "nome": "DEPOSITO VEGGIANO",
+    "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"
+  },
+  {
+    "nome": "Caduti Per La Liberta Calvene",
+    "indirizzo": "Piazza Resistenza 5, 36030 Calvene (VI)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1932",
+    "codice_univoco": "p00000_p1932",
+    "zona": "4121",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.7660779,
+    "lon": 11.5117007,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1932"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "Caduti Per La Liberta Calvene Piazza Resistenza 5, 36030 Calvene (VI)",
+    "geo_query_indirizzo": "Piazza Resistenza 5, 36030 Calvene (VI)"
+  },
+  {
+    "nome": "\"E. DE AMICIS\"",
+    "indirizzo": "VIA DIV. JULIA, 36030 CALTRANO (VICENZA)",
+    "codice_frutta": "p2133",
+    "codice_latte": "p1953",
+    "codice_univoco": "p2133_p1953",
+    "zona": "4121",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "10:00",
+    "lat": 45.7706147,
+    "lon": 11.4608005,
+    "codici_ddt_frutta": [
+      "p2133"
+    ],
+    "codici_ddt_latte": [
+      "p1953"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 11,
+    "geo_query_nome_indirizzo": "\"E. DE AMICIS\" VIA DIV. JULIA, 36030 CALTRANO (VICENZA)",
+    "geo_query_indirizzo": "VIA DIV. JULIA, 36030 CALTRANO (VICENZA)"
+  },
+  {
+    "nome": "DON P. COSTA",
+    "indirizzo": "VIA LENGORE 6, 36013 PIOVENE ROCCHETTE (VICENZA)",
+    "codice_frutta": "p2131",
+    "codice_latte": "p1947",
+    "codice_univoco": "p2131_p1947",
+    "zona": "4121",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "14:00",
+    "lat": 45.7479583,
+    "lon": 11.4276845,
+    "codici_ddt_frutta": [
+      "p2131"
+    ],
+    "codici_ddt_latte": [
+      "p1947"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 128,
+    "geo_query_nome_indirizzo": "DON P. COSTA VIA LENGORE 6, 36013 PIOVENE ROCCHETTE (VICENZA)",
+    "geo_query_indirizzo": "VIA LENGORE 6, 36013 PIOVENE ROCCHETTE (VICENZA)"
+  },
+  {
+    "nome": "G.Pascoli",
+    "indirizzo": "Piazza Vittoria 1, 36013 Piovene Rocchette (VI)",
+    "codice_frutta": "p2132",
+    "codice_latte": "p1916",
+    "codice_univoco": "p2132_p1916",
+    "zona": "4121",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "14:00",
+    "lat": 45.76215019586976,
+    "lon": 11.430326410867515,
+    "codici_ddt_frutta": [
+      "p2132"
+    ],
+    "codici_ddt_latte": [
+      "p1916"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 184,
+    "geo_query_nome_indirizzo": "G.Pascoli Piazza Vittoria 1, 36013 Piovene Rocchette (VI)",
+    "geo_query_indirizzo": "Piazza Vittoria 1, 36013 Piovene Rocchette (VI)"
+  },
+  {
+    "nome": "\"GRANATIERI DI SARDEGNA\"",
+    "indirizzo": "VIA DAL ZOTTO, 36010 COGOLLO DEL CENGIO (VICENZA)",
+    "codice_frutta": "p2134",
+    "codice_latte": "p1966",
+    "codice_univoco": "p2134_p1966",
+    "zona": "4121",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.7875247,
+    "lon": 11.4181171,
+    "codici_ddt_frutta": [
+      "p2134"
+    ],
+    "codici_ddt_latte": [
+      "p1966"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 17,
+    "geo_query_nome_indirizzo": "\"GRANATIERI DI SARDEGNA\" VIA DAL ZOTTO, 36010 COGOLLO DEL CENGIO (VICENZA)",
+    "geo_query_indirizzo": "VIA DAL ZOTTO, 36010 COGOLLO DEL CENGIO (VICENZA)"
+  },
+  {
+    "nome": "IC ARSIERO -ARSIERO CAP.",
+    "indirizzo": "VIA MONTE PRIAFORA' 2, 36011 ARSIERO (VICENZA)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1996",
+    "codice_univoco": "p00000_p1996",
+    "zona": "4121",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.8043265,
+    "lon": 11.3576692,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1996"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "IC ARSIERO -ARSIERO CAP. VIA MONTE PRIAFORA' 2, 36011 ARSIERO (VICENZA)",
+    "geo_query_indirizzo": "VIA MONTE PRIAFORA' 2, 36011 ARSIERO (VICENZA)"
+  },
+  {
+    "nome": "IC ARSIERO -TONEZZA",
+    "indirizzo": "VIA DELLA CASARA 4/A, 36040 TONEZZA DEL CIMONE (VICENZA)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1994",
+    "codice_univoco": "p00000_p1994",
+    "zona": "4121",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.8611248238137,
+    "lon": 11.3465198424174,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1994"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "IC ARSIERO -TONEZZA VIA DELLA CASARA 4/A, 36040 TONEZZA DEL CIMONE (VICENZA)",
+    "geo_query_indirizzo": "VIA DELLA CASARA 4/A, 36040 TONEZZA DEL CIMONE (VICENZA)"
+  },
+  {
+    "nome": "IC ARSIERO -VALDASTICO",
+    "indirizzo": "VIA VITTORIO VENETO 2/A, 36040 VALDASTICO (VICENZA)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1995",
+    "codice_univoco": "p00000_p1995",
+    "zona": "4121",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.8890259,
+    "lon": 11.3596093,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1995"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "IC ARSIERO -VALDASTICO VIA VITTORIO VENETO 2/A, 36040 VALDASTICO (VICENZA)",
+    "geo_query_indirizzo": "VIA VITTORIO VENETO 2/A, 36040 VALDASTICO (VICENZA)"
+  },
+  {
+    "nome": "IC ARSIERO -PEDEMONTE",
+    "indirizzo": "VIA BRANCAFORA 15, 36040 PEDEMONTE (VICENZA)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1992",
+    "codice_univoco": "p00000_p1992",
+    "zona": "4121",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "10:00",
+    "lat": 45.9143343,
+    "lon": 11.3031069,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1992"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "IC ARSIERO -PEDEMONTE VIA BRANCAFORA 15, 36040 PEDEMONTE (VICENZA)",
+    "geo_query_indirizzo": "VIA BRANCAFORA 15, 36040 PEDEMONTE (VICENZA)"
+  },
+  {
+    "nome": "IC ARSIERO -POSINA",
+    "indirizzo": "VIA SAREO 10/A, 36010 POSINA (VICENZA)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1993",
+    "codice_univoco": "p00000_p1993",
+    "zona": "4121",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.7905612852718,
+    "lon": 11.2608420309622,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1993"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "IC ARSIERO -POSINA VIA SAREO 10/A, 36010 POSINA (VICENZA)",
+    "geo_query_indirizzo": "VIA SAREO 10/A, 36010 POSINA (VICENZA)"
+  },
+  {
+    "nome": "Bruno Brandellero",
+    "indirizzo": "Via Mons. P. Bicego 2, 36030 Valli Del Pasubio (VI)",
+    "codice_frutta": "p13668",
+    "codice_latte": "p00000",
+    "codice_univoco": "p13668_p00000",
+    "zona": "3109_B",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.7399296,
+    "lon": 11.2608845,
+    "codici_ddt_frutta": [
+      "p13668"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 72,
+    "geo_query_nome_indirizzo": "Bruno Brandellero Via Mons. P. Bicego 2, 36030 Valli Del Pasubio (VI)",
+    "geo_query_indirizzo": "Via Mons. P. Bicego 2, 36030 Valli Del Pasubio (VI)"
+  },
+  {
+    "lat": 45.442805,
+    "lon": 11.714498,
+    "nome": "DEPOSITO VEGGIANO",
+    "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"
+  }
+]; const polys = ["ytjtGi~nfAgNuOpBeWwAi{@gJwWgl@rhAg}@ps@ck@nb@iNbSoP}BgK_NqDxg@}eCbzKs[|xA}]dJwjA{c@uu@sFmqAp[uy@ti@}z@bKweArv@sc@b]s}@lFw}AoI{nAjRcaBjlB_fApsBu_@`_AuJrdAot@feCsXbWoPc@w|@yZsp@oq@kk@mwAuC{a@cAouA}Cni@a@rScQoDwp@pXek@vVo_B|Eyo@dYrHti@xGni@w^~Guq@iGga@zl@}q@rXk^|FlLbDwD`UwFbr@Zz{@EdqAwUpqA{D~OzEvUxIeBpDlNns@j}Anc@pbAvKuAxMyG~AnOt@hF}HqCsXsGec@ed@iU`Yq]nBaWh]_}@mVi^xu@}Uj}@}QnyA_Wpa@yPvv@{WviAcNhfAvO|j@yO_C_Rs^{a@cHeMqIwYcKej@{Gyr@hCok@lOqU~Dy]hUqOlUjT_@m_@hQ[pHzOfC_O|H}XwLfOpOfFrB|BiEfMaIcS}DlSeL~KgNgWp@lEyE~d@wZvQ_Qj[c@`i@eNhZmC~TpGfq@~FrGtThc@eA~a@di@xLy@GcT}i@id@{`@_Kum@mRspAaUwqBfj@glApHcp@lHq`AlY}JrKaGsLvBqXcDhQwDh]cMvMyRdcAyYrz@qZbvA_[hVgHzi@o[a@bBxB|]eGzBqk@vOyClLwWp_@mvA|SubA`Tmt@ne@y\\p`AmYbp@mHflAqHxdAqY|k@uOv_@fDp~Afc@xkAhp@JzT{MHkFmE|Bng@tCvj@uSpZ`HthAo_@rVwWd^xY~eA`aAzgAnb@lfAkHn`@zWlb@lP`l@yKef@uOyXcG__@yMwiAmcA_nAq\\g[iKcc@~c@y~@vW{NyBah@wG_[xQcL}GweBxS~WPiTuKmZrDoKjLa|Ar`@snAfYkc@nIqbAf]elA`Tey@|TmSj|@nVns@cmApXQzn@vcAhpAxmCpY`iBn`BBzHlz@zZfa@lGth@wApTgC~OmGtd@}UjfAbKny@El{As_@x{B}Ub}Aq`@fWwl@|w@e\\zr@`kAilB~a@q]fSek@O{s@~Nkt@|OgcAz@kxA{GieAlQ_w@`c@wdBlKqb@ar@ky@tBsmE{_@s~@zPwh@rc@ugA~~@}qA~_@s`@pa@m\\p]j`Alm@}t@hb@y_ApT{{Anb@wpDds@qnDpfA_aCzaA_iBjn@cq@jpAo^~~C|GjpAkbAl_Bob@fkBe|@p`AmJvvArf@d^v^fOee@viCyoLh_@s|AlQ~DxNeSdaB_pAfr@wbAfOcCjCxx@}Adh@pNlN"]; let map, markers = [];
+        async function initMap() {
+            const { Map } = await google.maps.importLibrary("maps");
+            const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+            
+            // Trova primo punto per centrare
+            const centerP = data.find(p => p.lat && p.lon) || {lat: 45.4428, lon: 11.7145};
+            map = new Map(document.getElementById("map"), { zoom: 12, center: { lat: centerP.lat, lng: centerP.lon }, mapId: 'DEMO_MAP_ID' });
+            
+            const geocoder = new google.maps.Geocoder();
+            const bounds = new google.maps.LatLngBounds();
+
+            data.forEach((p, i) => {
+                const isD = (i === 0 || i === data.length - 1);
+                if (p.lat && p.lon) {
+                    addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                } else {
+                    // Geocoding di backup
+                    const query = `${p.nome}, ${p.indirizzo}`;
+                    geocoder.geocode({ address: query }, (results, status) => {
+                        if (status === "OK") {
+                            const loc = results[0].geometry.location;
+                            p.lat = loc.lat(); p.lon = loc.lng();
+                            addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                        } else {
+                            geocoder.geocode({ address: p.indirizzo }, (res2, st2) => {
+                                if (st2 === "OK") {
+                                    const loc2 = res2[0].geometry.location;
+                                    p.lat = loc2.lat(); p.lon = loc2.lng();
+                                    addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            if (polys.length > 0) {
+                polys.forEach(pString => {
+                    const p = google.maps.geometry.encoding.decodePath(pString);
+                    new google.maps.Polyline({ path: p, strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6, map });
+                });
+            } else {
+                new google.maps.Polyline({ 
+                    path: data.filter(p => p.lat).map(p => ({ lat: p.lat, lng: p.lon })), 
+                    strokeColor: "#4f46e5", strokeOpacity: 0.6, strokeWeight: 4, map 
+                });
+            }
+        }
+
+        function addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement) {
+            const m = new AdvancedMarkerElement({
+                map,
+                position: { lat: p.lat, lng: p.lon },
+                content: createPin(i, isD),
+                title: p.nome
+            });
+            markers[i] = m;
+            bounds.extend(m.position);
+            map.fitBounds(bounds);
+        }
+
+        function createPin(idx, isD) {
+            const d = document.createElement("div"); d.style.background = isD ? "#475569" : "#4f46e5";
+            d.style.color = "white"; d.style.width = "26px"; d.style.height = "26px"; d.style.borderRadius = "50%"; 
+            d.style.display = "flex"; d.style.alignItems = "center"; d.style.justifyContent = "center";
+            d.style.fontSize = "11px"; d.style.fontWeight = "900"; d.style.border = "3px solid white";
+            d.innerText = isD ? "" : idx; if(isD) d.innerHTML = '<span class="material-icons-round" style="font-size:14px">home</span>';
+            return d;
+        }
+
+        function panTo(i) { if(markers[i]) { map.panTo(markers[i].position); map.setZoom(17); } }
+        window.addEventListener('load', initMap);
+    </script>
+</body></html>

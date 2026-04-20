@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V04 - Zone: 3104</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry&v=weekly" defer></script>
+    <style>
+        :root { --p: #4f46e5; --sidebar-w: 400px; }
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .main-container { display: flex; height: 100vh; }
+        #sidebar { width: var(--sidebar-w); height: 100%; background: white; display: flex; flex-direction: column; z-index: 100; box-shadow: 10px 0 30px rgba(0,0,0,0.1); }
+        .header { padding: 24px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; padding: 15px; gap: 8px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+        .stat-card { background: white; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center; }
+        .stat-val { display: block; font-weight: 800; font-size: 1rem; color: var(--p); }
+        .stat-lbl { font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 700; }
+        .tot-card { grid-column: span 2; background: #f5f3ff; border-color: #c7d2fe; }
+        #stop-list { flex: 1; overflow-y: auto; padding: 15px; background: #f1f5f9; }
+        .stop-card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 12px; display: flex; gap: 14px; align-items: center; border: 1.5px solid #e2e8f0; cursor: pointer; transition: 0.2s; }
+        .stop-card:hover { border-color: var(--p); transform: translateX(5px); }
+        .stop-num { width: 30px; height: 30px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0; }
+        .nav-btn { background: #22c55e; color: white; width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+        #map { flex: 1; height: 100%; }
+        .depot-tag { background: #475569; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; }
+        @media (max-width: 800px) { .main-container { flex-direction: column; } #sidebar { width: 100%; height: 50%; } #map { height: 50%; } }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div id="sidebar">
+            <div class="header">
+                <div style="font-size:0.75rem; opacity:0.8; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Logistica Operativa</div>
+                <h1 style="margin:0; font-size:1.5rem; letter-spacing:-0.01em;">V04</h1>
+                <div style="margin-top:6px; font-size:0.85rem; font-weight:600; color: #a5b4fc;">Zone: 3104</div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card"><span class="stat-val">22</span><span class="stat-lbl">Tappe</span></div>
+                <div class="stat-card"><span class="stat-val">229.0 km</span><span class="stat-lbl">Distanza</span></div>
+                <div class="stat-card"><span class="stat-val">4h 59m</span><span class="stat-lbl">Guida</span></div>
+                <div class="stat-card"><span class="stat-val">2h 56m</span><span class="stat-lbl">Scarico</span></div>
+                <div class="stat-card tot-card"><span class="stat-val" style="font-size:1.3rem;">7h 55m</span><span class="stat-lbl">TEMPO TOTALE STIMATO</span></div>
+            </div>
+            <div id="stop-list">
+                <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">home</span></div>
+                    <div class="stop-info"><span class="depot-tag">PARTENZA</span><br><b style="font-size:0.9rem;">Deposito Veggiano</b></div>
+                </div>
+                <div class="stop-card" onclick="panTo(1)"><div class="stop-num">1</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Unica Giovanni Paolo Ii</b><br><small style="color:#64748b; font-size:0.75rem;">Via Casona,30, 36050 Pozzoleone (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6585971,11.6730151&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(2)"><div class="stop-num">2</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SC. ELEM. "MANZONI"</b><br><small style="color:#64748b; font-size:0.75rem;">VIA ANTONIBON 24, 36055 NOVE (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7240392,11.6766282&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(3)"><div class="stop-num">3</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">G. PASCOLI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA MARSAN 11, 36063 MAROSTICA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7563243,11.6825245&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(4)"><div class="stop-num">4</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">BASSANO - MARCHESANE</b><br><small style="color:#64748b; font-size:0.75rem;">VIA ROLANDI, 36061 BASSANO DEL GRAPPA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7493292,11.6999125&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(5)"><div class="stop-num">5</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">G. MARCONI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA MELAGRANI, 36061 BASSANO DEL GRAPPA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7463288,11.7119018&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(6)"><div class="stop-num">6</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Bassano - Rondo Brenta</b><br><small style="color:#64748b; font-size:0.75rem;">Via Val D'Aosta, 3, 36061 Bassano Del Grappa (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7591046,11.7112483&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(7)"><div class="stop-num">7</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Elementare San Giuseppe</b><br><small style="color:#64748b; font-size:0.75rem;">Via Ss. Trinita' N. 1 - Ingr. Via Foza N. 4, 36061 Bassano Del Grappa (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7694583,11.7133198&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(8)"><div class="stop-num">8</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Bassano - Q.Re Xxv Aprile</b><br><small style="color:#64748b; font-size:0.75rem;">Via Rivana, 13, 36061 Bassano Del Grappa (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7694583,11.7133198&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(9)"><div class="stop-num">9</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SAN NAZARIO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA EUROPA, 36029 VALBRENTA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.8390185,11.6903469&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(10)"><div class="stop-num">10</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">CISMON - CAP.</b><br><small style="color:#64748b; font-size:0.75rem;">P.LE DEL POPOLO, 36029 VALBRENTA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.8633224,11.6899498&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(11)"><div class="stop-num">11</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SOLAGNA</b><br><small style="color:#64748b; font-size:0.75rem;">VIA IV NOVEMBRE, 36020 SOLAGNA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.8198327,11.7147493&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(12)"><div class="stop-num">12</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">POVE DEL GRAPPA</b><br><small style="color:#64748b; font-size:0.75rem;">PIAZZA DEGLI SCALPELLINI, 36020 POVE DEL GRAPPA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7999792,11.7293422&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(13)"><div class="stop-num">13</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">DANTE ALIGHIERI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA A.DE GASPERI, 36060 ROMANO D'EZZELINO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7938289,11.7590565&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(14)"><div class="stop-num">14</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">ROMANO D'EZZ. - SAN GIACOMO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA VELO 65/67, 36060 ROMANO D'EZZELINO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7770121,11.75927&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(15)"><div class="stop-num">15</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Fondazione Elisabetta Vendramin -Ets - Paritaria</b><br><small style="color:#64748b; font-size:0.75rem;">Via Col Fagheron, 65, 36061 Bassano Del Grappa (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7727241,11.7534961&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(16)"><div class="stop-num">16</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">ROMANO D'EZZ. - FELLETTE</b><br><small style="color:#64748b; font-size:0.75rem;">VIA GIOVANNI XXIII 53, 36060 ROMANO D'EZZELINO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7665781,11.7752216&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(17)"><div class="stop-num">17</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Mussolente</b><br><small style="color:#64748b; font-size:0.75rem;">Via Roma, 36065 Mussolente (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7815464,11.8013324&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(18)"><div class="stop-num">18</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">I MAGGIO - SAN BARTOLOMEO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA S.BARTOLOMEO 46/B, 31100 TREVISO (TREVISO)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7890083,11.9409618&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(19)"><div class="stop-num">19</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">MUSSOLENTE - CASONI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA FRANCESCO BARACCA 2, 36060 MUSSOLENTE (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7553727,11.810372&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(20)"><div class="stop-num">20</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">ROMANO D'EZZ. - SACRO CUORE</b><br><small style="color:#64748b; font-size:0.75rem;">VIA LANZARINI 31/A, 36060 ROMANO D'EZZELINO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7480377,11.8027192&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(21)"><div class="stop-num">21</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Montegrappa</b><br><small style="color:#64748b; font-size:0.75rem;">Piazza San Zeno 19, 36022 Cassola (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7450649,11.7705934&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(22)"><div class="stop-num">22</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">E. CAVALLINI - STROPPARI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA DON ANGELO GAZZETTA 14, 36056 TEZZE SUL BRENTA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6851968,11.7346186&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+    <script>
+        const data = [
+  {
+    "lat": 45.442805,
+    "lon": 11.714498,
+    "nome": "DEPOSITO VEGGIANO",
+    "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"
+  },
+  {
+    "nome": "Scuola Unica Giovanni Paolo Ii",
+    "indirizzo": "Via Casona,30, 36050 Pozzoleone (VI)",
+    "codice_frutta": "p2227",
+    "codice_latte": "p2659",
+    "codice_univoco": "p2227_p2659",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "07:15",
+    "orario_max": "14:00",
+    "lat": 45.6585971,
+    "lon": 11.6730151,
+    "codici_ddt_frutta": [
+      "p2227"
+    ],
+    "codici_ddt_latte": [
+      "p2659"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 435,
+    "geo_query_nome_indirizzo": "Scuola Unica Giovanni Paolo Ii Via Casona,30, 36050 Pozzoleone (VI)",
+    "geo_query_indirizzo": "Via Casona,30, 36050 Pozzoleone (VI)"
+  },
+  {
+    "nome": "SC. ELEM. \"MANZONI\"",
+    "indirizzo": "VIA ANTONIBON 24, 36055 NOVE (VICENZA)",
+    "codice_frutta": "p2228",
+    "codice_latte": "p2660",
+    "codice_univoco": "p2228_p2660",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "07:15",
+    "orario_max": "14:00",
+    "lat": 45.7240392,
+    "lon": 11.6766282,
+    "codici_ddt_frutta": [
+      "p2228"
+    ],
+    "codici_ddt_latte": [
+      "p2660"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 367,
+    "geo_query_nome_indirizzo": "SC. ELEM. \"MANZONI\" VIA ANTONIBON 24, 36055 NOVE (VICENZA)",
+    "geo_query_indirizzo": "VIA ANTONIBON 24, 36055 NOVE (VICENZA)"
+  },
+  {
+    "nome": "G. PASCOLI",
+    "indirizzo": "VIA MARSAN 11, 36063 MAROSTICA (VICENZA)",
+    "codice_frutta": "p2195",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2195_p00000",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.7563243,
+    "lon": 11.6825245,
+    "codici_ddt_frutta": [
+      "p2195"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 175,
+    "geo_query_nome_indirizzo": "G. PASCOLI VIA MARSAN 11, 36063 MAROSTICA (VICENZA)",
+    "geo_query_indirizzo": "VIA MARSAN 11, 36063 MAROSTICA (VICENZA)"
+  },
+  {
+    "nome": "BASSANO - MARCHESANE",
+    "indirizzo": "VIA ROLANDI, 36061 BASSANO DEL GRAPPA (VICENZA)",
+    "codice_frutta": "p9882",
+    "codice_latte": "p00000",
+    "codice_univoco": "p9882_p00000",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.7493292,
+    "lon": 11.6999125,
+    "codici_ddt_frutta": [
+      "p9882"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 66,
+    "geo_query_nome_indirizzo": "BASSANO - MARCHESANE VIA ROLANDI, 36061 BASSANO DEL GRAPPA (VICENZA)",
+    "geo_query_indirizzo": "VIA ROLANDI, 36061 BASSANO DEL GRAPPA (VICENZA)"
+  },
+  {
+    "nome": "G. MARCONI",
+    "indirizzo": "VIA MELAGRANI, 36061 BASSANO DEL GRAPPA (VICENZA)",
+    "codice_frutta": "p12726",
+    "codice_latte": "p00000",
+    "codice_univoco": "p12726_p00000",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "14:00",
+    "lat": 45.7463288,
+    "lon": 11.7119018,
+    "codici_ddt_frutta": [
+      "p12726"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 172,
+    "geo_query_nome_indirizzo": "G. MARCONI VIA MELAGRANI, 36061 BASSANO DEL GRAPPA (VICENZA)",
+    "geo_query_indirizzo": "VIA MELAGRANI, 36061 BASSANO DEL GRAPPA (VICENZA)"
+  },
+  {
+    "nome": "Bassano - Rondo Brenta",
+    "indirizzo": "Via Val D'Aosta, 3, 36061 Bassano Del Grappa (VI)",
+    "codice_frutta": "p12870",
+    "codice_latte": "p00000",
+    "codice_univoco": "p12870_p00000",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.7591046,
+    "lon": 11.7112483,
+    "codici_ddt_frutta": [
+      "p12870"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 68,
+    "geo_query_nome_indirizzo": "Bassano - Rondo Brenta Via Val D'Aosta, 3, 36061 Bassano Del Grappa (VI)",
+    "geo_query_indirizzo": "Via Val D'Aosta, 3, 36061 Bassano Del Grappa (VI)"
+  },
+  {
+    "nome": "Scuola Elementare San Giuseppe",
+    "indirizzo": "Via Ss. Trinita' N. 1 - Ingr. Via Foza N. 4, 36061 Bassano Del Grappa (VI)",
+    "codice_frutta": "p2106",
+    "codice_latte": "p1815",
+    "codice_univoco": "p2106_p1815",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "14:00",
+    "lat": 45.7694583,
+    "lon": 11.7133198,
+    "codici_ddt_frutta": [
+      "p2106"
+    ],
+    "codici_ddt_latte": [
+      "p1815"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 372,
+    "geo_query_nome_indirizzo": "Scuola Elementare San Giuseppe Via Ss. Trinita' N. 1 - Ingr. Via Foza N. 4, 36061 Bassano Del Grappa (VI)",
+    "geo_query_indirizzo": "Via Ss. Trinita' N. 1 - Ingr. Via Foza N. 4, 36061 Bassano Del Grappa (VI)"
+  },
+  {
+    "nome": "Bassano - Q.Re Xxv Aprile",
+    "indirizzo": "Via Rivana, 13, 36061 Bassano Del Grappa (VI)",
+    "codice_frutta": "p13107",
+    "codice_latte": "p2668",
+    "codice_univoco": "p13107_p2668",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.7694583,
+    "lon": 11.7133198,
+    "codici_ddt_frutta": [
+      "p13107"
+    ],
+    "codici_ddt_latte": [
+      "p2668"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 67,
+    "geo_query_nome_indirizzo": "Bassano - Q.Re Xxv Aprile Via Rivana, 13, 36061 Bassano Del Grappa (VI)",
+    "geo_query_indirizzo": "Via Rivana, 13, 36061 Bassano Del Grappa (VI)"
+  },
+  {
+    "nome": "SAN NAZARIO",
+    "indirizzo": "VIA EUROPA, 36029 VALBRENTA (VICENZA)",
+    "codice_frutta": "p2238",
+    "codice_latte": "p1875",
+    "codice_univoco": "p2238_p1875",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.8390185,
+    "lon": 11.6903469,
+    "codici_ddt_frutta": [
+      "p2238"
+    ],
+    "codici_ddt_latte": [
+      "p1875"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 358,
+    "geo_query_nome_indirizzo": "SAN NAZARIO VIA EUROPA, 36029 VALBRENTA (VICENZA)",
+    "geo_query_indirizzo": "VIA EUROPA, 36029 VALBRENTA (VICENZA)"
+  },
+  {
+    "nome": "CISMON - CAP.",
+    "indirizzo": "P.LE DEL POPOLO, 36029 VALBRENTA (VICENZA)",
+    "codice_frutta": "p2236",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2236_p00000",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.8633224,
+    "lon": 11.6899498,
+    "codici_ddt_frutta": [
+      "p2236"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 90,
+    "geo_query_nome_indirizzo": "CISMON - CAP. P.LE DEL POPOLO, 36029 VALBRENTA (VICENZA)",
+    "geo_query_indirizzo": "P.LE DEL POPOLO, 36029 VALBRENTA (VICENZA)"
+  },
+  {
+    "nome": "SOLAGNA",
+    "indirizzo": "VIA IV NOVEMBRE, 36020 SOLAGNA (VICENZA)",
+    "codice_frutta": "p2237",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2237_p00000",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.8198327,
+    "lon": 11.7147493,
+    "codici_ddt_frutta": [
+      "p2237"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 436,
+    "geo_query_nome_indirizzo": "SOLAGNA VIA IV NOVEMBRE, 36020 SOLAGNA (VICENZA)",
+    "geo_query_indirizzo": "VIA IV NOVEMBRE, 36020 SOLAGNA (VICENZA)"
+  },
+  {
+    "nome": "POVE DEL GRAPPA",
+    "indirizzo": "PIAZZA DEGLI SCALPELLINI, 36020 POVE DEL GRAPPA (VICENZA)",
+    "codice_frutta": "p2239",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2239_p00000",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.7999792,
+    "lon": 11.7293422,
+    "codici_ddt_frutta": [
+      "p2239"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 305,
+    "geo_query_nome_indirizzo": "POVE DEL GRAPPA PIAZZA DEGLI SCALPELLINI, 36020 POVE DEL GRAPPA (VICENZA)",
+    "geo_query_indirizzo": "PIAZZA DEGLI SCALPELLINI, 36020 POVE DEL GRAPPA (VICENZA)"
+  },
+  {
+    "nome": "DANTE ALIGHIERI",
+    "indirizzo": "VIA A.DE GASPERI, 36060 ROMANO D'EZZELINO (VICENZA)",
+    "codice_frutta": "p2263",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2263_p00000",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.7938289,
+    "lon": 11.7590565,
+    "codici_ddt_frutta": [
+      "p2263"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 104,
+    "geo_query_nome_indirizzo": "DANTE ALIGHIERI VIA A.DE GASPERI, 36060 ROMANO D'EZZELINO (VICENZA)",
+    "geo_query_indirizzo": "VIA A.DE GASPERI, 36060 ROMANO D'EZZELINO (VICENZA)"
+  },
+  {
+    "nome": "ROMANO D'EZZ. - SAN GIACOMO",
+    "indirizzo": "VIA VELO 65/67, 36060 ROMANO D'EZZELINO (VICENZA)",
+    "codice_frutta": "p2266",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2266_p00000",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.7770121,
+    "lon": 11.75927,
+    "codici_ddt_frutta": [
+      "p2266"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 334,
+    "geo_query_nome_indirizzo": "ROMANO D'EZZ. - SAN GIACOMO VIA VELO 65/67, 36060 ROMANO D'EZZELINO (VICENZA)",
+    "geo_query_indirizzo": "VIA VELO 65/67, 36060 ROMANO D'EZZELINO (VICENZA)"
+  },
+  {
+    "nome": "Fondazione Elisabetta Vendramin -Ets - Paritaria",
+    "indirizzo": "Via Col Fagheron, 65, 36061 Bassano Del Grappa (VI)",
+    "codice_frutta": "p2123",
+    "codice_latte": "p1924",
+    "codice_univoco": "p2123_p1924",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.7727241,
+    "lon": 11.7534961,
+    "codici_ddt_frutta": [
+      "p2123"
+    ],
+    "codici_ddt_latte": [
+      "p1924"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 156,
+    "geo_query_nome_indirizzo": "Fondazione Elisabetta Vendramin -Ets - Paritaria Via Col Fagheron, 65, 36061 Bassano Del Grappa (VI)",
+    "geo_query_indirizzo": "Via Col Fagheron, 65, 36061 Bassano Del Grappa (VI)"
+  },
+  {
+    "nome": "ROMANO D'EZZ. - FELLETTE",
+    "indirizzo": "VIA GIOVANNI XXIII 53, 36060 ROMANO D'EZZELINO (VICENZA)",
+    "codice_frutta": "p2264",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2264_p00000",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "14:00",
+    "lat": 45.7665781,
+    "lon": 11.7752216,
+    "codici_ddt_frutta": [
+      "p2264"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 332,
+    "geo_query_nome_indirizzo": "ROMANO D'EZZ. - FELLETTE VIA GIOVANNI XXIII 53, 36060 ROMANO D'EZZELINO (VICENZA)",
+    "geo_query_indirizzo": "VIA GIOVANNI XXIII 53, 36060 ROMANO D'EZZELINO (VICENZA)"
+  },
+  {
+    "nome": "Mussolente",
+    "indirizzo": "Via Roma, 36065 Mussolente (VI)",
+    "codice_frutta": "p11853",
+    "codice_latte": "p00000",
+    "codice_univoco": "p11853_p00000",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.7815464,
+    "lon": 11.8013324,
+    "codici_ddt_frutta": [
+      "p11853"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 285,
+    "geo_query_nome_indirizzo": "Mussolente Via Roma, 36065 Mussolente (VI)",
+    "geo_query_indirizzo": "Via Roma, 36065 Mussolente (VI)"
+  },
+  {
+    "nome": "I MAGGIO - SAN BARTOLOMEO",
+    "indirizzo": "VIA S.BARTOLOMEO 46/B, 31100 TREVISO (TREVISO)",
+    "codice_frutta": "p13179",
+    "codice_latte": "p00000",
+    "codice_univoco": "p13179_p00000",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "14:00",
+    "lat": 45.7890083,
+    "lon": 11.9409618,
+    "codici_ddt_frutta": [
+      "p13179"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 216,
+    "geo_query_nome_indirizzo": "I MAGGIO - SAN BARTOLOMEO VIA S.BARTOLOMEO 46/B, 31100 TREVISO (TREVISO)",
+    "geo_query_indirizzo": "VIA S.BARTOLOMEO 46/B, 31100 TREVISO (TREVISO)"
+  },
+  {
+    "nome": "MUSSOLENTE - CASONI",
+    "indirizzo": "VIA FRANCESCO BARACCA 2, 36060 MUSSOLENTE (VICENZA)",
+    "codice_frutta": "p11969",
+    "codice_latte": "p00000",
+    "codice_univoco": "p11969_p00000",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "07:15",
+    "orario_max": "10:00",
+    "lat": 45.7553727,
+    "lon": 11.810372,
+    "codici_ddt_frutta": [
+      "p11969"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 286,
+    "geo_query_nome_indirizzo": "MUSSOLENTE - CASONI VIA FRANCESCO BARACCA 2, 36060 MUSSOLENTE (VICENZA)",
+    "geo_query_indirizzo": "VIA FRANCESCO BARACCA 2, 36060 MUSSOLENTE (VICENZA)"
+  },
+  {
+    "nome": "ROMANO D'EZZ. - SACRO CUORE",
+    "indirizzo": "VIA LANZARINI 31/A, 36060 ROMANO D'EZZELINO (VICENZA)",
+    "codice_frutta": "p2265",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2265_p00000",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.7480377,
+    "lon": 11.8027192,
+    "codici_ddt_frutta": [
+      "p2265"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 333,
+    "geo_query_nome_indirizzo": "ROMANO D'EZZ. - SACRO CUORE VIA LANZARINI 31/A, 36060 ROMANO D'EZZELINO (VICENZA)",
+    "geo_query_indirizzo": "VIA LANZARINI 31/A, 36060 ROMANO D'EZZELINO (VICENZA)"
+  },
+  {
+    "nome": "Scuola Primaria Montegrappa",
+    "indirizzo": "Piazza San Zeno 19, 36022 Cassola (VI)",
+    "codice_frutta": "p2157",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2157_p00000",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.7450649,
+    "lon": 11.7705934,
+    "codici_ddt_frutta": [
+      "p2157"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 410,
+    "geo_query_nome_indirizzo": "Scuola Primaria Montegrappa Piazza San Zeno 19, 36022 Cassola (VI)",
+    "geo_query_indirizzo": "Piazza San Zeno 19, 36022 Cassola (VI)"
+  },
+  {
+    "nome": "E. CAVALLINI - STROPPARI",
+    "indirizzo": "VIA DON ANGELO GAZZETTA 14, 36056 TEZZE SUL BRENTA (VICENZA)",
+    "codice_frutta": "p2417",
+    "codice_latte": "p2646",
+    "codice_univoco": "p2417_p2646",
+    "zona": "3104",
+    "data_consegna": "",
+    "orario_min": "07:15",
+    "orario_max": "10:00",
+    "lat": 45.6851968,
+    "lon": 11.7346186,
+    "codici_ddt_frutta": [
+      "p2417"
+    ],
+    "codici_ddt_latte": [
+      "p2646"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 132,
+    "geo_query_nome_indirizzo": "E. CAVALLINI - STROPPARI VIA DON ANGELO GAZZETTA 14, 36056 TEZZE SUL BRENTA (VICENZA)",
+    "geo_query_indirizzo": "VIA DON ANGELO GAZZETTA 14, 36056 TEZZE SUL BRENTA (VICENZA)"
+  },
+  {
+    "lat": 45.442805,
+    "lon": 11.714498,
+    "nome": "DEPOSITO VEGGIANO",
+    "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"
+  }
+]; const polys = ["ytjtGi~nfAgNuOpBeWwAi{@gJwWgl@rhAg}@ps@ck@nb@iNbSoP}BgK_NqDxg@}eCbzKs[|xA}]dJwjA{c@uu@sFmqAp[uy@ti@}z@bKweArv@aVfNcBdU}Gq[mNavA{g@wvAum@odCmf@ycBmSai@uQ{@SUQRst@pByOmpAojBhm@yYlImTqFuZfQm_@vVsj@fCeAbV@b@cCfYiXqGayBaWwtAwGciAef@_~@pKx@xBsTpFm`@bOuVlGsRNwm@lFmReDmR_b@_Vqc@bRtNlUoDtHuJfNus@sQiw@hH|Ztb@fb@xQoN^uHWe]`Bax@kL}N}l@yQgTua@cMaWqL`OsY`SzEdFeDjUeIpH{KwYue@eGKn@oCcC{_@jAgKtNaJ}^}HoSac@p@ct@fi@ge@vQcVaBclAoMcX`YsWr[gQdKkR|EmItQkTj_@eRzUdQsTbq@i`Abr@qy@|gAwXbZ_Ib\\m_@vBuN_J_Y~R_Y`P{`AmD}b@{Hi_@wTv@aL{FqLtHaN[d_@xk@bEvK{PyNwQuT}ShFzIy@vSfYrGfYyJcSq@zFeBjUe@uJiSnAeNyKmLTdN~F]hWmV^yLoEiOuAiKsBmJzWyBxE_FwJsMmWwFiKClZdG~ICtLsOMuHzE}DnCkI~SiNfTfDwMcK{Cs\\aJkWbJe@fNuIh]aHjKgQzJmPnJvGfZuPhYeDtZwMt|@aEho@kE^aEiMpDtNxEaAlD_o@fN_|@~Bk[`RaY{GwZjPcJzPiJhHyLjJs\\J}MpWwJd[bJrLtDkChKxW}g@`MqJ`Oh@bBqKuEoKBaZrDjHhM|VpEfLxC_CtHiZdJ`B`Q~AjMpDrUj@lAeVmNeHbJ]bPtJtRuAt@pKdBsRh@sJvHxUaDqWgQ}[yMx@hS_GbRrSxPbOkCwI_^{k@pKF`LiHxLdFhTaBzHz^xDf`@yM`dAsTxYxHlZgJjUmVxZid@tGuu@jQcENpIcNxh@qPzTdKre@sW|Si`@kEsPdGsXnUum@?yp@oI_v@j_@e[nYaJfSoJfTra@fEjMnLqCbC|ItHzb@vImB_IwXv@cFdH{WhHkHrJsNW{PrCgTtM_Toh@vOgPkQkRak@mCwgBbEgLe@DcM?~LR\\`@Po@IqiAX}hDyBs`@sAueA{O_b@aK_yAgC{lA{VmhBcHi{BgK}jA~FsF|KgI}JrD_FzDrEb{@pHvyBfHtfAlVflBg@vW|JnxAlO`c@rAtcAtBrc@pOaB~SkE~QdF|O~a@ba@oJnIbPhW|sBrEb`@~HbGv[oIjKq@N`YcG|W", "edfvG_f`gAwJlc@cG|UWJB`@G\\qA|ESt@b@CfKqCfJ}CzDo@j@zFp@rGlAtIBpTKpEFdEc@xASEc@ZG|@Xj@h@APSh@xAlCpZj@tKb@vXc@bDRnE`@tAPvCF`DLdDtDe@~B_AhAo@z@KJ`ABZ@XLdD`AhNtAzQdAxKz@|GHd@zAmAbCoBxEqDhCoA|@d@BVT\\JB~@jEdBlWl@fP@lKw@`g@RxEn@f@t@kAnGaBfQoD``@oIbF}@dImA\\E@h@A\\ZpIEBEL?`@RPJA|AvDlBzGtBjXpB`UQPJp@^Y|Qr@~CLnGpAvNdCpC@tL[rKe@~KyAnCo@tH}@|Oi@|L|@vId@nCBlCAlBf@BHDHNJ\\Op@q@hEKtFYtBSJSf@IxD]dCK|AN`AhDp@hFlAjBtER`JCD_I@eLnAJB{ACzAx@H`@BNAPu@@SlDGtBLBh@@|HAjL?Z?Vl@tMf@bPcAnOcCv\\L~JhCnVlD|TPnGwBfKyA~JLtA|AnEvGdNnIhUbKhYpAtJfClUx@nHXtJOfAV^fFQrP_AdI}ArKKjNVpN`AtNkEvJmDjCmBbCcAj@W`FfWVhAxAzC|Az@jJz@jK?tDb@|CrAbBT`HS`Cm@jAeAz@}BbB_@x@DrJlFzC\\tKuCvh@sOnRuFxHoFdKqH~CqAj`@cGnAb@j@|IlDx_@r@zDbA`Cb@xBn@hVCLJh@XFR]jAyAvHkEjCWtER|Fl@xOpAbDRFLVADOrOh@pDBbErNnIjYvDbNrLda@d^dnApPtk@jEpOrAtMxAfMvCzJpFbP|HlQdCrFrEjMzF`PfBxEvA|GzErV|AxQpCrRb@pFJ`PRjXAlCk@dCaAXk@e@OmBb@_AnAIfGjBfAJnA?hCoBb@_Ct@qGfA{CrBaDbFgG`UyVhOiMbU_MzPcGxMmCzQ{AjOiAfIcBdFkBxGqDfRkPnNsK`FgCbMkEpQaEfX}FdS{DxKu@lIDrJz@dKvBlIvCfZrLnTtItFxB`JpDf@b@rAl@tAdAfFrHzElHxA|BbAl@tAHrAe@rA}CPwIvGa_@pHm`@fIkb@rQiv@|Sc{@hNak@~DaSjS{hAxHs`@nPwm@tMgi@dPct@xDgO~@sAd@QpFz@hBd@xCxAzDXbC]lBmA^kAEcB_@oC`@oBh@w@bEqCbAJFV\\Zb@ONk@NiAzDqCvQsM|EiFbD{ClDaBxLcKbDwDvD_IlD_EbWoJfCmBjA{BrF_NpUu[|H}Q~CiFL@vDnEpBlE\\jGItGpAxk@DpI}AnRg@pDpCV`Hx@bANFjEBpB"]; let map, markers = [];
+        async function initMap() {
+            const { Map } = await google.maps.importLibrary("maps");
+            const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+            
+            // Trova primo punto per centrare
+            const centerP = data.find(p => p.lat && p.lon) || {lat: 45.4428, lon: 11.7145};
+            map = new Map(document.getElementById("map"), { zoom: 12, center: { lat: centerP.lat, lng: centerP.lon }, mapId: 'DEMO_MAP_ID' });
+            
+            const geocoder = new google.maps.Geocoder();
+            const bounds = new google.maps.LatLngBounds();
+
+            data.forEach((p, i) => {
+                const isD = (i === 0 || i === data.length - 1);
+                if (p.lat && p.lon) {
+                    addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                } else {
+                    // Geocoding di backup
+                    const query = `${p.nome}, ${p.indirizzo}`;
+                    geocoder.geocode({ address: query }, (results, status) => {
+                        if (status === "OK") {
+                            const loc = results[0].geometry.location;
+                            p.lat = loc.lat(); p.lon = loc.lng();
+                            addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                        } else {
+                            geocoder.geocode({ address: p.indirizzo }, (res2, st2) => {
+                                if (st2 === "OK") {
+                                    const loc2 = res2[0].geometry.location;
+                                    p.lat = loc2.lat(); p.lon = loc2.lng();
+                                    addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            if (polys.length > 0) {
+                polys.forEach(pString => {
+                    const p = google.maps.geometry.encoding.decodePath(pString);
+                    new google.maps.Polyline({ path: p, strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6, map });
+                });
+            } else {
+                new google.maps.Polyline({ 
+                    path: data.filter(p => p.lat).map(p => ({ lat: p.lat, lng: p.lon })), 
+                    strokeColor: "#4f46e5", strokeOpacity: 0.6, strokeWeight: 4, map 
+                });
+            }
+        }
+
+        function addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement) {
+            const m = new AdvancedMarkerElement({
+                map,
+                position: { lat: p.lat, lng: p.lon },
+                content: createPin(i, isD),
+                title: p.nome
+            });
+            markers[i] = m;
+            bounds.extend(m.position);
+            map.fitBounds(bounds);
+        }
+
+        function createPin(idx, isD) {
+            const d = document.createElement("div"); d.style.background = isD ? "#475569" : "#4f46e5";
+            d.style.color = "white"; d.style.width = "26px"; d.style.height = "26px"; d.style.borderRadius = "50%"; 
+            d.style.display = "flex"; d.style.alignItems = "center"; d.style.justifyContent = "center";
+            d.style.fontSize = "11px"; d.style.fontWeight = "900"; d.style.border = "3px solid white";
+            d.innerText = isD ? "" : idx; if(isD) d.innerHTML = '<span class="material-icons-round" style="font-size:14px">home</span>';
+            return d;
+        }
+
+        function panTo(i) { if(markers[i]) { map.panTo(markers[i].position); map.setZoom(17); } }
+        window.addEventListener('load', initMap);
+    </script>
+</body></html>

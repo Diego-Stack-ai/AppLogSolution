@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V02 - Zone: 3109</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry&v=weekly" defer></script>
+    <style>
+        :root { --p: #4f46e5; --sidebar-w: 400px; }
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .main-container { display: flex; height: 100vh; }
+        #sidebar { width: var(--sidebar-w); height: 100%; background: white; display: flex; flex-direction: column; z-index: 100; box-shadow: 10px 0 30px rgba(0,0,0,0.1); }
+        .header { padding: 24px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; padding: 15px; gap: 8px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+        .stat-card { background: white; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center; }
+        .stat-val { display: block; font-weight: 800; font-size: 1rem; color: var(--p); }
+        .stat-lbl { font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 700; }
+        .tot-card { grid-column: span 2; background: #f5f3ff; border-color: #c7d2fe; }
+        #stop-list { flex: 1; overflow-y: auto; padding: 15px; background: #f1f5f9; }
+        .stop-card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 12px; display: flex; gap: 14px; align-items: center; border: 1.5px solid #e2e8f0; cursor: pointer; transition: 0.2s; }
+        .stop-card:hover { border-color: var(--p); transform: translateX(5px); }
+        .stop-num { width: 30px; height: 30px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0; }
+        .nav-btn { background: #22c55e; color: white; width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+        #map { flex: 1; height: 100%; }
+        .depot-tag { background: #475569; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; }
+        @media (max-width: 800px) { .main-container { flex-direction: column; } #sidebar { width: 100%; height: 50%; } #map { height: 50%; } }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div id="sidebar">
+            <div class="header">
+                <div style="font-size:0.75rem; opacity:0.8; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Logistica Operativa</div>
+                <h1 style="margin:0; font-size:1.5rem; letter-spacing:-0.01em;">V02</h1>
+                <div style="margin-top:6px; font-size:0.85rem; font-weight:600; color: #a5b4fc;">Zone: 3109</div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card"><span class="stat-val">20</span><span class="stat-lbl">Tappe</span></div>
+                <div class="stat-card"><span class="stat-val">161.2 km</span><span class="stat-lbl">Distanza</span></div>
+                <div class="stat-card"><span class="stat-val">3h 11m</span><span class="stat-lbl">Guida</span></div>
+                <div class="stat-card"><span class="stat-val">2h 40m</span><span class="stat-lbl">Scarico</span></div>
+                <div class="stat-card tot-card"><span class="stat-val" style="font-size:1.3rem;">5h 51m</span><span class="stat-lbl">TEMPO TOTALE STIMATO</span></div>
+            </div>
+            <div id="stop-list">
+                <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">home</span></div>
+                    <div class="stop-info"><span class="depot-tag">PARTENZA</span><br><b style="font-size:0.9rem;">Deposito Veggiano</b></div>
+                </div>
+                <div class="stop-card" onclick="panTo(1)"><div class="stop-num">1</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">CEDERLE</b><br><small style="color:#64748b; font-size:0.75rem;">VIA 8 APRILE 19, 36054 MONTEBELLO VICENTINO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.4561354,11.3819043&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(2)"><div class="stop-num">2</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">ZERMEGHEDO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA COSTEGGIOLA 56, 36050 ZERMEGHEDO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.47367412117018,11.370586060725895&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(3)"><div class="stop-num">3</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SANTA BAKHITA</b><br><small style="color:#64748b; font-size:0.75rem;">VIA CAPPUCCINI 1, 36071 ARZIGNANO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5226757,11.338266&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(4)"><div class="stop-num">4</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">A. FOGAZZARO</b><br><small style="color:#64748b; font-size:0.75rem;">CORSO G. MAZZINI 85, 36071 ARZIGNANO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5226757,11.338266&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(5)"><div class="stop-num">5</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">San Rocco</b><br><small style="color:#64748b; font-size:0.75rem;">Via Trento, 65/B, 36071 Arzignano (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.523693,11.327297&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(6)"><div class="stop-num">6</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Vittorino Da Feltre</b><br><small style="color:#64748b; font-size:0.75rem;">Via San Zeno 38, 36071 Arzignano (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.51863751547486,11.31383117837582&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(7)"><div class="stop-num">7</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Don Albanello</b><br><small style="color:#64748b; font-size:0.75rem;">Via Degli Alpini 4, 36070 Nogarole Vicentino (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.56032643693668,11.28967484498291&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(8)"><div class="stop-num">8</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Zanella</b><br><small style="color:#64748b; font-size:0.75rem;">Via Dante, 24, 36070 Trissino (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.5639413,11.3717731&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(9)"><div class="stop-num">9</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Padre Kolbe Spagnago</b><br><small style="color:#64748b; font-size:0.75rem;">Via Giacomo Leopardi, 1, 36073 Cornedo Vicentino (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6094836,11.3505362&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(10)"><div class="stop-num">10</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria San Domenico Savio - Loc. Cereda</b><br><small style="color:#64748b; font-size:0.75rem;">Piazza Sant'Andrea, 1, 36073 Cornedo Vicentino (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6094836,11.3505362&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(11)"><div class="stop-num">11</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Gian Giorgio Trissino Cornedo Capoluogo</b><br><small style="color:#64748b; font-size:0.75rem;">Via Mazzalovo, 1, 36073 Cornedo Vicentino (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6148682,11.3433246&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(12)"><div class="stop-num">12</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">PRIMARIA BORNE</b><br><small style="color:#64748b; font-size:0.75rem;">VIA BOLIVIA 1, 36078 VALDAGNO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6422713,11.2969242&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(13)"><div class="stop-num">13</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">PRIMARIA NOVALE</b><br><small style="color:#64748b; font-size:0.75rem;">VIA MONTELLO 4, 36078 VALDAGNO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6628772,11.2972896&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(14)"><div class="stop-num">14</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">SCUOLA PRIMARIA - A. MANZONI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA A. MANZONI 13, 36030 SAN VITO DI LEGUZZANO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6815519,11.37629&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(15)"><div class="stop-num">15</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria “E. De Amicis” –  Case</b><br><small style="color:#64748b; font-size:0.75rem;">Via Deledda, 2, 36064 Malo (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6659691,11.3956785&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(16)"><div class="stop-num">16</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">MALO - MOLINA</b><br><small style="color:#64748b; font-size:0.75rem;">VIALE DELL'INDUSTRIA 13, 36034 MALO (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6734568,11.4604014&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(17)"><div class="stop-num">17</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">San Giovanni Bosco</b><br><small style="color:#64748b; font-size:0.75rem;">Via Risorgimento 31, 36036 Torrebelvicino (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.67898086660827,11.50217561555479&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(18)"><div class="stop-num">18</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">DANTE ALIGHIERI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA CARD. E. DALLA COSTA 2, 36030 VILLAVERLA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.65199032173602,11.492712279226026&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(19)"><div class="stop-num">19</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Dante Alighieri</b><br><small style="color:#64748b; font-size:0.75rem;">Via Card. Dalla Costa 2, 36030 Villaverla (VI)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6516116656209,11.49271409999804&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(20)"><div class="stop-num">20</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">GIOVANNI XXIII - NOVOLEDO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA A. PALLADIO 155, 36030 VILLAVERLA (VICENZA)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.64582474149015,11.507721337139904&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+    <script>
+        const data = [
+  {
+    "lat": 45.442805,
+    "lon": 11.714498,
+    "nome": "DEPOSITO VEGGIANO",
+    "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"
+  },
+  {
+    "nome": "CEDERLE",
+    "indirizzo": "VIA 8 APRILE 19, 36054 MONTEBELLO VICENTINO (VICENZA)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p2639",
+    "codice_univoco": "p00000_p2639",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "10:00",
+    "lat": 45.4561354,
+    "lon": 11.3819043,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p2639"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "CEDERLE VIA 8 APRILE 19, 36054 MONTEBELLO VICENTINO (VICENZA)",
+    "geo_query_indirizzo": "VIA 8 APRILE 19, 36054 MONTEBELLO VICENTINO (VICENZA)"
+  },
+  {
+    "nome": "ZERMEGHEDO",
+    "indirizzo": "VIA COSTEGGIOLA 56, 36050 ZERMEGHEDO (VICENZA)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p2002",
+    "codice_univoco": "p00000_p2002",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "10:00",
+    "lat": 45.47367412117018,
+    "lon": 11.370586060725895,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p2002"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "ZERMEGHEDO VIA COSTEGGIOLA 56, 36050 ZERMEGHEDO (VICENZA)",
+    "geo_query_indirizzo": "VIA COSTEGGIOLA 56, 36050 ZERMEGHEDO (VICENZA)"
+  },
+  {
+    "nome": "SANTA BAKHITA",
+    "indirizzo": "VIA CAPPUCCINI 1, 36071 ARZIGNANO (VICENZA)",
+    "codice_frutta": "p2268",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2268_p00000",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "10:00",
+    "lat": 45.5226757,
+    "lon": 11.338266,
+    "codici_ddt_frutta": [
+      "p2268"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 362,
+    "geo_query_nome_indirizzo": "SANTA BAKHITA VIA CAPPUCCINI 1, 36071 ARZIGNANO (VICENZA)",
+    "geo_query_indirizzo": "VIA CAPPUCCINI 1, 36071 ARZIGNANO (VICENZA)"
+  },
+  {
+    "nome": "A. FOGAZZARO",
+    "indirizzo": "CORSO G. MAZZINI 85, 36071 ARZIGNANO (VICENZA)",
+    "codice_frutta": "p2093",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2093_p00000",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "07:00",
+    "orario_max": "10:00",
+    "lat": 45.5226757,
+    "lon": 11.338266,
+    "codici_ddt_frutta": [
+      "p2093"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 34,
+    "geo_query_nome_indirizzo": "A. FOGAZZARO CORSO G. MAZZINI 85, 36071 ARZIGNANO (VICENZA)",
+    "geo_query_indirizzo": "CORSO G. MAZZINI 85, 36071 ARZIGNANO (VICENZA)"
+  },
+  {
+    "nome": "San Rocco",
+    "indirizzo": "Via Trento, 65/B, 36071 Arzignano (VI)",
+    "codice_frutta": "p2092",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2092_p00000",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "07:15",
+    "orario_max": "10:00",
+    "lat": 45.523693,
+    "lon": 11.327297,
+    "codici_ddt_frutta": [
+      "p2092"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 361,
+    "geo_query_nome_indirizzo": "San Rocco Via Trento, 65/B, 36071 Arzignano (VI)",
+    "geo_query_indirizzo": "Via Trento, 65/B, 36071 Arzignano (VI)"
+  },
+  {
+    "nome": "Vittorino Da Feltre",
+    "indirizzo": "Via San Zeno 38, 36071 Arzignano (VI)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1746",
+    "codice_univoco": "p00000_p1746",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "10:00",
+    "lat": 45.51863751547486,
+    "lon": 11.31383117837582,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1746"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "Vittorino Da Feltre Via San Zeno 38, 36071 Arzignano (VI)",
+    "geo_query_indirizzo": "Via San Zeno 38, 36071 Arzignano (VI)"
+  },
+  {
+    "nome": "Don Albanello",
+    "indirizzo": "Via Degli Alpini 4, 36070 Nogarole Vicentino (VI)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1747",
+    "codice_univoco": "p00000_p1747",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "10:00",
+    "lat": 45.56032643693668,
+    "lon": 11.28967484498291,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1747"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "Don Albanello Via Degli Alpini 4, 36070 Nogarole Vicentino (VI)",
+    "geo_query_indirizzo": "Via Degli Alpini 4, 36070 Nogarole Vicentino (VI)"
+  },
+  {
+    "nome": "Scuola Primaria Zanella",
+    "indirizzo": "Via Dante, 24, 36070 Trissino (VI)",
+    "codice_frutta": "p2322",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2322_p00000",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.5639413,
+    "lon": 11.3717731,
+    "codici_ddt_frutta": [
+      "p2322"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 432,
+    "geo_query_nome_indirizzo": "Scuola Primaria Zanella Via Dante, 24, 36070 Trissino (VI)",
+    "geo_query_indirizzo": "Via Dante, 24, 36070 Trissino (VI)"
+  },
+  {
+    "nome": "Scuola Primaria Padre Kolbe Spagnago",
+    "indirizzo": "Via Giacomo Leopardi, 1, 36073 Cornedo Vicentino (VI)",
+    "codice_frutta": "p2136",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2136_p00000",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.6094836,
+    "lon": 11.3505362,
+    "codici_ddt_frutta": [
+      "p2136"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 412,
+    "geo_query_nome_indirizzo": "Scuola Primaria Padre Kolbe Spagnago Via Giacomo Leopardi, 1, 36073 Cornedo Vicentino (VI)",
+    "geo_query_indirizzo": "Via Giacomo Leopardi, 1, 36073 Cornedo Vicentino (VI)"
+  },
+  {
+    "nome": "Scuola Primaria San Domenico Savio - Loc. Cereda",
+    "indirizzo": "Piazza Sant'Andrea, 1, 36073 Cornedo Vicentino (VI)",
+    "codice_frutta": "p2135",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2135_p00000",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "08:30",
+    "orario_max": "14:00",
+    "lat": 45.6094836,
+    "lon": 11.3505362,
+    "codici_ddt_frutta": [
+      "p2135"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 422,
+    "geo_query_nome_indirizzo": "Scuola Primaria San Domenico Savio - Loc. Cereda Piazza Sant'Andrea, 1, 36073 Cornedo Vicentino (VI)",
+    "geo_query_indirizzo": "Piazza Sant'Andrea, 1, 36073 Cornedo Vicentino (VI)"
+  },
+  {
+    "nome": "Scuola Primaria Gian Giorgio Trissino Cornedo Capoluogo",
+    "indirizzo": "Via Mazzalovo, 1, 36073 Cornedo Vicentino (VI)",
+    "codice_frutta": "p2137",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2137_p00000",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.6148682,
+    "lon": 11.3433246,
+    "codici_ddt_frutta": [
+      "p2137"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 403,
+    "geo_query_nome_indirizzo": "Scuola Primaria Gian Giorgio Trissino Cornedo Capoluogo Via Mazzalovo, 1, 36073 Cornedo Vicentino (VI)",
+    "geo_query_indirizzo": "Via Mazzalovo, 1, 36073 Cornedo Vicentino (VI)"
+  },
+  {
+    "nome": "PRIMARIA BORNE",
+    "indirizzo": "VIA BOLIVIA 1, 36078 VALDAGNO (VICENZA)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1850",
+    "codice_univoco": "p00000_p1850",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "10:00",
+    "lat": 45.6422713,
+    "lon": 11.2969242,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1850"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "PRIMARIA BORNE VIA BOLIVIA 1, 36078 VALDAGNO (VICENZA)",
+    "geo_query_indirizzo": "VIA BOLIVIA 1, 36078 VALDAGNO (VICENZA)"
+  },
+  {
+    "nome": "PRIMARIA NOVALE",
+    "indirizzo": "VIA MONTELLO 4, 36078 VALDAGNO (VICENZA)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p2026",
+    "codice_univoco": "p00000_p2026",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "10:00",
+    "lat": 45.6628772,
+    "lon": 11.2972896,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p2026"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "PRIMARIA NOVALE VIA MONTELLO 4, 36078 VALDAGNO (VICENZA)",
+    "geo_query_indirizzo": "VIA MONTELLO 4, 36078 VALDAGNO (VICENZA)"
+  },
+  {
+    "nome": "SCUOLA PRIMARIA - A. MANZONI",
+    "indirizzo": "VIA A. MANZONI 13, 36030 SAN VITO DI LEGUZZANO (VICENZA)",
+    "codice_frutta": "p2358",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2358_p00000",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "14:00",
+    "lat": 45.6815519,
+    "lon": 11.37629,
+    "codici_ddt_frutta": [
+      "p2358"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 377,
+    "geo_query_nome_indirizzo": "SCUOLA PRIMARIA - A. MANZONI VIA A. MANZONI 13, 36030 SAN VITO DI LEGUZZANO (VICENZA)",
+    "geo_query_indirizzo": "VIA A. MANZONI 13, 36030 SAN VITO DI LEGUZZANO (VICENZA)"
+  },
+  {
+    "nome": "Scuola Primaria “E. De Amicis” –  Case",
+    "indirizzo": "Via Deledda, 2, 36064 Malo (VI)",
+    "codice_frutta": "p2259",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2259_p00000",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "14:00",
+    "lat": 45.6659691,
+    "lon": 11.3956785,
+    "codici_ddt_frutta": [
+      "p2259"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 388,
+    "geo_query_nome_indirizzo": "Scuola Primaria “E. De Amicis” –  Case Via Deledda, 2, 36064 Malo (VI)",
+    "geo_query_indirizzo": "Via Deledda, 2, 36064 Malo (VI)"
+  },
+  {
+    "nome": "MALO - MOLINA",
+    "indirizzo": "VIALE DELL'INDUSTRIA 13, 36034 MALO (VICENZA)",
+    "codice_frutta": "p2257",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2257_p00000",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "10:00",
+    "lat": 45.6734568,
+    "lon": 11.4604014,
+    "codici_ddt_frutta": [
+      "p2257"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 261,
+    "geo_query_nome_indirizzo": "MALO - MOLINA VIALE DELL'INDUSTRIA 13, 36034 MALO (VICENZA)",
+    "geo_query_indirizzo": "VIALE DELL'INDUSTRIA 13, 36034 MALO (VICENZA)"
+  },
+  {
+    "nome": "San Giovanni Bosco",
+    "indirizzo": "Via Risorgimento 31, 36036 Torrebelvicino (VI)",
+    "codice_frutta": "p13525",
+    "codice_latte": "p00000",
+    "codice_univoco": "p13525_p00000",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "10:00",
+    "lat": 45.67898086660827,
+    "lon": 11.50217561555479,
+    "codici_ddt_frutta": [
+      "p13525"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 355,
+    "geo_query_nome_indirizzo": "San Giovanni Bosco Via Risorgimento 31, 36036 Torrebelvicino (VI)",
+    "geo_query_indirizzo": "Via Risorgimento 31, 36036 Torrebelvicino (VI)"
+  },
+  {
+    "nome": "DANTE ALIGHIERI",
+    "indirizzo": "VIA CARD. E. DALLA COSTA 2, 36030 VILLAVERLA (VICENZA)",
+    "codice_frutta": "p2382",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2382_p00000",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.65199032173602,
+    "lon": 11.492712279226026,
+    "codici_ddt_frutta": [
+      "p2382"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 105,
+    "geo_query_nome_indirizzo": "DANTE ALIGHIERI VIA CARD. E. DALLA COSTA 2, 36030 VILLAVERLA (VICENZA)",
+    "geo_query_indirizzo": "VIA CARD. E. DALLA COSTA 2, 36030 VILLAVERLA (VICENZA)"
+  },
+  {
+    "nome": "Dante Alighieri",
+    "indirizzo": "Via Card. Dalla Costa 2, 36030 Villaverla (VI)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1813",
+    "codice_univoco": "p00000_p1813",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.6516116656209,
+    "lon": 11.49271409999804,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1813"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "Dante Alighieri Via Card. Dalla Costa 2, 36030 Villaverla (VI)",
+    "geo_query_indirizzo": "Via Card. Dalla Costa 2, 36030 Villaverla (VI)"
+  },
+  {
+    "nome": "GIOVANNI XXIII - NOVOLEDO",
+    "indirizzo": "VIA A. PALLADIO 155, 36030 VILLAVERLA (VICENZA)",
+    "codice_frutta": "p2383",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2383_p00000",
+    "zona": "3109",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.64582474149015,
+    "lon": 11.507721337139904,
+    "codici_ddt_frutta": [
+      "p2383"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 206,
+    "geo_query_nome_indirizzo": "GIOVANNI XXIII - NOVOLEDO VIA A. PALLADIO 155, 36030 VILLAVERLA (VICENZA)",
+    "geo_query_indirizzo": "VIA A. PALLADIO 155, 36030 VILLAVERLA (VICENZA)"
+  },
+  {
+    "lat": 45.442805,
+    "lon": 11.714498,
+    "nome": "DEPOSITO VEGGIANO",
+    "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"
+  }
+]; const polys = ["ytjtGi~nfAgAkI}Gy@aCoCpBeWwAi{@gJwWgl@rhAi_@rR}\\|_@ck@nb@iNbSoP}BgK_NlCa@_Izh@efAf{Ew~@z}Do{@pnE}`@~sBKteAnDrsBkK~hDq@tgBrEhiAt_ApvD~Lfs@xSrh@jq@lx@|bBrsBsHzGyKsEyTmDuFvFgFpNfEfDdc@ha@ni@`h@zq@h^xMrN`Ex[fU`s@zAha@r@~GjEhDi@aJQeFcE}EiKeA{OqAuHfAUd@kDnP_RfOaGlTZtKmEbBRhMqEnFmMhIgOjB~Bwg@qAaU}KeJwXrNsq@zx@aCjFi^x_@ae@jy@qq@hy@a[ln@cTpMoOgNdA{HkJvKkEpE[cDuCwGv@xD|AdJeErXSAGVLRkAzI{A~IzAxLh@{DhAqLgCaBSdAmAbIpB~Io@lFSb@Nh@xE|AdDbCj@n@xC_AfEjHvH|Nl@`D~BlGfCjGuDr@|BqD}GyRoJ_QkG{BDmA_AWeJmFwHvK_j@teB{G`LsJ_CoLsCyF~BaKkGuDgI{CkFdDq@f@aI}Em@kJ|HgC|LgH~HwHiAmAkD{FbCmEvAkKhDwKzO{Lp`@YlUsEdMcB`EiBoEuB}@~BDvBmBqBoR}Oyb@fHwEuEsTsHwb@tDmYdFqIsAwQvI_Xj^}_@vQiPxGnGTeEbCbD~Lm]FyTjOmZhGkWwJoD{DgGtCcPm@{TkLqKeIpCuKnAaFkDcGhC}FcFsFyILiHmCoJsJwHeC}]eTWkCaOxDs]|EkNaKT{AqJJuOe@{KwM`Bu{@zE{cAzWgVlLcJpL_e@xt@oDwEkEvLyPhh@}^fp@hE_@sFnO}SrNsJlFoB~N`ThBuWngAei@`kAS\\cu@lr@uDnRiDj@ua@hWsIxDiChAy@hKIbIgCRyBn@qAPuLqIiHc@aDkFsIHyV~DuM{BnAuDs@sAaRdLiWlF{F|BlGwEvVsCtJmItDnAvAiCxOiJyC_PR{J_Qa`@onAgnB{p@{dAuQk^sCwW}Ikv@oWc_@m]sEaQtDmT`QgPaPoCaIdVyR~ZsZdPgGnFdDnb@gMfHeB|EqH}Mk\\rYaOb`@eUrNoNxYoYvBgD`\\mc@qK{\\`EeJjXeSaBcR_z@uoFgFe]sD}JkDqJkIvE?AA?E@}BpBqOfRcm@y{@{Cyj@iEuKcEaJkGiMyMkNkLs@mBqNoH{{@`@kDn@sEdE|ExG~AdVaQtt@_TvUu@rJfBbG~Q|@jXXfa@zTqBbJuBrReD|EOzKkEl`@wJdSe@w@hHjA}FtEeAuE_]LIrVuSlNeJR}G}EgJ", "kfruG{qfeAJz@dBk@`@Qi@{Dg@_FUuCA_BLsBr@sFNsARm@Z[TDROHW?[MYIEK]CUBgAbAqFx@eDj@aDHuBCw@i@aGWgDCiCFoAzAwLl@aC`@o@f@c@pAe@l@EhBWfA_@tCaBzCwBh@u@r@qBLmCyBcVuC{X}B_UOkBFcAPw@bDqIrAqDzBqO?gEN}JNwOoAoG{@{DaB_IaAeEQkBC_AB}@DQEUKOSy@YqFa@qCgCoJiAuEa@gDAq@@gAxBHfBD|@BdBD`ALhAAjDSPGj@S|@IvC]~Eq@LWRaAVg@TMLc@Ee@QUYCs@Ve@Gy@?_@AQMmAU_ADqDTaAOe@QKOOI_@U_@U}@y@e@_AQ}@CeBLcBf@{Cn@yCZyACUtA_GfBqFtBeFxCsFrD}FvKiQ`FcInWmb@dBoCvIiM`EeFtDeE|CaD`HeG`JwG`C{AlFcDlE}BpIoDxJ}CnJsBtF}@jLgAxHUfDCxHJhCHb_@rBzG`@hAB|QfAz[fBpBLjETjGTlEBvEOpAI~Fq@zEaAhCu@zEcBvCqAnCuAnEsCvBaBdEqDjCiCzHoIxLaNfCgClE}DhDmCrFsDzGwDjEuBtF}BnIoCpHkBvIsA|Iq@dO}@pDc@jCe@tEoA|EoB`DgBdC_BnFsE|KiKnDuCpFkD`B}@bBw@|EoBpHsBhLkCnH_BrSmEhKyBnG}@jAMtESbBCnEB~CLbFf@~GjArH|BtLvE|UjJhTrIrNxFNXx@ZjAv@tAvAvBbDtBhD~@xAlAbBtA|Bb@d@\\Vb@Ll@Fl@Cj@Q^U`@i@^gAJ{@@oB@gCFw@b@gC`BmIDiAd@yB^yBnFwXzGg^xGe]xBkJpPkq@hXqgAvDwO|AkHtC_PbUcoA~BwLdFwRvPkn@vEeSfKwd@|Hs]d@uBPI@Al@iC\\q@t@e@n@IfB\\hBb@ZCXLxAp@bB|@XBp@PV?lAHt@Ch@GrA[dAq@f@}@JmAc@sCEgAN{@\\o@@Ir@q@`CiB|@Sn@F@LFTLNRDPEVc@?q@EIf@s@x@u@vDwBbLaIdCuBnAqAzCiDvAwAx@i@dBw@nAo@dFcEnGcGlBqCxB{En@kAdByBhAy@pEeBbN_FhAg@|@k@dAgAv@gBlB{E`ByDlAaCjFiHxHeKbDyE~AkD`CsGrDsHn@k@D@TNhC|Cv@bAh@v@Rd@b@tBTpCKpH\\tR~@v_@@vAg@tGiApMU~AET`AHl@Fl@F|Gx@z@LF|CB~C"]; let map, markers = [];
+        async function initMap() {
+            const { Map } = await google.maps.importLibrary("maps");
+            const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+            
+            // Trova primo punto per centrare
+            const centerP = data.find(p => p.lat && p.lon) || {lat: 45.4428, lon: 11.7145};
+            map = new Map(document.getElementById("map"), { zoom: 12, center: { lat: centerP.lat, lng: centerP.lon }, mapId: 'DEMO_MAP_ID' });
+            
+            const geocoder = new google.maps.Geocoder();
+            const bounds = new google.maps.LatLngBounds();
+
+            data.forEach((p, i) => {
+                const isD = (i === 0 || i === data.length - 1);
+                if (p.lat && p.lon) {
+                    addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                } else {
+                    // Geocoding di backup
+                    const query = `${p.nome}, ${p.indirizzo}`;
+                    geocoder.geocode({ address: query }, (results, status) => {
+                        if (status === "OK") {
+                            const loc = results[0].geometry.location;
+                            p.lat = loc.lat(); p.lon = loc.lng();
+                            addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                        } else {
+                            geocoder.geocode({ address: p.indirizzo }, (res2, st2) => {
+                                if (st2 === "OK") {
+                                    const loc2 = res2[0].geometry.location;
+                                    p.lat = loc2.lat(); p.lon = loc2.lng();
+                                    addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            if (polys.length > 0) {
+                polys.forEach(pString => {
+                    const p = google.maps.geometry.encoding.decodePath(pString);
+                    new google.maps.Polyline({ path: p, strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6, map });
+                });
+            } else {
+                new google.maps.Polyline({ 
+                    path: data.filter(p => p.lat).map(p => ({ lat: p.lat, lng: p.lon })), 
+                    strokeColor: "#4f46e5", strokeOpacity: 0.6, strokeWeight: 4, map 
+                });
+            }
+        }
+
+        function addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement) {
+            const m = new AdvancedMarkerElement({
+                map,
+                position: { lat: p.lat, lng: p.lon },
+                content: createPin(i, isD),
+                title: p.nome
+            });
+            markers[i] = m;
+            bounds.extend(m.position);
+            map.fitBounds(bounds);
+        }
+
+        function createPin(idx, isD) {
+            const d = document.createElement("div"); d.style.background = isD ? "#475569" : "#4f46e5";
+            d.style.color = "white"; d.style.width = "26px"; d.style.height = "26px"; d.style.borderRadius = "50%"; 
+            d.style.display = "flex"; d.style.alignItems = "center"; d.style.justifyContent = "center";
+            d.style.fontSize = "11px"; d.style.fontWeight = "900"; d.style.border = "3px solid white";
+            d.innerText = isD ? "" : idx; if(isD) d.innerHTML = '<span class="material-icons-round" style="font-size:14px">home</span>';
+            return d;
+        }
+
+        function panTo(i) { if(markers[i]) { map.panTo(markers[i].position); map.setZoom(17); } }
+        window.addEventListener('load', initMap);
+    </script>
+</body></html>

@@ -1,22 +1,47 @@
+# Root Gitignore for App folder
+
 # Credenziali / segreti
-backend/config/log-solution-60007-firebase-adminsdk-fbsvc-2cf3d0c171.json
-backend/config/log-solution-60007-firebase-adminsdk-*.json
-webapp/config/ID_GESTIONE.txt
-webapp/config/ID_GESTIONE_IMPOSTAZIONI.txt
-docs/ID_GESTIONE.txt
-docs/ID_GESTIONE_IMPOSTAZIONI.txt
+**/log-solution-60007-firebase-adminsdk-*.json
+**/ID_GESTIONE.txt
+**/ID_GESTIONE_IMPOSTAZIONI.txt
+**/.env
+
 # File temporanei / di sistema
 *.log
 *.tmp
 *.swp
 .DS_Store
 Thumbs.db
+desktop.ini
+*.gsheet
+*.gdoc
+*.gslides
+*.gdraw
+*.gtable
+*.gform
+
 # Ambiente/editor
 .vscode/
 .idea/
 *.code-workspace
-# Python (se usi ambienti virtuali)
+. agent/
+brain/
+.gemini/
+.cursor/
+
+# Python / Node
 venv/
 .env/
 __pycache__/
 *.pyc
+node_modules/
+
+# Firebase / Vercel
+.firebase/
+.vercel/
+.next/
+out/
+
+# Backup / Git nested
+.git_backup/
+**/.git/

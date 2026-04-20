@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8"><title>Dashboard Logistica</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+    body { font-family: 'Inter', sans-serif; background: #f8fafc; padding: 60px 20px; color: #1e293b; }
+    .main-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 24px; margin: 40px 0; }
+    .sum-card { background: white; padding: 35px; border-radius: 24px; text-align: center; border: 1px solid #e2e8f0; }
+    .g-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 30px; }
+</style></head>
+<body>
+    <div style="max-width:1400px; margin:0 auto;">
+        <h1 style="font-weight:900; font-size:2.8rem; margin:0;">Dashboard Logistica</h1>
+        <p style="color:#64748b; font-size:1.1rem; margin-top:10px;">Pianificazione flotta basata su Veggiano (PD)</p>
+        <div class="main-grid">
+            <div class="sum-card"><b style="font-size:2.2rem; color:#4f46e5;">9</b><br><small>GIRI</small></div>
+            <div class="sum-card"><b style="font-size:2.2rem; color:#4f46e5;">1852.4 km</b><br><small>KM TOTALI</small></div>
+            <div class="sum-card"><b style="font-size:2.2rem; color:#10b981;">€ 5994.00</b><br><small>FATTURATO (324 DDT)</small></div>
+            <div class="sum-card"><b style="font-size:2.2rem; color:#10b981;">21h 36m</b><br><small>SCARICO</small></div>
+            <div class="sum-card" style="background:#eef2ff;"><b style="font-size:2.2rem; color:#4f46e5;">55h 43m</b><br><small>TEMPO TOTALE</small></div>
+        </div>
+        <div class="g-grid">
+        <div style="background:white; border-radius:24px; padding:30px; border:1.5px solid #e2e8f0; position:relative; overflow:hidden; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+            <div style="position:absolute; top:0; left:0; width:12px; height:100%; background:#4f46e5;"></div>
+            <div style="font-size:0.8rem; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:8px;">V01</div>
+            <b style="font-size:1.15rem; color:#0f172a; display:block;">Zone: 3101, 3122, 3211_B</b>
+            <div style="font-size:0.85rem; font-weight:700; color:#10b981; margin-top:5px;">💰 Fatturato: € 518.00 (28 DDT)</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin:20px 0; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:15px;">
+                <span>🛣️ <b>144.6 km</b></span><span>🕒 Guida: 2h 30m</span>
+                <span> 14 tappe</span><span style="font-weight:900; color:#4f46e5;">🏁 TOT: 4h 22m</span>
+            </div>
+            <a href="V01_Zone_3101_3122_3211_B.html" style="display:block; background:#4f46e5; color:white; text-align:center; padding:15px; border-radius:14px; text-decoration:none; font-weight:800; font-size:0.85rem;">APRI MAPPA</a>
+        </div>
+    
+        <div style="background:white; border-radius:24px; padding:30px; border:1.5px solid #e2e8f0; position:relative; overflow:hidden; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+            <div style="position:absolute; top:0; left:0; width:12px; height:100%; background:#4f46e5;"></div>
+            <div style="font-size:0.8rem; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:8px;">V02</div>
+            <b style="font-size:1.15rem; color:#0f172a; display:block;">Zone: 3102</b>
+            <div style="font-size:0.85rem; font-weight:700; color:#10b981; margin-top:5px;">💰 Fatturato: € 777.00 (42 DDT)</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin:20px 0; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:15px;">
+                <span>🛣️ <b>189.1 km</b></span><span>🕒 Guida: 3h 34m</span>
+                <span> 21 tappe</span><span style="font-weight:900; color:#4f46e5;">🏁 TOT: 6h 22m</span>
+            </div>
+            <a href="V02_Zone_3102.html" style="display:block; background:#4f46e5; color:white; text-align:center; padding:15px; border-radius:14px; text-decoration:none; font-weight:800; font-size:0.85rem;">APRI MAPPA</a>
+        </div>
+    
+        <div style="background:white; border-radius:24px; padding:30px; border:1.5px solid #e2e8f0; position:relative; overflow:hidden; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+            <div style="position:absolute; top:0; left:0; width:12px; height:100%; background:#4f46e5;"></div>
+            <div style="font-size:0.8rem; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:8px;">V03</div>
+            <b style="font-size:1.15rem; color:#0f172a; display:block;">Zone: 3103</b>
+            <div style="font-size:0.85rem; font-weight:700; color:#10b981; margin-top:5px;">💰 Fatturato: € 888.00 (48 DDT)</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin:20px 0; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:15px;">
+                <span>🛣️ <b>103.0 km</b></span><span>🕒 Guida: 2h 42m</span>
+                <span> 24 tappe</span><span style="font-weight:900; color:#4f46e5;">🏁 TOT: 5h 54m</span>
+            </div>
+            <a href="V03_Zone_3103.html" style="display:block; background:#4f46e5; color:white; text-align:center; padding:15px; border-radius:14px; text-decoration:none; font-weight:800; font-size:0.85rem;">APRI MAPPA</a>
+        </div>
+    
+        <div style="background:white; border-radius:24px; padding:30px; border:1.5px solid #e2e8f0; position:relative; overflow:hidden; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+            <div style="position:absolute; top:0; left:0; width:12px; height:100%; background:#4f46e5;"></div>
+            <div style="font-size:0.8rem; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:8px;">V04</div>
+            <b style="font-size:1.15rem; color:#0f172a; display:block;">Zone: 3104</b>
+            <div style="font-size:0.85rem; font-weight:700; color:#10b981; margin-top:5px;">💰 Fatturato: € 814.00 (44 DDT)</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin:20px 0; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:15px;">
+                <span>🛣️ <b>229.0 km</b></span><span>🕒 Guida: 4h 59m</span>
+                <span> 22 tappe</span><span style="font-weight:900; color:#4f46e5;">🏁 TOT: 7h 55m</span>
+            </div>
+            <a href="V04_Zone_3104.html" style="display:block; background:#4f46e5; color:white; text-align:center; padding:15px; border-radius:14px; text-decoration:none; font-weight:800; font-size:0.85rem;">APRI MAPPA</a>
+        </div>
+    
+        <div style="background:white; border-radius:24px; padding:30px; border:1.5px solid #e2e8f0; position:relative; overflow:hidden; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+            <div style="position:absolute; top:0; left:0; width:12px; height:100%; background:#4f46e5;"></div>
+            <div style="font-size:0.8rem; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:8px;">V05</div>
+            <b style="font-size:1.15rem; color:#0f172a; display:block;">Zone: 3105</b>
+            <div style="font-size:0.85rem; font-weight:700; color:#10b981; margin-top:5px;">💰 Fatturato: € 925.00 (50 DDT)</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin:20px 0; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:15px;">
+                <span>🛣️ <b>153.8 km</b></span><span>🕒 Guida: 3h 41m</span>
+                <span> 25 tappe</span><span style="font-weight:900; color:#4f46e5;">🏁 TOT: 7h 1m</span>
+            </div>
+            <a href="V05_Zone_3105.html" style="display:block; background:#4f46e5; color:white; text-align:center; padding:15px; border-radius:14px; text-decoration:none; font-weight:800; font-size:0.85rem;">APRI MAPPA</a>
+        </div>
+    
+        <div style="background:white; border-radius:24px; padding:30px; border:1.5px solid #e2e8f0; position:relative; overflow:hidden; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+            <div style="position:absolute; top:0; left:0; width:12px; height:100%; background:#4f46e5;"></div>
+            <div style="font-size:0.8rem; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:8px;">V06</div>
+            <b style="font-size:1.15rem; color:#0f172a; display:block;">Zone: 3101, 3102, 3122</b>
+            <div style="font-size:0.85rem; font-weight:700; color:#10b981; margin-top:5px;">💰 Fatturato: € 555.00 (30 DDT)</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin:20px 0; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:15px;">
+                <span>🛣️ <b>133.9 km</b></span><span>🕒 Guida: 2h 41m</span>
+                <span> 15 tappe</span><span style="font-weight:900; color:#4f46e5;">🏁 TOT: 4h 41m</span>
+            </div>
+            <a href="V06_Zone_3101_3102_3122.html" style="display:block; background:#4f46e5; color:white; text-align:center; padding:15px; border-radius:14px; text-decoration:none; font-weight:800; font-size:0.85rem;">APRI MAPPA</a>
+        </div>
+    
+        <div style="background:white; border-radius:24px; padding:30px; border:1.5px solid #e2e8f0; position:relative; overflow:hidden; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+            <div style="position:absolute; top:0; left:0; width:12px; height:100%; background:#4f46e5;"></div>
+            <div style="font-size:0.8rem; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:8px;">V07</div>
+            <b style="font-size:1.15rem; color:#0f172a; display:block;">Zone: 3201</b>
+            <div style="font-size:0.85rem; font-weight:700; color:#10b981; margin-top:5px;">💰 Fatturato: € 444.00 (24 DDT)</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin:20px 0; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:15px;">
+                <span>🛣️ <b>412.8 km</b></span><span>🕒 Guida: 6h 6m</span>
+                <span> 12 tappe</span><span style="font-weight:900; color:#4f46e5;">🏁 TOT: 7h 42m</span>
+            </div>
+            <a href="V07_Zone_3201.html" style="display:block; background:#4f46e5; color:white; text-align:center; padding:15px; border-radius:14px; text-decoration:none; font-weight:800; font-size:0.85rem;">APRI MAPPA</a>
+        </div>
+    
+        <div style="background:white; border-radius:24px; padding:30px; border:1.5px solid #e2e8f0; position:relative; overflow:hidden; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+            <div style="position:absolute; top:0; left:0; width:12px; height:100%; background:#4f46e5;"></div>
+            <div style="font-size:0.8rem; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:8px;">V08</div>
+            <b style="font-size:1.15rem; color:#0f172a; display:block;">Zone: 3208, 3211</b>
+            <div style="font-size:0.85rem; font-weight:700; color:#10b981; margin-top:5px;">💰 Fatturato: € 444.00 (24 DDT)</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin:20px 0; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:15px;">
+                <span>🛣️ <b>284.7 km</b></span><span>🕒 Guida: 4h 15m</span>
+                <span> 12 tappe</span><span style="font-weight:900; color:#4f46e5;">🏁 TOT: 5h 51m</span>
+            </div>
+            <a href="V08_Zone_3208_3211.html" style="display:block; background:#4f46e5; color:white; text-align:center; padding:15px; border-radius:14px; text-decoration:none; font-weight:800; font-size:0.85rem;">APRI MAPPA</a>
+        </div>
+    
+        <div style="background:white; border-radius:24px; padding:30px; border:1.5px solid #e2e8f0; position:relative; overflow:hidden; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+            <div style="position:absolute; top:0; left:0; width:12px; height:100%; background:#4f46e5;"></div>
+            <div style="font-size:0.8rem; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:8px;">V09</div>
+            <b style="font-size:1.15rem; color:#0f172a; display:block;">Zone: 3211, 4122</b>
+            <div style="font-size:0.85rem; font-weight:700; color:#10b981; margin-top:5px;">💰 Fatturato: € 629.00 (34 DDT)</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin:20px 0; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:15px;">
+                <span>🛣️ <b>201.5 km</b></span><span>🕒 Guida: 3h 39m</span>
+                <span> 17 tappe</span><span style="font-weight:900; color:#4f46e5;">🏁 TOT: 5h 55m</span>
+            </div>
+            <a href="V09_Zone_3211_4122.html" style="display:block; background:#4f46e5; color:white; text-align:center; padding:15px; border-radius:14px; text-decoration:none; font-weight:800; font-size:0.85rem;">APRI MAPPA</a>
+        </div>
+    </div>
+    </div>
+</body></html>

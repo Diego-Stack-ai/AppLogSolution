@@ -1,0 +1,147 @@
+
+# Contesto Sistema Ottimizzazione Percorsi (Logistica)
+
+## Architettura Attuale
+
+Il sistema di ottimizzazione dei percorsi utilizza una struttura a due fasi:
+
+### 1. Ottimizzazione del percorso
+
+* Algoritmo principale: OR-Tools (TSP - Traveling Salesman Problem)
+* Fallback: algoritmo Nearest Neighbor
+* Input: matrice delle distanze tra i punti
+
+### 2. Visualizzazione e calcolo reale
+
+* API utilizzata: Google Directions
+* Funzione: ottenere percorso reale su strada e visualizzazione su mappa
+
+---
+
+## Metodo di Calcolo Distanze
+
+### Stato attuale
+
+* Metodo: formula di Haversine
+* Tipo distanza: linea d’aria (geometrica)
+* Utilizzo: costruzione matrice per ottimizzazione
+
+### Problema principale
+
+* L’ottimizzazione avviene su distanze non reali
+* Il percorso finale viene invece eseguito su strade reali
+
+👉 Questo genera il cosiddetto:
+**“Paradosso dell’ottimizzazione”**
+
+---
+
+## Conseguenze
+
+* Percorso teoricamente ottimo ≠ percorso realmente ottimo
+* Errori significativi in contesti urbani complessi
+* Possibili inefficienze logistiche (tempo, carburante, organizzazione)
+
+---
+
+## Sistema Attuale – Compromessi
+
+### Vantaggi
+
+* Velocità elevata (nessuna API durante ottimizzazione)
+* Costi ridotti
+* Struttura semplice e stabile
+
+### Svantaggi
+
+* Bassa precisione geografica
+* Ottimizzazione non aderente alla realtà stradale
+
+---
+
+## Meccanismi di Supporto
+
+* Uso API Google Directions solo dopo l’ottimizzazione
+* Fallback con coefficiente correttivo (es. distanza * 1.3)
+* Nessun caching persistente delle distanze
+
+---
+
+## Limiti Tecnici
+
+* Haversine non considera:
+
+  * rete stradale
+  * sensi unici
+  * traffico
+  * ostacoli geografici
+
+* Google Distance Matrix:
+
+  * limite ~25 waypoint
+  * costi API
+
+---
+
+## Strategie di Miglioramento
+
+### 1. Matrice distanze reali + caching (SOLUZIONE CONSIGLIATA)
+
+* Calcolare distanze reali tramite API
+* Salvare risultati in cache locale (JSON)
+* Riutilizzare nel tempo
+
+**Vantaggi:**
+
+* Alta precisione
+* Riduzione chiamate API
+* Ottimizzazione reale
+
+---
+
+### 2. Uso API alternative
+
+* OpenRouteService (gratuito, buona precisione)
+* OSRM (locale, più complesso)
+
+---
+
+### 3. Ottimizzazione avanzata
+
+* Uso durata (tempo) invece di distanza
+* Integrazione traffico (traffic-aware)
+
+---
+
+### 4. Migliorie minori
+
+* Coefficienti dinamici per zona
+* Miglior gestione coordinate GPS
+* Validazione dati input
+
+---
+
+## Direzione Evolutiva Consigliata
+
+1. Eliminare Haversine dalla fase di ottimizzazione
+2. Introdurre distanze reali (API)
+3. Implementare caching persistente
+4. Mantenere OR-Tools come motore di ottimizzazione
+
+---
+
+## Stato del Sistema
+
+* Architettura solida
+* Ottimizzazione avanzata già presente
+* Necessaria evoluzione sul modello di distanza
+
+---
+
+## Obiettivo Finale
+
+Sistema logistico che:
+
+* ottimizza su dati reali
+* riduce costi API
+* garantisce percorsi realmente efficienti

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Log Solution</title>
+    <link rel="stylesheet" href="styles.css?v=1.37">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <!-- PWA & Mobile Optimization -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Log Solutions">
+    <link rel="apple-touch-icon" href="img/logo.png">
+    <meta name="theme-color" content="#4f46e5">
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .nav-card {
+            background: var(--surface);
+            padding: 32px;
+            border-radius: 24px;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .nav-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px -10px var(--primary-glow);
+            background: white;
+        }
+
+        .nav-card .icon-circle {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            background: var(--bg-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .nav-card:hover .icon-circle {
+            background: var(--primary);
+            color: white;
+        }
+
+        .nav-card h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .nav-card p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .welcome-section {
+            margin-bottom: 40px;
+        }
+
+        .welcome-section h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .logout-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .logout-link:hover {
+            color: var(--danger);
+        }
+    </style>
+</head>
+<body>
+    <nav class="glass-nav">
+        <div class="nav-content">
+            <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
+            <div class="nav-title" style="flex: 1; margin-left: 4px;">Pannello di Controllo <span style="font-size: 11px; background: rgba(79, 70, 229, 0.1); color: var(--primary); padding: 2px 8px; border-radius: 20px; margin-left: 8px; font-weight: 600; vertical-align: middle;">v1.32</span></div>
+            <a href="login.html" class="logout-link logout-btn" title="Esci">
+                <span class="material-icons-round">logout</span>
+                Logout
+            </a>
+        </div>
+    </nav>
+
+    <main class="main-container">
+        <div class="welcome-section">
+            <h1>Bentornato, <span id="userGreeting" style="color: var(--primary);">Amministrazione</span></h1>
+            <p>Seleziona un'area di gestione per iniziare</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Elaborazione Distinte (Novità Cloud) -->
+            <a href="javascript:void(0)" onclick="window.navigateWithState('elaborazione.html')" class="nav-card" style="border: 2px solid var(--primary); background: linear-gradient(145deg, #ffffff, #f0f4ff);">
+                <div class="icon-circle" style="background: var(--primary); color: white;">
+                    <span class="material-icons-round" style="font-size: 32px;">cloud_upload</span>
+                </div>
+                <h3>Elaborazione Distinte</h3>
+                <p>Carica i PDF del fornitore nella Nuvola e genera le stampe per i furgoni.</p>
+            </a>
+
+            <!-- Progetto Scuole -->
+            <a href="javascript:void(0)" onclick="window.navigateWithState('progetto_scuole.html')" class="nav-card">
+                <div class="icon-circle" style="background: #eff6ff; color: #3b82f6;">
+                    <span class="material-icons-round" style="font-size: 32px;">school</span>
+                </div>
+                <h3>Progetto Scuole</h3>
+                <p>Gestisci l'intera infrastruttura del progetto scuole (clienti, articoli, anomalie e rientri).</p>
+            </a>
+
+            <!-- Visualizzazione Turni -->
+            <a href="javascript:void(0)" onclick="window.navigateWithState('visualizzazione.html')" class="nav-card">
+                <div class="icon-circle">
+                    <span class="material-icons-round" style="font-size: 32px;">visibility</span>
+                </div>
+                <h3>Visualizza Turni</h3>
+                <p>Controlla i viaggi inseriti dagli autisti e le statistiche</p>
+            </a>
+
+            <!-- Inserimento Turno -->
+            <a href="javascript:void(0)" onclick="window.navigateWithState('inserimento.html')" class="nav-card">
+                <div class="icon-circle">
+                    <span class="material-icons-round" style="font-size: 32px;">add_road</span>
+                </div>
+                <h3>Inizia Viaggio</h3>
+                <p>Accedi alla pagina per registrare un nuovo turno o viaggio</p>
+            </a>
+
+            <!-- Mappa Consegne -->
+            <a href="javascript:void(0)" onclick="window.navigateWithState('mappa_consegne.html')" class="nav-card">
+                <div class="icon-circle">
+                    <span class="material-icons-round" style="font-size: 32px;">map</span>
+                </div>
+                <h3>Mappa Consegne</h3>
+                <p>Visualizza geograficamente tutti i punti di consegna geolocalizzati</p>
+            </a>
+
+            <!-- Impostazioni -->
+            <a href="javascript:void(0)" onclick="window.navigateWithState('impostazioni.html')" class="nav-card">
+                <div class="icon-circle">
+                    <span class="material-icons-round" style="font-size: 32px;">settings</span>
+                </div>
+                <h3>Impostazioni Sistema</h3>
+                <p>Gestisci autisti, mezzi e configurazioni globali</p>
+            </a>
+        </div>
+    </main>
+
+
+    <script src="script.js?v=1.37"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.37"></script>
+</body>
+</html>
+

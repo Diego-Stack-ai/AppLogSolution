@@ -99,9 +99,7 @@ HTML_TEMPLATE = """
     L.control.zoom({ position: 'bottomright' }).addTo(map);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(map);
     
-    // STRATO DEI MARKER (per pulizia facile)
     let markerLayer = L.layerGroup().addTo(map);
-
     let ALL_POINTS = [];
     let MODIFIED = {};
     let IS_LOCKED = true;
@@ -141,9 +139,7 @@ HTML_TEMPLATE = """
             return mProv && mCom && mSearch;
         });
 
-        // PULIZIA TOTALE MAPPA
         markerLayer.clearLayers();
-        
         const listDiv = document.getElementById('point-list');
         listDiv.innerHTML = "";
         let bounds = [];
@@ -210,3 +206,65 @@ HTML_TEMPLATE = """
 </script>
 </body>
 </html>
+"""
+
+@app.route('/')
+def index():
+    return render_template_string(HTML_TEMPLATE)
+
+@app.route('/get_points')
+def get_points():
+    with LOCK:
+        df = pd.read_excel(EXCEL_FILE)
+        cols = {
+            'cod_f': find_col(df.columns, ['Codice Frutta', 'Cod_F', 'Frutta']),
+            'cod_l': find_col(df.columns, ['Codice Latte', 'Cod_L', 'Latte']),
+            'destinatario': find_col(df.columns, ['consegnato', 'Destinatario', 'Nome']),
+            'indirizzo': find_col(df.columns, ['Indirizzo']),
+            'comune': find_col(df.columns, ['Citt', 'Comune']),
+            'prov': find_col(df.columns, ['Prov']),
+            'lat': find_col(df.columns, ['Latitudine', 'Lat']),
+            'lng': find_col(df.columns, ['Longitudine', 'Lng'])
+        }
+        
+        points = []
+        for _, row in df.iterrows():
+            points.append({
+                'cod_f': str(row[cols['cod_f']]),
+                'cod_l': str(row[cols['cod_l']]),
+                'destinatario': str(row[cols['destinatario']]),
+                'indirizzo': str(row[cols['indirizzo']]),
+                'comune': str(row[cols['comune']]),
+                'prov': str(row[cols['prov']]),
+                'lat': float(row[cols['lat']]) if pd.notnull(row[cols['lat']]) else 0,
+                'lng': float(row[cols['lng']]) if pd.notnull(row[cols['lng']]) else 0
+            })
+        return jsonify(points)
+
+@app.route('/save_all', methods=['POST'])
+def save_all():
+    items = request.json
+    with LOCK:
+        df = pd.read_excel(EXCEL_FILE)
+        col_id = find_col(df.columns, ['Codice Frutta', 'Cod_F', 'Frutta'])
+        col_lat = find_col(df.columns, ['Latitudine', 'Lat'])
+        col_lng = find_col(df.columns, ['Longitudine', 'Lng'])
+        col_status = find_col(df.columns, ['Stato geocoding'])
+
+        for item in items:
+            mask = df[col_id].astype(str) == str(item['id'])
+            if mask.any():
+                df.loc[mask, col_lat] = item['lat']
+                df.loc[mask, col_lng] = item['lng']
+                if col_status:
+                    df.loc[mask, col_status] = 'ok'
+        
+        df.to_excel(EXCEL_FILE, index=False)
+        return jsonify({'status': 'success'})
+
+if __name__ == '__main__':
+    def open_browser():
+        webbrowser.open(f'http://127.0.0.1:{PORT}')
+    
+    threading.Timer(1.5, open_browser).start()
+    app.run(port=PORT, debug=False)

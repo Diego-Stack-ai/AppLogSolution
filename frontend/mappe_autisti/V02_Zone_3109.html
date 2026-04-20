@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V04</title>
+    <title>V02</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
@@ -69,13 +69,13 @@
         </div>
         <div id="sidebar">
             <div class="header">
-                <div class="trip-title">🏎️ V04 | Zone: 3207</div>
+                <div class="trip-title">🏎️ V02 | Zone: 3109</div>
                 <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
                 <div class="stats-row">
-                    <div class="stat-item"><span class="stat-val">126.1km</span><span class="stat-lbl">Strada</span></div>
-                    <div class="stat-item"><span class="stat-val">2h 48m</span><span class="stat-lbl">Guida</span></div>
-                    <div class="stat-item"><span class="stat-val">3h 2m</span><span class="stat-lbl">Soste</span></div>
-                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">5h 50m</span><span class="stat-lbl">Totale</span></div>
+                    <div class="stat-item"><span class="stat-val">83.9km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">1h 51m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 27m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">4h 18m</span><span class="stat-lbl">Totale</span></div>
                 </div>
             </div>
             <div id="delivery-list"><div class="card next" onclick="focusOn(0)">
@@ -87,10 +87,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(0, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">SCUOLA PRIMARIA CORLETTO</b>
-                    <span class="addr"><b>VIA PRIULI 72</b><br>31033 CASTELFRANCO VENETO (TREVISO)</span>
+                    <b class="name">CEDERLE</b>
+                    <span class="addr"><b>VIA 8 APRILE 19</b><br>36054 MONTEBELLO VICENTINO (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6489197,11.8972368&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4561354,11.3819043&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(1)">
                 <div class="stop-num">2</div>
                 <div class="stop-info">
@@ -100,10 +100,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(1, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">"S.MARIA DELLA PIEVE"</b>
-                    <span class="addr"><b>BORGO PIEVE 80</b><br>31033 CASTELFRANCO VENETO (TREVISO)</span>
+                    <b class="name">ZERMEGHEDO</b>
+                    <span class="addr"><b>VIA COSTEGGIOLA 56</b><br>36050 ZERMEGHEDO (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6679725,11.9305332&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.47367412117018,11.37058606072589&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(2)">
                 <div class="stop-num">3</div>
                 <div class="stop-info">
@@ -113,10 +113,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(2, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Zona Ovest Masaccio</b>
-                    <span class="addr"><b>Via Monfenera 23</b><br>31033 Castelfranco Veneto (TV)</span>
+                    <b class="name">SANTA BAKHITA</b>
+                    <span class="addr"><b>VIA CAPPUCCINI 1</b><br>36071 ARZIGNANO (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.674323,11.9188857&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5226757,11.338266&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(3)">
                 <div class="stop-num">4</div>
                 <div class="stop-info">
@@ -126,10 +126,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(3, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Don Bosco - Valla</b>
-                    <span class="addr"><b>Via Enrico Toti 8</b><br>31039 Riese Pio X (TV)</span>
+                    <b class="name">A. FOGAZZARO</b>
+                    <span class="addr"><b>CORSO G. MAZZINI 85</b><br>36071 ARZIGNANO (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7072531,11.9300784&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5226757,11.338266&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(4)">
                 <div class="stop-num">5</div>
                 <div class="stop-info">
@@ -139,10 +139,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(4, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">GIUSEPPINA BIANCO - CASTELLO G.</b>
-                    <span class="addr"><b>VIA PAOLO PIAZZA 3</b><br>31030 CASTELLO DI GODEGO (TREVISO)</span>
+                    <b class="name">San Rocco</b>
+                    <span class="addr"><b>Via Trento</b><br>65/B, 36071 Arzignano (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6931681,11.8835511&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.523693,11.327297&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(5)">
                 <div class="stop-num">6</div>
                 <div class="stop-info">
@@ -152,10 +152,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(5, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">ANGELO MARCHESAN - RAMON</b>
-                    <span class="addr"><b>VIA MARCHESAN 1</b><br>31037 LORIA (TREVISO)</span>
+                    <b class="name">Vittorino Da Feltre</b>
+                    <span class="addr"><b>Via San Zeno 38</b><br>36071 Arzignano (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7139815,11.8652845&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.51863465263014,11.313823989584177&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(6)">
                 <div class="stop-num">7</div>
                 <div class="stop-info">
@@ -165,10 +165,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(6, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">GIOVANNI XXIII - BESSICA</b>
-                    <span class="addr"><b>VIA DANTE ALIGHIERI</b><br>46, 31037 LORIA (TREVISO)</span>
+                    <b class="name">Don Albanello</b>
+                    <span class="addr"><b>Via Degli Alpini 4</b><br>36070 Nogarole Vicentino (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7362559,11.8391598&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.56032643693668,11.28967484498291&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(7)">
                 <div class="stop-num">8</div>
                 <div class="stop-info">
@@ -178,10 +178,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(7, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">General Giardino ( Semonzo)</b>
-                    <span class="addr"><b>Via Martiri Del Grappa N°24</b><br>31030 Borso Del Grappa (TV)</span>
+                    <b class="name">Scuola Primaria Zanella</b>
+                    <span class="addr"><b>Via Dante</b><br>24, 36070 Trissino (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.76563261966323,11.79157081480377&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5639413,11.3717731&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(8)">
                 <div class="stop-num">9</div>
                 <div class="stop-info">
@@ -191,10 +191,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(8, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">MONTE GRAPPA - BORSO DEL GRAPPA</b>
-                    <span class="addr"><b>VIA MARTIRI DEL GRAPPAN. 24</b><br>31030 BORSO DEL GRAPPA (TREVISO)</span>
+                    <b class="name">Scuola Primaria San Domenico Savio - Loc. Cereda</b>
+                    <span class="addr"><b>Piazza Sant'Andrea</b><br>1, 36073 Cornedo Vicentino (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8210248,11.7993161&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6094836,11.3505362&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(9)">
                 <div class="stop-num">10</div>
                 <div class="stop-info">
@@ -204,10 +204,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(9, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">M.FILIPPIN FERRARESE - PADERNO</b>
-                    <span class="addr"><b>VIA ROMA N. 5</b><br>31017 PIEVE DEL GRAPPA (TREVISO)</span>
+                    <b class="name">Scuola Primaria Padre Kolbe Spagnago</b>
+                    <span class="addr"><b>Via Giacomo Leopardi</b><br>1, 36073 Cornedo Vicentino (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8273409,11.8562764&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6094836,11.3505362&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(10)">
                 <div class="stop-num">11</div>
                 <div class="stop-info">
@@ -217,10 +217,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(10, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">SCUOLA PRIMARIA PARITARIA "FILIPPIN"</b>
-                    <span class="addr"><b>VIA S.GIACOMO 4</b><br>31017 PIEVE DEL GRAPPA (TREVISO)</span>
+                    <b class="name">Scuola Primaria Gian Giorgio Trissino Cornedo Capoluogo</b>
+                    <span class="addr"><b>Via Mazzalovo</b><br>1, 36073 Cornedo Vicentino (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8299919,11.8610041&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6148682,11.3433246&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(11)">
                 <div class="stop-num">12</div>
                 <div class="stop-info">
@@ -230,10 +230,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(11, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Sc.Elementare Paritaria Collegio Canova</b>
-                    <span class="addr"><b>Via Degli Impianti Sportivi 8</b><br>31054 Possagno (TV)</span>
+                    <b class="name">PRIMARIA BORNE</b>
+                    <span class="addr"><b>VIA BOLIVIA 1</b><br>36078 VALDAGNO (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.854879,11.8815695&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6422713,11.2969242&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(12)">
                 <div class="stop-num">13</div>
                 <div class="stop-info">
@@ -243,10 +243,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(12, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">ALDO FANTINA - POSSAGNO</b>
-                    <span class="addr"><b>VIA STRADONE DEL TEMPIO N. 21</b><br>31054 POSSAGNO (TREVISO)</span>
+                    <b class="name">PRIMARIA NOVALE</b>
+                    <span class="addr"><b>VIA MONTELLO 4</b><br>36078 VALDAGNO (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8561165,11.8799611&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6628772,11.2972896&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(13)">
                 <div class="stop-num">14</div>
                 <div class="stop-info">
@@ -256,10 +256,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(13, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Francesco Sartor - Cavaso Del Tomba</b>
-                    <span class="addr"><b>Via Stradone Del Tempio N°21</b><br>31034 Cavaso Del Tomba (TV)</span>
+                    <b class="name">Bruno Brandellero</b>
+                    <span class="addr"><b>Via Mons. P. Bicego 2</b><br>36030 Valli Del Pasubio (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8656383,11.9126347&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7399296,11.2608845&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(14)">
                 <div class="stop-num">15</div>
                 <div class="stop-info">
@@ -269,10 +269,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(14, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">F.Lli Stramare - Pederobba Cap.</b>
-                    <span class="addr"><b>Via Roma 102</b><br>31040 Pederobba (TV)</span>
+                    <b class="name">San Giovanni Bosco</b>
+                    <span class="addr"><b>Via Risorgimento 31</b><br>36036 Torrebelvicino (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.877235,11.951834&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.71113201658011,11.327091653787704&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(15)">
                 <div class="stop-num">16</div>
                 <div class="stop-info">
@@ -282,10 +282,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(15, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">SCUOLA PRIMARIA S. MARIA ASSUNTA</b>
-                    <span class="addr"><b>VIA PIVA 10</b><br>31049 VALDOBBIADENE (TREVISO)</span>
+                    <b class="name">SCUOLA PRIMARIA - A. MANZONI</b>
+                    <span class="addr"><b>VIA A. MANZONI 13</b><br>36030 SAN VITO DI LEGUZZANO (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.90164055489511,11.99638002114868&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6815519,11.37629&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(16)">
                 <div class="stop-num">17</div>
                 <div class="stop-info">
@@ -295,10 +295,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(16, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">GIACOMO ZANELLA - CASTIONE</b>
-                    <span class="addr"><b>VIA CASTIGLIONE</b><br>7, 31037 LORIA (TREVISO)</span>
+                    <b class="name">Scuola Primaria “E. De Amicis” –  Case</b>
+                    <span class="addr"><b>Via Deledda</b><br>2, 36064 Malo (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7922286660117,11.91160116677398&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6659691,11.3956785&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(17)">
                 <div class="stop-num">18</div>
                 <div class="stop-info">
@@ -308,10 +308,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(17, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">S. PIO X - SAN VITO</b>
-                    <span class="addr"><b>PIAZZA SAN VITO 6</b><br>31030 ALTIVOLE (TREVISO)</span>
+                    <b class="name">MALO - MOLINA</b>
+                    <span class="addr"><b>VIALE DELL'INDUSTRIA 13</b><br>36034 MALO (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7558039,11.9117124&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6734568,11.4604014&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(18)">
                 <div class="stop-num">19</div>
                 <div class="stop-info">
@@ -321,10 +321,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(18, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">MADONNINA DEL GRAPPA- SPINEDA</b>
-                    <span class="addr"><b>VIA CENDROLE 68</b><br>31039 RIESE PIO X (TREVISO)</span>
+                    <b class="name">DANTE ALIGHIERI</b>
+                    <span class="addr"><b>VIA CARD. E. DALLA COSTA 2</b><br>36030 VILLAVERLA (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7499828,11.8836609&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.65260525252498,11.491480276156864&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(19)">
                 <div class="stop-num">20</div>
                 <div class="stop-info">
@@ -334,10 +334,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(19, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">MONSIGNOR BERNARDI - POGGIANA</b>
-                    <span class="addr"><b>VIA BRIGATA MARTIRI DEL GRAPPA 5</b><br>31039 RIESE PIO X (TREVISO)</span>
+                    <b class="name">Dante Alighieri</b>
+                    <span class="addr"><b>Via Card. Dalla Costa 2</b><br>36030 Villaverla (VI)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7292228,11.8826846&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.65255401546338,11.49156259463146&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(20)">
                 <div class="stop-num">21</div>
                 <div class="stop-info">
@@ -347,75 +347,10 @@
                         -->
                         <button class="btn-done" onclick="toggleDone(20, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">MARGHERITA SARTO SANSON - CAP.</b>
-                    <span class="addr"><b>VIA MERRY DEL VAL 25</b><br>31039 RIESE PIO X (TREVISO)</span>
+                    <b class="name">GIOVANNI XXIII - NOVOLEDO</b>
+                    <span class="addr"><b>VIA A. PALLADIO 155</b><br>36030 VILLAVERLA (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7303283,11.9194384&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(21)">
-                <div class="stop-num">22</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <!-- DISATTIVATO TEMPORANEAMENTE PER IL TEST DEL CLIENTE
-                        <button class="btn-geo" onclick="saveRealCoords(21, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
-                        -->
-                        <button class="btn-done" onclick="toggleDone(21, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">VIA BARCO - ALTIVOLE CAP.</b>
-                    <span class="addr"><b>VIA BARCO 22</b><br>31030 ALTIVOLE (TREVISO)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7554893,11.9560703&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(22)">
-                <div class="stop-num">23</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <!-- DISATTIVATO TEMPORANEAMENTE PER IL TEST DEL CLIENTE
-                        <button class="btn-geo" onclick="saveRealCoords(22, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
-                        -->
-                        <button class="btn-done" onclick="toggleDone(22, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">GIOVANNI XXIII - CASELLE</b>
-                    <span class="addr"><b>VIA J. KENNEDY 1/1</b><br>31030 ALTIVOLE (TREVISO)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7464156,11.975021&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(23)">
-                <div class="stop-num">24</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <!-- DISATTIVATO TEMPORANEAMENTE PER IL TEST DEL CLIENTE
-                        <button class="btn-geo" onclick="saveRealCoords(23, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
-                        -->
-                        <button class="btn-done" onclick="toggleDone(23, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">Gianni Rodari - Barcon</b>
-                    <span class="addr"><b>Via Pola</b><br>19, 31050 Vedelago (TV)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7211921,12.004646&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(24)">
-                <div class="stop-num">25</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <!-- DISATTIVATO TEMPORANEAMENTE PER IL TEST DEL CLIENTE
-                        <button class="btn-geo" onclick="saveRealCoords(24, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
-                        -->
-                        <button class="btn-done" onclick="toggleDone(24, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">ISTITUTO SCOLASTICO "MARIA AUSILIATRICE"</b>
-                    <span class="addr"><b>VIA RISORGIMENTO 113</b><br>31044 MONTEBELLUNA (TREVISO)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.77225911543582,12.05885922631987&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(25)">
-                <div class="stop-num">26</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <!-- DISATTIVATO TEMPORANEAMENTE PER IL TEST DEL CLIENTE
-                        <button class="btn-geo" onclick="saveRealCoords(25, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
-                        -->
-                        <button class="btn-done" onclick="toggleDone(25, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">R.Pezzani - Istrana Cap.</b>
-                    <span class="addr"><b>Via Bertilla Boscardin</b><br>1, 31036 Istrana (TV)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6773652,12.1050772&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.645802242683224,11.507546102976724&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div></div>
         </div>
     </div>
@@ -474,8 +409,8 @@
     </script>
 
     <script>
-        const v_id = "V04";
-        const data = [{"cliente": "SCUOLA PRIMARIA CORLETTO", "indirizzo": "VIA PRIULI 72, 31033 CASTELFRANCO VENETO (TREVISO)", "lat": 45.6489197, "lon": 11.8972368, "codice_frutta": "p7729", "codice_latte": "p00000"}, {"cliente": "\"S.MARIA DELLA PIEVE\"", "indirizzo": "BORGO PIEVE 80, 31033 CASTELFRANCO VENETO (TREVISO)", "lat": 45.6679725, "lon": 11.9305332, "codice_frutta": "p2058", "codice_latte": "p2003"}, {"cliente": "Zona Ovest Masaccio", "indirizzo": "Via Monfenera 23, 31033 Castelfranco Veneto (TV)", "lat": 45.674323, "lon": 11.9188857, "codice_frutta": "p7732", "codice_latte": "p1921"}, {"cliente": "Don Bosco - Valla", "indirizzo": "Via Enrico Toti 8, 31039 Riese Pio X (TV)", "lat": 45.7072531, "lon": 11.9300784, "codice_frutta": "p2175", "codice_latte": "p1920"}, {"cliente": "GIUSEPPINA BIANCO - CASTELLO G.", "indirizzo": "VIA PAOLO PIAZZA 3, 31030 CASTELLO DI GODEGO (TREVISO)", "lat": 45.6931681, "lon": 11.8835511, "codice_frutta": "p2331", "codice_latte": "p1776"}, {"cliente": "ANGELO MARCHESAN - RAMON", "indirizzo": "VIA MARCHESAN 1, 31037 LORIA (TREVISO)", "lat": 45.7139815, "lon": 11.8652845, "codice_frutta": "p2330", "codice_latte": "p00000"}, {"cliente": "GIOVANNI XXIII - BESSICA", "indirizzo": "VIA DANTE ALIGHIERI, 46, 31037 LORIA (TREVISO)", "lat": 45.7362559, "lon": 11.8391598, "codice_frutta": "p00000", "codice_latte": "p1779"}, {"cliente": "General Giardino ( Semonzo)", "indirizzo": "Via Martiri Del Grappa N\u00b024, 31030 Borso Del Grappa (TV)", "lat": 45.76563261966323, "lon": 11.79157081480377, "codice_frutta": "p2272", "codice_latte": "p00000"}, {"cliente": "MONTE GRAPPA - BORSO DEL GRAPPA", "indirizzo": "VIA MARTIRI DEL GRAPPAN. 24, 31030 BORSO DEL GRAPPA (TREVISO)", "lat": 45.8210248, "lon": 11.7993161, "codice_frutta": "p2273", "codice_latte": "p00000"}, {"cliente": "M.FILIPPIN FERRARESE - PADERNO", "indirizzo": "VIA ROMA N. 5, 31017 PIEVE DEL GRAPPA (TREVISO)", "lat": 45.8273409, "lon": 11.8562764, "codice_frutta": "p2270", "codice_latte": "p00000"}, {"cliente": "SCUOLA PRIMARIA PARITARIA \"FILIPPIN\"", "indirizzo": "VIA S.GIACOMO 4, 31017 PIEVE DEL GRAPPA (TREVISO)", "lat": 45.8299919, "lon": 11.8610041, "codice_frutta": "p11119", "codice_latte": "p00000"}, {"cliente": "Sc.Elementare Paritaria Collegio Canova", "indirizzo": "Via Degli Impianti Sportivi 8, 31054 Possagno (TV)", "lat": 45.854879, "lon": 11.8815695, "codice_frutta": "p2293", "codice_latte": "p00000"}, {"cliente": "ALDO FANTINA - POSSAGNO", "indirizzo": "VIA STRADONE DEL TEMPIO N. 21, 31054 POSSAGNO (TREVISO)", "lat": 45.8561165, "lon": 11.8799611, "codice_frutta": "p2269", "codice_latte": "p00000"}, {"cliente": "Francesco Sartor - Cavaso Del Tomba", "indirizzo": "Via Stradone Del Tempio N\u00b021, 31034 Cavaso Del Tomba (TV)", "lat": 45.8656383, "lon": 11.9126347, "codice_frutta": "p2271", "codice_latte": "p00000"}, {"cliente": "F.Lli Stramare - Pederobba Cap.", "indirizzo": "Via Roma 102, 31040 Pederobba (TV)", "lat": 45.877235, "lon": 11.951834, "codice_frutta": "p00000", "codice_latte": "p2025"}, {"cliente": "SCUOLA PRIMARIA S. MARIA ASSUNTA", "indirizzo": "VIA PIVA 10, 31049 VALDOBBIADENE (TREVISO)", "lat": 45.90164055489511, "lon": 11.99638002114868, "codice_frutta": "p2286", "codice_latte": "p00000"}, {"cliente": "GIACOMO ZANELLA - CASTIONE", "indirizzo": "VIA CASTIGLIONE, 7, 31037 LORIA (TREVISO)", "lat": 45.7922286660117, "lon": 11.91160116677398, "codice_frutta": "p00000", "codice_latte": "p1778"}, {"cliente": "S. PIO X - SAN VITO", "indirizzo": "PIAZZA SAN VITO 6, 31030 ALTIVOLE (TREVISO)", "lat": 45.7558039, "lon": 11.9117124, "codice_frutta": "p2413", "codice_latte": "p1936"}, {"cliente": "MADONNINA DEL GRAPPA- SPINEDA", "indirizzo": "VIA CENDROLE 68, 31039 RIESE PIO X (TREVISO)", "lat": 45.7499828, "lon": 11.8836609, "codice_frutta": "p2174", "codice_latte": "p1918"}, {"cliente": "MONSIGNOR BERNARDI - POGGIANA", "indirizzo": "VIA BRIGATA MARTIRI DEL GRAPPA 5, 31039 RIESE PIO X (TREVISO)", "lat": 45.7292228, "lon": 11.8826846, "codice_frutta": "p00000", "codice_latte": "p1919"}, {"cliente": "MARGHERITA SARTO SANSON - CAP.", "indirizzo": "VIA MERRY DEL VAL 25, 31039 RIESE PIO X (TREVISO)", "lat": 45.7303283, "lon": 11.9194384, "codice_frutta": "p2173", "codice_latte": "p1917"}, {"cliente": "VIA BARCO - ALTIVOLE CAP.", "indirizzo": "VIA BARCO 22, 31030 ALTIVOLE (TREVISO)", "lat": 45.7554893, "lon": 11.9560703, "codice_frutta": "p2411", "codice_latte": "p1934"}, {"cliente": "GIOVANNI XXIII - CASELLE", "indirizzo": "VIA J. KENNEDY 1/1, 31030 ALTIVOLE (TREVISO)", "lat": 45.7464156, "lon": 11.975021, "codice_frutta": "p2412", "codice_latte": "p1935"}, {"cliente": "Gianni Rodari - Barcon", "indirizzo": "Via Pola, 19, 31050 Vedelago (TV)", "lat": 45.7211921, "lon": 12.004646, "codice_frutta": "p2153", "codice_latte": "p00000"}, {"cliente": "ISTITUTO SCOLASTICO \"MARIA AUSILIATRICE\"", "indirizzo": "VIA RISORGIMENTO 113, 31044 MONTEBELLUNA (TREVISO)", "lat": 45.77225911543582, "lon": 12.05885922631987, "codice_frutta": "p2246", "codice_latte": "p00000"}, {"cliente": "R.Pezzani - Istrana Cap.", "indirizzo": "Via Bertilla Boscardin, 1, 31036 Istrana (TV)", "lat": 45.6773652, "lon": 12.1050772, "codice_frutta": "p2056", "codice_latte": "p1748"}];
+        const v_id = "V02";
+        const data = [{"cliente": "CEDERLE", "indirizzo": "VIA 8 APRILE 19, 36054 MONTEBELLO VICENTINO (VICENZA)", "lat": 45.4561354, "lon": 11.3819043, "codice_frutta": "p00000", "codice_latte": "p2639"}, {"cliente": "ZERMEGHEDO", "indirizzo": "VIA COSTEGGIOLA 56, 36050 ZERMEGHEDO (VICENZA)", "lat": 45.47367412117018, "lon": 11.37058606072589, "codice_frutta": "p00000", "codice_latte": "p2002"}, {"cliente": "SANTA BAKHITA", "indirizzo": "VIA CAPPUCCINI 1, 36071 ARZIGNANO (VICENZA)", "lat": 45.5226757, "lon": 11.338266, "codice_frutta": "p2268", "codice_latte": "p00000"}, {"cliente": "A. FOGAZZARO", "indirizzo": "CORSO G. MAZZINI 85, 36071 ARZIGNANO (VICENZA)", "lat": 45.5226757, "lon": 11.338266, "codice_frutta": "p2093", "codice_latte": "p00000"}, {"cliente": "San Rocco", "indirizzo": "Via Trento, 65/B, 36071 Arzignano (VI)", "lat": 45.523693, "lon": 11.327297, "codice_frutta": "p2092", "codice_latte": "p00000"}, {"cliente": "Vittorino Da Feltre", "indirizzo": "Via San Zeno 38, 36071 Arzignano (VI)", "lat": 45.51863465263014, "lon": 11.313823989584177, "codice_frutta": "p00000", "codice_latte": "p1746"}, {"cliente": "Don Albanello", "indirizzo": "Via Degli Alpini 4, 36070 Nogarole Vicentino (VI)", "lat": 45.56032643693668, "lon": 11.28967484498291, "codice_frutta": "p00000", "codice_latte": "p1747"}, {"cliente": "Scuola Primaria Zanella", "indirizzo": "Via Dante, 24, 36070 Trissino (VI)", "lat": 45.5639413, "lon": 11.3717731, "codice_frutta": "p2322", "codice_latte": "p00000"}, {"cliente": "Scuola Primaria San Domenico Savio - Loc. Cereda", "indirizzo": "Piazza Sant'Andrea, 1, 36073 Cornedo Vicentino (VI)", "lat": 45.6094836, "lon": 11.3505362, "codice_frutta": "p2135", "codice_latte": "p00000"}, {"cliente": "Scuola Primaria Padre Kolbe Spagnago", "indirizzo": "Via Giacomo Leopardi, 1, 36073 Cornedo Vicentino (VI)", "lat": 45.6094836, "lon": 11.3505362, "codice_frutta": "p2136", "codice_latte": "p00000"}, {"cliente": "Scuola Primaria Gian Giorgio Trissino Cornedo Capoluogo", "indirizzo": "Via Mazzalovo, 1, 36073 Cornedo Vicentino (VI)", "lat": 45.6148682, "lon": 11.3433246, "codice_frutta": "p2137", "codice_latte": "p00000"}, {"cliente": "PRIMARIA BORNE", "indirizzo": "VIA BOLIVIA 1, 36078 VALDAGNO (VICENZA)", "lat": 45.6422713, "lon": 11.2969242, "codice_frutta": "p00000", "codice_latte": "p1850"}, {"cliente": "PRIMARIA NOVALE", "indirizzo": "VIA MONTELLO 4, 36078 VALDAGNO (VICENZA)", "lat": 45.6628772, "lon": 11.2972896, "codice_frutta": "p00000", "codice_latte": "p2026"}, {"cliente": "Bruno Brandellero", "indirizzo": "Via Mons. P. Bicego 2, 36030 Valli Del Pasubio (VI)", "lat": 45.7399296, "lon": 11.2608845, "codice_frutta": "p13668", "codice_latte": "p00000"}, {"cliente": "San Giovanni Bosco", "indirizzo": "Via Risorgimento 31, 36036 Torrebelvicino (VI)", "lat": 45.71113201658011, "lon": 11.327091653787704, "codice_frutta": "p13525", "codice_latte": "p00000"}, {"cliente": "SCUOLA PRIMARIA - A. MANZONI", "indirizzo": "VIA A. MANZONI 13, 36030 SAN VITO DI LEGUZZANO (VICENZA)", "lat": 45.6815519, "lon": 11.37629, "codice_frutta": "p2358", "codice_latte": "p00000"}, {"cliente": "Scuola Primaria \u201cE. De Amicis\u201d \u2013  Case", "indirizzo": "Via Deledda, 2, 36064 Malo (VI)", "lat": 45.6659691, "lon": 11.3956785, "codice_frutta": "p2259", "codice_latte": "p00000"}, {"cliente": "MALO - MOLINA", "indirizzo": "VIALE DELL'INDUSTRIA 13, 36034 MALO (VICENZA)", "lat": 45.6734568, "lon": 11.4604014, "codice_frutta": "p2257", "codice_latte": "p00000"}, {"cliente": "DANTE ALIGHIERI", "indirizzo": "VIA CARD. E. DALLA COSTA 2, 36030 VILLAVERLA (VICENZA)", "lat": 45.65260525252498, "lon": 11.491480276156864, "codice_frutta": "p2382", "codice_latte": "p00000"}, {"cliente": "Dante Alighieri", "indirizzo": "Via Card. Dalla Costa 2, 36030 Villaverla (VI)", "lat": 45.65255401546338, "lon": 11.49156259463146, "codice_frutta": "p00000", "codice_latte": "p1813"}, {"cliente": "GIOVANNI XXIII - NOVOLEDO", "indirizzo": "VIA A. PALLADIO 155, 36030 VILLAVERLA (VICENZA)", "lat": 45.645802242683224, "lon": 11.507546102976724, "codice_frutta": "p2383", "codice_latte": "p00000"}];
         window.data = data; window.v_id = v_id;
         let map, markers = [], userMarker;
         window.currentPos = null;

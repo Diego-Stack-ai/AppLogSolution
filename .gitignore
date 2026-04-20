@@ -21,13 +21,13 @@ desktop.ini
 *.gform
 
 # Ambiente/editor
-.vscode/
-.idea/
+**/.vscode/
+**/.idea/
 *.code-workspace
-. agent/
-brain/
-.gemini/
-.cursor/
+**/.agent/
+**/brain/
+**/.gemini/
+**/.cursor/
 
 # Python / Node
 venv/

@@ -14,7 +14,8 @@ GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
 
 # --- CONFIGURAZIONE OTTIMIZZAZIONE ---
 # Opzioni: "HAVERSINE" (Locale/Veloce) o "GOOGLE_MATRIX" (API/Preciso)
-MODO_DISTANZA = "HAVERSINE" 
+MODO_DISTANZA = "GOOGLE_MATRIX" 
+CACHE_FILE = PROG_DIR / "distanze_reali_cache.json"
 
 DEPOT = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"}
 TIME_OFFSET_PER_STOP = 8
@@ -46,43 +47,122 @@ def haversine(p1, p2):
     a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
     return R * (2 * math.asin(math.sqrt(a)))
 
+# --- GESTIONE CACHE DISTANZE REALI ---
+
+class DistanceCache:
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.data = self._load()
+
+    def _load(self):
+        if self.file_path.exists():
+            try:
+                with open(self.file_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except: return {}
+        return {}
+
+    def save(self):
+        with open(self.file_path, "w", encoding="utf-8") as f:
+            json.dump(self.data, f, indent=2)
+
+    def _get_key(self, p1, p2):
+        # Arrotondiamo a 5 decimali per stabilità (~1 metro)
+        lat1, lon1 = round(float(p1.get('lat', 0)), 5), round(float(p1.get('lon', p1.get('lng', 0))), 5)
+        lat2, lon2 = round(float(p2.get('lat', 0)), 5), round(float(p2.get('lon', p2.get('lng', 0))), 5)
+        return f"{lat1},{lon1}_{lat2},{lon2}"
+
+    def get(self, p1, p2):
+        return self.data.get(self._get_key(p1, p2))
+
+    def set(self, p1, p2, dist_meters, duration_seconds):
+        self.data[self._get_key(p1, p2)] = {"dist": dist_meters, "dur": duration_seconds}
+
+dist_cache = DistanceCache(CACHE_FILE)
+
 # --- LOGICA DI OTTIMIZZAZIONE AVANZATA (OR-TOOLS) ---
 
 def crea_matrice_distanze(punti_con_deposito):
-    """Crea la matrice delle distanze (in metri) tra tutti i punti."""
+    """Crea la matrice delle distanze (in metri) usando Cache + Google Matrix API con Chunking."""
     n = len(punti_con_deposito)
     matrix = [[0] * n for _ in range(n)]
     
-    if MODO_DISTANZA == "HAVERSINE":
-        for i in range(n):
-            for j in range(n):
-                if i == j: continue
-                matrix[i][j] = int(haversine(punti_con_deposito[i], punti_con_deposito[j]) * 1000)
-    
-    elif MODO_DISTANZA == "GOOGLE_MATRIX":
-        # Google Matrix API limit: 25 origins/destinations per request
-        if n > 25:
-            print("WARN Troppe tappe (>25) per Google Matrix API. Uso Haversine locale.")
-            return crea_matrice_distanze_haversine_internal(punti_con_deposito)
-            
-        coords = "|".join([f"{p['lat']},{p['lon']}" for p in punti_con_deposito])
-        url = f"https://maps.googleapis.com/maps/api/distancematrix/json?origins={coords}&destinations={coords}&key={GOOGLE_MAPS_API_KEY}"
-        try:
-            r = requests.get(url).json()
-            if r['status'] == 'OK':
-                for i, row in enumerate(r['rows']):
-                    for j, element in enumerate(row['elements']):
-                        if element['status'] == 'OK':
-                            matrix[i][j] = element['distance']['value']
-                        else:
-                            matrix[i][j] = int(haversine(punti_con_deposito[i], punti_con_deposito[j]) * 1000)
+    # 1. Riempimento iniziale dal Cache
+    punti_mancanti = False
+    for i in range(n):
+        for j in range(n):
+            if i == j: continue
+            cached = dist_cache.get(punti_con_deposito[i], punti_con_deposito[j])
+            if cached:
+                matrix[i][j] = cached['dist']
             else:
-                print(f"WARN Errore Google Matrix status: {r['status']}. Uso Haversine.")
-                return crea_matrice_distanze_haversine_internal(punti_con_deposito)
-        except Exception as e:
-            print(f"WARN Errore connessione Matrix API: {e}. Uso Haversine.")
-            return crea_matrice_distanze_haversine_internal(punti_con_deposito)
+                punti_mancanti = True
+
+    if not punti_mancanti:
+        return matrix
+
+    if MODO_DISTANZA == "HAVERSINE":
+        return crea_matrice_distanze_haversine_internal(punti_con_deposito)
+
+    # 2. Richiesta a Google Matrix con CHUNKING (per superare il limite di 25 origini e 100 elementi totali)
+    # NOTA: Google permette max 100 elementi per richiesta (es: 10 origini x 10 destinazioni)
+    CHUNK_SIZE = 10
+    print(f"  API Google Matrix: Elaborazione distanze reali per {n} punti...")
+    
+    try:
+        modificato = False
+        for r_start in range(0, n, CHUNK_SIZE):
+            r_end = min(r_start + CHUNK_SIZE, n)
+            origins = "|".join([f"{p['lat']},{p['lon']}" for p in punti_con_deposito[r_start:r_end]])
             
+            for c_start in range(0, n, CHUNK_SIZE):
+                c_end = min(c_start + CHUNK_SIZE, n)
+                # Ottimizzazione: se tutte le distanze in questo blocco sono già nel cache, saltiamo la chiamata
+                blocco_mancante = False
+                for i in range(r_start, r_end):
+                    for j in range(c_start, c_end):
+                        if i != j and matrix[i][j] == 0:
+                            blocco_mancante = True; break
+                    if blocco_mancante: break
+                
+                if not blocco_mancante: continue
+
+                destinations = "|".join([f"{p['lat']},{p['lon']}" for p in punti_con_deposito[c_start:c_end]])
+                url = f"https://maps.googleapis.com/maps/api/distancematrix/json?origins={origins}&destinations={destinations}&key={GOOGLE_MAPS_API_KEY}"
+                
+                resp = requests.get(url, timeout=10).json()
+                if resp['status'] == 'OK':
+                    for i_local, row in enumerate(resp['rows']):
+                        i_global = r_start + i_local
+                        for j_local, element in enumerate(row['elements']):
+                            j_global = c_start + j_local
+                            if i_global == j_global: continue
+                            
+                            if element['status'] == 'OK':
+                                dist = element['distance']['value']
+                                dur = element['duration']['value']
+                                matrix[i_global][j_global] = dist
+                                dist_cache.set(punti_con_deposito[i_global], punti_con_deposito[j_global], dist, dur)
+                                modificato = True
+                elif resp['status'] == 'REQUEST_DENIED':
+                    print("  ERR API Google Matrix: Accesso Negato (REQUEST_DENIED).")
+                    print("      -> DEVI ABILITARE 'Distance Matrix API' nella Google Cloud Console.")
+                    return crea_matrice_distanze_haversine_internal(punti_con_deposito)
+                else:
+                    print(f"  WARN Google Matrix status: {resp['status']}. Uso Haversine per questo blocco.")
+                    # Fallback locale per il blocco specifico
+                    for i in range(r_start, r_end):
+                        for j in range(c_start, c_end):
+                            if i != j and matrix[i][j] == 0:
+                                matrix[i][j] = int(haversine(punti_con_deposito[i], punti_con_deposito[j]) * 1000)
+
+        if modificato:
+            dist_cache.save()
+            
+    except Exception as e:
+        print(f"  WARN Errore durante il chunking Matrix: {e}. Uso Haversine di emergenza.")
+        return crea_matrice_distanze_haversine_internal(punti_con_deposito)
+
     return matrix
 
 def crea_matrice_distanze_haversine_internal(punti_con_deposito):
@@ -233,6 +313,9 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path):
                     <div class="stop-info"><span class="depot-tag">PARTENZA</span><br><b style="font-size:0.9rem;">Deposito Veggiano</b></div>
                 </div>
                 { "".join([f'''<div class="stop-card" onclick="panTo({i+1})"><div class="stop-num">{i+1}</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">{p['nome']}</b><br><small style="color:#64748b; font-size:0.75rem;">{p['indirizzo']}</small></div><a href="https://www.google.com/maps/dir/?api=1&destination={p['lat']},{p['lon']}&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div>''' for i, p in enumerate(percorso)]) }
+                <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">flag</span></div>
+                    <div class="stop-info"><span class="depot-tag">ARRIVO</span><br><b style="font-size:0.9rem;">Deposito Veggiano</b></div>
+                </div>
             </div>
         </div>
         <div id="map"></div>

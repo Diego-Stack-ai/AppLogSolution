@@ -714,7 +714,8 @@ def main():
 
     # Traccia i PDF usati (per verifica orfani e finalizzazione stati)
     pdf_usati: set[Path] = set()
-    rientri_usati: set[tuple] = set() # (codice, data_str)
+    rientri_usati: set[tuple] = set()     # (codice, data_str) - PDF trovato e allegato
+    rientri_assegnati: set[tuple] = set() # (codice, data_str) - Presente in un viaggio
     pdf_generati: list[Path] = []
 
     for viaggio in viaggi:
@@ -765,6 +766,9 @@ def main():
                     # ── RIENTRO: cerca nei PDF delle date storiche (col. B) ──
                     date_rientro = rientri[codice.lower()]
                     for d_r in date_rientro:
+                        # Segna come assegnato a un viaggio (indipendentemente dal ritrovamento del PDF)
+                        rientri_assegnati.add((codice.lower(), d_r))
+                        
                         cart_storica = CONSEGNE_DIR / f"CONSEGNE_{d_r}" / "DDT-ORIGINALI-DIVISI"
                         for sotto in ["FRUTTA", "LATTE"]:
                             pdf_found = _trova_pdf(codice, d_r, cart_storica / sotto)
@@ -788,7 +792,11 @@ def main():
                         articoli = _raccogli_articoli_da_pdf(pdf_obj, tp)
                         articoli_giro.extend(articoli)
                         n_art = len(articoli)
-                        is_rientro = (codice.lower() in rientri) and (d_r != d_p)
+                        # Un DDT è un rientro se è presente nella mappa rientri.
+                        # Non forziamo il controllo d_r != d_p perché per i rientri manuali
+                        # la data del punto (d_p) viene forzata alla data del DDT (d_r) per trovare il file.
+                        is_rientro = (codice.lower() in rientri)
+                        
                         tag = f" [RIENTRO<-{d_r}]" if is_rientro else ""
                         print(f"       OK {nome:<40} {codice} ({tp}){tag} -> {n_art} art.")
                         if is_rientro:
@@ -860,18 +868,22 @@ def main():
     print(f"\n  FIN Finalizzazione stati in rientri_ddt.xlsx...")
     aggiornamenti_excel = []
     for r_idx, cod, d_str, stato in all_rientri_rows:
-        is_usato = (cod, d_str) in rientri_usati
+        is_usato     = (cod, d_str) in rientri_usati
+        is_assegnato = (cod, d_str) in rientri_assegnati
         
         # Se era in lavorazione
         if "lavorazione" in stato:
             if is_usato:
-                # Promosso ad allegato
+                # Caso 1: Assegnato e PDF trovato -> Promosso ad allegato
                 aggiornamenti_excel.append((r_idx, f"allegato DDT {data_ddt}"))
+            elif is_assegnato:
+                # Caso 2: Assegnato ma PDF non trovato -> Resta in lavorazione (pronto per riprovare)
+                pass 
             else:
-                # Rimandato: sbianca la cella
+                # Caso 3: Non assegnato a nessun viaggio -> Sbianca la cella per reset procedura
                 aggiornamenti_excel.append((r_idx, ""))
         
-        # Se non era in lavorazione ma è stato usato comunque oggi (es. abbinamento automatico)
+        # Se non era in lavorazione ma è stato usato comunque oggi (es. abbinamento automatico/immediato)
         elif is_usato and "allegato" not in stato:
             aggiornamenti_excel.append((r_idx, f"allegato DDT {data_ddt}"))
 

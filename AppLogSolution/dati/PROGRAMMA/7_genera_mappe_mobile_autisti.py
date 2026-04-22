@@ -13,6 +13,8 @@ WEBAPP_FOLDER = ROOT_DIR / "frontend" / "mappe_autisti"
 GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
 
 DEPOT = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"}
+CACHE_FILE = PROG_DIR / "distanze_reali_cache.json"
+MODO_DISTANZA = "GOOGLE_MATRIX"
 
 # Tentativo di import OR-Tools
 try:
@@ -37,7 +39,103 @@ def haversine(p1, p2):
     a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
     return R * (2 * math.asin(math.sqrt(a)))
 
+# --- GESTIONE CACHE DISTANZE REALI ---
+
+class DistanceCache:
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.data = self._load()
+
+    def _load(self):
+        if self.file_path.exists():
+            try:
+                with open(self.file_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except: return {}
+        return {}
+
+    def save(self):
+        with open(self.file_path, "w", encoding="utf-8") as f:
+            json.dump(self.data, f, indent=2)
+
+    def _get_key(self, p1, p2):
+        lat1, lon1 = round(float(p1.get('lat', 0)), 5), round(float(p1.get('lon', p1.get('lng', 0))), 5)
+        lat2, lon2 = round(float(p2.get('lat', 0)), 5), round(float(p2.get('lon', p2.get('lng', 0))), 5)
+        return f"{lat1},{lon1}_{lat2},{lon2}"
+
+    def get(self, p1, p2):
+        return self.data.get(self._get_key(p1, p2))
+
+    def set(self, p1, p2, dist_meters, duration_seconds):
+        self.data[self._get_key(p1, p2)] = {"dist": dist_meters, "dur": duration_seconds}
+
+dist_cache = DistanceCache(CACHE_FILE)
+
 # --- LOGICA DI OTTIMIZZAZIONE AVANZATA (OR-TOOLS) ---
+
+def crea_matrice_distanze(punti):
+    """Crea la matrice delle distanze (in metri) usando Cache + Google Matrix API con Chunking."""
+    n = len(punti)
+    matrix = [[0] * n for _ in range(n)]
+    
+    # 1. Riempimento iniziale dal Cache
+    punti_mancanti = False
+    for i in range(n):
+        for j in range(n):
+            if i == j: continue
+            cached = dist_cache.get(punti[i], punti[j])
+            if cached: matrix[i][j] = cached['dist']
+            else: punti_mancanti = True
+
+    if not punti_mancanti: return matrix
+    if MODO_DISTANZA == "HAVERSINE": return [[int(haversine(punti[i], punti[j]) * 1000) for j in range(n)] for i in range(n)]
+
+    # 2. Richiesta a Google Matrix con CHUNKING (limite Google: 100 elementi per chiamata)
+    CHUNK_SIZE = 10
+    print(f"  API Google Matrix: Elaborazione distanze reali per {n} punti...")
+    
+    try:
+        modificato = False
+        for r_start in range(0, n, CHUNK_SIZE):
+            r_end = min(r_start + CHUNK_SIZE, n)
+            origins = "|".join([f"{p['lat']},{p['lon']}" for p in punti[r_start:r_end]])
+            
+            for c_start in range(0, n, CHUNK_SIZE):
+                c_end = min(c_start + CHUNK_SIZE, n)
+                # Verifica se il blocco è già completo in cache
+                blocco_mancante = False
+                for i in range(r_start, r_end):
+                    for j in range(c_start, c_end):
+                        if i != j and matrix[i][j] == 0:
+                            blocco_mancante = True; break
+                    if blocco_mancante: break
+                
+                if not blocco_mancante: continue
+
+                destinations = "|".join([f"{p['lat']},{p['lon']}" for p in punti[c_start:c_end]])
+                url = f"https://maps.googleapis.com/maps/api/distancematrix/json?origins={origins}&destinations={destinations}&key={GOOGLE_MAPS_API_KEY}"
+                
+                resp = requests.get(url, timeout=10).json()
+                if resp['status'] == 'OK':
+                    for i_local, row in enumerate(resp['rows']):
+                        i_global = r_start + i_local
+                        for j_local, element in enumerate(row['elements']):
+                            j_global = c_start + j_local
+                            if i_global == j_global: continue
+                            if element['status'] == 'OK':
+                                d, t = element['distance']['value'], element['duration']['value']
+                                matrix[i_global][j_global] = d
+                                dist_cache.set(punti[i_global], punti[j_global], d, t)
+                                modificato = True
+                elif resp['status'] == 'REQUEST_DENIED':
+                    print("  ERR API Google Matrix: REQUEST_DENIED. Abilita 'Distance Matrix API' nel Cloud Console.")
+                    return [[int(haversine(punti[i], punti[j]) * 1000) for j in range(n)] for i in range(n)]
+        
+        if modificato: dist_cache.save()
+        return matrix
+    except Exception as e:
+        print(f"  WARN Errore Matrix: {e}. Fallback Haversine.")
+        return [[int(haversine(punti[i], punti[j]) * 1000) for j in range(n)] for i in range(n)]
 
 def ottimizza_percorso(punti_consegna):
     if not punti_consegna: return []
@@ -45,7 +143,7 @@ def ottimizza_percorso(punti_consegna):
 
     all_locations = [DEPOT] + punti_consegna
     n = len(all_locations)
-    distance_matrix = [[int(haversine(all_locations[i], all_locations[j]) * 1000) for j in range(n)] for i in range(n)]
+    distance_matrix = crea_matrice_distanze(all_locations)
     
     manager = pywrapcp.RoutingIndexManager(n, 1, 0)
     routing = pywrapcp.RoutingModel(manager)
@@ -372,8 +470,10 @@ def main():
         perc = v.get("lista_punti", [])
         if not perc: continue
         
-        # Statistiche di base (ora coerenti con l'ordine dell'ufficio)
-        km = round(sum(haversine(perc[j], perc[j+1]) for j in range(len(perc)-1)) * 1.25, 1) if len(perc)>1 else 0
+        # 1. Calcolo KM includendo DEPOSITO -> PRIMO PUNTO ... ULTIMO PUNTO -> DEPOSITO
+        perc_completo = [DEPOT] + perc + [DEPOT]
+        km = round(sum(haversine(perc_completo[j], perc_completo[j+1]) for j in range(len(perc_completo)-1)) * 1.25, 1)
+        
         t_guida = int(km / 45 * 60)
         t_sosta = len(perc) * 7
         t_tot = t_guida + t_sosta
@@ -390,30 +490,46 @@ def main():
             query = f"{d['cliente']} {d['indirizzo']}".replace(" ", "+")
             return f"https://www.google.com/maps/dir/?api=1&destination={query}&travelmode=driving"
 
-        deliveries = [{"cliente": p.get("nome", "Cliente"), "indirizzo": p.get("indirizzo", "-"), "lat": p.get("lat"), "lon": p.get("lon"), "codice_frutta": p.get("codice_frutta", ""), "codice_latte": p.get("codice_latte", "")} for p in perc]
+        # 2. Creazione lista consegne per JS (include il deposito per la mappa)
+        deliveries = [{"cliente": p.get("nome", "Cliente"), "indirizzo": p.get("indirizzo", "-"), "lat": p.get("lat"), "lon": p.get("lon"), "codice_frutta": p.get("codice_frutta", ""), "codice_latte": p.get("codice_latte", "")} for p in perc_completo]
+        # 3. Costruzione delle card HTML
         cards_list = []
-        for idx, d in enumerate(deliveries):
-            # Formattazione indirizzo su due righe: via/piazza sopra (grassetto), resto sotto
+        
+        # Card di Partenza
+        cards_list.append(f'''
+            <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
+                <div class="stop-num" style="background:#475569;"><span class="material-icons-round">home</span></div>
+                <div class="stop-info"><b class="name">PARTENZA</b><span class="addr">Deposito Veggiano</span></div>
+            </div>''')
+
+        for idx, p in enumerate(perc):
+            d = {"cliente": p.get("nome", "Cliente"), "indirizzo": p.get("indirizzo", "-"), "lat": p.get("lat"), "lon": p.get("lon")}
             p_addr = d["indirizzo"].split(',', 1)
             via_parte = p_addr[0].strip()
             resto_parte = p_addr[1].strip() if len(p_addr) > 1 else ""
             addr_html = f'<span class="addr"><b>{via_parte}</b><br>{resto_parte}</span>'
             
-            c = f'''<div class="card {'next' if idx == 0 else ''}" onclick="focusOn({idx})">
+            nav_url = get_nav_url(p)
+            
+            c = f'''<div class="card {'next' if idx == 0 else ''}" onclick="focusOn({idx+1})">
                 <div class="stop-num">{idx+1}</div>
                 <div class="stop-info">
                     <div class="actions">
-                        <!-- DISATTIVATO TEMPORANEAMENTE PER IL TEST DEL CLIENTE
-                        <button class="btn-geo" onclick="saveRealCoords({idx}, event)"><span class="material-icons-round">location_searching</span> GEOLOCALIZZA</button>
-                        -->
                         <button class="btn-done" onclick="toggleDone({idx}, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
                     <b class="name">{d["cliente"]}</b>
                     {addr_html}
                 </div>
-                <a href="{get_nav_url(d)}" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="{nav_url}" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div>'''
             cards_list.append(c)
+        
+        # Card di Arrivo
+        cards_list.append(f'''
+            <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
+                <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
+                <div class="stop-info"><b class="name">ARRIVO</b><span class="addr">Deposito Veggiano</span></div>
+            </div>''')
         
         cards_html = "".join(cards_list)
 

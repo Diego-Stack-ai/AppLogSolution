@@ -1,0 +1,2376 @@
+[
+  {
+    "nome_giro": "V01",
+    "file_sorgente": "V01_Zone_3110.html",
+    "zone": [
+      "3110"
+    ],
+    "num_fermate": 25,
+    "data_ddt": "23-04-2026 - prova nuovi percorsi",
+    "lista_punti": [
+      {
+        "nome": "Scuola Primaria Lampertico Di Montegaldella",
+        "indirizzo": "Via Lampertico 4",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1816",
+        "data_consegna": "20-04-2026",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.437203803960315,
+        "lon": 11.671292941394501,
+        "zona": "3110",
+        "codici_ddt_frutta": [
+          "p1816"
+        ],
+        "codici_ddt_latte": [],
+        "rientri_alert": [
+          {
+            "codice": "p1816",
+            "status": "red",
+            "data_ddt": "20-04-2026"
+          }
+        ],
+        "row_idx_mappatura": 385,
+        "_is_rientro_speciale": true,
+        "geo_query_nome_indirizzo": "Scuola Primaria Lampertico Di Montegaldella Via Lampertico 4",
+        "geo_query_indirizzo": "Via Lampertico 4"
+      },
+      {
+        "nome": "Rovolon Bastia",
+        "indirizzo": "Via S.Francesco 22, 35030 Rovolon (PADOVA)",
+        "codice_frutta": "p2068",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2068_p00000",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.38728051662348,
+        "lon": 11.651415441284,
+        "codici_ddt_frutta": [
+          "p2068"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 145,
+        "geo_query_nome_indirizzo": "Rovolon Bastia Via S.Francesco 22, 35030 Rovolon (PADOVA)",
+        "geo_query_indirizzo": "Via S.Francesco 22, 35030 Rovolon (PADOVA)"
+      },
+      {
+        "nome": "VO' - NEGRI",
+        "indirizzo": "VIA MAZZINI 208",
+        "codice_frutta": "p2366",
+        "codice_latte": "p00000",
+        "data_consegna": "20-04-2026",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.330033178272515,
+        "lon": 11.641705158039603,
+        "zona": "3110",
+        "codici_ddt_frutta": [
+          "p2366"
+        ],
+        "codici_ddt_latte": [],
+        "rientri_alert": [
+          {
+            "codice": "p2366",
+            "status": "red",
+            "data_ddt": "20-04-2026"
+          }
+        ],
+        "row_idx_mappatura": 100,
+        "_is_rientro_speciale": true,
+        "geo_query_nome_indirizzo": "VO' - NEGRI VIA MAZZINI 208",
+        "geo_query_indirizzo": "VIA MAZZINI 208"
+      },
+      {
+        "nome": "LOZZO ATESTINO - MARCONI",
+        "indirizzo": "VIA GUIDO NEGRI, 35034 LOZZO ATESTINO (PADOVA)",
+        "codice_frutta": "p2364",
+        "codice_latte": "p1800",
+        "codice_univoco": "p2364_p1800",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.28670438065416,
+        "lon": 11.62904776524812,
+        "codici_ddt_frutta": [
+          "p2364"
+        ],
+        "codici_ddt_latte": [
+          "p1800"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 74,
+        "geo_query_nome_indirizzo": "LOZZO ATESTINO - MARCONI VIA GUIDO NEGRI, 35034 LOZZO ATESTINO (PADOVA)",
+        "geo_query_indirizzo": "VIA GUIDO NEGRI, 35034 LOZZO ATESTINO (PADOVA)"
+      },
+      {
+        "nome": "ESTE-S.MARIA LOC. PILASTRO",
+        "indirizzo": "VIA SCARABELLO 2, 35042 ESTE (PADOVA)",
+        "codice_frutta": "p8650",
+        "codice_latte": "p1742",
+        "codice_univoco": "p8650_p1742",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:45",
+        "orario_max": "14:00",
+        "lat": 45.2245872,
+        "lon": 11.6417771,
+        "codici_ddt_frutta": [
+          "p8650"
+        ],
+        "codici_ddt_latte": [
+          "p1742"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 66,
+        "geo_query_nome_indirizzo": "ESTE-S.MARIA LOC. PILASTRO VIA SCARABELLO 2, 35042 ESTE (PADOVA)",
+        "geo_query_indirizzo": "VIA SCARABELLO 2, 35042 ESTE (PADOVA)"
+      },
+      {
+        "nome": "OSPEDALETTO EUG. \"G.B.FERRARI\"",
+        "indirizzo": "VIA G.B. FERRARI 5, 35045 OSPEDALETTO EUGANEO (PADOVA)",
+        "codice_frutta": "p2327",
+        "codice_latte": "p1849",
+        "codice_univoco": "p2327_p1849",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.22352981612313,
+        "lon": 11.61343933560412,
+        "codici_ddt_frutta": [
+          "p2327"
+        ],
+        "codici_ddt_latte": [
+          "p1849"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 82,
+        "geo_query_nome_indirizzo": "OSPEDALETTO EUG. \"G.B.FERRARI\" VIA G.B. FERRARI 5, 35045 OSPEDALETTO EUGANEO (PADOVA)",
+        "geo_query_indirizzo": "VIA G.B. FERRARI 5, 35045 OSPEDALETTO EUGANEO (PADOVA)"
+      },
+      {
+        "nome": "\"A. MANZONI\" LOC. PALUGANA",
+        "indirizzo": "VIA PALUGANA SUD 36, 35045 OSPEDALETTO EUGANEO (PADOVA)",
+        "codice_frutta": "p2328",
+        "codice_latte": "p1851",
+        "codice_univoco": "p2328_p1851",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.20835378107115,
+        "lon": 11.60425813414614,
+        "codici_ddt_frutta": [
+          "p2328"
+        ],
+        "codici_ddt_latte": [
+          "p1851"
+        ],
+        "rientri_alert": [
+          {
+            "codice": "p2328",
+            "status": "yellow",
+            "data_ddt": "16-04-2026"
+          },
+          {
+            "codice": "p1851",
+            "status": "yellow",
+            "data_ddt": "16-04-2026"
+          }
+        ],
+        "row_idx_mappatura": 50,
+        "geo_query_nome_indirizzo": "\"A. MANZONI\" LOC. PALUGANA VIA PALUGANA SUD 36, 35045 OSPEDALETTO EUGANEO (PADOVA)",
+        "geo_query_indirizzo": "VIA PALUGANA SUD 36, 35045 OSPEDALETTO EUGANEO (PADOVA)"
+      },
+      {
+        "nome": "S. CATERINA D'ESTE - DUCA DEGLI ABRUZZI",
+        "indirizzo": "VIA ROMA 32, 35040 SANTA CATERINA D'ESTE (PADOVA)",
+        "codice_frutta": "p2325",
+        "codice_latte": "p1848",
+        "codice_univoco": "p2325_p1848",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.1948386,
+        "lon": 11.6204779,
+        "codici_ddt_frutta": [
+          "p2325"
+        ],
+        "codici_ddt_latte": [
+          "p1848"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 88,
+        "geo_query_nome_indirizzo": "S. CATERINA D'ESTE - DUCA DEGLI ABRUZZI VIA ROMA 32, 35040 SANTA CATERINA D'ESTE (PADOVA)",
+        "geo_query_indirizzo": "VIA ROMA 32, 35040 SANTA CATERINA D'ESTE (PADOVA)"
+      },
+      {
+        "nome": "PONSO \"CARLO COLLODI\"",
+        "indirizzo": "VIA ROSSELLE 16A, 35040 PONSO (PADOVA)",
+        "codice_frutta": "p2326",
+        "codice_latte": "p1847",
+        "codice_univoco": "p2326_p1847",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.1930072,
+        "lon": 11.5849071,
+        "codici_ddt_frutta": [
+          "p2326"
+        ],
+        "codici_ddt_latte": [
+          "p1847"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 84,
+        "geo_query_nome_indirizzo": "PONSO \"CARLO COLLODI\" VIA ROSSELLE 16A, 35040 PONSO (PADOVA)",
+        "geo_query_indirizzo": "VIA ROSSELLE 16A, 35040 PONSO (PADOVA)"
+      },
+      {
+        "nome": "Primaria Santa Margherita D'Adige-Località Santa Margherita D'Adige",
+        "indirizzo": "Viale Europa, 157, 35046 Borgo Veneto (PADOVA)",
+        "codice_frutta": "p2429",
+        "codice_latte": "p1956",
+        "codice_univoco": "p2429_p1956",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:15",
+        "orario_max": "14:00",
+        "lat": 45.2119866,
+        "lon": 11.5551887,
+        "codici_ddt_frutta": [
+          "p2429"
+        ],
+        "codici_ddt_latte": [
+          "p1956"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 142,
+        "geo_query_nome_indirizzo": "Primaria Santa Margherita D'Adige-Località Santa Margherita D'Adige Viale Europa, 157, 35046 Borgo Veneto (PADOVA)",
+        "geo_query_indirizzo": "Viale Europa, 157, 35046 Borgo Veneto (PADOVA)"
+      },
+      {
+        "nome": "Primaria Megliadino San Vitale",
+        "indirizzo": "Via Roma, 50, 35040 Megliadino San Vitale (PADOVA)",
+        "codice_frutta": "p2428",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2428_p00000",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.1961849,
+        "lon": 11.5243219,
+        "codici_ddt_frutta": [
+          "p2428"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 138,
+        "geo_query_nome_indirizzo": "Primaria Megliadino San Vitale Via Roma, 50, 35040 Megliadino San Vitale (PADOVA)",
+        "geo_query_indirizzo": "Via Roma, 50, 35040 Megliadino San Vitale (PADOVA)"
+      },
+      {
+        "nome": "SALETTO",
+        "indirizzo": "VIA MARCONI 35, 35046 BORGO VENETO (PADOVA)",
+        "codice_frutta": "p2427",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2427_p00000",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:15",
+        "orario_max": "14:00",
+        "lat": 45.2244572,
+        "lon": 11.5377897,
+        "codici_ddt_frutta": [
+          "p2427"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 89,
+        "geo_query_nome_indirizzo": "SALETTO VIA MARCONI 35, 35046 BORGO VENETO (PADOVA)",
+        "geo_query_indirizzo": "VIA MARCONI 35, 35046 BORGO VENETO (PADOVA)"
+      },
+      {
+        "nome": "MEGLIADINO SAN FIDENZIO",
+        "indirizzo": "VIA MARCONI 5, 35046 BORGO VENETO (PADOVA)",
+        "codice_frutta": "p2430",
+        "codice_latte": "p1957",
+        "codice_univoco": "p2430_p1957",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.2267084,
+        "lon": 11.5320088,
+        "codici_ddt_frutta": [
+          "p2430"
+        ],
+        "codici_ddt_latte": [
+          "p1957"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 78,
+        "geo_query_nome_indirizzo": "MEGLIADINO SAN FIDENZIO VIA MARCONI 5, 35046 BORGO VENETO (PADOVA)",
+        "geo_query_indirizzo": "VIA MARCONI 5, 35046 BORGO VENETO (PADOVA)"
+      },
+      {
+        "nome": "Montagnana-Educandato San Benedetto",
+        "indirizzo": "Via Mure Nord, 35044 Montagnana (PADOVA)",
+        "codice_frutta": "p2109",
+        "codice_latte": "p1750",
+        "codice_univoco": "p2109_p1750",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.2355677,
+        "lon": 11.4645026,
+        "codici_ddt_frutta": [
+          "p2109"
+        ],
+        "codici_ddt_latte": [
+          "p1750"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 131,
+        "geo_query_nome_indirizzo": "Montagnana-Educandato San Benedetto Via Mure Nord, 35044 Montagnana (PADOVA)",
+        "geo_query_indirizzo": "Via Mure Nord, 35044 Montagnana (PADOVA)"
+      },
+      {
+        "nome": "Casale Di Scodosia-Marconi",
+        "indirizzo": "Piazza Matteotti 32/33, 35040 Casale Di Scodosia (PADOVA)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p2011",
+        "codice_univoco": "p00000_p2011",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.188329247483644,
+        "lon": 11.465408409151866,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p2011"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 457,
+        "geo_query_nome_indirizzo": "Casale Di Scodosia-Marconi Piazza Matteotti 32/33, 35040 Casale Di Scodosia (PADOVA)",
+        "geo_query_indirizzo": "Piazza Matteotti 32/33, 35040 Casale Di Scodosia (PADOVA)"
+      },
+      {
+        "nome": "MERLARA - DANTE ALIGHIERI",
+        "indirizzo": "VIA STRADONA 22, 35040 MERLARA (PADOVA)",
+        "codice_frutta": "p11560",
+        "codice_latte": "p00000",
+        "codice_univoco": "p11560_p00000",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.1620808,
+        "lon": 11.4516202,
+        "codici_ddt_frutta": [
+          "p11560"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 79,
+        "geo_query_nome_indirizzo": "MERLARA - DANTE ALIGHIERI VIA STRADONA 22, 35040 MERLARA (PADOVA)",
+        "geo_query_indirizzo": "VIA STRADONA 22, 35040 MERLARA (PADOVA)"
+      },
+      {
+        "nome": "Castelbaldo-Rosa",
+        "indirizzo": "Piazza Della Resistenza 1B, 35040 Castelbaldo (PADOVA)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1911",
+        "codice_univoco": "p00000_p1911",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.12055223557332,
+        "lon": 11.451707743293088,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1911"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 457,
+        "geo_query_nome_indirizzo": "Castelbaldo-Rosa Piazza Della Resistenza 1B, 35040 Castelbaldo (PADOVA)",
+        "geo_query_indirizzo": "Piazza Della Resistenza 1B, 35040 Castelbaldo (PADOVA)"
+      },
+      {
+        "nome": "MASI-ZONARO",
+        "indirizzo": "VIA MONS.G. MASIERO 1, 35040 MASI (PADOVA)",
+        "codice_frutta": "p8992",
+        "codice_latte": "p2023",
+        "codice_univoco": "p8992_p2023",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.11114315991153,
+        "lon": 11.49008849786989,
+        "codici_ddt_frutta": [
+          "p8992"
+        ],
+        "codici_ddt_latte": [
+          "p2023"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 77,
+        "geo_query_nome_indirizzo": "MASI-ZONARO VIA MONS.G. MASIERO 1, 35040 MASI (PADOVA)",
+        "geo_query_indirizzo": "VIA MONS.G. MASIERO 1, 35040 MASI (PADOVA)"
+      },
+      {
+        "nome": "Enrico Fermi",
+        "indirizzo": "Via Ca' Nove, 1, 35040 Sant'Urbano (PADOVA)",
+        "codice_frutta": "p2160",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2160_p00000",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.1294342,
+        "lon": 11.6253592,
+        "codici_ddt_frutta": [
+          "p2160"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 119,
+        "geo_query_nome_indirizzo": "Enrico Fermi Via Ca' Nove, 1, 35040 Sant'Urbano (PADOVA)",
+        "geo_query_indirizzo": "Via Ca' Nove, 1, 35040 Sant'Urbano (PADOVA)"
+      },
+      {
+        "nome": "Alcide De Gasperi",
+        "indirizzo": "Via Garibaldi, 17, 35040 Villa Estense (PADOVA)",
+        "codice_frutta": "p2158",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2158_p00000",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.1670521,
+        "lon": 11.6622227,
+        "codici_ddt_frutta": [
+          "p2158"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 105,
+        "geo_query_nome_indirizzo": "Alcide De Gasperi Via Garibaldi, 17, 35040 Villa Estense (PADOVA)",
+        "geo_query_indirizzo": "Via Garibaldi, 17, 35040 Villa Estense (PADOVA)"
+      },
+      {
+        "nome": "PRIMARIA \"CROCE\" GRANZE",
+        "indirizzo": "VIA MARTIRI DELLA LIBERTA', 35040 GRANZE (PADOVA)",
+        "codice_frutta": "p14010",
+        "codice_latte": "p00000",
+        "codice_univoco": "p14010_p00000",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.1549393162804,
+        "lon": 11.7133866530957,
+        "codici_ddt_frutta": [
+          "p14010"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 86,
+        "geo_query_nome_indirizzo": "PRIMARIA \"CROCE\" GRANZE VIA MARTIRI DELLA LIBERTA', 35040 GRANZE (PADOVA)",
+        "geo_query_indirizzo": "VIA MARTIRI DELLA LIBERTA', 35040 GRANZE (PADOVA)"
+      },
+      {
+        "nome": "G.VERDI LOC. DESERTO",
+        "indirizzo": "VIA DESERTO 122, 35042 ESTE (PADOVA)",
+        "codice_frutta": "p6419",
+        "codice_latte": "p1743",
+        "codice_univoco": "p6419_p1743",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 45.2029865,
+        "lon": 11.6887414,
+        "codici_ddt_frutta": [
+          "p6419"
+        ],
+        "codici_ddt_latte": [
+          "p1743"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 70,
+        "geo_query_nome_indirizzo": "G.VERDI LOC. DESERTO VIA DESERTO 122, 35042 ESTE (PADOVA)",
+        "geo_query_indirizzo": "VIA DESERTO 122, 35042 ESTE (PADOVA)"
+      },
+      {
+        "nome": "CINTO EUGANEO-FONTANAFREDDA",
+        "indirizzo": "VIA ROMA 36, 35030 CINTO EUGANEO (PADOVA)",
+        "codice_frutta": "p2365",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2365_p00000",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.292179,
+        "lon": 11.656624,
+        "codici_ddt_frutta": [
+          "p2365"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 60,
+        "geo_query_nome_indirizzo": "CINTO EUGANEO-FONTANAFREDDA VIA ROMA 36, 35030 CINTO EUGANEO (PADOVA)",
+        "geo_query_indirizzo": "VIA ROMA 36, 35030 CINTO EUGANEO (PADOVA)"
+      },
+      {
+        "nome": "TEOLO-DON BOSCO",
+        "indirizzo": "VIA MOLARE 25, 35037 TEOLO (PADOVA)",
+        "codice_frutta": "p6337",
+        "codice_latte": "p1971",
+        "codice_univoco": "p6337_p1971",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.347459,
+        "lon": 11.6725064,
+        "codici_ddt_frutta": [
+          "p6337"
+        ],
+        "codici_ddt_latte": [
+          "p1971"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 98,
+        "geo_query_nome_indirizzo": "TEOLO-DON BOSCO VIA MOLARE 25, 35037 TEOLO (PADOVA)",
+        "geo_query_indirizzo": "VIA MOLARE 25, 35037 TEOLO (PADOVA)"
+      },
+      {
+        "nome": "Cervarese-Fossona Papa Luciani",
+        "indirizzo": "Via S. Antonio, 96, 35030 Cervarese Santa Croce (PADOVA)",
+        "codice_frutta": "p2067",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2067_p00000",
+        "zona": "3110",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.40647144505557,
+        "lon": 11.69205605955506,
+        "codici_ddt_frutta": [
+          "p2067"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 110,
+        "geo_query_nome_indirizzo": "Cervarese-Fossona Papa Luciani Via S. Antonio, 96, 35030 Cervarese Santa Croce (PADOVA)",
+        "geo_query_indirizzo": "Via S. Antonio, 96, 35030 Cervarese Santa Croce (PADOVA)"
+      }
+    ]
+  },
+  {
+    "nome_giro": "V02",
+    "file_sorgente": "V02_Zone_3111.html",
+    "zone": [
+      "3111"
+    ],
+    "num_fermate": 26,
+    "data_ddt": "23-04-2026 - prova nuovi percorsi",
+    "lista_punti": [
+      {
+        "nome": "CURTAROLO-LOC. PIEVE",
+        "indirizzo": "VIA MONTE PASUBIO3, 35010 CURTAROLO (PADOVA)",
+        "codice_frutta": "p2240",
+        "codice_latte": "p1811",
+        "codice_univoco": "p2240_p1811",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.53836319303304,
+        "lon": 11.82278448882445,
+        "codici_ddt_frutta": [
+          "p2240"
+        ],
+        "codici_ddt_latte": [
+          "p1811"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 62,
+        "geo_query_nome_indirizzo": "CURTAROLO-LOC. PIEVE VIA MONTE PASUBIO3, 35010 CURTAROLO (PADOVA)",
+        "geo_query_indirizzo": "VIA MONTE PASUBIO3, 35010 CURTAROLO (PADOVA)"
+      },
+      {
+        "nome": "CAMPO S.MARTINO-MARCONI",
+        "indirizzo": "VIA FORESE 42, 35010 CAMPO SAN MARTINO (PADOVA)",
+        "codice_frutta": "p2242",
+        "codice_latte": "p1809",
+        "codice_univoco": "p2242_p1809",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.5467878,
+        "lon": 11.8148138,
+        "codici_ddt_frutta": [
+          "p2242"
+        ],
+        "codici_ddt_latte": [
+          "p1809"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 59,
+        "geo_query_nome_indirizzo": "CAMPO S.MARTINO-MARCONI VIA FORESE 42, 35010 CAMPO SAN MARTINO (PADOVA)",
+        "geo_query_indirizzo": "VIA FORESE 42, 35010 CAMPO SAN MARTINO (PADOVA)"
+      },
+      {
+        "nome": "CAMPO S.MARTINO-LOC. MARSANGO",
+        "indirizzo": "VIA ALCIDE DE GASPERI 43, 35010 CAMPO SAN MARTINO (PADOVA)",
+        "codice_frutta": "p2243",
+        "codice_latte": "p1807",
+        "codice_univoco": "p2243_p1807",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.5516149,
+        "lon": 11.8348171,
+        "codici_ddt_frutta": [
+          "p2243"
+        ],
+        "codici_ddt_latte": [
+          "p1807"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 58,
+        "geo_query_nome_indirizzo": "CAMPO S.MARTINO-LOC. MARSANGO VIA ALCIDE DE GASPERI 43, 35010 CAMPO SAN MARTINO (PADOVA)",
+        "geo_query_indirizzo": "VIA ALCIDE DE GASPERI 43, 35010 CAMPO SAN MARTINO (PADOVA)"
+      },
+      {
+        "nome": "CAMPO S.MARTINO-LOC. BUSIAGO",
+        "indirizzo": "VIA S.LORENZO 83, 35010 CAMPO SAN MARTINO (PADOVA)",
+        "codice_frutta": "p2244",
+        "codice_latte": "p1810",
+        "codice_univoco": "p2244_p1810",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.5622293,
+        "lon": 11.8243292,
+        "codici_ddt_frutta": [
+          "p2244"
+        ],
+        "codici_ddt_latte": [
+          "p1810"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 57,
+        "geo_query_nome_indirizzo": "CAMPO S.MARTINO-LOC. BUSIAGO VIA S.LORENZO 83, 35010 CAMPO SAN MARTINO (PADOVA)",
+        "geo_query_indirizzo": "VIA S.LORENZO 83, 35010 CAMPO SAN MARTINO (PADOVA)"
+      },
+      {
+        "nome": "Cittadella-S.Maria",
+        "indirizzo": "Via Case Bianche 6 / 10, 35013 Cittadella (PADOVA)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1708",
+        "codice_univoco": "p00000_p1708",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.61905136091718,
+        "lon": 11.804605964883383,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1708"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 457,
+        "geo_query_nome_indirizzo": "Cittadella-S.Maria Via Case Bianche 6 / 10, 35013 Cittadella (PADOVA)",
+        "geo_query_indirizzo": "Via Case Bianche 6 / 10, 35013 Cittadella (PADOVA)"
+      },
+      {
+        "nome": "Cittadella-L.Cornaro Piscopia",
+        "indirizzo": "Via Angelo Gabrielli 32, 35013 Cittadella (PADOVA)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1706",
+        "codice_univoco": "p00000_p1706",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.64223016410392,
+        "lon": 11.775825701882429,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1706"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 457,
+        "geo_query_nome_indirizzo": "Cittadella-L.Cornaro Piscopia Via Angelo Gabrielli 32, 35013 Cittadella (PADOVA)",
+        "geo_query_indirizzo": "Via Angelo Gabrielli 32, 35013 Cittadella (PADOVA)"
+      },
+      {
+        "nome": "Cittadella-Borgo Treviso",
+        "indirizzo": "Via S. Prosdocimo, 22, 35013 Cittadella (PADOVA)",
+        "codice_frutta": "p2247",
+        "codice_latte": "p1707",
+        "codice_univoco": "p2247_p1707",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.6514754,
+        "lon": 11.7928968,
+        "codici_ddt_frutta": [
+          "p2247"
+        ],
+        "codici_ddt_latte": [
+          "p1707"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 111,
+        "geo_query_nome_indirizzo": "Cittadella-Borgo Treviso Via S. Prosdocimo, 22, 35013 Cittadella (PADOVA)",
+        "geo_query_indirizzo": "Via S. Prosdocimo, 22, 35013 Cittadella (PADOVA)"
+      },
+      {
+        "nome": "Galliera Veneta-G.Giardino",
+        "indirizzo": "Via G. Leopardi Nr. 4, 35015 Galliera Veneta (PADOVA)",
+        "codice_frutta": "p2041",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2041_p00000",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.66307484796692,
+        "lon": 11.82527234532166,
+        "codici_ddt_frutta": [
+          "p2041"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 127,
+        "geo_query_nome_indirizzo": "Galliera Veneta-G.Giardino Via G. Leopardi Nr. 4, 35015 Galliera Veneta (PADOVA)",
+        "geo_query_indirizzo": "Via G. Leopardi Nr. 4, 35015 Galliera Veneta (PADOVA)"
+      },
+      {
+        "nome": "Tombolo - Tombolan Fava",
+        "indirizzo": "Via Sant'Andrea Apostolo, 7, 35019 Tombolo (PADOVA)",
+        "codice_frutta": "p2040",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2040_p00000",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.6381425,
+        "lon": 11.8311346,
+        "codici_ddt_frutta": [
+          "p2040"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 157,
+        "geo_query_nome_indirizzo": "Tombolo - Tombolan Fava Via Sant'Andrea Apostolo, 7, 35019 Tombolo (PADOVA)",
+        "geo_query_indirizzo": "Via Sant'Andrea Apostolo, 7, 35019 Tombolo (PADOVA)"
+      },
+      {
+        "nome": "Duca D'Aosta San Martino Di Lupari",
+        "indirizzo": "Via Julia, 35018 San Martino Di Lupari (PADOVA)",
+        "codice_frutta": "p2209",
+        "codice_latte": "p1930",
+        "codice_univoco": "p2209_p1930",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.6471714,
+        "lon": 11.8603388,
+        "codici_ddt_frutta": [
+          "p2209"
+        ],
+        "codici_ddt_latte": [
+          "p1930"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 118,
+        "geo_query_nome_indirizzo": "Duca D'Aosta San Martino Di Lupari Via Julia, 35018 San Martino Di Lupari (PADOVA)",
+        "geo_query_indirizzo": "Via Julia, 35018 San Martino Di Lupari (PADOVA)"
+      },
+      {
+        "nome": "C. Battisti Campretto",
+        "indirizzo": "Via Dell'Usignolo, 35018 San Martino Di Lupari (PADOVA)",
+        "codice_frutta": "p2210",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2210_p00000",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.6366694,
+        "lon": 11.8676692,
+        "codici_ddt_frutta": [
+          "p2210"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 107,
+        "geo_query_nome_indirizzo": "C. Battisti Campretto Via Dell'Usignolo, 35018 San Martino Di Lupari (PADOVA)",
+        "geo_query_indirizzo": "Via Dell'Usignolo, 35018 San Martino Di Lupari (PADOVA)"
+      },
+      {
+        "nome": "A. Diaz Borghetto",
+        "indirizzo": "Via Del Cimitero N. 5, 35018 San Martino Di Lupari (PADOVA)",
+        "codice_frutta": "p2211",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2211_p00000",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.60886269483804,
+        "lon": 11.88621872115404,
+        "codici_ddt_frutta": [
+          "p2211"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 102,
+        "geo_query_nome_indirizzo": "A. Diaz Borghetto Via Del Cimitero N. 5, 35018 San Martino Di Lupari (PADOVA)",
+        "geo_query_indirizzo": "Via Del Cimitero N. 5, 35018 San Martino Di Lupari (PADOVA)"
+      },
+      {
+        "nome": "G Rodari - Loreggiola",
+        "indirizzo": "Via Pio X N. 13, 35010 Loreggia (PADOVA)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1819",
+        "codice_univoco": "p00000_p1819",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.60886361198493,
+        "lon": 11.91901292211988,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1819"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 457,
+        "geo_query_nome_indirizzo": "G Rodari - Loreggiola Via Pio X N. 13, 35010 Loreggia (PADOVA)",
+        "geo_query_indirizzo": "Via Pio X N. 13, 35010 Loreggia (PADOVA)"
+      },
+      {
+        "nome": "PIOMBINO DESE-A. STIFFONI",
+        "indirizzo": "VIA DANTE 11, 35017 PIOMBINO DESE (PADOVA)",
+        "codice_frutta": "p2192",
+        "codice_latte": "p2008",
+        "codice_univoco": "p2192_p2008",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 45.6098378,
+        "lon": 11.9963249,
+        "codici_ddt_frutta": [
+          "p2192"
+        ],
+        "codici_ddt_latte": [
+          "p2008"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 83,
+        "geo_query_nome_indirizzo": "PIOMBINO DESE-A. STIFFONI VIA DANTE 11, 35017 PIOMBINO DESE (PADOVA)",
+        "geo_query_indirizzo": "VIA DANTE 11, 35017 PIOMBINO DESE (PADOVA)"
+      },
+      {
+        "nome": "VITTORINO DA FELTRE",
+        "indirizzo": "VIA G.B.ROSSI 25, 30033 NOALE (VENEZIA)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1901",
+        "codice_univoco": "p00000_p1901",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.55089466215433,
+        "lon": 12.066893799240649,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1901"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 457,
+        "geo_query_nome_indirizzo": "VITTORINO DA FELTRE VIA G.B.ROSSI 25, 30033 NOALE (VENEZIA)",
+        "geo_query_indirizzo": "VIA G.B.ROSSI 25, 30033 NOALE (VENEZIA)"
+      },
+      {
+        "nome": "A.Palladio Loc. Torreselle",
+        "indirizzo": "Via Gattoeo, 1, 35017 Piombino Dese (PADOVA)",
+        "codice_frutta": "p2193",
+        "codice_latte": "p2007",
+        "codice_univoco": "p2193_p2007",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 45.62751743164006,
+        "lon": 12.04010538109275,
+        "codici_ddt_frutta": [
+          "p2193"
+        ],
+        "codici_ddt_latte": [
+          "p2007"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 104,
+        "geo_query_nome_indirizzo": "A.Palladio Loc. Torreselle Via Gattoeo, 1, 35017 Piombino Dese (PADOVA)",
+        "geo_query_indirizzo": "Via Gattoeo, 1, 35017 Piombino Dese (PADOVA)"
+      },
+      {
+        "nome": "N. Sauro Campagnalta",
+        "indirizzo": "Viale Dei Martiri, 10, 35018 San Martino Di Lupari (PADOVA)",
+        "codice_frutta": "p2208",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2208_p00000",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.6729491,
+        "lon": 11.8532186,
+        "codici_ddt_frutta": [
+          "p2208"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 132,
+        "geo_query_nome_indirizzo": "N. Sauro Campagnalta Viale Dei Martiri, 10, 35018 San Martino Di Lupari (PADOVA)",
+        "geo_query_indirizzo": "Viale Dei Martiri, 10, 35018 San Martino Di Lupari (PADOVA)"
+      },
+      {
+        "nome": "Galliera Veneta-D.G.Manesso",
+        "indirizzo": "Via G. Leopardi Nr. 6, 35015 Galliera Veneta (PADOVA)",
+        "codice_frutta": "p2042",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2042_p00000",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.66849573355976,
+        "lon": 11.8293493030243,
+        "codici_ddt_frutta": [
+          "p2042"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 126,
+        "geo_query_nome_indirizzo": "Galliera Veneta-D.G.Manesso Via G. Leopardi Nr. 6, 35015 Galliera Veneta (PADOVA)",
+        "geo_query_indirizzo": "Via G. Leopardi Nr. 6, 35015 Galliera Veneta (PADOVA)"
+      },
+      {
+        "nome": "Galliera Veneta-Monte Grappa",
+        "indirizzo": "Via Campagna N. 84, 35015 Galliera Veneta (PADOVA)",
+        "codice_frutta": "p2043",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2043_p00000",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.6767898,
+        "lon": 11.8189718,
+        "codici_ddt_frutta": [
+          "p2043"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 128,
+        "geo_query_nome_indirizzo": "Galliera Veneta-Monte Grappa Via Campagna N. 84, 35015 Galliera Veneta (PADOVA)",
+        "geo_query_indirizzo": "Via Campagna N. 84, 35015 Galliera Veneta (PADOVA)"
+      },
+      {
+        "nome": "Primaria Pozzetto Cittadella-Ca' Onorai",
+        "indirizzo": "Via Vecchia Di Bassano, 2/B, 35013 Cittadella (PADOVA)",
+        "codice_frutta": "p2248",
+        "codice_latte": "p1705",
+        "codice_univoco": "p2248_p1705",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.6672022,
+        "lon": 11.780156,
+        "codici_ddt_frutta": [
+          "p2248"
+        ],
+        "codici_ddt_latte": [
+          "p1705"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 141,
+        "geo_query_nome_indirizzo": "Primaria Pozzetto Cittadella-Ca' Onorai Via Vecchia Di Bassano, 2/B, 35013 Cittadella (PADOVA)",
+        "geo_query_indirizzo": "Via Vecchia Di Bassano, 2/B, 35013 Cittadella (PADOVA)"
+      },
+      {
+        "nome": "A. Gabelli - Belvedere Di Tezze",
+        "indirizzo": "Via Nazionale, 125, 36056 Tezze Sul Brenta (VICENZA)",
+        "codice_frutta": "p2415",
+        "codice_latte": "p2645",
+        "codice_univoco": "p2415_p2645",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:15",
+        "orario_max": "14:00",
+        "lat": 45.6800786,
+        "lon": 11.7742551,
+        "codici_ddt_frutta": [
+          "p2415"
+        ],
+        "codici_ddt_latte": [
+          "p2645"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 353,
+        "geo_query_nome_indirizzo": "A. Gabelli - Belvedere Di Tezze Via Nazionale, 125, 36056 Tezze Sul Brenta (VICENZA)",
+        "geo_query_indirizzo": "Via Nazionale, 125, 36056 Tezze Sul Brenta (VICENZA)"
+      },
+      {
+        "nome": "IV NOVEMBRE - CAMPAGNARI",
+        "indirizzo": "VIA MADRE TERESA DI CALCUTTA 2, 36056 TEZZE SUL BRENTA (VICENZA)",
+        "codice_frutta": "p2416",
+        "codice_latte": "p2647",
+        "codice_univoco": "p2416_p2647",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:15",
+        "orario_max": "14:00",
+        "lat": 45.68185699832713,
+        "lon": 11.75545300863611,
+        "codici_ddt_frutta": [
+          "p2416"
+        ],
+        "codici_ddt_latte": [
+          "p2647"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 430,
+        "geo_query_nome_indirizzo": "IV NOVEMBRE - CAMPAGNARI VIA MADRE TERESA DI CALCUTTA 2, 36056 TEZZE SUL BRENTA (VICENZA)",
+        "geo_query_indirizzo": "VIA MADRE TERESA DI CALCUTTA 2, 36056 TEZZE SUL BRENTA (VICENZA)"
+      },
+      {
+        "nome": "Primaria Laghi Cittadella-Laghi",
+        "indirizzo": "Via Don G.Lago, 25, 35013 Cittadella (PADOVA)",
+        "codice_frutta": "p2249",
+        "codice_latte": "p1699",
+        "codice_univoco": "p2249_p1699",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.6677433,
+        "lon": 11.7565771,
+        "codici_ddt_frutta": [
+          "p2249"
+        ],
+        "codici_ddt_latte": [
+          "p1699"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 137,
+        "geo_query_nome_indirizzo": "Primaria Laghi Cittadella-Laghi Via Don G.Lago, 25, 35013 Cittadella (PADOVA)",
+        "geo_query_indirizzo": "Via Don G.Lago, 25, 35013 Cittadella (PADOVA)"
+      },
+      {
+        "nome": "FONTANIVA-BATTISTI",
+        "indirizzo": "PIAZZA UMBERTO PRIMO 13, 35014 FONTANIVA (PADOVA)",
+        "codice_frutta": "p2404",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2404_p00000",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.63692234829117,
+        "lon": 11.7533698465271,
+        "codici_ddt_frutta": [
+          "p2404"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 67,
+        "geo_query_nome_indirizzo": "FONTANIVA-BATTISTI PIAZZA UMBERTO PRIMO 13, 35014 FONTANIVA (PADOVA)",
+        "geo_query_indirizzo": "PIAZZA UMBERTO PRIMO 13, 35014 FONTANIVA (PADOVA)"
+      },
+      {
+        "nome": "FONTANIVA-S.GIORGIO IN BRENTA",
+        "indirizzo": "PIAZZA DON SILVIO MOZZATO, 35014 FONTANIVA (PADOVA)",
+        "codice_frutta": "p2403",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2403_p00000",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.6131724,
+        "lon": 11.7659423,
+        "codici_ddt_frutta": [
+          "p2403"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 68,
+        "geo_query_nome_indirizzo": "FONTANIVA-S.GIORGIO IN BRENTA PIAZZA DON SILVIO MOZZATO, 35014 FONTANIVA (PADOVA)",
+        "geo_query_indirizzo": "PIAZZA DON SILVIO MOZZATO, 35014 FONTANIVA (PADOVA)"
+      },
+      {
+        "nome": "L. Bottazzo",
+        "indirizzo": "Via Montessori 1,, 35016 Piazzola Sul Brenta (PADOVA)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1797",
+        "codice_univoco": "p00000_p1797",
+        "zona": "3111",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.561159189320904,
+        "lon": 11.752605034929008,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1797"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 457,
+        "geo_query_nome_indirizzo": "L. Bottazzo Via Montessori 1,, 35016 Piazzola Sul Brenta (PADOVA)",
+        "geo_query_indirizzo": "Via Montessori 1,, 35016 Piazzola Sul Brenta (PADOVA)"
+      }
+    ]
+  },
+  {
+    "nome_giro": "V03",
+    "file_sorgente": "V03_Zone_3205_3206.html",
+    "zone": [
+      "3205"
+    ],
+    "num_fermate": 16,
+    "data_ddt": "23-04-2026 - prova nuovi percorsi",
+    "lista_punti": [
+      {
+        "nome": "E. DE AMICIS MORIAGO D.B.",
+        "indirizzo": "VIA MANZONI 27, 31010 MORIAGO DELLA BATTAGLIA (TREVISO)",
+        "codice_frutta": "p2301",
+        "codice_latte": "p1950",
+        "codice_univoco": "p2301_p1950",
+        "zona": "3205",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 45.8677942,
+        "lon": 12.1015402,
+        "codici_ddt_frutta": [
+          "p2301"
+        ],
+        "codici_ddt_latte": [
+          "p1950"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 184,
+        "geo_query_nome_indirizzo": "E. DE AMICIS MORIAGO D.B. VIA MANZONI 27, 31010 MORIAGO DELLA BATTAGLIA (TREVISO)",
+        "geo_query_indirizzo": "VIA MANZONI 27, 31010 MORIAGO DELLA BATTAGLIA (TREVISO)"
+      },
+      {
+        "nome": "Gianni Rodari - Col San Martino",
+        "indirizzo": "Via Giarentine 2, 31010 Farra Di Soligo (TREVISO)",
+        "codice_frutta": "p13947",
+        "codice_latte": "p00000",
+        "codice_univoco": "p13947_p00000",
+        "zona": "3205",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:15",
+        "orario_max": "14:00",
+        "lat": 45.8966595,
+        "lon": 12.0851042,
+        "codici_ddt_frutta": [
+          "p13947"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 249,
+        "geo_query_nome_indirizzo": "Gianni Rodari - Col San Martino Via Giarentine 2, 31010 Farra Di Soligo (TREVISO)",
+        "geo_query_indirizzo": "Via Giarentine 2, 31010 Farra Di Soligo (TREVISO)"
+      },
+      {
+        "nome": "LORENZO MILANI - FARRA CAP.",
+        "indirizzo": "VIA DEI PATRIOTI 29, 31010 FARRA DI SOLIGO (TREVISO)",
+        "codice_frutta": "p8831",
+        "codice_latte": "p00000",
+        "codice_univoco": "p8831_p00000",
+        "zona": "3205",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:15",
+        "orario_max": "14:00",
+        "lat": 45.9056039,
+        "lon": 12.1269508,
+        "codici_ddt_frutta": [
+          "p8831"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 205,
+        "geo_query_nome_indirizzo": "LORENZO MILANI - FARRA CAP. VIA DEI PATRIOTI 29, 31010 FARRA DI SOLIGO (TREVISO)",
+        "geo_query_indirizzo": "VIA DEI PATRIOTI 29, 31010 FARRA DI SOLIGO (TREVISO)"
+      },
+      {
+        "nome": "G.ANCILLOTTO - SOLIGO",
+        "indirizzo": "VIA DEI COLLI 25, 31010 FARRA DI SOLIGO (TREVISO)",
+        "codice_frutta": "p8767",
+        "codice_latte": "p00000",
+        "codice_univoco": "p8767_p00000",
+        "zona": "3205",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:15",
+        "orario_max": "14:00",
+        "lat": 45.9097342,
+        "lon": 12.1524089,
+        "codici_ddt_frutta": [
+          "p8767"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 195,
+        "geo_query_nome_indirizzo": "G.ANCILLOTTO - SOLIGO VIA DEI COLLI 25, 31010 FARRA DI SOLIGO (TREVISO)",
+        "geo_query_indirizzo": "VIA DEI COLLI 25, 31010 FARRA DI SOLIGO (TREVISO)"
+      },
+      {
+        "nome": "Collegio Vescovile Balbi Valier",
+        "indirizzo": "Via Sartori, N.47, 31053 Pieve Di Soligo (TREVISO)",
+        "codice_frutta": "p10839",
+        "codice_latte": "p00000",
+        "codice_univoco": "p10839_p00000",
+        "zona": "3205",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.9026685,
+        "lon": 12.1753991,
+        "codici_ddt_frutta": [
+          "p10839"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 241,
+        "geo_query_nome_indirizzo": "Collegio Vescovile Balbi Valier Via Sartori, N.47, 31053 Pieve Di Soligo (TREVISO)",
+        "geo_query_indirizzo": "Via Sartori, N.47, 31053 Pieve Di Soligo (TREVISO)"
+      },
+      {
+        "nome": "O.DE GASPARI FALZE' DI P.",
+        "indirizzo": "VIA DONATORI DEL SANGUE 4, 31020 SERNAGLIA DELLA BATTAGLIA (TREVISO)",
+        "codice_frutta": "p2302",
+        "codice_latte": "p1951",
+        "codice_univoco": "p2302_p1951",
+        "zona": "3205",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 45.86008859765876,
+        "lon": 12.17298733945312,
+        "codici_ddt_frutta": [
+          "p2302"
+        ],
+        "codici_ddt_latte": [
+          "p1951"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 215,
+        "geo_query_nome_indirizzo": "O.DE GASPARI FALZE' DI P. VIA DONATORI DEL SANGUE 4, 31020 SERNAGLIA DELLA BATTAGLIA (TREVISO)",
+        "geo_query_indirizzo": "VIA DONATORI DEL SANGUE 4, 31020 SERNAGLIA DELLA BATTAGLIA (TREVISO)"
+      },
+      {
+        "nome": "F.FABBRI - SANTA MARIA",
+        "indirizzo": "PIAZZA DONATORI DI SANGUE 1, 31020 SAN PIETRO DI FELETTO (TREVISO)",
+        "codice_frutta": "p2357",
+        "codice_latte": "p1704",
+        "codice_univoco": "p2357_p1704",
+        "zona": "3205",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.8977212304539,
+        "lon": 12.23460724970705,
+        "codici_ddt_frutta": [
+          "p2357"
+        ],
+        "codici_ddt_latte": [
+          "p1704"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 188,
+        "geo_query_nome_indirizzo": "F.FABBRI - SANTA MARIA PIAZZA DONATORI DI SANGUE 1, 31020 SAN PIETRO DI FELETTO (TREVISO)",
+        "geo_query_indirizzo": "PIAZZA DONATORI DI SANGUE 1, 31020 SAN PIETRO DI FELETTO (TREVISO)"
+      },
+      {
+        "nome": "S. PELLICO - RUA DI F.",
+        "indirizzo": "VIA DELLA LIBERTA' 27/A, 31020 SAN PIETRO DI FELETTO (TREVISO)",
+        "codice_frutta": "p2355",
+        "codice_latte": "p1792",
+        "codice_univoco": "p2355_p1792",
+        "zona": "3205",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:45",
+        "orario_max": "14:00",
+        "lat": 45.91723,
+        "lon": 12.2539765,
+        "codici_ddt_frutta": [
+          "p2355"
+        ],
+        "codici_ddt_latte": [
+          "p1792"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 219,
+        "geo_query_nome_indirizzo": "S. PELLICO - RUA DI F. VIA DELLA LIBERTA' 27/A, 31020 SAN PIETRO DI FELETTO (TREVISO)",
+        "geo_query_indirizzo": "VIA DELLA LIBERTA' 27/A, 31020 SAN PIETRO DI FELETTO (TREVISO)"
+      },
+      {
+        "nome": "\"PAPA LUCIANI\" - BAGNOLO",
+        "indirizzo": "VIA GORIZIA 1, 31020 SAN PIETRO DI FELETTO (TREVISO)",
+        "codice_frutta": "p2356",
+        "codice_latte": "p1794",
+        "codice_univoco": "p2356_p1794",
+        "zona": "3205",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.9122035,
+        "lon": 12.2722528,
+        "codici_ddt_frutta": [
+          "p2356"
+        ],
+        "codici_ddt_latte": [
+          "p1794"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 167,
+        "geo_query_nome_indirizzo": "\"PAPA LUCIANI\" - BAGNOLO VIA GORIZIA 1, 31020 SAN PIETRO DI FELETTO (TREVISO)",
+        "geo_query_indirizzo": "VIA GORIZIA 1, 31020 SAN PIETRO DI FELETTO (TREVISO)"
+      },
+      {
+        "nome": "D. ALIGHIERI",
+        "indirizzo": "VIA ZANDONAI 14, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p6525",
+        "codice_latte": "p00000",
+        "codice_univoco": "p6525_p00000",
+        "zona": "3205",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.89992267108354,
+        "lon": 12.292951632010025,
+        "codici_ddt_frutta": [
+          "p6525"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 179,
+        "geo_query_nome_indirizzo": "D. ALIGHIERI VIA ZANDONAI 14, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA ZANDONAI 14, 31015 CONEGLIANO (TREVISO)"
+      },
+      {
+        "nome": "LA NOSTRA FAMIGLIA",
+        "indirizzo": "VIA COSTA ALTA, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p8847",
+        "codice_latte": "p00000",
+        "codice_univoco": "p8847_p00000",
+        "zona": "3205",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.8957981947636,
+        "lon": 12.286239422048778,
+        "codici_ddt_frutta": [
+          "p8847"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 204,
+        "geo_query_nome_indirizzo": "LA NOSTRA FAMIGLIA VIA COSTA ALTA, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA COSTA ALTA, 31015 CONEGLIANO (TREVISO)"
+      },
+      {
+        "nome": "CAMPOLONGO",
+        "indirizzo": "VIA VITAL 120, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p13495",
+        "codice_latte": "p00000",
+        "codice_univoco": "p13495_p00000",
+        "zona": "3205",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.8663868,
+        "lon": 12.3071656,
+        "codici_ddt_frutta": [
+          "p13495"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 177,
+        "geo_query_nome_indirizzo": "CAMPOLONGO VIA VITAL 120, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA VITAL 120, 31015 CONEGLIANO (TREVISO)"
+      },
+      {
+        "nome": "DON ORFEO MANTOVANI-V.DEI MILLE",
+        "indirizzo": "VIA DEI MILLE 42, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p2354",
+        "codice_latte": "p1793",
+        "codice_univoco": "p2354_p1793",
+        "zona": "3205",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.8726659,
+        "lon": 12.2846529,
+        "codici_ddt_frutta": [
+          "p2354"
+        ],
+        "codici_ddt_latte": [
+          "p1793"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 183,
+        "geo_query_nome_indirizzo": "DON ORFEO MANTOVANI-V.DEI MILLE VIA DEI MILLE 42, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA DEI MILLE 42, 31015 CONEGLIANO (TREVISO)"
+      },
+      {
+        "nome": "SCUOLA PRIMARIA \" PIANCA SCHOOL \"",
+        "indirizzo": "VIA GIUNTI N°12/A, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p2254",
+        "codice_latte": "p1861",
+        "codice_univoco": "p2254_p1861",
+        "zona": "3205",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.8780224,
+        "lon": 12.2770314,
+        "codici_ddt_frutta": [
+          "p2254"
+        ],
+        "codici_ddt_latte": [
+          "p1861"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 223,
+        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \" PIANCA SCHOOL \" VIA GIUNTI N°12/A, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA GIUNTI N°12/A, 31015 CONEGLIANO (TREVISO)"
+      },
+      {
+        "nome": "\"GIANNI RODARI\" - PARE'",
+        "indirizzo": "VIA EINAUDI 110, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p2353",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2353_p00000",
+        "zona": "3205",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.8717147,
+        "lon": 12.2731564,
+        "codici_ddt_frutta": [
+          "p2353"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 164,
+        "geo_query_nome_indirizzo": "\"GIANNI RODARI\" - PARE' VIA EINAUDI 110, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA EINAUDI 110, 31015 CONEGLIANO (TREVISO)"
+      },
+      {
+        "nome": "MARCO POLO - COLFOSCO",
+        "indirizzo": "VIA F.BARACCA 11, 31030 SUSEGANA (TREVISO)",
+        "codice_frutta": "p7719",
+        "codice_latte": "p00000",
+        "codice_univoco": "p7719_p00000",
+        "zona": "3205",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.83559097871938,
+        "lon": 12.21974387126694,
+        "codici_ddt_frutta": [
+          "p7719"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 209,
+        "geo_query_nome_indirizzo": "MARCO POLO - COLFOSCO VIA F.BARACCA 11, 31030 SUSEGANA (TREVISO)",
+        "geo_query_indirizzo": "VIA F.BARACCA 11, 31030 SUSEGANA (TREVISO)"
+      }
+    ]
+  },
+  {
+    "nome_giro": "V04",
+    "file_sorgente": "V04_Zone_3206.html",
+    "zone": [
+      "3206"
+    ],
+    "num_fermate": 15,
+    "data_ddt": "23-04-2026 - prova nuovi percorsi",
+    "lista_punti": [
+      {
+        "nome": "G.Pascoli",
+        "indirizzo": "Viale Istria 36, 31015 Conegliano (TREVISO)",
+        "codice_frutta": "p13231",
+        "codice_latte": "p00000",
+        "codice_univoco": "p13231_p00000",
+        "zona": "3206",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.88361658272463,
+        "lon": 12.3035714265497,
+        "codici_ddt_frutta": [
+          "p13231"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 246,
+        "geo_query_nome_indirizzo": "G.Pascoli Viale Istria 36, 31015 Conegliano (TREVISO)",
+        "geo_query_indirizzo": "Viale Istria 36, 31015 Conegliano (TREVISO)"
+      },
+      {
+        "nome": "SAN FRANCESCO",
+        "indirizzo": "VIA F. FENZI 28, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p6524",
+        "codice_latte": "p00000",
+        "codice_univoco": "p6524_p00000",
+        "zona": "3206",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.88792693234254,
+        "lon": 12.29721589695894,
+        "codici_ddt_frutta": [
+          "p6524"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 222,
+        "geo_query_nome_indirizzo": "SAN FRANCESCO VIA F. FENZI 28, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA F. FENZI 28, 31015 CONEGLIANO (TREVISO)"
+      },
+      {
+        "nome": "SCUOLA PRIMARIA \"IMMACOLATA\"",
+        "indirizzo": "VIA MADONNA20, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p2267",
+        "codice_latte": "p1929",
+        "codice_univoco": "p2267_p1929",
+        "zona": "3206",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.89003285647119,
+        "lon": 12.30301483284913,
+        "codici_ddt_frutta": [
+          "p2267"
+        ],
+        "codici_ddt_latte": [
+          "p1929"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 228,
+        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"IMMACOLATA\" VIA MADONNA20, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA MADONNA20, 31015 CONEGLIANO (TREVISO)"
+      },
+      {
+        "nome": "\"J.F. KENNEDY\" - CONEGLIANO CAP",
+        "indirizzo": "VIA KENNEDY 10, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p6528",
+        "codice_latte": "p00000",
+        "codice_univoco": "p6528_p00000",
+        "zona": "3206",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.8899507,
+        "lon": 12.3066424,
+        "codici_ddt_frutta": [
+          "p6528"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 165,
+        "geo_query_nome_indirizzo": "\"J.F. KENNEDY\" - CONEGLIANO CAP VIA KENNEDY 10, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA KENNEDY 10, 31015 CONEGLIANO (TREVISO)"
+      },
+      {
+        "nome": "G. MAZZINI",
+        "indirizzo": "VIA T. VECELLIO 13/15, 31015 CONEGLIANO (TREVISO)",
+        "codice_frutta": "p6526",
+        "codice_latte": "p00000",
+        "codice_univoco": "p6526_p00000",
+        "zona": "3206",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.8928947689846,
+        "lon": 12.30222358118974,
+        "codici_ddt_frutta": [
+          "p6526"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 192,
+        "geo_query_nome_indirizzo": "G. MAZZINI VIA T. VECELLIO 13/15, 31015 CONEGLIANO (TREVISO)",
+        "geo_query_indirizzo": "VIA T. VECELLIO 13/15, 31015 CONEGLIANO (TREVISO)"
+      },
+      {
+        "nome": "P. Maset - Scomigo - Loc. Scomigo",
+        "indirizzo": "Via Pastin Santin 5, 31015 Conegliano (TREVISO)",
+        "codice_frutta": "p6527",
+        "codice_latte": "p00000",
+        "codice_univoco": "p6527_p00000",
+        "zona": "3206",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.9376756,
+        "lon": 12.3068024,
+        "codici_ddt_frutta": [
+          "p6527"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 251,
+        "geo_query_nome_indirizzo": "P. Maset - Scomigo - Loc. Scomigo Via Pastin Santin 5, 31015 Conegliano (TREVISO)",
+        "geo_query_indirizzo": "Via Pastin Santin 5, 31015 Conegliano (TREVISO)"
+      },
+      {
+        "nome": "UGO COSTELLA - B.GO VENDRAN",
+        "indirizzo": "VIA P. MASCAGNI 16, 31029 VITTORIO VENETO (TREVISO)",
+        "codice_frutta": "p2396",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2396_p00000",
+        "zona": "3206",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.9663573,
+        "lon": 12.2945747,
+        "codici_ddt_frutta": [
+          "p2396"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 234,
+        "geo_query_nome_indirizzo": "UGO COSTELLA - B.GO VENDRAN VIA P. MASCAGNI 16, 31029 VITTORIO VENETO (TREVISO)",
+        "geo_query_indirizzo": "VIA P. MASCAGNI 16, 31029 VITTORIO VENETO (TREVISO)"
+      },
+      {
+        "nome": "SCUOLA PRIMARIA \"SANTA GIOVANNA D'ARCO\"",
+        "indirizzo": "VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)",
+        "codice_frutta": "p2099",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2099_p00000",
+        "zona": "3206",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.97358583056165,
+        "lon": 12.29359709699365,
+        "codici_ddt_frutta": [
+          "p2099"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 229,
+        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"SANTA GIOVANNA D'ARCO\" VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)",
+        "geo_query_indirizzo": "VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)"
+      },
+      {
+        "nome": "UGO FOSCOLO - CENEDA",
+        "indirizzo": "VIA U. FOSCOLO 80, 31029 VITTORIO VENETO (TREVISO)",
+        "codice_frutta": "p2397",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2397_p00000",
+        "zona": "3206",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.97620611550319,
+        "lon": 12.29525948927156,
+        "codici_ddt_frutta": [
+          "p2397"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 235,
+        "geo_query_nome_indirizzo": "UGO FOSCOLO - CENEDA VIA U. FOSCOLO 80, 31029 VITTORIO VENETO (TREVISO)",
+        "geo_query_indirizzo": "VIA U. FOSCOLO 80, 31029 VITTORIO VENETO (TREVISO)"
+      },
+      {
+        "nome": "MARCO POLO PRIMARIA - COSTA",
+        "indirizzo": "PIAZZA ZANETTE 11, 31029 VITTORIO VENETO (TREVISO)",
+        "codice_frutta": "p8678",
+        "codice_latte": "p1858",
+        "codice_univoco": "p8678_p1858",
+        "zona": "3206",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 45.9849141,
+        "lon": 12.3085564,
+        "codici_ddt_frutta": [
+          "p8678"
+        ],
+        "codici_ddt_latte": [
+          "p1858"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 210,
+        "geo_query_nome_indirizzo": "MARCO POLO PRIMARIA - COSTA PIAZZA ZANETTE 11, 31029 VITTORIO VENETO (TREVISO)",
+        "geo_query_indirizzo": "PIAZZA ZANETTE 11, 31029 VITTORIO VENETO (TREVISO)"
+      },
+      {
+        "nome": "PARRAVICINI - SERRAVALLE",
+        "indirizzo": "VIA PARRAVICINI 18, 31029 VITTORIO VENETO (TREVISO)",
+        "codice_frutta": "p12472",
+        "codice_latte": "p1855",
+        "codice_univoco": "p12472_p1855",
+        "zona": "3206",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 45.9985007,
+        "lon": 12.2943275,
+        "codici_ddt_frutta": [
+          "p12472"
+        ],
+        "codici_ddt_latte": [
+          "p1855"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 216,
+        "geo_query_nome_indirizzo": "PARRAVICINI - SERRAVALLE VIA PARRAVICINI 18, 31029 VITTORIO VENETO (TREVISO)",
+        "geo_query_indirizzo": "VIA PARRAVICINI 18, 31029 VITTORIO VENETO (TREVISO)"
+      },
+      {
+        "nome": "A. MANZONI - SERRAVALLE",
+        "indirizzo": "VIA MARCINELLE 10, 31029 VITTORIO VENETO (TREVISO)",
+        "codice_frutta": "p12400",
+        "codice_latte": "p00000",
+        "codice_univoco": "p12400_p00000",
+        "zona": "3206",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 46.0091068,
+        "lon": 12.2811319,
+        "codici_ddt_frutta": [
+          "p12400"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 172,
+        "geo_query_nome_indirizzo": "A. MANZONI - SERRAVALLE VIA MARCINELLE 10, 31029 VITTORIO VENETO (TREVISO)",
+        "geo_query_indirizzo": "VIA MARCINELLE 10, 31029 VITTORIO VENETO (TREVISO)"
+      },
+      {
+        "nome": "G.PASCOLI - VITTORIO CENTRO",
+        "indirizzo": "VIA DIV.NINO NANNETTI 128, 31029 VITTORIO VENETO (TREVISO)",
+        "codice_frutta": "p8652",
+        "codice_latte": "p1856",
+        "codice_univoco": "p8652_p1856",
+        "zona": "3206",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:45",
+        "orario_max": "14:00",
+        "lat": 45.98646752689192,
+        "lon": 12.29783977434389,
+        "codici_ddt_frutta": [
+          "p8652"
+        ],
+        "codici_ddt_latte": [
+          "p1856"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 196,
+        "geo_query_nome_indirizzo": "G.PASCOLI - VITTORIO CENTRO VIA DIV.NINO NANNETTI 128, 31029 VITTORIO VENETO (TREVISO)",
+        "geo_query_indirizzo": "VIA DIV.NINO NANNETTI 128, 31029 VITTORIO VENETO (TREVISO)"
+      },
+      {
+        "nome": "F.CRISPI - VIA DIAZ",
+        "indirizzo": "VIA A.DIAZ 30, 31029 VITTORIO VENETO (TREVISO)",
+        "codice_frutta": "p13927",
+        "codice_latte": "p1853",
+        "codice_univoco": "p13927_p1853",
+        "zona": "3206",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:45",
+        "orario_max": "14:00",
+        "lat": 45.980237866388,
+        "lon": 12.3013241255646,
+        "codici_ddt_frutta": [
+          "p13927"
+        ],
+        "codici_ddt_latte": [
+          "p1853"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 187,
+        "geo_query_nome_indirizzo": "F.CRISPI - VIA DIAZ VIA A.DIAZ 30, 31029 VITTORIO VENETO (TREVISO)",
+        "geo_query_indirizzo": "VIA A.DIAZ 30, 31029 VITTORIO VENETO (TREVISO)"
+      },
+      {
+        "nome": "\"G. SCARABELLOTTO\" ORSAGO",
+        "indirizzo": "VIA DON MILANI 4, 31010 ORSAGO (TREVISO)",
+        "codice_frutta": "p13590",
+        "codice_latte": "p00000",
+        "codice_univoco": "p13590_p00000",
+        "zona": "3206",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.927714631673645,
+        "lon": 12.424202843919838,
+        "codici_ddt_frutta": [
+          "p13590"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 162,
+        "geo_query_nome_indirizzo": "\"G. SCARABELLOTTO\" ORSAGO VIA DON MILANI 4, 31010 ORSAGO (TREVISO)",
+        "geo_query_indirizzo": "VIA DON MILANI 4, 31010 ORSAGO (TREVISO)"
+      }
+    ]
+  },
+  {
+    "nome_giro": "V05",
+    "file_sorgente": "V05_Zone_3209.html",
+    "zone": [
+      "3209"
+    ],
+    "num_fermate": 18,
+    "data_ddt": "23-04-2026 - prova nuovi percorsi",
+    "lista_punti": [
+      {
+        "nome": "SALVO D'ACQUISTO",
+        "indirizzo": "PIAZZA IV NOVEMBRE 1/A, 30020 FOSSALTA DI PIAVE (VENEZIA)",
+        "codice_frutta": "p2318",
+        "codice_latte": "p2012",
+        "codice_univoco": "p2318_p2012",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.6457541,
+        "lon": 12.5121322,
+        "codici_ddt_frutta": [
+          "p2318"
+        ],
+        "codici_ddt_latte": [
+          "p2012"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 343,
+        "geo_query_nome_indirizzo": "SALVO D'ACQUISTO PIAZZA IV NOVEMBRE 1/A, 30020 FOSSALTA DI PIAVE (VENEZIA)",
+        "geo_query_indirizzo": "PIAZZA IV NOVEMBRE 1/A, 30020 FOSSALTA DI PIAVE (VENEZIA)"
+      },
+      {
+        "nome": "TITO ACERBO",
+        "indirizzo": "VIA BOSCO 13, 30024 MUSILE DI PIAVE (VENEZIA)",
+        "codice_frutta": "p2180",
+        "codice_latte": "p1964",
+        "codice_univoco": "p2180_p1964",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "false",
+        "orario_max": "10:00",
+        "lat": 45.6269737,
+        "lon": 12.5258098,
+        "codici_ddt_frutta": [
+          "p2180"
+        ],
+        "codici_ddt_latte": [
+          "p1964"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 348,
+        "geo_query_nome_indirizzo": "TITO ACERBO VIA BOSCO 13, 30024 MUSILE DI PIAVE (VENEZIA)",
+        "geo_query_indirizzo": "VIA BOSCO 13, 30024 MUSILE DI PIAVE (VENEZIA)"
+      },
+      {
+        "nome": "Edmondo De Amicis - Sede Distaccata",
+        "indirizzo": "Via Marconi 3, 30024 Musile Di Piave (VENEZIA)",
+        "codice_frutta": "p14089",
+        "codice_latte": "p2654",
+        "codice_univoco": "p14089_p2654",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:45",
+        "orario_max": "14:00",
+        "lat": 45.6221091,
+        "lon": 12.5601895,
+        "codici_ddt_frutta": [
+          "p14089"
+        ],
+        "codici_ddt_latte": [
+          "p2654"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 272,
+        "geo_query_nome_indirizzo": "Edmondo De Amicis - Sede Distaccata Via Marconi 3, 30024 Musile Di Piave (VENEZIA)",
+        "geo_query_indirizzo": "Via Marconi 3, 30024 Musile Di Piave (VENEZIA)"
+      },
+      {
+        "nome": "EDMONDO DE AMICIS",
+        "indirizzo": "PIAZZA 18 GIUGNO 2, 30024 MUSILE DI PIAVE (VENEZIA)",
+        "codice_frutta": "p2182",
+        "codice_latte": "p1963",
+        "codice_univoco": "p2182_p1963",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:45",
+        "orario_max": "14:00",
+        "lat": 45.62245928812135,
+        "lon": 12.563558858818391,
+        "codici_ddt_frutta": [
+          "p2182"
+        ],
+        "codici_ddt_latte": [
+          "p1963"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 314,
+        "geo_query_nome_indirizzo": "EDMONDO DE AMICIS PIAZZA 18 GIUGNO 2, 30024 MUSILE DI PIAVE (VENEZIA)",
+        "geo_query_indirizzo": "PIAZZA 18 GIUGNO 2, 30024 MUSILE DI PIAVE (VENEZIA)"
+      },
+      {
+        "nome": "E. Fermi",
+        "indirizzo": "Via Giovanni Xxiii 5, 30027 San Dono Di Piave (VENEZIA)",
+        "codice_frutta": "p12528",
+        "codice_latte": "p00000",
+        "codice_univoco": "p12528_p00000",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.6347629648625,
+        "lon": 12.5699955481901,
+        "codici_ddt_frutta": [
+          "p12528"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 270,
+        "geo_query_nome_indirizzo": "E. Fermi Via Giovanni Xxiii 5, 30027 San Dono Di Piave (VENEZIA)",
+        "geo_query_indirizzo": "Via Giovanni Xxiii 5, 30027 San Dono Di Piave (VENEZIA)"
+      },
+      {
+        "nome": "MARCO POLO",
+        "indirizzo": "VIA MILLEPERTICHE 127, 30024 MUSILE DI PIAVE (VENEZIA)",
+        "codice_frutta": "p2181",
+        "codice_latte": "p1965",
+        "codice_univoco": "p2181_p1965",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 45.649806808499825,
+        "lon": 12.566753413346298,
+        "codici_ddt_frutta": [
+          "p2181"
+        ],
+        "codici_ddt_latte": [
+          "p1965"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 333,
+        "geo_query_nome_indirizzo": "MARCO POLO VIA MILLEPERTICHE 127, 30024 MUSILE DI PIAVE (VENEZIA)",
+        "geo_query_indirizzo": "VIA MILLEPERTICHE 127, 30024 MUSILE DI PIAVE (VENEZIA)"
+      },
+      {
+        "nome": "MARCO POLO",
+        "indirizzo": "VIA BOEMIA 2, 30027 SAN DONA' DI PIAVE (VENEZIA)",
+        "codice_frutta": "p9148",
+        "codice_latte": "p00000",
+        "codice_univoco": "p9148_p00000",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.65220018230452,
+        "lon": 12.604234612597786,
+        "codici_ddt_frutta": [
+          "p9148"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 336,
+        "geo_query_nome_indirizzo": "MARCO POLO VIA BOEMIA 2, 30027 SAN DONA' DI PIAVE (VENEZIA)",
+        "geo_query_indirizzo": "VIA BOEMIA 2, 30027 SAN DONA' DI PIAVE (VENEZIA)"
+      },
+      {
+        "nome": "Guglielmo Marconi-Cap.",
+        "indirizzo": "Via Leopardi, 56, 30020 Pramaggiore (VENEZIA)",
+        "codice_frutta": "p2114",
+        "codice_latte": "p1733",
+        "codice_univoco": "p2114_p1733",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.81492613528129,
+        "lon": 12.73155155515594,
+        "codici_ddt_frutta": [
+          "p2114"
+        ],
+        "codici_ddt_latte": [
+          "p1733"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 280,
+        "geo_query_nome_indirizzo": "Guglielmo Marconi-Cap. Via Leopardi, 56, 30020 Pramaggiore (VENEZIA)",
+        "geo_query_indirizzo": "Via Leopardi, 56, 30020 Pramaggiore (VENEZIA)"
+      },
+      {
+        "nome": "DANTE ALIGHIERI - LOC. PRADIPOZZO",
+        "indirizzo": "VIA FORNACE N. 34, 30020 PORTOGRUARO (VENEZIA)",
+        "codice_frutta": "p2363",
+        "codice_latte": "p1867",
+        "codice_univoco": "p2363_p1867",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.78346752983553,
+        "lon": 12.76019427991685,
+        "codici_ddt_frutta": [
+          "p2363"
+        ],
+        "codici_ddt_latte": [
+          "p1867"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 309,
+        "geo_query_nome_indirizzo": "DANTE ALIGHIERI - LOC. PRADIPOZZO VIA FORNACE N. 34, 30020 PORTOGRUARO (VENEZIA)",
+        "geo_query_indirizzo": "VIA FORNACE N. 34, 30020 PORTOGRUARO (VENEZIA)"
+      },
+      {
+        "nome": "CESARE BATTISTI - LOC. SUMMAGA",
+        "indirizzo": "VIA SAN BENEDETTO N. 15, 30020 PORTOGRUARO (VENEZIA)",
+        "codice_frutta": "p2362",
+        "codice_latte": "p1866",
+        "codice_univoco": "p2362_p1866",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.77787456540089,
+        "lon": 12.79991559848095,
+        "codici_ddt_frutta": [
+          "p2362"
+        ],
+        "codici_ddt_latte": [
+          "p1866"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 306,
+        "geo_query_nome_indirizzo": "CESARE BATTISTI - LOC. SUMMAGA VIA SAN BENEDETTO N. 15, 30020 PORTOGRUARO (VENEZIA)",
+        "geo_query_indirizzo": "VIA SAN BENEDETTO N. 15, 30020 PORTOGRUARO (VENEZIA)"
+      },
+      {
+        "nome": "DON LORENZO MILANI",
+        "indirizzo": "VIA MAGELLANO N. 18, 30026 PORTOGRUARO (VENEZIA)",
+        "codice_frutta": "p2360",
+        "codice_latte": "p1865",
+        "codice_univoco": "p2360_p1865",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.78399892049632,
+        "lon": 12.82970884230005,
+        "codici_ddt_frutta": [
+          "p2360"
+        ],
+        "codici_ddt_latte": [
+          "p1865"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 310,
+        "geo_query_nome_indirizzo": "DON LORENZO MILANI VIA MAGELLANO N. 18, 30026 PORTOGRUARO (VENEZIA)",
+        "geo_query_indirizzo": "VIA MAGELLANO N. 18, 30026 PORTOGRUARO (VENEZIA)"
+      },
+      {
+        "nome": "MARCO POLO",
+        "indirizzo": "VIA LIVENZA N. 3, 30026 PORTOGRUARO (VENEZIA)",
+        "codice_frutta": "p2361",
+        "codice_latte": "p1863",
+        "codice_univoco": "p2361_p1863",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.77153149649337,
+        "lon": 12.833475973518937,
+        "codici_ddt_frutta": [
+          "p2361"
+        ],
+        "codici_ddt_latte": [
+          "p1863"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 335,
+        "geo_query_nome_indirizzo": "MARCO POLO VIA LIVENZA N. 3, 30026 PORTOGRUARO (VENEZIA)",
+        "geo_query_indirizzo": "VIA LIVENZA N. 3, 30026 PORTOGRUARO (VENEZIA)"
+      },
+      {
+        "nome": "IPPOLITO NIEVO-CAP.",
+        "indirizzo": "VIA CAMILLO VALLE N. 15, 30026 PORTOGRUARO (VENEZIA)",
+        "codice_frutta": "p2359",
+        "codice_latte": "p1874",
+        "codice_univoco": "p2359_p1874",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.78058984536306,
+        "lon": 12.84476537118256,
+        "codici_ddt_frutta": [
+          "p2359"
+        ],
+        "codici_ddt_latte": [
+          "p1874"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 328,
+        "geo_query_nome_indirizzo": "IPPOLITO NIEVO-CAP. VIA CAMILLO VALLE N. 15, 30026 PORTOGRUARO (VENEZIA)",
+        "geo_query_indirizzo": "VIA CAMILLO VALLE N. 15, 30026 PORTOGRUARO (VENEZIA)"
+      },
+      {
+        "nome": "Guglielmo Marconi",
+        "indirizzo": "Via Madonetta 81, 30028 San Michele Al Tagliamento (VENEZIA)",
+        "codice_frutta": "p2339",
+        "codice_latte": "p1795",
+        "codice_univoco": "p2339_p1795",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 45.78453549883707,
+        "lon": 12.972780787923686,
+        "codici_ddt_frutta": [
+          "p2339"
+        ],
+        "codici_ddt_latte": [
+          "p1795"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 279,
+        "geo_query_nome_indirizzo": "Guglielmo Marconi Via Madonetta 81, 30028 San Michele Al Tagliamento (VENEZIA)",
+        "geo_query_indirizzo": "Via Madonetta 81, 30028 San Michele Al Tagliamento (VENEZIA)"
+      },
+      {
+        "nome": "Giovanni Pascoli",
+        "indirizzo": "Via Conciliazione 122, 30028 San Michele Al Tagliamento (VENEZIA)",
+        "codice_frutta": "p2340",
+        "codice_latte": "p1789",
+        "codice_univoco": "p2340_p1789",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.71708781674325,
+        "lon": 13.01326038702978,
+        "codici_ddt_frutta": [
+          "p2340"
+        ],
+        "codici_ddt_latte": [
+          "p1789"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 276,
+        "geo_query_nome_indirizzo": "Giovanni Pascoli Via Conciliazione 122, 30028 San Michele Al Tagliamento (VENEZIA)",
+        "geo_query_indirizzo": "Via Conciliazione 122, 30028 San Michele Al Tagliamento (VENEZIA)"
+      },
+      {
+        "nome": "Aristide Gabelli",
+        "indirizzo": "Via Maja 80, 30028 San Michele Al Tagliamento (VENEZIA)",
+        "codice_frutta": "p00000",
+        "codice_latte": "p1791",
+        "codice_univoco": "p00000_p1791",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.64175509210006,
+        "lon": 13.053987892820448,
+        "codici_ddt_frutta": [
+          "p00000"
+        ],
+        "codici_ddt_latte": [
+          "p1791"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 457,
+        "geo_query_nome_indirizzo": "Aristide Gabelli Via Maja 80, 30028 San Michele Al Tagliamento (VENEZIA)",
+        "geo_query_indirizzo": "Via Maja 80, 30028 San Michele Al Tagliamento (VENEZIA)"
+      },
+      {
+        "nome": "FORTE 48",
+        "indirizzo": "VIA CARROZZANI 29, 30027 SAN DONA' DI PIAVE (VENEZIA)",
+        "codice_frutta": "p12264",
+        "codice_latte": "p00000",
+        "codice_univoco": "p12264_p00000",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.634093246962,
+        "lon": 12.5774933971919,
+        "codici_ddt_frutta": [
+          "p12264"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 320,
+        "geo_query_nome_indirizzo": "FORTE 48 VIA CARROZZANI 29, 30027 SAN DONA' DI PIAVE (VENEZIA)",
+        "geo_query_indirizzo": "VIA CARROZZANI 29, 30027 SAN DONA' DI PIAVE (VENEZIA)"
+      },
+      {
+        "nome": "S. PIO X",
+        "indirizzo": "VIA A. MANZONI 2, 30020 MEOLO (VENEZIA)",
+        "codice_frutta": "p2319",
+        "codice_latte": "p2013",
+        "codice_univoco": "p2319_p2013",
+        "zona": "3209",
+        "data_consegna": "23-04-2026 - prova nuovi percorsi",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.61616596940227,
+        "lon": 12.4550840392784,
+        "codici_ddt_frutta": [
+          "p2319"
+        ],
+        "codici_ddt_latte": [
+          "p2013"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 341,
+        "geo_query_nome_indirizzo": "S. PIO X VIA A. MANZONI 2, 30020 MEOLO (VENEZIA)",
+        "geo_query_indirizzo": "VIA A. MANZONI 2, 30020 MEOLO (VENEZIA)"
+      }
+    ]
+  }
+]

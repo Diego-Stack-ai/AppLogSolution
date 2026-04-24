@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V09 - Zone: 3211</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry&v=weekly" defer></script>
+    <style>
+        :root { --p: #4f46e5; --sidebar-w: 400px; }
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .main-container { display: flex; height: 100vh; }
+        #sidebar { width: var(--sidebar-w); height: 100%; background: white; display: flex; flex-direction: column; z-index: 100; box-shadow: 10px 0 30px rgba(0,0,0,0.1); }
+        .header { padding: 24px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; padding: 15px; gap: 8px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+        .stat-card { background: white; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center; }
+        .stat-val { display: block; font-weight: 800; font-size: 1rem; color: var(--p); }
+        .stat-lbl { font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 700; }
+        .tot-card { grid-column: span 2; background: #f5f3ff; border-color: #c7d2fe; }
+        #stop-list { flex: 1; overflow-y: auto; padding: 15px; background: #f1f5f9; }
+        .stop-card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 12px; display: flex; gap: 14px; align-items: center; border: 1.5px solid #e2e8f0; cursor: pointer; transition: 0.2s; }
+        .stop-card:hover { border-color: var(--p); transform: translateX(5px); }
+        .stop-num { width: 30px; height: 30px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0; }
+        .nav-btn { background: #22c55e; color: white; width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+        #map { flex: 1; height: 100%; }
+        .depot-tag { background: #475569; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; }
+        @media (max-width: 800px) { .main-container { flex-direction: column; } #sidebar { width: 100%; height: 50%; } #map { height: 50%; } }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div id="sidebar">
+            <div class="header">
+                <div style="font-size:0.75rem; opacity:0.8; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Logistica Operativa</div>
+                <h1 style="margin:0; font-size:1.5rem; letter-spacing:-0.01em;">V09</h1>
+                <div style="margin-top:6px; font-size:0.85rem; font-weight:600; color: #a5b4fc;">Zone: 3211</div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card"><span class="stat-val">20</span><span class="stat-lbl">Tappe</span></div>
+                <div class="stat-card"><span class="stat-val">209.8 km</span><span class="stat-lbl">Distanza</span></div>
+                <div class="stat-card"><span class="stat-val">3h 51m</span><span class="stat-lbl">Guida</span></div>
+                <div class="stat-card"><span class="stat-val">2h 40m</span><span class="stat-lbl">Scarico</span></div>
+                <div class="stat-card tot-card"><span class="stat-val" style="font-size:1.3rem;">6h 31m</span><span class="stat-lbl">TEMPO TOTALE STIMATO</span></div>
+            </div>
+            <div id="stop-list">
+                <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">home</span></div>
+                    <div class="stop-info"><span class="depot-tag">PARTENZA</span><br><b style="font-size:0.9rem;">Deposito Veggiano</b></div>
+                </div>
+                <div class="stop-card" onclick="panTo(1)"><div class="stop-num">1</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria G. Marconi Di Padernello</b><br><small style="color:#64748b; font-size:0.75rem;">Via Giusti, 19, 31038 Padernello (TV)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6817259,12.1253065&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(2)"><div class="stop-num">2</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria G. Carducci Di Porcellengo</b><br><small style="color:#64748b; font-size:0.75rem;">Via Francesco Baracca, 3, 31038 Porcellengo (TV)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7070291,12.1452939&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(3)"><div class="stop-num">3</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Onorevole Visentin Di Postioma</b><br><small style="color:#64748b; font-size:0.75rem;">Via Europa Unita, 31, 31038 Postioma (TV)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7171636,12.1494057&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(4)"><div class="stop-num">4</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">MARIO FIORE - CAMALO'</b><br><small style="color:#64748b; font-size:0.75rem;">PIAZZA S. MATTEO 2, 31050 POVEGLIANO (TREVISO)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7519944,12.1707098&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(5)"><div class="stop-num">5</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">PLACIDO FABRIS - POVEGLIANO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA MASETTO 5, 31050 POVEGLIANO (TREVISO)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7578398,12.2027331&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(6)"><div class="stop-num">6</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Giovanni Battista Cicogna</b><br><small style="color:#64748b; font-size:0.75rem;">Via G. B. Cicogna, 50, 31050 Ponzano Veneto (TV)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.7181594,12.2011213&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(7)"><div class="stop-num">7</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">DE AMICIS - FONTANE</b><br><small style="color:#64748b; font-size:0.75rem;">VIA FONTANE 42, 31020 VILLORBA (TREVISO)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.70325370439111,12.246349617089969&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(8)"><div class="stop-num">8</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">I MAGGIO - SAN BARTOLOMEO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA S.BARTOLOMEO 46/B, 31100 TREVISO (TREVISO)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.677927,12.24199&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(9)"><div class="stop-num">9</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">GIOVANNI XXIII - VIA FEDERICI</b><br><small style="color:#64748b; font-size:0.75rem;">VIA FEDERICI 12, 31100 TREVISO (TREVISO)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6723834,12.2380837&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(10)"><div class="stop-num">10</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Carmen Frova_Collegio Pio X</b><br><small style="color:#64748b; font-size:0.75rem;">Borgo Cavour, 40, 31100 Treviso (TV)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6679011,12.2364577&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(11)"><div class="stop-num">11</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">E.De Amicis - Via Caccianiga</b><br><small style="color:#64748b; font-size:0.75rem;">Via Caccianiga 16, 31100 Treviso (TV)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6683746,12.2392965&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(12)"><div class="stop-num">12</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">A. GABELLI - VIALE CADORNA</b><br><small style="color:#64748b; font-size:0.75rem;">VIALE CADORNA 21, 31100 TREVISO (TREVISO)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6628472,12.2429047&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(13)"><div class="stop-num">13</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">"G.B. TIEPOLO" - LANZAGO</b><br><small style="color:#64748b; font-size:0.75rem;">VIA TIEPOLO N. 4, 31057 SILEA (TREVISO)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6617178,12.2920986&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(14)"><div class="stop-num">14</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Antonio Vivaldi-Silea Cap.</b><br><small style="color:#64748b; font-size:0.75rem;">Via Roma N. 79, 31057 Silea (TV)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6536253,12.3012308&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(15)"><div class="stop-num">15</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">G. PRATI - VIA DEI MILLE</b><br><small style="color:#64748b; font-size:0.75rem;">VIA DEI MILLE 7, 31100 TREVISO (TREVISO)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6362262,12.2378641&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(16)"><div class="stop-num">16</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">R. Degli Azzoni - San Giuseppe</b><br><small style="color:#64748b; font-size:0.75rem;">Via Paludetti 11, 31100 Treviso (TV)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6625053,12.216445&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(17)"><div class="stop-num">17</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">"MADDALENA DI CANOSSA"</b><br><small style="color:#64748b; font-size:0.75rem;">VIALE EUROPA 20, 31100 TREVISO (TREVISO)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6745788,12.2255846&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(18)"><div class="stop-num">18</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria G. Pascoli Di</b><br><small style="color:#64748b; font-size:0.75rem;">Via Grotta, 1, 31038 Castagnole (TV)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6855208,12.1855819&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(19)"><div class="stop-num">19</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria Treforni Di Paese</b><br><small style="color:#64748b; font-size:0.75rem;">Via Treforni N. 4, 31038 Paese (TV)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6721991,12.1823073&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div><div class="stop-card" onclick="panTo(20)"><div class="stop-num">20</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">Scuola Primaria L. Pravato Di Paese</b><br><small style="color:#64748b; font-size:0.75rem;">Via Della Costituzione N.1, 31038 Paese (TV)</small></div><a href="https://www.google.com/maps/dir/?api=1&destination=45.6754328,12.1585365&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+    <script>
+        const data = [
+  {
+    "lat": 45.442805,
+    "lon": 11.714498,
+    "nome": "DEPOSITO VEGGIANO",
+    "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"
+  },
+  {
+    "nome": "Scuola Primaria G. Marconi Di Padernello",
+    "indirizzo": "Via Giusti, 19, 31038 Padernello (TV)",
+    "codice_frutta": "p2140",
+    "codice_latte": "p1764",
+    "codice_univoco": "p2140_p1764",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "10:00",
+    "lat": 45.6817259,
+    "lon": 12.1253065,
+    "codici_ddt_frutta": [
+      "p2140"
+    ],
+    "codici_ddt_latte": [
+      "p1764"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 399,
+    "geo_query_nome_indirizzo": "Scuola Primaria G. Marconi Di Padernello Via Giusti, 19, 31038 Padernello (TV)",
+    "geo_query_indirizzo": "Via Giusti, 19, 31038 Padernello (TV)"
+  },
+  {
+    "nome": "Scuola Primaria G. Carducci Di Porcellengo",
+    "indirizzo": "Via Francesco Baracca, 3, 31038 Porcellengo (TV)",
+    "codice_frutta": "p2141",
+    "codice_latte": "p1766",
+    "codice_univoco": "p2141_p1766",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "10:00",
+    "lat": 45.7070291,
+    "lon": 12.1452939,
+    "codici_ddt_frutta": [
+      "p2141"
+    ],
+    "codici_ddt_latte": [
+      "p1766"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 398,
+    "geo_query_nome_indirizzo": "Scuola Primaria G. Carducci Di Porcellengo Via Francesco Baracca, 3, 31038 Porcellengo (TV)",
+    "geo_query_indirizzo": "Via Francesco Baracca, 3, 31038 Porcellengo (TV)"
+  },
+  {
+    "nome": "Scuola Primaria Onorevole Visentin Di Postioma",
+    "indirizzo": "Via Europa Unita, 31, 31038 Postioma (TV)",
+    "codice_frutta": "p2142",
+    "codice_latte": "p1765",
+    "codice_univoco": "p2142_p1765",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "10:00",
+    "lat": 45.7171636,
+    "lon": 12.1494057,
+    "codici_ddt_frutta": [
+      "p2142"
+    ],
+    "codici_ddt_latte": [
+      "p1765"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 411,
+    "geo_query_nome_indirizzo": "Scuola Primaria Onorevole Visentin Di Postioma Via Europa Unita, 31, 31038 Postioma (TV)",
+    "geo_query_indirizzo": "Via Europa Unita, 31, 31038 Postioma (TV)"
+  },
+  {
+    "nome": "MARIO FIORE - CAMALO'",
+    "indirizzo": "PIAZZA S. MATTEO 2, 31050 POVEGLIANO (TREVISO)",
+    "codice_frutta": "p2287",
+    "codice_latte": "p1735",
+    "codice_univoco": "p2287_p1735",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "10:00",
+    "lat": 45.7519944,
+    "lon": 12.1707098,
+    "codici_ddt_frutta": [
+      "p2287"
+    ],
+    "codici_ddt_latte": [
+      "p1735"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 272,
+    "geo_query_nome_indirizzo": "MARIO FIORE - CAMALO' PIAZZA S. MATTEO 2, 31050 POVEGLIANO (TREVISO)",
+    "geo_query_indirizzo": "PIAZZA S. MATTEO 2, 31050 POVEGLIANO (TREVISO)"
+  },
+  {
+    "nome": "PLACIDO FABRIS - POVEGLIANO",
+    "indirizzo": "VIA MASETTO 5, 31050 POVEGLIANO (TREVISO)",
+    "codice_frutta": "p2288",
+    "codice_latte": "p1712",
+    "codice_univoco": "p2288_p1712",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "07:30",
+    "orario_max": "10:00",
+    "lat": 45.7578398,
+    "lon": 12.2027331,
+    "codici_ddt_frutta": [
+      "p2288"
+    ],
+    "codici_ddt_latte": [
+      "p1712"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 303,
+    "geo_query_nome_indirizzo": "PLACIDO FABRIS - POVEGLIANO VIA MASETTO 5, 31050 POVEGLIANO (TREVISO)",
+    "geo_query_indirizzo": "VIA MASETTO 5, 31050 POVEGLIANO (TREVISO)"
+  },
+  {
+    "nome": "Giovanni Battista Cicogna",
+    "indirizzo": "Via G. B. Cicogna, 50, 31050 Ponzano Veneto (TV)",
+    "codice_frutta": "p2065",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2065_p00000",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "10:00",
+    "lat": 45.7181594,
+    "lon": 12.2011213,
+    "codici_ddt_frutta": [
+      "p2065"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 201,
+    "geo_query_nome_indirizzo": "Giovanni Battista Cicogna Via G. B. Cicogna, 50, 31050 Ponzano Veneto (TV)",
+    "geo_query_indirizzo": "Via G. B. Cicogna, 50, 31050 Ponzano Veneto (TV)"
+  },
+  {
+    "nome": "DE AMICIS - FONTANE",
+    "indirizzo": "VIA FONTANE 42, 31020 VILLORBA (TREVISO)",
+    "codice_frutta": "p00000",
+    "codice_latte": "p1711",
+    "codice_univoco": "p00000_p1711",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "14:00",
+    "lat": 45.70325370439111,
+    "lon": 12.246349617089969,
+    "codici_ddt_frutta": [
+      "p00000"
+    ],
+    "codici_ddt_latte": [
+      "p1711"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 461,
+    "geo_query_nome_indirizzo": "DE AMICIS - FONTANE VIA FONTANE 42, 31020 VILLORBA (TREVISO)",
+    "geo_query_indirizzo": "VIA FONTANE 42, 31020 VILLORBA (TREVISO)"
+  },
+  {
+    "nome": "I MAGGIO - SAN BARTOLOMEO",
+    "indirizzo": "VIA S.BARTOLOMEO 46/B, 31100 TREVISO (TREVISO)",
+    "codice_frutta": "p13179",
+    "codice_latte": "p00000",
+    "codice_univoco": "p13179_p00000",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "14:00",
+    "lat": 45.677927,
+    "lon": 12.24199,
+    "codici_ddt_frutta": [
+      "p13179"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 216,
+    "geo_query_nome_indirizzo": "I MAGGIO - SAN BARTOLOMEO VIA S.BARTOLOMEO 46/B, 31100 TREVISO (TREVISO)",
+    "geo_query_indirizzo": "VIA S.BARTOLOMEO 46/B, 31100 TREVISO (TREVISO)"
+  },
+  {
+    "nome": "GIOVANNI XXIII - VIA FEDERICI",
+    "indirizzo": "VIA FEDERICI 12, 31100 TREVISO (TREVISO)",
+    "codice_frutta": "p6231",
+    "codice_latte": "p00000",
+    "codice_univoco": "p6231_p00000",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.6723834,
+    "lon": 12.2380837,
+    "codici_ddt_frutta": [
+      "p6231"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 207,
+    "geo_query_nome_indirizzo": "GIOVANNI XXIII - VIA FEDERICI VIA FEDERICI 12, 31100 TREVISO (TREVISO)",
+    "geo_query_indirizzo": "VIA FEDERICI 12, 31100 TREVISO (TREVISO)"
+  },
+  {
+    "nome": "Carmen Frova_Collegio Pio X",
+    "indirizzo": "Borgo Cavour, 40, 31100 Treviso (TV)",
+    "codice_frutta": "p2075",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2075_p00000",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.6679011,
+    "lon": 12.2364577,
+    "codici_ddt_frutta": [
+      "p2075"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 80,
+    "geo_query_nome_indirizzo": "Carmen Frova_Collegio Pio X Borgo Cavour, 40, 31100 Treviso (TV)",
+    "geo_query_indirizzo": "Borgo Cavour, 40, 31100 Treviso (TV)"
+  },
+  {
+    "nome": "E.De Amicis - Via Caccianiga",
+    "indirizzo": "Via Caccianiga 16, 31100 Treviso (TV)",
+    "codice_frutta": "p13810",
+    "codice_latte": "p00000",
+    "codice_univoco": "p13810_p00000",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "14:00",
+    "lat": 45.6683746,
+    "lon": 12.2392965,
+    "codici_ddt_frutta": [
+      "p13810"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 136,
+    "geo_query_nome_indirizzo": "E.De Amicis - Via Caccianiga Via Caccianiga 16, 31100 Treviso (TV)",
+    "geo_query_indirizzo": "Via Caccianiga 16, 31100 Treviso (TV)"
+  },
+  {
+    "nome": "A. GABELLI - VIALE CADORNA",
+    "indirizzo": "VIALE CADORNA 21, 31100 TREVISO (TREVISO)",
+    "codice_frutta": "p13987",
+    "codice_latte": "p00000",
+    "codice_univoco": "p13987_p00000",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "14:00",
+    "lat": 45.6628472,
+    "lon": 12.2429047,
+    "codici_ddt_frutta": [
+      "p13987"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 37,
+    "geo_query_nome_indirizzo": "A. GABELLI - VIALE CADORNA VIALE CADORNA 21, 31100 TREVISO (TREVISO)",
+    "geo_query_indirizzo": "VIALE CADORNA 21, 31100 TREVISO (TREVISO)"
+  },
+  {
+    "nome": "\"G.B. TIEPOLO\" - LANZAGO",
+    "indirizzo": "VIA TIEPOLO N. 4, 31057 SILEA (TREVISO)",
+    "codice_frutta": "p11380",
+    "codice_latte": "p00000",
+    "codice_univoco": "p11380_p00000",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "10:00",
+    "lat": 45.6617178,
+    "lon": 12.2920986,
+    "codici_ddt_frutta": [
+      "p11380"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 14,
+    "geo_query_nome_indirizzo": "\"G.B. TIEPOLO\" - LANZAGO VIA TIEPOLO N. 4, 31057 SILEA (TREVISO)",
+    "geo_query_indirizzo": "VIA TIEPOLO N. 4, 31057 SILEA (TREVISO)"
+  },
+  {
+    "nome": "Antonio Vivaldi-Silea Cap.",
+    "indirizzo": "Via Roma N. 79, 31057 Silea (TV)",
+    "codice_frutta": "p13491",
+    "codice_latte": "p00000",
+    "codice_univoco": "p13491_p00000",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "10:00",
+    "lat": 45.6536253,
+    "lon": 12.3012308,
+    "codici_ddt_frutta": [
+      "p13491"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 61,
+    "geo_query_nome_indirizzo": "Antonio Vivaldi-Silea Cap. Via Roma N. 79, 31057 Silea (TV)",
+    "geo_query_indirizzo": "Via Roma N. 79, 31057 Silea (TV)"
+  },
+  {
+    "nome": "G. PRATI - VIA DEI MILLE",
+    "indirizzo": "VIA DEI MILLE 7, 31100 TREVISO (TREVISO)",
+    "codice_frutta": "p2279",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2279_p00000",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "08:00",
+    "orario_max": "14:00",
+    "lat": 45.6362262,
+    "lon": 12.2378641,
+    "codici_ddt_frutta": [
+      "p2279"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 176,
+    "geo_query_nome_indirizzo": "G. PRATI - VIA DEI MILLE VIA DEI MILLE 7, 31100 TREVISO (TREVISO)",
+    "geo_query_indirizzo": "VIA DEI MILLE 7, 31100 TREVISO (TREVISO)"
+  },
+  {
+    "nome": "R. Degli Azzoni - San Giuseppe",
+    "indirizzo": "Via Paludetti 11, 31100 Treviso (TV)",
+    "codice_frutta": "p13834",
+    "codice_latte": "p00000",
+    "codice_univoco": "p13834_p00000",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "08:15",
+    "orario_max": "14:00",
+    "lat": 45.6625053,
+    "lon": 12.216445,
+    "codici_ddt_frutta": [
+      "p13834"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 328,
+    "geo_query_nome_indirizzo": "R. Degli Azzoni - San Giuseppe Via Paludetti 11, 31100 Treviso (TV)",
+    "geo_query_indirizzo": "Via Paludetti 11, 31100 Treviso (TV)"
+  },
+  {
+    "nome": "\"MADDALENA DI CANOSSA\"",
+    "indirizzo": "VIALE EUROPA 20, 31100 TREVISO (TREVISO)",
+    "codice_frutta": "p2341",
+    "codice_latte": "p00000",
+    "codice_univoco": "p2341_p00000",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "14:00",
+    "lat": 45.6745788,
+    "lon": 12.2255846,
+    "codici_ddt_frutta": [
+      "p2341"
+    ],
+    "codici_ddt_latte": [
+      "p00000"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 21,
+    "geo_query_nome_indirizzo": "\"MADDALENA DI CANOSSA\" VIALE EUROPA 20, 31100 TREVISO (TREVISO)",
+    "geo_query_indirizzo": "VIALE EUROPA 20, 31100 TREVISO (TREVISO)"
+  },
+  {
+    "nome": "Scuola Primaria G. Pascoli Di",
+    "indirizzo": "Via Grotta, 1, 31038 Castagnole (TV)",
+    "codice_frutta": "p2139",
+    "codice_latte": "p1763",
+    "codice_univoco": "p2139_p1763",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "14:00",
+    "lat": 45.6855208,
+    "lon": 12.1855819,
+    "codici_ddt_frutta": [
+      "p2139"
+    ],
+    "codici_ddt_latte": [
+      "p1763"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 400,
+    "geo_query_nome_indirizzo": "Scuola Primaria G. Pascoli Di Via Grotta, 1, 31038 Castagnole (TV)",
+    "geo_query_indirizzo": "Via Grotta, 1, 31038 Castagnole (TV)"
+  },
+  {
+    "nome": "Scuola Primaria Treforni Di Paese",
+    "indirizzo": "Via Treforni N. 4, 31038 Paese (TV)",
+    "codice_frutta": "p2143",
+    "codice_latte": "p1762",
+    "codice_univoco": "p2143_p1762",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "10:00",
+    "lat": 45.6721991,
+    "lon": 12.1823073,
+    "codici_ddt_frutta": [
+      "p2143"
+    ],
+    "codici_ddt_latte": [
+      "p1762"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 427,
+    "geo_query_nome_indirizzo": "Scuola Primaria Treforni Di Paese Via Treforni N. 4, 31038 Paese (TV)",
+    "geo_query_indirizzo": "Via Treforni N. 4, 31038 Paese (TV)"
+  },
+  {
+    "nome": "Scuola Primaria L. Pravato Di Paese",
+    "indirizzo": "Via Della Costituzione N.1, 31038 Paese (TV)",
+    "codice_frutta": "p2138",
+    "codice_latte": "p1761",
+    "codice_univoco": "p2138_p1761",
+    "zona": "3211",
+    "data_consegna": "",
+    "orario_min": "07:45",
+    "orario_max": "10:00",
+    "lat": 45.6754328,
+    "lon": 12.1585365,
+    "codici_ddt_frutta": [
+      "p2138"
+    ],
+    "codici_ddt_latte": [
+      "p1761"
+    ],
+    "rientri_alert": [],
+    "row_idx_mappatura": 404,
+    "geo_query_nome_indirizzo": "Scuola Primaria L. Pravato Di Paese Via Della Costituzione N.1, 31038 Paese (TV)",
+    "geo_query_indirizzo": "Via Della Costituzione N.1, 31038 Paese (TV)"
+  },
+  {
+    "lat": 45.442805,
+    "lon": 11.714498,
+    "nome": "DEPOSITO VEGGIANO",
+    "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"
+  }
+]; const polys = ["ytjtGi~nfAgAkI}Gy@aCoCpBeWwAi{@gJwWgl@rhAi_@rR}\\|_@ck@nb@iNbSgOuCyDqFz[s{AhXenAnSmwB`b@soCl_@u`Cri@qvH~YipCnf@ubD`dA{dD~c@{cArH{^o@yYoMudAwPqtA_n@ccFakAspJgSeaBoM}f@u^_f@kaAep@_d@cg@_Rc~@kNou@sNkXwZ{Tyv@_]c|@mAsyAgGum@vB{`@yHwhAkDix@{_@aj@qNgF_LxFqTvCgQnP_Son@uFW?oRs@qNyDfEk`@aC}@ae@oC}GlLgOhB}ExMu\\xFup@`@gHc@Fh@sUnX_@n@qJtMsFqCaI_SSm@o@rAcE`n@{^bj@uJfQyCfOeJ|GkJq@sWq@sKeC_UeB~FhYUtF_Vf@mLgAsNoBsOaEsMCsQpGu@xGmPfBgLwLSSsS~UqU{BaoAmP}s@dh@}UxWsObH{Bw]oJdH{B|KeFm@cJzMiU{KoNtDsP{J?QqCgE{{A}tB{L~OqOeNkKkRcCxCwFuEiKtIcCcDkEiPoFsCoHUcDs\\_Lk^}]qu@c]io@gHyKaIr@oRtXoj@b_@}GtBoFyAuDmCoJk\\cBkPcRwUwDgTb@mV}G_t@mC}^rDaD~FxApOdOtCq@P_KpDmFdLxEra@pQxAtATDvs@lT`eAj@fHgNrMC`YwKhMaLiFeVBC?Od@_AVcGdQ_OrPuOoE_SoGuTc@qCpIsEhLyHl@}Le@qVhIyNlLkPrGeRfHgRiCiPkAmGvIeEbHsCrO{FfYsHfEgNfn@ni@`YvRnEdEvNbDvCkJf@zExItPvHiCjCqAbF~DxDkC|E~@fDdC^vMTnIr@p@rLkBdOyEtB}BqGX}QrBt@_@gFkQo@f[fYkDhFkIwDwLiGiDgHrCkC`@iCsHq@wHcBdNlEha@f^kMwEu\\dGwFzEcBQvBbIkEjAcXkGsFwBeXiEJoBwQoIIxDm`@jMwpA|Ccx@RcCQys@hr@sV[e[C`ZZdUoLv^{JhDzFz`@vLncCxUdcAnA`[qBvNlD~CjYa@f[fBjYbBg@zFfFpF_@tEsGgGeIkCiIwCsKaHyOwBi@KkVqAeEaC{@lKaDlx@_D|}@mKfh@qLfQ}LmNwGwR_JgFyHlLEpAtCqHhHuHmHyMe`@{H{LoYuBwE]|G}IlK_IlFFyGgEnMaNlJKBaQxKyJrJ{@t@zGmBnMt\\x@rj@kh@xyAyEjNnCbFMxLaL|M~AzIlo@t|@bD|EpD@nIuOlOsc@bE_N_AzBoI`l@n@`d@~BjKgF`JcIbRd@tE~CdF", "k~wuG}ueiAyBmEe@Wo@WaA_@Ng@Ro@f@eAtB}ElEeKnCiDzAkD@?B@FCBK?EhAyAT[r@`@lBrA`@^@~@HzCAHAT@RV^`@CTa@^g@pA?`Ch@xGxDxAb@pAAdCcAlFq@PAFIl@DrRlFvI`A~HLbU|KbCh@~@AlJ_BbI\\h@X\\KtBg@xJkAzIcCbC{AhAuFP_Fh@gHVaA^}A\\_BVfAp@`CTj@xBxD`CvBhAt@nHjC`Fp@zC?\\VVS|@}@bScDvH_@pKGnKEd@FTVn@WrCQjD@tZM`_@QlESfJ_BdNoCrKuBlCi@n@LTJFBNCFMrA_AjKy@|Av@ZCHOtAgA~AUpDIjG^hBZnBv@BHDFrClEvApCf@RJId@oCpAk@RA`DbAzDlBjKxBtYlABJJLPAHS`JRrFT`JE`S[lEMjCsApEaD^UpCQxJRlCOnAaB^gEZmBtAmAtEc@bKkAl@{@t@oFx@cBdEkAzHb@hWtEJd@qBbVgAjNR`@N?~@OlPDlCBlFt@hBPDDD@BA`AZlDPd[fAnBPx@r@IzAwApBiGrNgA|BaAh@}AfBObAVdCmD~S}Bf\\qEhQgBvFwA~Ac@Eu@T[`AHjA~@j@hAm@lBaGjEoOzD{Nv@gB|@e@zAW~Hb@tK|A`J~CvIjEd`@`StJxEnLdEtH|AvFj@~NN`Mk@bGUjHRvFt@hHfBrM~C`Mn@vOeAvJy@|ICbPlAnOhApNInQOhIh@zKzAhKl@xZ{@xMd@xOtC|FpBdLlFdg@hXrHnGvEzFrFrJnDdJ`CpIlBvJ~Kpv@jEtUnD`LvC|GdFlIrDlEbGlF~HxFrHbF~OpKhQhLxVtP~ExDrEzEtE`GdFpIzGbPfCzI`ClLdDrU`I~o@tShcB~w@vsGxhAxdJvJxx@RfJWvIoBpNsB~GoIhRmJjTsFfM{Xxo@eGvQoN~e@sQbn@qR~w@eI`_@oF|d@}OnxA{KncA{Hxu@eG|y@uKj{AkR|mC}Cnc@qCjXqDrRqI|a@cHb]cOdt@{CdOyDnWeIp}@qO`cBcA|GyHj^mOlq@eTb`AqChLg@~@m@VsBOo@Lo@t@WvCp@jChBxA~BnAlHhCxCxAhALrD@vCgAj@{@NqA_@gC@mC`@u@fD}Cx@[bAJRh@d@DZqARo@n@u@tQsLlMmMjDqBlGmE|HgHpE}H~CiFvEiCrToI|ByCrBkFbB_EvEwHjIwK`FaHjB{DzBaGtCmGdByBdClChCpDz@~EFzTnAfh@a@dJiBbRrLpAbANFjEBpB"]; let map, markers = [];
+        async function initMap() {
+            const { Map } = await google.maps.importLibrary("maps");
+            const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+            
+            // Trova primo punto per centrare
+            const centerP = data.find(p => p.lat && p.lon) || {lat: 45.4428, lon: 11.7145};
+            map = new Map(document.getElementById("map"), { zoom: 12, center: { lat: centerP.lat, lng: centerP.lon }, mapId: 'DEMO_MAP_ID' });
+            
+            const geocoder = new google.maps.Geocoder();
+            const bounds = new google.maps.LatLngBounds();
+
+            data.forEach((p, i) => {
+                const isD = (i === 0 || i === data.length - 1);
+                if (p.lat && p.lon) {
+                    addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                } else {
+                    // Geocoding di backup
+                    const query = `${p.nome}, ${p.indirizzo}`;
+                    geocoder.geocode({ address: query }, (results, status) => {
+                        if (status === "OK") {
+                            const loc = results[0].geometry.location;
+                            p.lat = loc.lat(); p.lon = loc.lng();
+                            addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                        } else {
+                            geocoder.geocode({ address: p.indirizzo }, (res2, st2) => {
+                                if (st2 === "OK") {
+                                    const loc2 = res2[0].geometry.location;
+                                    p.lat = loc2.lat(); p.lon = loc2.lng();
+                                    addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            if (polys.length > 0) {
+                polys.forEach(pString => {
+                    const p = google.maps.geometry.encoding.decodePath(pString);
+                    new google.maps.Polyline({ path: p, strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6, map });
+                });
+            } else {
+                new google.maps.Polyline({ 
+                    path: data.filter(p => p.lat).map(p => ({ lat: p.lat, lng: p.lon })), 
+                    strokeColor: "#4f46e5", strokeOpacity: 0.6, strokeWeight: 4, map 
+                });
+            }
+        }
+
+        function addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement) {
+            const m = new AdvancedMarkerElement({
+                map,
+                position: { lat: p.lat, lng: p.lon },
+                content: createPin(i, isD),
+                title: p.nome
+            });
+            markers[i] = m;
+            bounds.extend(m.position);
+            map.fitBounds(bounds);
+        }
+
+        function createPin(idx, isD) {
+            const d = document.createElement("div"); d.style.background = isD ? "#475569" : "#4f46e5";
+            d.style.color = "white"; d.style.width = "26px"; d.style.height = "26px"; d.style.borderRadius = "50%"; 
+            d.style.display = "flex"; d.style.alignItems = "center"; d.style.justifyContent = "center";
+            d.style.fontSize = "11px"; d.style.fontWeight = "900"; d.style.border = "3px solid white";
+            d.innerText = isD ? "" : idx; if(isD) d.innerHTML = '<span class="material-icons-round" style="font-size:14px">home</span>';
+            return d;
+        }
+
+        function panTo(i) { if(markers[i]) { map.panTo(markers[i].position); map.setZoom(17); } }
+        window.addEventListener('load', initMap);
+    </script>
+</body></html>

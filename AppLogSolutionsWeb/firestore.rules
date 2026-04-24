@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Funzione helper per controllare autenticazione
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Regola di default chiusa
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Regole per gli utenti (lettura profilo per Auth)
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    match /mezzi/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /progetti/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Regole per il nuovo sistema Tenant (DNR)
+    match /customers/{tenant}/{collection=**} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Legacy (mantenute per compatibilità, da rimuovere in futuro)
+    match /mappatura/{docId} { allow read, write: if isAuthenticated(); }
+    match /articoli/{docId} { allow read, write: if isAuthenticated(); }
+    match /config/{docId} { allow read, write: if isAuthenticated(); }
+    match /viaggi/{docId} { allow read, write: if isAuthenticated(); }
+    match /ddt/{docId} { allow read, write: if isAuthenticated(); }
+  }
+}

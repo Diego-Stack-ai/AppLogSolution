@@ -1,0 +1,35 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Blocca tutto di default
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // Input dei fornitori (upload PDF originari)
+    // Client non puo' fare upload diretto in produzione. 
+    // Opzionalmente se il web client fa upload, abilita scrittura qui.
+    // L'upload del lenzuolone avverra' da admin o da cloud function, o utente autenticato.
+    match /input_pdf_fornitore/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Cartella delle consegne (DDT tagliati e distinte PDF)
+    match /CONSEGNE/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Scrittura solo da Cloud Function
+    }
+    
+    // Archivio
+    match /archivio_lenzuoloni_processati/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Scrittura solo da CF
+    }
+  }
+}

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script>
+        (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. See https://goo.gle/js-api-loading-troubleshooting"):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
+            key: "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4",
+            v: "beta"
+        });
+    </script>
+    <style>
+        :root { 
+            --primary: #6366f1; --primary-dark: #4f46e5; --bg: #0f172a; 
+            --sidebar-bg: #ffffff; --text-main: #1e293b; --text-muted: #64748b;
+            --accent: #10b981; --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Inter', sans-serif; height: 100vh; display: flex; background: var(--bg); overflow: hidden; }
+        #sidebar { width: 400px; height: 100%; background: var(--sidebar-bg); border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; z-index: 1000; box-shadow: 10px 0 30px rgba(0,0,0,0.05); }
+        #header { padding: 25px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; }
+        #zone-list { flex: 1; overflow-y: auto; padding: 15px; background: #f8fafc; }
+        .zone-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; margin-bottom: 12px; cursor: pointer; transition: 0.2s; box-shadow: var(--card-shadow); }
+        .zone-card.selected { border: 2px solid var(--primary); background: #f5f3ff; }
+        .zone-header { display: flex; align-items: center; gap: 10px; }
+        .color-pill { width: 12px; height: 12px; border-radius: 4px; }
+        .zone-title { font-weight: 700; flex: 1; font-size: 0.9rem; }
+        #map { flex: 1; }
+        .btn { padding: 6px 10px; font-size: 0.7rem; font-weight: 700; cursor: pointer; border-radius: 6px; border: 1px solid #ddd; background: white; }
+        .btn-confirm { background: #22c55e; color: white; border: none; }
+        .btn-cancel { background: #ef4444; color: white; border: none; }
+        .btn-lock { background: #f1f5f9; min-width: 100px; }
+        .btn-lock.locked { background: #ef4444; color: white; }
+        #save-status { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 10px 20px; background: #10b981; color: white; border-radius: 30px; font-weight: 700; display: none; z-index: 5000; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .custom-marker { position: absolute; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 11px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid white; transition: 0.2s; transform: translate(-50%, -100%); }
+        .point-card { background: #f8fafc; padding: 7px 9px; margin-bottom: 5px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .point-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; color: white; font-size: 0.65rem; font-weight: 800; margin-right: 6px; flex-shrink: 0; vertical-align: middle; }
+        .point-name { font-size: 0.75rem; font-weight: 700; color: #1e293b; }
+        .point-addr { font-size: 0.65rem; color: #64748b; margin-top: 2px; padding-left: 26px; }
+        .zone-chip { display:inline-block; padding:3px 9px; border-radius:20px; border:2px solid #cbd5e1; font-size:0.6rem; font-weight:700; cursor:pointer; margin:2px 2px 0 0; color:#475569; background:white; transition:0.15s; white-space:nowrap; }
+        .zone-chip.sel { color:white; border-color:transparent; }
+        .chk-box { display:none; }
+        .chk-lbl { display:inline-flex; width:22px; height:22px; border-radius:5px; border:2px solid #cbd5e1; align-items:center; justify-content:center; cursor:pointer; background:white; font-size:13px; color:transparent; flex-shrink:0; transition:0.15s; }
+        .chk-box:checked + .chk-lbl { background:#6366f1; border-color:#6366f1; color:white; }
+        .m-tonda { border-radius: 50%; }
+        .m-goccia { border-radius: 50% 50% 50% 0; transform: rotate(-45deg); }
+        .m-goccia span { transform: rotate(45deg); }
+        .m-quadrato { border-radius: 4px; }
+        .m-triangolo { background: transparent !important; border-left: 18px solid transparent; border-right: 18px solid transparent; border-bottom: 36px solid #ccc; width: 0 !important; height: 0 !important; border-radius:0; }
+        .m-triangolo span { position: absolute; top: 16px; left: -8px; width: 16px; }
+        /* Zona speciale DDT da inserire */
+        .zone-card.speciale { border: 2px dashed #f59e0b; background: #fffbeb; }
+        .zone-card.speciale .zone-title span:first-child { color: #92400e; }
+        .zone-card.speciale .zone-title span:last-child { color: #b45309; }
+        .badge-speciale { display:inline-block; background:#f59e0b; color:white; font-size:0.55rem; font-weight:800; padding:1px 6px; border-radius:10px; margin-left:6px; vertical-align:middle; letter-spacing:0.03em; }
+        
+        /* Utility */
+        .hidden { display: none !important; }
+        .btn-verifica { background: #6366f1; color: white; border: none; flex: 1; }
+        .btn-verifica.active { background: #1e293b; border: 2px solid #10b981; }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <div id="header">
+            <h1 style="margin:0; font-size:1.2rem;">Gestione Zone <span id="tot-points" style="font-size:0.7rem; opacity:0.7;">0 Punti</span></h1>
+            <div style="margin-top:10px; display:flex; justify-content: space-between; align-items:center; gap:8px;">
+                <button onclick="saveAllToServer()" style="background:var(--accent); color:white; border:none; padding:8px 15px; border-radius:8px; font-weight:800; cursor:pointer; flex: 1;">SALVA TUTTO</button>
+                <button onclick="toggleVerificaViaggi()" id="btn-verifica" class="btn btn-verifica" style="padding:8px 10px; height: 35px;">VERIFICA VIAGGI</button>
+            </div>
+            <div style="display:flex; gap:5px; margin-top:10px;">
+                <button onclick="toggleLockMap()" id="btn-lock-map" class="btn btn-lock">CARICAMENTO...</button>
+                <button id="btn-toggle-drag" onclick="toggleDragging()" class="btn" style="flex:1;">🔒 SPOSTA PUNTI (OFF)</button>
+            </div>
+            <div style="text-align:right; margin-top:5px;"><small style="opacity:0.6;">27-04-2026</small></div>
+        </div>
+        <div id="zone-list"></div>
+    </div>
+    <div id="map"></div>
+    <div id="save-status">💾 AGGIORNAMENTO COMPLETATO!</div>
+
+    <script>
+        let DATA_ZONE = [{"id_zona": "3102", "lista_punti": [{"nome": "Primaria Leonardo Da Vinci Pianiga", "indirizzo": "Via Patriarcato, 22, 30030 Pianiga (VENEZIA)", "codice_frutta": "p2311", "codice_latte": "p00000", "codice_univoco": "p2311_p00000", "zona": "3102", "data_consegna": "", "orario_min": "07:45", "orario_max": "14:00", "lat": 45.457056, "lon": 12.0311559, "codici_ddt_frutta": ["p2311"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 289, "geo_query_nome_indirizzo": "Primaria Leonardo Da Vinci Pianiga Via Patriarcato, 22, 30030 Pianiga (VENEZIA)", "geo_query_indirizzo": "Via Patriarcato, 22, 30030 Pianiga (VENEZIA)"}], "color": "#06b6d4", "nome_giro": "Viaggio 7"}, {"id_zona": "3103", "lista_punti": [{"nome": "T.F. Fraccon", "indirizzo": "Via Mameli 137, 36100 Vicenza (VICENZA)", "codice_frutta": "p2051", "codice_latte": "p00000", "codice_univoco": "p2051_p00000", "zona": "3103", "data_consegna": "", "orario_min": "07:30", "orario_max": "14:00", "lat": 45.5521135, "lon": 11.5252457, "codici_ddt_frutta": ["p2051"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 395, "geo_query_nome_indirizzo": "T.F. Fraccon Via Mameli 137, 36100 Vicenza (VICENZA)", "geo_query_indirizzo": "Via Mameli 137, 36100 Vicenza (VICENZA)"}, {"nome": "Villa Squarzi - Paritaria", "indirizzo": "Via Riviera Berica, 691 (Entrata Da Via Cipro 10), 36100 Vicenza (VICENZA)", "codice_frutta": "p2060", "codice_latte": "p00000", "codice_univoco": "p2060_p00000", "zona": "3103", "data_consegna": "", "orario_min": "07:30", "orario_max": "14:00", "lat": 45.50460565086844, "lon": 11.57113802192212, "codici_ddt_frutta": ["p2060"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 396, "geo_query_nome_indirizzo": "Villa Squarzi - Paritaria Via Riviera Berica, 691 (Entrata Da Via Cipro 10), 36100 Vicenza (VICENZA)", "geo_query_indirizzo": "Via Riviera Berica, 691 (Entrata Da Via Cipro 10), 36100 Vicenza (VICENZA)"}], "color": "#8b5cf6", "nome_giro": "Viaggio 5"}, {"id_zona": "3104", "lista_punti": [{"nome": "Bassano - Q.Re Xxv Aprile", "indirizzo": "Via Rivana, 13, 36061 Bassano Del Grappa (VICENZA)", "codice_frutta": "p13107", "codice_latte": "p00000", "codice_univoco": "p13107_p00000", "zona": "3104", "data_consegna": "", "orario_min": "07:30", "orario_max": "10:00", "lat": 45.76681024488471, "lon": 11.71611868510704, "codici_ddt_frutta": ["p13107"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 356, "geo_query_nome_indirizzo": "Bassano - Q.Re Xxv Aprile Via Rivana, 13, 36061 Bassano Del Grappa (VICENZA)", "geo_query_indirizzo": "Via Rivana, 13, 36061 Bassano Del Grappa (VICENZA)"}, {"nome": "Scuola Elementare San Giuseppe", "indirizzo": "Via Ss. Trinita' N. 1 - Ingr. Via Foza N. 4, 36061 Bassano Del Grappa (VICENZA)", "codice_frutta": "p2106", "codice_latte": "p00000", "codice_univoco": "p2106_p00000", "zona": "3104", "data_consegna": "", "orario_min": "07:45", "orario_max": "14:00", "lat": 45.76727125493416, "lon": 11.72220998177986, "codici_ddt_frutta": ["p2106"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 380, "geo_query_nome_indirizzo": "Scuola Elementare San Giuseppe Via Ss. Trinita' N. 1 - Ingr. Via Foza N. 4, 36061 Bassano Del Grappa (VICENZA)", "geo_query_indirizzo": "Via Ss. Trinita' N. 1 - Ingr. Via Foza N. 4, 36061 Bassano Del Grappa (VICENZA)"}], "color": "#10b981", "nome_giro": "Viaggio 2"}, {"id_zona": "3105", "lista_punti": [{"nome": "Scuola Primaria Sacro Cuore", "indirizzo": "Via Marconi, 9, 35010 Cadoneghe (PADOVA)", "codice_frutta": "p2111", "codice_latte": "p00000", "codice_univoco": "p2111_p00000", "zona": "3105", "data_consegna": "", "orario_min": "08:00", "orario_max": "14:00", "lat": 45.456696, "lon": 11.9037821, "codici_ddt_frutta": ["p2111"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 152, "geo_query_nome_indirizzo": "Scuola Primaria Sacro Cuore Via Marconi, 9, 35010 Cadoneghe (PADOVA)", "geo_query_indirizzo": "Via Marconi, 9, 35010 Cadoneghe (PADOVA)"}, {"nome": "Davila-Pd", "indirizzo": "Via L. Calabresi, 5, 35129 Padova (PADOVA)", "codice_frutta": "p2115", "codice_latte": "p00000", "codice_univoco": "p2115_p00000", "zona": "3105", "data_consegna": "", "orario_min": "08:00", "orario_max": "14:00", "lat": 45.43347087328516, "lon": 11.92117152089309, "codici_ddt_frutta": ["p2115"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 115, "geo_query_nome_indirizzo": "Davila-Pd Via L. Calabresi, 5, 35129 Padova (PADOVA)", "geo_query_indirizzo": "Via L. Calabresi, 5, 35129 Padova (PADOVA)"}, {"nome": "SALVO D'ACQUISTO (EX IV IC)", "indirizzo": "VIA BACH 1, 35132 PADOVA (PADOVA)", "codice_frutta": "p2344", "codice_latte": "p00000", "codice_univoco": "p2344_p00000", "zona": "3105", "data_consegna": "", "orario_min": "08:00", "orario_max": "14:00", "lat": 45.4223293, "lon": 11.8959893, "codici_ddt_frutta": ["p2344"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 90, "geo_query_nome_indirizzo": "SALVO D'ACQUISTO (EX IV IC) VIA BACH 1, 35132 PADOVA (PADOVA)", "geo_query_indirizzo": "VIA BACH 1, 35132 PADOVA (PADOVA)"}, {"nome": "VO' - NEGRI", "indirizzo": "VIA MAZZINI 208, 35030 VO' (PADOVA)", "codice_frutta": "p2366", "codice_latte": "p00000", "codice_univoco": "p2366_p00000", "zona": "3105", "data_consegna": "", "orario_min": "07:30", "orario_max": "14:00", "lat": 45.33002375001173, "lon": 11.64171320466665, "codici_ddt_frutta": ["p2366"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 100, "geo_query_nome_indirizzo": "VO' - NEGRI VIA MAZZINI 208, 35030 VO' (PADOVA)", "geo_query_indirizzo": "VIA MAZZINI 208, 35030 VO' (PADOVA)"}], "color": "#ec4899", "nome_giro": "Viaggio 6"}, {"id_zona": "3122", "lista_punti": [{"nome": "A. Vivaldi- Tempo Pieno", "indirizzo": "Via Fornase 53/D, 30038 Spinea (VENEZIA)", "codice_frutta": "p13729", "codice_latte": "p00000", "codice_univoco": "p13729_p00000", "zona": "3122", "data_consegna": "", "orario_min": "08:00", "orario_max": "14:00", "lat": 45.476921, "lon": 12.1614235, "codici_ddt_frutta": ["p13729"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 262, "geo_query_nome_indirizzo": "A. Vivaldi- Tempo Pieno Via Fornase 53/D, 30038 Spinea (VENEZIA)", "geo_query_indirizzo": "Via Fornase 53/D, 30038 Spinea (VENEZIA)"}, {"nome": "G. Leopardi", "indirizzo": "Via Bernini,1, 30030 Mira (VENEZIA)", "codice_frutta": "p2178", "codice_latte": "p00000", "codice_univoco": "p2178_p00000", "zona": "3122", "data_consegna": "", "orario_min": "07:30", "orario_max": "14:00", "lat": 45.435385, "lon": 12.1424074, "codici_ddt_frutta": ["p2178"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 273, "geo_query_nome_indirizzo": "G. Leopardi Via Bernini,1, 30030 Mira (VENEZIA)", "geo_query_indirizzo": "Via Bernini,1, 30030 Mira (VENEZIA)"}, {"nome": "\"ANNA FRANK\"", "indirizzo": "VIA FREGENE 15, 30038 SPINEA (VENEZIA)", "codice_frutta": "p2277", "codice_latte": "p00000", "codice_univoco": "p2277_p00000", "zona": "3122", "data_consegna": "", "orario_min": "08:00", "orario_max": "14:00", "lat": 45.4884291, "lon": 12.1551743, "codici_ddt_frutta": ["p2277"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 297, "geo_query_nome_indirizzo": "\"ANNA FRANK\" VIA FREGENE 15, 30038 SPINEA (VENEZIA)", "geo_query_indirizzo": "VIA FREGENE 15, 30038 SPINEA (VENEZIA)"}], "color": "#f59e0b", "nome_giro": "Viaggio 3"}, {"id_zona": "3201", "lista_punti": [{"nome": "Scuola Primaria Falcade", "indirizzo": "Via Marmolada, 37, 32020 Falcade (BELLUNO)", "codice_frutta": "p11639", "codice_latte": "p00000", "codice_univoco": "p11639_p00000", "zona": "3201", "data_consegna": "", "orario_min": "07:30", "orario_max": "14:00", "lat": 46.36379562796535, "lon": 11.88486885529479, "codici_ddt_frutta": ["p11639"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 46, "geo_query_nome_indirizzo": "Scuola Primaria Falcade Via Marmolada, 37, 32020 Falcade (BELLUNO)", "geo_query_indirizzo": "Via Marmolada, 37, 32020 Falcade (BELLUNO)"}], "color": "#4f46e5", "nome_giro": "Viaggio 1"}, {"id_zona": "3208", "lista_punti": [{"nome": "MARCO POLO", "indirizzo": "VIA F. PETRARCA 5, 30016 JESOLO (VENEZIA)", "codice_frutta": "p14011", "codice_latte": "p00000", "codice_univoco": "p14011_p00000", "zona": "3208", "data_consegna": "", "orario_min": "07:45", "orario_max": "14:00", "lat": 45.65248473471084, "lon": 12.60397532366186, "codici_ddt_frutta": ["p14011"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 298, "geo_query_nome_indirizzo": "MARCO POLO VIA F. PETRARCA 5, 30016 JESOLO (VENEZIA)", "geo_query_indirizzo": "VIA F. PETRARCA 5, 30016 JESOLO (VENEZIA)"}, {"nome": "Giovanni Verga", "indirizzo": "Via Aldo Moro 1, 30016 Jesolo (VENEZIA)", "codice_frutta": "p2230", "codice_latte": "p00000", "codice_univoco": "p2230_p00000", "zona": "3208", "data_consegna": "", "orario_min": "08:00", "orario_max": "14:00", "lat": 45.515335, "lon": 12.6680289, "codici_ddt_frutta": ["p2230"], "codici_ddt_latte": ["p00000"], "rientri_alert": [], "row_idx_mappatura": 277, "geo_query_nome_indirizzo": "Giovanni Verga Via Aldo Moro 1, 30016 Jesolo (VENEZIA)", "geo_query_indirizzo": "Via Aldo Moro 1, 30016 Jesolo (VENEZIA)"}], "color": "#ef4444", "nome_giro": "Viaggio 4"}, {"id_zona": "DDT_DA_INSERIRE", "lista_punti": [{"nome": "IPPOLITO NIEVO", "indirizzo": "VIA BASSA GAMBARARE N. 16", "codice_frutta": "p2177", "codice_latte": "p2673", "data_consegna": "20-04-2026", "orario_min": "07:30", "orario_max": "14:00", "lat": 45.41989701421395, "lon": 12.15151969651761, "zona": "DDT_DA_INSERIRE", "codici_ddt_frutta": ["p2177", "p2673"], "codici_ddt_latte": [], "rientri_alert": [{"codice": "p2177", "status": "red", "data_ddt": "20-04-2026"}, {"codice": "p2673", "status": "red", "data_ddt": "20-04-2026"}], "row_idx_mappatura": 327, "_is_rientro_speciale": true, "geo_query_nome_indirizzo": "IPPOLITO NIEVO VIA BASSA GAMBARARE N. 16", "geo_query_indirizzo": "VIA BASSA GAMBARARE N. 16"}], "color": "#f59e0b", "nome_giro": "⚠️ DDT DA INSERIRE"}];
+        let map, gMarkers = [], DRAGGING_ENABLED = false, isLockedGlobal = true;
+        let activeExpandedZid = null, activeAction = null, activeSourceZid = null;
+        let _hasUnsavedChanges = false, VIEW_MODE_PULITA = false;
+
+        function toggleVerificaViaggi() {
+            VIEW_MODE_PULITA = !VIEW_MODE_PULITA;
+            const btn = document.getElementById('btn-verifica');
+            if (VIEW_MODE_PULITA) {
+                btn.classList.add('active');
+                btn.textContent = 'VISTA PULITA ON';
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = 'VERIFICA VIAGGI';
+            }
+            renderMarkers();
+            renderSidebar();
+        }
+
+        window.addEventListener('beforeunload', function(e) {
+            if (_hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = 'Hai modifiche non salvate. Premi SALVA TUTTO prima di chiudere.';
+                return e.returnValue;
+            }
+        });
+
+        async function initMap() {
+            const { Map } = await google.maps.importLibrary("maps");
+            map = new Map(document.getElementById("map"), { center: { lat: 45.5, lng: 11.8 }, zoom: 9, mapTypeId: 'hybrid', mapId: "MY_MAP_ID" });
+            _updateLockUI();
+            updateTotals();
+            await renderMarkers();
+            renderSidebar();
+            if(gMarkers.length) { 
+                let b = new google.maps.LatLngBounds(); 
+                gMarkers.forEach(m => b.extend(m.position)); 
+                map.fitBounds(b); 
+            }
+        }
+
+        function _updateLockUI() {
+            const btn = document.getElementById('btn-lock-map');
+            btn.innerHTML = isLockedGlobal ? 'BLOCCATA 🔒' : 'SBLOCCATA 🔓';
+            btn.className = 'btn btn-lock' + (isLockedGlobal ? ' locked' : '');
+        }
+
+        async function toggleLockMap() {
+            isLockedGlobal = !isLockedGlobal;
+            fetch('/toggle_lock', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action: isLockedGlobal?'lock':'unlock'}) })
+            .then(() => { _updateLockUI(); renderMarkers(); renderSidebar(); });
+        }
+
+        async function toggleDragging() {
+            DRAGGING_ENABLED = !DRAGGING_ENABLED;
+            const btn = document.getElementById('btn-toggle-drag');
+            btn.textContent = DRAGGING_ENABLED ? "🔓 SPOSTA PUNTI (ON)" : "🔒 SPOSTA PUNTI (OFF)";
+            btn.style.background = DRAGGING_ENABLED ? "#10b981" : "#4b5563";
+            btn.style.color = "white";
+            await renderMarkers();
+        }
+
+        async function renderMarkers() {
+            gMarkers.forEach(m => m.setMap(null)); gMarkers = [];
+            const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+            const coordCounts = {};
+            DATA_ZONE.forEach(z => {
+                const isSpeciale = (z.id_zona === 'DDT_DA_INSERIRE');
+                if (VIEW_MODE_PULITA && isSpeciale) return;
+
+                z.lista_punti.forEach((p, idx) => {
+                    if (!p.lat) return;
+                    const key = `${p.lat.toFixed(6)}_${p.lon.toFixed(6)}`;
+                    coordCounts[key] = (coordCounts[key] || 0) + 1;
+                    const layer = coordCounts[key];
+                    let shape = 'm-goccia';
+                    if (layer === 2) shape = 'm-quadrato'; else if (layer === 3) shape = 'm-triangolo'; else if (layer > 3) shape = 'm-tonda';
+                    
+                    const el = document.createElement("div");
+                    el.className = `custom-marker ${shape}`;
+                    if (shape === 'm-triangolo') el.style.borderBottomColor = z.color; else el.style.backgroundColor = z.color;
+                    el.innerHTML = `<span>${idx+1}</span>`;
+                    
+                    const m = new AdvancedMarkerElement({ position: {lat: p.lat, lng: p.lon}, map: map, title: p.nome, content: el, gmpDraggable: DRAGGING_ENABLED && !isLockedGlobal });
+                    m.addListener("dragend", () => {
+                        p.lat = m.position.lat; p.lon = m.position.lng;
+                        _hasUnsavedChanges = true;
+                        _salvaSingolo(p.codice_frutta || '', p.codice_latte || '', p.nome || '', p.lat, p.lon);
+                    });
+                    m.addListener("gmp-click", () => {
+                        new google.maps.InfoWindow({ content: `<div style="padding:10px;"><b>${p.nome}</b><br>${p.indirizzo}<br><br><button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}')" style="width:100%; cursor:pointer;">VEDI SU GOOGLE</button></div>` }).open(map, m);
+                    });
+                    gMarkers.push(m);
+                });
+            });
+        }
+
+        function _salvaSingolo(cod_f, cod_l, nome, lat, lon) {
+            fetch('/save_coord', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cod_f, cod_l, nome, lat, lon}) })
+            .then(r => r.json())
+            .then(d => { 
+                let st = document.getElementById('save-status');
+                if (d.status === 'ok') {
+                    _hasUnsavedChanges = false;
+                    st.style.background = '#10b981';
+                    st.textContent = '✅ Salvato: ' + nome;
+                } else {
+                    st.style.background = '#ef4444';
+                    st.textContent = '❌ Errore: ' + (d.msg || 'sconosciuto');
+                }
+                st.style.display = 'block'; 
+                setTimeout(()=>{st.style.display='none';}, 3000); 
+            })
+            .catch(err => {
+                let st = document.getElementById('save-status');
+                st.style.background = '#ef4444';
+                st.textContent = '❌ Connessione persa!';
+                st.style.display = 'block';
+                setTimeout(()=>{st.style.display='none';}, 3000);
+            });
+        }
+
+        function renderSidebar() {
+            const list = document.getElementById('zone-list');
+            list.innerHTML = DATA_ZONE.filter(z => z.lista_punti.length > 0).map(z => {
+                const isSpeciale = (z.id_zona === 'DDT_DA_INSERIRE');
+                if (VIEW_MODE_PULITA && isSpeciale) return '';
+                
+                const isSelected = (activeExpandedZid === z.id_zona) || (activeSourceZid === z.id_zona);
+                return `
+                <div class="zone-card ${isSelected ? 'selected' : ''} ${isSpeciale ? 'speciale' : ''}" onclick="focusZone('${z.id_zona}')">
+                    <div class="zone-header">
+                        <div class="color-pill" style="background: ${z.color}"></div>
+                        <div class="zone-title">
+                            <span style="display:block; font-size:0.95rem; font-weight:800;">${z.nome_giro || z.id_zona}${isSpeciale ? '<span class="badge-speciale">RIENTRI</span>' : ''}</span>
+                            <span style="display:block; font-size:0.65rem; font-weight:600; color:#94a3b8;">${isSpeciale ? 'Assegna a un viaggio' : 'Zona ' + z.id_zona}</span>
+                        </div>
+                        <div style="text-align:right; flex-shrink:0;">
+                            <div style="font-size:0.72rem; font-weight:800; background:${isSpeciale?'#fde68a':'#e2e8f0'}; padding:2px 7px; border-radius:20px; color:${isSpeciale?'#92400e':'#475569'}; white-space:nowrap;">${z.lista_punti.length} pt</div>
+                            ${(() => { const s = calcolaValoreZona(z); return s.tot_ddt > 0 ? `<div style="font-size:0.65rem; font-weight:700; color:#10b981; margin-top:2px; white-space:nowrap;">${s.tot_ddt} DDT · € ${s.valore}</div>` : ''; })()}
+                        </div>
+                    </div>
+                    ${isSelected ? `
+                        <div style="margin-top:10px; border-top:1px solid #e2e8f0; padding-top:10px; max-height:320px; overflow-y:auto;">
+                            ${z.lista_punti.map((p, idx) => {
+                                const pid = (p.codice_frutta + "_" + p.nome).replace(/[^a-zA-Z0-9]/g, '_');
+                                const parts = (p.indirizzo || '').split(',');
+                                const via = parts[0] || '';
+                                const comune = parts.slice(1).join(',').trim();
+                                const codiceDDT = [...(p.codici_ddt_frutta||[]), ...(p.codici_ddt_latte||[])].join(', ');
+                                let ctrl = '';
+                                if (activeAction === 'dividi' && !isSpeciale) ctrl = `<input type="checkbox" id="chk-${pid}" class="chk-box dividi-chk" value="${pid}" onclick="event.stopPropagation()"><label for="chk-${pid}" class="chk-lbl" onclick="event.stopPropagation()">✓</label>`;
+                                else if (activeAction === 'sposta') ctrl = `<div class="zone-chips" data-pid="${pid}" style="padding-left:26px; margin-top:4px;">${DATA_ZONE.filter(o=>o.id_zona!==z.id_zona && o.id_zona!=='DDT_DA_INSERIRE').map(o=>`<span class="zone-chip" data-zone="${o.id_zona}" style="" onclick="event.stopPropagation(); _selChip(this,'${o.color}')">${o.nome_giro||o.id_zona}</span>`).join('')}</div>`;
+                                return `<div class="point-card">
+                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
+                                        <div style="display:flex; align-items:center; flex:1; min-width:0; gap:0;">
+                                            <span class="point-num" style="background:${z.color};">${idx+1}</span>
+                                            <span class="point-name" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.nome}</span>
+                                        </div>
+                                         ${activeAction === 'dividi' ? ctrl : ''}
+                                    </div>
+                                    ${codiceDDT ? `<div style="font-size:0.6rem; color:#f59e0b; font-weight:700; padding-left:26px; margin-top:2px;">DDT: ${codiceDDT}</div>` : ''}
+                                     <div class="point-addr">
+                                         <span style="display:block;">${via}</span>
+                                         ${comune ? `<span style="font-weight:700; color:#334155;">${comune}</span>` : ''}
+                                     </div>
+                                     ${activeAction === 'sposta' ? ctrl : ''}
+                                 </div>`;
+                            }).join('')}
+                        </div>
+                        <div style="margin-top:10px; display:flex; gap:4px;">
+                            ${activeAction ? `
+                                <button class="btn btn-cancel" onclick="event.stopPropagation(); cancelAction()">✕ Annulla</button>
+                                <button class="btn btn-confirm" style="flex:1;" onclick="event.stopPropagation(); ${activeAction==='dividi'?'executeDividi':'executeSposta'}('${z.id_zona}')">✓ Conferma</button>
+                            ` : `
+                                ${!isSpeciale ? `<button class="btn" style="flex:1;" ${isLockedGlobal?'disabled':''} onclick="event.stopPropagation(); startAction('dividi', '${z.id_zona}')">DIVIDI</button>` : ''}
+                                <button class="btn" style="flex:1; ${isSpeciale?'background:#f59e0b;color:white;border:none;':''}" ${isLockedGlobal?'disabled':''} onclick="event.stopPropagation(); startAction('sposta', '${z.id_zona}')">${isSpeciale ? '📦 ASSEGNA A VIAGGIO' : 'SPOSTA'}</button>
+                            `}
+                        </div>
+                    ` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        function focusZone(zid) { if(activeAction) return; activeExpandedZid = (activeExpandedZid === zid) ? null : zid; renderSidebar(); }
+        function startAction(type, zid) { activeAction = type; activeSourceZid = zid; renderSidebar(); }
+        function cancelAction() { activeAction = null; activeSourceZid = null; renderSidebar(); }
+        function _selChip(el, color) {
+            el.closest('.zone-chips').querySelectorAll('.zone-chip').forEach(c => { c.classList.remove('sel'); c.style.background='white'; c.style.color='#475569'; });
+            el.classList.add('sel'); el.style.background = color; el.style.color = 'white';
+        }
+
+        function executeDividi(sourceZid) {
+            const z = DATA_ZONE.find(x => x.id_zona === sourceZid);
+            const chks = document.querySelectorAll('.dividi-chk:checked');
+            if(!chks.length) return alert("Seleziona punti!");
+            const ids = Array.from(chks).map(c => c.value);
+            const toMove = z.lista_punti.filter(p => ids.includes((p.codice_frutta + "_" + p.nome).replace(/[^a-zA-Z0-9]/g, '_')));
+            const newZ = { id_zona: sourceZid+"_B", nome_giro: (z.nome_giro||"Viaggio")+"/B", color: "#"+Math.floor(Math.random()*16777215).toString(16), lista_punti: toMove };
+            z.lista_punti = z.lista_punti.filter(p => !toMove.includes(p));
+            DATA_ZONE.push(newZ);
+            cancelAction(); updateTotals(); renderMarkers(); renderSidebar();
+        }
+
+        function executeSposta(sourceZid) {
+            const z = DATA_ZONE.find(x => x.id_zona === sourceZid);
+            document.querySelectorAll('.zone-chips').forEach(chips => {
+                const sel = chips.querySelector('.zone-chip.sel');
+                if(sel) {
+                    const target = DATA_ZONE.find(x => x.id_zona === sel.dataset.zone);
+                    const pid = chips.dataset.pid;
+                    const pIdx = z.lista_punti.findIndex(p => (p.codice_frutta + "_" + p.nome).replace(/[^a-zA-Z0-9]/g, '_') === pid);
+                    if(pIdx >= 0 && target) { target.lista_punti.push(z.lista_punti.splice(pIdx, 1)[0]); }
+                }
+            });
+            cancelAction(); updateTotals(); renderMarkers(); renderSidebar();
+        }
+
+        function updateTotals() {
+            const total = DATA_ZONE.reduce((acc, z) => acc + z.lista_punti.length, 0);
+            document.getElementById('tot-points').textContent = `${total} Punti`;
+        }
+
+        const VALORE_DDT = 16.50;
+        function calcolaValoreZona(z) {
+            let totDdt = 0;
+            z.lista_punti.forEach(p => {
+                totDdt += (p.codici_ddt_frutta || []).filter(c => c && c !== 'p00000').length;
+                totDdt += (p.codici_ddt_latte  || []).filter(c => c && c !== 'p00000').length;
+                // fallback: se le liste non ci sono, conta 1 DDT se ha almeno un codice
+                if (!(p.codici_ddt_frutta) && !(p.codici_ddt_latte)) {
+                    if (p.codice_frutta && p.codice_frutta !== 'p00000') totDdt++;
+                    if (p.codice_latte  && p.codice_latte  !== 'p00000') totDdt++;
+                }
+            });
+            return { tot_ddt: totDdt, valore: (totDdt * VALORE_DDT).toFixed(2) };
+        }
+
+        function saveAllToServer() {
+            const btn = event.target; btn.disabled = true; btn.textContent = "...";
+            fetch('/save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(DATA_ZONE) })
+            .then(() => { 
+                _hasUnsavedChanges = false;
+                const st = document.getElementById('save-status');
+                st.style.background = '#10b981';
+                st.textContent = '✅ SALVATAGGIO COMPLETATO!';
+                st.style.display = 'block'; 
+                setTimeout(()=>{ st.style.display='none'; }, 3000); 
+            }).finally(() => { btn.disabled = false; btn.textContent = "SALVA TUTTO"; });
+        }
+
+        window.onload = initMap;
+    </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V04</title>
+    <title>V02</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
@@ -69,13 +69,13 @@
         </div>
         <div id="sidebar">
             <div class="header">
-                <div class="trip-title">🏎️ V04 | Zone: 3206</div>
+                <div class="trip-title">🏎️ V02 | Zone: DDT_DA_INSERIRE</div>
                 <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
                 <div class="stats-row">
-                    <div class="stat-item"><span class="stat-val">218.9km</span><span class="stat-lbl">Strada</span></div>
-                    <div class="stat-item"><span class="stat-val">4h 51m</span><span class="stat-lbl">Guida</span></div>
-                    <div class="stat-item"><span class="stat-val">1h 45m</span><span class="stat-lbl">Soste</span></div>
-                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">6h 36m</span><span class="stat-lbl">Totale</span></div>
+                    <div class="stat-item"><span class="stat-val">194.3km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">4h 19m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">1h 38m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">5h 57m</span><span class="stat-lbl">Totale</span></div>
                 </div>
             </div>
             <div id="delivery-list">
@@ -88,150 +88,140 @@
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(0, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">G.Pascoli</b>
-                    <span class="addr"><b>Viale Istria 36</b><br>31015 Conegliano (TREVISO)</span>
+                    <b class="name">E. DE AMICIS MORIAGO D.B.</b>
+                    <span class="addr"><b>VIA MANZONI 27</b><br></span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.88361658272463,12.3035714265497&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8677942,12.1015402&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(2)">
                 <div class="stop-num">2</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(1, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">SAN FRANCESCO</b>
-                    <span class="addr"><b>VIA F. FENZI 28</b><br>31015 CONEGLIANO (TREVISO)</span>
+                    <b class="name">Gianni Rodari - Col San Martino</b>
+                    <span class="addr"><b>Via Giarentine 2</b><br></span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.88792693234254,12.29721589695894&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8966595,12.0851042&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(3)">
                 <div class="stop-num">3</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(2, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">SCUOLA PRIMARIA "IMMACOLATA"</b>
-                    <span class="addr"><b>VIA MADONNA20</b><br>31015 CONEGLIANO (TREVISO)</span>
+                    <b class="name">LORENZO MILANI - FARRA CAP.</b>
+                    <span class="addr"><b>VIA DEI PATRIOTI 29</b><br></span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.89003285647119,12.30301483284913&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.9056039,12.1269508&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(4)">
                 <div class="stop-num">4</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(3, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">"J.F. KENNEDY" - CONEGLIANO CAP</b>
-                    <span class="addr"><b>VIA KENNEDY 10</b><br>31015 CONEGLIANO (TREVISO)</span>
+                    <b class="name">G.ANCILLOTTO - SOLIGO</b>
+                    <span class="addr"><b>VIA DEI COLLI 25</b><br></span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8899507,12.3066424&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.9097342,12.1524089&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(5)">
                 <div class="stop-num">5</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(4, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">G. MAZZINI</b>
-                    <span class="addr"><b>VIA T. VECELLIO 13/15</b><br>31015 CONEGLIANO (TREVISO)</span>
+                    <b class="name">O.DE GASPARI FALZE' DI P.</b>
+                    <span class="addr"><b>VIA DONATORI DEL SANGUE 4</b><br></span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8928947689846,12.30222358118974&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.86008859765876,12.17298733945312&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(6)">
                 <div class="stop-num">6</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(5, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">P. Maset - Scomigo - Loc. Scomigo</b>
-                    <span class="addr"><b>Via Pastin Santin 5</b><br>31015 Conegliano (TREVISO)</span>
+                    <b class="name">F.FABBRI - SANTA MARIA</b>
+                    <span class="addr"><b>PIAZZA DONATORI DI SANGUE 1</b><br></span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.9376756,12.3068024&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8977212304539,12.23460724970705&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(7)">
                 <div class="stop-num">7</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(6, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">UGO COSTELLA - B.GO VENDRAN</b>
-                    <span class="addr"><b>VIA P. MASCAGNI 16</b><br>31029 VITTORIO VENETO (TREVISO)</span>
+                    <b class="name">S. PELLICO - RUA DI F.</b>
+                    <span class="addr"><b>VIA DELLA LIBERTA' 27/A</b><br></span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.9663573,12.2945747&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.91723,12.2539765&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(8)">
                 <div class="stop-num">8</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(7, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">SCUOLA PRIMARIA "SANTA GIOVANNA D'ARCO"</b>
-                    <span class="addr"><b>VIA DEL FANTE 231</b><br>31029 VITTORIO VENETO (TREVISO)</span>
+                    <b class="name">"PAPA LUCIANI" - BAGNOLO</b>
+                    <span class="addr"><b>VIA GORIZIA 1</b><br></span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.97358583056165,12.29359709699365&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.9122035,12.2722528&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(9)">
                 <div class="stop-num">9</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(8, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">UGO FOSCOLO - CENEDA</b>
-                    <span class="addr"><b>VIA U. FOSCOLO 80</b><br>31029 VITTORIO VENETO (TREVISO)</span>
+                    <b class="name">D. ALIGHIERI</b>
+                    <span class="addr"><b>VIA ZANDONAI 14</b><br></span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.97620611550319,12.29525948927156&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.89992267108354,12.29295163201003&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(10)">
                 <div class="stop-num">10</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(9, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">MARCO POLO PRIMARIA - COSTA</b>
-                    <span class="addr"><b>PIAZZA ZANETTE 11</b><br>31029 VITTORIO VENETO (TREVISO)</span>
+                    <b class="name">LA NOSTRA FAMIGLIA</b>
+                    <span class="addr"><b>VIA COSTA ALTA</b><br></span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.9849141,12.3085564&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8957981947636,12.28623942204878&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(11)">
                 <div class="stop-num">11</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(10, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">PARRAVICINI - SERRAVALLE</b>
-                    <span class="addr"><b>VIA PARRAVICINI 18</b><br>31029 VITTORIO VENETO (TREVISO)</span>
+                    <b class="name">SCUOLA PRIMARIA " PIANCA SCHOOL "</b>
+                    <span class="addr"><b>VIA GIUNTI N°12/A</b><br></span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.9985007,12.2943275&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8780224,12.2770314&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(12)">
                 <div class="stop-num">12</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(11, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">A. MANZONI - SERRAVALLE</b>
-                    <span class="addr"><b>VIA MARCINELLE 10</b><br>31029 VITTORIO VENETO (TREVISO)</span>
+                    <b class="name">"GIANNI RODARI" - PARE'</b>
+                    <span class="addr"><b>VIA EINAUDI 110</b><br></span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=46.0091068,12.2811319&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8717147,12.2731564&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(13)">
                 <div class="stop-num">13</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(12, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">G.PASCOLI - VITTORIO CENTRO</b>
-                    <span class="addr"><b>VIA DIV.NINO NANNETTI 128</b><br>31029 VITTORIO VENETO (TREVISO)</span>
+                    <b class="name">DON ORFEO MANTOVANI-V.DEI MILLE</b>
+                    <span class="addr"><b>VIA DEI MILLE 42</b><br></span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.98646752689192,12.29783977434389&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8726659,12.2846529&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(14)">
                 <div class="stop-num">14</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(13, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">F.CRISPI - VIA DIAZ</b>
-                    <span class="addr"><b>VIA A.DIAZ 30</b><br>31029 VITTORIO VENETO (TREVISO)</span>
+                    <b class="name">CAMPOLONGO</b>
+                    <span class="addr"><b>VIA VITAL 120</b><br></span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.980237866388,12.3013241255646&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(15)">
-                <div class="stop-num">15</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(14, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">"G. SCARABELLOTTO" ORSAGO</b>
-                    <span class="addr"><b>VIA DON MILANI 4</b><br>31010 ORSAGO (TREVISO)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.927714631673645,12.424202843919838&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8663868,12.3071656&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div>
             <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
                 <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
@@ -294,8 +284,8 @@
     </script>
 
     <script>
-        const v_id = "V04";
-        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}, {"cliente": "G.Pascoli", "indirizzo": "Viale Istria 36, 31015 Conegliano (TREVISO)", "lat": 45.88361658272463, "lon": 12.3035714265497, "codice_frutta": "p13231", "codice_latte": "p00000"}, {"cliente": "SAN FRANCESCO", "indirizzo": "VIA F. FENZI 28, 31015 CONEGLIANO (TREVISO)", "lat": 45.88792693234254, "lon": 12.29721589695894, "codice_frutta": "p6524", "codice_latte": "p00000"}, {"cliente": "SCUOLA PRIMARIA \"IMMACOLATA\"", "indirizzo": "VIA MADONNA20, 31015 CONEGLIANO (TREVISO)", "lat": 45.89003285647119, "lon": 12.30301483284913, "codice_frutta": "p2267", "codice_latte": "p1929"}, {"cliente": "\"J.F. KENNEDY\" - CONEGLIANO CAP", "indirizzo": "VIA KENNEDY 10, 31015 CONEGLIANO (TREVISO)", "lat": 45.8899507, "lon": 12.3066424, "codice_frutta": "p6528", "codice_latte": "p00000"}, {"cliente": "G. MAZZINI", "indirizzo": "VIA T. VECELLIO 13/15, 31015 CONEGLIANO (TREVISO)", "lat": 45.8928947689846, "lon": 12.30222358118974, "codice_frutta": "p6526", "codice_latte": "p00000"}, {"cliente": "P. Maset - Scomigo - Loc. Scomigo", "indirizzo": "Via Pastin Santin 5, 31015 Conegliano (TREVISO)", "lat": 45.9376756, "lon": 12.3068024, "codice_frutta": "p6527", "codice_latte": "p00000"}, {"cliente": "UGO COSTELLA - B.GO VENDRAN", "indirizzo": "VIA P. MASCAGNI 16, 31029 VITTORIO VENETO (TREVISO)", "lat": 45.9663573, "lon": 12.2945747, "codice_frutta": "p2396", "codice_latte": "p00000"}, {"cliente": "SCUOLA PRIMARIA \"SANTA GIOVANNA D'ARCO\"", "indirizzo": "VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)", "lat": 45.97358583056165, "lon": 12.29359709699365, "codice_frutta": "p2099", "codice_latte": "p00000"}, {"cliente": "UGO FOSCOLO - CENEDA", "indirizzo": "VIA U. FOSCOLO 80, 31029 VITTORIO VENETO (TREVISO)", "lat": 45.97620611550319, "lon": 12.29525948927156, "codice_frutta": "p2397", "codice_latte": "p00000"}, {"cliente": "MARCO POLO PRIMARIA - COSTA", "indirizzo": "PIAZZA ZANETTE 11, 31029 VITTORIO VENETO (TREVISO)", "lat": 45.9849141, "lon": 12.3085564, "codice_frutta": "p8678", "codice_latte": "p1858"}, {"cliente": "PARRAVICINI - SERRAVALLE", "indirizzo": "VIA PARRAVICINI 18, 31029 VITTORIO VENETO (TREVISO)", "lat": 45.9985007, "lon": 12.2943275, "codice_frutta": "p12472", "codice_latte": "p1855"}, {"cliente": "A. MANZONI - SERRAVALLE", "indirizzo": "VIA MARCINELLE 10, 31029 VITTORIO VENETO (TREVISO)", "lat": 46.0091068, "lon": 12.2811319, "codice_frutta": "p12400", "codice_latte": "p00000"}, {"cliente": "G.PASCOLI - VITTORIO CENTRO", "indirizzo": "VIA DIV.NINO NANNETTI 128, 31029 VITTORIO VENETO (TREVISO)", "lat": 45.98646752689192, "lon": 12.29783977434389, "codice_frutta": "p8652", "codice_latte": "p1856"}, {"cliente": "F.CRISPI - VIA DIAZ", "indirizzo": "VIA A.DIAZ 30, 31029 VITTORIO VENETO (TREVISO)", "lat": 45.980237866388, "lon": 12.3013241255646, "codice_frutta": "p13927", "codice_latte": "p1853"}, {"cliente": "\"G. SCARABELLOTTO\" ORSAGO", "indirizzo": "VIA DON MILANI 4, 31010 ORSAGO (TREVISO)", "lat": 45.927714631673645, "lon": 12.424202843919838, "codice_frutta": "p13590", "codice_latte": "p00000"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}];
+        const v_id = "V02";
+        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}, {"cliente": "E. DE AMICIS MORIAGO D.B.", "indirizzo": "VIA MANZONI 27", "lat": 45.8677942, "lon": 12.1015402, "codice_frutta": "p2301", "codice_latte": "p1950"}, {"cliente": "Gianni Rodari - Col San Martino", "indirizzo": "Via Giarentine 2", "lat": 45.8966595, "lon": 12.0851042, "codice_frutta": "p13947", "codice_latte": "p00000"}, {"cliente": "LORENZO MILANI - FARRA CAP.", "indirizzo": "VIA DEI PATRIOTI 29", "lat": 45.9056039, "lon": 12.1269508, "codice_frutta": "p8831", "codice_latte": "p00000"}, {"cliente": "G.ANCILLOTTO - SOLIGO", "indirizzo": "VIA DEI COLLI 25", "lat": 45.9097342, "lon": 12.1524089, "codice_frutta": "p8767", "codice_latte": "p00000"}, {"cliente": "O.DE GASPARI FALZE' DI P.", "indirizzo": "VIA DONATORI DEL SANGUE 4", "lat": 45.86008859765876, "lon": 12.17298733945312, "codice_frutta": "p2302", "codice_latte": "p1951"}, {"cliente": "F.FABBRI - SANTA MARIA", "indirizzo": "PIAZZA DONATORI DI SANGUE 1", "lat": 45.8977212304539, "lon": 12.23460724970705, "codice_frutta": "p2357", "codice_latte": "p1704"}, {"cliente": "S. PELLICO - RUA DI F.", "indirizzo": "VIA DELLA LIBERTA' 27/A", "lat": 45.91723, "lon": 12.2539765, "codice_frutta": "p2355", "codice_latte": "p1792"}, {"cliente": "\"PAPA LUCIANI\" - BAGNOLO", "indirizzo": "VIA GORIZIA 1", "lat": 45.9122035, "lon": 12.2722528, "codice_frutta": "p2356", "codice_latte": "p1794"}, {"cliente": "D. ALIGHIERI", "indirizzo": "VIA ZANDONAI 14", "lat": 45.89992267108354, "lon": 12.29295163201003, "codice_frutta": "p6525", "codice_latte": "p00000"}, {"cliente": "LA NOSTRA FAMIGLIA", "indirizzo": "VIA COSTA ALTA", "lat": 45.8957981947636, "lon": 12.28623942204878, "codice_frutta": "p8847", "codice_latte": "p00000"}, {"cliente": "SCUOLA PRIMARIA \" PIANCA SCHOOL \"", "indirizzo": "VIA GIUNTI N\u00b012/A", "lat": 45.8780224, "lon": 12.2770314, "codice_frutta": "p2254", "codice_latte": "p1861"}, {"cliente": "\"GIANNI RODARI\" - PARE'", "indirizzo": "VIA EINAUDI 110", "lat": 45.8717147, "lon": 12.2731564, "codice_frutta": "p2353", "codice_latte": "p00000"}, {"cliente": "DON ORFEO MANTOVANI-V.DEI MILLE", "indirizzo": "VIA DEI MILLE 42", "lat": 45.8726659, "lon": 12.2846529, "codice_frutta": "p2354", "codice_latte": "p1793"}, {"cliente": "CAMPOLONGO", "indirizzo": "VIA VITAL 120", "lat": 45.8663868, "lon": 12.3071656, "codice_frutta": "p13495", "codice_latte": "p00000"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}];
         window.data = data; window.v_id = v_id;
         let map, markers = [], userMarker;
         window.currentPos = null;

@@ -81,11 +81,13 @@ def _carica_mappatura():
     col_cap = next((i for i, h in enumerate(headers) if h == "CAP"), 5)
     col_citta = next((i for i, h in enumerate(headers) if h == "Città"), 6)
     col_prov = next((i for i, h in enumerate(headers) if h == "Provincia"), 7)
-    col_om = next((i for i, h in enumerate(headers) if h == "Orario min"), 10)
-    col_oM = next((i for i, h in enumerate(headers) if h == "Orario max"), 11)
-    col_lat = next((i for i, h in enumerate(headers) if h == "Latitudine"), 12)
-    col_lon = next((i for i, h in enumerate(headers) if h == "Longitudine"), 13)
-    col_reali = next((i for i, h in enumerate(headers) if h == "COORDINATE_REALI_GPS"), 19)
+    col_om_f = next((i for i, h in enumerate(headers) if h == "Orario min Frutta"), 10)
+    col_oM_f = next((i for i, h in enumerate(headers) if h == "Orario max Frutta"), 11)
+    col_om_l = next((i for i, h in enumerate(headers) if h == "Orario min Latte"),  12)
+    col_oM_l = next((i for i, h in enumerate(headers) if h == "Orario max Latte"),  13)
+    col_lat  = next((i for i, h in enumerate(headers) if h == "Latitudine"),         14)
+    col_lon  = next((i for i, h in enumerate(headers) if h == "Longitudine"),        15)
+    col_reali= next((i for i, h in enumerate(headers) if h == "COORDINATE_REALI_GPS"), 21)
 
     map_codice = {}
     for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
@@ -108,13 +110,25 @@ def _carica_mappatura():
             
         cod_f = _val(vals[col_cod_f]) if col_cod_f < len(vals) else ""
         cod_l = _val(vals[col_cod_l]) if col_cod_l < len(vals) else ""
+        om_f = _val(vals[col_om_f]) if col_om_f < len(vals) else ""
+        oM_f = _val(vals[col_oM_f]) if col_oM_f < len(vals) else ""
+        om_l = _val(vals[col_om_l]) if col_om_l < len(vals) else ""
+        oM_l = _val(vals[col_oM_l]) if col_oM_l < len(vals) else ""
+        # orario_max generale = il più restrittivo tra frutta e latte (per routing/mappe)
+        def _orario_min_str(a, b):
+            if a and b: return a if a < b else b
+            return a or b
         dato = {
             "codice_frutta": cod_f.lower() if cod_f else "",
             "codice_latte": cod_l.lower() if cod_l else "",
             "nome": _val(vals[col_nome]) if col_nome < len(vals) else "",
             "indirizzo": _build_indirizzo(vals, col_ind, col_cap, col_citta, col_prov),
-            "orario_min": _val(vals[col_om]) if col_om < len(vals) else "",
-            "orario_max": _val(vals[col_oM]) if col_oM < len(vals) else "",
+            "orario_min_frutta": om_f,
+            "orario_max_frutta": oM_f,
+            "orario_min_latte":  om_l,
+            "orario_max_latte":  oM_l,
+            "orario_min": _orario_min_str(om_f, om_l),
+            "orario_max": _orario_min_str(oM_f, oM_l),
             "lat": lat,
             "lon": lon,
         }
@@ -190,17 +204,25 @@ def _salva_excel(punti: list[dict], out_path: Path):
     ws.title = "Punti consegna"
     headers = [
         "Codice Frutta", "Codice Latte", "Codici DDT trovati", "Zona",
-        "Nome", "Indirizzo", "Orario min", "Orario max", "Latitudine", "Longitudine"
+        "Nome", "Indirizzo",
+        "Orario min Frutta", "Orario max Frutta",
+        "Orario min Latte",  "Orario max Latte",
+        "Orario min", "Orario max",
+        "Latitudine", "Longitudine"
     ]
     ws.append(headers)
     for pt in punti:
         ws.append([
             pt.get("codice_frutta", ""),
             pt.get("codice_latte", ""),
-            f"{pt.get('codice_frutta') or 'p00000'}_{pt.get('codice_latte') or 'p00000'}",  # codice univoco composito
+            f"{pt.get('codice_frutta') or 'p00000'}_{pt.get('codice_latte') or 'p00000'}",
             pt.get("zona", ""),
             pt.get("nome", ""),
             pt.get("indirizzo", ""),
+            pt.get("orario_min_frutta", ""),
+            pt.get("orario_max_frutta", ""),
+            pt.get("orario_min_latte",  ""),
+            pt.get("orario_max_latte",  ""),
             pt.get("orario_min", ""),
             pt.get("orario_max", ""),
             pt.get("lat") if pt.get("lat") is not None else "",

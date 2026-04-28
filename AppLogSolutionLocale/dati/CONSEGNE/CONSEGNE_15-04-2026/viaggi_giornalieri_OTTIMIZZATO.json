@@ -17,7 +17,7 @@
         "codice_univoco": "p12039_p1923",
         "zona": "3108",
         "data_consegna": "15-04-2026",
-        "orario_min": "08:00",
+        "orario_min": "07:45",
         "orario_max": "10:00",
         "lat": 45.3755598,
         "lon": 11.739319,
@@ -30,7 +30,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 438,
         "geo_query_nome_indirizzo": "Teolo Primaria Loc. San Biagio Via Attiliano Oliveros, 1, 35037 Teolo (PD)",
-        "geo_query_indirizzo": "Via Attiliano Oliveros, 1, 35037 Teolo (PD)"
+        "geo_query_indirizzo": "Via Attiliano Oliveros, 1, 35037 Teolo (PD)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "Villa Del Bosco Loc. S. Biagio",
@@ -40,7 +44,7 @@
         "codice_univoco": "p12016_p1958",
         "zona": "3108",
         "data_consegna": "15-04-2026",
-        "orario_min": "08:00",
+        "orario_min": "07:45",
         "orario_max": "10:00",
         "lat": 45.3755598,
         "lon": 11.739319,
@@ -53,7 +57,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 451,
         "geo_query_nome_indirizzo": "Villa Del Bosco Loc. S. Biagio Via Attiliano Oliveros, 1, 35037 Teolo (PD)",
-        "geo_query_indirizzo": "Via Attiliano Oliveros, 1, 35037 Teolo (PD)"
+        "geo_query_indirizzo": "Via Attiliano Oliveros, 1, 35037 Teolo (PD)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "TEOLO-DE AMICIS LOC. TRAMONTE",
@@ -63,7 +71,7 @@
         "codice_univoco": "p12130_p1970",
         "zona": "3108",
         "data_consegna": "15-04-2026",
-        "orario_min": "08:00",
+        "orario_min": "07:45",
         "orario_max": "10:00",
         "lat": 45.354372514042375,
         "lon": 11.743078186038915,
@@ -76,7 +84,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 439,
         "geo_query_nome_indirizzo": "TEOLO-DE AMICIS LOC. TRAMONTE VIA TERME 12, 35037 TEOLO (PADOVA)",
-        "geo_query_indirizzo": "VIA TERME 12, 35037 TEOLO (PADOVA)"
+        "geo_query_indirizzo": "VIA TERME 12, 35037 TEOLO (PADOVA)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "TORREGLIA-DON BOSCO",
@@ -99,7 +111,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 444,
         "geo_query_nome_indirizzo": "TORREGLIA-DON BOSCO PIAZZA CAPITELLO 2, 35038 TORREGLIA (PADOVA)",
-        "geo_query_indirizzo": "PIAZZA CAPITELLO 2, 35038 TORREGLIA (PADOVA)"
+        "geo_query_indirizzo": "PIAZZA CAPITELLO 2, 35038 TORREGLIA (PADOVA)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "Don Milani",
@@ -122,7 +138,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 124,
         "geo_query_nome_indirizzo": "Don Milani Via Cataio 55, Localita Turri, 35036 Montegrotto Terme (PD)",
-        "geo_query_indirizzo": "Via Cataio 55, Localita Turri, 35036 Montegrotto Terme (PD)"
+        "geo_query_indirizzo": "Via Cataio 55, Localita Turri, 35036 Montegrotto Terme (PD)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "G.MARCONI LOC. CARPANEDO",
@@ -145,7 +165,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 182,
         "geo_query_nome_indirizzo": "G.MARCONI LOC. CARPANEDO VIA S.STEFANO 2, 35020 ALBIGNASEGO (PADOVA)",
-        "geo_query_indirizzo": "VIA S.STEFANO 2, 35020 ALBIGNASEGO (PADOVA)"
+        "geo_query_indirizzo": "VIA S.STEFANO 2, 35020 ALBIGNASEGO (PADOVA)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "ALBIGNASEGO L. DA VINCI",
@@ -156,7 +180,7 @@
         "zona": "3108",
         "data_consegna": "15-04-2026",
         "orario_min": "08:15",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 45.3499818,
         "lon": 11.8639231,
         "codici_ddt_frutta": [
@@ -168,7 +192,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 50,
         "geo_query_nome_indirizzo": "ALBIGNASEGO L. DA VINCI VIA S.TOMMASO 30, 35020 ALBIGNASEGO (PADOVA)",
-        "geo_query_indirizzo": "VIA S.TOMMASO 30, 35020 ALBIGNASEGO (PADOVA)"
+        "geo_query_indirizzo": "VIA S.TOMMASO 30, 35020 ALBIGNASEGO (PADOVA)",
+        "orario_min_frutta": "08:15",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "08:15",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "LUIGI LUZZATTI",
@@ -179,7 +207,7 @@
         "zona": "3108",
         "data_consegna": "15-04-2026",
         "orario_min": "07:45",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 45.365701,
         "lon": 11.874528,
         "codici_ddt_frutta": [
@@ -191,7 +219,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 255,
         "geo_query_nome_indirizzo": "LUIGI LUZZATTI VIA SALBORO 2A, 35125 PADOVA (PADOVA)",
-        "geo_query_indirizzo": "VIA SALBORO 2A, 35125 PADOVA (PADOVA)"
+        "geo_query_indirizzo": "VIA SALBORO 2A, 35125 PADOVA (PADOVA)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "G.Ricci Curbastro - Pd",
@@ -214,7 +246,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "G.Ricci Curbastro - Pd Via Orna 21/A, 35124 Padova (PD)",
-        "geo_query_indirizzo": "Via Orna 21/A, 35124 Padova (PD)"
+        "geo_query_indirizzo": "Via Orna 21/A, 35124 Padova (PD)",
+        "orario_min_frutta": "",
+        "orario_max_frutta": "",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "Quattro Martiri",
@@ -237,7 +273,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 327,
         "geo_query_nome_indirizzo": "Quattro Martiri Via Del Commissario,30, 35127 Padova (PD)",
-        "geo_query_indirizzo": "Via Del Commissario,30, 35127 Padova (PD)"
+        "geo_query_indirizzo": "Via Del Commissario,30, 35127 Padova (PD)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "I. NIEVO - PD",
@@ -260,7 +300,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 218,
         "geo_query_nome_indirizzo": "I. NIEVO - PD VIA VECCHIA 1/N, 35127 PADOVA (PADOVA)",
-        "geo_query_indirizzo": "VIA VECCHIA 1/N, 35127 PADOVA (PADOVA)"
+        "geo_query_indirizzo": "VIA VECCHIA 1/N, 35127 PADOVA (PADOVA)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "A. Volta - Pd",
@@ -283,7 +327,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 43,
         "geo_query_nome_indirizzo": "A. Volta - Pd Via Sant' Osvaldo, 1, 35127 Padova (PD)",
-        "geo_query_indirizzo": "Via Sant' Osvaldo, 1, 35127 Padova (PD)"
+        "geo_query_indirizzo": "Via Sant' Osvaldo, 1, 35127 Padova (PD)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "LUZZATTO DINA - PD",
@@ -306,7 +354,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 256,
         "geo_query_nome_indirizzo": "LUZZATTO DINA - PD VIA GRADENIGO 1, 35131 PADOVA (PADOVA)",
-        "geo_query_indirizzo": "VIA GRADENIGO 1, 35131 PADOVA (PADOVA)"
+        "geo_query_indirizzo": "VIA GRADENIGO 1, 35131 PADOVA (PADOVA)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "Ardigo-Pd",
@@ -329,7 +381,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 62,
         "geo_query_nome_indirizzo": "Ardigo-Pd Via Degli Agnusdei 17, 35121 Padova (PD)",
-        "geo_query_indirizzo": "Via Degli Agnusdei 17, 35121 Padova (PD)"
+        "geo_query_indirizzo": "Via Degli Agnusdei 17, 35121 Padova (PD)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "Santa Dorotea - Paritaria",
@@ -352,7 +408,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 364,
         "geo_query_nome_indirizzo": "Santa Dorotea - Paritaria Via San Pietro,117 - Via Dei Livello 59-61, 35139 Padova (PD)",
-        "geo_query_indirizzo": "Via San Pietro,117 - Via Dei Livello 59-61, 35139 Padova (PD)"
+        "geo_query_indirizzo": "Via San Pietro,117 - Via Dei Livello 59-61, 35139 Padova (PD)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "SCUOLA PRIMARIA VANZO",
@@ -375,7 +435,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 428,
         "geo_query_nome_indirizzo": "SCUOLA PRIMARIA VANZO VIA MARCONI13/D, 35122 PADOVA (PADOVA)",
-        "geo_query_indirizzo": "VIA MARCONI13/D, 35122 PADOVA (PADOVA)"
+        "geo_query_indirizzo": "VIA MARCONI13/D, 35122 PADOVA (PADOVA)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "08:30",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "Daniele Manin",
@@ -386,7 +450,7 @@
         "zona": "3108",
         "data_consegna": "15-04-2026",
         "orario_min": "07:30",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 45.38853918884325,
         "lon": 11.876711340426267,
         "codici_ddt_frutta": [
@@ -398,7 +462,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 102,
         "geo_query_nome_indirizzo": "Daniele Manin Via Tre Garofani, 50, 35124 Padova (PD)",
-        "geo_query_indirizzo": "Via Tre Garofani, 50, 35124 Padova (PD)"
+        "geo_query_indirizzo": "Via Tre Garofani, 50, 35124 Padova (PD)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "Santa Croce(Ist. Suore S.Francesco Di Sales)",
@@ -409,7 +477,7 @@
         "zona": "3108",
         "data_consegna": "15-04-2026",
         "orario_min": "07:30",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 45.3926959,
         "lon": 11.8710116,
         "codici_ddt_frutta": [
@@ -421,7 +489,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 363,
         "geo_query_nome_indirizzo": "Santa Croce(Ist. Suore S.Francesco Di Sales) Via Santa Maria In Vanzo,53, 35123 Padova (PD)",
-        "geo_query_indirizzo": "Via Santa Maria In Vanzo,53, 35123 Padova (PD)"
+        "geo_query_indirizzo": "Via Santa Maria In Vanzo,53, 35123 Padova (PD)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "Vittorino Zanibon",
@@ -444,7 +516,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 456,
         "geo_query_nome_indirizzo": "Vittorino Zanibon Via Siracusa 12, 35142 Padova (PD)",
-        "geo_query_indirizzo": "Via Siracusa 12, 35142 Padova (PD)"
+        "geo_query_indirizzo": "Via Siracusa 12, 35142 Padova (PD)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "DON BOSCO - PADOVA (EX XII IC)",
@@ -467,7 +543,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 119,
         "geo_query_nome_indirizzo": "DON BOSCO - PADOVA (EX XII IC) VIA BRESSANONE 23, 35142 PADOVA (PADOVA)",
-        "geo_query_indirizzo": "VIA BRESSANONE 23, 35142 PADOVA (PADOVA)"
+        "geo_query_indirizzo": "VIA BRESSANONE 23, 35142 PADOVA (PADOVA)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "PRATI-PADOVA (EX XII IC)",
@@ -490,7 +570,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 306,
         "geo_query_nome_indirizzo": "PRATI-PADOVA (EX XII IC) VIA DECORATI AL VALOR CIVILE 154, 35142 PADOVA (PADOVA)",
-        "geo_query_indirizzo": "VIA DECORATI AL VALOR CIVILE 154, 35142 PADOVA (PADOVA)"
+        "geo_query_indirizzo": "VIA DECORATI AL VALOR CIVILE 154, 35142 PADOVA (PADOVA)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "\"LUIGI CONFIGLIACHI\"",
@@ -513,7 +597,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 20,
         "geo_query_nome_indirizzo": "\"LUIGI CONFIGLIACHI\" VIA SETTE MARTIRI 33, 35143 PADOVA (PADOVA)",
-        "geo_query_indirizzo": "VIA SETTE MARTIRI 33, 35143 PADOVA (PADOVA)"
+        "geo_query_indirizzo": "VIA SETTE MARTIRI 33, 35143 PADOVA (PADOVA)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       }
     ]
   },
@@ -548,7 +636,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "CEDERLE VIA 8 APRILE 19, 36054 MONTEBELLO VICENTINO (VICENZA)",
-        "geo_query_indirizzo": "VIA 8 APRILE 19, 36054 MONTEBELLO VICENTINO (VICENZA)"
+        "geo_query_indirizzo": "VIA 8 APRILE 19, 36054 MONTEBELLO VICENTINO (VICENZA)",
+        "orario_min_frutta": "",
+        "orario_max_frutta": "",
+        "orario_min_latte": "08:00",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "ZERMEGHEDO",
@@ -571,7 +663,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "ZERMEGHEDO VIA COSTEGGIOLA 56, 36050 ZERMEGHEDO (VICENZA)",
-        "geo_query_indirizzo": "VIA COSTEGGIOLA 56, 36050 ZERMEGHEDO (VICENZA)"
+        "geo_query_indirizzo": "VIA COSTEGGIOLA 56, 36050 ZERMEGHEDO (VICENZA)",
+        "orario_min_frutta": "",
+        "orario_max_frutta": "",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "SANTA BAKHITA",
@@ -594,7 +690,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 362,
         "geo_query_nome_indirizzo": "SANTA BAKHITA VIA CAPPUCCINI 1, 36071 ARZIGNANO (VICENZA)",
-        "geo_query_indirizzo": "VIA CAPPUCCINI 1, 36071 ARZIGNANO (VICENZA)"
+        "geo_query_indirizzo": "VIA CAPPUCCINI 1, 36071 ARZIGNANO (VICENZA)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "A. FOGAZZARO",
@@ -617,7 +717,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 34,
         "geo_query_nome_indirizzo": "A. FOGAZZARO CORSO G. MAZZINI 85, 36071 ARZIGNANO (VICENZA)",
-        "geo_query_indirizzo": "CORSO G. MAZZINI 85, 36071 ARZIGNANO (VICENZA)"
+        "geo_query_indirizzo": "CORSO G. MAZZINI 85, 36071 ARZIGNANO (VICENZA)",
+        "orario_min_frutta": "07:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "San Rocco",
@@ -640,7 +744,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 361,
         "geo_query_nome_indirizzo": "San Rocco Via Trento, 65/B, 36071 Arzignano (VI)",
-        "geo_query_indirizzo": "Via Trento, 65/B, 36071 Arzignano (VI)"
+        "geo_query_indirizzo": "Via Trento, 65/B, 36071 Arzignano (VI)",
+        "orario_min_frutta": "07:15",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "Vittorino Da Feltre",
@@ -663,7 +771,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "Vittorino Da Feltre Via San Zeno 38, 36071 Arzignano (VI)",
-        "geo_query_indirizzo": "Via San Zeno 38, 36071 Arzignano (VI)"
+        "geo_query_indirizzo": "Via San Zeno 38, 36071 Arzignano (VI)",
+        "orario_min_frutta": "",
+        "orario_max_frutta": "",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "Don Albanello",
@@ -686,7 +798,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "Don Albanello Via Degli Alpini 4, 36070 Nogarole Vicentino (VI)",
-        "geo_query_indirizzo": "Via Degli Alpini 4, 36070 Nogarole Vicentino (VI)"
+        "geo_query_indirizzo": "Via Degli Alpini 4, 36070 Nogarole Vicentino (VI)",
+        "orario_min_frutta": "",
+        "orario_max_frutta": "",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "Scuola Primaria Zanella",
@@ -709,7 +825,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 432,
         "geo_query_nome_indirizzo": "Scuola Primaria Zanella Via Dante, 24, 36070 Trissino (VI)",
-        "geo_query_indirizzo": "Via Dante, 24, 36070 Trissino (VI)"
+        "geo_query_indirizzo": "Via Dante, 24, 36070 Trissino (VI)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "Scuola Primaria Padre Kolbe Spagnago",
@@ -732,7 +852,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 412,
         "geo_query_nome_indirizzo": "Scuola Primaria Padre Kolbe Spagnago Via Giacomo Leopardi, 1, 36073 Cornedo Vicentino (VI)",
-        "geo_query_indirizzo": "Via Giacomo Leopardi, 1, 36073 Cornedo Vicentino (VI)"
+        "geo_query_indirizzo": "Via Giacomo Leopardi, 1, 36073 Cornedo Vicentino (VI)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "Scuola Primaria San Domenico Savio - Loc. Cereda",
@@ -755,7 +879,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 422,
         "geo_query_nome_indirizzo": "Scuola Primaria San Domenico Savio - Loc. Cereda Piazza Sant'Andrea, 1, 36073 Cornedo Vicentino (VI)",
-        "geo_query_indirizzo": "Piazza Sant'Andrea, 1, 36073 Cornedo Vicentino (VI)"
+        "geo_query_indirizzo": "Piazza Sant'Andrea, 1, 36073 Cornedo Vicentino (VI)",
+        "orario_min_frutta": "08:30",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "Scuola Primaria Gian Giorgio Trissino Cornedo Capoluogo",
@@ -778,7 +906,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 403,
         "geo_query_nome_indirizzo": "Scuola Primaria Gian Giorgio Trissino Cornedo Capoluogo Via Mazzalovo, 1, 36073 Cornedo Vicentino (VI)",
-        "geo_query_indirizzo": "Via Mazzalovo, 1, 36073 Cornedo Vicentino (VI)"
+        "geo_query_indirizzo": "Via Mazzalovo, 1, 36073 Cornedo Vicentino (VI)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "PRIMARIA BORNE",
@@ -801,7 +933,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "PRIMARIA BORNE VIA BOLIVIA 1, 36078 VALDAGNO (VICENZA)",
-        "geo_query_indirizzo": "VIA BOLIVIA 1, 36078 VALDAGNO (VICENZA)"
+        "geo_query_indirizzo": "VIA BOLIVIA 1, 36078 VALDAGNO (VICENZA)",
+        "orario_min_frutta": "",
+        "orario_max_frutta": "",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "PRIMARIA NOVALE",
@@ -824,7 +960,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "PRIMARIA NOVALE VIA MONTELLO 4, 36078 VALDAGNO (VICENZA)",
-        "geo_query_indirizzo": "VIA MONTELLO 4, 36078 VALDAGNO (VICENZA)"
+        "geo_query_indirizzo": "VIA MONTELLO 4, 36078 VALDAGNO (VICENZA)",
+        "orario_min_frutta": "",
+        "orario_max_frutta": "",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "SCUOLA PRIMARIA - A. MANZONI",
@@ -847,7 +987,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 377,
         "geo_query_nome_indirizzo": "SCUOLA PRIMARIA - A. MANZONI VIA A. MANZONI 13, 36030 SAN VITO DI LEGUZZANO (VICENZA)",
-        "geo_query_indirizzo": "VIA A. MANZONI 13, 36030 SAN VITO DI LEGUZZANO (VICENZA)"
+        "geo_query_indirizzo": "VIA A. MANZONI 13, 36030 SAN VITO DI LEGUZZANO (VICENZA)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "Scuola Primaria “E. De Amicis” –  Case",
@@ -870,7 +1014,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 388,
         "geo_query_nome_indirizzo": "Scuola Primaria “E. De Amicis” –  Case Via Deledda, 2, 36064 Malo (VI)",
-        "geo_query_indirizzo": "Via Deledda, 2, 36064 Malo (VI)"
+        "geo_query_indirizzo": "Via Deledda, 2, 36064 Malo (VI)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "MALO - MOLINA",
@@ -893,7 +1041,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 261,
         "geo_query_nome_indirizzo": "MALO - MOLINA VIALE DELL'INDUSTRIA 13, 36034 MALO (VICENZA)",
-        "geo_query_indirizzo": "VIALE DELL'INDUSTRIA 13, 36034 MALO (VICENZA)"
+        "geo_query_indirizzo": "VIALE DELL'INDUSTRIA 13, 36034 MALO (VICENZA)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "San Giovanni Bosco",
@@ -916,7 +1068,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 355,
         "geo_query_nome_indirizzo": "San Giovanni Bosco Via Risorgimento 31, 36036 Torrebelvicino (VI)",
-        "geo_query_indirizzo": "Via Risorgimento 31, 36036 Torrebelvicino (VI)"
+        "geo_query_indirizzo": "Via Risorgimento 31, 36036 Torrebelvicino (VI)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "DANTE ALIGHIERI",
@@ -939,7 +1095,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 105,
         "geo_query_nome_indirizzo": "DANTE ALIGHIERI VIA CARD. E. DALLA COSTA 2, 36030 VILLAVERLA (VICENZA)",
-        "geo_query_indirizzo": "VIA CARD. E. DALLA COSTA 2, 36030 VILLAVERLA (VICENZA)"
+        "geo_query_indirizzo": "VIA CARD. E. DALLA COSTA 2, 36030 VILLAVERLA (VICENZA)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "Dante Alighieri",
@@ -962,7 +1122,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "Dante Alighieri Via Card. Dalla Costa 2, 36030 Villaverla (VI)",
-        "geo_query_indirizzo": "Via Card. Dalla Costa 2, 36030 Villaverla (VI)"
+        "geo_query_indirizzo": "Via Card. Dalla Costa 2, 36030 Villaverla (VI)",
+        "orario_min_frutta": "",
+        "orario_max_frutta": "",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "GIOVANNI XXIII - NOVOLEDO",
@@ -985,7 +1149,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 206,
         "geo_query_nome_indirizzo": "GIOVANNI XXIII - NOVOLEDO VIA A. PALLADIO 155, 36030 VILLAVERLA (VICENZA)",
-        "geo_query_indirizzo": "VIA A. PALLADIO 155, 36030 VILLAVERLA (VICENZA)"
+        "geo_query_indirizzo": "VIA A. PALLADIO 155, 36030 VILLAVERLA (VICENZA)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       }
     ]
   },
@@ -1021,7 +1189,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "Zambelli Sestiere Dorsoduro 2403, 30123 Venezia (VE)",
-        "geo_query_indirizzo": "Sestiere Dorsoduro 2403, 30123 Venezia (VE)"
+        "geo_query_indirizzo": "Sestiere Dorsoduro 2403, 30123 Venezia (VE)",
+        "orario_min_frutta": "",
+        "orario_max_frutta": "",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "RENIER MICHIEL",
@@ -1032,7 +1204,7 @@
         "zona": "3199",
         "data_consegna": "15-04-2026",
         "orario_min": "07:30",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 45.4350078,
         "lon": 12.3231043,
         "codici_ddt_frutta": [
@@ -1044,7 +1216,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 330,
         "geo_query_nome_indirizzo": "RENIER MICHIEL SESTIERE DORSODURO 1184, 30123 VENEZIA (VENEZIA)",
-        "geo_query_indirizzo": "SESTIERE DORSODURO 1184, 30123 VENEZIA (VENEZIA)"
+        "geo_query_indirizzo": "SESTIERE DORSODURO 1184, 30123 VENEZIA (VENEZIA)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "ZAMBELLI",
@@ -1067,7 +1243,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 458,
         "geo_query_nome_indirizzo": "ZAMBELLI SESTIERE DORSODURO 2403, 30123 VENEZIA (VENEZIA)",
-        "geo_query_indirizzo": "SESTIERE DORSODURO 2403, 30123 VENEZIA (VENEZIA)"
+        "geo_query_indirizzo": "SESTIERE DORSODURO 2403, 30123 VENEZIA (VENEZIA)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "A.MANZONI",
@@ -1090,7 +1270,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 47,
         "geo_query_nome_indirizzo": "A.MANZONI SESTIERE SANTA CROCE 1779, 30135 VENEZIA (VENEZIA)",
-        "geo_query_indirizzo": "SESTIERE SANTA CROCE 1779, 30135 VENEZIA (VENEZIA)"
+        "geo_query_indirizzo": "SESTIERE SANTA CROCE 1779, 30135 VENEZIA (VENEZIA)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "GIACINTO GALLINA",
@@ -1113,7 +1297,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 196,
         "geo_query_nome_indirizzo": "GIACINTO GALLINA SESTIERE CANNAREGIO 6167, 30121 VENEZIA (VENEZIA)",
-        "geo_query_indirizzo": "SESTIERE CANNAREGIO 6167, 30121 VENEZIA (VENEZIA)"
+        "geo_query_indirizzo": "SESTIERE CANNAREGIO 6167, 30121 VENEZIA (VENEZIA)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "Diedo",
@@ -1136,7 +1324,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 116,
         "geo_query_nome_indirizzo": "Diedo Sestiere Cannaregio, 2385, 30121 Venezia (VE)",
-        "geo_query_indirizzo": "Sestiere Cannaregio, 2385, 30121 Venezia (VE)"
+        "geo_query_indirizzo": "Sestiere Cannaregio, 2385, 30121 Venezia (VE)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "SAN GIROLAMO",
@@ -1159,7 +1351,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 356,
         "geo_query_nome_indirizzo": "SAN GIROLAMO SESTIERE CANNAREGIO 3022/A, 30121 VENEZIA (VENEZIA)",
-        "geo_query_indirizzo": "SESTIERE CANNAREGIO 3022/A, 30121 VENEZIA (VENEZIA)"
+        "geo_query_indirizzo": "SESTIERE CANNAREGIO 3022/A, 30121 VENEZIA (VENEZIA)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "ARMANDO DIAZ",
@@ -1170,7 +1366,7 @@
         "zona": "3199",
         "data_consegna": "15-04-2026",
         "orario_min": "07:30",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 45.4368994,
         "lon": 12.3429364,
         "codici_ddt_frutta": [
@@ -1182,7 +1378,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 64,
         "geo_query_nome_indirizzo": "ARMANDO DIAZ SESTIERE CASTELLO 4968/A, 30122 VENEZIA (VENEZIA)",
-        "geo_query_indirizzo": "SESTIERE CASTELLO 4968/A, 30122 VENEZIA (VENEZIA)"
+        "geo_query_indirizzo": "SESTIERE CASTELLO 4968/A, 30122 VENEZIA (VENEZIA)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "Gaspare Gozzi",
@@ -1193,7 +1393,7 @@
         "zona": "3199",
         "data_consegna": "15-04-2026",
         "orario_min": "07:30",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 45.4368994,
         "lon": 12.3429364,
         "codici_ddt_frutta": [
@@ -1205,7 +1405,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 193,
         "geo_query_nome_indirizzo": "Gaspare Gozzi Sestiere Castello, 1925, 30122 Venezia (VE)",
-        "geo_query_indirizzo": "Sestiere Castello, 1925, 30122 Venezia (VE)"
+        "geo_query_indirizzo": "Sestiere Castello, 1925, 30122 Venezia (VE)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "BERNARDO CANAL",
@@ -1228,7 +1432,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 70,
         "geo_query_nome_indirizzo": "BERNARDO CANAL SESTIERE SAN POLO 2515, 30125 VENEZIA (VENEZIA)",
-        "geo_query_indirizzo": "SESTIERE SAN POLO 2515, 30125 VENEZIA (VENEZIA)"
+        "geo_query_indirizzo": "SESTIERE SAN POLO 2515, 30125 VENEZIA (VENEZIA)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "Bernardo Canal",
@@ -1251,7 +1459,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "Bernardo Canal Sestiere San Polo 2515, 30125 Venezia (VE)",
-        "geo_query_indirizzo": "Sestiere San Polo 2515, 30125 Venezia (VE)"
+        "geo_query_indirizzo": "Sestiere San Polo 2515, 30125 Venezia (VE)",
+        "orario_min_frutta": "",
+        "orario_max_frutta": "",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "SAN FRANCESCO DI SALES",
@@ -1274,7 +1486,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 351,
         "geo_query_nome_indirizzo": "SAN FRANCESCO DI SALES SAN POLO 1500/B, 30125 VENEZIA (VENEZIA)",
-        "geo_query_indirizzo": "SAN POLO 1500/B, 30125 VENEZIA (VENEZIA)"
+        "geo_query_indirizzo": "SAN POLO 1500/B, 30125 VENEZIA (VENEZIA)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "Istituto Cavanis Loc. Dorsoduro",
@@ -1285,7 +1501,7 @@
         "zona": "3199",
         "data_consegna": "15-04-2026",
         "orario_min": "07:45",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 45.4304441,
         "lon": 12.3282389,
         "codici_ddt_frutta": [
@@ -1297,7 +1513,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 240,
         "geo_query_nome_indirizzo": "Istituto Cavanis Loc. Dorsoduro Rio Terà Foscarini, 898, 30123 Venezia (VE)",
-        "geo_query_indirizzo": "Rio Terà Foscarini, 898, 30123 Venezia (VE)"
+        "geo_query_indirizzo": "Rio Terà Foscarini, 898, 30123 Venezia (VE)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "Duca D'Aosta",
@@ -1320,7 +1540,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 130,
         "geo_query_nome_indirizzo": "Duca D'Aosta Via Fondamenta De Le Scuole, 373 Loc. Giudecca 373, 30133 Venezia (VE)",
-        "geo_query_indirizzo": "Via Fondamenta De Le Scuole, 373 Loc. Giudecca 373, 30133 Venezia (VE)"
+        "geo_query_indirizzo": "Via Fondamenta De Le Scuole, 373 Loc. Giudecca 373, 30133 Venezia (VE)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "A.Manzoni",
@@ -1343,7 +1567,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "A.Manzoni Sestiere Santa Croce 1779, 20135 Venezia (VE)",
-        "geo_query_indirizzo": "Sestiere Santa Croce 1779, 20135 Venezia (VE)"
+        "geo_query_indirizzo": "Sestiere Santa Croce 1779, 20135 Venezia (VE)",
+        "orario_min_frutta": "",
+        "orario_max_frutta": "",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "PIER LUIGI PENZO- MALAMOCCO",
@@ -1366,7 +1594,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 300,
         "geo_query_nome_indirizzo": "PIER LUIGI PENZO- MALAMOCCO VIA BUONO DA MALAMOCCO, 30010 VENEZIA (VENEZIA)",
-        "geo_query_indirizzo": "VIA BUONO DA MALAMOCCO, 30010 VENEZIA (VENEZIA)"
+        "geo_query_indirizzo": "VIA BUONO DA MALAMOCCO, 30010 VENEZIA (VENEZIA)",
+        "orario_min_frutta": "08:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       }
     ]
   },
@@ -1406,7 +1638,11 @@
         ],
         "row_idx_mappatura": 129,
         "geo_query_nome_indirizzo": "Don Talamini- Selva Di Cadore Via Dei Denever, 21 - S.Fosca, 32020 Selva Di Cadore (BL)",
-        "geo_query_indirizzo": "Via Dei Denever, 21 - S.Fosca, 32020 Selva Di Cadore (BL)"
+        "geo_query_indirizzo": "Via Dei Denever, 21 - S.Fosca, 32020 Selva Di Cadore (BL)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "Fraz. Villapiccola",
@@ -1429,7 +1665,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 167,
         "geo_query_nome_indirizzo": "Fraz. Villapiccola Via Piave, 2, 32041 Auronzo Di Cadore (BL)",
-        "geo_query_indirizzo": "Via Piave, 2, 32041 Auronzo Di Cadore (BL)"
+        "geo_query_indirizzo": "Via Piave, 2, 32041 Auronzo Di Cadore (BL)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "PRIMARIA COMELICO SUPERIORE",
@@ -1439,8 +1679,8 @@
         "codice_univoco": "p8840_p1895",
         "zona": "3203",
         "data_consegna": "15-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
         "lat": 46.5989587,
         "lon": 12.4935433,
         "codici_ddt_frutta": [
@@ -1463,7 +1703,11 @@
         ],
         "row_idx_mappatura": 312,
         "geo_query_nome_indirizzo": "PRIMARIA COMELICO SUPERIORE VIA DI PIANO 30, 32040 COMELICO SUPERIORE (BELLUNO)",
-        "geo_query_indirizzo": "VIA DI PIANO 30, 32040 COMELICO SUPERIORE (BELLUNO)"
+        "geo_query_indirizzo": "VIA DI PIANO 30, 32040 COMELICO SUPERIORE (BELLUNO)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "\"A.TONELLO\" - S. NICOLO' COM.",
@@ -1474,7 +1718,7 @@
         "zona": "3203",
         "data_consegna": "15-04-2026",
         "orario_min": "08:00",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 46.5836711,
         "lon": 12.5257544,
         "codici_ddt_frutta": [
@@ -1486,7 +1730,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 4,
         "geo_query_nome_indirizzo": "\"A.TONELLO\" - S. NICOLO' COM. VIA CAPOLUOGO 37, 32040 SAN NICOLO' DI COMELICO (BELLUNO)",
-        "geo_query_indirizzo": "VIA CAPOLUOGO 37, 32040 SAN NICOLO' DI COMELICO (BELLUNO)"
+        "geo_query_indirizzo": "VIA CAPOLUOGO 37, 32040 SAN NICOLO' DI COMELICO (BELLUNO)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "08:00",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "SAN PIETRO DI CADORE - PRIMARIA",
@@ -1509,7 +1757,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 359,
         "geo_query_nome_indirizzo": "SAN PIETRO DI CADORE - PRIMARIA VIA DANTE 5, 32040 SAN PIETRO DI CADORE (BELLUNO)",
-        "geo_query_indirizzo": "VIA DANTE 5, 32040 SAN PIETRO DI CADORE (BELLUNO)"
+        "geo_query_indirizzo": "VIA DANTE 5, 32040 SAN PIETRO DI CADORE (BELLUNO)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "08:00",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "\"GIOSUE' CARDUCCI\" - S. STEFANO",
@@ -1520,7 +1772,7 @@
         "zona": "3203",
         "data_consegna": "15-04-2026",
         "orario_min": "08:00",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 46.55823549046,
         "lon": 12.5542733652496,
         "codici_ddt_frutta": [
@@ -1532,7 +1784,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 16,
         "geo_query_nome_indirizzo": "\"GIOSUE' CARDUCCI\" - S. STEFANO PIAZZALE VOLONTARI DELLA LIBERTA' N5, 32045 SANTO STEFANO DI CADORE (BELLUNO)",
-        "geo_query_indirizzo": "PIAZZALE VOLONTARI DELLA LIBERTA' N5, 32045 SANTO STEFANO DI CADORE (BELLUNO)"
+        "geo_query_indirizzo": "PIAZZALE VOLONTARI DELLA LIBERTA' N5, 32045 SANTO STEFANO DI CADORE (BELLUNO)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "08:00",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "\"A. DORIGUZZI ROSSIN\" - DANTA",
@@ -1543,7 +1799,7 @@
         "zona": "3203",
         "data_consegna": "15-04-2026",
         "orario_min": "08:00",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 46.5666887,
         "lon": 12.5217516,
         "codici_ddt_frutta": [
@@ -1561,7 +1817,11 @@
         ],
         "row_idx_mappatura": 2,
         "geo_query_nome_indirizzo": "\"A. DORIGUZZI ROSSIN\" - DANTA VIA ROMA 21, 32040 DANTA DI CADORE (BELLUNO)",
-        "geo_query_indirizzo": "VIA ROMA 21, 32040 DANTA DI CADORE (BELLUNO)"
+        "geo_query_indirizzo": "VIA ROMA 21, 32040 DANTA DI CADORE (BELLUNO)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "08:00",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "Vittime Del Vajont",
@@ -1584,7 +1844,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 453,
         "geo_query_nome_indirizzo": "Vittime Del Vajont Borgo Ronco, 7, 32040 Vigo Di Cadore (BL)",
-        "geo_query_indirizzo": "Borgo Ronco, 7, 32040 Vigo Di Cadore (BL)"
+        "geo_query_indirizzo": "Borgo Ronco, 7, 32040 Vigo Di Cadore (BL)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "G.Da Pra Zotto",
@@ -1607,7 +1871,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 180,
         "geo_query_nome_indirizzo": "G.Da Pra Zotto Via Dante Alighieri, 307, 32040 Lozzo Di Cadore (BL)",
-        "geo_query_indirizzo": "Via Dante Alighieri, 307, 32040 Lozzo Di Cadore (BL)"
+        "geo_query_indirizzo": "Via Dante Alighieri, 307, 32040 Lozzo Di Cadore (BL)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "OLINDO FUGAZZA DI DOMEGGE DI C.",
@@ -1630,7 +1898,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 290,
         "geo_query_nome_indirizzo": "OLINDO FUGAZZA DI DOMEGGE DI C. VIA GARIBALDI 7, 32040 DOMEGGE DI CADORE (BELLUNO)",
-        "geo_query_indirizzo": "VIA GARIBALDI 7, 32040 DOMEGGE DI CADORE (BELLUNO)"
+        "geo_query_indirizzo": "VIA GARIBALDI 7, 32040 DOMEGGE DI CADORE (BELLUNO)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "\"G. MARCONI\" DI CALALZO DI CAD.",
@@ -1641,7 +1913,7 @@
         "zona": "3203",
         "data_consegna": "15-04-2026",
         "orario_min": "07:30",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 46.4458149,
         "lon": 12.3816501,
         "codici_ddt_frutta": [
@@ -1653,7 +1925,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 12,
         "geo_query_nome_indirizzo": "\"G. MARCONI\" DI CALALZO DI CAD. VIA GIOVANNI XXIII 13, 32042 CALALZO DI CADORE (BELLUNO)",
-        "geo_query_indirizzo": "VIA GIOVANNI XXIII 13, 32042 CALALZO DI CADORE (BELLUNO)"
+        "geo_query_indirizzo": "VIA GIOVANNI XXIII 13, 32042 CALALZO DI CADORE (BELLUNO)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "P.DI CADORE CAP. SCUOLA NUOVA",
@@ -1676,7 +1952,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 293,
         "geo_query_nome_indirizzo": "P.DI CADORE CAP. SCUOLA NUOVA P.LE MARTIRI DELLA LIBERTA' 7, 32044 PIEVE DI CADORE (BELLUNO)",
-        "geo_query_indirizzo": "P.LE MARTIRI DELLA LIBERTA' 7, 32044 PIEVE DI CADORE (BELLUNO)"
+        "geo_query_indirizzo": "P.LE MARTIRI DELLA LIBERTA' 7, 32044 PIEVE DI CADORE (BELLUNO)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "VALLE DI CADORE",
@@ -1699,7 +1979,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 448,
         "geo_query_nome_indirizzo": "VALLE DI CADORE VIALE DOLOMITI 2, 32040 VALLE DI CADORE (BELLUNO)",
-        "geo_query_indirizzo": "VIALE DOLOMITI 2, 32040 VALLE DI CADORE (BELLUNO)"
+        "geo_query_indirizzo": "VIALE DOLOMITI 2, 32040 VALLE DI CADORE (BELLUNO)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       }
     ]
   },
@@ -1733,7 +2017,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 170,
         "geo_query_nome_indirizzo": "G. B. LOVADINA - CIMADOLMO VIA LOVADINA 1, 31010 CIMADOLMO (TREVISO)",
-        "geo_query_indirizzo": "VIA LOVADINA 1, 31010 CIMADOLMO (TREVISO)"
+        "geo_query_indirizzo": "VIA LOVADINA 1, 31010 CIMADOLMO (TREVISO)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "CESARE AMBROSETTO-S.POLO CAP.",
@@ -1756,7 +2044,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 87,
         "geo_query_nome_indirizzo": "CESARE AMBROSETTO-S.POLO CAP. VIA ROMA 36, 31020 SAN POLO DI PIAVE (TREVISO)",
-        "geo_query_indirizzo": "VIA ROMA 36, 31020 SAN POLO DI PIAVE (TREVISO)"
+        "geo_query_indirizzo": "VIA ROMA 36, 31020 SAN POLO DI PIAVE (TREVISO)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "DANTE ALIGHIERI - ORMELLE",
@@ -1779,7 +2071,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 109,
         "geo_query_nome_indirizzo": "DANTE ALIGHIERI - ORMELLE VIA ROMANA 4, 31024 ORMELLE (TREVISO)",
-        "geo_query_indirizzo": "VIA ROMANA 4, 31024 ORMELLE (TREVISO)"
+        "geo_query_indirizzo": "VIA ROMANA 4, 31024 ORMELLE (TREVISO)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "SCUOLA PRIMARIA PARITARIA \"BRANDOLINI ROTA\"",
@@ -1789,8 +2085,8 @@
         "codice_univoco": "p2232_p1799",
         "zona": "3204",
         "data_consegna": "15-04-2026",
-        "orario_min": "07:30",
-        "orario_max": "14:00",
+        "orario_min": "07:00",
+        "orario_max": "10:00",
         "lat": 45.7773374,
         "lon": 12.5044638,
         "codici_ddt_frutta": [
@@ -1802,7 +2098,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 414,
         "geo_query_nome_indirizzo": "SCUOLA PRIMARIA PARITARIA \"BRANDOLINI ROTA\" VIA BRANDOLINI N. 6, 31046 ODERZO (TREVISO)",
-        "geo_query_indirizzo": "VIA BRANDOLINI N. 6, 31046 ODERZO (TREVISO)"
+        "geo_query_indirizzo": "VIA BRANDOLINI N. 6, 31046 ODERZO (TREVISO)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "07:00",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "FRANCESCO DALL'ONGARO - MANSUE'",
@@ -1825,7 +2125,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 162,
         "geo_query_nome_indirizzo": "FRANCESCO DALL'ONGARO - MANSUE' V.LE PAOLO MOLIN 9, 31040 MANSUE' (TREVISO)",
-        "geo_query_indirizzo": "V.LE PAOLO MOLIN 9, 31040 MANSUE' (TREVISO)"
+        "geo_query_indirizzo": "V.LE PAOLO MOLIN 9, 31040 MANSUE' (TREVISO)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "S. PIO X - MEDUNA DI L.",
@@ -1848,7 +2152,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 342,
         "geo_query_nome_indirizzo": "S. PIO X - MEDUNA DI L. VIA S. BELLINO 18, 31040 MEDUNA DI LIVENZA (TREVISO)",
-        "geo_query_indirizzo": "VIA S. BELLINO 18, 31040 MEDUNA DI LIVENZA (TREVISO)"
+        "geo_query_indirizzo": "VIA S. BELLINO 18, 31040 MEDUNA DI LIVENZA (TREVISO)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "A. MANZONI - SAN GIOVANNI",
@@ -1871,7 +2179,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 39,
         "geo_query_nome_indirizzo": "A. MANZONI - SAN GIOVANNI VIA CORRADO GINI 20, 31045 MOTTA DI LIVENZA (TREVISO)",
-        "geo_query_indirizzo": "VIA CORRADO GINI 20, 31045 MOTTA DI LIVENZA (TREVISO)"
+        "geo_query_indirizzo": "VIA CORRADO GINI 20, 31045 MOTTA DI LIVENZA (TREVISO)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "ALEANDRO - MOTTA DI L. CAP.",
@@ -1894,7 +2206,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 54,
         "geo_query_nome_indirizzo": "ALEANDRO - MOTTA DI L. CAP. VIA MANZONI 2, 31045 MOTTA DI LIVENZA (TREVISO)",
-        "geo_query_indirizzo": "VIA MANZONI 2, 31045 MOTTA DI LIVENZA (TREVISO)"
+        "geo_query_indirizzo": "VIA MANZONI 2, 31045 MOTTA DI LIVENZA (TREVISO)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "ALBINO LUCIANI - GORGO CAP.",
@@ -1917,7 +2233,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 51,
         "geo_query_nome_indirizzo": "ALBINO LUCIANI - GORGO CAP. VIA ROMA60/1, 31040 GORGO AL MONTICANO (TREVISO)",
-        "geo_query_indirizzo": "VIA ROMA60/1, 31040 GORGO AL MONTICANO (TREVISO)"
+        "geo_query_indirizzo": "VIA ROMA60/1, 31040 GORGO AL MONTICANO (TREVISO)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "A. Volta - Chiarano",
@@ -1940,7 +2260,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 42,
         "geo_query_nome_indirizzo": "A. Volta - Chiarano Via Roma, 69/A, 31040 Chiarano (TV)",
-        "geo_query_indirizzo": "Via Roma, 69/A, 31040 Chiarano (TV)"
+        "geo_query_indirizzo": "Via Roma, 69/A, 31040 Chiarano (TV)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "SCUOLA PRIMARIA \"F. PASCON\"",
@@ -1963,7 +2287,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 383,
         "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"F. PASCON\" PIAZZA A. M. COLOMBO 4, 31040 SALGAREDA (TREVISO)",
-        "geo_query_indirizzo": "PIAZZA A. M. COLOMBO 4, 31040 SALGAREDA (TREVISO)"
+        "geo_query_indirizzo": "PIAZZA A. M. COLOMBO 4, 31040 SALGAREDA (TREVISO)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "SCUOLA PRIMARIA \"A. FOGAZZARO\"",
@@ -1986,7 +2314,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 379,
         "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"A. FOGAZZARO\" VIA DELLA VITTORIA 56, 31047 PONTE DI PIAVE (TREVISO)",
-        "geo_query_indirizzo": "VIA DELLA VITTORIA 56, 31047 PONTE DI PIAVE (TREVISO)"
+        "geo_query_indirizzo": "VIA DELLA VITTORIA 56, 31047 PONTE DI PIAVE (TREVISO)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "SCUOLA PRIMARIA \"A. MORO\"",
@@ -2009,7 +2341,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 380,
         "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"A. MORO\" VIA NICOLO' TOMMASEO 1, 31047 PONTE DI PIAVE (TREVISO)",
-        "geo_query_indirizzo": "VIA NICOLO' TOMMASEO 1, 31047 PONTE DI PIAVE (TREVISO)"
+        "geo_query_indirizzo": "VIA NICOLO' TOMMASEO 1, 31047 PONTE DI PIAVE (TREVISO)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       },
       {
         "nome": "SCUOLA PRIMARIA \"DON L. MILANI\"",
@@ -2032,7 +2368,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 381,
         "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"DON L. MILANI\" VIA AMPELIO DE FAVERI 1, 31040 PONTE DI PIAVE (TREVISO)",
-        "geo_query_indirizzo": "VIA AMPELIO DE FAVERI 1, 31040 PONTE DI PIAVE (TREVISO)"
+        "geo_query_indirizzo": "VIA AMPELIO DE FAVERI 1, 31040 PONTE DI PIAVE (TREVISO)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       }
     ]
   },
@@ -2066,7 +2406,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 181,
         "geo_query_nome_indirizzo": "G.Marconi Via Seminario,34, 30026 Portogruaro (VE)",
-        "geo_query_indirizzo": "Via Seminario,34, 30026 Portogruaro (VE)"
+        "geo_query_indirizzo": "Via Seminario,34, 30026 Portogruaro (VE)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       }
     ]
   },
@@ -2101,7 +2445,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "Caduti Per La Liberta Calvene Piazza Resistenza 5, 36030 Calvene (VI)",
-        "geo_query_indirizzo": "Piazza Resistenza 5, 36030 Calvene (VI)"
+        "geo_query_indirizzo": "Piazza Resistenza 5, 36030 Calvene (VI)",
+        "orario_min_frutta": "",
+        "orario_max_frutta": "",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "\"E. DE AMICIS\"",
@@ -2124,7 +2472,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 11,
         "geo_query_nome_indirizzo": "\"E. DE AMICIS\" VIA DIV. JULIA, 36030 CALTRANO (VICENZA)",
-        "geo_query_indirizzo": "VIA DIV. JULIA, 36030 CALTRANO (VICENZA)"
+        "geo_query_indirizzo": "VIA DIV. JULIA, 36030 CALTRANO (VICENZA)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "08:00",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "DON P. COSTA",
@@ -2135,7 +2487,7 @@
         "zona": "3109",
         "data_consegna": "15-04-2026",
         "orario_min": "07:45",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 45.7479583,
         "lon": 11.4276845,
         "codici_ddt_frutta": [
@@ -2147,7 +2499,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 128,
         "geo_query_nome_indirizzo": "DON P. COSTA VIA LENGORE 6, 36013 PIOVENE ROCCHETTE (VICENZA)",
-        "geo_query_indirizzo": "VIA LENGORE 6, 36013 PIOVENE ROCCHETTE (VICENZA)"
+        "geo_query_indirizzo": "VIA LENGORE 6, 36013 PIOVENE ROCCHETTE (VICENZA)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "G.Pascoli",
@@ -2158,7 +2514,7 @@
         "zona": "3109",
         "data_consegna": "15-04-2026",
         "orario_min": "07:45",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 45.76215019586976,
         "lon": 11.430326410867515,
         "codici_ddt_frutta": [
@@ -2170,7 +2526,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 184,
         "geo_query_nome_indirizzo": "G.Pascoli Piazza Vittoria 1, 36013 Piovene Rocchette (VI)",
-        "geo_query_indirizzo": "Piazza Vittoria 1, 36013 Piovene Rocchette (VI)"
+        "geo_query_indirizzo": "Piazza Vittoria 1, 36013 Piovene Rocchette (VI)",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "\"GRANATIERI DI SARDEGNA\"",
@@ -2180,8 +2540,8 @@
         "codice_univoco": "p2134_p1966",
         "zona": "3109",
         "data_consegna": "15-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
         "lat": 45.7875247,
         "lon": 11.4181171,
         "codici_ddt_frutta": [
@@ -2193,7 +2553,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 17,
         "geo_query_nome_indirizzo": "\"GRANATIERI DI SARDEGNA\" VIA DAL ZOTTO, 36010 COGOLLO DEL CENGIO (VICENZA)",
-        "geo_query_indirizzo": "VIA DAL ZOTTO, 36010 COGOLLO DEL CENGIO (VICENZA)"
+        "geo_query_indirizzo": "VIA DAL ZOTTO, 36010 COGOLLO DEL CENGIO (VICENZA)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "IC ARSIERO -ARSIERO CAP.",
@@ -2216,7 +2580,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "IC ARSIERO -ARSIERO CAP. VIA MONTE PRIAFORA' 2, 36011 ARSIERO (VICENZA)",
-        "geo_query_indirizzo": "VIA MONTE PRIAFORA' 2, 36011 ARSIERO (VICENZA)"
+        "geo_query_indirizzo": "VIA MONTE PRIAFORA' 2, 36011 ARSIERO (VICENZA)",
+        "orario_min_frutta": "",
+        "orario_max_frutta": "",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "IC ARSIERO -TONEZZA",
@@ -2239,7 +2607,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "IC ARSIERO -TONEZZA VIA DELLA CASARA 4/A, 36040 TONEZZA DEL CIMONE (VICENZA)",
-        "geo_query_indirizzo": "VIA DELLA CASARA 4/A, 36040 TONEZZA DEL CIMONE (VICENZA)"
+        "geo_query_indirizzo": "VIA DELLA CASARA 4/A, 36040 TONEZZA DEL CIMONE (VICENZA)",
+        "orario_min_frutta": "",
+        "orario_max_frutta": "",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "IC ARSIERO -VALDASTICO",
@@ -2262,7 +2634,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "IC ARSIERO -VALDASTICO VIA VITTORIO VENETO 2/A, 36040 VALDASTICO (VICENZA)",
-        "geo_query_indirizzo": "VIA VITTORIO VENETO 2/A, 36040 VALDASTICO (VICENZA)"
+        "geo_query_indirizzo": "VIA VITTORIO VENETO 2/A, 36040 VALDASTICO (VICENZA)",
+        "orario_min_frutta": "",
+        "orario_max_frutta": "",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "IC ARSIERO -PEDEMONTE",
@@ -2285,7 +2661,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "IC ARSIERO -PEDEMONTE VIA BRANCAFORA 15, 36040 PEDEMONTE (VICENZA)",
-        "geo_query_indirizzo": "VIA BRANCAFORA 15, 36040 PEDEMONTE (VICENZA)"
+        "geo_query_indirizzo": "VIA BRANCAFORA 15, 36040 PEDEMONTE (VICENZA)",
+        "orario_min_frutta": "",
+        "orario_max_frutta": "",
+        "orario_min_latte": "08:15",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "IC ARSIERO -POSINA",
@@ -2308,7 +2688,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 461,
         "geo_query_nome_indirizzo": "IC ARSIERO -POSINA VIA SAREO 10/A, 36010 POSINA (VICENZA)",
-        "geo_query_indirizzo": "VIA SAREO 10/A, 36010 POSINA (VICENZA)"
+        "geo_query_indirizzo": "VIA SAREO 10/A, 36010 POSINA (VICENZA)",
+        "orario_min_frutta": "",
+        "orario_max_frutta": "",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00"
       },
       {
         "nome": "Bruno Brandellero",
@@ -2319,7 +2703,7 @@
         "zona": "3109",
         "data_consegna": "15-04-2026",
         "orario_min": "08:00",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 45.7399296,
         "lon": 11.2608845,
         "codici_ddt_frutta": [
@@ -2331,7 +2715,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 72,
         "geo_query_nome_indirizzo": "Bruno Brandellero Via Mons. P. Bicego 2, 36030 Valli Del Pasubio (VI)",
-        "geo_query_indirizzo": "Via Mons. P. Bicego 2, 36030 Valli Del Pasubio (VI)"
+        "geo_query_indirizzo": "Via Mons. P. Bicego 2, 36030 Valli Del Pasubio (VI)",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       }
     ]
   },
@@ -2365,7 +2753,11 @@
         "rientri_alert": [],
         "row_idx_mappatura": 419,
         "geo_query_nome_indirizzo": "SCUOLA PRIMARIA S. G. BOSCO VIA DEI DECORATI 4, 36022 CASSOLA (VICENZA)",
-        "geo_query_indirizzo": "VIA DEI DECORATI 4, 36022 CASSOLA (VICENZA)"
+        "geo_query_indirizzo": "VIA DEI DECORATI 4, 36022 CASSOLA (VICENZA)",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": ""
       }
     ]
   }

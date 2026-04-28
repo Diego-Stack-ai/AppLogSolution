@@ -312,7 +312,18 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path):
                 <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">home</span></div>
                     <div class="stop-info"><span class="depot-tag">PARTENZA</span><br><b style="font-size:0.9rem;">Deposito Veggiano</b></div>
                 </div>
-                { "".join([f'''<div class="stop-card" onclick="panTo({i+1})"><div class="stop-num">{i+1}</div><div style="flex:1;"><b style="font-size:0.85rem; color:#1e293b;">{p['nome']}</b><br><small style="color:#64748b; font-size:0.75rem;">{p['indirizzo']}</small></div><a href="https://www.google.com/maps/dir/?api=1&destination={p['lat']},{p['lon']}&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a></div>''' for i, p in enumerate(percorso)]) }
+                { "".join([f'''
+<div class="stop-card" onclick="panTo({i+1})" style="{'background:#fff1f2; border-color:#fecaca;' if '10:00' in str(p.get('orario_max','')) else ''}">
+  <div class="stop-num" style="background:{'#ef4444' if '10:00' in str(p.get('orario_max','')) else 'var(--p)'}">{i+1}</div>
+  <div style="flex:1;">
+    <div style="display:flex; align-items:center; gap:6px;">
+      <b style="font-size:0.85rem; color:#1e293b;">{p['nome']}</b>
+      {"<span style='background:#ef4444;color:white;font-size:0.6rem;font-weight:900;padding:2px 6px;border-radius:4px;'>H10</span>" if '10:00' in str(p.get('orario_max','')) else ""}
+    </div>
+    <small style="color:#64748b; font-size:0.75rem;">{p['indirizzo']}</small>
+  </div>
+  <a href="https://www.google.com/maps/dir/?api=1&destination={p['lat']},{p['lon']}&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a>
+</div>''' for i, p in enumerate(percorso)]) }
                 <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">flag</span></div>
                     <div class="stop-info"><span class="depot-tag">ARRIVO</span><br><b style="font-size:0.9rem;">Deposito Veggiano</b></div>
                 </div>
@@ -372,10 +383,11 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path):
         }}
 
         function addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement) {{
+            const isH10 = !isD && p.orario_max === '10:00';
             const m = new AdvancedMarkerElement({{
                 map,
                 position: {{ lat: p.lat, lng: p.lon }},
-                content: createPin(i, isD),
+                content: createPin(i, isD, isH10),
                 title: p.nome
             }});
             markers[i] = m;
@@ -383,12 +395,15 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path):
             map.fitBounds(bounds);
         }}
 
-        function createPin(idx, isD) {{
-            const d = document.createElement("div"); d.style.background = isD ? "#475569" : "#4f46e5";
-            d.style.color = "white"; d.style.width = "26px"; d.style.height = "26px"; d.style.borderRadius = "50%"; 
-            d.style.display = "flex"; d.style.alignItems = "center"; d.style.justifyContent = "center";
-            d.style.fontSize = "11px"; d.style.fontWeight = "900"; d.style.border = "3px solid white";
-            d.innerText = isD ? "" : idx; if(isD) d.innerHTML = '<span class="material-icons-round" style="font-size:14px">home</span>';
+        function createPin(idx, isD, isH10) {{
+            const color = isD ? '#475569' : (isH10 ? '#ef4444' : '#4f46e5');
+            const d = document.createElement('div'); d.style.background = color;
+            d.style.color = 'white'; d.style.width = '26px'; d.style.height = '26px'; d.style.borderRadius = '50%'; 
+            d.style.display = 'flex'; d.style.alignItems = 'center'; d.style.justifyContent = 'center';
+            d.style.fontSize = '11px'; d.style.fontWeight = '900'; d.style.border = '3px solid white';
+            d.style.boxShadow = isH10 ? '0 0 0 2px #ef4444' : 'none';
+            d.innerText = isD ? '' : idx;
+            if (isD) d.innerHTML = '<span class="material-icons-round" style="font-size:14px">home</span>';
             return d;
         }}
 

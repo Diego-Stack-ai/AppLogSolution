@@ -16,6 +16,10 @@
         "codice_univoco": "p6618_p00000",
         "zona": "3106",
         "data_consegna": "28-04-2026",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "07:30",
+        "orario_max_latte": "10:00",
         "orario_min": "07:30",
         "orario_max": "10:00",
         "lat": 45.19040334865818,
@@ -39,8 +43,12 @@
         "codice_univoco": "p2066_p00000",
         "zona": "3106",
         "data_consegna": "28-04-2026",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": "",
         "orario_min": "08:00",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 45.30961682015293,
         "lon": 12.07423983558196,
         "codici_ddt_frutta": [
@@ -69,6 +77,10 @@
         "codice_frutta": "p2301",
         "codice_latte": "p1950",
         "data_consegna": "23-04-2026",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00",
         "orario_min": "07:45",
         "orario_max": "10:00",
         "lat": 45.8677942,
@@ -97,92 +109,15 @@
         "geo_query_indirizzo": "VIA MANZONI 27"
       },
       {
-        "nome": "Gianni Rodari - Col San Martino",
-        "indirizzo": "Via Giarentine 2",
-        "codice_frutta": "p13947",
-        "codice_latte": "p00000",
-        "data_consegna": "23-04-2026",
-        "orario_min": "08:15",
-        "orario_max": "14:00",
-        "lat": 45.8966595,
-        "lon": 12.0851042,
-        "zona": "DDT_DA_INSERIRE",
-        "codici_ddt_frutta": [
-          "p13947"
-        ],
-        "codici_ddt_latte": [],
-        "rientri_alert": [
-          {
-            "codice": "p13947",
-            "status": "red",
-            "data_ddt": "23-04-2026"
-          }
-        ],
-        "row_idx_mappatura": 249,
-        "_is_rientro_speciale": true,
-        "geo_query_nome_indirizzo": "Gianni Rodari - Col San Martino Via Giarentine 2",
-        "geo_query_indirizzo": "Via Giarentine 2"
-      },
-      {
-        "nome": "LORENZO MILANI - FARRA CAP.",
-        "indirizzo": "VIA DEI PATRIOTI 29",
-        "codice_frutta": "p8831",
-        "codice_latte": "p00000",
-        "data_consegna": "23-04-2026",
-        "orario_min": "08:15",
-        "orario_max": "14:00",
-        "lat": 45.9056039,
-        "lon": 12.1269508,
-        "zona": "DDT_DA_INSERIRE",
-        "codici_ddt_frutta": [
-          "p8831"
-        ],
-        "codici_ddt_latte": [],
-        "rientri_alert": [
-          {
-            "codice": "p8831",
-            "status": "red",
-            "data_ddt": "23-04-2026"
-          }
-        ],
-        "row_idx_mappatura": 205,
-        "_is_rientro_speciale": true,
-        "geo_query_nome_indirizzo": "LORENZO MILANI - FARRA CAP. VIA DEI PATRIOTI 29",
-        "geo_query_indirizzo": "VIA DEI PATRIOTI 29"
-      },
-      {
-        "nome": "G.ANCILLOTTO - SOLIGO",
-        "indirizzo": "VIA DEI COLLI 25",
-        "codice_frutta": "p8767",
-        "codice_latte": "p00000",
-        "data_consegna": "23-04-2026",
-        "orario_min": "08:15",
-        "orario_max": "14:00",
-        "lat": 45.9097342,
-        "lon": 12.1524089,
-        "zona": "DDT_DA_INSERIRE",
-        "codici_ddt_frutta": [
-          "p8767"
-        ],
-        "codici_ddt_latte": [],
-        "rientri_alert": [
-          {
-            "codice": "p8767",
-            "status": "red",
-            "data_ddt": "23-04-2026"
-          }
-        ],
-        "row_idx_mappatura": 195,
-        "_is_rientro_speciale": true,
-        "geo_query_nome_indirizzo": "G.ANCILLOTTO - SOLIGO VIA DEI COLLI 25",
-        "geo_query_indirizzo": "VIA DEI COLLI 25"
-      },
-      {
         "nome": "O.DE GASPARI FALZE' DI P.",
         "indirizzo": "VIA DONATORI DEL SANGUE 4",
         "codice_frutta": "p2302",
         "codice_latte": "p1951",
         "data_consegna": "23-04-2026",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00",
         "orario_min": "07:45",
         "orario_max": "10:00",
         "lat": 45.86008859765876,
@@ -216,6 +151,10 @@
         "codice_frutta": "p2357",
         "codice_latte": "p1704",
         "data_consegna": "23-04-2026",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "08:15",
+        "orario_max_latte": "10:00",
         "orario_min": "08:00",
         "orario_max": "10:00",
         "lat": 45.8977212304539,
@@ -249,8 +188,12 @@
         "codice_frutta": "p2355",
         "codice_latte": "p1792",
         "data_consegna": "23-04-2026",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "08:00",
+        "orario_max_latte": "10:00",
         "orario_min": "07:45",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 45.91723,
         "lon": 12.2539765,
         "zona": "DDT_DA_INSERIRE",
@@ -282,8 +225,12 @@
         "codice_frutta": "p2356",
         "codice_latte": "p1794",
         "data_consegna": "23-04-2026",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "08:00",
+        "orario_max_latte": "10:00",
         "orario_min": "08:00",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 45.9122035,
         "lon": 12.2722528,
         "zona": "DDT_DA_INSERIRE",
@@ -310,67 +257,17 @@
         "geo_query_indirizzo": "VIA GORIZIA 1"
       },
       {
-        "nome": "D. ALIGHIERI",
-        "indirizzo": "VIA ZANDONAI 14",
-        "codice_frutta": "p6525",
-        "codice_latte": "p00000",
-        "data_consegna": "23-04-2026",
-        "orario_min": "07:30",
-        "orario_max": "14:00",
-        "lat": 45.89992267108354,
-        "lon": 12.29295163201003,
-        "zona": "DDT_DA_INSERIRE",
-        "codici_ddt_frutta": [
-          "p6525"
-        ],
-        "codici_ddt_latte": [],
-        "rientri_alert": [
-          {
-            "codice": "p6525",
-            "status": "red",
-            "data_ddt": "23-04-2026"
-          }
-        ],
-        "row_idx_mappatura": 179,
-        "_is_rientro_speciale": true,
-        "geo_query_nome_indirizzo": "D. ALIGHIERI VIA ZANDONAI 14",
-        "geo_query_indirizzo": "VIA ZANDONAI 14"
-      },
-      {
-        "nome": "LA NOSTRA FAMIGLIA",
-        "indirizzo": "VIA COSTA ALTA",
-        "codice_frutta": "p8847",
-        "codice_latte": "p00000",
-        "data_consegna": "23-04-2026",
-        "orario_min": "07:30",
-        "orario_max": "14:00",
-        "lat": 45.8957981947636,
-        "lon": 12.28623942204878,
-        "zona": "DDT_DA_INSERIRE",
-        "codici_ddt_frutta": [
-          "p8847"
-        ],
-        "codici_ddt_latte": [],
-        "rientri_alert": [
-          {
-            "codice": "p8847",
-            "status": "red",
-            "data_ddt": "23-04-2026"
-          }
-        ],
-        "row_idx_mappatura": 204,
-        "_is_rientro_speciale": true,
-        "geo_query_nome_indirizzo": "LA NOSTRA FAMIGLIA VIA COSTA ALTA",
-        "geo_query_indirizzo": "VIA COSTA ALTA"
-      },
-      {
         "nome": "SCUOLA PRIMARIA \" PIANCA SCHOOL \"",
         "indirizzo": "VIA GIUNTI N°12/A",
         "codice_frutta": "p2254",
         "codice_latte": "p1861",
         "data_consegna": "23-04-2026",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "08:00",
+        "orario_max_latte": "10:00",
         "orario_min": "08:00",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 45.8780224,
         "lon": 12.2770314,
         "zona": "DDT_DA_INSERIRE",
@@ -397,40 +294,17 @@
         "geo_query_indirizzo": "VIA GIUNTI N°12/A"
       },
       {
-        "nome": "\"GIANNI RODARI\" - PARE'",
-        "indirizzo": "VIA EINAUDI 110",
-        "codice_frutta": "p2353",
-        "codice_latte": "p00000",
-        "data_consegna": "23-04-2026",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 45.8717147,
-        "lon": 12.2731564,
-        "zona": "DDT_DA_INSERIRE",
-        "codici_ddt_frutta": [
-          "p2353"
-        ],
-        "codici_ddt_latte": [],
-        "rientri_alert": [
-          {
-            "codice": "p2353",
-            "status": "red",
-            "data_ddt": "23-04-2026"
-          }
-        ],
-        "row_idx_mappatura": 164,
-        "_is_rientro_speciale": true,
-        "geo_query_nome_indirizzo": "\"GIANNI RODARI\" - PARE' VIA EINAUDI 110",
-        "geo_query_indirizzo": "VIA EINAUDI 110"
-      },
-      {
         "nome": "DON ORFEO MANTOVANI-V.DEI MILLE",
         "indirizzo": "VIA DEI MILLE 42",
         "codice_frutta": "p2354",
         "codice_latte": "p1793",
         "data_consegna": "23-04-2026",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "08:00",
+        "orario_max_latte": "10:00",
         "orario_min": "08:00",
-        "orario_max": "14:00",
+        "orario_max": "10:00",
         "lat": 45.8726659,
         "lon": 12.2846529,
         "zona": "DDT_DA_INSERIRE",
@@ -457,11 +331,46 @@
         "geo_query_indirizzo": "VIA DEI MILLE 42"
       },
       {
+        "nome": "\"GIANNI RODARI\" - PARE'",
+        "indirizzo": "VIA EINAUDI 110",
+        "codice_frutta": "p2353",
+        "codice_latte": "p00000",
+        "data_consegna": "23-04-2026",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": "",
+        "orario_min": "08:00",
+        "orario_max": "14:00",
+        "lat": 45.8717147,
+        "lon": 12.2731564,
+        "zona": "DDT_DA_INSERIRE",
+        "codici_ddt_frutta": [
+          "p2353"
+        ],
+        "codici_ddt_latte": [],
+        "rientri_alert": [
+          {
+            "codice": "p2353",
+            "status": "red",
+            "data_ddt": "23-04-2026"
+          }
+        ],
+        "row_idx_mappatura": 164,
+        "_is_rientro_speciale": true,
+        "geo_query_nome_indirizzo": "\"GIANNI RODARI\" - PARE' VIA EINAUDI 110",
+        "geo_query_indirizzo": "VIA EINAUDI 110"
+      },
+      {
         "nome": "CAMPOLONGO",
         "indirizzo": "VIA VITAL 120",
         "codice_frutta": "p13495",
         "codice_latte": "p00000",
         "data_consegna": "23-04-2026",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": "",
         "orario_min": "07:30",
         "orario_max": "14:00",
         "lat": 45.8663868,
@@ -482,6 +391,161 @@
         "_is_rientro_speciale": true,
         "geo_query_nome_indirizzo": "CAMPOLONGO VIA VITAL 120",
         "geo_query_indirizzo": "VIA VITAL 120"
+      },
+      {
+        "nome": "D. ALIGHIERI",
+        "indirizzo": "VIA ZANDONAI 14",
+        "codice_frutta": "p6525",
+        "codice_latte": "p00000",
+        "data_consegna": "23-04-2026",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": "",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.8991163,
+        "lon": 12.2924438,
+        "zona": "DDT_DA_INSERIRE",
+        "codici_ddt_frutta": [
+          "p6525"
+        ],
+        "codici_ddt_latte": [],
+        "rientri_alert": [
+          {
+            "codice": "p6525",
+            "status": "red",
+            "data_ddt": "23-04-2026"
+          }
+        ],
+        "row_idx_mappatura": 179,
+        "_is_rientro_speciale": true,
+        "geo_query_nome_indirizzo": "D. ALIGHIERI VIA ZANDONAI 14",
+        "geo_query_indirizzo": "VIA ZANDONAI 14"
+      },
+      {
+        "nome": "LA NOSTRA FAMIGLIA",
+        "indirizzo": "VIA COSTA ALTA",
+        "codice_frutta": "p8847",
+        "codice_latte": "p00000",
+        "data_consegna": "23-04-2026",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": "",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.9044641,
+        "lon": 12.2747095,
+        "zona": "DDT_DA_INSERIRE",
+        "codici_ddt_frutta": [
+          "p8847"
+        ],
+        "codici_ddt_latte": [],
+        "rientri_alert": [
+          {
+            "codice": "p8847",
+            "status": "red",
+            "data_ddt": "23-04-2026"
+          }
+        ],
+        "row_idx_mappatura": 204,
+        "_is_rientro_speciale": true,
+        "geo_query_nome_indirizzo": "LA NOSTRA FAMIGLIA VIA COSTA ALTA",
+        "geo_query_indirizzo": "VIA COSTA ALTA"
+      },
+      {
+        "nome": "G.ANCILLOTTO - SOLIGO",
+        "indirizzo": "VIA DEI COLLI 25",
+        "codice_frutta": "p8767",
+        "codice_latte": "p00000",
+        "data_consegna": "23-04-2026",
+        "orario_min_frutta": "08:15",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": "",
+        "orario_min": "08:15",
+        "orario_max": "14:00",
+        "lat": 45.9097342,
+        "lon": 12.1524089,
+        "zona": "DDT_DA_INSERIRE",
+        "codici_ddt_frutta": [
+          "p8767"
+        ],
+        "codici_ddt_latte": [],
+        "rientri_alert": [
+          {
+            "codice": "p8767",
+            "status": "red",
+            "data_ddt": "23-04-2026"
+          }
+        ],
+        "row_idx_mappatura": 195,
+        "_is_rientro_speciale": true,
+        "geo_query_nome_indirizzo": "G.ANCILLOTTO - SOLIGO VIA DEI COLLI 25",
+        "geo_query_indirizzo": "VIA DEI COLLI 25"
+      },
+      {
+        "nome": "LORENZO MILANI - FARRA CAP.",
+        "indirizzo": "VIA DEI PATRIOTI 29",
+        "codice_frutta": "p8831",
+        "codice_latte": "p00000",
+        "data_consegna": "23-04-2026",
+        "orario_min_frutta": "08:15",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": "",
+        "orario_min": "08:15",
+        "orario_max": "14:00",
+        "lat": 45.9056039,
+        "lon": 12.1269508,
+        "zona": "DDT_DA_INSERIRE",
+        "codici_ddt_frutta": [
+          "p8831"
+        ],
+        "codici_ddt_latte": [],
+        "rientri_alert": [
+          {
+            "codice": "p8831",
+            "status": "red",
+            "data_ddt": "23-04-2026"
+          }
+        ],
+        "row_idx_mappatura": 205,
+        "_is_rientro_speciale": true,
+        "geo_query_nome_indirizzo": "LORENZO MILANI - FARRA CAP. VIA DEI PATRIOTI 29",
+        "geo_query_indirizzo": "VIA DEI PATRIOTI 29"
+      },
+      {
+        "nome": "Gianni Rodari - Col San Martino",
+        "indirizzo": "Via Giarentine 2",
+        "codice_frutta": "p13947",
+        "codice_latte": "p00000",
+        "data_consegna": "23-04-2026",
+        "orario_min_frutta": "08:15",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": "",
+        "orario_min": "08:15",
+        "orario_max": "14:00",
+        "lat": 45.8966595,
+        "lon": 12.0851042,
+        "zona": "DDT_DA_INSERIRE",
+        "codici_ddt_frutta": [
+          "p13947"
+        ],
+        "codici_ddt_latte": [],
+        "rientri_alert": [
+          {
+            "codice": "p13947",
+            "status": "red",
+            "data_ddt": "23-04-2026"
+          }
+        ],
+        "row_idx_mappatura": 249,
+        "_is_rientro_speciale": true,
+        "geo_query_nome_indirizzo": "Gianni Rodari - Col San Martino Via Giarentine 2",
+        "geo_query_indirizzo": "Via Giarentine 2"
       }
     ]
   },
@@ -489,7 +553,7 @@
     "nome_giro": "V03",
     "file_sorgente": "V03_Zone_3207.html",
     "zone": [
-      "3207_B_B"
+      "3207_B"
     ],
     "num_fermate": 1,
     "data_ddt": "28-04-2026",
@@ -500,8 +564,12 @@
         "codice_frutta": "p2056",
         "codice_latte": "p00000",
         "codice_univoco": "p2056_p00000",
-        "zona": "3207_B_B",
+        "zona": "3207_B",
         "data_consegna": "28-04-2026",
+        "orario_min_frutta": "08:15",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "08:15",
+        "orario_max_latte": "10:00",
         "orario_min": "08:15",
         "orario_max": "10:00",
         "lat": 45.67766254908982,

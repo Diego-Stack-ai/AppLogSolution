@@ -33,7 +33,11 @@ if %ERRORLEVEL% neq 0 (
 echo.
 echo ---------------------------------------------------------
 echo OPERAZIONE COMPLETATA!
-echo I file sono nella cartella CONSEGNE/CONSEGNE_[DATA]/PERCORSI_VEGGIANO/
-echo ---------------------------------------------------------
+echo I file HTML base sono stati creati.
+echo.
+echo =========================================================
+echo  AVVIO EDITOR INTERATTIVO (H10 e Modifiche Manuali)
+echo =========================================================
+python "PROGRAMMA\10_editor_percorsi_manuali.py"
 echo.
 pause

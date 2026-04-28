@@ -116,23 +116,10 @@ def _geocodifica_punto(punto: dict, cache: dict) -> tuple[float, float] | None:
     return None
 
 def _aggiorna_mappatura_coord(row_idx: int, lat: float, lon: float):
-    """Salva le coordinate trovate su mappatura_destinazioni.xlsx (permanente)."""
-    path = PROG_DIR / "mappatura_destinazioni.xlsx"
-    if not path.exists() or row_idx is None:
-        return
-    try:
-        from openpyxl import load_workbook
-        wb = load_workbook(path)
-        ws = wb.active
-        # Colonne Latitudine=13 (M), Longitudine=14 (N) — adatta se diverse
-        row = ws[row_idx]
-        ws.cell(row=row_idx, column=13, value=lat)
-        ws.cell(row=row_idx, column=14, value=lon)
-        wb.save(path)
-    except PermissionError:
-        print(f"    ⚠️  mappatura_destinazioni.xlsx è aperto — coordinate non salvate sull'Excel.")
-    except Exception as e:
-        print(f"    ⚠️  Errore salvataggio Excel: {e}")
+    """(Disabilitato) Non salva piu le coordinate trovate su mappatura_destinazioni.xlsx.
+    La mappatura e' aggiornabile solo manualmente tramite il Tool 5.
+    """
+    pass
 
 # --- UTILITY ---
 
@@ -287,6 +274,10 @@ def main():
             "codice_univoco": cod_univoco,  # chiave univoca stabile per il /save
             "zona": _val(p.get("zona")) or "0000",
             "data_consegna": _val(p.get("data_consegna")),
+            "orario_min_frutta": _val(p.get("orario_min_frutta")),
+            "orario_max_frutta": _val(p.get("orario_max_frutta")),
+            "orario_min_latte":  _val(p.get("orario_min_latte")),
+            "orario_max_latte":  _val(p.get("orario_max_latte")),
             "orario_min": _val(p.get("orario_min")),
             "orario_max": _val(p.get("orario_max")),
             "lat": p.get("latitudine"),
@@ -345,20 +336,41 @@ def main():
             primo_entry = codici_con_date[0]
             primo_codice = primo_entry["codice"]
             primo_data_orig = primo_entry["data"]
+            # Trova la posizione esatta delle colonne Latitudine e Longitudine
+            headers_m = [str(c.value or "").strip() for c in ws_m[1]]
+            col_lat = next((i for i, h in enumerate(headers_m) if h == "Latitudine"), 14)
+            col_lon = next((i for i, h in enumerate(headers_m) if h == "Longitudine"), 15)
+            
             nome_r = _val(row[2].value) or f"Rientro {primo_codice}"
             ind_r  = _val(row[4].value)
-            lat_r  = row[12].value
-            lon_r  = row[13].value
+            lat_r  = row[col_lat].value if col_lat < len(row) else None
+            lon_r  = row[col_lon].value if col_lon < len(row) else None
+            col_om_f = next((i for i, h in enumerate(headers_m) if h == "Orario min Frutta"), 10)
+            col_oM_f = next((i for i, h in enumerate(headers_m) if h == "Orario max Frutta"), 11)
+            col_om_l = next((i for i, h in enumerate(headers_m) if h == "Orario min Latte"), 12)
+            col_oM_l = next((i for i, h in enumerate(headers_m) if h == "Orario max Latte"), 13)
+            
+            om_f = _val(row[col_om_f].value) if col_om_f < len(row) else ""
+            oM_f = _val(row[col_oM_f].value) if col_oM_f < len(row) else ""
+            om_l = _val(row[col_om_l].value) if col_om_l < len(row) else ""
+            oM_l = _val(row[col_oM_l].value) if col_oM_l < len(row) else ""
+            
+            def _min_str(a, b):
+                if a and b: return a if a < b else b
+                return a or b
+
             punto_r = {
                 "nome": nome_r,
                 "indirizzo": ind_r,
                 "codice_frutta": _val(row[0].value),
                 "codice_latte":  _val(row[1].value),
-                # ← data originale del DDT (colonna B): indica la cartella CONSEGNE_ dove
-                #   si trova fisicamente il PDF. Usata da 9_genera_distinte per trovarlo.
                 "data_consegna": primo_data_orig or data,
-                "orario_min": _val(row[10].value),
-                "orario_max": _val(row[11].value),
+                "orario_min_frutta": om_f,
+                "orario_max_frutta": oM_f,
+                "orario_min_latte": om_l,
+                "orario_max_latte": oM_l,
+                "orario_min": _min_str(om_f, om_l),
+                "orario_max": _min_str(oM_f, oM_l),
                 "lat": lat_r,
                 "lon": lon_r,
                 "zona": "DDT_DA_INSERIRE",
@@ -410,7 +422,7 @@ def main():
         rimasti = len(senza_coord) - trovati
         print(f"  Geocoding completato: {trovati} trovati, {rimasti} ancora da posizionare manualmente.\n")
     else:
-        print("  ✅ Tutti i punti hanno già le coordinate.")
+        print("  OK Tutti i punti hanno gia' le coordinate.")
 
     out_json.write_text(json.dumps({"data": data, "punti": lista_finale}, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"  Punti totali: {len(lista_finale)} (Mappati: {mappati}, Fuori mappa: {fallback})")

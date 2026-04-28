@@ -421,7 +421,7 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
     from reportlab.lib.styles import ParagraphStyle
     st_titolo = ParagraphStyle("titolo", parent=styles["Heading1"], fontSize=14, spaceAfter=3)
     st_sub    = ParagraphStyle("sub",    parent=styles["Normal"],   fontSize=9,  spaceAfter=2)
-    st_body   = ParagraphStyle("body",   parent=styles["Normal"],   fontSize=8)
+    st_body   = ParagraphStyle("body",   parent=styles["Normal"],   fontSize=8,  leading=9)
     st_warn   = ParagraphStyle("warn",   parent=styles["Normal"],   fontSize=8, textColor=colors.red)
 
     nome_giro = viaggio.get("nome_giro", "?")
@@ -433,7 +433,6 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
     # Intestazione
     elementi.append(Paragraph(f"DISTINTA DI CARICO — {nome_giro}  [{label}]", st_titolo))
     elementi.append(Paragraph(f"Zone: {zone}  |  Fermate: {n_fermate}  |  Data: {data_ddt}", st_sub))
-    elementi.append(Paragraph("PERICOLO: Caricare nell'ordine inverso: l'ULTIMA fermata va caricata PER PRIMA.", st_warn))
     elementi.append(Spacer(1, 4*mm))
 
     # ── SEZIONE 1: ARTICOLI ──
@@ -449,10 +448,10 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
         codice_stampato = f"{art['codice_base']} {variante}".strip() if variante else art["codice_base"]
 
         dati_art.append([
-            codice_stampato,
-            art.get("descrizione", "")[:55], # Aumentato limite caratteri visto lo spazio extra
-            display or "—",
-            art.get("confezionamento", "")[:30] or "—",
+            Paragraph(codice_stampato, st_body),
+            Paragraph(art.get("descrizione", ""), st_body),
+            Paragraph(display or "—", st_body),
+            Paragraph(art.get("confezionamento", "") or "—", st_body),
         ])
     ts_art = TableStyle([
         ("BACKGROUND",     (0, 0), (-1, 0),  colors.HexColor("#10b981")),
@@ -461,8 +460,9 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f0fdf4")]),
         ("GRID",           (0, 0), (-1, -1), 0.3, colors.HexColor("#e2e8f0")),
         ("TEXTCOLOR",      (4, 1), (4, -1),  colors.red),
-        ("LEFTPADDING",    (0, 0), (-1, -1), 3),
-        ("RIGHTPADDING",   (0, 0), (-1, -1), 3),
+        ("LEFTPADDING",    (0, 0), (-1, -1), 2*mm),
+        ("RIGHTPADDING",   (0, 0), (-1, -1), 5*mm),
+        ("VALIGN",         (0, 0), (-1, -1), "TOP"),
     ])
     t_art = Table(dati_art, colWidths=[35*mm, 75*mm, 35*mm, 35*mm])
     t_art.setStyle(ts_art)
@@ -470,21 +470,20 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
     elementi.append(Spacer(1, 10*mm))
 
     # ── SEZIONE 2: LISTA CLIENTI ──
-    elementi.append(Paragraph("ORDINE DI CARICO (carica dal basso: N.1 = ultima fermata = primo da caricare):", st_body))
+    elementi.append(Paragraph("ORDINE DI CONSEGNA (Fermata 1 = Prima consegna):", st_body))
     fermate     = viaggio.get("lista_punti", [])
-    fermate_inv = list(reversed(fermate))
 
     # colonne: #, Cod.F, Cod.L, Nome, Indirizzo
     dati_fermate = [["#", "Cod. F", "Cod. L", "Nome", "Indirizzo"]]
-    for idx, f in enumerate(fermate_inv, 1):
+    for idx, f in enumerate(fermate, 1):
         cf = f.get("codice_frutta", "") or ""
         cl = f.get("codice_latte",  "") or ""
         dati_fermate.append([
-            str(idx),
-            cf if cf != CODICE_VUOTO else "—",
-            cl if cl != CODICE_VUOTO else "—",
-            f.get("nome", "")[:40],
-            f.get("indirizzo", "")[:50],
+            Paragraph(str(idx), st_body),
+            Paragraph(cf if cf != CODICE_VUOTO else "—", st_body),
+            Paragraph(cl if cl != CODICE_VUOTO else "—", st_body),
+            Paragraph(f.get("nome", ""), st_body),
+            Paragraph(f.get("indirizzo", ""), st_body),
         ])
     ts_fermate = TableStyle([
         ("BACKGROUND",     (0, 0), (-1, 0),  colors.HexColor("#1e293b")),
@@ -492,8 +491,9 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
         ("FONTSIZE",       (0, 0), (-1, -1), 7),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
         ("GRID",           (0, 0), (-1, -1), 0.3, colors.HexColor("#e2e8f0")),
-        ("LEFTPADDING",    (0, 0), (-1, -1), 3),
-        ("RIGHTPADDING",   (0, 0), (-1, -1), 3),
+        ("LEFTPADDING",    (0, 0), (-1, -1), 2*mm),
+        ("RIGHTPADDING",   (0, 0), (-1, -1), 5*mm),
+        ("VALIGN",         (0, 0), (-1, -1), "TOP"),
     ])
     t_fermate = Table(dati_fermate, colWidths=[8*mm, 22*mm, 22*mm, 50*mm, 65*mm])
     t_fermate.setStyle(ts_fermate)
@@ -742,7 +742,11 @@ def main():
 
             # Cerca nella cartella corretta per data (supporta rientri di altre date)
             if d_p != data_v:
-                cartella_r   = CONSEGNE_DIR / f"CONSEGNE_{d_p}"
+                try:
+                    cartella_r = _trova_cartella(d_p)
+                except Exception:
+                    cartella_r = CONSEGNE_DIR / f"CONSEGNE_{d_p}"
+                
                 dir_frutta_r = cartella_r / "DDT-ORIGINALI-DIVISI" / "FRUTTA"
                 dir_latte_r  = cartella_r / "DDT-ORIGINALI-DIVISI" / "LATTE"
             else:
@@ -768,8 +772,12 @@ def main():
                     for d_r in date_rientro:
                         # Segna come assegnato a un viaggio (indipendentemente dal ritrovamento del PDF)
                         rientri_assegnati.add((codice.lower(), d_r))
+                        try:
+                            cartella_r_base = _trova_cartella(d_r)
+                            cart_storica = cartella_r_base / "DDT-ORIGINALI-DIVISI"
+                        except Exception:
+                            cart_storica = CONSEGNE_DIR / f"CONSEGNE_{d_r}" / "DDT-ORIGINALI-DIVISI"
                         
-                        cart_storica = CONSEGNE_DIR / f"CONSEGNE_{d_r}" / "DDT-ORIGINALI-DIVISI"
                         for sotto in ["FRUTTA", "LATTE"]:
                             pdf_found = _trova_pdf(codice, d_r, cart_storica / sotto)
                             if pdf_found:

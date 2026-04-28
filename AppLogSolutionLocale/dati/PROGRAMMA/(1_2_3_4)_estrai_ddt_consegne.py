@@ -125,22 +125,59 @@ def _ricava_date_da_pdf() -> list[str]:
     return sorted(date_trovate)
 
 
-def _leggi_codici_mappatura():
-    if not MAPPATURA_XLSX.exists(): return set()
+def _leggi_codici_mappatura() -> dict:
+    """Restituisce {codice: (row_idx, om_frutta, oM_frutta, om_latte, oM_latte)}."""
+    if not MAPPATURA_XLSX.exists(): return {}
     try:
         from openpyxl import load_workbook
         wb = load_workbook(MAPPATURA_XLSX, read_only=True, data_only=True)
         ws = wb.active
-        codici = set()
-        for row in ws.iter_rows(min_row=2, max_col=2):
-            for cell in row:
-                val = str(cell.value or "").strip().lower()
-                if val and val != "p00000": codici.add(val)
+        headers = [str(c.value or "").strip() for c in ws[1]]
+        col_om_f = next((i for i, h in enumerate(headers) if h == "Orario min Frutta"), 10)
+        col_oM_f = next((i for i, h in enumerate(headers) if h == "Orario max Frutta"), 11)
+        col_om_l = next((i for i, h in enumerate(headers) if h == "Orario min Latte"),  12)
+        col_oM_l = next((i for i, h in enumerate(headers) if h == "Orario max Latte"),  13)
+        codici = {}
+        for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
+            vals = [c.value for c in row]
+            def _v(x): return str(x).strip() if x is not None else ""
+            c_f = _v(vals[0]).lower()
+            c_l = _v(vals[1]).lower() if len(vals) > 1 else ""
+            om_f = _v(vals[col_om_f]) if col_om_f < len(vals) else ""
+            oM_f = _v(vals[col_oM_f]) if col_oM_f < len(vals) else ""
+            om_l = _v(vals[col_om_l]) if col_om_l < len(vals) else ""
+            oM_l = _v(vals[col_oM_l]) if col_oM_l < len(vals) else ""
+            if c_f and c_f != "p00000": codici[c_f] = (row_idx, om_f, oM_f, om_l, oM_l)
+            if c_l and c_l != "p00000": codici[c_l] = (row_idx, om_f, oM_f, om_l, oM_l)
         wb.close()
         return codici
     except Exception as e:
         print(f"⚠️ Errore mappatura: {e}")
-        return set()
+        return {}
+
+
+def _aggiorna_orari_mappatura(row_idx: int, orario_min: str, orario_max: str, tipo: str):
+    """Scrive Orario min/max sulla colonna FRUTTA o LATTE in mappatura_destinazioni.xlsx."""
+    if not MAPPATURA_XLSX.exists() or not row_idx: return
+    tipo_cap = tipo.capitalize()  # "Frutta" o "Latte"
+    try:
+        from openpyxl import load_workbook
+        wb = load_workbook(MAPPATURA_XLSX)
+        ws = wb.active
+        headers = [str(c.value or "").strip() for c in ws[1]]
+        col_om = next((i + 1 for i, h in enumerate(headers) if h == f"Orario min {tipo_cap}"), None)
+        col_oM = next((i + 1 for i, h in enumerate(headers) if h == f"Orario max {tipo_cap}"), None)
+        if col_om is None or col_oM is None:
+            print(f"    ⚠️  Colonne orario {tipo_cap} non trovate in mappatura.")
+            return
+        if orario_min: ws.cell(row=row_idx, column=col_om, value=orario_min)
+        if orario_max: ws.cell(row=row_idx, column=col_oM, value=orario_max)
+        wb.save(MAPPATURA_XLSX)
+        print(f"    ✅ Mappatura [{tipo_cap}] riga {row_idx}: min={orario_min or '—'}  max={orario_max or '—'}")
+    except PermissionError:
+        print(f"    ⚠️  mappatura_destinazioni.xlsx e' aperto — orari non aggiornati.")
+    except Exception as e:
+        print(f"    ⚠️  Errore aggiornamento orari: {e}")
 
 
 def _verifica_nuovi_clienti(dati_nuovi: dict):
@@ -171,9 +208,10 @@ def _verifica_nuovi_clienti(dati_nuovi: dict):
     return False
 
 
-def _estrai_da_cartella(cart_in: Path, cart_out: Path, etichetta: str, date_valide: set[str], mappati: set, *, duplicata: bool = False):
+def _estrai_da_cartella(cart_in: Path, cart_out: Path, etichetta: str, date_valide: set[str], mappati: dict, *, duplicata: bool = False):
     """Estrae DDT da tutti i PDF accettando qualsiasi data presente in date_valide."""
     nuovi_dati = {}
+    aggiornati_orari: set[int] = set()  # row_idx già aggiornati in questa esecuzione
     if not cart_in.exists(): return 0, 0, nuovi_dati
     cart_out.mkdir(parents=True, exist_ok=True)
     pdf_files = list(cart_in.glob("*.pdf"))
@@ -192,6 +230,36 @@ def _estrai_da_cartella(cart_in: Path, cart_out: Path, etichetta: str, date_vali
                     if l not in mappati and l not in nuovi_dati:
                         nuovi_dati[l] = _estrai_dati_consegna_da_testo(text, l, duplicata)
                         nuovi_dati[l]["tipo"] = etichetta
+                    elif l in mappati:
+                        # Cliente noto: verifica se orario nel DDT e' diverso dalla mappatura
+                        row_idx_m, om_f, oM_f, om_l, oM_l = mappati[l]
+                        # Seleziona i valori correnti per il tipo in elaborazione
+                        om_mappa = om_f if etichetta == "FRUTTA" else om_l
+                        oM_mappa = oM_f if etichetta == "FRUTTA" else oM_l
+                        if row_idx_m not in aggiornati_orari:
+                            idx_c = text.upper().find("CAUSALE DEL TRASPORTO")
+                            if idx_c >= 0:
+                                m_c = CAUSALE_RE.search(text[idx_c:idx_c+150])
+                                if m_c:
+                                    oM_ddt = f"{int(m_c.group(2)):02d}:00" if m_c.group(2) else ""
+                                    om_ddt = ""
+                                    if m_c.group(3):
+                                        s = m_c.group(3)
+                                        if len(s) == 3: om_ddt = f"{int(s[0]):02d}:{int(s[1:3]):02d}"
+                                        elif len(s) == 4: om_ddt = f"{int(s[:2]):02d}:{int(s[2:]):02d}"
+                                    needs_update = (
+                                        (oM_ddt and oM_ddt != oM_mappa) or
+                                        (om_ddt and om_ddt != om_mappa)
+                                    )
+                                    if needs_update:
+                                        print(f"    [ORARIO {etichetta}] {l}: DDT({om_ddt or '-'}/{oM_ddt or '-'}) vs Mappatura({om_mappa or '-'}/{oM_mappa or '-'})")
+                                        _aggiorna_orari_mappatura(row_idx_m, om_ddt or None, oM_ddt or None, etichetta)
+                                        # Aggiorna in-memoria per tipo corretto
+                                        if etichetta == "FRUTTA":
+                                            mappati[l] = (row_idx_m, om_ddt or om_f, oM_ddt or oM_f, om_l, oM_l)
+                                        else:
+                                            mappati[l] = (row_idx_m, om_f, oM_f, om_ddt or om_l, oM_ddt or oM_l)
+                                        aggiornati_orari.add(row_idx_m)
                     chiave = (d, l)
                     cnt = visti.get(chiave, 0) + 1
                     visti[chiave] = cnt

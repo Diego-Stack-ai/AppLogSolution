@@ -465,12 +465,33 @@ def main():
     json_f = target_dir / "viaggi_giornalieri.json"
     if not json_f.exists(): return print(f"ERR Salva la mappa!")
     with open(json_f, "r", encoding="utf-8") as f: data_zone = json.load(f)
-    data_zone = [z for z in data_zone if z.get("id_zona", "") != "DDT_DA_INSERIRE"]
+    
+    # Filtro corretto: ignora solo il blocco "parcheggio" dei DDT da inserire
+    data_zone_valida = []
+    for z in data_zone:
+        if z.get("id_zona", "") == "DDT_DA_INSERIRE": continue
+        
+        # Correggiamo la zona interna dei punti se sono stati assegnati a un viaggio reale,
+        # in modo che il nome file diventi "Zone_3207" e non "Zone_DDT_DA_INSERIRE"
+        for p in z.get("lista_punti", []):
+            if p.get("zona", "") == "DDT_DA_INSERIRE":
+                p["zona"] = z.get("id_zona", "")
+                
+        data_zone_valida.append(z)
+        
     out_dir = target_dir / "PERCORSI_VEGGIANO"
+    
+    # Creazione o Pulizia cartella per evitare "doppioni" vecchi
+    if out_dir.exists():
+        for file in out_dir.iterdir():
+            if file.is_file() and file.name.endswith('.html'):
+                try: file.unlink()
+                except: pass
     out_dir.mkdir(exist_ok=True)
+    
     summary = []
     
-    data_zone_sorted = sorted(data_zone, key=lambda x: x.get('id_zona', ''))
+    data_zone_sorted = sorted(data_zone_valida, key=lambda x: x.get('id_zona', ''))
     
     print(f"\n--- GENERAZIONE PERCORSI CON OR-TOOLS ({MODO_DISTANZA}) ---")
 

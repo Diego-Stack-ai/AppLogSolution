@@ -66,8 +66,10 @@
   },
   {
     "nome_giro": "V02",
-    "file_sorgente": "V02_Zone_DDT_DA_INSERIRE.html",
-    "zone": [],
+    "file_sorgente": "V02_Zone_3207.html",
+    "zone": [
+      "3207"
+    ],
     "num_fermate": 14,
     "data_ddt": "28-04-2026",
     "lista_punti": [
@@ -85,7 +87,7 @@
         "orario_max": "10:00",
         "lat": 45.8677942,
         "lon": 12.1015402,
-        "zona": "DDT_DA_INSERIRE",
+        "zona": "3207",
         "codici_ddt_frutta": [
           "p2301",
           "p1950"
@@ -109,6 +111,99 @@
         "geo_query_indirizzo": "VIA MANZONI 27"
       },
       {
+        "nome": "Gianni Rodari - Col San Martino",
+        "indirizzo": "Via Giarentine 2",
+        "codice_frutta": "p13947",
+        "codice_latte": "p00000",
+        "data_consegna": "23-04-2026",
+        "orario_min_frutta": "08:15",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": "",
+        "orario_min": "08:15",
+        "orario_max": "14:00",
+        "lat": 45.8966595,
+        "lon": 12.0851042,
+        "zona": "3207",
+        "codici_ddt_frutta": [
+          "p13947"
+        ],
+        "codici_ddt_latte": [],
+        "rientri_alert": [
+          {
+            "codice": "p13947",
+            "status": "red",
+            "data_ddt": "23-04-2026"
+          }
+        ],
+        "row_idx_mappatura": 249,
+        "_is_rientro_speciale": true,
+        "geo_query_nome_indirizzo": "Gianni Rodari - Col San Martino Via Giarentine 2",
+        "geo_query_indirizzo": "Via Giarentine 2"
+      },
+      {
+        "nome": "LORENZO MILANI - FARRA CAP.",
+        "indirizzo": "VIA DEI PATRIOTI 29",
+        "codice_frutta": "p8831",
+        "codice_latte": "p00000",
+        "data_consegna": "23-04-2026",
+        "orario_min_frutta": "08:15",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": "",
+        "orario_min": "08:15",
+        "orario_max": "14:00",
+        "lat": 45.9056039,
+        "lon": 12.1269508,
+        "zona": "3207",
+        "codici_ddt_frutta": [
+          "p8831"
+        ],
+        "codici_ddt_latte": [],
+        "rientri_alert": [
+          {
+            "codice": "p8831",
+            "status": "red",
+            "data_ddt": "23-04-2026"
+          }
+        ],
+        "row_idx_mappatura": 205,
+        "_is_rientro_speciale": true,
+        "geo_query_nome_indirizzo": "LORENZO MILANI - FARRA CAP. VIA DEI PATRIOTI 29",
+        "geo_query_indirizzo": "VIA DEI PATRIOTI 29"
+      },
+      {
+        "nome": "G.ANCILLOTTO - SOLIGO",
+        "indirizzo": "VIA DEI COLLI 25",
+        "codice_frutta": "p8767",
+        "codice_latte": "p00000",
+        "data_consegna": "23-04-2026",
+        "orario_min_frutta": "08:15",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": "",
+        "orario_min": "08:15",
+        "orario_max": "14:00",
+        "lat": 45.9097342,
+        "lon": 12.1524089,
+        "zona": "3207",
+        "codici_ddt_frutta": [
+          "p8767"
+        ],
+        "codici_ddt_latte": [],
+        "rientri_alert": [
+          {
+            "codice": "p8767",
+            "status": "red",
+            "data_ddt": "23-04-2026"
+          }
+        ],
+        "row_idx_mappatura": 195,
+        "_is_rientro_speciale": true,
+        "geo_query_nome_indirizzo": "G.ANCILLOTTO - SOLIGO VIA DEI COLLI 25",
+        "geo_query_indirizzo": "VIA DEI COLLI 25"
+      },
+      {
         "nome": "O.DE GASPARI FALZE' DI P.",
         "indirizzo": "VIA DONATORI DEL SANGUE 4",
         "codice_frutta": "p2302",
@@ -122,7 +217,7 @@
         "orario_max": "10:00",
         "lat": 45.86008859765876,
         "lon": 12.17298733945312,
-        "zona": "DDT_DA_INSERIRE",
+        "zona": "3207",
         "codici_ddt_frutta": [
           "p2302",
           "p1951"
@@ -159,7 +254,7 @@
         "orario_max": "10:00",
         "lat": 45.8977212304539,
         "lon": 12.23460724970705,
-        "zona": "DDT_DA_INSERIRE",
+        "zona": "3207",
         "codici_ddt_frutta": [
           "p2357",
           "p1704"
@@ -196,7 +291,7 @@
         "orario_max": "10:00",
         "lat": 45.91723,
         "lon": 12.2539765,
-        "zona": "DDT_DA_INSERIRE",
+        "zona": "3207",
         "codici_ddt_frutta": [
           "p2355",
           "p1792"
@@ -233,7 +328,7 @@
         "orario_max": "10:00",
         "lat": 45.9122035,
         "lon": 12.2722528,
-        "zona": "DDT_DA_INSERIRE",
+        "zona": "3207",
         "codici_ddt_frutta": [
           "p2356",
           "p1794"
@@ -257,142 +352,6 @@
         "geo_query_indirizzo": "VIA GORIZIA 1"
       },
       {
-        "nome": "SCUOLA PRIMARIA \" PIANCA SCHOOL \"",
-        "indirizzo": "VIA GIUNTI N°12/A",
-        "codice_frutta": "p2254",
-        "codice_latte": "p1861",
-        "data_consegna": "23-04-2026",
-        "orario_min_frutta": "08:00",
-        "orario_max_frutta": "14:00",
-        "orario_min_latte": "08:00",
-        "orario_max_latte": "10:00",
-        "orario_min": "08:00",
-        "orario_max": "10:00",
-        "lat": 45.8780224,
-        "lon": 12.2770314,
-        "zona": "DDT_DA_INSERIRE",
-        "codici_ddt_frutta": [
-          "p2254",
-          "p1861"
-        ],
-        "codici_ddt_latte": [],
-        "rientri_alert": [
-          {
-            "codice": "p2254",
-            "status": "red",
-            "data_ddt": "23-04-2026"
-          },
-          {
-            "codice": "p1861",
-            "status": "red",
-            "data_ddt": "23-04-2026"
-          }
-        ],
-        "row_idx_mappatura": 223,
-        "_is_rientro_speciale": true,
-        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \" PIANCA SCHOOL \" VIA GIUNTI N°12/A",
-        "geo_query_indirizzo": "VIA GIUNTI N°12/A"
-      },
-      {
-        "nome": "DON ORFEO MANTOVANI-V.DEI MILLE",
-        "indirizzo": "VIA DEI MILLE 42",
-        "codice_frutta": "p2354",
-        "codice_latte": "p1793",
-        "data_consegna": "23-04-2026",
-        "orario_min_frutta": "08:00",
-        "orario_max_frutta": "14:00",
-        "orario_min_latte": "08:00",
-        "orario_max_latte": "10:00",
-        "orario_min": "08:00",
-        "orario_max": "10:00",
-        "lat": 45.8726659,
-        "lon": 12.2846529,
-        "zona": "DDT_DA_INSERIRE",
-        "codici_ddt_frutta": [
-          "p2354",
-          "p1793"
-        ],
-        "codici_ddt_latte": [],
-        "rientri_alert": [
-          {
-            "codice": "p2354",
-            "status": "red",
-            "data_ddt": "23-04-2026"
-          },
-          {
-            "codice": "p1793",
-            "status": "red",
-            "data_ddt": "23-04-2026"
-          }
-        ],
-        "row_idx_mappatura": 183,
-        "_is_rientro_speciale": true,
-        "geo_query_nome_indirizzo": "DON ORFEO MANTOVANI-V.DEI MILLE VIA DEI MILLE 42",
-        "geo_query_indirizzo": "VIA DEI MILLE 42"
-      },
-      {
-        "nome": "\"GIANNI RODARI\" - PARE'",
-        "indirizzo": "VIA EINAUDI 110",
-        "codice_frutta": "p2353",
-        "codice_latte": "p00000",
-        "data_consegna": "23-04-2026",
-        "orario_min_frutta": "08:00",
-        "orario_max_frutta": "14:00",
-        "orario_min_latte": "",
-        "orario_max_latte": "",
-        "orario_min": "08:00",
-        "orario_max": "14:00",
-        "lat": 45.8717147,
-        "lon": 12.2731564,
-        "zona": "DDT_DA_INSERIRE",
-        "codici_ddt_frutta": [
-          "p2353"
-        ],
-        "codici_ddt_latte": [],
-        "rientri_alert": [
-          {
-            "codice": "p2353",
-            "status": "red",
-            "data_ddt": "23-04-2026"
-          }
-        ],
-        "row_idx_mappatura": 164,
-        "_is_rientro_speciale": true,
-        "geo_query_nome_indirizzo": "\"GIANNI RODARI\" - PARE' VIA EINAUDI 110",
-        "geo_query_indirizzo": "VIA EINAUDI 110"
-      },
-      {
-        "nome": "CAMPOLONGO",
-        "indirizzo": "VIA VITAL 120",
-        "codice_frutta": "p13495",
-        "codice_latte": "p00000",
-        "data_consegna": "23-04-2026",
-        "orario_min_frutta": "07:30",
-        "orario_max_frutta": "14:00",
-        "orario_min_latte": "",
-        "orario_max_latte": "",
-        "orario_min": "07:30",
-        "orario_max": "14:00",
-        "lat": 45.8663868,
-        "lon": 12.3071656,
-        "zona": "DDT_DA_INSERIRE",
-        "codici_ddt_frutta": [
-          "p13495"
-        ],
-        "codici_ddt_latte": [],
-        "rientri_alert": [
-          {
-            "codice": "p13495",
-            "status": "red",
-            "data_ddt": "23-04-2026"
-          }
-        ],
-        "row_idx_mappatura": 177,
-        "_is_rientro_speciale": true,
-        "geo_query_nome_indirizzo": "CAMPOLONGO VIA VITAL 120",
-        "geo_query_indirizzo": "VIA VITAL 120"
-      },
-      {
         "nome": "D. ALIGHIERI",
         "indirizzo": "VIA ZANDONAI 14",
         "codice_frutta": "p6525",
@@ -406,7 +365,7 @@
         "orario_max": "14:00",
         "lat": 45.8991163,
         "lon": 12.2924438,
-        "zona": "DDT_DA_INSERIRE",
+        "zona": "3207",
         "codici_ddt_frutta": [
           "p6525"
         ],
@@ -437,7 +396,7 @@
         "orario_max": "14:00",
         "lat": 45.9044641,
         "lon": 12.2747095,
-        "zona": "DDT_DA_INSERIRE",
+        "zona": "3207",
         "codici_ddt_frutta": [
           "p8847"
         ],
@@ -455,97 +414,140 @@
         "geo_query_indirizzo": "VIA COSTA ALTA"
       },
       {
-        "nome": "G.ANCILLOTTO - SOLIGO",
-        "indirizzo": "VIA DEI COLLI 25",
-        "codice_frutta": "p8767",
-        "codice_latte": "p00000",
+        "nome": "SCUOLA PRIMARIA \" PIANCA SCHOOL \"",
+        "indirizzo": "VIA GIUNTI N°12/A",
+        "codice_frutta": "p2254",
+        "codice_latte": "p1861",
         "data_consegna": "23-04-2026",
-        "orario_min_frutta": "08:15",
+        "orario_min_frutta": "08:00",
         "orario_max_frutta": "14:00",
-        "orario_min_latte": "",
-        "orario_max_latte": "",
-        "orario_min": "08:15",
-        "orario_max": "14:00",
-        "lat": 45.9097342,
-        "lon": 12.1524089,
-        "zona": "DDT_DA_INSERIRE",
+        "orario_min_latte": "08:00",
+        "orario_max_latte": "10:00",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.8780224,
+        "lon": 12.2770314,
+        "zona": "3207",
         "codici_ddt_frutta": [
-          "p8767"
+          "p2254",
+          "p1861"
         ],
         "codici_ddt_latte": [],
         "rientri_alert": [
           {
-            "codice": "p8767",
+            "codice": "p2254",
+            "status": "red",
+            "data_ddt": "23-04-2026"
+          },
+          {
+            "codice": "p1861",
             "status": "red",
             "data_ddt": "23-04-2026"
           }
         ],
-        "row_idx_mappatura": 195,
+        "row_idx_mappatura": 223,
         "_is_rientro_speciale": true,
-        "geo_query_nome_indirizzo": "G.ANCILLOTTO - SOLIGO VIA DEI COLLI 25",
-        "geo_query_indirizzo": "VIA DEI COLLI 25"
+        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \" PIANCA SCHOOL \" VIA GIUNTI N°12/A",
+        "geo_query_indirizzo": "VIA GIUNTI N°12/A"
       },
       {
-        "nome": "LORENZO MILANI - FARRA CAP.",
-        "indirizzo": "VIA DEI PATRIOTI 29",
-        "codice_frutta": "p8831",
+        "nome": "\"GIANNI RODARI\" - PARE'",
+        "indirizzo": "VIA EINAUDI 110",
+        "codice_frutta": "p2353",
         "codice_latte": "p00000",
         "data_consegna": "23-04-2026",
-        "orario_min_frutta": "08:15",
+        "orario_min_frutta": "08:00",
         "orario_max_frutta": "14:00",
         "orario_min_latte": "",
         "orario_max_latte": "",
-        "orario_min": "08:15",
+        "orario_min": "08:00",
         "orario_max": "14:00",
-        "lat": 45.9056039,
-        "lon": 12.1269508,
-        "zona": "DDT_DA_INSERIRE",
+        "lat": 45.8717147,
+        "lon": 12.2731564,
+        "zona": "3207",
         "codici_ddt_frutta": [
-          "p8831"
+          "p2353"
         ],
         "codici_ddt_latte": [],
         "rientri_alert": [
           {
-            "codice": "p8831",
+            "codice": "p2353",
             "status": "red",
             "data_ddt": "23-04-2026"
           }
         ],
-        "row_idx_mappatura": 205,
+        "row_idx_mappatura": 164,
         "_is_rientro_speciale": true,
-        "geo_query_nome_indirizzo": "LORENZO MILANI - FARRA CAP. VIA DEI PATRIOTI 29",
-        "geo_query_indirizzo": "VIA DEI PATRIOTI 29"
+        "geo_query_nome_indirizzo": "\"GIANNI RODARI\" - PARE' VIA EINAUDI 110",
+        "geo_query_indirizzo": "VIA EINAUDI 110"
       },
       {
-        "nome": "Gianni Rodari - Col San Martino",
-        "indirizzo": "Via Giarentine 2",
-        "codice_frutta": "p13947",
-        "codice_latte": "p00000",
+        "nome": "DON ORFEO MANTOVANI-V.DEI MILLE",
+        "indirizzo": "VIA DEI MILLE 42",
+        "codice_frutta": "p2354",
+        "codice_latte": "p1793",
         "data_consegna": "23-04-2026",
-        "orario_min_frutta": "08:15",
+        "orario_min_frutta": "08:00",
         "orario_max_frutta": "14:00",
-        "orario_min_latte": "",
-        "orario_max_latte": "",
-        "orario_min": "08:15",
-        "orario_max": "14:00",
-        "lat": 45.8966595,
-        "lon": 12.0851042,
-        "zona": "DDT_DA_INSERIRE",
+        "orario_min_latte": "08:00",
+        "orario_max_latte": "10:00",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.8726659,
+        "lon": 12.2846529,
+        "zona": "3207",
         "codici_ddt_frutta": [
-          "p13947"
+          "p2354",
+          "p1793"
         ],
         "codici_ddt_latte": [],
         "rientri_alert": [
           {
-            "codice": "p13947",
+            "codice": "p2354",
+            "status": "red",
+            "data_ddt": "23-04-2026"
+          },
+          {
+            "codice": "p1793",
             "status": "red",
             "data_ddt": "23-04-2026"
           }
         ],
-        "row_idx_mappatura": 249,
+        "row_idx_mappatura": 183,
         "_is_rientro_speciale": true,
-        "geo_query_nome_indirizzo": "Gianni Rodari - Col San Martino Via Giarentine 2",
-        "geo_query_indirizzo": "Via Giarentine 2"
+        "geo_query_nome_indirizzo": "DON ORFEO MANTOVANI-V.DEI MILLE VIA DEI MILLE 42",
+        "geo_query_indirizzo": "VIA DEI MILLE 42"
+      },
+      {
+        "nome": "CAMPOLONGO",
+        "indirizzo": "VIA VITAL 120",
+        "codice_frutta": "p13495",
+        "codice_latte": "p00000",
+        "data_consegna": "23-04-2026",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "14:00",
+        "orario_min_latte": "",
+        "orario_max_latte": "",
+        "orario_min": "07:30",
+        "orario_max": "14:00",
+        "lat": 45.8663868,
+        "lon": 12.3071656,
+        "zona": "3207",
+        "codici_ddt_frutta": [
+          "p13495"
+        ],
+        "codici_ddt_latte": [],
+        "rientri_alert": [
+          {
+            "codice": "p13495",
+            "status": "red",
+            "data_ddt": "23-04-2026"
+          }
+        ],
+        "row_idx_mappatura": 177,
+        "_is_rientro_speciale": true,
+        "geo_query_nome_indirizzo": "CAMPOLONGO VIA VITAL 120",
+        "geo_query_indirizzo": "VIA VITAL 120"
       }
     ]
   },

@@ -1,0 +1,132 @@
+[
+  {
+    "nome_giro": "V01",
+    "file_sorgente": "V01_Zone_3108.html",
+    "zone": [
+      "3108"
+    ],
+    "num_fermate": 1,
+    "data_ddt": "29-04-2026",
+    "lista_punti": [
+      {
+        "nome": "Ardigo-Pd",
+        "indirizzo": "Via Degli Agnusdei 17, 35121 Padova (PADOVA)",
+        "codice_frutta": "p2047",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2047_p00000",
+        "zona": "3108",
+        "data_consegna": "29-04-2026",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": "",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.4052534,
+        "lon": 11.8836038,
+        "codici_ddt_frutta": [
+          "p2047"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 106,
+        "geo_query_nome_indirizzo": "Ardigo-Pd Via Degli Agnusdei 17, 35121 Padova (PADOVA)",
+        "geo_query_indirizzo": "Via Degli Agnusdei 17, 35121 Padova (PADOVA)"
+      }
+    ]
+  },
+  {
+    "nome_giro": "V02",
+    "file_sorgente": "V02_Zone_3109.html",
+    "zone": [
+      "3109"
+    ],
+    "num_fermate": 3,
+    "data_ddt": "29-04-2026",
+    "lista_punti": [
+      {
+        "nome": "SCUOLA PRIMARIA S. G. BOSCO",
+        "indirizzo": "VIA DEI DECORATI 4, 36022 CASSOLA (VICENZA)",
+        "codice_frutta": "p2156",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2156_p00000",
+        "zona": "3109",
+        "data_consegna": "29-04-2026",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": "",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.73380310015742,
+        "lon": 11.79917094579648,
+        "codici_ddt_frutta": [
+          "p2156"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 453,
+        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA S. G. BOSCO VIA DEI DECORATI 4, 36022 CASSOLA (VICENZA)",
+        "geo_query_indirizzo": "VIA DEI DECORATI 4, 36022 CASSOLA (VICENZA)"
+      },
+      {
+        "nome": "Scuola Primaria Zanella",
+        "indirizzo": "Via Dante, 24, 36070 Trissino (VICENZA)",
+        "codice_frutta": "p2322",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2322_p00000",
+        "zona": "3109",
+        "data_consegna": "29-04-2026",
+        "orario_min_frutta": "07:30",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": "",
+        "orario_min": "07:30",
+        "orario_max": "10:00",
+        "lat": 45.5639413,
+        "lon": 11.3717731,
+        "codici_ddt_frutta": [
+          "p2322"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 393,
+        "geo_query_nome_indirizzo": "Scuola Primaria Zanella Via Dante, 24, 36070 Trissino (VICENZA)",
+        "geo_query_indirizzo": "Via Dante, 24, 36070 Trissino (VICENZA)"
+      },
+      {
+        "nome": "San Rocco",
+        "indirizzo": "Via Trento, 65/B, 36071 Arzignano (VICENZA)",
+        "codice_frutta": "p2092",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2092_p00000",
+        "zona": "3109",
+        "data_consegna": "29-04-2026",
+        "orario_min_frutta": "07:15",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": "",
+        "orario_min": "07:15",
+        "orario_max": "10:00",
+        "lat": 45.52339003489561,
+        "lon": 11.3262858072014,
+        "codici_ddt_frutta": [
+          "p2092"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "row_idx_mappatura": 378,
+        "geo_query_nome_indirizzo": "San Rocco Via Trento, 65/B, 36071 Arzignano (VICENZA)",
+        "geo_query_indirizzo": "Via Trento, 65/B, 36071 Arzignano (VICENZA)"
+      }
+    ]
+  }
+]

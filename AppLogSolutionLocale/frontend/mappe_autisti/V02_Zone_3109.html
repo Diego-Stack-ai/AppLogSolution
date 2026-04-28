@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V01</title>
+    <title>V02</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
@@ -69,13 +69,13 @@
         </div>
         <div id="sidebar">
             <div class="header">
-                <div class="trip-title">🏎️ V01 | Zone: 3106</div>
+                <div class="trip-title">🏎️ V02 | Zone: 3109</div>
                 <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
                 <div class="stats-row">
-                    <div class="stat-item"><span class="stat-val">113.4km</span><span class="stat-lbl">Strada</span></div>
-                    <div class="stat-item"><span class="stat-val">1h 52m</span><span class="stat-lbl">Guida</span></div>
-                    <div class="stat-item"><span class="stat-val">16m</span><span class="stat-lbl">Soste</span></div>
-                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">2h 8m</span><span class="stat-lbl">Totale</span></div>
+                    <div class="stat-item"><span class="stat-val">168.7km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 5m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">24m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">2h 29m</span><span class="stat-lbl">Totale</span></div>
                 </div>
             </div>
             <div id="delivery-list">
@@ -88,20 +88,30 @@
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(0, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">GABRIELE D'ANNUNZIO</b>
-                    <span class="addr"><b>VIA CIVRAN 3</b><br>30010 CONA (VENEZIA)</span>
+                    <b class="name">SCUOLA PRIMARIA S. G. BOSCO</b>
+                    <span class="addr"><b>VIA DEI DECORATI 4</b><br>36022 CASSOLA (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.19040334865818,12.04072566746522&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.73380310015742,11.79917094579648&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(2)">
                 <div class="stop-num">2</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(1, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">G. Zanella Loc. Corte</b>
-                    <span class="addr"><b>Piazza Monumento</b><br>23, 35028 Piove Di Sacco (PADOVA)</span>
+                    <b class="name">Scuola Primaria Zanella</b>
+                    <span class="addr"><b>Via Dante</b><br>24, 36070 Trissino (VICENZA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.30961682015293,12.07423983558196&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5639413,11.3717731&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(3)">
+                <div class="stop-num">3</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(2, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">San Rocco</b>
+                    <span class="addr"><b>Via Trento</b><br>65/B, 36071 Arzignano (VICENZA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.52339003489561,11.3262858072014&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div>
             <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
                 <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
@@ -164,8 +174,8 @@
     </script>
 
     <script>
-        const v_id = "V01";
-        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}, {"cliente": "GABRIELE D'ANNUNZIO", "indirizzo": "VIA CIVRAN 3, 30010 CONA (VENEZIA)", "lat": 45.19040334865818, "lon": 12.04072566746522, "codice_frutta": "p6618", "codice_latte": "p00000"}, {"cliente": "G. Zanella Loc. Corte", "indirizzo": "Piazza Monumento, 23, 35028 Piove Di Sacco (PADOVA)", "lat": 45.30961682015293, "lon": 12.07423983558196, "codice_frutta": "p2066", "codice_latte": "p00000"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}];
+        const v_id = "V02";
+        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}, {"cliente": "SCUOLA PRIMARIA S. G. BOSCO", "indirizzo": "VIA DEI DECORATI 4, 36022 CASSOLA (VICENZA)", "lat": 45.73380310015742, "lon": 11.79917094579648, "codice_frutta": "p2156", "codice_latte": "p00000"}, {"cliente": "Scuola Primaria Zanella", "indirizzo": "Via Dante, 24, 36070 Trissino (VICENZA)", "lat": 45.5639413, "lon": 11.3717731, "codice_frutta": "p2322", "codice_latte": "p00000"}, {"cliente": "San Rocco", "indirizzo": "Via Trento, 65/B, 36071 Arzignano (VICENZA)", "lat": 45.52339003489561, "lon": 11.3262858072014, "codice_frutta": "p2092", "codice_latte": "p00000"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}];
         window.data = data; window.v_id = v_id;
         let map, markers = [], userMarker;
         window.currentPos = null;

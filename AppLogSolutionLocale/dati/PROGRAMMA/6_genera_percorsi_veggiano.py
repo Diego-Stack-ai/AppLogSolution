@@ -242,10 +242,22 @@ def get_google_trip_data(percorso):
             url = f"https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={dest}&waypoints={waypts}&key={GOOGLE_MAPS_API_KEY}"
             r = requests.get(url, timeout=5).json()
             if r.get('status') == 'OK':
-                km_tot += sum(l['distance']['value'] for l in r['routes'][0]['legs']) / 1000.0
-                sec_tot += sum(l['duration']['value'] for l in r['routes'][0]['legs'])
+                legs = r['routes'][0]['legs']
+                km_tot += sum(l['distance']['value'] for l in legs) / 1000.0
+                sec_tot += sum(l['duration']['value'] for l in legs)
                 polylines.append(r['routes'][0]['overview_polyline']['points'])
-    except: pass
+                
+                # Novità: Salvataggio segmenti in cache per ottimizzare chiamate future Matrix
+                if len(legs) == len(sub) - 1:
+                    modificato = False
+                    for idx_leg, leg in enumerate(legs):
+                        d_val, t_val = leg['distance']['value'], leg['duration']['value']
+                        dist_cache.set(sub[idx_leg], sub[idx_leg+1], d_val, t_val)
+                        modificato = True
+                    if modificato:
+                        dist_cache.save()
+    except Exception as e:
+        print(f"Errore recupero Directions API: {e}")
             
     final_km = round(km_tot if km_tot > 0 else km_stima, 1)
     final_guida_sec = sec_tot if sec_tot > 0 else sec_stima

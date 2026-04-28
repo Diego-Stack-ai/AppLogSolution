@@ -74,43 +74,6 @@
     "data_ddt": "28-04-2026",
     "lista_punti": [
       {
-        "nome": "E. DE AMICIS MORIAGO D.B.",
-        "indirizzo": "VIA MANZONI 27",
-        "codice_frutta": "p2301",
-        "codice_latte": "p1950",
-        "data_consegna": "23-04-2026",
-        "orario_min_frutta": "07:45",
-        "orario_max_frutta": "10:00",
-        "orario_min_latte": "07:45",
-        "orario_max_latte": "10:00",
-        "orario_min": "07:45",
-        "orario_max": "10:00",
-        "lat": 45.8677942,
-        "lon": 12.1015402,
-        "zona": "3207",
-        "codici_ddt_frutta": [
-          "p2301",
-          "p1950"
-        ],
-        "codici_ddt_latte": [],
-        "rientri_alert": [
-          {
-            "codice": "p2301",
-            "status": "red",
-            "data_ddt": "23-04-2026"
-          },
-          {
-            "codice": "p1950",
-            "status": "red",
-            "data_ddt": "23-04-2026"
-          }
-        ],
-        "row_idx_mappatura": 184,
-        "_is_rientro_speciale": true,
-        "geo_query_nome_indirizzo": "E. DE AMICIS MORIAGO D.B. VIA MANZONI 27",
-        "geo_query_indirizzo": "VIA MANZONI 27"
-      },
-      {
         "nome": "Gianni Rodari - Col San Martino",
         "indirizzo": "Via Giarentine 2",
         "codice_frutta": "p13947",
@@ -171,6 +134,43 @@
         "_is_rientro_speciale": true,
         "geo_query_nome_indirizzo": "LORENZO MILANI - FARRA CAP. VIA DEI PATRIOTI 29",
         "geo_query_indirizzo": "VIA DEI PATRIOTI 29"
+      },
+      {
+        "nome": "E. DE AMICIS MORIAGO D.B.",
+        "indirizzo": "VIA MANZONI 27",
+        "codice_frutta": "p2301",
+        "codice_latte": "p1950",
+        "data_consegna": "23-04-2026",
+        "orario_min_frutta": "07:45",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "07:45",
+        "orario_max_latte": "10:00",
+        "orario_min": "07:45",
+        "orario_max": "10:00",
+        "lat": 45.8677942,
+        "lon": 12.1015402,
+        "zona": "3207",
+        "codici_ddt_frutta": [
+          "p2301",
+          "p1950"
+        ],
+        "codici_ddt_latte": [],
+        "rientri_alert": [
+          {
+            "codice": "p2301",
+            "status": "red",
+            "data_ddt": "23-04-2026"
+          },
+          {
+            "codice": "p1950",
+            "status": "red",
+            "data_ddt": "23-04-2026"
+          }
+        ],
+        "row_idx_mappatura": 184,
+        "_is_rientro_speciale": true,
+        "geo_query_nome_indirizzo": "E. DE AMICIS MORIAGO D.B. VIA MANZONI 27",
+        "geo_query_indirizzo": "VIA MANZONI 27"
       },
       {
         "nome": "G.ANCILLOTTO - SOLIGO",

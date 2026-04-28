@@ -38,29 +38,18 @@
             </div>
             <div class="stats-grid">
                 <div class="stat-card"><span class="stat-val">14</span><span class="stat-lbl">Tappe</span></div>
-                <div class="stat-card"><span class="stat-val">254.6 km</span><span class="stat-lbl">Distanza</span></div>
-                <div class="stat-card"><span class="stat-val">3h 35m</span><span class="stat-lbl">Guida</span></div>
+                <div class="stat-card"><span class="stat-val">264.7 km</span><span class="stat-lbl">Distanza</span></div>
+                <div class="stat-card"><span class="stat-val">3h 47m</span><span class="stat-lbl">Guida</span></div>
                 <div class="stat-card"><span class="stat-val">1h 52m</span><span class="stat-lbl">Scarico</span></div>
-                <div class="stat-card tot-card"><span class="stat-val" style="font-size:1.3rem;">5h 27m</span><span class="stat-lbl">TEMPO TOTALE STIMATO</span></div>
+                <div class="stat-card tot-card"><span class="stat-val" style="font-size:1.3rem;">5h 39m</span><span class="stat-lbl">TEMPO TOTALE STIMATO</span></div>
             </div>
             <div id="stop-list">
                 <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">home</span></div>
                     <div class="stop-info"><span class="depot-tag">PARTENZA</span><br><b style="font-size:0.9rem;">Deposito Veggiano</b></div>
                 </div>
                 
-<div class="stop-card" onclick="panTo(1)" style="background:#fff1f2; border-color:#fecaca;">
-  <div class="stop-num" style="background:#ef4444">1</div>
-  <div style="flex:1;">
-    <div style="display:flex; align-items:center; gap:6px;">
-      <b style="font-size:0.85rem; color:#1e293b;">E. DE AMICIS MORIAGO D.B.</b>
-      <span style='background:#ef4444;color:white;font-size:0.6rem;font-weight:900;padding:2px 6px;border-radius:4px;'>H10</span>
-    </div>
-    <small style="color:#64748b; font-size:0.75rem;">VIA MANZONI 27</small>
-  </div>
-  <a href="https://www.google.com/maps/dir/?api=1&destination=45.8677942,12.1015402&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a>
-</div>
-<div class="stop-card" onclick="panTo(2)" style="">
-  <div class="stop-num" style="background:var(--p)">2</div>
+<div class="stop-card" onclick="panTo(1)" style="">
+  <div class="stop-num" style="background:var(--p)">1</div>
   <div style="flex:1;">
     <div style="display:flex; align-items:center; gap:6px;">
       <b style="font-size:0.85rem; color:#1e293b;">Gianni Rodari - Col San Martino</b>
@@ -70,8 +59,8 @@
   </div>
   <a href="https://www.google.com/maps/dir/?api=1&destination=45.8966595,12.0851042&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a>
 </div>
-<div class="stop-card" onclick="panTo(3)" style="">
-  <div class="stop-num" style="background:var(--p)">3</div>
+<div class="stop-card" onclick="panTo(2)" style="">
+  <div class="stop-num" style="background:var(--p)">2</div>
   <div style="flex:1;">
     <div style="display:flex; align-items:center; gap:6px;">
       <b style="font-size:0.85rem; color:#1e293b;">LORENZO MILANI - FARRA CAP.</b>
@@ -80,6 +69,17 @@
     <small style="color:#64748b; font-size:0.75rem;">VIA DEI PATRIOTI 29</small>
   </div>
   <a href="https://www.google.com/maps/dir/?api=1&destination=45.9056039,12.1269508&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a>
+</div>
+<div class="stop-card" onclick="panTo(3)" style="background:#fff1f2; border-color:#fecaca;">
+  <div class="stop-num" style="background:#ef4444">3</div>
+  <div style="flex:1;">
+    <div style="display:flex; align-items:center; gap:6px;">
+      <b style="font-size:0.85rem; color:#1e293b;">E. DE AMICIS MORIAGO D.B.</b>
+      <span style='background:#ef4444;color:white;font-size:0.6rem;font-weight:900;padding:2px 6px;border-radius:4px;'>H10</span>
+    </div>
+    <small style="color:#64748b; font-size:0.75rem;">VIA MANZONI 27</small>
+  </div>
+  <a href="https://www.google.com/maps/dir/?api=1&destination=45.8677942,12.1015402&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a>
 </div>
 <div class="stop-card" onclick="panTo(4)" style="">
   <div class="stop-num" style="background:var(--p)">4</div>
@@ -218,43 +218,6 @@
     "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"
   },
   {
-    "nome": "E. DE AMICIS MORIAGO D.B.",
-    "indirizzo": "VIA MANZONI 27",
-    "codice_frutta": "p2301",
-    "codice_latte": "p1950",
-    "data_consegna": "23-04-2026",
-    "orario_min_frutta": "07:45",
-    "orario_max_frutta": "10:00",
-    "orario_min_latte": "07:45",
-    "orario_max_latte": "10:00",
-    "orario_min": "07:45",
-    "orario_max": "10:00",
-    "lat": 45.8677942,
-    "lon": 12.1015402,
-    "zona": "3207",
-    "codici_ddt_frutta": [
-      "p2301",
-      "p1950"
-    ],
-    "codici_ddt_latte": [],
-    "rientri_alert": [
-      {
-        "codice": "p2301",
-        "status": "red",
-        "data_ddt": "23-04-2026"
-      },
-      {
-        "codice": "p1950",
-        "status": "red",
-        "data_ddt": "23-04-2026"
-      }
-    ],
-    "row_idx_mappatura": 184,
-    "_is_rientro_speciale": true,
-    "geo_query_nome_indirizzo": "E. DE AMICIS MORIAGO D.B. VIA MANZONI 27",
-    "geo_query_indirizzo": "VIA MANZONI 27"
-  },
-  {
     "nome": "Gianni Rodari - Col San Martino",
     "indirizzo": "Via Giarentine 2",
     "codice_frutta": "p13947",
@@ -315,6 +278,43 @@
     "_is_rientro_speciale": true,
     "geo_query_nome_indirizzo": "LORENZO MILANI - FARRA CAP. VIA DEI PATRIOTI 29",
     "geo_query_indirizzo": "VIA DEI PATRIOTI 29"
+  },
+  {
+    "nome": "E. DE AMICIS MORIAGO D.B.",
+    "indirizzo": "VIA MANZONI 27",
+    "codice_frutta": "p2301",
+    "codice_latte": "p1950",
+    "data_consegna": "23-04-2026",
+    "orario_min_frutta": "07:45",
+    "orario_max_frutta": "10:00",
+    "orario_min_latte": "07:45",
+    "orario_max_latte": "10:00",
+    "orario_min": "07:45",
+    "orario_max": "10:00",
+    "lat": 45.8677942,
+    "lon": 12.1015402,
+    "zona": "3207",
+    "codici_ddt_frutta": [
+      "p2301",
+      "p1950"
+    ],
+    "codici_ddt_latte": [],
+    "rientri_alert": [
+      {
+        "codice": "p2301",
+        "status": "red",
+        "data_ddt": "23-04-2026"
+      },
+      {
+        "codice": "p1950",
+        "status": "red",
+        "data_ddt": "23-04-2026"
+      }
+    ],
+    "row_idx_mappatura": 184,
+    "_is_rientro_speciale": true,
+    "geo_query_nome_indirizzo": "E. DE AMICIS MORIAGO D.B. VIA MANZONI 27",
+    "geo_query_indirizzo": "VIA MANZONI 27"
   },
   {
     "nome": "G.ANCILLOTTO - SOLIGO",
@@ -699,7 +699,7 @@
     "nome": "DEPOSITO VEGGIANO",
     "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"
   }
-]; const polys = ["ytjtGi~nfAgNuOpBeWwAi{@gJwWgl@rhAg}@ps@ck@nb@iNbSoP}BgK_NqDxg@}eCbzKs[|xA}]dJwjA{c@uu@sFmqAp[uy@ti@}z@bKweArv@sc@b]s}@lFw}AoI{nAjRoo@ng@sp@zcA_fApsBu_@`_AuJrdAot@feCsXbWwEtGwIyHw|@yZsp@oq@kk@mwAuC{a@aGa_CwZ{kCkXiqAov@i~D_`AmdAwP}_@yKysA}y@ouBuA}lBsAe~CfO_kB}EywBcMgqAoj@gsHoBmsDan@grCbIajBfTkrA`e@unCra@ipBxd@emAzJsr@yIn_@cMd\\wh@gr@gPu@mp@{eB{hAu_AgjC~FiJ[ul@yA{XeSks@mv@ib@cd@{G_Ug\\lUkg@iSk]iVyj@vKi\\`SyBsIaC_DabAas@cIn@uHVyTaIsLkq@pTw_A|C}bA_DejA{YotBqAwq@oNa[aGcLgOtIyc@|a@sl@lUim@xE}UjUkCx@fE_Bn@ec@uJuUoZuvAq\\_fA}J{}@qP{hBG}_@yDsTpf@_g@bVwBff@o\\fcAo_@~h@}v@h]eEb]lLj`@b`@lD|LkLgWu[aWq^iLe\\nI{g@no@kZy\\{Gy\\o^g\\a`@si@kHyi@uEm{@`Yas@pKwPz@wFi@}TxGiSyOsZuq@fFo~@oQyH_g@w@{WhL{IrCaH@KAUkAu[{D~@w@lE|Bof@lDsG~GePgFtBjTgXfDeg@a@qBwJxL`dA}_BlZ}e@nYaURlPxHcFiOdj@wv@xgAgVfe@fCzd@|UhP|QoCvj@z@rQqK|OgRjS}h@tUsUdHxE\\wFbJdK~L`[dHiChBcGvBoU_JuOoIoUx@o@eD[{Bcj@F{OnGqDhIqTGkB@IISp@ya@`WiMhB_@gRhEiSoUqD{RpDkV{JsZeXiWvPgl@bCmb@sLwEfGiSvYuE~~@~MdaB`hBdu@ff@dkAdLjx@vQvv@`o@hkDlhBxxBln@fSjGxs@aB`z@wOnvA{Ohw@w`@tiAoLpoAco@vs@yBzu@kYl~AcmA||B|O~mAl}@|~@n[fbDj^bN|MeFhx@kR`bBtDlnAb[r_B{Cl}AyHd{A|Hn}@j`B`zFjr@jt@hv@|IndBdq@bcCvEnlArCnr@jB~w@tNtw@rg@dTpj@dQfjAp\\rp@|mAbz@zm@`eAfl@|vElaB`|Mv[djCzF~u@_`@fkAmpA|zDab@bhCmv@hsImTd}C{c@`iCgd@zmDgv@njEkRdb@`\\hRzNeV~c@u[x_Ait@vm@}dAvMtDdBz|@Pjc@pJfK"]; let map, markers = [];
+]; const polys = ["ytjtGi~nfAgNuOpBeWwAi{@gJwWgl@rhAg}@ps@ck@nb@iNbSoP}BgK_NqDxg@}eCbzKs[|xA}]dJwjA{c@uu@sFmqAp[uy@ti@}z@bKweArv@sc@b]s}@lFw}AoI{nAjRcaBjlB_fApsBu_@`_AuJrdAot@feCsXbWoPc@w|@yZsp@oq@kk@mwAuC{a@aGa_CwZ{kCkXiqAov@i~D_`AmdAq]wtB}y@ouBuA}lBsAe~CfO_kBaTajEoj@gsHoBmsDan@grCbIajBfTkrA`e@unCra@ipBxd@emAzJsr@yIn_@cMd\\wh@gr@gPu@mp@{eB{hAu_AgjC~FiJ[ul@yA{XeSks@mv@ib@cd@{G_Ug\\lUkg@iSk]iVyj@vKi\\`SyBsIaC_DabAas@cIn@uHVyTaIsLkq@`F{Zcj@_b@aX{R_a@lH{SqW_Zyj@cKyc@sg@uiCgDaAj@uZyPc}@qn@}zCcBgMbBfMt@vb@f`@hmA|[fmAnNrPdVjKvReHzc@kDfLyIte@}XnUuSkd@pb@s\\nMib@lPqV`@yVcEyFgGwVg]y[cdBgWow@wJw~@kN{_BuFus@zg@ei@`]mDhj@iZj_Agi@pg@uo@bb@pAf\\lJdYlg@oR_]s[uPg\\mIqY`Mci@vl@oX{d@wIe^gc@qY_[sp@}Eug@{Aqy@td@afAfE{h@gSeYsaApBan@eOaEsl@fNab@x@_A@MdAcF{Ce[wG`N`EoOw@wWpGeJtEqNkGpEn[c^w@ye@SBWd@eHpMdHqM`@HHAH[r~@g|Apn@kr@fAzPtGiB{Vti@qp@feA}Qlm@bAdf@`vA~AjS{JrK{Xja@ql@hM}NbBhIxF_ArJ|VhNlH|A_JcLeo@dDiSiMaDgAuk@hRyc@f@ig@fa@qJ{_@vHkO{^~CiRoRyo@yRaSbRcn@~@ud@gMoJzKkLz~AvLrhBxtBhfAh\\fz@tHtr@fXd_Abr@voBvfAr`ApYzhBdm@rjA_ApkAsO`eC}p@|hAaUlcAse@dy@aExr@gZrv@iw@vo@qNbgAtC`}@`Yz_Ajv@fdAtY~vCnY~IhUgN|nA_MxsAdK`oAxV|wAeHjkBgEnlAhNrdAvbBlvF`u@|k@`x@rIf`Bbn@`dChEflAvDvu@v@f_ApZhi@vb@tQjm@hSlmApa@rk@xkAzw@di@`jAxo@bkF|~A|pMd[~fCzAbp@ai@ptAahApmDid@lyC_u@nrIgz@j}God@f{Dyz@bkEgIrIf_@xNfu@yv@v~@sr@pn@_iAxLfpA}A|TnM~MB~C"]; let map, markers = [];
         async function initMap() {
             const { Map } = await google.maps.importLibrary("maps");
             const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");

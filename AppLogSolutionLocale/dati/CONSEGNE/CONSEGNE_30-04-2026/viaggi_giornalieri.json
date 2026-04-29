@@ -70,15 +70,43 @@
     "nome_giro": "Viaggio 2"
   },
   {
-    "id_zona": "3205",
+    "id_zona": "3206",
     "lista_punti": [
+      {
+        "nome": "SCUOLA PRIMARIA \"SANTA GIOVANNA D'ARCO\"",
+        "indirizzo": "VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)",
+        "codice_frutta": "p2099",
+        "codice_latte": "p00000",
+        "codice_univoco": "p2099_p00000",
+        "zona": "3206",
+        "data_consegna": "",
+        "orario_min_frutta": "08:00",
+        "orario_max_frutta": "10:00",
+        "orario_min_latte": "",
+        "orario_max_latte": "",
+        "orario_min": "08:00",
+        "orario_max": "10:00",
+        "lat": 45.97358583056165,
+        "lon": 12.29359709699365,
+        "codici_ddt_frutta": [
+          "p2099"
+        ],
+        "codici_ddt_latte": [
+          "p00000"
+        ],
+        "rientri_alert": [],
+        "rientri_da_allegare": [],
+        "row_idx_mappatura": 229,
+        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"SANTA GIOVANNA D'ARCO\" VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)",
+        "geo_query_indirizzo": "VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)"
+      },
       {
         "nome": "F.FABBRI - SANTA MARIA",
         "indirizzo": "PIAZZA DONATORI DI SANGUE 1, 31020 SAN PIETRO DI FELETTO (TREVISO)",
         "codice_frutta": "p2357",
         "codice_latte": "p00000",
         "codice_univoco": "p2357_p00000",
-        "zona": "3205",
+        "zona": "3206",
         "data_consegna": "",
         "orario_min_frutta": "08:00",
         "orario_max_frutta": "10:00",
@@ -111,49 +139,7 @@
         "row_idx_mappatura": 188,
         "geo_query_nome_indirizzo": "F.FABBRI - SANTA MARIA PIAZZA DONATORI DI SANGUE 1, 31020 SAN PIETRO DI FELETTO (TREVISO)",
         "geo_query_indirizzo": "PIAZZA DONATORI DI SANGUE 1, 31020 SAN PIETRO DI FELETTO (TREVISO)"
-      }
-    ],
-    "color": "#ef4444",
-    "nome_giro": "Viaggio 4"
-  },
-  {
-    "id_zona": "3206",
-    "lista_punti": [
-      {
-        "nome": "SCUOLA PRIMARIA \"SANTA GIOVANNA D'ARCO\"",
-        "indirizzo": "VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)",
-        "codice_frutta": "p2099",
-        "codice_latte": "p00000",
-        "codice_univoco": "p2099_p00000",
-        "zona": "3206",
-        "data_consegna": "",
-        "orario_min_frutta": "08:00",
-        "orario_max_frutta": "10:00",
-        "orario_min_latte": "",
-        "orario_max_latte": "",
-        "orario_min": "08:00",
-        "orario_max": "10:00",
-        "lat": 45.97358583056165,
-        "lon": 12.29359709699365,
-        "codici_ddt_frutta": [
-          "p2099"
-        ],
-        "codici_ddt_latte": [
-          "p00000"
-        ],
-        "rientri_alert": [],
-        "rientri_da_allegare": [],
-        "row_idx_mappatura": 229,
-        "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"SANTA GIOVANNA D'ARCO\" VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)",
-        "geo_query_indirizzo": "VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)"
-      }
-    ],
-    "color": "#4f46e5",
-    "nome_giro": "Viaggio 1"
-  },
-  {
-    "id_zona": "DDT_DA_INSERIRE",
-    "lista_punti": [
+      },
       {
         "nome": "O.DE GASPARI FALZE' DI P.",
         "indirizzo": "VIA DONATORI DEL SANGUE 4",
@@ -168,7 +154,7 @@
         "orario_max": "10:00",
         "lat": 45.86008859765876,
         "lon": 12.17298733945312,
-        "zona": "DDT_DA_INSERIRE",
+        "zona": "3206",
         "codici_ddt_frutta": [
           "p1951"
         ],
@@ -186,7 +172,7 @@
         "geo_query_indirizzo": "VIA DONATORI DEL SANGUE 4"
       }
     ],
-    "color": "#f59e0b",
-    "nome_giro": "⚠️ DDT DA INSERIRE"
+    "color": "#4f46e5",
+    "nome_giro": "Viaggio 1"
   }
 ]

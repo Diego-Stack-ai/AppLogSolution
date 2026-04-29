@@ -91,7 +91,7 @@
       "codice_frutta": "p2357",
       "codice_latte": "p00000",
       "codice_univoco": "p2357_p00000",
-      "zona": "3205",
+      "zona": "3206",
       "data_consegna": "",
       "orario_min_frutta": "08:00",
       "orario_max_frutta": "10:00",
@@ -139,7 +139,7 @@
       "orario_max": "10:00",
       "lat": 45.86008859765876,
       "lon": 12.17298733945312,
-      "zona": "DDT_DA_INSERIRE",
+      "zona": "3206",
       "codici_ddt_frutta": [
         "p1951"
       ],
@@ -157,5 +157,5 @@
       "geo_query_indirizzo": "VIA DONATORI DEL SANGUE 4"
     }
   ],
-  "is_locked": false
+  "is_locked": true
 }

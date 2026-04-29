@@ -810,6 +810,39 @@ def main():
                         if is_rientro:
                             rientri_usati.add((codice.lower(), d_r))
 
+        # ── RIENTRI DA ALLEGARE (cliente con consegna normale oggi + rientro storico) ──
+        # Campo operativo introdotto dal fix in script 3: quando un rientro viene abbinato
+        # a un punto che ha già una consegna regolare oggi, il codice finisce qui invece
+        # che solo in rientri_alert (che questo script ignora).
+        for obj_r in punto.get("rientri_da_allegare", []):
+            codice_r = obj_r["codice"]
+            data_r   = obj_r["data"]
+            tipo_r   = obj_r.get("tipo", "FRUTTA")
+            rientri_assegnati.add((codice_r.lower(), data_r))
+
+            try:
+                cartella_r_base = _trova_cartella(data_r)
+                cart_storica    = cartella_r_base / "DDT-ORIGINALI-DIVISI"
+            except Exception:
+                cart_storica = CONSEGNE_DIR / f"CONSEGNE_{data_r}" / "DDT-ORIGINALI-DIVISI"
+
+            pdf_found = None
+            for sotto in ["FRUTTA", "LATTE"]:
+                pdf_found = _trova_pdf(codice_r, data_r, cart_storica / sotto)
+                if pdf_found:
+                    break
+
+            if pdf_found:
+                pdf_usati.add(pdf_found)
+                pdf_usati_viaggio.append(pdf_found)
+                articoli = _raccogli_articoli_da_pdf(pdf_found, tipo_r)
+                articoli_giro.extend(articoli)
+                rientri_usati.add((codice_r.lower(), data_r))
+                print(f"       OK {nome:<40} {codice_r} ({tipo_r})[RIENTRO<-{data_r}] -> {len(articoli)} art.")
+            else:
+                pdf_non_trovati.append(f"{codice_r} ({tipo_r})[RIENTRO]")
+                print(f"       !! {nome:<40} {codice_r} ({tipo_r})[RIENTRO<-{data_r}] -> PDF non trovato")
+
         # Aggrega articoli del viaggio
         articoli_agg = _aggrega_articoli(articoli_giro)
         print(f"       -> Totale articoli distinti: {len(articoli_agg)}")

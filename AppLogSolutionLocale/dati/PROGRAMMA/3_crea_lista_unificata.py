@@ -285,6 +285,7 @@ def main():
             "codici_ddt_frutta": [],
             "codici_ddt_latte": [],
             "rientri_alert": [],
+            "rientri_da_allegare": [],
             "row_idx_mappatura": row_idx
         }
 
@@ -325,6 +326,18 @@ def main():
                     if not any(a["codice"] == cr and a["data_ddt"] == data_orig for a in up["rientri_alert"]):
                         up["rientri_alert"].append({"codice": cr, "status": status, "data_ddt": data_orig})
                         righe_rientri_da_marcare.append(r_idx)
+                    # ── FIX: propaga il rientro come campo operativo per script 9 ──
+                    # Senza questo, script 9 non allega mai il PDF del rientro quando
+                    # il cliente ha già una consegna regolare oggi (entra nel ramo 'if')
+                    # e il codice finisce solo in rientri_alert (campo puramente visivo).
+                    tipo_r = map_codice.get(cr.lower(), (None, "F"))[1]  # "F" o "L"
+                    if not any(a["codice"] == cr and a["data"] == data_orig
+                               for a in up.get("rientri_da_allegare", [])):
+                        up.setdefault("rientri_da_allegare", []).append({
+                            "codice": cr,
+                            "data":   data_orig,
+                            "tipo":   "FRUTTA" if tipo_r == "F" else "LATTE"
+                        })
         else:
             # DDT non abbinato ad alcuna consegna oggi → zona speciale sulla mappa
             path_m = PROG_DIR / "mappatura_destinazioni.xlsx"

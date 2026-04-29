@@ -1,0 +1,151 @@
+{
+  "data": "30-04-2026",
+  "punti": [
+    {
+      "nome": "SCUOLA PRIMARIA \"SANTA GIOVANNA D'ARCO\"",
+      "indirizzo": "VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)",
+      "codice_frutta": "p2099",
+      "codice_latte": "p00000",
+      "codice_univoco": "p2099_p00000",
+      "zona": "3206",
+      "data_consegna": "",
+      "orario_min_frutta": "08:00",
+      "orario_max_frutta": "10:00",
+      "orario_min_latte": "",
+      "orario_max_latte": "",
+      "orario_min": "08:00",
+      "orario_max": "10:00",
+      "lat": 45.97358583056165,
+      "lon": 12.29359709699365,
+      "codici_ddt_frutta": [
+        "p2099"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 229,
+      "geo_query_nome_indirizzo": "SCUOLA PRIMARIA \"SANTA GIOVANNA D'ARCO\" VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)",
+      "geo_query_indirizzo": "VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)"
+    },
+    {
+      "nome": "Duca D'Aosta San Martino Di Lupari",
+      "indirizzo": "Via Julia, 35018 San Martino Di Lupari (PADOVA)",
+      "codice_frutta": "p2209",
+      "codice_latte": "p00000",
+      "codice_univoco": "p2209_p00000",
+      "zona": "3111",
+      "data_consegna": "",
+      "orario_min_frutta": "07:30",
+      "orario_max_frutta": "10:00",
+      "orario_min_latte": "07:30",
+      "orario_max_latte": "10:00",
+      "orario_min": "07:30",
+      "orario_max": "10:00",
+      "lat": 45.6471714,
+      "lon": 11.8603388,
+      "codici_ddt_frutta": [
+        "p2209"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 118,
+      "geo_query_nome_indirizzo": "Duca D'Aosta San Martino Di Lupari Via Julia, 35018 San Martino Di Lupari (PADOVA)",
+      "geo_query_indirizzo": "Via Julia, 35018 San Martino Di Lupari (PADOVA)"
+    },
+    {
+      "nome": "OSPEDALETTO EUG. \"G.B.FERRARI\"",
+      "indirizzo": "VIA G.B. FERRARI 5, 35045 OSPEDALETTO EUGANEO (PADOVA)",
+      "codice_frutta": "p2327",
+      "codice_latte": "p00000",
+      "codice_univoco": "p2327_p00000",
+      "zona": "3110",
+      "data_consegna": "",
+      "orario_min_frutta": "07:30",
+      "orario_max_frutta": "10:00",
+      "orario_min_latte": "07:30",
+      "orario_max_latte": "10:00",
+      "orario_min": "07:30",
+      "orario_max": "10:00",
+      "lat": 45.22349014302539,
+      "lon": 11.61347554542582,
+      "codici_ddt_frutta": [
+        "p2327"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [],
+      "row_idx_mappatura": 82,
+      "geo_query_nome_indirizzo": "OSPEDALETTO EUG. \"G.B.FERRARI\" VIA G.B. FERRARI 5, 35045 OSPEDALETTO EUGANEO (PADOVA)",
+      "geo_query_indirizzo": "VIA G.B. FERRARI 5, 35045 OSPEDALETTO EUGANEO (PADOVA)"
+    },
+    {
+      "nome": "F.FABBRI - SANTA MARIA",
+      "indirizzo": "PIAZZA DONATORI DI SANGUE 1, 31020 SAN PIETRO DI FELETTO (TREVISO)",
+      "codice_frutta": "p2357",
+      "codice_latte": "p00000",
+      "codice_univoco": "p2357_p00000",
+      "zona": "3206",
+      "data_consegna": "",
+      "orario_min_frutta": "08:00",
+      "orario_max_frutta": "10:00",
+      "orario_min_latte": "08:15",
+      "orario_max_latte": "10:00",
+      "orario_min": "08:00",
+      "orario_max": "10:00",
+      "lat": 45.8977212304539,
+      "lon": 12.23460724970705,
+      "codici_ddt_frutta": [
+        "p2357"
+      ],
+      "codici_ddt_latte": [
+        "p00000"
+      ],
+      "rientri_alert": [
+        {
+          "codice": "p1704",
+          "status": "red",
+          "data_ddt": "23-04-2026"
+        }
+      ],
+      "row_idx_mappatura": 188,
+      "geo_query_nome_indirizzo": "F.FABBRI - SANTA MARIA PIAZZA DONATORI DI SANGUE 1, 31020 SAN PIETRO DI FELETTO (TREVISO)",
+      "geo_query_indirizzo": "PIAZZA DONATORI DI SANGUE 1, 31020 SAN PIETRO DI FELETTO (TREVISO)"
+    },
+    {
+      "nome": "O.DE GASPARI FALZE' DI P.",
+      "indirizzo": "VIA DONATORI DEL SANGUE 4",
+      "codice_frutta": "p2302",
+      "codice_latte": "p1951",
+      "data_consegna": "23-04-2026",
+      "orario_min_frutta": "07:45",
+      "orario_max_frutta": "10:00",
+      "orario_min_latte": "07:45",
+      "orario_max_latte": "10:00",
+      "orario_min": "07:45",
+      "orario_max": "10:00",
+      "lat": 45.86008859765876,
+      "lon": 12.17298733945312,
+      "zona": "3206",
+      "codici_ddt_frutta": [
+        "p1951"
+      ],
+      "codici_ddt_latte": [],
+      "rientri_alert": [
+        {
+          "codice": "p1951",
+          "status": "red",
+          "data_ddt": "23-04-2026"
+        }
+      ],
+      "row_idx_mappatura": 215,
+      "_is_rientro_speciale": true,
+      "geo_query_nome_indirizzo": "O.DE GASPARI FALZE' DI P. VIA DONATORI DEL SANGUE 4",
+      "geo_query_indirizzo": "VIA DONATORI DEL SANGUE 4"
+    }
+  ],
+  "is_locked": true
+}

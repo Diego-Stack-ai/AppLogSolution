@@ -230,7 +230,8 @@ HTML_TEMPLATE = """
     }
 
     function marcaModificato(p, m) {
-        MODIFIED[p.cod_f] = { id: p.cod_f, lat: p.lat, lng: p.lng };
+        let unique_id = p.cod_f + '_' + p.cod_l + '_' + p.destinatario;
+        MODIFIED[unique_id] = { cod_f: p.cod_f, cod_l: p.cod_l, dest: p.destinatario, lat: p.lat, lng: p.lng };
         m.setIcon(`https://maps.google.com/mapfiles/ms/icons/blue-dot.png`);
         document.getElementById('btn-save').disabled = false;
         document.getElementById('save-counter').innerText = `(${Object.keys(MODIFIED).length})`;
@@ -302,13 +303,19 @@ def save_all():
     with LOCK:
         try:
             df = pd.read_excel(EXCEL_FILE)
-            col_id = find_col(df.columns, ['Codice Frutta', 'Cod_F', 'Frutta'])
+            col_id_f = find_col(df.columns, ['Codice Frutta', 'Cod_F', 'Frutta'])
+            col_id_l = find_col(df.columns, ['Codice Latte', 'Cod_L', 'Latte'])
+            col_dest = find_col(df.columns, ['consegnato', 'Destinatario', 'Nome'])
             col_lat = find_col(df.columns, ['Latitudine', 'Lat'])
             col_lng = find_col(df.columns, ['Longitudine', 'Lng'])
             col_status = find_col(df.columns, ['Stato geocoding'])
 
             for item in items:
-                mask = df[col_id].astype(str).str.strip().str.lower() == str(item['id']).strip().lower()
+                mask_f = df[col_id_f].astype(str).str.strip().str.lower() == str(item['cod_f']).strip().lower()
+                mask_l = df[col_id_l].astype(str).str.strip().str.lower() == str(item['cod_l']).strip().lower()
+                mask_d = df[col_dest].astype(str).str.strip().str.lower() == str(item['dest']).strip().lower()
+                mask = mask_f & mask_l & mask_d
+                
                 if mask.any():
                     df.loc[mask, col_lat] = item['lat']
                     df.loc[mask, col_lng] = item['lng']

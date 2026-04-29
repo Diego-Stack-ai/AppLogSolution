@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V01</title>
+    <title>V03</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
@@ -69,13 +69,13 @@
         </div>
         <div id="sidebar">
             <div class="header">
-                <div class="trip-title">🏎️ V01 | Zone: 3108</div>
+                <div class="trip-title">🏎️ V03 | Zone: 3206</div>
                 <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
                 <div class="stats-row">
-                    <div class="stat-item"><span class="stat-val">63.3km</span><span class="stat-lbl">Strada</span></div>
-                    <div class="stat-item"><span class="stat-val">1h 1m</span><span class="stat-lbl">Guida</span></div>
-                    <div class="stat-item"><span class="stat-val">8m</span><span class="stat-lbl">Soste</span></div>
-                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">1h 9m</span><span class="stat-lbl">Totale</span></div>
+                    <div class="stat-item"><span class="stat-val">239.4km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 49m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">24m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">3h 13m</span><span class="stat-lbl">Totale</span></div>
                 </div>
             </div>
             <div id="delivery-list">
@@ -88,10 +88,30 @@
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(0, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Ardigo-Pd</b>
-                    <span class="addr"><b>Via Degli Agnusdei 17</b><br>35121 Padova (PADOVA)</span>
+                    <b class="name">O.DE GASPARI FALZE' DI P.</b>
+                    <span class="addr"><b>VIA DONATORI DEL SANGUE 4</b><br></span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4052534,11.8836038&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.86008859765876,12.17298733945312&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(2)">
+                <div class="stop-num">2</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(1, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">F.FABBRI - SANTA MARIA</b>
+                    <span class="addr"><b>PIAZZA DONATORI DI SANGUE 1</b><br>31020 SAN PIETRO DI FELETTO (TREVISO)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.8977212304539,12.23460724970705&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(3)">
+                <div class="stop-num">3</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(2, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">SCUOLA PRIMARIA "SANTA GIOVANNA D'ARCO"</b>
+                    <span class="addr"><b>VIA DEL FANTE 231</b><br>31029 VITTORIO VENETO (TREVISO)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.97358583056165,12.29359709699365&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div>
             <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
                 <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
@@ -154,8 +174,8 @@
     </script>
 
     <script>
-        const v_id = "V01";
-        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}, {"cliente": "Ardigo-Pd", "indirizzo": "Via Degli Agnusdei 17, 35121 Padova (PADOVA)", "lat": 45.4052534, "lon": 11.8836038, "codice_frutta": "p2047", "codice_latte": "p00000"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}];
+        const v_id = "V03";
+        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}, {"cliente": "O.DE GASPARI FALZE' DI P.", "indirizzo": "VIA DONATORI DEL SANGUE 4", "lat": 45.86008859765876, "lon": 12.17298733945312, "codice_frutta": "p2302", "codice_latte": "p1951"}, {"cliente": "F.FABBRI - SANTA MARIA", "indirizzo": "PIAZZA DONATORI DI SANGUE 1, 31020 SAN PIETRO DI FELETTO (TREVISO)", "lat": 45.8977212304539, "lon": 12.23460724970705, "codice_frutta": "p2357", "codice_latte": "p00000"}, {"cliente": "SCUOLA PRIMARIA \"SANTA GIOVANNA D'ARCO\"", "indirizzo": "VIA DEL FANTE 231, 31029 VITTORIO VENETO (TREVISO)", "lat": 45.97358583056165, "lon": 12.29359709699365, "codice_frutta": "p2099", "codice_latte": "p00000"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}];
         window.data = data; window.v_id = v_id;
         let map, markers = [], userMarker;
         window.currentPos = null;

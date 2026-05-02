@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V01</title>
+    <title>V02</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
@@ -69,13 +69,13 @@
         </div>
         <div id="sidebar">
             <div class="header">
-                <div class="trip-title">🏎️ V01 | Zone: 3110</div>
+                <div class="trip-title">🏎️ V02 | Zone: 3102</div>
                 <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
                 <div class="stats-row">
-                    <div class="stat-item"><span class="stat-val">87.2km</span><span class="stat-lbl">Strada</span></div>
-                    <div class="stat-item"><span class="stat-val">1h 7m</span><span class="stat-lbl">Guida</span></div>
-                    <div class="stat-item"><span class="stat-val">8m</span><span class="stat-lbl">Soste</span></div>
-                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">1h 15m</span><span class="stat-lbl">Totale</span></div>
+                    <div class="stat-item"><span class="stat-val">157.2km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 52m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">1h 44m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">4h 36m</span><span class="stat-lbl">Totale</span></div>
                 </div>
             </div>
             <div id="delivery-list">
@@ -88,10 +88,130 @@
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(0, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">OSPEDALETTO EUG. "G.B.FERRARI"</b>
-                    <span class="addr"><b>VIA G.B. FERRARI 5</b><br>35045 OSPEDALETTO EUGANEO (PADOVA)</span>
+                    <b class="name">SAONARA-BORGATO</b>
+                    <span class="addr"><b>VIA V. BACHELET 12</b><br>35020 SAONARA (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.22349014302539,11.61347554542582&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.37056264242794,11.98677266740852&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(2)">
+                <div class="stop-num">2</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(1, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">P.E. Venturini</b>
+                    <span class="addr"><b>Via P. Cicogna</b><br>2, 30015 Chioggia (VENEZIA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.19515350272428,12.28310347200546&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(3)">
+                <div class="stop-num">3</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(2, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Mario Merlin - Tempo Pieno</b>
+                    <span class="addr"><b>Via Ridotto Madonna</b><br>30015 Chioggia (VENEZIA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.19590518723022,12.28353495502525&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(4)">
+                <div class="stop-num">4</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(3, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">DON MILANI</b>
+                    <span class="addr"><b>VIA DOMENICO SCHIAVO</b><br>30015 CHIOGGIA (VENEZIA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.1990915721074,12.28960211181694&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(5)">
+                <div class="stop-num">5</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(4, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Paolo Vi</b>
+                    <span class="addr"><b>Via Acacia</b><br>N.18, 30015 Chioggia (VENEZIA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.19922918341118,12.28676030456366&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(6)">
+                <div class="stop-num">6</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(5, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">S. Todaro</b>
+                    <span class="addr"><b>Via S. Marco 25</b><br>30015 Chioggia (VENEZIA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.21600598452581,12.29197854900413&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(7)">
+                <div class="stop-num">7</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(6, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">PIER ANTONIO GREGORUTTI</b>
+                    <span class="addr"><b>CALLE SANTA CROCE 1222</b><br>30015 CHIOGGIA (VENEZIA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.2230968026504,12.28259833872717&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(8)">
+                <div class="stop-num">8</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(7, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">GIUSEPPE MARCHETTI</b>
+                    <span class="addr"><b>VIALE REPUBBLICA 2</b><br>30015 CHIOGGIA (VENEZIA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.21699922961572,12.27435776713203&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(9)">
+                <div class="stop-num">9</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(8, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">MARIO CHIEREGHIN</b>
+                    <span class="addr"><b>VIA PALMIRO TOGLIATTI 831</b><br>30015 CHIOGGIA (VENEZIA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.20229915455106,12.27843645648345&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(10)">
+                <div class="stop-num">10</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(9, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">GUGLIELMO MARCONI</b>
+                    <span class="addr"><b>VIA MARTIRI 1</b><br>30030 VIGONOVO (VENEZIA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.39745654384737,11.97977478408867&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(11)">
+                <div class="stop-num">11</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(10, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">LEONARDO DA VINCI</b>
+                    <span class="addr"><b>VIA MONTALE 2</b><br>30030 VIGONOVO (VENEZIA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.38767700370573,12.00972480667649&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(12)">
+                <div class="stop-num">12</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(11, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">EDMONDO DE AMICIS</b>
+                    <span class="addr"><b>VIA BATTISTI 52</b><br>30030 VIGONOVO (VENEZIA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.3919165216601,12.02251082114253&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(13)">
+                <div class="stop-num">13</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(12, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Don Orione</b>
+                    <span class="addr"><b>Via Matteotti</b><br>1, 30039 Stra (VENEZIA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.41715662267875,12.0057014847946&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div>
             <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
                 <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
@@ -154,8 +274,8 @@
     </script>
 
     <script>
-        const v_id = "V01";
-        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}, {"cliente": "OSPEDALETTO EUG. \"G.B.FERRARI\"", "indirizzo": "VIA G.B. FERRARI 5, 35045 OSPEDALETTO EUGANEO (PADOVA)", "lat": 45.22349014302539, "lon": 11.61347554542582, "codice_frutta": "p2327", "codice_latte": "p00000"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}];
+        const v_id = "V02";
+        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}, {"cliente": "SAONARA-BORGATO", "indirizzo": "VIA V. BACHELET 12, 35020 SAONARA (PADOVA)", "lat": 45.37056264242794, "lon": 11.98677266740852, "codice_frutta": "p00000", "codice_latte": "p1749"}, {"cliente": "P.E. Venturini", "indirizzo": "Via P. Cicogna , 2, 30015 Chioggia (VENEZIA)", "lat": 45.19515350272428, "lon": 12.28310347200546, "codice_frutta": "p2101", "codice_latte": "p00000"}, {"cliente": "Mario Merlin - Tempo Pieno", "indirizzo": "Via Ridotto Madonna, 30015 Chioggia (VENEZIA)", "lat": 45.19590518723022, "lon": 12.28353495502525, "codice_frutta": "p00000", "codice_latte": "p1721"}, {"cliente": "DON MILANI", "indirizzo": "VIA DOMENICO SCHIAVO, 30015 CHIOGGIA (VENEZIA)", "lat": 45.1990915721074, "lon": 12.28960211181694, "codice_frutta": "p00000", "codice_latte": "p1720"}, {"cliente": "Paolo Vi", "indirizzo": "Via Acacia, N.18, 30015 Chioggia (VENEZIA)", "lat": 45.19922918341118, "lon": 12.28676030456366, "codice_frutta": "p2110", "codice_latte": "p1835"}, {"cliente": "S. Todaro", "indirizzo": "Via S. Marco 25, 30015 Chioggia (VENEZIA)", "lat": 45.21600598452581, "lon": 12.29197854900413, "codice_frutta": "p00000", "codice_latte": "p1723"}, {"cliente": "PIER ANTONIO GREGORUTTI", "indirizzo": "CALLE SANTA CROCE 1222, 30015 CHIOGGIA (VENEZIA)", "lat": 45.2230968026504, "lon": 12.28259833872717, "codice_frutta": "p8640", "codice_latte": "p00000"}, {"cliente": "GIUSEPPE MARCHETTI", "indirizzo": "VIALE REPUBBLICA 2, 30015 CHIOGGIA (VENEZIA)", "lat": 45.21699922961572, "lon": 12.27435776713203, "codice_frutta": "p8994", "codice_latte": "p00000"}, {"cliente": "MARIO CHIEREGHIN", "indirizzo": "VIA PALMIRO TOGLIATTI 831, 30015 CHIOGGIA (VENEZIA)", "lat": 45.20229915455106, "lon": 12.27843645648345, "codice_frutta": "p8936", "codice_latte": "p00000"}, {"cliente": "GUGLIELMO MARCONI", "indirizzo": "VIA MARTIRI 1, 30030 VIGONOVO (VENEZIA)", "lat": 45.39745654384737, "lon": 11.97977478408867, "codice_frutta": "p00000", "codice_latte": "p1892"}, {"cliente": "LEONARDO DA VINCI", "indirizzo": "VIA MONTALE 2, 30030 VIGONOVO (VENEZIA)", "lat": 45.38767700370573, "lon": 12.00972480667649, "codice_frutta": "p2381", "codice_latte": "p00000"}, {"cliente": "EDMONDO DE AMICIS", "indirizzo": "VIA BATTISTI 52, 30030 VIGONOVO (VENEZIA)", "lat": 45.3919165216601, "lon": 12.02251082114253, "codice_frutta": "p2380", "codice_latte": "p1894"}, {"cliente": "Don Orione", "indirizzo": "Via Matteotti, 1, 30039 Stra (VENEZIA)", "lat": 45.41715662267875, "lon": 12.0057014847946, "codice_frutta": "p11501", "codice_latte": "p00000"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}];
         window.data = data; window.v_id = v_id;
         let map, markers = [], userMarker;
         window.currentPos = null;

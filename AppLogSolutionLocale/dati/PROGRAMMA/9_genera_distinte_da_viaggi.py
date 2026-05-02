@@ -45,7 +45,9 @@ ARTICOLI_NOTI_SET = frozenset({
     "LT-AQ-04-LV", "LT-AQ-04-LB", "LT-AQ-04-LS", "LT-DL-02-LC", "LT-ES-04-LS", "LT-ESL-IN-LB", 
     "MA-T-LI-L3-NA", "ME-T-DI-V0-NA", "ME-S-BI-L3-NA", "PE-T-DI-L3-NA",
     "YO-BI-MN-04-LB", "YO-DL-02-LC", "FI-Z-BI-L3-NA", "FR-M-BI-L3-NI",
-    "LNS-04-GADGET", "LNS-04-", "CA-Z-BI-L3-NA", "KI-S-BI-L3-NA"
+    "LNS-04-GADGET", "LNS-04-", "CA-Z-BI-L3-NA", "KI-S-BI-L3-NA",
+    "AL-M-BI-L3-NI", "SUCCO-REC",
+    "FO-DI-AS-04-LV", "ME-S-DI-L3-NA"
 })
 
 def _is_primary_code(text):
@@ -76,6 +78,8 @@ CONSOLIDAMENTO = {
     "AP-SU-PC":      ("Cartoni",   "Porzioni",  24),
     "FO-DI-GP-01-NI":("Colli",     "Buste",     16),
     "FO-DI-PV-04-LB":("Colli",     "Fette",     20),
+    "AL-M-BI-L3-NI": ("Colli",     "Porzioni",  10),
+    "SUCCO-REC":     ("Colli",     "Porzioni",  24),
 }
 
 UNITA_QTY = r"(Confezioni|Confezione|confezioni|confezione|Colli|Collo|colli|collo|Brick|brick|Fardelli|Fardello|fardelli|fardello|Bottiglie|Bottiglia|bottiglie|bottiglia|Cartoni|Cartone|cartoni|cartone|Cluster|cluster|Porzioni|Porzione|porzioni|porzione|Fascette|Fascetta|fascette|fascetta|Manifesti|Manifesto|manifesti|manifesto|Fette|Fetta|fette|fetta|Buste|Busta|buste|busta|pz)"
@@ -810,38 +814,38 @@ def main():
                         if is_rientro:
                             rientri_usati.add((codice.lower(), d_r))
 
-        # ── RIENTRI DA ALLEGARE (cliente con consegna normale oggi + rientro storico) ──
-        # Campo operativo introdotto dal fix in script 3: quando un rientro viene abbinato
-        # a un punto che ha già una consegna regolare oggi, il codice finisce qui invece
-        # che solo in rientri_alert (che questo script ignora).
-        for obj_r in punto.get("rientri_da_allegare", []):
-            codice_r = obj_r["codice"]
-            data_r   = obj_r["data"]
-            tipo_r   = obj_r.get("tipo", "FRUTTA")
-            rientri_assegnati.add((codice_r.lower(), data_r))
+            # ── RIENTRI DA ALLEGARE (cliente con consegna normale oggi + rientro storico) ──
+            # Campo operativo introdotto dal fix in script 3: quando un rientro viene abbinato
+            # a un punto che ha già una consegna regolare oggi, il codice finisce qui invece
+            # che solo in rientri_alert (che questo script ignora).
+            for obj_r in punto.get("rientri_da_allegare", []):
+                codice_r = obj_r["codice"]
+                data_r   = obj_r["data"]
+                tipo_r   = obj_r.get("tipo", "FRUTTA")
+                rientri_assegnati.add((codice_r.lower(), data_r))
 
-            try:
-                cartella_r_base = _trova_cartella(data_r)
-                cart_storica    = cartella_r_base / "DDT-ORIGINALI-DIVISI"
-            except Exception:
-                cart_storica = CONSEGNE_DIR / f"CONSEGNE_{data_r}" / "DDT-ORIGINALI-DIVISI"
+                try:
+                    cartella_r_base = _trova_cartella(data_r)
+                    cart_storica    = cartella_r_base / "DDT-ORIGINALI-DIVISI"
+                except Exception:
+                    cart_storica = CONSEGNE_DIR / f"CONSEGNE_{data_r}" / "DDT-ORIGINALI-DIVISI"
 
-            pdf_found = None
-            for sotto in ["FRUTTA", "LATTE"]:
-                pdf_found = _trova_pdf(codice_r, data_r, cart_storica / sotto)
+                pdf_found = None
+                for sotto in ["FRUTTA", "LATTE"]:
+                    pdf_found = _trova_pdf(codice_r, data_r, cart_storica / sotto)
+                    if pdf_found:
+                        break
+
                 if pdf_found:
-                    break
-
-            if pdf_found:
-                pdf_usati.add(pdf_found)
-                pdf_usati_viaggio.append(pdf_found)
-                articoli = _raccogli_articoli_da_pdf(pdf_found, tipo_r)
-                articoli_giro.extend(articoli)
-                rientri_usati.add((codice_r.lower(), data_r))
-                print(f"       OK {nome:<40} {codice_r} ({tipo_r})[RIENTRO<-{data_r}] -> {len(articoli)} art.")
-            else:
-                pdf_non_trovati.append(f"{codice_r} ({tipo_r})[RIENTRO]")
-                print(f"       !! {nome:<40} {codice_r} ({tipo_r})[RIENTRO<-{data_r}] -> PDF non trovato")
+                    pdf_usati.add(pdf_found)
+                    pdf_usati_viaggio.append(pdf_found)
+                    articoli = _raccogli_articoli_da_pdf(pdf_found, tipo_r)
+                    articoli_giro.extend(articoli)
+                    rientri_usati.add((codice_r.lower(), data_r))
+                    print(f"       OK {nome:<40} {codice_r} ({tipo_r})[RIENTRO<-{data_r}] -> {len(articoli)} art.")
+                else:
+                    pdf_non_trovati.append(f"{codice_r} ({tipo_r})[RIENTRO]")
+                    print(f"       !! {nome:<40} {codice_r} ({tipo_r})[RIENTRO<-{data_r}] -> PDF non trovato")
 
         # Aggrega articoli del viaggio
         articoli_agg = _aggrega_articoli(articoli_giro)

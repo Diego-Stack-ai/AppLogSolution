@@ -1,6 +1,6 @@
 @echo off
 title Editor Massivo Excel
-cd /d "%~dp0"
+cd /d "%~dp0PROGRAMMA"
 echo Avvio dell'Editor Massivo...
 python 5_editor_massivo_excel.py
 if %ERRORLEVEL% neq 0 (

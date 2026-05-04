@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V01</title>
+    <title>V05</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
@@ -69,13 +69,13 @@
         </div>
         <div id="sidebar">
             <div class="header">
-                <div class="trip-title">🏎️ V01 | Zone: 3101</div>
+                <div class="trip-title">🏎️ V05 | Zone: 4123</div>
                 <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
                 <div class="stats-row">
-                    <div class="stat-item"><span class="stat-val">151.4km</span><span class="stat-lbl">Strada</span></div>
-                    <div class="stat-item"><span class="stat-val">2h 57m</span><span class="stat-lbl">Guida</span></div>
-                    <div class="stat-item"><span class="stat-val">2h 32m</span><span class="stat-lbl">Soste</span></div>
-                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">5h 29m</span><span class="stat-lbl">Totale</span></div>
+                    <div class="stat-item"><span class="stat-val">328.3km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">5h 29m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 24m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">7h 53m</span><span class="stat-lbl">Totale</span></div>
                 </div>
             </div>
             <div id="delivery-list">
@@ -88,190 +88,180 @@
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(0, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">A. Vivaldi- Tempo Pieno</b>
-                    <span class="addr"><b>Via Fornase 53/D</b><br>30038 Spinea (VENEZIA)</span>
+                    <b class="name">Arsie</b>
+                    <span class="addr"><b>Piazza Marconi 1</b><br>32030 Arsie (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.47740507971339,12.16192909639931&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.98435952842514,11.757226537705&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(2)">
                 <div class="stop-num">2</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(1, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">MANTEGNA - TEMPO PIENO</b>
-                    <span class="addr"><b>VIA BOTTICELLI 4</b><br>30038 SPINEA (VENEZIA)</span>
+                    <b class="name">SC. ELEM. STATALE DI SOVRAMONTE</b>
+                    <span class="addr"><b>PIANA DI SORRIVA 332</b><br>32030 SOVRAMONTE (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.48252984047472,12.17696677546312&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=46.0555658187478,11.77629300203608&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(3)">
                 <div class="stop-num">3</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(2, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">CAPUOZZO-CATENE</b>
-                    <span class="addr"><b>VIA SCATTOLIN 6</b><br>30175 VENEZIA (VENEZIA)</span>
+                    <b class="name">"MARGHERITA RUSCONI" SEREN D.G.</b>
+                    <span class="addr"><b>VIA G. MARCONI 26</b><br>32030 SEREN DEL GRAPPA (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4781632469308,12.21222879570085&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.98981071578704,11.84086854362541&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(4)">
                 <div class="stop-num">4</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(3, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">LOMBARDO RADICE</b>
-                    <span class="addr"><b>QUARTIERE S. GIUSEPPE 1</b><br>30173 VENEZIA (VENEZIA)</span>
+                    <b class="name">MUGNAI</b>
+                    <span class="addr"><b>VIA SCUOLE 53</b><br>32032 FELTRE (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.48027186201517,12.26543214008941&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=46.01618159236259,11.86814182499236&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(5)">
                 <div class="stop-num">5</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(4, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">VIA VIRGILIO</b>
-                    <span class="addr"><b>VIA VIRGILIO N. 1</b><br>30173 VENEZIA (VENEZIA)</span>
+                    <b class="name">SC. ELEM. "A.RECH" PEDAVENA</b>
+                    <span class="addr"><b>VIA U. FOSCOLO 1</b><br>32034 PEDAVENA (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.49564945173967,12.26296239390049&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=46.03903902220696,11.87634880447441&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(6)">
                 <div class="stop-num">6</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(5, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">LEONARDO DA VINCI</b>
-                    <span class="addr"><b>VIA BISSUOLA N. 95</b><br>30173 VENEZIA (VENEZIA)</span>
+                    <b class="name">FARRA</b>
+                    <span class="addr"><b>VIA BOSCARIZ 1</b><br>32032 FELTRE (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.49347594605456,12.25905759228288&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=46.02749659094529,11.90151508570556&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(7)">
                 <div class="stop-num">7</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(6, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Scuola Primaria Paritaria Berna</b>
-                    <span class="addr"><b>Via Bissuola</b><br>93, 30173 Venezia (VENEZIA)</span>
+                    <b class="name">FOEN</b>
+                    <span class="addr"><b>VIA VALLINA 1</b><br>32032 FELTRE (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.49374200719483,12.25792048815366&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=46.04101915366381,11.9063858402588&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(8)">
                 <div class="stop-num">8</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(7, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Istituto Farina</b>
-                    <span class="addr"><b>Via Santa Chiara 11</b><br>Mestre Ve, 30174 Venezia (VENEZIA)</span>
+                    <b class="name">"ROMANO OCRI" CESIOM.-SORANZEN</b>
+                    <span class="addr"><b>VIA SCUOLE 14</b><br>32030 CESIOMAGGIORE (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.49930340246611,12.23149551178663&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=46.07358887371196,11.94613988304191&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(9)">
                 <div class="stop-num">9</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(8, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Scuola Primaria D. A. Munaretto - Cipressina</b>
-                    <span class="addr"><b>Via Del Gazzato</b><br>6, 30174 Venezia (VENEZIA)</span>
+                    <b class="name">SAN GREGORIO NELLE ALPI</b>
+                    <span class="addr"><b>VIA MONTE PIZZOCCO 2</b><br>32030 SAN GREGORIO NELLE ALPI (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.50196554228852,12.22981089811288&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=46.10446850259822,12.02748591804557&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(10)">
                 <div class="stop-num">10</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(9, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">SCUOLA PARITARIA PRIMARIA "LUIGI CABURLOTTO"</b>
-                    <span class="addr"><b>VIA TERRAGLIO 92</b><br>30174 VENEZIA (VENEZIA)</span>
+                    <b class="name">Scuola Elementare Santa Giustina</b>
+                    <span class="addr"><b>Via Cal De Formiga 29</b><br>32035 Santa Giustina (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.51087923323055,12.23848156336822&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=46.08070574267619,12.03891212844902&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(11)">
                 <div class="stop-num">11</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(10, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">G. VERDI - VIA FAVRETTI</b>
-                    <span class="addr"><b>VIA FAVRETTI 14</b><br>31021 MOGLIANO VENETO (TREVISO)</span>
+                    <b class="name">Fraz. Meano</b>
+                    <span class="addr"><b>Piazza Alvisi 17</b><br>32035 Santa Giustina (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.55323724194049,12.24011068650817&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=46.10223867972199,12.06636185550743&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(12)">
                 <div class="stop-num">12</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(11, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">M. POLO - ZERMAN</b>
-                    <span class="addr"><b>VIA DELLA CHIESA 13</b><br>31021 MOGLIANO VENETO (TREVISO)</span>
+                    <b class="name">Dante Alighieri - Mel</b>
+                    <span class="addr"><b>Via D. R. Zannoni</b><br>37, 32026 Borgo Valbelluna (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.57983640079801,12.26859610898437&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=46.04399146457267,12.06463451290184&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(13)">
                 <div class="stop-num">13</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(12, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">A. FRANK - ZONA PEEP</b>
-                    <span class="addr"><b>VIA BARBIERO 121</b><br>31021 MOGLIANO VENETO (TREVISO)</span>
+                    <b class="name">"VITTORINO DA FELTRE" FELTRE</b>
+                    <span class="addr"><b>VIA C. CASTALDI 4</b><br>32032 FELTRE (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.55791334897933,12.25381814627151&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=46.01590127211293,11.91045748465577&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(14)">
                 <div class="stop-num">14</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(13, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">D. VALERI - VIA RAGUSA</b>
-                    <span class="addr"><b>VIA RAGUSA 18</b><br>31021 MOGLIANO VENETO (TREVISO)</span>
+                    <b class="name">Scuola Primaria Parificata Paritaria Istituto Canossiano</b>
+                    <span class="addr"><b>Viale Montegrappa</b><br>1, 32032 Feltre (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.55190507058421,12.25348167196657&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=46.01203314763302,11.90884818898544&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(15)">
                 <div class="stop-num">15</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(14, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Scuola Primaria Villa Medico - Zelarino</b>
-                    <span class="addr"><b>Via Castellana</b><br>154/B, 30174 Venezia (VENEZIA)</span>
+                    <b class="name">E. De Amicis - Alano Di Piave</b>
+                    <span class="addr"><b>Piazza Martiri</b><br>3, 32038 Alano Di Piave Del Comune Di Setteville (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.51554811309299,12.20777326766317&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.90772227312552,11.90832772135733&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(16)">
                 <div class="stop-num">16</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(15, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">ADAMO VOLPATO</b>
-                    <span class="addr"><b>PIAZZA IV NOVEMBRE N.49</b><br>30030 MARTELLAGO (VENEZIA)</span>
+                    <b class="name">SCUOLA PRIMARIA S. MARIA ASSUNTA</b>
+                    <span class="addr"><b>VIA PIVA 10</b><br>31049 VALDOBBIADENE (TREVISO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.52337660224813,12.15691285007483&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.9014986985537,11.99650876718139&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(17)">
                 <div class="stop-num">17</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(16, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">"MARCO POLO"</b>
-                    <span class="addr"><b>VIA M. POLO 2</b><br>30038 SPINEA (VENEZIA)</span>
+                    <b class="name">F.Lli Stramare - Pederobba Cap.</b>
+                    <span class="addr"><b>Via Roma 102</b><br>31040 Pederobba (TREVISO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.49825210673141,12.14977438417815&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.87714458284614,11.95191736125999&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(18)">
                 <div class="stop-num">18</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(17, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">I. Nievo</b>
-                    <span class="addr"><b>Via Buonarroti 48</b><br>30038 Spinea (VENEZIA)</span>
+                    <b class="name">Francesco Sartor - Cavaso Del Tomba</b>
+                    <span class="addr"><b>Via Stradone Del Tempio N°21</b><br>31034 Cavaso Del Tomba (TREVISO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.49352610652237,12.16461175092623&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(19)">
-                <div class="stop-num">19</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(18, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">"ANNA FRANK"</b>
-                    <span class="addr"><b>VIA FREGENE 15</b><br>30038 SPINEA (VENEZIA)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4884796256669,12.15500800304108&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.85675089032596,11.87898907011721&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div>
             <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
                 <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
@@ -334,8 +324,8 @@
     </script>
 
     <script>
-        const v_id = "V01";
-        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}, {"cliente": "A. Vivaldi- Tempo Pieno", "indirizzo": "Via Fornase 53/D, 30038 Spinea (VENEZIA)", "lat": 45.47740507971339, "lon": 12.16192909639931, "codice_frutta": "p13729", "codice_latte": "p00000"}, {"cliente": "MANTEGNA - TEMPO PIENO", "indirizzo": "VIA BOTTICELLI 4, 30038 SPINEA (VENEZIA)", "lat": 45.48252984047472, "lon": 12.17696677546312, "codice_frutta": "p7412", "codice_latte": "p00000"}, {"cliente": "CAPUOZZO-CATENE", "indirizzo": "VIA SCATTOLIN 6, 30175 VENEZIA (VENEZIA)", "lat": 45.4781632469308, "lon": 12.21222879570085, "codice_frutta": "p2274", "codice_latte": "p00000"}, {"cliente": "LOMBARDO RADICE", "indirizzo": "QUARTIERE S. GIUSEPPE 1, 30173 VENEZIA (VENEZIA)", "lat": 45.48027186201517, "lon": 12.26543214008941, "codice_frutta": "p8200", "codice_latte": "p00000"}, {"cliente": "VIA VIRGILIO", "indirizzo": "VIA VIRGILIO N. 1, 30173 VENEZIA (VENEZIA)", "lat": 45.49564945173967, "lon": 12.26296239390049, "codice_frutta": "p2162", "codice_latte": "p00000"}, {"cliente": "LEONARDO DA VINCI", "indirizzo": "VIA BISSUOLA N. 95, 30173 VENEZIA (VENEZIA)", "lat": 45.49347594605456, "lon": 12.25905759228288, "codice_frutta": "p2161", "codice_latte": "p00000"}, {"cliente": "Scuola Primaria Paritaria Berna", "indirizzo": "Via Bissuola,93, 30173 Venezia (VENEZIA)", "lat": 45.49374200719483, "lon": 12.25792048815366, "codice_frutta": "p2235", "codice_latte": "p00000"}, {"cliente": "Istituto Farina", "indirizzo": "Via Santa Chiara 11, Mestre Ve, 30174 Venezia (VENEZIA)", "lat": 45.49930340246611, "lon": 12.23149551178663, "codice_frutta": "p2233", "codice_latte": "p1700"}, {"cliente": "Scuola Primaria D. A. Munaretto - Cipressina", "indirizzo": "Via Del Gazzato, 6, 30174 Venezia (VENEZIA)", "lat": 45.50196554228852, "lon": 12.22981089811288, "codice_frutta": "p7025", "codice_latte": "p00000"}, {"cliente": "SCUOLA PARITARIA PRIMARIA \"LUIGI CABURLOTTO\"", "indirizzo": "VIA TERRAGLIO 92, 30174 VENEZIA (VENEZIA)", "lat": 45.51087923323055, "lon": 12.23848156336822, "codice_frutta": "p10949", "codice_latte": "p1937"}, {"cliente": "G. VERDI - VIA FAVRETTI", "indirizzo": "VIA FAVRETTI 14, 31021 MOGLIANO VENETO (TREVISO)", "lat": 45.55323724194049, "lon": 12.24011068650817, "codice_frutta": "p2076", "codice_latte": "p00000"}, {"cliente": "M. POLO - ZERMAN", "indirizzo": "VIA DELLA CHIESA 13, 31021 MOGLIANO VENETO (TREVISO)", "lat": 45.57983640079801, "lon": 12.26859610898437, "codice_frutta": "p2079", "codice_latte": "p00000"}, {"cliente": "A. FRANK - ZONA PEEP", "indirizzo": "VIA BARBIERO 121, 31021 MOGLIANO VENETO (TREVISO)", "lat": 45.55791334897933, "lon": 12.25381814627151, "codice_frutta": "p2078", "codice_latte": "p00000"}, {"cliente": "D. VALERI - VIA RAGUSA", "indirizzo": "VIA RAGUSA 18, 31021 MOGLIANO VENETO (TREVISO)", "lat": 45.55190507058421, "lon": 12.25348167196657, "codice_frutta": "p2077", "codice_latte": "p00000"}, {"cliente": "Scuola Primaria Villa Medico - Zelarino", "indirizzo": "Via Castellana, 154/B, 30174 Venezia (VENEZIA)", "lat": 45.51554811309299, "lon": 12.20777326766317, "codice_frutta": "p7026", "codice_latte": "p00000"}, {"cliente": "ADAMO VOLPATO", "indirizzo": "PIAZZA IV NOVEMBRE N.49, 30030 MARTELLAGO (VENEZIA)", "lat": 45.52337660224813, "lon": 12.15691285007483, "codice_frutta": "p2309", "codice_latte": "p00000"}, {"cliente": "\"MARCO POLO\"", "indirizzo": "VIA M. POLO 2, 30038 SPINEA (VENEZIA)", "lat": 45.49825210673141, "lon": 12.14977438417815, "codice_frutta": "p2278", "codice_latte": "p00000"}, {"cliente": "I. Nievo", "indirizzo": "Via Buonarroti 48, 30038 Spinea (VENEZIA)", "lat": 45.49352610652237, "lon": 12.16461175092623, "codice_frutta": "p13569", "codice_latte": "p00000"}, {"cliente": "\"ANNA FRANK\"", "indirizzo": "VIA FREGENE 15, 30038 SPINEA (VENEZIA)", "lat": 45.4884796256669, "lon": 12.15500800304108, "codice_frutta": "p2277", "codice_latte": "p00000"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}];
+        const v_id = "V05";
+        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}, {"cliente": "Arsie", "indirizzo": "Piazza Marconi 1, 32030 Arsie (BELLUNO)", "lat": 45.98435952842514, "lon": 11.757226537705, "codice_frutta": "p00000", "codice_latte": "p1798"}, {"cliente": "SC. ELEM. STATALE DI SOVRAMONTE", "indirizzo": "PIANA DI SORRIVA 332, 32030 SOVRAMONTE (BELLUNO)", "lat": 46.0555658187478, "lon": 11.77629300203608, "codice_frutta": "p11826", "codice_latte": "p00000"}, {"cliente": "\"MARGHERITA RUSCONI\" SEREN D.G.", "indirizzo": "VIA G. MARCONI 26, 32030 SEREN DEL GRAPPA (BELLUNO)", "lat": 45.98981071578704, "lon": 11.84086854362541, "codice_frutta": "p00000", "codice_latte": "p1907"}, {"cliente": "MUGNAI", "indirizzo": "VIA SCUOLE 53, 32032 FELTRE (BELLUNO)", "lat": 46.01618159236259, "lon": 11.86814182499236, "codice_frutta": "p9960", "codice_latte": "p00000"}, {"cliente": "SC. ELEM. \"A.RECH\" PEDAVENA", "indirizzo": "VIA U. FOSCOLO 1, 32034 PEDAVENA (BELLUNO)", "lat": 46.03903902220696, "lon": 11.87634880447441, "codice_frutta": "p00000", "codice_latte": "p1854"}, {"cliente": "FARRA", "indirizzo": "VIA BOSCARIZ 1, 32032 FELTRE (BELLUNO)", "lat": 46.02749659094529, "lon": 11.90151508570556, "codice_frutta": "p10238", "codice_latte": "p00000"}, {"cliente": "FOEN", "indirizzo": "VIA VALLINA 1, 32032 FELTRE (BELLUNO)", "lat": 46.04101915366381, "lon": 11.9063858402588, "codice_frutta": "p7473", "codice_latte": "p00000"}, {"cliente": "\"ROMANO OCRI\" CESIOM.-SORANZEN", "indirizzo": "VIA SCUOLE 14, 32030 CESIOMAGGIORE (BELLUNO)", "lat": 46.07358887371196, "lon": 11.94613988304191, "codice_frutta": "p00000", "codice_latte": "p2009"}, {"cliente": "SAN GREGORIO NELLE ALPI", "indirizzo": "VIA MONTE PIZZOCCO 2, 32030 SAN GREGORIO NELLE ALPI (BELLUNO)", "lat": 46.10446850259822, "lon": 12.02748591804557, "codice_frutta": "p00000", "codice_latte": "p1988"}, {"cliente": "Scuola Elementare Santa Giustina", "indirizzo": "Via Cal De Formiga 29, 32035 Santa Giustina (BELLUNO)", "lat": 46.08070574267619, "lon": 12.03891212844902, "codice_frutta": "p00000", "codice_latte": "p1985"}, {"cliente": "Fraz. Meano", "indirizzo": "Piazza Alvisi 17, 32035 Santa Giustina (BELLUNO)", "lat": 46.10223867972199, "lon": 12.06636185550743, "codice_frutta": "p00000", "codice_latte": "p1986"}, {"cliente": "Dante Alighieri - Mel", "indirizzo": "Via D. R. Zannoni, 37, 32026 Borgo Valbelluna (BELLUNO)", "lat": 46.04399146457267, "lon": 12.06463451290184, "codice_frutta": "p00000", "codice_latte": "p1922"}, {"cliente": "\"VITTORINO DA FELTRE\" FELTRE", "indirizzo": "VIA C. CASTALDI 4, 32032 FELTRE (BELLUNO)", "lat": 46.01590127211293, "lon": 11.91045748465577, "codice_frutta": "p9804", "codice_latte": "p00000"}, {"cliente": "Scuola Primaria Parificata Paritaria Istituto Canossiano", "indirizzo": "Viale Montegrappa, 1, 32032 Feltre (BELLUNO)", "lat": 46.01203314763302, "lon": 11.90884818898544, "codice_frutta": "p2154", "codice_latte": "p00000"}, {"cliente": "E. De Amicis - Alano Di Piave", "indirizzo": "Piazza Martiri, 3, 32038 Alano Di Piave Del Comune Di Setteville (BELLUNO)", "lat": 45.90772227312552, "lon": 11.90832772135733, "codice_frutta": "p2130", "codice_latte": "p1760"}, {"cliente": "SCUOLA PRIMARIA S. MARIA ASSUNTA", "indirizzo": "VIA PIVA 10, 31049 VALDOBBIADENE (TREVISO)", "lat": 45.9014986985537, "lon": 11.99650876718139, "codice_frutta": "p2286", "codice_latte": "p00000"}, {"cliente": "F.Lli Stramare - Pederobba Cap.", "indirizzo": "Via Roma 102, 31040 Pederobba (TREVISO)", "lat": 45.87714458284614, "lon": 11.95191736125999, "codice_frutta": "p00000", "codice_latte": "p2025"}, {"cliente": "Francesco Sartor - Cavaso Del Tomba", "indirizzo": "Via Stradone Del Tempio N\u00b021, 31034 Cavaso Del Tomba (TREVISO)", "lat": 45.85675089032596, "lon": 11.87898907011721, "codice_frutta": "p2271", "codice_latte": "p00000"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}];
         window.data = data; window.v_id = v_id;
         let map, markers = [], userMarker;
         window.currentPos = null;

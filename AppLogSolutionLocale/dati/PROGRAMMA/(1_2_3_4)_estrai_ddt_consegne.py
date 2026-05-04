@@ -36,17 +36,22 @@ LUOGO_RE = re.compile(r'(?:[Ll]uogo [Dd]i [Dd]estinazione|[Cc]odice [Dd]estinazi
 CAP_RE = re.compile(r"\b(\d{5})\b")
 PROVINCIA_RE = re.compile(r"\(([A-Z]{2})\)")
 CAUSALE_RE = re.compile(r'(?:conto di|ordine e conto di)\s+([A-Z]\d{4})(?:\s+H(\d{2}))?(?:\s+(\d{3}))?', re.I)
+NUM_DDT_RE = re.compile(r'DDT\s*[Nn][°º\.\s]*([A-Za-z0-9/-]+)', re.I)
 
 
-def _estrai_data_luogo(text: str) -> tuple[str | None, str | None]:
-    """Estrae (data, luogo) da una pagina DDT. data in formato DD-MM-YYYY."""
+def _estrai_data_luogo(text: str) -> tuple[str | None, str | None, str | None]:
+    """Estrae (data, luogo, num_ddt) da una pagina DDT. data in formato DD-MM-YYYY."""
     data = None
     m = DATA_DDT_RE.search(text)
     if m:
         data = f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
     luogo_m = LUOGO_RE.search(text)
     luogo = luogo_m.group(1).lower() if luogo_m else None
-    return (data, luogo)
+    
+    num_m = NUM_DDT_RE.search(text)
+    num_ddt = num_m.group(1).replace("/", "-") if num_m else "UNK"
+    
+    return (data, luogo, num_ddt)
 
 
 def _estrai_dati_consegna_da_testo(text: str, codice: str, da_frutta: bool) -> dict:
@@ -119,7 +124,7 @@ def _ricava_date_da_pdf() -> list[str]:
                 with pdfplumber.open(pdf_path) as pdf:
                     for page in pdf.pages:
                         text = page.extract_text() or ""
-                        data, _ = _estrai_data_luogo(text)
+                        data, _, _ = _estrai_data_luogo(text)
                         if data: date_trovate.add(data)
             except: pass
     return sorted(date_trovate)
@@ -223,9 +228,10 @@ def _estrai_da_cartella(cart_in: Path, cart_out: Path, etichetta: str, date_vali
         try:
             reader = PdfReader(pdf_path)
             with pdfplumber.open(pdf_path) as pdf:
+                gruppi_locali = {}
                 for i in range(0, len(pdf.pages), 2 if duplicata else 1):
                     text = pdf.pages[i].extract_text() or ""
-                    d, l = _estrai_data_luogo(text)
+                    d, l, num_ddt = _estrai_data_luogo(text)
                     if not d or not l or d not in date_valide: continue  # accetta tutte le date valide
                     if l not in mappati and l not in nuovi_dati:
                         nuovi_dati[l] = _estrai_dati_consegna_da_testo(text, l, duplicata)
@@ -260,13 +266,23 @@ def _estrai_da_cartella(cart_in: Path, cart_out: Path, etichetta: str, date_vali
                                         else:
                                             mappati[l] = (row_idx_m, om_f, oM_f, om_ddt or om_l, oM_ddt or oM_l)
                                         aggiornati_orari.add(row_idx_m)
-                    chiave = (d, l)
-                    cnt = visti.get(chiave, 0) + 1
-                    visti[chiave] = cnt
-                    fname = f"{l}_{d}_{cnt}.pdf" if cnt > 1 else f"{l}_{d}.pdf"
-                    writer = PdfWriter()
-                    writer.add_page(reader.pages[i])
-                    with open(cart_out / fname, "wb") as f: writer.write(f)
+                                        
+                    chiave = (l, d, num_ddt)
+                    if chiave not in gruppi_locali:
+                        gruppi_locali[chiave] = PdfWriter()
+                    gruppi_locali[chiave].add_page(reader.pages[i])
+                    if duplicata and i + 1 < len(pdf.pages):
+                        gruppi_locali[chiave].add_page(reader.pages[i+1])
+                        
+                # Scrittura dei PDF accorpati per questo documento master
+                for (l, d, num_ddt), writer in gruppi_locali.items():
+                    chiave_globale = (l, d, num_ddt)
+                    cnt = visti.get(chiave_globale, 0) + 1
+                    visti[chiave_globale] = cnt
+                    
+                    fname = f"{l}_{d}_{num_ddt}_{cnt}.pdf" if cnt > 1 else f"{l}_{d}_{num_ddt}.pdf"
+                    with open(cart_out / fname, "wb") as f:
+                        writer.write(f)
                     creati += 1
                     if creati <= 3 or creati % 50 == 0: print(f"    {fname}")
         except Exception as e: print(f"  Errore {pdf_path.name}: {e}")

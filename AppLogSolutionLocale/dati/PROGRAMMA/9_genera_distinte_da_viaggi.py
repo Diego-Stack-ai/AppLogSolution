@@ -368,40 +368,31 @@ def _aggiorna_stato_rientri_excel(aggiornamenti: list):
 
 
 
-def _trova_pdf(codice: str, data: str, cartella: Path) -> Path | None:
+def _trova_pdf(codice: str, data: str, cartella: Path) -> list[Path]:
     """
-    Cerca il PDF del cliente nella cartella specificata.
-    Nome atteso: {codice}_{data}.pdf  (es. p2067_26-03-2026.pdf)
+    Cerca i PDF del cliente nella cartella specificata.
+    Nome atteso: {codice}_{data}.pdf oppure {codice}_{data}_{num_ddt}.pdf
 
-    Supporta cartelle multi-data (es. "30-03-2026_31-03-2026"):
-      1. Prova la data esatta composta (es. p1745_30-03-2026_31-03-2026.pdf)
-      2. Per cartelle multi-data, prova ogni singola data separata (es. p1745_30-03-2026.pdf)
-      3. Fallback glob: qualsiasi file che inizia con {codice}_
+    Restituisce una lista di Path (può contenere più DDT per lo stesso codice/data).
     """
     if codice == CODICE_VUOTO or not codice:
-        return None
+        return []
 
-    # 1. Ricerca esatta (funziona per date singole e come primo tentativo)
-    p = cartella / f"{codice}_{data}.pdf"
-    if p.exists():
-        return p
-
-    # 2. Se la data è multi-data (contiene "_" che separa due date DD-MM-YYYY_DD-MM-YYYY),
-    #    prova ogni singola data estratta
-    #    Formato atteso: "30-03-2026_31-03-2026" -> ['30-03-2026', '31-03-2026']
+    risultati = []
+    
+    # Estrai tutte le date da cercare (supporta date composte tipo DD-MM-YYYY_DD-MM-YYYY)
     parti_data = re.findall(r"\d{2}-\d{2}-\d{4}", data)
-    if len(parti_data) > 1:
-        for d in parti_data:
-            p = cartella / f"{codice}_{d}.pdf"
-            if p.exists():
-                return p
-
-    # 3. Fallback glob: cerca qualsiasi file che inizia con il codice
+    date_valide = set(parti_data) if parti_data else {data}
+    
+    # Cerca tutti i file che iniziano con il codice cliente
     matches = list(cartella.glob(f"{codice}_*.pdf"))
-    if matches:
-        return matches[0]
+    
+    for m in matches:
+        # Filtra solo i file che contengono almeno una delle date valide
+        if any(d in m.name for d in date_valide):
+            risultati.append(m)
 
-    return None
+    return risultati
 
 
 def _trova_cartella(data_arg: str | None) -> Path:
@@ -783,16 +774,18 @@ def main():
                             cart_storica = CONSEGNE_DIR / f"CONSEGNE_{d_r}" / "DDT-ORIGINALI-DIVISI"
                         
                         for sotto in ["FRUTTA", "LATTE"]:
-                            pdf_found = _trova_pdf(codice, d_r, cart_storica / sotto)
-                            if pdf_found:
-                                pdfs_da_processare.append((pdf_found, sotto, d_r))
+                            pdfs_found = _trova_pdf(codice, d_r, cart_storica / sotto)
+                            if pdfs_found:
+                                for p_f in pdfs_found:
+                                    pdfs_da_processare.append((p_f, sotto, d_r))
                                 break
                 else:
                     # ── CONSEGNA NORMALE: cerca nella cartella della sessione corrente ──
                     cart_tipo = dir_frutta_r if tipo == "FRUTTA" else dir_latte_r
-                    pdf_found = _trova_pdf(codice, d_p, cart_tipo)
-                    if pdf_found:
-                        pdfs_da_processare.append((pdf_found, tipo, d_p))
+                    pdfs_found = _trova_pdf(codice, d_p, cart_tipo)
+                    if pdfs_found:
+                        for p_f in pdfs_found:
+                            pdfs_da_processare.append((p_f, tipo, d_p))
 
                 if not pdfs_da_processare:
                     pdf_non_trovati.append(f"{codice} ({tipo})")
@@ -830,19 +823,20 @@ def main():
                 except Exception:
                     cart_storica = CONSEGNE_DIR / f"CONSEGNE_{data_r}" / "DDT-ORIGINALI-DIVISI"
 
-                pdf_found = None
+                pdfs_found = []
                 for sotto in ["FRUTTA", "LATTE"]:
-                    pdf_found = _trova_pdf(codice_r, data_r, cart_storica / sotto)
-                    if pdf_found:
+                    pdfs_found = _trova_pdf(codice_r, data_r, cart_storica / sotto)
+                    if pdfs_found:
                         break
 
-                if pdf_found:
-                    pdf_usati.add(pdf_found)
-                    pdf_usati_viaggio.append(pdf_found)
-                    articoli = _raccogli_articoli_da_pdf(pdf_found, tipo_r)
-                    articoli_giro.extend(articoli)
+                if pdfs_found:
+                    for p_f in pdfs_found:
+                        pdf_usati.add(p_f)
+                        pdf_usati_viaggio.append(p_f)
+                        articoli = _raccogli_articoli_da_pdf(p_f, tipo_r)
+                        articoli_giro.extend(articoli)
+                        print(f"       OK {nome:<40} {codice_r} ({tipo_r})[RIENTRO<-{data_r}] -> {len(articoli)} art.")
                     rientri_usati.add((codice_r.lower(), data_r))
-                    print(f"       OK {nome:<40} {codice_r} ({tipo_r})[RIENTRO<-{data_r}] -> {len(articoli)} art.")
                 else:
                     pdf_non_trovati.append(f"{codice_r} ({tipo_r})[RIENTRO]")
                     print(f"       !! {nome:<40} {codice_r} ({tipo_r})[RIENTRO<-{data_r}] -> PDF non trovato")

@@ -266,20 +266,22 @@ def main():
     # ── Costruisce i set di codici PDF fisicamente presenti ──────────────────
     # Legge i nomi file nelle cartelle FRUTTA e LATTE ed estrae il codice
     # (es. "p2063_30-03-2026.pdf" → "p2063")
-    def _codici_in_cartella(cart: Path) -> set:
+    def _codici_in_cartella(cart: Path) -> tuple[set, int]:
         if not cart.exists():
-            return set()
+            return set(), 0
         codici = set()
+        count = 0
         for f in cart.glob("*.pdf"):
+            count += 1
             # nome atteso: {codice}_{data}.pdf  oppure {codice}_{data}_N.pdf
             parti = f.stem.split("_")
             if parti:
                 codici.add(parti[0].lower())
-        return codici
+        return codici, count
 
-    pdf_frutta_presenti = _codici_in_cartella(input_frutta)
-    pdf_latte_presenti  = _codici_in_cartella(input_latte)
-    print(f"  PDF presenti → FRUTTA: {len(pdf_frutta_presenti)}  LATTE: {len(pdf_latte_presenti)}")
+    pdf_frutta_presenti, count_f = _codici_in_cartella(input_frutta)
+    pdf_latte_presenti, count_l  = _codici_in_cartella(input_latte)
+    print(f"  PDF trovati → FRUTTA: {count_f} file ({len(pdf_frutta_presenti)} clienti)  LATTE: {count_l} file ({len(pdf_latte_presenti)} clienti)")
 
     punti_totali = []
     for cartella in [input_frutta, input_latte]:

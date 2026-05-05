@@ -469,8 +469,28 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         }
 
         function addMarker(p, i, bounds) {
-            const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i+1).toString(), color: "white", fontSize: "10px", fontWeight: "900" } });
-            markers[i] = m; bounds.extend(m.getPosition()); map.fitBounds(bounds);
+            let markerConfig = { position: { lat: p.lat, lng: p.lon }, map: map };
+            
+            if (i === 0 || i === data.length - 1) {
+                // Sede (Partenza / Arrivo)
+                markerConfig.icon = {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 6,
+                    fillColor: "#475569",
+                    fillOpacity: 1,
+                    strokeWeight: 2,
+                    strokeColor: "white"
+                };
+                markerConfig.title = i === 0 ? "Partenza" : "Arrivo";
+            } else {
+                // Consegna (l'indice 1 corrisponde alla consegna 1)
+                markerConfig.label = { text: i.toString(), color: "white", fontSize: "10px", fontWeight: "900" };
+            }
+
+            const m = new google.maps.Marker(markerConfig);
+            markers[i] = m; 
+            bounds.extend(m.getPosition()); 
+            map.fitBounds(bounds);
         }
 
         function focusOn(i) { if(markers[i]) { map.panTo(markers[i].getPosition()); map.setZoom(17); } }

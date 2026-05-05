@@ -411,8 +411,9 @@ def _trova_cartella(data_arg: str | None) -> Path:
         raise FileNotFoundError("Nessuna cartella CONSEGNE_* trovata.")
     return folders[-1]
 
-def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia: int, styles, colors, mm, Paragraph, Spacer, Table, TableStyle, PageBreak):
+def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia: int, styles, colors, mm, Paragraph, Spacer, Table, TableStyle, PageBreak, n_ddt_totali: int = 0, rientri_giro: list = None):
     """Restituisce la lista di elementi Flowable per una singola copia della distinta."""
+    if rientri_giro is None: rientri_giro = []
     from reportlab.lib.styles import ParagraphStyle
     st_titolo = ParagraphStyle("titolo", parent=styles["Heading1"], fontSize=14, spaceAfter=3)
     st_sub    = ParagraphStyle("sub",    parent=styles["Normal"],   fontSize=9,  spaceAfter=2)
@@ -427,7 +428,13 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
 
     # Intestazione
     elementi.append(Paragraph(f"DISTINTA DI CARICO — {nome_giro}  [{label}]", st_titolo))
-    elementi.append(Paragraph(f"Zone: {zone}  |  Fermate: {n_fermate}  |  Data: {data_ddt}", st_sub))
+    elementi.append(Paragraph(f"Zone: {zone}  |  Fermate Totali: {n_fermate}  |  DDT Totali: {n_ddt_totali}  |  Data: {data_ddt}", st_sub))
+    
+    if rientri_giro:
+        rientri_unici = sorted(list(set(rientri_giro)))
+        riga2 = f"<font color='red'><b>DDT da Rientri:</b></font> {', '.join(rientri_unici)}"
+        elementi.append(Paragraph(riga2, st_sub))
+        
     elementi.append(Spacer(1, 4*mm))
 
     # ── SEZIONE 1: ARTICOLI ──
@@ -490,14 +497,14 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
         ("RIGHTPADDING",   (0, 0), (-1, -1), 5*mm),
         ("VALIGN",         (0, 0), (-1, -1), "TOP"),
     ])
-    t_fermate = Table(dati_fermate, colWidths=[8*mm, 22*mm, 22*mm, 50*mm, 65*mm])
+    t_fermate = Table(dati_fermate, colWidths=[12*mm, 22*mm, 22*mm, 50*mm, 65*mm])
     t_fermate.setStyle(ts_fermate)
     elementi.append(t_fermate)
     
     return elementi
 
 
-def _genera_distinta_pdf(viaggio: dict, articoli_viaggio: dict, out_path: Path, data_ddt: str, pdf_ddt: list[Path]):
+def _genera_distinta_pdf(viaggio: dict, articoli_viaggio: dict, out_path: Path, data_ddt: str, pdf_ddt: list[Path], rientri_giro: list = None):
     """Genera il PDF della distinta di carico per un viaggio in DOPPIA COPIA + DDT allegati x2."""
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
@@ -518,19 +525,18 @@ def _genera_distinta_pdf(viaggio: dict, articoli_viaggio: dict, out_path: Path, 
 
     elementi = []
     # Copia 1 — AUTISTA
-    elementi += _blocco_distinta(viaggio, articoli_viaggio, data_ddt, 1, styles, colors, mm, Paragraph, Spacer, Table, TableStyle, PageBreak)
+    elementi += _blocco_distinta(viaggio, articoli_viaggio, data_ddt, 1, styles, colors, mm, Paragraph, Spacer, Table, TableStyle, PageBreak, len(pdf_ddt), rientri_giro)
     elementi.append(PageBreak())
     # Copia 2 — UFFICIO
-    elementi += _blocco_distinta(viaggio, articoli_viaggio, data_ddt, 2, styles, colors, mm, Paragraph, Spacer, Table, TableStyle, PageBreak)
+    elementi += _blocco_distinta(viaggio, articoli_viaggio, data_ddt, 2, styles, colors, mm, Paragraph, Spacer, Table, TableStyle, PageBreak, len(pdf_ddt), rientri_giro)
 
     doc.build(elementi)
 
     # --- Assembla fascicoli: [Distinta Copy 1 + DDTs] + [Distinta Copy 2 + DDTs] ---
-    # I DDT vengono allegati in ordine INVERSO rispetto al percorso:
-    # -> Nel PDF: stop N, stop N-1, ..., stop 1
-    # -> Dopo la stampa (i fogli escono impilati): stop 1 è in CIMA alla pila OK
-    # Così l'autista trova subito il DDT della prima consegna senza sfogliare.
-    pdf_ddt_inv = list(reversed(pdf_ddt))
+    # I DDT vengono allegati nello STESSO ORDINE del percorso (1..N):
+    # -> Nel PDF: stop 1, stop 2, ..., stop N
+    # Utile per il caricamento massivo, mantenendo l'allineamento con la tabella e le mappe.
+    pdf_ddt_ordinati = list(pdf_ddt)
 
     try:
         from pypdf import PdfWriter, PdfReader
@@ -553,7 +559,7 @@ def _genera_distinta_pdf(viaggio: dict, articoli_viaggio: dict, out_path: Path, 
             writer.add_page(reader_tmp.pages[i])
 
         # 2. Ogni DDT viene aggiunto in doppia copia consecutiva
-        for pdf in pdf_ddt_inv:
+        for pdf in pdf_ddt_ordinati:
             writer.append(str(pdf)) # Prima copia (autista)
             writer.append(str(pdf)) # Seconda copia (ufficio)
 
@@ -722,8 +728,8 @@ def main():
         print(f"  [GIRO] {nome_giro} (zone: {zone}) - {len(punti)} fermate")
 
         articoli_giro: list[dict] = []
-        pdf_non_trovati: list[str] = []
         pdf_usati_viaggio: list[Path] = []  # PDF di questo viaggio specifico
+        rientri_giro: list[str] = []        # Accumula i rientri di questo viaggio: "codice_cliente (data_storica)"
         zone_punti: set[str] = set()        # Zone raccolte dai singoli punti
 
         for punto in punti:
@@ -806,6 +812,7 @@ def main():
                         print(f"       OK {nome:<40} {codice} ({tp}){tag} -> {n_art} art.")
                         if is_rientro:
                             rientri_usati.add((codice.lower(), d_r))
+                            rientri_giro.append(f"{codice.upper()} ({d_r})")
 
             # ── RIENTRI DA ALLEGARE (cliente con consegna normale oggi + rientro storico) ──
             # Campo operativo introdotto dal fix in script 3: quando un rientro viene abbinato
@@ -837,6 +844,7 @@ def main():
                         articoli_giro.extend(articoli)
                         print(f"       OK {nome:<40} {codice_r} ({tipo_r})[RIENTRO<-{data_r}] -> {len(articoli)} art.")
                     rientri_usati.add((codice_r.lower(), data_r))
+                    rientri_giro.append(f"{codice_r.upper()} ({data_r})")
                 else:
                     pdf_non_trovati.append(f"{codice_r} ({tipo_r})[RIENTRO]")
                     print(f"       !! {nome:<40} {codice_r} ({tipo_r})[RIENTRO<-{data_r}] -> PDF non trovato")
@@ -856,7 +864,7 @@ def main():
         out_pdf   = out_dir / pdf_name
 
         try:
-            _genera_distinta_pdf(viaggio, articoli_agg, out_pdf, data_ddt, list(pdf_usati_viaggio))
+            _genera_distinta_pdf(viaggio, articoli_agg, out_pdf, data_ddt, list(pdf_usati_viaggio), rientri_giro)
             pdf_generati.append(out_pdf)
             print(f"       DOC Salvato: {pdf_name} (doppia copia + {len(pdf_usati_viaggio)} DDT x2)\n")
         except Exception as e:

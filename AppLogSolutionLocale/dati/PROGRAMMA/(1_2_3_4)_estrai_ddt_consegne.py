@@ -213,33 +213,45 @@ def _verifica_nuovi_clienti(dati_nuovi: dict):
     return False
 
 
+def _estrai_solo_articoli_per_confronto(text: str) -> str:
+    idx = text.find("Cod. Articolo")
+    if idx == -1: idx = text.find("Descrizione Natura")
+    if idx == -1: return text
+    return text[idx:]
+
 def _estrai_da_cartella(cart_in: Path, cart_out: Path, etichetta: str, date_valide: set[str], mappati: dict, *, duplicata: bool = False):
-    """Estrae DDT da tutti i PDF accettando qualsiasi data presente in date_valide."""
+    """Estrae DDT raggruppandoli per (Punto di Consegna, Data, Numero DDT). Per FRUTTA decodifica l'ordine di stampa."""
     nuovi_dati = {}
-    aggiornati_orari: set[int] = set()  # row_idx già aggiornati in questa esecuzione
+    aggiornati_orari: set[int] = set()
     if not cart_in.exists(): return 0, 0, nuovi_dati
     cart_out.mkdir(parents=True, exist_ok=True)
     pdf_files = list(cart_in.glob("*.pdf"))
     if not pdf_files: return 0, 0, nuovi_dati
+    
     import pdfplumber
     creati = 0
     visti = {}
+    
+    blocchi = {}  # { (l, d, num_ddt) : [(text, pypdf_page)] }
+    readers_open = []  # Manteniamo aperti i reader fino alla scrittura
+    
+    # 1. LETTURA GLOBALE E RAGGRUPPAMENTO
     for pdf_path in pdf_files:
         try:
             reader = PdfReader(pdf_path)
+            readers_open.append(reader)
             with pdfplumber.open(pdf_path) as pdf:
-                gruppi_locali = {}
-                for i in range(0, len(pdf.pages), 2 if duplicata else 1):
+                for i in range(len(pdf.pages)):
                     text = pdf.pages[i].extract_text() or ""
                     d, l, num_ddt = _estrai_data_luogo(text)
-                    if not d or not l or d not in date_valide: continue  # accetta tutte le date valide
+                    if not d or not l or d not in date_valide: continue
+                    
+                    # Gestione nuovi clienti
                     if l not in mappati and l not in nuovi_dati:
                         nuovi_dati[l] = _estrai_dati_consegna_da_testo(text, l, duplicata)
                         nuovi_dati[l]["tipo"] = etichetta
                     elif l in mappati:
-                        # Cliente noto: verifica se orario nel DDT e' diverso dalla mappatura
                         row_idx_m, om_f, oM_f, om_l, oM_l = mappati[l]
-                        # Seleziona i valori correnti per il tipo in elaborazione
                         om_mappa = om_f if etichetta == "FRUTTA" else om_l
                         oM_mappa = oM_f if etichetta == "FRUTTA" else oM_l
                         if row_idx_m not in aggiornati_orari:
@@ -253,40 +265,72 @@ def _estrai_da_cartella(cart_in: Path, cart_out: Path, etichetta: str, date_vali
                                         s = m_c.group(3)
                                         if len(s) == 3: om_ddt = f"{int(s[0]):02d}:{int(s[1:3]):02d}"
                                         elif len(s) == 4: om_ddt = f"{int(s[:2]):02d}:{int(s[2:]):02d}"
-                                    needs_update = (
-                                        (oM_ddt and oM_ddt != oM_mappa) or
-                                        (om_ddt and om_ddt != om_mappa)
-                                    )
+                                    needs_update = ((oM_ddt and oM_ddt != oM_mappa) or (om_ddt and om_ddt != om_mappa))
                                     if needs_update:
                                         print(f"    [ORARIO {etichetta}] {l}: DDT({om_ddt or '-'}/{oM_ddt or '-'}) vs Mappatura({om_mappa or '-'}/{oM_mappa or '-'})")
                                         _aggiorna_orari_mappatura(row_idx_m, om_ddt or None, oM_ddt or None, etichetta)
-                                        # Aggiorna in-memoria per tipo corretto
-                                        if etichetta == "FRUTTA":
-                                            mappati[l] = (row_idx_m, om_ddt or om_f, oM_ddt or oM_f, om_l, oM_l)
-                                        else:
-                                            mappati[l] = (row_idx_m, om_f, oM_f, om_ddt or om_l, oM_ddt or oM_l)
+                                        if etichetta == "FRUTTA": mappati[l] = (row_idx_m, om_ddt or om_f, oM_ddt or oM_f, om_l, oM_l)
+                                        else: mappati[l] = (row_idx_m, om_f, oM_f, om_ddt or om_l, oM_ddt or oM_l)
                                         aggiornati_orari.add(row_idx_m)
                                         
                     chiave = (l, d, num_ddt)
-                    if chiave not in gruppi_locali:
-                        gruppi_locali[chiave] = PdfWriter()
-                    gruppi_locali[chiave].add_page(reader.pages[i])
-                    if duplicata and i + 1 < len(pdf.pages):
-                        gruppi_locali[chiave].add_page(reader.pages[i+1])
-                        
-                # Scrittura dei PDF accorpati per questo documento master
-                for (l, d, num_ddt), writer in gruppi_locali.items():
-                    chiave_globale = (l, d, num_ddt)
-                    cnt = visti.get(chiave_globale, 0) + 1
-                    visti[chiave_globale] = cnt
-                    
-                    fname = f"{l}_{d}_{num_ddt}_{cnt}.pdf" if cnt > 1 else f"{l}_{d}_{num_ddt}.pdf"
-                    with open(cart_out / fname, "wb") as f:
-                        writer.write(f)
-                    creati += 1
-                    if creati <= 3 or creati % 50 == 0: print(f"    {fname}")
+                    if chiave not in blocchi:
+                        blocchi[chiave] = []
+                    blocchi[chiave].append((text, reader.pages[i]))
         except Exception as e: print(f"  Errore {pdf_path.name}: {e}")
-    return creati, sum(1 for c in visti.values() if c > 1), nuovi_dati
+
+    # 2. ANALISI DEL BLOCCO CAMPIONE (Solo per la Frutta)
+    is_fascicolato = False
+    if duplicata and blocchi:
+        max_chiave = max(blocchi.keys(), key=lambda k: len(blocchi[k]))
+        max_pages = blocchi[max_chiave]
+        n_pages = len(max_pages)
+        
+        if n_pages > 2:
+            # Confronto gli articoli tra la prima e la seconda pagina del blocco
+            art_p1 = _estrai_solo_articoli_per_confronto(max_pages[0][0])
+            art_p2 = _estrai_solo_articoli_per_confronto(max_pages[1][0])
+            if art_p1 == art_p2:
+                is_fascicolato = False
+                print(f"    [PATTERN {etichetta}] Non Fascicolato (1,1,2,2) rilevato sul blocco {max_chiave[0]} ({n_pages} pag.)")
+            else:
+                is_fascicolato = True
+                print(f"    [PATTERN {etichetta}] Fascicolato (1,2,1,2) rilevato sul blocco {max_chiave[0]} ({n_pages} pag.)")
+
+    # 3. TAGLIO FOTOCOPIE E SCRITTURA
+    doppioni_totali = 0
+    for chiave, lista_pagine in blocchi.items():
+        writer = PdfWriter()
+        l, d, num_ddt = chiave
+        n = len(lista_pagine)
+        pagine_da_salvare = []
+        
+        if duplicata:
+            doppioni_totali += 1 if n > 1 else 0
+            if is_fascicolato:
+                # Tieni la prima metà
+                half = n // 2
+                pagine_da_salvare = [p[1] for p in lista_pagine[:half]]
+            else:
+                # Tieni una pagina sì e una no (indici pari)
+                pagine_da_salvare = [lista_pagine[i][1] for i in range(0, n, 2)]
+        else:
+            # LATTE o copia singola: salva tutto il blocco intatto
+            doppioni_totali += 1 if n > 1 else 0
+            pagine_da_salvare = [p[1] for p in lista_pagine]
+            
+        for pg in pagine_da_salvare:
+            writer.add_page(pg)
+            
+        cnt = visti.get(chiave, 0) + 1
+        visti[chiave] = cnt
+        fname = f"{l}_{d}_{num_ddt}_{cnt}.pdf" if cnt > 1 else f"{l}_{d}_{num_ddt}.pdf"
+        with open(cart_out / fname, "wb") as f:
+            writer.write(f)
+        creati += 1
+        if creati <= 3 or creati % 50 == 0: print(f"    {fname}")
+
+    return creati, doppioni_totali, nuovi_dati
 
 
 def _pulisci_sorgenti(cart_in: Path, date_valide: set[str]):

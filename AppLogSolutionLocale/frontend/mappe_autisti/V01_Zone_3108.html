@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V02</title>
+    <title>V01</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
@@ -69,13 +69,13 @@
         </div>
         <div id="sidebar">
             <div class="header">
-                <div class="trip-title">🏎️ V02 | Zone: 3107</div>
+                <div class="trip-title">🏎️ V01 | Zone: 3108</div>
                 <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
                 <div class="stats-row">
-                    <div class="stat-item"><span class="stat-val">200.1km</span><span class="stat-lbl">Strada</span></div>
-                    <div class="stat-item"><span class="stat-val">4h 20m</span><span class="stat-lbl">Guida</span></div>
-                    <div class="stat-item"><span class="stat-val">3h 28m</span><span class="stat-lbl">Soste</span></div>
-                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">7h 48m</span><span class="stat-lbl">Totale</span></div>
+                    <div class="stat-item"><span class="stat-val">85.6km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 43m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 56m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">5h 39m</span><span class="stat-lbl">Totale</span></div>
                 </div>
             </div>
             <div id="delivery-list">
@@ -88,260 +88,220 @@
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(0, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">IC VICENZA 6-7 - DE AMICIS</b>
-                    <span class="addr"><b>VIALE FIUME 97</b><br>36100 VICENZA (VICENZA)</span>
+                    <b class="name">"LUIGI CONFIGLIACHI"</b>
+                    <span class="addr"><b>VIA SETTE MARTIRI 33</b><br>35143 PADOVA (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.56420246257925,11.56019414568&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.4143395158788,11.82825698220902&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(2)">
                 <div class="stop-num">2</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(1, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">LAMPERTICO</b>
-                    <span class="addr"><b>VIA DANTE 7</b><br>36030 COSTABISSARA (VICENZA)</span>
+                    <b class="name">Santa Dorotea - Paritaria</b>
+                    <span class="addr"><b>Via San Pietro</b><br>117 - Via Dei Livello 59-61, 35139 Padova (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.58397578170773,11.487675445755&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.40914344890809,11.86947125547258&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(3)">
                 <div class="stop-num">3</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(2, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">DE AMICIS</b>
-                    <span class="addr"><b>STRADA ST.PASUBIO 50</b><br>36030 COSTABISSARA (VICENZA)</span>
+                    <b class="name">Ardigo-Pd</b>
+                    <span class="addr"><b>Via Degli Agnusdei 17</b><br>35121 Padova (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.59977391840039,11.49565215015464&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.40525206841458,11.88359843558196&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(4)">
                 <div class="stop-num">4</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(3, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">MALO - SAN TOMIO</b>
-                    <span class="addr"><b>VIA S. TOMMASO 15</b><br>36034 MALO (VICENZA)</span>
+                    <b class="name">LUZZATTO DINA - PD</b>
+                    <span class="addr"><b>VIA GRADENIGO 1</b><br>35131 PADOVA (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.63858247493378,11.42665583136081&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.409329596175,11.89471845337294&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(5)">
                 <div class="stop-num">5</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(4, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">SAN GIOVANNI BOSCO</b>
-                    <span class="addr"><b>VIA ROZZAMPIA 73</b><br>36016 THIENE (VICENZA)</span>
+                    <b class="name">A. Volta - Pd</b>
+                    <span class="addr"><b>Via Sant' Osvaldo</b><br>1, 35127 Padova (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.67897593815084,11.50215317661065&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.39089472346748,11.89204342764741&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(6)">
                 <div class="stop-num">6</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(5, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">ALFREDO TALIN</b>
-                    <span class="addr"><b>VIA MANTEGNA 2</b><br>36016 THIENE (VICENZA)</span>
+                    <b class="name">Daniele Manin</b>
+                    <span class="addr"><b>Via Tre Garofani</b><br>50, 35124 Padova (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.71219408961221,11.4891863468006&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.38846611375161,11.87676814357725&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(7)">
                 <div class="stop-num">7</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(6, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Lugo Di Vicenza - Capoluogo</b>
-                    <span class="addr"><b>Via Matteotti</b><br>26, 36030 Lugo Di Vicenza (VICENZA)</span>
+                    <b class="name">Santa Croce(Ist. Suore S.Francesco Di Sales)</b>
+                    <span class="addr"><b>Via Santa Maria In Vanzo</b><br>53, 35123 Padova (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.74679854516579,11.52907339472045&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.39322065882329,11.87114571045074&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(8)">
                 <div class="stop-num">8</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(7, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">FARA VICENTINO - CAP.</b>
-                    <span class="addr"><b>VIA MARCONI 31</b><br>36030 FARA VICENTINO (VICENZA)</span>
+                    <b class="name">SCUOLA PRIMARIA VANZO</b>
+                    <span class="addr"><b>VIA MARCONI13/D</b><br>35122 PADOVA (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.73900645946068,11.54873052135696&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.39628644523381,11.86797907267342&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(9)">
                 <div class="stop-num">9</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(8, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Ic Breganze - Maragnole</b>
-                    <span class="addr"><b>Piazza Mons. Faresin 15</b><br>36042 Breganze (VICENZA)</span>
+                    <b class="name">Vittorino Zanibon</b>
+                    <span class="addr"><b>Via Siracusa 12</b><br>35142 Padova (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7084504144673,11.56396264934593&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.39394082150886,11.862397995562&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(10)">
                 <div class="stop-num">10</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(9, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Dante Alighieri Fara Vic.No Fraz.S.Giorgio</b>
-                    <span class="addr"><b>Via Perlena 76</b><br>36030 Fara Vicentino (VICENZA)</span>
+                    <b class="name">PRATI-PADOVA (EX XII IC)</b>
+                    <span class="addr"><b>VIA DECORATI AL VALOR CIVILE 154</b><br>35142 PADOVA (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.73070860919205,11.58354277515464&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.38961279915535,11.83612934824068&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(11)">
                 <div class="stop-num">11</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(10, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Scuola Primaria Pio Xii</b>
-                    <span class="addr"><b>Via Sette Comuni</b><br>16, 36046 Lusiana Conco (VICENZA)</span>
+                    <b class="name">DON BOSCO - PADOVA (EX XII IC)</b>
+                    <span class="addr"><b>VIA BRESSANONE 23</b><br>35142 PADOVA (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.78608209586047,11.57620192831117&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.38086799952996,11.85147662883606&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(12)">
                 <div class="stop-num">12</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(11, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Scuola Primaria Monsignor Girardi</b>
-                    <span class="addr"><b>Via Marco Poli</b><br>2, 36046 Lusiana Conco (VICENZA)</span>
+                    <b class="name">G.Ricci Curbastro - Pd</b>
+                    <span class="addr"><b>Via Orna 21/A</b><br>35124 Padova (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.79812037030975,11.60466233978538&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.38074403226921,11.87260980510765&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(13)">
                 <div class="stop-num">13</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(12, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">O. GUGELMO</b>
-                    <span class="addr"><b>VIA PEROZZI 11</b><br>36063 MAROSTICA (VICENZA)</span>
+                    <b class="name">Quattro Martiri</b>
+                    <span class="addr"><b>Via Del Commissario</b><br>30, 35127 Padova (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.76192979090894,11.60803063599852&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.37834774221216,11.88724005952455&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(14)">
                 <div class="stop-num">14</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(13, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">SAN GIOVANNI BOSCO</b>
-                    <span class="addr"><b>VIA ROMA 2</b><br>36060 PIANEZZE (VICENZA)</span>
+                    <b class="name">I. NIEVO - PD</b>
+                    <span class="addr"><b>VIA VECCHIA 1/N</b><br>35127 PADOVA (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.73887306803864,11.62540254221682&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.38170021697302,11.89969851723555&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(15)">
                 <div class="stop-num">15</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(14, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">A.C. Pertile</b>
-                    <span class="addr"><b>Via N. Dalle Laste</b><br>2, 36063 Marostica (VICENZA)</span>
+                    <b class="name">LUIGI LUZZATTI</b>
+                    <span class="addr"><b>VIA SALBORO 2A</b><br>35125 PADOVA (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.74260178425182,11.65701509587861&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.35924144563047,11.89167804444124&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(16)">
                 <div class="stop-num">16</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(15, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">A. CANOVA</b>
-                    <span class="addr"><b>VIA S. CROCE</b><br>36061 BASSANO DEL GRAPPA (VICENZA)</span>
+                    <b class="name">ALBIGNASEGO L. DA VINCI</b>
+                    <span class="addr"><b>VIA S.TOMMASO 30</b><br>35020 ALBIGNASEGO (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.75120242320178,11.73628384971672&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.3499844657752,11.86394992209017&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(17)">
                 <div class="stop-num">17</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(16, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">ROSA' E. MARANGONI</b>
-                    <span class="addr"><b>VIA CONCORDIA 3</b><br>36027 ROSA' (VICENZA)</span>
+                    <b class="name">G.MARCONI LOC. CARPANEDO</b>
+                    <span class="addr"><b>VIA S.STEFANO 2</b><br>35020 ALBIGNASEGO (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7305794226442,11.72961051368766&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.33232251152823,11.86654318465577&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(18)">
                 <div class="stop-num">18</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(17, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">SC. ELEM. J.FERRAZZI</b>
-                    <span class="addr"><b>VIA B.MONTAGNA 7</b><br>36050 CARTIGLIANO (VICENZA)</span>
+                    <b class="name">Don Milani</b>
+                    <span class="addr"><b>Via Cataio 55</b><br>Localita Turri, 35036 Montegrotto Terme (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.71057364479363,11.69506131346678&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.31692663412102,11.78490725962149&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(19)">
                 <div class="stop-num">19</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(18, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">MONTEGRAPPA - TEZZE SUL BRENTA</b>
-                    <span class="addr"><b>VIA DON ANTONIO BELLUZZO 7</b><br>36056 TEZZE SUL BRENTA (VICENZA)</span>
+                    <b class="name">TORREGLIA-DON BOSCO</b>
+                    <span class="addr"><b>PIAZZA CAPITELLO 2</b><br>35038 TORREGLIA (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.68733293779901,11.70680672422317&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.33491834088148,11.73112080879708&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(20)">
                 <div class="stop-num">20</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(19, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">SCUOLA PRIMARIA SCHIAVON</b>
-                    <span class="addr"><b>VIA S. TERESA 5</b><br>36060 SCHIAVON (VICENZA)</span>
+                    <b class="name">TEOLO-DE AMICIS LOC. TRAMONTE</b>
+                    <span class="addr"><b>VIA TERME 12</b><br>35037 TEOLO (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.69230482640572,11.64458290793458&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.35437816856666,11.74307013941187&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(21)">
                 <div class="stop-num">21</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(20, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Scuola Primaria Le Risorgive</b>
-                    <span class="addr"><b>Piazza Iv Novembre 4</b><br>36050 Bressanvido (VICENZA)</span>
+                    <b class="name">Teolo Primaria Loc. San Biagio</b>
+                    <span class="addr"><b>Via Attiliano Oliveros</b><br>1, 35037 Teolo (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.63392982195741,11.62877286577278&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.37543827311507,11.73993188475992&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(22)">
                 <div class="stop-num">22</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(21, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Scuola Primaia Tecchio</b>
-                    <span class="addr"><b>Via Chiesa Lupia</b><br>36066 Sandrigo (VICENZA)</span>
+                    <b class="name">Villa Del Bosco Loc. S. Biagio</b>
+                    <span class="addr"><b>Via Attiliano Oliveros</b><br>1, 35037 Teolo (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.64087804614776,11.6092760263893&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(23)">
-                <div class="stop-num">23</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(22, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">CD SANDRIGO -CAPOLUOGO</b>
-                    <span class="addr"><b>VIA CHILESOTTI</b><br>36066 SANDRIGO (VICENZA)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.66217877820745,11.59546464942092&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(24)">
-                <div class="stop-num">24</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(23, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">MONTECCHIO PREC. - CAP.</b>
-                    <span class="addr"><b>VIA MAGANZA 19</b><br>36030 MONTECCHIO PRECALCINO (VICENZA)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.66775002683057,11.56142527961784&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(25)">
-                <div class="stop-num">25</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(24, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">SCUOLA PRIMARIA G. ZANELLA</b>
-                    <span class="addr"><b>VIA ROSSINI 2/4</b><br>36010 MONTICELLO CONTE OTTO (VICENZA)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.60311106976638,11.57163500073318&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(26)">
-                <div class="stop-num">26</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(25, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">Pasini</b>
-                    <span class="addr"><b>Via Ospedaletto-S.S.53 Postumia</b><br>165, 36100 Vicenza (VICENZA)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.57602046989039,11.59210170412117&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.37541472136299,11.73984873628046&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div>
             <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
                 <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
@@ -404,8 +364,8 @@
     </script>
 
     <script>
-        const v_id = "V02";
-        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}, {"cliente": "IC VICENZA 6-7 - DE AMICIS", "indirizzo": "VIALE FIUME 97, 36100 VICENZA (VICENZA)", "lat": 45.56420246257925, "lon": 11.56019414568, "codice_frutta": "p00000", "codice_latte": "p1962"}, {"cliente": "LAMPERTICO", "indirizzo": "VIA DANTE 7, 36030 COSTABISSARA (VICENZA)", "lat": 45.58397578170773, "lon": 11.487675445755, "codice_frutta": "p12858", "codice_latte": "p2028"}, {"cliente": "DE AMICIS", "indirizzo": "STRADA ST.PASUBIO 50, 36030 COSTABISSARA (VICENZA)", "lat": 45.59977391840039, "lon": 11.49565215015464, "codice_frutta": "p00000", "codice_latte": "p1839"}, {"cliente": "MALO - SAN TOMIO", "indirizzo": "VIA S. TOMMASO 15, 36034 MALO (VICENZA)", "lat": 45.63858247493378, "lon": 11.42665583136081, "codice_frutta": "p2258", "codice_latte": "p00000"}, {"cliente": "SAN GIOVANNI BOSCO", "indirizzo": "VIA ROZZAMPIA 73, 36016 THIENE (VICENZA)", "lat": 45.67897593815084, "lon": 11.50215317661065, "codice_frutta": "p2352", "codice_latte": "p00000"}, {"cliente": "ALFREDO TALIN", "indirizzo": "VIA MANTEGNA 2, 36016 THIENE (VICENZA)", "lat": 45.71219408961221, "lon": 11.4891863468006, "codice_frutta": "p2351", "codice_latte": "p00000"}, {"cliente": "Lugo Di Vicenza - Capoluogo", "indirizzo": "Via Matteotti, 26, 36030 Lugo Di Vicenza (VICENZA)", "lat": 45.74679854516579, "lon": 11.52907339472045, "codice_frutta": "p2071", "codice_latte": "p00000"}, {"cliente": "FARA VICENTINO - CAP.", "indirizzo": "VIA MARCONI 31, 36030 FARA VICENTINO (VICENZA)", "lat": 45.73900645946068, "lon": 11.54873052135696, "codice_frutta": "p2072", "codice_latte": "p00000"}, {"cliente": "Ic Breganze - Maragnole", "indirizzo": "Piazza Mons. Faresin 15, 36042 Breganze (VICENZA)", "lat": 45.7084504144673, "lon": 11.56396264934593, "codice_frutta": "p00000", "codice_latte": "p2016"}, {"cliente": "Dante Alighieri Fara Vic.No Fraz.S.Giorgio", "indirizzo": "Via Perlena 76, 36030 Fara Vicentino (VICENZA)", "lat": 45.73070860919205, "lon": 11.58354277515464, "codice_frutta": "p00000", "codice_latte": "p1940"}, {"cliente": "Scuola Primaria Pio Xii", "indirizzo": "Via Sette Comuni, 16, 36046 Lusiana Conco (VICENZA)", "lat": 45.78608209586047, "lon": 11.57620192831117, "codice_frutta": "p2091", "codice_latte": "p00000"}, {"cliente": "Scuola Primaria Monsignor Girardi", "indirizzo": "Via Marco Poli, 2, 36046 Lusiana Conco (VICENZA)", "lat": 45.79812037030975, "lon": 11.60466233978538, "codice_frutta": "p2090", "codice_latte": "p00000"}, {"cliente": "O. GUGELMO", "indirizzo": "VIA PEROZZI 11, 36063 MAROSTICA (VICENZA)", "lat": 45.76192979090894, "lon": 11.60803063599852, "codice_frutta": "p2197", "codice_latte": "p2638"}, {"cliente": "SAN GIOVANNI BOSCO", "indirizzo": "VIA ROMA 2, 36060 PIANEZZE (VICENZA)", "lat": 45.73887306803864, "lon": 11.62540254221682, "codice_frutta": "p2198", "codice_latte": "p00000"}, {"cliente": "A.C. Pertile", "indirizzo": "Via N. Dalle Laste,2, 36063 Marostica (VICENZA)", "lat": 45.74260178425182, "lon": 11.65701509587861, "codice_frutta": "p2194", "codice_latte": "p00000"}, {"cliente": "A. CANOVA", "indirizzo": "VIA S. CROCE, 36061 BASSANO DEL GRAPPA (VICENZA)", "lat": 45.75120242320178, "lon": 11.73628384971672, "codice_frutta": "p00000", "codice_latte": "p1830"}, {"cliente": "ROSA' E. MARANGONI", "indirizzo": "VIA CONCORDIA 3, 36027 ROSA' (VICENZA)", "lat": 45.7305794226442, "lon": 11.72961051368766, "codice_frutta": "p00000", "codice_latte": "p1859"}, {"cliente": "SC. ELEM. J.FERRAZZI", "indirizzo": "VIA B.MONTAGNA 7, 36050 CARTIGLIANO (VICENZA)", "lat": 45.71057364479363, "lon": 11.69506131346678, "codice_frutta": "p2226", "codice_latte": "p2658"}, {"cliente": "MONTEGRAPPA - TEZZE SUL BRENTA", "indirizzo": "VIA DON ANTONIO BELLUZZO 7, 36056 TEZZE SUL BRENTA (VICENZA)", "lat": 45.68733293779901, "lon": 11.70680672422317, "codice_frutta": "p2414", "codice_latte": "p2644"}, {"cliente": "SCUOLA PRIMARIA SCHIAVON", "indirizzo": "VIA S. TERESA 5, 36060 SCHIAVON (VICENZA)", "lat": 45.69230482640572, "lon": 11.64458290793458, "codice_frutta": "p2196", "codice_latte": "p1873"}, {"cliente": "Scuola Primaria Le Risorgive", "indirizzo": "Piazza Iv Novembre 4, 36050 Bressanvido (VICENZA)", "lat": 45.63392982195741, "lon": 11.62877286577278, "codice_frutta": "p00000", "codice_latte": "p1926"}, {"cliente": "Scuola Primaia Tecchio", "indirizzo": "Via Chiesa Lupia, 36066 Sandrigo (VICENZA)", "lat": 45.64087804614776, "lon": 11.6092760263893, "codice_frutta": "p2313", "codice_latte": "p1925"}, {"cliente": "CD SANDRIGO -CAPOLUOGO", "indirizzo": "VIA CHILESOTTI, 36066 SANDRIGO (VICENZA)", "lat": 45.66217877820745, "lon": 11.59546464942092, "codice_frutta": "p2312", "codice_latte": "p00000"}, {"cliente": "MONTECCHIO PREC. - CAP.", "indirizzo": "VIA MAGANZA 19, 36030 MONTECCHIO PRECALCINO (VICENZA)", "lat": 45.66775002683057, "lon": 11.56142527961784, "codice_frutta": "p00000", "codice_latte": "p1909"}, {"cliente": "SCUOLA PRIMARIA G. ZANELLA", "indirizzo": "VIA ROSSINI 2/4, 36010 MONTICELLO CONTE OTTO (VICENZA)", "lat": 45.60311106976638, "lon": 11.57163500073318, "codice_frutta": "p2124", "codice_latte": "p1769"}, {"cliente": "Pasini", "indirizzo": "Via Ospedaletto-S.S.53 Postumia, 165, 36100 Vicenza (VICENZA)", "lat": 45.57602046989039, "lon": 11.59210170412117, "codice_frutta": "p00000", "codice_latte": "p1960"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}];
+        const v_id = "V01";
+        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}, {"cliente": "\"LUIGI CONFIGLIACHI\"", "indirizzo": "VIA SETTE MARTIRI 33, 35143 PADOVA (PADOVA)", "lat": 45.4143395158788, "lon": 11.82825698220902, "codice_frutta": "p2057", "codice_latte": "p1834"}, {"cliente": "Santa Dorotea - Paritaria", "indirizzo": "Via San Pietro,117 - Via Dei Livello 59-61, 35139 Padova (PADOVA)", "lat": 45.40914344890809, "lon": 11.86947125547258, "codice_frutta": "p2105", "codice_latte": "p00000"}, {"cliente": "Ardigo-Pd", "indirizzo": "Via Degli Agnusdei 17, 35121 Padova (PADOVA)", "lat": 45.40525206841458, "lon": 11.88359843558196, "codice_frutta": "p2047", "codice_latte": "p00000"}, {"cliente": "LUZZATTO DINA - PD", "indirizzo": "VIA GRADENIGO 1, 35131 PADOVA (PADOVA)", "lat": 45.409329596175, "lon": 11.89471845337294, "codice_frutta": "p2048", "codice_latte": "p00000"}, {"cliente": "A. Volta - Pd", "indirizzo": "Via Sant' Osvaldo, 1, 35127 Padova (PADOVA)", "lat": 45.39089472346748, "lon": 11.89204342764741, "codice_frutta": "p2199", "codice_latte": "p00000"}, {"cliente": "Daniele Manin", "indirizzo": "Via Tre Garofani, 50, 35124 Padova (PADOVA)", "lat": 45.38846611375161, "lon": 11.87676814357725, "codice_frutta": "p2074", "codice_latte": "p1983"}, {"cliente": "Santa Croce(Ist. Suore S.Francesco Di Sales)", "indirizzo": "Via Santa Maria In Vanzo,53, 35123 Padova (PADOVA)", "lat": 45.39322065882329, "lon": 11.87114571045074, "codice_frutta": "p2103", "codice_latte": "p1938"}, {"cliente": "SCUOLA PRIMARIA VANZO", "indirizzo": "VIA MARCONI13/D, 35122 PADOVA (PADOVA)", "lat": 45.39628644523381, "lon": 11.86797907267342, "codice_frutta": "p2260", "codice_latte": "p1817"}, {"cliente": "Vittorino Zanibon", "indirizzo": "Via Siracusa 12, 35142 Padova (PADOVA)", "lat": 45.39394082150886, "lon": 11.862397995562, "codice_frutta": "p2073", "codice_latte": "p00000"}, {"cliente": "PRATI-PADOVA (EX XII IC)", "indirizzo": "VIA DECORATI AL VALOR CIVILE 154, 35142 PADOVA (PADOVA)", "lat": 45.38961279915535, "lon": 11.83612934824068, "codice_frutta": "p2179", "codice_latte": "p00000"}, {"cliente": "DON BOSCO - PADOVA (EX XII IC)", "indirizzo": "VIA BRESSANONE 23, 35142 PADOVA (PADOVA)", "lat": 45.38086799952996, "lon": 11.85147662883606, "codice_frutta": "p2172", "codice_latte": "p1954"}, {"cliente": "G.Ricci Curbastro - Pd", "indirizzo": "Via Orna 21/A, 35124 Padova (PADOVA)", "lat": 45.38074403226921, "lon": 11.87260980510765, "codice_frutta": "p00000", "codice_latte": "p1939"}, {"cliente": "Quattro Martiri", "indirizzo": "Via Del Commissario,30, 35127 Padova (PADOVA)", "lat": 45.37834774221216, "lon": 11.88724005952455, "codice_frutta": "p2171", "codice_latte": "p00000"}, {"cliente": "I. NIEVO - PD", "indirizzo": "VIA VECCHIA 1/N, 35127 PADOVA (PADOVA)", "lat": 45.38170021697302, "lon": 11.89969851723555, "codice_frutta": "p2200", "codice_latte": "p00000"}, {"cliente": "LUIGI LUZZATTI", "indirizzo": "VIA SALBORO 2A, 35125 PADOVA (PADOVA)", "lat": 45.35924144563047, "lon": 11.89167804444124, "codice_frutta": "p2170", "codice_latte": "p1709"}, {"cliente": "ALBIGNASEGO L. DA VINCI", "indirizzo": "VIA S.TOMMASO 30, 35020 ALBIGNASEGO (PADOVA)", "lat": 45.3499844657752, "lon": 11.86394992209017, "codice_frutta": "p2290", "codice_latte": "p1730"}, {"cliente": "G.MARCONI LOC. CARPANEDO", "indirizzo": "VIA S.STEFANO 2, 35020 ALBIGNASEGO (PADOVA)", "lat": 45.33232251152823, "lon": 11.86654318465577, "codice_frutta": "p2289", "codice_latte": "p00000"}, {"cliente": "Don Milani", "indirizzo": "Via Cataio 55, Localita Turri, 35036 Montegrotto Terme (PADOVA)", "lat": 45.31692663412102, "lon": 11.78490725962149, "codice_frutta": "p7211", "codice_latte": "p00000"}, {"cliente": "TORREGLIA-DON BOSCO", "indirizzo": "PIAZZA CAPITELLO 2, 35038 TORREGLIA (PADOVA)", "lat": 45.33491834088148, "lon": 11.73112080879708, "codice_frutta": "p7210", "codice_latte": "p00000"}, {"cliente": "TEOLO-DE AMICIS LOC. TRAMONTE", "indirizzo": "VIA TERME 12, 35037 TEOLO (PADOVA)", "lat": 45.35437816856666, "lon": 11.74307013941187, "codice_frutta": "p12130", "codice_latte": "p1970"}, {"cliente": "Teolo Primaria Loc. San Biagio", "indirizzo": "Via Attiliano Oliveros, 1, 35037 Teolo (PADOVA)", "lat": 45.37543827311507, "lon": 11.73993188475992, "codice_frutta": "p12039", "codice_latte": "p1923"}, {"cliente": "Villa Del Bosco Loc. S. Biagio", "indirizzo": "Via Attiliano Oliveros, 1, 35037 Teolo (PADOVA)", "lat": 45.37541472136299, "lon": 11.73984873628046, "codice_frutta": "p12016", "codice_latte": "p1958"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}];
         window.data = data; window.v_id = v_id;
         let map, markers = [], userMarker;
         window.currentPos = null;
@@ -488,8 +448,28 @@
         }
 
         function addMarker(p, i, bounds) {
-            const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lon }, map: map, label: { text: (i+1).toString(), color: "white", fontSize: "10px", fontWeight: "900" } });
-            markers[i] = m; bounds.extend(m.getPosition()); map.fitBounds(bounds);
+            let markerConfig = { position: { lat: p.lat, lng: p.lon }, map: map };
+            
+            if (i === 0 || i === data.length - 1) {
+                // Sede (Partenza / Arrivo)
+                markerConfig.icon = {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 6,
+                    fillColor: "#475569",
+                    fillOpacity: 1,
+                    strokeWeight: 2,
+                    strokeColor: "white"
+                };
+                markerConfig.title = i === 0 ? "Partenza" : "Arrivo";
+            } else {
+                // Consegna (l'indice 1 corrisponde alla consegna 1)
+                markerConfig.label = { text: i.toString(), color: "white", fontSize: "10px", fontWeight: "900" };
+            }
+
+            const m = new google.maps.Marker(markerConfig);
+            markers[i] = m; 
+            bounds.extend(m.getPosition()); 
+            map.fitBounds(bounds);
         }
 
         function focusOn(i) { if(markers[i]) { map.panTo(markers[i].getPosition()); map.setZoom(17); } }

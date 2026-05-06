@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Clienti - Log Solution</title>
+    <link rel="stylesheet" href="styles.css?v=1.36">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    
+    <!-- PWA & Mobile Optimization -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Log Solutions">
+    <link rel="apple-touch-icon" href="img/logo.png">
+    <meta name="theme-color" content="#4f46e5">
+
+    <script src="script.js?v=1.36" defer></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.36"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDLnhP2Q4bz2ubYwcMLiD3-qq4c220eVKw&loading=async&callback=initAutocomplete&libraries=places&language=it"></script>
+    <style>
+        .search-bar-container {
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input-wrapper .material-icons-round {
+            position: absolute;
+            left: 16px;
+            color: var(--text-muted);
+        }
+
+        .search-input-wrapper input {
+            padding-left: 48px;
+            height: 54px;
+            font-size: 16px;
+            border-radius: 16px;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+
+        .client-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .client-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .client-card:hover {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+        }
+
+        .client-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .client-info h3 {
+            margin: 0 0 4px 0;
+            font-size: 18px;
+        }
+
+        .client-info p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-primary { background: #eef2ff; color: #4f46e5; }
+        .badge-secondary { background: #f1f5f9; color: #64748b; }
+
+        .client-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .detail-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .detail-value {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .actions-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        #resultsCount {
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .empty-results {
+            text-align: center;
+            padding: 48px;
+            color: var(--text-muted);
+        }
+
+        .modal-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            text-align: left;
+            margin-top: 20px;
+        }
+
+
+
+        .edit-fab {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: auto;
+        }
+
+        .edit-fab:hover {
+            transform: scale(1.1);
+            background: var(--primary-hover);
+        }
+
+        .delete-fab {
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: 8px;
+        }
+
+        .delete-fab:hover {
+            transform: scale(1.1);
+            background: #fecaca;
+        }
+
+        #editMap {
+            height: 250px;
+            width: 100%;
+            border-radius: 12px;
+            margin-top: 10px;
+            border: 1px solid var(--border);
+            z-index: 1;
+        }
+
+        .map-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            grid-column: 1 / -1;
+        }
+
+        .geo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .geo-ok { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .geo-missing { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Google Autocomplete Customization */
+        .pac-container {
+            border-radius: 12px;
+            margin-top: 8px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
+            font-family: inherit;
+            z-index: 10000 !important;
+        }
+        .pac-item {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        .pac-item-query {
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+    </style>
+</head>
+<body>
+    <nav class="glass-nav">
+        <div class="nav-content">
+            <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
+            <button id="dashboardBtn" class="logout-btn" title="Dashboard"
+                onclick="window.navigateWithState('dashboard.html')"
+                style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
+                <span class="material-icons-round">dashboard</span>
+            </button>
+            <div class="nav-title" style="flex: 1;">Gestione Clienti</div>
+            <a href="login.html" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
+        </div>
+    </nav>
+
+    <main class="main-container">
+        <div class="search-bar-container" style="display: flex; gap: 10px; align-items: center;">
+            <div class="search-input-wrapper" style="flex: 1;">
+                <span class="material-icons-round">search</span>
+                <input type="text" id="custSearch" placeholder="Cerca per nome, codice, città o indirizzo..." autocomplete="off">
+            </div>
+            <button onclick="window.openAddModal()" class="btn-primary" style="width: auto; height: 50px; padding: 0 20px; border-radius: 15px; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                <span class="material-icons-round">person_add</span>
+                Nuovo Cliente
+            </button>
+        </div>
+
+        <div id="resultsCount">Verifica connessione al database...</div>
+        
+        <div id="loadingIndicator" style="display:none; text-align: center; padding: 40px;">
+            <div class="loader"></div>
+            <p style="margin-top: 15px;">Caricamento clienti in corso...</p>
+        </div>
+
+        <div id="custContainer" class="client-list">
+            <!-- Risultati della ricerca -->
+        </div>
+    <!-- Modal Modifica Cliente -->
+    <div id="editCustModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <span class="material-icons-round" style="color: var(--primary);" id="modalIcon">edit</span>
+                <span id="modalTitle">Modifica Cliente</span>
+            </h3>
+            
+            <form id="editCustForm" class="modal-body">
+                <input type="hidden" id="editId">
+                <div class="input-group" style="grid-column: 1 / -1;">
+                    <label>Nome Destinatario *</label>
+                    <input type="text" id="editNome" required>
+                </div>
+                <div class="input-group">
+                    <label>Cod. Frutta</label>
+                    <input type="text" id="editCodFrutta">
+                </div>
+                <div class="input-group">
+                    <label>Cod. Latte</label>
+                    <input type="text" id="editCodLatte">
+                </div>
+                <div class="input-group" style="grid-column: 1 / -1;">
+                    <label>Indirizzo *</label>
+                    <input type="text" id="editIndirizzo" placeholder="Via, Piazza, Corso..." required>
+                </div>
+                <div class="input-group">
+                    <label>Città *</label>
+                    <input type="text" id="editCitta" placeholder="Comune" required>
+                </div>
+                <div class="input-group">
+                    <label>Provincia *</label>
+                    <input type="text" id="editProv" maxlength="2" placeholder="Prov.">
+                </div>
+                <div class="input-group">
+                    <label>Orario Min</label>
+                    <input type="text" id="editOrarioMin" placeholder="08:00">
+                </div>
+                <div class="input-group">
+                    <label>Orario Max</label>
+                    <input type="text" id="editOrarioMax" placeholder="10:00">
+                </div>
+                <div class="input-group" style="grid-column: 1 / -1;">
+                    <label>Email</label>
+                    <input type="email" id="editEmail">
+                </div>
+                <!-- Nuovi Campi per Inserimento Rapido -->
+                <div class="input-group" style="grid-column: 1 / -1; background: #eef2ff; padding: 15px; border-radius: 12px; border: 1px dashed #4f46e5;">
+                    <label style="color: #4f46e5; font-weight: 700;">Configurazione Inserimento Rapido</label>
+                    <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="editIsProgetto" style="width: 20px; height: 20px; cursor: pointer;">
+                        <span style="font-size: 14px; color: #334155;">Mostra questo cliente nel wizard di inserimento</span>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <label style="font-size: 11px;">Elenco Viaggi / Giri (separati da virgola)</label>
+                        <input type="text" id="editViaggi" placeholder="es. VIAGGIO 01, VIAGGIO 02, BS, FBS...">
+                    </div>
+                </div>
+
+                <div class="map-section" style="grid-column: 1 / -1; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label style="display: block; margin-bottom: 6px; font-weight: 700; color: var(--primary);">Cerca indirizzo (Google Search)</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="quickMapSearch" placeholder="Cerca via, città o attività..." style="flex: 1; border-radius: 12px;">
+                                <button type="button" class="btn-primary" style="width: auto; padding: 0 16px; background: #4f46e5; height: 45px; pointer-events: none; opacity: 0.7;">
+                                    <span class="material-icons-round">search</span>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" onclick="getCurrentLocation()" class="btn-primary" title="Usa mia posizione GPS" style="background: #10b981; width: 45px; height: 45px; padding: 0; border-radius: 12px;">
+                            <span class="material-icons-round">my_location</span>
+                        </button>
+                    </div>
+
+                    <div id="editMap" style="height: 350px;"></div>
+                    
+                    <div class="map-controls" style="margin-top: 15px; background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <div style="display: flex; gap: 15px; width: 100%;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 10px; color: #64748b; font-weight: 700; text-transform: uppercase;">Latitudine</label>
+                                <input type="text" id="editLat" placeholder="Lat" style="border: none; background: transparent; padding: 0; font-weight: 600; color: #334155; width: 100%;" readonly>
+                            </div>
+                            <div style="flex: 1; border-left: 1px solid #e2e8f0; padding-left: 15px;">
+                                <label style="font-size: 10px; color: #64748b; font-weight: 700; text-transform: uppercase;">Longitudine</label>
+                                <input type="text" id="editLng" placeholder="Lng" style="border: none; background: transparent; padding: 0; font-weight: 600; color: #334155; width: 100%;" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <p style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">
+                        Muovi il cursore sulla mappa per affinare la posizione esatta della consegna.
+                    </p>
+                </div>
+
+                <div style="grid-column: 1 / -1; display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn-primary" style="flex: 2;">Salva Modifiche</button>
+                    <button type="button" onclick="closeEditModal()" class="btn-primary" style="flex: 1; background: #f1f5f9; color: #64748b; box-shadow: none;">Annulla</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('custSearch');
+            const container = document.getElementById('custContainer');
+            const countEl = document.getElementById('resultsCount');
+
+            window.renderClienti = function(query = '') {
+                const q = query || (searchInput ? searchInput.value.trim().toLowerCase() : '');
+                const clienti = window.appData.lista_clienti || [];
+                let filtered = clienti;
+
+                if (q.length >= 2) {
+                    filtered = clienti.filter(c => 
+                        (c.nome || '').toLowerCase().includes(q) || 
+                        (c.citta || '').toLowerCase().includes(q) ||
+                        (c.indirizzo || '').toLowerCase().includes(q) ||
+                        (c.codiceLatte || '').toLowerCase().includes(q) ||
+                        (c.codiceFrutta || '').toLowerCase().includes(q)
+                    );
+                }
+
+                if (countEl) {
+                    countEl.textContent = q.length >= 2 
+                        ? `Trovati ${filtered.length} risultati su ${clienti.length} clienti.`
+                        : `Visualizzando tutti i ${clienti.length} clienti in archivio.`;
+                }
+
+                if (filtered.length === 0) {
+                    container.innerHTML = '<div class="empty-results">Nessun cliente trovato con questi criteri.</div>';
+                    return;
+                }
+
+                filtered.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+
+                container.innerHTML = filtered.map((c, index) => `
+                    <div class="client-card" id="card-${c.id || index}">
+                        <div class="client-header">
+                            <div class="client-info">
+                                <h3>${c.nome || 'N/A'}</h3>
+                                <p>
+                                    <a href="${c.lat && c.lng ? `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}` : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((c.indirizzo || '') + ' ' + (c.citta || '') + ' ' + (c.provincia || ''))}`}" 
+                                       target="_blank" 
+                                       class="address-link" 
+                                       style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 4px;">
+                                        <span class="material-icons-round" style="font-size: 16px; color: var(--primary);">location_on</span> 
+                                        <span>${c.indirizzo || ''}${c.citta ? ', ' + (c.cap || '') + ' ' + (c.citta || '') : ''}${c.provincia ? ' (' + c.provincia + ')' : ''}</span>
+                                    </a>
+                                </p>
+                                ${c.lat && c.lng 
+                                    ? `<div class="geo-badge geo-ok"><span class="material-icons-round" style="font-size:12px;">check_circle</span> Posizione Salvata (${parseFloat(c.lat).toFixed(4)}, ${parseFloat(c.lng).toFixed(4)})</div>`
+                                    : `<div class="geo-badge geo-missing"><span class="material-icons-round" style="font-size:12px;">help_outline</span> Posizione da Geolocalizzare</div>`
+                                }
+                            </div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                                <div style="display: flex; gap: 4px;">
+                                    <span class="badge" style="background: #fdf2f2; color: #991b1b; border: 1px solid #fee2e2; font-size: 10px;">Cod. Frutta: <b>${c.codiceFrutta || '-'}</b></span>
+                                    <span class="badge" style="background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; font-size: 10px;">Cod. Latte: <b>${c.codiceLatte || '-'}</b></span>
+                                </div>
+                                <span class="badge badge-secondary">${c.tipologiaGrado || '-'}</span>
+                                <button onclick="openEditModal('${c.id || index}')" class="edit-fab" title="Modifica">
+                                    <span class="material-icons-round" style="font-size: 18px;">edit</span>
+                                </button>
+                                <button onclick="deleteCust('${c.id || index}')" class="delete-fab" title="Elimina">
+                                    <span class="material-icons-round" style="font-size: 18px;">delete</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="client-details-grid">
+                            <div class="detail-item">
+                                <span class="detail-label">Orario Consegna</span>
+                                <span class="detail-value">${(c.orarioMin || 'N.D.') + ' - ' + (c.orarioMax || 'N.D.')}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Tipologia</span>
+                                <span class="detail-value">${c.tipologiaConsegna || '-'}</span>
+                            </div>
+                            <div class="detail-item" style="grid-column: 1 / -1;">
+                                <span class="detail-label">Email</span>
+                                <span class="detail-value">${c.email || '-'}</span>
+                            </div>
+                            <div class="detail-item" style="grid-column: 1 / -1;">
+                                <span class="detail-label">Sito Web</span>
+                                <span class="detail-value">
+                                    ${c.homePage && c.homePage !== '' ? `<a href="${c.homePage.startsWith('http') ? c.homePage : 'https://' + c.homePage}" target="_blank" style="color: var(--primary);">${c.homePage}</a>` : '-'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            };
+
+            if (searchInput) {
+                searchInput.addEventListener('input', () => {
+                    const query = searchInput.value.trim().toLowerCase();
+                    renderClienti(query);
+                });
+            }
+
+            renderClienti();
+
+            const modal = document.getElementById('editCustModal');
+            const editForm = document.getElementById('editCustForm');
+
+            window.openAddModal = () => {
+                document.getElementById('modalTitle').textContent = "Aggiungi Nuovo Cliente";
+                document.getElementById('editId').value = "";
+                editForm.reset();
+                document.getElementById('editLat').value = "";
+                document.getElementById('editLng').value = "";
+                modal.classList.add('active');
+                setTimeout(() => initEditMap(null, null), 300);
+            };
+
+            window.openEditModal = (id) => {
+                document.getElementById('modalTitle').textContent = "Modifica Cliente";
+                const clienti = window.appData.lista_clienti || [];
+                const c = clienti.find((item, index) => (item.id === id || index.toString() === id));
+                if (!c) return;
+
+                document.getElementById('editId').value = id;
+                document.getElementById('editNome').value = c.nome || '';
+                document.getElementById('editCodFrutta').value = c.codiceFrutta || '';
+                document.getElementById('editCodLatte').value = c.codiceLatte || '';
+                document.getElementById('editIndirizzo').value = c.indirizzo || '';
+                document.getElementById('editCitta').value = c.citta || '';
+                document.getElementById('editProv').value = c.provincia || '';
+                document.getElementById('editOrarioMin').value = c.orarioMin || '';
+                document.getElementById('editOrarioMax').value = c.orarioMax || '';
+                document.getElementById('editEmail').value = c.email || '';
+                document.getElementById('editLat').value = c.lat || '';
+                document.getElementById('editLng').value = c.lng || '';
+                document.getElementById('editIsProgetto').checked = !!c.isProgetto;
+                document.getElementById('editViaggi').value = Array.isArray(c.viaggi) ? c.viaggi.join(', ') : (c.viaggi || '');
+
+                modal.classList.add('active');
+                setTimeout(() => initEditMap(c.lat, c.lng), 300);
+            };
+
+            let editMap, editMarker;
+            
+            window.updateMapPosition = (lat, lng) => {
+                if (editMap) {
+                    editMap.setView([lat, lng], 18);
+                    if (editMarker) editMarker.setLatLng([lat, lng]);
+                }
+            };
+
+            function initEditMap(lat, lng) {
+                const defaultLat = lat ? parseFloat(lat) : 45.4064; 
+                const defaultLng = lng ? parseFloat(lng) : 11.8768;
+                if (editMap) editMap.remove();
+
+                const googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                    maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: '© Google Maps'
+                });
+
+                editMap = L.map('editMap', { center: [defaultLat, defaultLng], zoom: lat ? 18 : 10, layers: [googleHybrid] });
+                editMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(editMap);
+                
+                editMarker.on('dragend', function(e) {
+                    const pos = editMarker.getLatLng();
+                    document.getElementById('editLat').value = pos.lat.toFixed(6);
+                    document.getElementById('editLng').value = pos.lng.toFixed(6);
+                });
+
+                editMap.on('click', function(e) {
+                    editMarker.setLatLng(e.latlng);
+                    document.getElementById('editLat').value = e.latlng.lat.toFixed(6);
+                    document.getElementById('editLng').value = e.latlng.lng.toFixed(6);
+                });
+            }
+
+            window.closeEditModal = () => { modal.classList.remove('active'); };
+
+            window.getCurrentLocation = () => {
+                if (!navigator.geolocation) return alert("GPS non supportato");
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    document.getElementById('editLat').value = lat.toFixed(6);
+                    document.getElementById('editLng').value = lng.toFixed(6);
+                    window.updateMapPosition(lat, lng);
+                }, (err) => alert("GPS Error: " + err.message));
+            };
+
+            editForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('editId').value;
+                const isNew = !id;
+                const updatedData = {
+                    nome: document.getElementById('editNome').value,
+                    codiceFrutta: document.getElementById('editCodFrutta').value,
+                    codiceLatte: document.getElementById('editCodLatte').value,
+                    indirizzo: document.getElementById('editIndirizzo').value,
+                    citta: document.getElementById('editCitta').value,
+                    provincia: document.getElementById('editProv').value,
+                    orarioMin: document.getElementById('editOrarioMin').value,
+                    orarioMax: document.getElementById('editOrarioMax').value,
+                    email: document.getElementById('editEmail').value,
+                    lat: document.getElementById('editLat').value,
+                    lng: document.getElementById('editLng').value,
+                    isProgetto: document.getElementById('editIsProgetto').checked,
+                    viaggi: document.getElementById('editViaggi').value.split(',').map(s => s.trim()).filter(s => s !== '')
+                };
+
+                try {
+                    const btn = e.target.querySelector('button[type="submit"]');
+                    btn.disabled = true; btn.textContent = "Salvataggio...";
+                    if (isNew) { if (window.addCustomer) await window.addCustomer(updatedData); }
+                    else { if (window.updateCustomer) await window.updateCustomer(id, updatedData); }
+                    alert("Salvato!"); closeEditModal(); renderClienti();
+                } catch (err) { alert("Errore: " + err.message); }
+                finally { const btn = e.target.querySelector('button[type="submit"]'); btn.disabled = false; btn.textContent = "Salva Modifiche"; }
+            });
+
+            window.deleteCust = async (id) => {
+                const clienti = window.appData.lista_clienti || [];
+                const idx = clienti.findIndex((item, index) => (item.id === id || index.toString() === id));
+                if (idx === -1) return;
+                if (confirm('Eliminare ' + clienti[idx].nome + '?')) {
+                    try {
+                        if (window.deleteFromFirebase && clienti[idx].id) await window.deleteFromFirebase("customers", clienti[idx].id);
+                        alert("Eliminato!"); renderClienti();
+                    } catch (e) { alert("Errore: " + e.message); }
+                }
+            };
+        });
+
+        window.initAutocomplete = async function() {
+            try {
+                const { PlaceAutocompleteElement } = await google.maps.importLibrary("places");
+                const field = new PlaceAutocompleteElement({ componentRestrictions: { country: "it" } });
+                field.id = 'quickMapSearch'; field.placeholder = "Cerca via, città o attività...";
+                field.style.width = "100%";
+
+                const attach = () => {
+                    const old = document.getElementById('quickMapSearch');
+                    if (old && old.tagName !== 'GMP-PLACE-AUTOCOMPLETE') {
+                        old.parentElement.replaceChild(field, old);
+                    }
+                };
+                if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
+                else attach();
+
+                field.addEventListener("gmp-placeselect", async (e) => {
+                    const place = e.place;
+                    if (!place.geometry) return;
+                    const lat = place.geometry.location.lat();
+                    const lng = place.geometry.location.lng();
+                    document.getElementById('editLat').value = lat.toFixed(6);
+                    document.getElementById('editLng').value = lng.toFixed(6);
+                    await place.fetchFields({ fields: ["address_components"] });
+                    let num = "", route = "", city = "", prov = "";
+                    if (place.address_components) {
+                        place.address_components.forEach(c => {
+                            if (c.types.includes("street_number")) num = c.long_name;
+                            if (c.types.includes("route")) route = c.long_name;
+                            if (c.types.includes("locality")) city = c.long_name;
+                            if (c.types.includes("administrative_area_level_2")) prov = c.short_name;
+                        });
+                    }
+                    document.getElementById('editIndirizzo').value = `${route} ${num}`.trim();
+                    document.getElementById('editCitta').value = city;
+                    document.getElementById('editProv').value = prov;
+                    window.updateMapPosition(lat, lng);
+                });
+                console.log("Autocomplete Pronto");
+            } catch (e) { console.error(e); }
+        };
+    </script>
+</body>
+</html>
+

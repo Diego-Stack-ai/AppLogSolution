@@ -42,7 +42,7 @@ $newVersion = "$newMajor.$newMinor"
 Write-Host ""
 Write-Host "======================================================" -ForegroundColor Cyan
 Write-Host "  Log Solutions — Deploy automatico" -ForegroundColor Cyan
-Write-Host "  Versione: v$oldVersion  ->  v$newVersion" -ForegroundColor Yellow
+Write-Host "  Versione: v$oldVersion  →  v$newVersion" -ForegroundColor Yellow
 Write-Host "======================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -73,8 +73,8 @@ foreach ($f in $allFiles) {
 $scriptJs = Join-Path $frontendPath "script.js"
 $jsContent = Get-Content $scriptJs -Raw
 $jsUpdated = $jsContent `
-    -replace "APP_VERSION = `"$oldVersion`"", "APP_VERSION = `"$newVersion`"" `
-    -replace "// script\.js - v$oldVersion", "// script.js - v$newVersion"
+    -replace 'APP_VERSION = "' + $oldVersion + '"', 'APP_VERSION = "' + $newVersion + '"' `
+    -replace '// script\.js - v' + $oldVersion, '// script.js - v' + $newVersion
 Set-Content $scriptJs -Value $jsUpdated -NoNewline -Encoding UTF8
 
 Write-Host ""

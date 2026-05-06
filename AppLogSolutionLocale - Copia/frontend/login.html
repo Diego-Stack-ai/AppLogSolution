@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Log Solution</title>
+    <link rel="stylesheet" href="styles.css?v=1.36">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+    <!-- PWA & Mobile Optimization -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Log Solutions">
+    <link rel="apple-touch-icon" href="img/logo.png">
+    <meta name="theme-color" content="#4f46e5">
+</head>
+
+<body class="center-content">
+    <div class="glass-panel login-card">
+        <div class="login-header">
+            <img src="img/logo.png" alt="Log Solutions" style="width: 120px; height: auto; margin-bottom: 20px;">
+            <h1>Gestione Viaggi</h1>
+        </div>
+
+        <form id="loginForm">
+            <div id="authAlert" style="display:none; padding:12px; margin-bottom:20px; border-radius:12px; font-size:13px; text-align:center; font-weight:500; border:1px solid transparent;"></div>
+
+            <div class="input-group">
+                <label>Email di Accesso</label>
+                <input type="text" id="username" placeholder="esempio@logsolution.app" autocomplete="username" 
+                    autocapitalize="none" autocorrect="off" required>
+            </div>
+
+            <div class="input-group">
+                <label>Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required>
+                    <span class="password-toggle" onclick="window.togglePasswordVisibility()">
+                        <span class="material-icons-round" id="toggleIcon">visibility</span>
+                    </span>
+                </div>
+            </div>
+            <div style="text-align: right; margin-bottom: 24px;">
+                <a href="javascript:void(0)" onclick="window.sendResetEmail(document.getElementById('username').value)" style="font-size: 13px; color: var(--primary); text-decoration: none; font-weight: 500;">Password dimenticata?</a>
+            </div>
+
+            <button type="submit" class="btn-primary" style="margin-bottom: 12px;">Accedi ora</button>
+            <p style="font-size: 11px; color: var(--text-muted); opacity: 0.8; text-align: center; margin: 0;">
+                Log Solution Team &copy; 2026
+        </form>
+    </div>
+
+    <script src="script.js?v=1.36"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.36"></script>
+    <script>
+        // Gestione messaggi di stato via URL
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const alertEl = document.getElementById('authAlert');
+            if (!alertEl) return;
+
+            if (params.get('status') === 'verify_sent') {
+                alertEl.style.display = 'block';
+                alertEl.style.background = '#eff6ff';
+                alertEl.style.color = '#1e40af';
+                alertEl.style.borderColor = '#dbeafe';
+                alertEl.innerHTML = '<span class="material-icons-round" style="font-size:18px;vertical-align:middle;margin-right:8px;">mail_outline</span> Controlla la tua email per verificare l\'account prima di accedere.';
+            }
+        });
+    </script>
+</body>
+</html>
+

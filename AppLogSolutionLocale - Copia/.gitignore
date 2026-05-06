@@ -1,0 +1,42 @@
+# Credenziali / segreti
+backend/config/log-solution-60007-firebase-adminsdk-fbsvc-2cf3d0c171.json
+backend/config/log-solution-60007-firebase-adminsdk-*.json
+webapp/config/ID_GESTIONE.txt
+webapp/config/ID_GESTIONE_IMPOSTAZIONI.txt
+docs/ID_GESTIONE.txt
+docs/ID_GESTIONE_IMPOSTAZIONI.txt
+Password.txt
+
+# Cartelle AI e Sistema
+brain/
+scratch/
+.agent/
+.firebase/
+
+# Dati generati e Logistica
+**/CONSEGNE/
+**/DDT-ORIGINALI-DIVISI/
+*.pdf
+*.xlsx
+*.txt
+!mappatura_destinazioni.xlsx
+!tabella_aggiornamento_articoli.xlsx
+!rientri_ddt.xlsx
+
+# File temporanei / di sistema
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Ambiente/editor
+.vscode/
+.idea/
+*.code-workspace
+
+# Python
+venv/
+.env/
+__pycache__/
+*.pyc

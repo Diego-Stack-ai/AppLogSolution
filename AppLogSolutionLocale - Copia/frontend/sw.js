@@ -1,4 +1,4 @@
-const CACHE_NAME = 'log-solution-v1.54';
+const CACHE_NAME = 'log-solution-v1.36';
 const ASSETS = [
     './',
     './index.html',
@@ -9,7 +9,6 @@ const ASSETS = [
     './impostazioni.html',
     './visualizzazione.html',
     './mappa_consegne.html',
-    './elaborazione.html',
     './firebase-config.js',
     './manifest.json',
     './img/logo.png',

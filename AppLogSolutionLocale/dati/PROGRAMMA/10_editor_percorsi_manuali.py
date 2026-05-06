@@ -129,17 +129,21 @@ def save():
             percorsi_dir = FILE_JSON_OTTIMIZZATO.parent / "PERCORSI_VEGGIANO"
             percorsi_dir.mkdir(exist_ok=True)
             
-            # Formatta il nome file (cerca di capire il nome originale dal JSON o lo rigenera)
-            zone_str = "_".join(target_viaggio.get("zone", ["0000"]))
-            file_html_name = f"{viaggio_id}_Zone_{zone_str}.html"
+            # Sovrascriviamo lo STESSO file originale per non creare duplicati
+            file_html_name = target_viaggio.get("file_sorgente")
+            if not file_html_name:
+                zone_str_file = "_".join(target_viaggio.get("zone", ["0000"])[:3])
+                file_html_name = f"{viaggio_id}_Zone_{zone_str_file}.html"
+            
             output_html_path = percorsi_dir / file_html_name
+            zone_str_titolo = ", ".join(target_viaggio.get("zone", ["0000"]))
             
             # Calcola KM veri via API Google Directions (stessa logica del file 6)
             full_stats = gen_percorsi.get_google_trip_data(lista_punti)
             final_km, t_guida_min, t_sosta_min, t_tot, polylines = full_stats
             stats_4 = (final_km, t_guida_min, t_sosta_min, t_tot)
             
-            gen_percorsi.genera_html_giro(viaggio_id, zone_str, lista_punti, stats_4, polylines, output_html_path)
+            gen_percorsi.genera_html_giro(viaggio_id, zone_str_titolo, lista_punti, stats_4, polylines, output_html_path)
 
         return jsonify({"status": "ok", "msg": "Salvataggio e Ottimizzazione completati!"})
 

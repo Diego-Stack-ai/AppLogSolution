@@ -96,16 +96,16 @@ def main():
                         if not area: orfani += 1
 
     print("\n" + "-"*65)
-    print(f"📊 RIEPILOGO MENSILE {mese}/{anno}")
-    print("-"*65)
+    print(f" RIEPILOGO MENSILE {mese}/{anno}")
+    print("-" * 65)
 
-    print(f"\n🍎 SEZIONE FRUTTA")
+    print(f"\n SEZIONE FRUTTA")
     print(f"   - DDT Standard Frutta:     {stats['FRUTTA']['standard']}")
     print(f"   - DDT Speciali (3198/3199): {stats['FRUTTA']['speciali']}")
     if stats['FRUTTA']['speciali'] > 0:
         print(f"     [Dettaglio: Area 3198={stats['FRUTTA']['dettaglio']['3198']} | Area 3199={stats['FRUTTA']['dettaglio']['3199']}]")
 
-    print(f"\n🥛 SEZIONE LATTE")
+    print(f"\n SEZIONE LATTE")
     print(f"   - DDT Standard Latte:      {stats['LATTE']['standard']}")
     print(f"   - DDT Speciali (4199):      {stats['LATTE']['speciali']}")
 
@@ -113,9 +113,9 @@ def main():
                  stats['LATTE']['standard'] + stats['LATTE']['speciali']
     
     print("\n" + "-"*65)
-    print(f"📈 TOTALE GENERALE MESE: {tot_totale} DDT")
+    print(f" TOTALE GENERALE MESE: {tot_totale} DDT")
     if orfani > 0:
-        print(f"⚠️  Attenzione: {orfani} DDT senza codice area (conteggiati come Standard)")
+        print(f"  Attenzione: {orfani} DDT senza codice area (conteggiati come Standard)")
     print("="*65 + "\n")
     input("Premi INVIO per uscire...")
 

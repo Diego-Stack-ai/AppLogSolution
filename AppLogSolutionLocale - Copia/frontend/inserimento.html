@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inserimento Presenze - Log Solution</title>
+    <link rel="stylesheet" href="styles.css?v=1.36">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <!-- PWA & Mobile Optimization -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Log Solutions">
+    <link rel="apple-touch-icon" href="img/logo.png">
+    <meta name="theme-color" content="#4f46e5">
+</head>
+
+<style>
+    .step-container {
+        display: none;
+        animation: fadeIn 0.4s ease;
+    }
+
+    .step-container.active {
+        display: block;
+    }
+
+    .btn-wizard {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 16px;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .btn-next {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 4px 15px var(--primary-glow);
+    }
+
+    .btn-back {
+        background: #f1f5f9;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .btn-start {
+        background: #0284c7;
+        color: white;
+        font-size: 18px;
+        padding: 20px;
+        box-shadow: 0 10px 25px rgba(2, 132, 199, 0.3);
+    }
+
+    .btn-save {
+        background: var(--success);
+        color: white;
+        font-size: 18px;
+        padding: 20px;
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+    }
+
+    .wizard-step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        position: relative;
+    }
+
+    .step-dot {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: #94a3b8;
+        font-size: 14px;
+        z-index: 2;
+    }
+
+    .step-dot.active {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 0 0 4px var(--primary-glow);
+    }
+
+    .step-dot.completed {
+        background: var(--success);
+        color: white;
+    }
+
+    .readonly-field {
+        background: #f8fafc !important;
+        color: #64748b !important;
+        cursor: not-allowed !important;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+</head>
+
+<body>
+    <nav class="glass-nav">
+        <div class="nav-content">
+            <button id="dashboardBtn" class="logout-btn" title="Dashboard"
+                onclick="window.navigateWithState('dashboard.html')"
+                style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
+                <span class="material-icons-round">dashboard</span>
+            </button>
+            <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
+            <div class="nav-title" style="flex: 1;">Registrazione Turno</div>
+            <a href="login.html" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
+        </div>
+    </nav>
+
+    <main class="main-container">
+        <div class="glass-panel form-card">
+            <h2>Inizio Turno</h2>
+
+            <!-- Indicatori di progresso -->
+            <div class="wizard-step-indicator">
+                <div class="step-dot active" id="dot-1">1</div>
+                <div class="step-dot" id="dot-2">2</div>
+                <div class="step-dot" id="dot-3">3</div>
+                <div class="step-dot" id="dot-4">4</div>
+                <div
+                    style="position: absolute; top: 16px; left: 0; right: 0; height: 2px; background: #e2e8f0; z-index: 1;">
+                </div>
+            </div>
+
+            <form id="presenzeForm">
+
+                <!-- STEP 1: PARTENZA -->
+                <div id="step-1" class="step-container active">
+                    <h3 class="section-title">Informazioni Generali</h3>
+                    <div class="form-grid">
+                        <div class="input-group" style="grid-column: 1 / -1;">
+                            <label for="autistaNome">Autista Connesso</label>
+                            <input type="text" id="autistaNome" readonly class="readonly-field" value="Caricamento...">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="data" style="display: flex; justify-content: space-between;">
+                                <span>Data Registrazione *</span>
+                                <span id="nomeGiorno"
+                                    style="color: var(--primary); font-weight: 700; text-transform: capitalize;"></span>
+                            </label>
+                            <input type="date" id="data" readonly class="readonly-field">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="automezzo">Automezzo (Targa) *</label>
+                            <select id="automezzo" required>
+                                <option value="">Seleziona targa...</option>
+                            </select>
+                        </div>
+
+                        <!-- Nuova Sezione Menu Dinamici (Cliente + Viaggio) -->
+                        <div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                            <div class="input-group">
+                                <label for="clienteSelect">Cliente / Progetto *</label>
+                                <select id="clienteSelect" required>
+                                    <option value="">Seleziona cliente</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="viaggioSelect">Viaggio *</label>
+                                <select id="viaggioSelect" required disabled>
+                                    <option value="">Seleziona viaggio</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="kmPartenza">Km Partenza *</label>
+                            <input type="number" id="kmPartenza" placeholder="es. 120500" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Mattina Inizio *</label>
+                            <div class="time-select-group">
+                                <select id="mattinaInizioHH" class="hour-select" required>
+                                    <option value="">--</option>
+                                </select>
+                                <span class="time-separator">:</span>
+                                <select id="mattinaInizioMM" class="min-select" required>
+                                    <option value="">--</option>
+                                    <option value="00">00</option>
+                                    <option value="15">15</option>
+                                    <option value="20">20</option>
+                                    <option value="30">30</option>
+                                    <option value="45">45</option>
+                                    <option value="50">50</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="btnStartTrip" class="btn-wizard btn-start" style="display:none;">
+                        <span class="material-icons-round">play_arrow</span>
+                        Inizia Viaggio
+                    </button>
+                    <div id="trackingStatus" style="font-size:12px; color:#64748b; margin-top:8px; text-align:center; min-height:18px;"></div>
+                </div>
+
+                <!-- STEP 2: FINE MATTINA -->
+                <div id="step-2" class="step-container">
+                    <h3 class="section-title">Sessione Mattutina</h3>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Mattina Fine</label>
+                            <div class="time-select-group">
+                                <select id="mattinaFineHH" class="hour-select">
+                                    <option value="">Ore</option>
+                                </select>
+                                <span class="time-separator">:</span>
+                                <select id="mattinaFineMM" class="min-select">
+                                    <option value="">Min</option>
+                                    <option value="00">00</option>
+                                    <option value="15">15</option>
+                                    <option value="20">20</option>
+                                    <option value="30">30</option>
+                                    <option value="45">45</option>
+                                    <option value="50">50</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:12px;">
+                        <button type="button" onclick="nextStep(3)" class="btn-wizard btn-next">Continua</button>
+                    </div>
+                </div>
+
+                <!-- STEP 3: INIZIO POMERIGGIO -->
+                <div id="step-3" class="step-container">
+                    <h3 class="section-title">Sessione Pomeridiana</h3>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Pomeriggio Inizio</label>
+                            <div class="time-select-group">
+                                <select id="pomeriggioInizioHH" class="hour-select">
+                                    <option value="">Ore</option>
+                                </select>
+                                <span class="time-separator">:</span>
+                                <select id="pomeriggioInizioMM" class="min-select">
+                                    <option value="">Min</option>
+                                    <option value="00">00</option>
+                                    <option value="15">15</option>
+                                    <option value="20">20</option>
+                                    <option value="30">30</option>
+                                    <option value="45">45</option>
+                                    <option value="50">50</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:12px;">
+                        <button type="button" onclick="prevStep(2)" class="btn-wizard btn-back"
+                            style="flex:1;">Indietro</button>
+                        <button type="button" onclick="nextStep(4)" class="btn-wizard btn-next"
+                            style="flex:2;">Continua</button>
+                    </div>
+                </div>
+
+                <!-- STEP 4: CHIUSURA E RIEPILOGO -->
+                <div id="step-4" class="step-container">
+                    <h3 class="section-title">Chiusura Giornaliera</h3>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Pomeriggio Fine *</label>
+                            <div class="time-select-group">
+                                <select id="pomeriggioFineHH" class="hour-select">
+                                    <option value="">Ore</option>
+                                </select>
+                                <span class="time-separator">:</span>
+                                <select id="pomeriggioFineMM" class="min-select">
+                                    <option value="">Min</option>
+                                    <option value="00">00</option>
+                                    <option value="15">15</option>
+                                    <option value="20">20</option>
+                                    <option value="30">30</option>
+                                    <option value="45">45</option>
+                                    <option value="50">50</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="kmArrivo">Km Arrivo *</label>
+                            <input type="number" id="kmArrivo" placeholder="es. 120800">
+                        </div>
+                    </div>
+
+                    <div
+                        style="background: #f8fafc; padding: 20px; border-radius: 16px; margin: 24px 0; border: 1px solid #e2e8f0;">
+                        <h4 style="margin: 0 0 16px 0; color: #475569; font-size: 14px; text-transform: uppercase;">
+                            Riepilogo Conoscenza</h4>
+                        <div class="form-grid">
+                            <div class="input-group">
+                                <label for="deltaKm">Delta Km</label>
+                                <input type="text" id="deltaKm" readonly class="readonly-field">
+                            </div>
+                            <div class="input-group">
+                                <label for="oreOrdinarie">Ore Ordinarie</label>
+                                <input type="text" id="oreOrdinarie" readonly class="readonly-field">
+                            </div>
+                            <div class="input-group">
+                                <label for="oreStraordinario">Ore Straordinario</label>
+                                <input type="text" id="oreStraordinario" readonly class="readonly-field">
+                            </div>
+                            <div class="input-group">
+                                <label for="totaleOre">Totale Ore</label>
+                                <input type="text" id="totaleOre" readonly class="readonly-field"
+                                    style="color: var(--primary) !important;">
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:12px;">
+                        <button type="button" onclick="prevStep(3)" class="btn-wizard btn-back"
+                            style="flex:1;">Indietro</button>
+                        <button type="submit" class="btn-wizard btn-save" style="flex:2;">Salva e Invia Turno</button>
+                    </div>
+                </div>
+
+                <div style="margin-top: 40px; border-top: 2px solid #f1f5f9; padding-top: 30px;">
+                    <h3 class="section-title">Carburante e Note</h3>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="importo">Importo (€)</label>
+                            <input type="number" id="importo" step="0.01" placeholder="es. 50.00">
+                        </div>
+                        <div class="input-group">
+                            <label for="litri">Litri Carburante</label>
+                            <input type="number" id="litri" step="0.01" placeholder="es. 40.50">
+                        </div>
+                        <div class="input-group" style="grid-column: 1 / -1;">
+                            <label for="nota">Note / Osservazioni</label>
+                            <textarea id="nota" rows="3"
+                                placeholder="Aggiungi eventuali note sul viaggio, problemi al mezzo, ecc."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </main>
+
+    <!-- Modal Attenzione Data -->
+    <div class="modal-overlay" id="dateWarningModal">
+        <div class="modal-content">
+            <div class="modal-icon material-icons-round">warning</div>
+            <h2 style="font-size: 20px; color: #b45309; margin-bottom: 8px;">Attenzione!</h2>
+            <p style="margin-bottom: 24px; color: #475569; font-size: 15px; line-height: 1.5;">Stai scegliendo una data
+                che non è <b>oggi</b>.<br>Sei sicuro di voler registrare il turno per questo giorno?</p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button type="button" class="btn-primary"
+                    style="background:#f1f5f9; color:#334155; box-shadow:none; padding: 12px;"
+                    onclick="chiudiModalData('annulla')">Annulla</button>
+                <button type="button" class="btn-primary"
+                    style="background:#f59e0b; box-shadow:0 10px 20px -10px #f59e0b; padding: 12px;"
+                    onclick="chiudiModalData('conferma')">Sì, prosegui</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ripristino Viaggio Sospeso -->
+    <div id="recoveryTripModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="material-icons-round modal-icon" style="color: var(--primary);">history</span>
+            <h3>Viaggio non concluso</h3>
+            <p>È stato rilevato un viaggio iniziato ma non terminato. Vuoi riprendere dall'ultima tappa o iniziare un
+                nuovo turno?</p>
+            <div style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">
+                <button onclick="resumeDraft()" class="btn-primary">Riprendi Viaggio Precedente</button>
+                <button onclick="discardDraft()" class="btn-primary"
+                    style="background:#f1f5f9; color:#ef4444; box-shadow:none;">Elimina Bozze e Inizia Nuovo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Conferma Invio -->
+    <div id="confirmModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="material-icons-round modal-icon" style="color: var(--primary);">send</span>
+            <h3>Conferma Invio</h3>
+            <p>Sei sicuro di voler inviare i dati del turno di oggi al Foglio Google?</p>
+            <div style="display:flex; gap:12px; margin-top:24px;">
+                <button onclick="closeConfirmModal()" class="btn-primary"
+                    style="background:#f1f5f9; color:#334155; box-shadow:none;">Annulla</button>
+                <button id="btnConfirmSend" class="btn-primary">Sì, Invia Ora</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js?v=1.36"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.36"></script>
+    <script type="module">
+        import { saveTrip } from "./firestore-service.js?v=1.36";
+        import "./gps-tracker.js?v=1.36";
+
+        const presenzeForm = document.getElementById('presenzeForm');
+        const btnStartTrip = document.getElementById('btnStartTrip');
+        const btnConfirmSend = document.getElementById('btnConfirmSend');
+
+        // Logic to show/hide Start Trip button based on inputs
+        const checkStep1 = () => {
+            const d1 = document.getElementById('automezzo').value;
+            const d2 = document.getElementById('clienteSelect').value;
+            const d3 = document.getElementById('viaggioSelect').value;
+            const d4 = document.getElementById('kmPartenza').value;
+            const d5 = document.getElementById('mattinaInizioHH').value;
+            const d6 = document.getElementById('mattinaInizioMM').value;
+            
+            // Show only if not already tracking (button text checked or disabled state)
+            if (!btnStartTrip.disabled) {
+                if (d1 && d2 && d3 && d4 && d5 && d6) {
+                    btnStartTrip.style.display = 'flex';
+                } else {
+                    btnStartTrip.style.display = 'none';
+                }
+            }
+        };
+
+        ['automezzo', 'clienteSelect', 'viaggioSelect', 'kmPartenza', 'mattinaInizioHH', 'mattinaInizioMM'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', checkStep1);
+                el.addEventListener('change', checkStep1);
+            }
+        });
+
+        // Logic for Starting Trip
+        btnStartTrip.onclick = async () => {
+            // Check HTML5 validity for required fields
+            if (!presenzeForm.reportValidity()) return;
+
+            const targa = document.getElementById('automezzo').value;
+            const kmPartenza = document.getElementById('kmPartenza').value;
+            
+            const tripData = {
+                data: document.getElementById('data').value,
+                autista: window.appData.currentUser.nome,
+                automezzo: targa,
+                cliente: document.getElementById('clienteSelect').value,
+                viaggio: document.getElementById('viaggioSelect').value,
+                kmPartenza: Number(kmPartenza),
+                mattinaInizio: window.getTimeValue('mattinaInizio'),
+                stato: "in corso"
+            };
+
+            try {
+                const tripId = await saveTrip(tripData);
+                sessionStorage.setItem('currentTripId', tripId);
+                
+                // Avvia Tracking GPS (Modulo gps-tracker.js)
+                if (window.startGPSTracking) {
+                    window.startGPSTracking(tripId, kmPartenza);
+                }
+
+                btnStartTrip.innerHTML = '<span class="material-icons-round">gps_fixed</span> Tracking Attivo';
+                btnStartTrip.disabled = true;
+                window.nextStep(2);
+            } catch (e) {
+                alert("Errore avvio viaggio: " + e.message);
+            }
+        };
+
+        // Final Submission
+        btnConfirmSend.onclick = async () => {
+            const btn = presenzeForm.querySelector('.btn-save');
+            btn.innerHTML = 'Invio...'; btn.disabled = true;
+            window.closeConfirmModal();
+
+            const tripId = sessionStorage.getItem('currentTripId');
+            const kmArrivo = document.getElementById('kmArrivo').value;
+
+            const finalData = {
+                id: tripId,
+                data: document.getElementById('data').value,
+                autista: window.appData.currentUser.nome,
+                automezzo: document.getElementById('automezzo').value,
+                cliente: document.getElementById('clienteSelect').value,
+                viaggio: document.getElementById('viaggioSelect').value,
+                kmPartenza: Number(document.getElementById('kmPartenza').value),
+                kmArrivo: Number(kmArrivo),
+                delta_km: document.getElementById('deltaKm').value,
+                mattinaInizio: window.getTimeValue('mattinaInizio'),
+                mattinaFine: window.getTimeValue('mattinaFine'),
+                pomeriggioInizio: window.getTimeValue('pomeriggioInizio'),
+                pomeriggioFine: window.getTimeValue('pomeriggioFine'),
+                ore_ordinarie: document.getElementById('oreOrdinarie').value,
+                ore_straordinarie: document.getElementById('oreStraordinario').value,
+                ore_totali: document.getElementById('totaleOre').value,
+                importo: document.getElementById('importo').value,
+                litri: document.getElementById('litri').value,
+                nota: document.getElementById('nota').value,
+                stato: "concluso"
+            };
+
+            try {
+                // Ferma tracking
+                if (window.stopGPSTracking) window.stopGPSTracking();
+
+                // Salva su Firebase
+                await saveTrip(finalData);
+                
+                sessionStorage.removeItem('currentTripId');
+                sessionStorage.removeItem('currentDraft');
+
+                btn.innerHTML = 'Turno Inviato ✓';
+                btn.style.background = 'var(--success)';
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } catch (e) {
+                alert("Errore salvataggio: " + e.message);
+                btn.disabled = false;
+                btn.innerHTML = 'Salva e Invia Turno';
+            }
+        };
+    </script>
+</body>
+</html>

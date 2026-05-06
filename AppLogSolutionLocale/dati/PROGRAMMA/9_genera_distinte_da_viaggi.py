@@ -380,9 +380,12 @@ def _trova_pdf(codice: str, data: str, cartella: Path) -> list[Path]:
 
     risultati = []
     
+    # Normalizza gli slash in trattini per compatibilità con i nomi dei file
+    data_norm = data.replace("/", "-")
+    
     # Estrai tutte le date da cercare (supporta date composte tipo DD-MM-YYYY_DD-MM-YYYY)
-    parti_data = re.findall(r"\d{2}-\d{2}-\d{4}", data)
-    date_valide = set(parti_data) if parti_data else {data}
+    parti_data = re.findall(r"\d{2}-\d{2}-\d{4}", data_norm)
+    date_valide = set(parti_data) if parti_data else {data_norm}
     
     # Cerca tutti i file che iniziano con il codice cliente
     matches = list(cartella.glob(f"{codice}_*.pdf"))
@@ -718,6 +721,7 @@ def main():
     rientri_usati: set[tuple] = set()     # (codice, data_str) - PDF trovato e allegato
     rientri_assegnati: set[tuple] = set() # (codice, data_str) - Presente in un viaggio
     pdf_generati: list[Path] = []
+    pdf_non_trovati: list[str] = []       # PDF mancanti (normali o rientri)
 
     for viaggio in viaggi:
         nome_giro = viaggio["nome_giro"]
@@ -767,31 +771,39 @@ def main():
 
                 pdfs_da_processare = []
 
+                # ── 1. CERCA CONSEGNA BASE (Normale o Odierna) ──
+                cart_tipo = dir_frutta_r if tipo == "FRUTTA" else dir_latte_r
+                pdfs_found = _trova_pdf(codice, d_p, cart_tipo)
+                if pdfs_found:
+                    for p_f in pdfs_found:
+                        pdfs_da_processare.append((p_f, tipo, d_p))
+                
+                # ── 2. CERCA RIENTRI STORICI (Fallback sicuro) ──
                 if codice.lower() in rientri:
-                    # ── RIENTRO: cerca nei PDF delle date storiche (col. B) ──
-                    date_rientro = rientri[codice.lower()]
-                    for d_r in date_rientro:
-                        # Segna come assegnato a un viaggio (indipendentemente dal ritrovamento del PDF)
+                    for d_r in rientri[codice.lower()]:
                         rientri_assegnati.add((codice.lower(), d_r))
+                        
+                        # Normalizza gli slash in trattini (es. 04/05/2026 -> 04-05-2026)
+                        d_r_norm = d_r.replace("/", "-")
+                        
+                        # Estrai solo la data (DD-MM-YYYY) per trovare la cartella
+                        m_data = re.search(r"\d{2}-\d{2}-\d{4}", d_r_norm)
+                        d_r_base = m_data.group(0) if m_data else d_r_norm
+
                         try:
-                            cartella_r_base = _trova_cartella(d_r)
+                            cartella_r_base = _trova_cartella(d_r_base)
                             cart_storica = cartella_r_base / "DDT-ORIGINALI-DIVISI"
                         except Exception:
-                            cart_storica = CONSEGNE_DIR / f"CONSEGNE_{d_r}" / "DDT-ORIGINALI-DIVISI"
+                            cart_storica = CONSEGNE_DIR / f"CONSEGNE_{d_r_base}" / "DDT-ORIGINALI-DIVISI"
                         
                         for sotto in ["FRUTTA", "LATTE"]:
-                            pdfs_found = _trova_pdf(codice, d_r, cart_storica / sotto)
-                            if pdfs_found:
-                                for p_f in pdfs_found:
-                                    pdfs_da_processare.append((p_f, sotto, d_r))
+                            pf = _trova_pdf(codice, d_r, cart_storica / sotto)
+                            if pf:
+                                for p_f in pf:
+                                    # Evita di accodare file duplicati
+                                    if not any(x[0] == p_f for x in pdfs_da_processare):
+                                        pdfs_da_processare.append((p_f, sotto, d_r))
                                 break
-                else:
-                    # ── CONSEGNA NORMALE: cerca nella cartella della sessione corrente ──
-                    cart_tipo = dir_frutta_r if tipo == "FRUTTA" else dir_latte_r
-                    pdfs_found = _trova_pdf(codice, d_p, cart_tipo)
-                    if pdfs_found:
-                        for p_f in pdfs_found:
-                            pdfs_da_processare.append((p_f, tipo, d_p))
 
                 if not pdfs_da_processare:
                     pdf_non_trovati.append(f"{codice} ({tipo})")
@@ -822,13 +834,26 @@ def main():
                 codice_r = obj_r["codice"]
                 data_r   = obj_r["data"]
                 tipo_r   = obj_r.get("tipo", "FRUTTA")
+                
+                # FIX: Se questo rientro è già stato elaborato in questo giro
+                # (es. come codice primario), saltiamolo per evitare PDF e articoli doppi.
+                if (codice_r.lower(), data_r) in rientri_usati:
+                    continue
+
                 rientri_assegnati.add((codice_r.lower(), data_r))
 
+                # Normalizza gli slash in trattini
+                data_r_norm = data_r.replace("/", "-")
+
+                # Estrai solo la data (DD-MM-YYYY) per trovare la cartella
+                m_data_r = re.search(r"\d{2}-\d{2}-\d{4}", data_r_norm)
+                data_r_base = m_data_r.group(0) if m_data_r else data_r_norm
+
                 try:
-                    cartella_r_base = _trova_cartella(data_r)
+                    cartella_r_base = _trova_cartella(data_r_base)
                     cart_storica    = cartella_r_base / "DDT-ORIGINALI-DIVISI"
                 except Exception:
-                    cart_storica = CONSEGNE_DIR / f"CONSEGNE_{data_r}" / "DDT-ORIGINALI-DIVISI"
+                    cart_storica = CONSEGNE_DIR / f"CONSEGNE_{data_r_base}" / "DDT-ORIGINALI-DIVISI"
 
                 pdfs_found = []
                 for sotto in ["FRUTTA", "LATTE"]:

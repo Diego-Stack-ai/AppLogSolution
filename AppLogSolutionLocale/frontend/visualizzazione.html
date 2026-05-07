@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visualizzazione Dati - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.36">
+    <link rel="stylesheet" href="styles.css?v=1.37">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     
     <!-- PWA & Mobile Optimization -->
@@ -242,13 +242,13 @@
     </main>
 
         <!-- Script base: inizializza window.appData -->
-    <script src="script.js?v=1.36"></script>
+    <script src="script.js?v=1.37"></script>
     <!-- Autenticazione Firebase: popola currentUser e chiama onUserProfileLoaded -->
-    <script type="module" src="firebase-auth-sync.js?v=1.36"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.37"></script>
 
     <script type="module">
-        import { getAllTrips, getTripLogs, deleteTrip } from "./firestore-service.js?v=1.36";
-        import { renderTripList, removeTripCard } from "./ui-render.js?v=1.36";
+        import { getAllTrips, getTripLogs, deleteTrip } from "./firestore-service.js?v=1.37";
+        import { renderTripList, removeTripCard } from "./ui-render.js?v=1.37";
 
         const filterAutista = document.getElementById('filterAutista');
         const btnRefresh = document.getElementById('btnRefresh');
@@ -325,7 +325,7 @@
                 if (!mapInstance) {
                     mapInstance = L.map('logMap').setView([45.46427, 9.18951], 10);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap'
+                        attribution: 'Â© OpenStreetMap'
                     }).addTo(mapInstance);
                 }
 
@@ -362,7 +362,7 @@
          */
         window.confirmDeleteTrip = async (tripId, btnEl) => {
             // Conferma di sicurezza prima di procedere
-            if (!confirm('Sei sicuro di voler eliminare questo viaggio e tutti i suoi log GPS?\nL\'operazione non è reversibile.')) return;
+            if (!confirm('Sei sicuro di voler eliminare questo viaggio e tutti i suoi log GPS?\nL\'operazione non Ã¨ reversibile.')) return;
 
             // Feedback visivo: spinner sul pulsante durante l'operazione
             if (btnEl) {

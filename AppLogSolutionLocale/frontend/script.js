@@ -1,4 +1,4 @@
-/**
+﻿/**
  * script.js - v1.33
  * Modulo principale per la gestione della UI, validazioni e wizard.
  * Logica di persistenza spostata su firestore-service.js
@@ -8,7 +8,7 @@ const APP_VERSION = "1.33";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
-console.log(`[App] Log Solution PWA — versione ${APP_VERSION}`);
+console.log(`[App] Log Solution PWA â€” versione ${APP_VERSION}`);
 
 
 // --- STATO GLOBALE ---
@@ -79,7 +79,7 @@ function updateStepUI() {
     for (let i = 1; i <= totalSteps; i++) {
         const dot = document.getElementById(`dot-${i}`);
         if (!dot) continue;
-        if (i < currentStep) { dot.classList.add('completed'); dot.innerHTML = '✓'; }
+        if (i < currentStep) { dot.classList.add('completed'); dot.innerHTML = 'âœ“'; }
         else if (i === currentStep) { dot.classList.add('active'); dot.classList.remove('completed'); dot.innerHTML = i; }
         else { dot.classList.remove('active', 'completed'); dot.innerHTML = i; }
     }
@@ -166,7 +166,7 @@ window.discardDraft = () => {
     window.location.reload();
 };
 
-// --- MENÙ DINAMICI ---
+// --- MENÃ™ DINAMICI ---
 window.renderMezziInserimento = function() {
     const select = document.getElementById('automezzo');
     if (!select) return;
@@ -191,7 +191,7 @@ window.renderClientiInserimento = function() {
     const progetti = window.appData.lista_progetti || [];
     let nomi = progetti.map(p => p.nome).filter(Boolean);
 
-    // 2. Fallback hardcoded se Firestore è vuoto
+    // 2. Fallback hardcoded se Firestore Ã¨ vuoto
     if (nomi.length === 0) {
         nomi = ["PROGETTO SCUOLE", "CATTEL", "GRAN CHEF", "BAUER"];
     }
@@ -311,10 +311,10 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.serviceWorker.register('./sw.js').then(reg => {
             console.log('[SW] Registrato correttamente.');
 
-            // Se c'è già un SW in attesa (tab rimasto aperto durante aggiornamento)
-            // → invia subito SKIP_WAITING per forzare l'attivazione
+            // Se c'Ã¨ giÃ  un SW in attesa (tab rimasto aperto durante aggiornamento)
+            // â†’ invia subito SKIP_WAITING per forzare l'attivazione
             if (reg.waiting) {
-                console.log('[SW] SW in attesa trovato — invio SKIP_WAITING.');
+                console.log('[SW] SW in attesa trovato â€” invio SKIP_WAITING.');
                 reg.waiting.postMessage({ type: 'SKIP_WAITING' });
                 showUpdateToast(reg);
             }
@@ -332,27 +332,27 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('[SW] Errore registrazione:', err);
         });
 
-        // ⚡ CRITICO: Quando il nuovo SW prende il controllo, ricarica la pagina automaticamente
+        // âš¡ CRITICO: Quando il nuovo SW prende il controllo, ricarica la pagina automaticamente
         // Questo garantisce che il telefono non rimanga su una versione vecchia.
         let swRefreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (swRefreshing) return;
             swRefreshing = true;
-            console.log('[SW] Nuova versione attiva — ricarico la pagina...');
+            console.log('[SW] Nuova versione attiva â€” ricarico la pagina...');
             window.location.reload();
         });
     }
 });
 
 function showUpdateToast(reg) {
-    // Evita duplicati se il toast è già presente
+    // Evita duplicati se il toast Ã¨ giÃ  presente
     if (document.getElementById('sw-update-toast')) return;
 
     const toast = document.createElement('div');
     toast.id = 'sw-update-toast';
     toast.className = 'sw-update-toast show';
     toast.innerHTML = `
-        <div style="flex:1;">🆕 Nuova versione disponibile (v${APP_VERSION})</div>
+        <div style="flex:1;">ðŸ†• Nuova versione disponibile (v${APP_VERSION})</div>
         <button class="btn-update" id="btn-sw-update">Aggiorna ora</button>
     `;
     document.body.appendChild(toast);
@@ -360,7 +360,7 @@ function showUpdateToast(reg) {
     // Il pulsante invia SKIP_WAITING al SW in attesa, poi il controllerchange ricarica
     document.getElementById('btn-sw-update').addEventListener('click', () => {
         if (reg.waiting) {
-            console.log('[SW] Utente ha cliccato Aggiorna — invio SKIP_WAITING.');
+            console.log('[SW] Utente ha cliccato Aggiorna â€” invio SKIP_WAITING.');
             reg.waiting.postMessage({ type: 'SKIP_WAITING' });
         } else {
             // Fallback: nessun SW in attesa, ricarica direttamente
@@ -378,11 +378,11 @@ window.onUserProfileLoaded = (user) => {
     const role = (user.ruolo || 'autista').toLowerCase();
     if (dashBtn) dashBtn.style.display = (role === 'amministratore' || role === 'impiegata') ? 'flex' : 'none';
 
-    // Inizializza i menu a tendina dinamici se i dati sono già pronti
+    // Inizializza i menu a tendina dinamici se i dati sono giÃ  pronti
     if (typeof window.renderMezziInserimento === 'function') window.renderMezziInserimento();
     if (typeof window.renderClientiInserimento === 'function') window.renderClientiInserimento();
 
-    // Se siamo in inserimento e c'è una bozza, mostriamo il modale
+    // Se siamo in inserimento e c'Ã¨ una bozza, mostriamo il modale
     if (document.getElementById('presenzeForm') && sessionStorage.getItem('currentDraft')) {
         document.getElementById('recoveryTripModal')?.classList.add('active');
     }

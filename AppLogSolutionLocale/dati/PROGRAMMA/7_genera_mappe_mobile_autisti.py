@@ -3,6 +3,7 @@ import math
 import re
 import requests
 import subprocess
+import time
 from pathlib import Path
 
 # --- CONFIGURAZIONE ---
@@ -501,17 +502,22 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
 def cleanup_webapp_folder():
     if WEBAPP_FOLDER.exists():
-        print(f" Pulizia cartella webapp '{WEBAPP_FOLDER.name}'...")
-        for f in WEBAPP_FOLDER.glob("*.html"):
-            try: f.unlink()
-            except: pass
-        for f in WEBAPP_FOLDER.glob("*.txt"):
-            try: f.unlink()
-            except: pass
+        print(f" Pulizia cartella webapp '{WEBAPP_FOLDER.name}' (mantengo storici 10 giorni)...")
+        now = time.time()
+        for ext in ["*.html", "*.txt"]:
+            for f in WEBAPP_FOLDER.glob(ext):
+                try:
+                    # Elimina solo i file più vecchi di 10 giorni (86400 secondi * 10)
+                    if now - f.stat().st_mtime > 10 * 86400:
+                        f.unlink()
+                except Exception:
+                    pass
 
 def main():
     target_dir = get_latest_consegne_dir()
     if not target_dir: return
+    
+    data_str = target_dir.name.replace("CONSEGNE_", "")
     
     # 1. Pulisce la cartella pubblica per GitHub/Firebase
     cleanup_webapp_folder()
@@ -543,7 +549,7 @@ def main():
 
         zone_list = sorted(list(set([str(p.get('zona', '0000')) for p in perc])))
         z_str = "Zone: " + ", ".join(zone_list[:4])
-        fname = f"{v_id}_Zone_{'_'.join(zone_list[:4])}.html"
+        fname = f"{v_id}_Zone_{'_'.join(zone_list[:4])}_{data_str}.html"
 
         # Fallback per navigazione: se mancano lat/lon usa Nome + Indirizzo
         def get_nav_url(d):
@@ -600,12 +606,12 @@ def main():
         (out_folder / fname).write_text(html, encoding="utf-8")
         (WEBAPP_FOLDER / fname).write_text(html, encoding="utf-8")
 
-    txt_content = " LINK MAPPE PER AUTISTI (GIORNO CORRENTE)\n------------------------------------------\n\n"
+    txt_content = f" LINK MAPPE PER AUTISTI ({data_str})\n------------------------------------------\n\n"
     for i, v in enumerate(viaggi):
         v_id = v.get("nome_giro", f"V{i+1:02d}")
         # IMPORTANTE: Usiamo il nome del file già generato sopra
         zone_list = sorted(list(set([str(p.get('zona', '0000')) for p in v.get("lista_punti", [])])))
-        fname = f"{v_id}_Zone_{'_'.join(zone_list[:4])}.html"
+        fname = f"{v_id}_Zone_{'_'.join(zone_list[:4])}_{data_str}.html"
         
         # Generiamo link Firebase (più stabili per la web app)
         firebase_link = f"https://log-solution-60007.web.app/mappe_autisti/{fname}"

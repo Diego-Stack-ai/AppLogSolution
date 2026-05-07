@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>V02</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
+    <style>
+        :root { --p: #4f46e5; --accent: #10b981; --done: #94a3b8; --geo: #3b82f6; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: #f8fafc; overflow: hidden; }
+        .main-container { display: flex; flex-direction: column; height: 100vh; }
+        #map { height: 42vh; width: 100%; background: #dfe5eb; position: relative; }
+        #sidebar { flex: 1; display: flex; flex-direction: column; background: white; border-top: 2px solid #cbd5e1; overflow: hidden; }
+        .header { padding: 6px 12px; background: #1e293b; color: white; border-bottom: 2px solid var(--accent); position: relative; }
+        .trip-title { margin: 0; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
+        .reset-btn { position: absolute; right: 12px; top: 8px; font-size: 0.6rem; color: #94a3b8; text-decoration: underline; border: none; background: none; font-weight: 600; }
+        .stats-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 2px; }
+        .stat-item { flex: 1; display: flex; flex-direction: column; align-items: start; }
+        .stat-val { font-size: 0.82rem; font-weight: 800; color: white; line-height: 1; }
+        .stat-lbl { font-size: 0.52rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-top: 1px; }
+        #delivery-list { flex: 1; overflow-y: auto; padding: 8px; background: #f1f5f9; padding-bottom: 60px; }
+        
+        .card { 
+            background: white; border-radius: 12px; padding: 10px; margin-bottom: 8px; 
+            display: grid; grid-template-columns: 42px 1fr 52px; gap: 8px; align-items: center;
+            border: 1px solid #cbd5e1; position: relative; transition: all 0.2s; 
+        }
+        .card.done { opacity: 0.6; background: #e2e8f0; border-color: #cbd5e1; }
+        .card.done .stop-num { background: var(--done); }
+        .card.done .btn-done { color: var(--accent); background: white; border: 1px solid var(--accent); }
+        .card.next { border-color: var(--p); border-left: 5px solid var(--p); }
+        
+        .stop-num { width: 32px; height: 32px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
+        .stop-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+        .name { display: block; font-size: 0.85rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .addr { font-size: 0.78rem; color: #64748b; font-weight: 600; line-height: 1.1; display: block; }
+        
+        .actions { display: flex; gap: 6px; width: 100%; margin-bottom: 2px; }
+        .btn-done, .btn-geo { 
+            flex: 1; height: 32px; border-radius: 6px; font-size: 0.6rem; font-weight: 800;
+            display: flex; align-items: center; justify-content: center; gap: 4px; 
+            padding: 0 4px; text-decoration: none; border: none; white-space: nowrap;
+        }
+        .btn-nav { 
+            background: var(--accent); color: white; width: 44px; height: 44px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; text-decoration: none;
+        }
+        .btn-done { background: white; color: #64748b; border: 1px solid #cbd5e1; }
+        .btn-geo { background: var(--geo); color: white; }
+        .btn-geo.saved { background: #1e293b; }
+        .material-icons-round { font-size: 16px !important; }
+        .btn-nav { background: var(--accent); color: white; }
+        .btn-done { background: white; color: #64748b; border: 1px solid #cbd5e1; }
+        .btn-geo { background: var(--geo); color: white; }
+        .btn-geo.saved { background: #1e293b; }
+        .material-icons-round { font-size: 16px !important; }
+
+        #gps-btn { position: absolute; bottom: 20px; right: 20px; background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; color: var(--p); border: none; }
+        #geo-feedback { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 30px; font-size: 0.8rem; font-weight: 700; z-index: 2000; display: none; }
+    </style>
+</head>
+<body>
+    <div id="geo-feedback">Coordinate salvate!</div>
+    <div class="main-container">
+        <div id="map">
+            <button id="gps-btn" onclick="centerOnMe()"><span class="material-icons-round">my_location</span></button>
+        </div>
+        <div id="sidebar">
+            <div class="header">
+                <div class="trip-title">🏎️ V02 | Zone: 3111</div>
+                <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
+                <div class="stats-row">
+                    <div class="stat-item"><span class="stat-val">112.3km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 41m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">3h 4m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">5h 45m</span><span class="stat-lbl">Totale</span></div>
+                </div>
+            </div>
+            <div id="delivery-list">
+            <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
+                <div class="stop-num" style="background:#475569;"><span class="material-icons-round">home</span></div>
+                <div class="stop-info"><b class="name">PARTENZA</b><span class="addr">Deposito Veggiano</span></div>
+            </div><div class="card next" onclick="focusOn(1)">
+                <div class="stop-num">1</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(0, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">L. Bottazzo</b>
+                    <span class="addr"><b>Via Montessori 1</b><br>, 35016 Piazzola Sul Brenta (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.56120300092029,11.75261850261741&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(2)">
+                <div class="stop-num">2</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(1, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">FONTANIVA-S.GIORGIO IN BRENTA</b>
+                    <span class="addr"><b>PIAZZA DON SILVIO MOZZATO</b><br>35014 FONTANIVA (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6138065529252,11.76743360821228&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(3)">
+                <div class="stop-num">3</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(2, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">FONTANIVA-BATTISTI</b>
+                    <span class="addr"><b>PIAZZA UMBERTO PRIMO 13</b><br>35014 FONTANIVA (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.63697110887776,11.75358174103928&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(4)">
+                <div class="stop-num">4</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(3, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Cittadella-L.Cornaro Piscopia</b>
+                    <span class="addr"><b>Via Angelo Gabrielli 32</b><br>35013 Cittadella (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.64227521173349,11.7758142461782&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(5)">
+                <div class="stop-num">5</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(4, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Cittadella-Borgo Treviso</b>
+                    <span class="addr"><b>Via S. Prosdocimo</b><br>22, 35013 Cittadella (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.65160476939064,11.79532285805398&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(6)">
+                <div class="stop-num">6</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(5, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Primaria Pozzetto Cittadella-Ca' Onorai</b>
+                    <span class="addr"><b>Via Vecchia Di Bassano</b><br>2/B, 35013 Cittadella (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.66744587073191,11.77986095700835&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(7)">
+                <div class="stop-num">7</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(6, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Primaria Laghi Cittadella-Laghi</b>
+                    <span class="addr"><b>Via Don G.Lago</b><br>25, 35013 Cittadella (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.67674707904238,11.7549221770378&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(8)">
+                <div class="stop-num">8</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(7, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">IV NOVEMBRE - CAMPAGNARI</b>
+                    <span class="addr"><b>VIA MADRE TERESA DI CALCUTTA 2</b><br>36056 TEZZE SUL BRENTA (VICENZA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.68183825928856,11.75542350433695&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(9)">
+                <div class="stop-num">9</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(8, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">A. Gabelli - Belvedere Di Tezze</b>
+                    <span class="addr"><b>Via Nazionale</b><br>125, 36056 Tezze Sul Brenta (VICENZA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.68695562192638,11.77227026532898&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(10)">
+                <div class="stop-num">10</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(9, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Galliera Veneta-Monte Grappa</b>
+                    <span class="addr"><b>Via Campagna N. 84</b><br>35015 Galliera Veneta (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.6763662578414,11.81742952981643&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(11)">
+                <div class="stop-num">11</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(10, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Galliera Veneta-D.G.Manesso</b>
+                    <span class="addr"><b>Via G. Leopardi Nr. 6</b><br>35015 Galliera Veneta (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.668458246527,11.82932784535218&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(12)">
+                <div class="stop-num">12</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(11, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Galliera Veneta-G.Giardino</b>
+                    <span class="addr"><b>Via G. Leopardi Nr. 4</b><br>35015 Galliera Veneta (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.66310484047931,11.82520260788728&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(13)">
+                <div class="stop-num">13</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(12, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">N. Sauro Campagnalta</b>
+                    <span class="addr"><b>Viale Dei Martiri</b><br>10, 35018 San Martino Di Lupari (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.66877509677433,11.85533620401727&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(14)">
+                <div class="stop-num">14</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(13, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Duca D'Aosta San Martino Di Lupari</b>
+                    <span class="addr"><b>Via Julia</b><br>35018 San Martino Di Lupari (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.64757078740999,11.85991232876665&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(15)">
+                <div class="stop-num">15</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(14, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">C. Battisti Campretto</b>
+                    <span class="addr"><b>Via Dell'Usignolo</b><br>35018 San Martino Di Lupari (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.63882796276695,11.87180918961451&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(16)">
+                <div class="stop-num">16</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(15, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Tombolo - Tombolan Fava</b>
+                    <span class="addr"><b>Via Sant'Andrea Apostolo</b><br>7, 35019 Tombolo (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.63807498674172,11.83109704907379&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(17)">
+                <div class="stop-num">17</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(16, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">Cittadella-S.Maria</b>
+                    <span class="addr"><b>Via Case Bianche 6 / 10</b><br>35013 Cittadella (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.61904006079672,11.8045219292646&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(18)">
+                <div class="stop-num">18</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(17, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">CAMPO S.MARTINO-LOC. BUSIAGO</b>
+                    <span class="addr"><b>VIA S.LORENZO 83</b><br>35010 CAMPO SAN MARTINO (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.56389497812773,11.83441162368696&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(19)">
+                <div class="stop-num">19</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(18, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">CAMPO S.MARTINO-LOC. MARSANGO</b>
+                    <span class="addr"><b>VIA ALCIDE DE GASPERI 43</b><br>35010 CAMPO SAN MARTINO (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.55194359471043,11.83580147070847&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(20)">
+                <div class="stop-num">20</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(19, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">CAMPO S.MARTINO-MARCONI</b>
+                    <span class="addr"><b>VIA FORESE 42</b><br>35010 CAMPO SAN MARTINO (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.54618106632538,11.81133229269867&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(21)">
+                <div class="stop-num">21</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(20, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">CURTAROLO-LOC. PIEVE</b>
+                    <span class="addr"><b>VIA MONTE PASUBIO3</b><br>35010 CURTAROLO (PADOVA)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.53836319303304,11.82277912440642&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(22)">
+                <div class="stop-num">22</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(21, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">CURTAROLO-LOC. S.MARIA DI NON</b>
+                    <span class="addr"><b>VIA SANTA MARIA DI NON 33</b><br></span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.51284232761436,11.85183537368013&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(23)">
+                <div class="stop-num">23</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(22, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">LIMENA-MANZONI</b>
+                    <span class="addr"><b>VIA GAROLLA 44</b><br></span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.48153741072637,11.84096493671796&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div>
+            <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
+                <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
+                <div class="stop-info"><b class="name">ARRIVO</b><span class="addr">Deposito Veggiano</span></div>
+            </div></div>
+        </div>
+    </div>
+    
+    <!-- FIREBASE SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLnhP2Q4bz2ubYwcMLiD3-qq4c220eVKw",
+            authDomain: "log-solution-60007.firebaseapp.com",
+            projectId: "log-solution-60007",
+            storageBucket: "log-solution-60007.appspot.com",
+            messagingSenderId: "343696844738",
+            appId: "1:343696844738:web:b8d4e10c71fb2c67bc7d20"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.saveRealCoords = async function(i) {
+            if (!window.currentPos) {
+                alert("GPS non pronto. Attendi il pallino blu.");
+                return;
+            }
+            const p = window.data[i];
+            const btn = document.querySelectorAll('.btn-geo')[i];
+            
+            try {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-icons-round">sync</span>';
+                
+                await addDoc(collection(db, "coordinate_reali"), {
+                    codice_frutta: p.codice_frutta || "",
+                    codice_latte: p.codice_latte || "",
+                    nome: p.cliente,
+                    indirizzo: p.indirizzo,
+                    lat: window.currentPos.lat,
+                    lon: window.currentPos.lng,
+                    timestamp: serverTimestamp(),
+                    v_id: window.v_id
+                });
+
+                btn.classList.add('saved');
+                btn.innerHTML = '<span class="material-icons-round">location_on</span> GEOLOCALIZZA';
+                const f = document.getElementById('geo-feedback');
+                f.style.display = 'block';
+                setTimeout(() => f.style.display = 'none', 3000);
+            } catch (e) {
+                console.error(e);
+                alert("Errore salvataggio!");
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-icons-round">location_searching</span>';
+            }
+        };
+    </script>
+
+    <script>
+        const v_id = "V02";
+        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}, {"cliente": "L. Bottazzo", "indirizzo": "Via Montessori 1,, 35016 Piazzola Sul Brenta (PADOVA)", "lat": 45.56120300092029, "lon": 11.75261850261741, "codice_frutta": "p00000", "codice_latte": "p1797"}, {"cliente": "FONTANIVA-S.GIORGIO IN BRENTA", "indirizzo": "PIAZZA DON SILVIO MOZZATO, 35014 FONTANIVA (PADOVA)", "lat": 45.6138065529252, "lon": 11.76743360821228, "codice_frutta": "p2403", "codice_latte": "p00000"}, {"cliente": "FONTANIVA-BATTISTI", "indirizzo": "PIAZZA UMBERTO PRIMO 13, 35014 FONTANIVA (PADOVA)", "lat": 45.63697110887776, "lon": 11.75358174103928, "codice_frutta": "p2404", "codice_latte": "p00000"}, {"cliente": "Cittadella-L.Cornaro Piscopia", "indirizzo": "Via Angelo Gabrielli 32, 35013 Cittadella (PADOVA)", "lat": 45.64227521173349, "lon": 11.7758142461782, "codice_frutta": "p00000", "codice_latte": "p1706"}, {"cliente": "Cittadella-Borgo Treviso", "indirizzo": "Via S. Prosdocimo, 22, 35013 Cittadella (PADOVA)", "lat": 45.65160476939064, "lon": 11.79532285805398, "codice_frutta": "p2247", "codice_latte": "p1707"}, {"cliente": "Primaria Pozzetto Cittadella-Ca' Onorai", "indirizzo": "Via Vecchia Di Bassano, 2/B, 35013 Cittadella (PADOVA)", "lat": 45.66744587073191, "lon": 11.77986095700835, "codice_frutta": "p2248", "codice_latte": "p1705"}, {"cliente": "Primaria Laghi Cittadella-Laghi", "indirizzo": "Via Don G.Lago, 25, 35013 Cittadella (PADOVA)", "lat": 45.67674707904238, "lon": 11.7549221770378, "codice_frutta": "p2249", "codice_latte": "p1699"}, {"cliente": "IV NOVEMBRE - CAMPAGNARI", "indirizzo": "VIA MADRE TERESA DI CALCUTTA 2, 36056 TEZZE SUL BRENTA (VICENZA)", "lat": 45.68183825928856, "lon": 11.75542350433695, "codice_frutta": "p2416", "codice_latte": "p2647"}, {"cliente": "A. Gabelli - Belvedere Di Tezze", "indirizzo": "Via Nazionale, 125, 36056 Tezze Sul Brenta (VICENZA)", "lat": 45.68695562192638, "lon": 11.77227026532898, "codice_frutta": "p2415", "codice_latte": "p2645"}, {"cliente": "Galliera Veneta-Monte Grappa", "indirizzo": "Via Campagna N. 84, 35015 Galliera Veneta (PADOVA)", "lat": 45.6763662578414, "lon": 11.81742952981643, "codice_frutta": "p2043", "codice_latte": "p00000"}, {"cliente": "Galliera Veneta-D.G.Manesso", "indirizzo": "Via G. Leopardi Nr. 6, 35015 Galliera Veneta (PADOVA)", "lat": 45.668458246527, "lon": 11.82932784535218, "codice_frutta": "p2042", "codice_latte": "p00000"}, {"cliente": "Galliera Veneta-G.Giardino", "indirizzo": "Via G. Leopardi Nr. 4, 35015 Galliera Veneta (PADOVA)", "lat": 45.66310484047931, "lon": 11.82520260788728, "codice_frutta": "p2041", "codice_latte": "p00000"}, {"cliente": "N. Sauro Campagnalta", "indirizzo": "Viale Dei Martiri, 10, 35018 San Martino Di Lupari (PADOVA)", "lat": 45.66877509677433, "lon": 11.85533620401727, "codice_frutta": "p2208", "codice_latte": "p00000"}, {"cliente": "Duca D'Aosta San Martino Di Lupari", "indirizzo": "Via Julia, 35018 San Martino Di Lupari (PADOVA)", "lat": 45.64757078740999, "lon": 11.85991232876665, "codice_frutta": "p2209", "codice_latte": "p1930"}, {"cliente": "C. Battisti Campretto", "indirizzo": "Via Dell'Usignolo, 35018 San Martino Di Lupari (PADOVA)", "lat": 45.63882796276695, "lon": 11.87180918961451, "codice_frutta": "p2210", "codice_latte": "p00000"}, {"cliente": "Tombolo - Tombolan Fava", "indirizzo": "Via Sant'Andrea Apostolo, 7, 35019 Tombolo (PADOVA)", "lat": 45.63807498674172, "lon": 11.83109704907379, "codice_frutta": "p2040", "codice_latte": "p00000"}, {"cliente": "Cittadella-S.Maria", "indirizzo": "Via Case Bianche 6 / 10, 35013 Cittadella (PADOVA)", "lat": 45.61904006079672, "lon": 11.8045219292646, "codice_frutta": "p00000", "codice_latte": "p1708"}, {"cliente": "CAMPO S.MARTINO-LOC. BUSIAGO", "indirizzo": "VIA S.LORENZO 83, 35010 CAMPO SAN MARTINO (PADOVA)", "lat": 45.56389497812773, "lon": 11.83441162368696, "codice_frutta": "p2244", "codice_latte": "p1810"}, {"cliente": "CAMPO S.MARTINO-LOC. MARSANGO", "indirizzo": "VIA ALCIDE DE GASPERI 43, 35010 CAMPO SAN MARTINO (PADOVA)", "lat": 45.55194359471043, "lon": 11.83580147070847, "codice_frutta": "p2243", "codice_latte": "p1807"}, {"cliente": "CAMPO S.MARTINO-MARCONI", "indirizzo": "VIA FORESE 42, 35010 CAMPO SAN MARTINO (PADOVA)", "lat": 45.54618106632538, "lon": 11.81133229269867, "codice_frutta": "p2242", "codice_latte": "p1809"}, {"cliente": "CURTAROLO-LOC. PIEVE", "indirizzo": "VIA MONTE PASUBIO3, 35010 CURTAROLO (PADOVA)", "lat": 45.53836319303304, "lon": 11.82277912440642, "codice_frutta": "p2240", "codice_latte": "p1811"}, {"cliente": "CURTAROLO-LOC. S.MARIA DI NON", "indirizzo": "VIA SANTA MARIA DI NON 33", "lat": 45.51284232761436, "lon": 11.85183537368013, "codice_frutta": "p2241", "codice_latte": "p1808"}, {"cliente": "LIMENA-MANZONI", "indirizzo": "VIA GAROLLA 44", "lat": 45.48153741072637, "lon": 11.84096493671796, "codice_frutta": "p2292", "codice_latte": "p1736"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}];
+        window.data = data; window.v_id = v_id;
+        let map, markers = [], userMarker;
+        window.currentPos = null;
+        
+        // --- GESTIONE STATO CONSEGNE ---
+        function loadStatus() {
+            const saved = JSON.parse(localStorage.getItem('done_' + v_id) || "[]");
+            data.forEach((p, i) => {
+                if (saved.includes(i)) {
+                    document.querySelectorAll('.card')[i].classList.add('done');
+                    const btn = document.querySelectorAll('.btn-done')[i];
+                    if(btn) btn.innerHTML = '<span class="material-icons-round">check_circle</span> CONSEGNATO';
+                }
+            });
+        }
+        function toggleDone(i, event) {
+            if(event) event.stopPropagation();
+            const card = document.querySelectorAll('.card')[i];
+            const btn = document.querySelectorAll('.btn-done')[i];
+            card.classList.toggle('done');
+            
+            const saved = JSON.parse(localStorage.getItem('done_' + v_id) || "[]");
+            if (card.classList.contains('done')) {
+                if (!saved.includes(i)) saved.push(i);
+                if(btn) btn.innerHTML = '<span class="material-icons-round">check_circle</span> CONSEGNATO';
+            } else {
+                const idx = saved.indexOf(i);
+                if (idx > -1) saved.splice(idx, 1);
+                if(btn) btn.innerHTML = '<span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO';
+            }
+            localStorage.setItem('done_' + v_id, JSON.stringify(saved));
+        }
+        function resetDone() {
+            if(confirm("Vuoi azzerare tutte le consegne di questo giro?")) {
+                localStorage.removeItem('done_' + v_id);
+                location.reload();
+            }
+        }
+
+        // --- MAPPA E GPS ---
+        async function initMap() {
+            const centerPoint = data.find(p => p.lat && p.lon) || { lat: 45.4428, lon: 11.7145 };
+            map = new google.maps.Map(document.getElementById("map"), { zoom: 12, center: { lat: centerPoint.lat, lng: centerPoint.lon }, disableDefaultUI: true });
+            
+            // GPS Real-time
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(pos => {
+                    const myPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    window.currentPos = myPos;
+                    if (!userMarker) {
+                        userMarker = new google.maps.Marker({
+                            position: myPos, map: map,
+                            icon: { path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: "#4285F4", fillOpacity: 1, strokeColor: "white", strokeWeight: 2 }
+                        });
+                    } else { userMarker.setPosition(myPos); }
+                }, err => console.log("GPS Off"), { enableHighAccuracy: true });
+            }
+
+            const ds = new google.maps.DirectionsService();
+            const dr = new google.maps.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.7, strokeWeight: 5 } });
+            const waypts = data.slice(1, -1).filter(d => d.lat && d.lon).map(d => ({ location: { lat: d.lat, lng: d.lon }, stopover: true }));
+            
+            if (data[0].lat && data[data.length-1].lat) {
+                ds.route({ origin: { lat: data[0].lat, lng: data[0].lon }, destination: { lat: data[data.length-1].lat, lng: data[data.length-1].lon }, waypoints: waypts, travelMode: "DRIVING" }, (res, st) => { if (st === "OK") dr.setDirections(res); });
+            }
+
+            const geocoder = new google.maps.Geocoder();
+            const bounds = new google.maps.LatLngBounds();
+            data.forEach((p, i) => {
+                if (p.lat && p.lon) { addMarker(p, i, bounds); } 
+                else {
+                    // GEOLOCALIZZAZIONE DISABILITATA PER TEST
+                    // geocoder.geocode({ address: `${p.cliente}, ${p.indirizzo}` }, (res, st) => {
+                    //     if (st === "OK") { p.lat = res[0].geometry.location.lat(); p.lon = res[0].geometry.location.lng(); addMarker(p, i, bounds); }
+                    // });
+                    console.log("Geocoding saltato per test:", p.cliente);
+                }
+            });
+            loadStatus();
+        }
+
+        function addMarker(p, i, bounds) {
+            let markerConfig = { position: { lat: p.lat, lng: p.lon }, map: map };
+            
+            if (i === 0 || i === data.length - 1) {
+                // Sede (Partenza / Arrivo)
+                markerConfig.icon = {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 6,
+                    fillColor: "#475569",
+                    fillOpacity: 1,
+                    strokeWeight: 2,
+                    strokeColor: "white"
+                };
+                markerConfig.title = i === 0 ? "Partenza" : "Arrivo";
+            } else {
+                // Consegna (l'indice 1 corrisponde alla consegna 1)
+                markerConfig.label = { text: i.toString(), color: "white", fontSize: "10px", fontWeight: "900" };
+            }
+
+            const m = new google.maps.Marker(markerConfig);
+            markers[i] = m; 
+            bounds.extend(m.getPosition()); 
+            map.fitBounds(bounds);
+        }
+
+        function focusOn(i) { if(markers[i]) { map.panTo(markers[i].getPosition()); map.setZoom(17); } }
+        function centerOnMe() { if(userMarker) { map.panTo(userMarker.getPosition()); map.setZoom(16); } }
+    </script>
+</body>
+</html>

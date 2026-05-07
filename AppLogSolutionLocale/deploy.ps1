@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # deploy.ps1 — Log Solutions | Script di versioning e deploy automatico
 # =============================================================================
 # Uso:
@@ -18,7 +18,7 @@ $ErrorActionPreference = "Stop"
 $frontendPath = Join-Path $PSScriptRoot "frontend"
 $swFile       = Join-Path $frontendPath "sw.js"
 
-# ─── 1. LEGGI VERSIONE ATTUALE ────────────────────────────────────────────────
+# --- 1. LEGGI VERSIONE ATTUALE ------------------------------------------------
 $swContent = Get-Content $swFile -Raw
 if ($swContent -notmatch "CACHE_NAME = 'log-solution-v(\d+)\.(\d+)'") {
     Write-Error "❌ Impossibile trovare CACHE_NAME in sw.js"
@@ -42,16 +42,16 @@ $newVersion = "$newMajor.$newMinor"
 Write-Host ""
 Write-Host "======================================================" -ForegroundColor Cyan
 Write-Host "  Log Solutions — Deploy automatico" -ForegroundColor Cyan
-Write-Host "  Versione: v$oldVersion  →  v$newVersion" -ForegroundColor Yellow
+Write-Host "  Versione: v$oldVersion  ->  v$newVersion" -ForegroundColor Yellow
 Write-Host "======================================================" -ForegroundColor Cyan
 Write-Host ""
 
-# ─── 2. AGGIORNA sw.js (CACHE_NAME) ──────────────────────────────────────────
+# --- 2. AGGIORNA sw.js (CACHE_NAME) ------------------------------------------
 Write-Host "📦 Aggiorno sw.js..." -ForegroundColor Green
 $swContent = $swContent -replace "log-solution-v$oldVersion", "log-solution-v$newVersion"
 Set-Content $swFile -Value $swContent -NoNewline -Encoding UTF8
 
-# ─── 3. AGGIORNA ?v= IN TUTTI I FILE HTML E JS ───────────────────────────────
+# --- 3. AGGIORNA ?v= IN TUTTI I FILE HTML E JS -------------------------------
 Write-Host "🔄 Aggiorno query string ?v= in HTML e JS..." -ForegroundColor Green
 
 $htmlFiles = Get-ChildItem $frontendPath -Filter "*.html"
@@ -69,18 +69,18 @@ foreach ($f in $allFiles) {
     }
 }
 
-# ─── 4. AGGIORNA APP_VERSION IN script.js ────────────────────────────────────
+# --- 4. AGGIORNA APP_VERSION IN script.js ------------------------------------
 $scriptJs = Join-Path $frontendPath "script.js"
 $jsContent = Get-Content $scriptJs -Raw
 $jsUpdated = $jsContent `
-    -replace 'APP_VERSION = "' + $oldVersion + '"', 'APP_VERSION = "' + $newVersion + '"' `
-    -replace '// script\.js - v' + $oldVersion, '// script.js - v' + $newVersion
+    -replace "APP_VERSION = `"$oldVersion`"", "APP_VERSION = `"$newVersion`"" `
+    -replace "// script\.js - v$oldVersion", "// script.js - v$newVersion"
 Set-Content $scriptJs -Value $jsUpdated -NoNewline -Encoding UTF8
 
 Write-Host ""
 Write-Host "✅ Versione aggiornata in $count file." -ForegroundColor Green
 
-# ─── 5. GIT COMMIT + PUSH (se non --SoloBump) ────────────────────────────────
+# --- 5. GIT COMMIT + PUSH (se non --SoloBump) --------------------------------
 if (-not $SoloBump) {
     $msg = if ($Messaggio -ne "") { $Messaggio } else { "Release v$newVersion" }
 

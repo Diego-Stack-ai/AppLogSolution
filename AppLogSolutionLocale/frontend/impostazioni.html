@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.36">
+    <link rel="stylesheet" href="styles.css?v=1.37">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
@@ -79,7 +79,7 @@
 
         <div id="autistiContent" style="display: none; padding-top: 20px;">
             <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
-                💡 <b>Nota Sicurezza:</b> Le password non sono più gestite qui. Per creare nuovi utenti, usa la console Firebase Auth. I profili appariranno qui una volta registrati.
+                ðŸ’¡ <b>Nota Sicurezza:</b> Le password non sono piÃ¹ gestite qui. Per creare nuovi utenti, usa la console Firebase Auth. I profili appariranno qui una volta registrati.
             </p>
             <div class="form-grid">
                 <div class="input-group">
@@ -128,13 +128,13 @@
         <!-- Sezione Gestione Clienti & Viaggi -->
         <div id="toggleProgettiBtn"
             style="display: flex; justify-content: space-between; align-items: center; margin: 32px 0 0 0; cursor: pointer; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
-            <h3 class="section-title" style="margin: 0;">📦 Gestione Clienti &amp; Viaggi</h3>
+            <h3 class="section-title" style="margin: 0;">ðŸ“¦ Gestione Clienti &amp; Viaggi</h3>
             <span class="material-icons-round" id="toggleProgettiIcon" style="color: var(--primary); transition: transform 0.3s ease;">expand_more</span>
         </div>
 
         <div id="progettiContent" style="display: none; padding-top: 20px;">
             <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
-                💡 Gestisci qui i clienti/progetti e i viaggi associati. Questi dati vengono usati nel dropdown della pagina <b>Registrazione Turno</b>.
+                ðŸ’¡ Gestisci qui i clienti/progetti e i viaggi associati. Questi dati vengono usati nel dropdown della pagina <b>Registrazione Turno</b>.
             </p>
 
             <!-- Form aggiunta/modifica cliente -->
@@ -163,10 +163,10 @@
             <!-- Importazione dati predefiniti -->
             <div id="importDefaultBox" style="background:#fffbeb; border:1px dashed #f59e0b; border-radius:12px; padding:16px; margin-bottom:24px; display:none;">
                 <p style="margin:0 0 12px 0; font-size:13px; color:#92400e;">
-                    ⚠️ Nessun cliente configurato. Vuoi importare i <b>4 clienti predefiniti</b> (PROGETTO SCUOLE, CATTEL, GRAN CHEF, BAUER) con i loro viaggi?
+                    âš ï¸ Nessun cliente configurato. Vuoi importare i <b>4 clienti predefiniti</b> (PROGETTO SCUOLE, CATTEL, GRAN CHEF, BAUER) con i loro viaggi?
                 </p>
                 <button type="button" id="btnImportDefault" class="btn-primary" style="background:#f59e0b; box-shadow:0 4px 12px rgba(245,158,11,0.3); font-size:13px; padding:10px 20px; width:auto;">
-                    ⬆️ Importa Dati Predefiniti
+                    â¬†ï¸ Importa Dati Predefiniti
                 </button>
             </div>
 
@@ -186,7 +186,7 @@
                 <div>
                     <h4 style="color: #0c4a6e; margin-bottom: 8px; font-size: 14px;">RUOLI E PERMESSI</h4>
                     <ul style="padding-left: 20px; color: #075985; font-size: 13px; line-height: 1.6;">
-                        <li><b>Autista:</b> Può solo inserire i propri turni.</li>
+                        <li><b>Autista:</b> PuÃ² solo inserire i propri turni.</li>
                         <li><b>Amministrativo:</b> Vede i riepiloghi e gestisce autisti/mezzi.</li>
                         <li><b>Amministratore:</b> Accesso totale a tutte le impostazioni.</li>
                     </ul>
@@ -194,7 +194,7 @@
                 <div>
                     <h4 style="color: #0c4a6e; margin-bottom: 8px; font-size: 14px;">TIPI DI TURNO</h4>
                     <ul style="padding-left: 20px; color: #075985; font-size: 13px; line-height: 1.6;">
-                        <li><b>In Giornata:</b> La data è bloccata su "oggi".</li>
+                        <li><b>In Giornata:</b> La data Ã¨ bloccata su "oggi".</li>
                         <li><b>Notturno:</b> Permette di scegliere la data di inizio del turno.</li>
                     </ul>
                 </div>
@@ -513,11 +513,11 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=1.36"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.36"></script>
+    <script src="script.js?v=1.37"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.37"></script>
 
     <script type="module">
-    // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
+    // â”€â”€â”€ GESTIONE CLIENTI & VIAGGI (PROGETTI) â€” modulo autonomo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot }
         from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -526,14 +526,14 @@
     const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
     const db  = getFirestore(app);
 
-    // ── CRUD locale (non dipende da window.saveProgetto) ──────────────────
+    // â”€â”€ CRUD locale (non dipende da window.saveProgetto) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function saveProgetto(id, data) {
         if (id) { await updateDoc(doc(db, "progetti", id), data); }
         else     { await addDoc(collection(db, "progetti"), data); }
     }
     async function delProgetto(id) { await deleteDoc(doc(db, "progetti", id)); }
 
-    // ── DATI DI DEFAULT ───────────────────────────────────────────────────
+    // â”€â”€ DATI DI DEFAULT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const DEFAULT_PROGETTI = [
         { nome: 'PROGETTO SCUOLE', viaggi: ['VIAGGIO 01','VIAGGIO 02','VIAGGIO 03','VIAGGIO 04','VIAGGIO 05','VIAGGIO 06','VIAGGIO 07','VIAGGIO 08','VIAGGIO 09','VIAGGIO 10'] },
         { nome: 'CATTEL',          viaggi: ['BS * BRESCIA', 'FBS * FUORI BRESCIA'] },
@@ -541,12 +541,12 @@
         { nome: 'BAUER',           viaggi: ['VI * VICENZA', 'TV * TREVISO'] }
     ];
 
-    // ── STATO ─────────────────────────────────────────────────────────────
+    // â”€â”€ STATO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let currentViaggi = [];
     let editId = null;
     let progettiCache = [];
 
-    // ── LISTENER REALTIME ─────────────────────────────────────────────────
+    // â”€â”€ LISTENER REALTIME â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     onSnapshot(collection(db, "progetti"), snap => {
         progettiCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         window.appData = window.appData || {};
@@ -556,7 +556,7 @@
         if (typeof window.renderProgettiInserimento === 'function') window.renderProgettiInserimento();
     });
 
-    // ── INIT DOM ──────────────────────────────────────────────────────────
+    // â”€â”€ INIT DOM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     document.addEventListener('DOMContentLoaded', () => {
         const toggleBtn   = document.getElementById('toggleProgettiBtn');
         const contentDiv  = document.getElementById('progettiContent');
@@ -587,7 +587,7 @@
             currentViaggi.forEach((v, i) => {
                 const tag = document.createElement('div');
                 tag.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:#e0e7ff;color:#3730a3;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;';
-                tag.innerHTML = `<span>${v}</span><span onclick="rimuoviViaggio(${i})" style="cursor:pointer;font-weight:900;color:#6366f1;font-size:14px;line-height:1;">×</span>`;
+                tag.innerHTML = `<span>${v}</span><span onclick="rimuoviViaggio(${i})" style="cursor:pointer;font-weight:900;color:#6366f1;font-size:14px;line-height:1;">Ã—</span>`;
                 tagList.appendChild(tag);
             });
         }
@@ -634,15 +634,15 @@
             btn.disabled = true; btn.textContent = 'Importazione...';
             try {
                 for (const p of DEFAULT_PROGETTI) await saveProgetto(null, p);
-                btn.textContent = '✅ Importati!';
+                btn.textContent = 'âœ… Importati!';
             } catch(e) {
                 alert('Errore importazione: ' + e.message);
-                btn.disabled = false; btn.textContent = '⬆️ Importa Dati Predefiniti';
+                btn.disabled = false; btn.textContent = 'â¬†ï¸ Importa Dati Predefiniti';
             }
         };
     });
 
-    // ── RENDER LISTA ──────────────────────────────────────────────────────
+    // â”€â”€ RENDER LISTA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function renderLista() {
         const lista     = document.getElementById('listaProgetti');
         const importBox = document.getElementById('importDefaultBox');

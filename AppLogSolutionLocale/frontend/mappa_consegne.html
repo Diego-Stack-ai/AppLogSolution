@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mappa Consegne - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.36">
+    <link rel="stylesheet" href="styles.css?v=1.37">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     
     <!-- PWA & Mobile Optimization -->
@@ -95,20 +95,20 @@
         const map = L.map('map').setView([45.4064, 11.8768], 9); // Centrato su Veneto
 
             const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap'
+                attribution: 'Â© OpenStreetMap'
             });
             
             const hybrid = L.layerGroup([
                 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: 'Satellite © Esri'
+                    attribution: 'Satellite Â© Esri'
                 }),
                 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: 'Labels © Esri'
+                    attribution: 'Labels Â© Esri'
                 })
             ]);
 
             const topo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-                attribution: 'Topo © Esri'
+                attribution: 'Topo Â© Esri'
             });
 
             hybrid.addTo(map);
@@ -186,8 +186,8 @@
             }
         });
     </script>
-    <script src="script.js?v=1.36"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.36"></script>
+    <script src="script.js?v=1.37"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.37"></script>
 </body>
 </html>
 

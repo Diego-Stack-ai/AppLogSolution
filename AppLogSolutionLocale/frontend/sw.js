@@ -1,4 +1,4 @@
-const CACHE_NAME = 'log-solution-v1.36';
+﻿const CACHE_NAME = 'log-solution-v1.37';
 const ASSETS = [
     './',
     './index.html',
@@ -14,7 +14,7 @@ const ASSETS = [
     './img/logo.png',
     'https://fonts.googleapis.com/icon?family=Material+Icons+Round'
 ];
-// Nota: JS/CSS con ?v= non sono in ASSETS perché usano strategia Network-First
+// Nota: JS/CSS con ?v= non sono in ASSETS perchÃ© usano strategia Network-First
 // e vengono cachati dinamicamente al primo accesso.
 
 // 1. Installazione: cache solo asset statici puri
@@ -46,7 +46,7 @@ self.addEventListener('activate', (event) => {
 // 3. SKIP_WAITING via messaggio (forza aggiornamento immediato)
 self.addEventListener('message', (event) => {
     if (event.data === 'SKIP_WAITING' || event.data?.type === 'SKIP_WAITING') {
-        console.log(`[SW ${CACHE_NAME}] SKIP_WAITING ricevuto — attivazione forzata.`);
+        console.log(`[SW ${CACHE_NAME}] SKIP_WAITING ricevuto â€” attivazione forzata.`);
         self.skipWaiting();
     }
 });
@@ -57,7 +57,7 @@ self.addEventListener('fetch', (event) => {
 
     const url = event.request.url;
 
-    // ── Bypass totale: Firebase, Firestore, autenticazione ─────────────────
+    // â”€â”€ Bypass totale: Firebase, Firestore, autenticazione â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (
         url.includes('firebaseio.com') ||
         url.includes('firestore.googleapis.com') ||
@@ -68,7 +68,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // ── Network-First: HTML (navigazione) ───────────────────────────────────
+    // â”€â”€ Network-First: HTML (navigazione) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (event.request.mode === 'navigate' || url.endsWith('.html')) {
         event.respondWith(
             fetch(event.request)
@@ -82,7 +82,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // ── Network-First: JS e CSS (sempre freschi, fallback offline) ──────────
+    // â”€â”€ Network-First: JS e CSS (sempre freschi, fallback offline) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Questa strategia elimina il bisogno di bumping manuale del ?v=
     if (url.match(/\.(js|css)(\?|$)/)) {
         event.respondWith(
@@ -101,7 +101,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // ── Cache-First: immagini e altri asset statici (cambiano raramente) ────
+    // â”€â”€ Cache-First: immagini e altri asset statici (cambiano raramente) â”€â”€â”€â”€
     event.respondWith(
         caches.match(event.request).then((cached) => {
             if (cached) return cached;

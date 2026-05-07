@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.36">
+    <link rel="stylesheet" href="styles.css?v=1.37">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -346,7 +346,7 @@
                     <h3 class="section-title">Carburante e Note</h3>
                     <div class="form-grid">
                         <div class="input-group">
-                            <label for="importo">Importo (€)</label>
+                            <label for="importo">Importo (â‚¬)</label>
                             <input type="number" id="importo" step="0.01" placeholder="es. 50.00">
                         </div>
                         <div class="input-group">
@@ -371,14 +371,14 @@
             <div class="modal-icon material-icons-round">warning</div>
             <h2 style="font-size: 20px; color: #b45309; margin-bottom: 8px;">Attenzione!</h2>
             <p style="margin-bottom: 24px; color: #475569; font-size: 15px; line-height: 1.5;">Stai scegliendo una data
-                che non è <b>oggi</b>.<br>Sei sicuro di voler registrare il turno per questo giorno?</p>
+                che non Ã¨ <b>oggi</b>.<br>Sei sicuro di voler registrare il turno per questo giorno?</p>
             <div style="display: flex; gap: 12px; justify-content: center;">
                 <button type="button" class="btn-primary"
                     style="background:#f1f5f9; color:#334155; box-shadow:none; padding: 12px;"
                     onclick="chiudiModalData('annulla')">Annulla</button>
                 <button type="button" class="btn-primary"
                     style="background:#f59e0b; box-shadow:0 10px 20px -10px #f59e0b; padding: 12px;"
-                    onclick="chiudiModalData('conferma')">Sì, prosegui</button>
+                    onclick="chiudiModalData('conferma')">SÃ¬, prosegui</button>
             </div>
         </div>
     </div>
@@ -388,7 +388,7 @@
         <div class="modal-content">
             <span class="material-icons-round modal-icon" style="color: var(--primary);">history</span>
             <h3>Viaggio non concluso</h3>
-            <p>È stato rilevato un viaggio iniziato ma non terminato. Vuoi riprendere dall'ultima tappa o iniziare un
+            <p>Ãˆ stato rilevato un viaggio iniziato ma non terminato. Vuoi riprendere dall'ultima tappa o iniziare un
                 nuovo turno?</p>
             <div style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">
                 <button onclick="resumeDraft()" class="btn-primary">Riprendi Viaggio Precedente</button>
@@ -407,16 +407,16 @@
             <div style="display:flex; gap:12px; margin-top:24px;">
                 <button onclick="closeConfirmModal()" class="btn-primary"
                     style="background:#f1f5f9; color:#334155; box-shadow:none;">Annulla</button>
-                <button id="btnConfirmSend" class="btn-primary">Sì, Invia Ora</button>
+                <button id="btnConfirmSend" class="btn-primary">SÃ¬, Invia Ora</button>
             </div>
         </div>
     </div>
 
-    <script src="script.js?v=1.36"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.36"></script>
+    <script src="script.js?v=1.37"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.37"></script>
     <script type="module">
-        import { saveTrip } from "./firestore-service.js?v=1.36";
-        import "./gps-tracker.js?v=1.36";
+        import { saveTrip } from "./firestore-service.js?v=1.37";
+        import "./gps-tracker.js?v=1.37";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -527,7 +527,7 @@
                 sessionStorage.removeItem('currentTripId');
                 sessionStorage.removeItem('currentDraft');
 
-                btn.innerHTML = 'Turno Inviato ✓';
+                btn.innerHTML = 'Turno Inviato âœ“';
                 btn.style.background = 'var(--success)';
                 setTimeout(() => {
                     window.location.reload();

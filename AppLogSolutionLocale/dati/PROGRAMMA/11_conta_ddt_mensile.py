@@ -16,8 +16,7 @@ BASE_DIR = PROG_DIR.parent
 CONSEGNE_DIR = BASE_DIR / "CONSEGNE"
 
 # Codici area speciali
-SPECIALI_FRUTTA = {"3198", "3199"}
-SPECIALI_LATTE  = {"4199"}
+SPECIALI = {"3198", "3199", "4199"}
 
 # Regex per trovare il codice area (es: G3109 o Q4199)
 AREA_RE = re.compile(r'(?:conto di|ordine e conto di)\s+([A-Z])(\d{4,5})', re.I)
@@ -59,8 +58,9 @@ def main():
 
     # Contatori
     stats = {
-        "FRUTTA": {"standard": 0, "speciali": 0, "dettaglio": {"3198": 0, "3199": 0}},
-        "LATTE":  {"standard": 0, "speciali": 0, "dettaglio": {"4199": 0}}
+        "FRUTTA": {"standard": 0},
+        "LATTE":  {"standard": 0},
+        "SPECIALI": {"totale": 0, "dettaglio": {"3198": 0, "3199": 0, "4199": 0}}
     }
     orfani = 0
 
@@ -80,20 +80,15 @@ def main():
             for p in pdfs:
                 area = estrai_codice_area(p)
                 
-                if tipo == "FRUTTA":
-                    if area in SPECIALI_FRUTTA:
-                        stats["FRUTTA"]["speciali"] += 1
-                        stats["FRUTTA"]["dettaglio"][area] += 1
-                    else:
+                if area in SPECIALI:
+                    stats["SPECIALI"]["totale"] += 1
+                    stats["SPECIALI"]["dettaglio"][area] += 1
+                else:
+                    if tipo == "FRUTTA":
                         stats["FRUTTA"]["standard"] += 1
-                        if not area: orfani += 1
-                else: # LATTE
-                    if area in SPECIALI_LATTE:
-                        stats["LATTE"]["speciali"] += 1
-                        stats["LATTE"]["dettaglio"][area] += 1
                     else:
                         stats["LATTE"]["standard"] += 1
-                        if not area: orfani += 1
+                    if not area: orfani += 1
 
     print("\n" + "-"*65)
     print(f" RIEPILOGO MENSILE {mese}/{anno}")
@@ -101,16 +96,17 @@ def main():
 
     print(f"\n SEZIONE FRUTTA")
     print(f"   - DDT Standard Frutta:     {stats['FRUTTA']['standard']}")
-    print(f"   - DDT Speciali (3198/3199): {stats['FRUTTA']['speciali']}")
-    if stats['FRUTTA']['speciali'] > 0:
-        print(f"     [Dettaglio: Area 3198={stats['FRUTTA']['dettaglio']['3198']} | Area 3199={stats['FRUTTA']['dettaglio']['3199']}]")
 
     print(f"\n SEZIONE LATTE")
     print(f"   - DDT Standard Latte:      {stats['LATTE']['standard']}")
-    print(f"   - DDT Speciali (4199):      {stats['LATTE']['speciali']}")
 
-    tot_totale = stats['FRUTTA']['standard'] + stats['FRUTTA']['speciali'] + \
-                 stats['LATTE']['standard'] + stats['LATTE']['speciali']
+    print(f"\n SEZIONE SPECIALI (Misti)")
+    print(f"   - DDT Speciali Totali:     {stats['SPECIALI']['totale']}")
+    if stats['SPECIALI']['totale'] > 0:
+        d = stats["SPECIALI"]["dettaglio"]
+        print(f"     [Dettaglio: Area 3198={d['3198']} | Area 3199={d['3199']} | Area 4199={d['4199']}]")
+
+    tot_totale = stats['FRUTTA']['standard'] + stats['LATTE']['standard'] + stats['SPECIALI']['totale']
     
     print("\n" + "-"*65)
     print(f" TOTALE GENERALE MESE: {tot_totale} DDT")

@@ -361,7 +361,7 @@ ARTICOLI_NOTI = {
     "MA-T-LI-L3-NA", "ME-T-DI-V0-NA", "ME-S-BI-L3-NA", "PE-T-DI-L3-NA",
     "YO-BI-MN-04-LB", "YO-DL-02-LC", "FI-Z-BI-L3-NA", "FR-M-BI-L3-NI",
     "LNS-04-GADGET", "LNS-04-", "CA-Z-BI-L3-NA", "KI-S-BI-L3-NA", "ME-S-DI-L3-NA", "FO-DI-AS-04-LV",
-    "AL-M-BI-L3-NI", "SUCCO-REC",
+    "AL-M-BI-L3-NI", "SUCCO-REC", "PF-T-LI-L3-NA", "SU-M-BI-L3-NI", "YO-CN-MN-04-",
 }
 
 def _is_primary_code(text: str) -> bool:
@@ -384,8 +384,17 @@ def _normalizza_cella_codice_base(raw: str) -> str:
     righe = [l.strip() for l in raw.split('\n')
              if l.strip() and not l.strip().startswith("Codice:")]
     if not righe: return ""
-    # La prima riga è sempre il codice base
-    return righe[0]
+    
+    codice_base = righe[0]
+    
+    # ── OPZIONE A: Ricomposizione per codici troncati ──
+    # Se la prima riga finisce col trattino, uniamo la prima parola della riga successiva
+    if len(righe) > 1 and codice_base.endswith('-'):
+        pezzi = righe[1].split()
+        if pezzi:
+            codice_base += pezzi[0]
+            
+    return codice_base
 
 
 def _verifica_nuovi_articoli(base):

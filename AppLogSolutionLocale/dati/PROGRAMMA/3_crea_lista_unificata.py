@@ -210,11 +210,11 @@ def _aggiorna_stato_rientri_excel(righe_validate: list[int], testo: str):
         for r_idx in righe_validate:
             ws.cell(row=r_idx, column=3).value = testo
         wb.save(path)
-        print(f"  💾 Excel Rientri: {len(righe_validate)} righe → '{testo}'")
+        print(f"  [OK] Excel Rientri: {len(righe_validate)} righe -> '{testo}'")
     except PermissionError:
-        print(f"  ⚠️  ERRORE: Impossibile aggiornare Excel Rientri. Chiudi il file!")
+        print(f"  [WARN] ERRORE: Impossibile aggiornare Excel Rientri. Chiudi il file!")
     except Exception as e:
-        print(f"  ⚠️  Errore salvataggio rientri: {e}")
+        print(f"  [WARN] Errore salvataggio rientri: {e}")
 
 def _carica_mappatura_veloce():
     path = PROG_DIR / "mappatura_destinazioni.xlsx"
@@ -307,8 +307,15 @@ def main():
 
     # Carica punti da Excel
     for p in punti:
-        c = _val(p.get("codice_frutta")).lower()
-        idx = map_codice[c][0] if c in map_codice else None
+        c_f = _val(p.get("codice_frutta")).lower()
+        c_l = _val(p.get("codice_latte")).lower()
+        
+        idx = None
+        if c_f and c_f != "p00000" and c_f in map_codice:
+            idx = map_codice[c_f][0]
+        elif c_l and c_l != "p00000" and c_l in map_codice:
+            idx = map_codice[c_l][0]
+            
         add_punto(p, idx)
 
     # Gestione rientri

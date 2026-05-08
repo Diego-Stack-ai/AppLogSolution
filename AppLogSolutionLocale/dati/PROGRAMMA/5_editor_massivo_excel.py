@@ -7,7 +7,7 @@ from flask import Flask, render_template_string, jsonify, request
 
 # Configurazione Percorsi
 EXCEL_FILE = "mappatura_destinazioni.xlsx"
-PORT = 5001
+PORT = 5002
 LOCK = threading.Lock()
 # API KEY (la stessa usata in 4_mappa_zone_google.py)
 GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"

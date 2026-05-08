@@ -47,7 +47,8 @@ ARTICOLI_NOTI_SET = frozenset({
     "YO-BI-MN-04-LB", "YO-DL-02-LC", "FI-Z-BI-L3-NA", "FR-M-BI-L3-NI",
     "LNS-04-GADGET", "LNS-04-", "CA-Z-BI-L3-NA", "KI-S-BI-L3-NA",
     "AL-M-BI-L3-NI", "SUCCO-REC",
-    "FO-DI-AS-04-LV", "ME-S-DI-L3-NA"
+    "FO-DI-AS-04-LV", "ME-S-DI-L3-NA",
+    "PF-T-LI-L3-NA", "SU-M-BI-L3-NI", "YO-CN-MN-04-"
 })
 
 def _is_primary_code(text):
@@ -79,7 +80,10 @@ CONSOLIDAMENTO = {
     "FO-DI-GP-01-NI":("Colli",     "Buste",     16),
     "FO-DI-PV-04-LB":("Colli",     "Fette",     20),
     "AL-M-BI-L3-NI": ("Colli",     "Porzioni",  10),
-    "SUCCO-REC":     ("Colli",     "Porzioni",  24),
+    "SUCCO-REC":     ("Cartoni",   "Porzioni",  24),
+    "PF-T-LI-L3-NA": ("Cartoni",   "Porzioni",   8),
+    "SU-M-BI-L3-NI": ("Cartoni",   "Porzioni",  18),
+    "YO-CN-MN-04-":  ("Cartoni",   "Cluster",   10),
 }
 
 UNITA_QTY = r"(Confezioni|Confezione|confezioni|confezione|Colli|Collo|colli|collo|Brick|brick|Fardelli|Fardello|fardelli|fardello|Bottiglie|Bottiglia|bottiglie|bottiglia|Cartoni|Cartone|cartoni|cartone|Cluster|cluster|Porzioni|Porzione|porzioni|porzione|Fascette|Fascetta|fascette|fascetta|Manifesti|Manifesto|manifesti|manifesto|Fette|Fetta|fette|fetta|Buste|Busta|buste|busta|pz)"
@@ -186,8 +190,19 @@ def _normalizza_cella_codice(raw: str) -> tuple[str, str]:
         codice_base = righe[0]
         idx_base = 0
 
+    # ── OPZIONE A: Ricomposizione per codici troncati ──
+    # Se il codice riconosciuto termina con "-" e ci sono righe successive,
+    # uniamo la prima parola della riga successiva al codice base.
+    if codice_base.endswith('-') and len(righe) > idx_base + 1:
+        pezzi = righe[idx_base + 1].split()
+        if pezzi:
+            codice_base += pezzi[0]
+            # Ripuliamo la riga successiva dalla parola unita per non ripeterla
+            righe[idx_base + 1] = " ".join(pezzi[1:]).strip()
+
     # Variante = righe successive alla base, nella stessa cella
-    righe_variante = righe[idx_base + 1:]
+    # Filtriamo eventuali righe rimaste vuote dopo la ricomposizione
+    righe_variante = [r for r in righe[idx_base + 1:] if r.strip()]
     variante_raw = " ".join(righe_variante).strip()
     # Normalizzazione minima: spazi multipli e trattini doppi
     variante_raw = re.sub(r'\s+', ' ', variante_raw)
@@ -385,16 +400,37 @@ def _trova_pdf(codice: str, data: str, cartella: Path) -> list[Path]:
     
     # Estrai tutte le date da cercare (supporta date composte tipo DD-MM-YYYY_DD-MM-YYYY)
     parti_data = re.findall(r"\d{2}-\d{2}-\d{4}", data_norm)
-    date_valide = set(parti_data) if parti_data else {data_norm}
+    
+    # SE abbiamo trovato più date (cartella multi-data vera), usa le date splittate
+    if len(parti_data) > 1:
+        date_valide = set(parti_data)
+    # ALTRIMENTI (data singola, con o senza numero DDT), usa l'intera stringa esatta
+    else:
+        date_valide = {data_norm}
     
     # Cerca tutti i file che iniziano con il codice cliente
     matches = list(cartella.glob(f"{codice}_*.pdf"))
     
     for m in matches:
-        # Filtra solo i file che contengono almeno una delle date valide
+        # Filtra solo i file che contengono almeno una delle stringhe valide
         if any(d in m.name for d in date_valide):
             risultati.append(m)
 
+    return risultati
+
+
+def _cerca_pdf_globale(codice: str, data: str) -> list[Path]:
+    """Fallback: cerca il PDF in tutte le cartelle CONSEGNE_ ignorando la cartella di appartenenza."""
+    if codice == CODICE_VUOTO or not codice:
+        return []
+    risultati = []
+    for d in CONSEGNE_DIR.iterdir():
+        if d.is_dir() and d.name.startswith("CONSEGNE_"):
+            cart_storica = d / "DDT-ORIGINALI-DIVISI"
+            for sotto in ["FRUTTA", "LATTE"]:
+                sotto_dir = cart_storica / sotto
+                if sotto_dir.exists():
+                    risultati.extend(_trova_pdf(codice, data, sotto_dir))
     return risultati
 
 
@@ -403,8 +439,15 @@ def _trova_cartella(data_arg: str | None) -> Path:
         if re.match(r"^\d{2}-\d{2}$", data_arg):
             data_arg = f"{data_arg}-2026"
         p = CONSEGNE_DIR / f"CONSEGNE_{data_arg}"
-        if not p.exists():
-            raise FileNotFoundError(f"Cartella non trovata: {p}")
+        if p.exists():
+            return p
+            
+        # Fallback: cerca se la data è contenuta nel nome di una cartella (utile per date composte)
+        for d in CONSEGNE_DIR.iterdir():
+            if d.is_dir() and d.name.startswith("CONSEGNE_") and data_arg in d.name:
+                return d
+                
+        raise FileNotFoundError(f"Cartella non trovata: {p}")
         return p
     folders = sorted(
         [d for d in CONSEGNE_DIR.iterdir() if d.is_dir() and d.name.startswith("CONSEGNE_")],
@@ -414,9 +457,10 @@ def _trova_cartella(data_arg: str | None) -> Path:
         raise FileNotFoundError("Nessuna cartella CONSEGNE_* trovata.")
     return folders[-1]
 
-def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia: int, styles, colors, mm, Paragraph, Spacer, Table, TableStyle, PageBreak, n_ddt_totali: int = 0, rientri_giro: list = None):
+def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia: int, styles, colors, mm, Paragraph, Spacer, Table, TableStyle, PageBreak, n_ddt_totali: int = 0, rientri_giro: list = None, pdf_non_trovati_giro: list = None):
     """Restituisce la lista di elementi Flowable per una singola copia della distinta."""
     if rientri_giro is None: rientri_giro = []
+    if pdf_non_trovati_giro is None: pdf_non_trovati_giro = []
     from reportlab.lib.styles import ParagraphStyle
     st_titolo = ParagraphStyle("titolo", parent=styles["Heading1"], fontSize=14, spaceAfter=3)
     st_sub    = ParagraphStyle("sub",    parent=styles["Normal"],   fontSize=9,  spaceAfter=2)
@@ -438,6 +482,11 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
         riga2 = f"<font color='red'><b>DDT da Rientri:</b></font> {', '.join(rientri_unici)}"
         elementi.append(Paragraph(riga2, st_sub))
         
+    if pdf_non_trovati_giro:
+        elementi.append(Spacer(1, 2*mm))
+        for err in pdf_non_trovati_giro:
+            elementi.append(Paragraph(f"<b>ATTENZIONE: {err}</b>", st_warn))
+            
     elementi.append(Spacer(1, 4*mm))
 
     # ── SEZIONE 1: ARTICOLI ──
@@ -507,7 +556,7 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
     return elementi
 
 
-def _genera_distinta_pdf(viaggio: dict, articoli_viaggio: dict, out_path: Path, data_ddt: str, pdf_ddt: list[Path], rientri_giro: list = None):
+def _genera_distinta_pdf(viaggio: dict, articoli_viaggio: dict, out_path: Path, data_ddt: str, pdf_ddt: list[Path], rientri_giro: list = None, pdf_non_trovati_giro: list = None):
     """Genera il PDF della distinta di carico per un viaggio in DOPPIA COPIA + DDT allegati x2."""
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
@@ -528,10 +577,10 @@ def _genera_distinta_pdf(viaggio: dict, articoli_viaggio: dict, out_path: Path, 
 
     elementi = []
     # Copia 1 — AUTISTA
-    elementi += _blocco_distinta(viaggio, articoli_viaggio, data_ddt, 1, styles, colors, mm, Paragraph, Spacer, Table, TableStyle, PageBreak, len(pdf_ddt), rientri_giro)
+    elementi += _blocco_distinta(viaggio, articoli_viaggio, data_ddt, 1, styles, colors, mm, Paragraph, Spacer, Table, TableStyle, PageBreak, len(pdf_ddt), rientri_giro, pdf_non_trovati_giro)
     elementi.append(PageBreak())
     # Copia 2 — UFFICIO
-    elementi += _blocco_distinta(viaggio, articoli_viaggio, data_ddt, 2, styles, colors, mm, Paragraph, Spacer, Table, TableStyle, PageBreak, len(pdf_ddt), rientri_giro)
+    elementi += _blocco_distinta(viaggio, articoli_viaggio, data_ddt, 2, styles, colors, mm, Paragraph, Spacer, Table, TableStyle, PageBreak, len(pdf_ddt), rientri_giro, pdf_non_trovati_giro)
 
     doc.build(elementi)
 
@@ -580,13 +629,14 @@ def _genera_distinta_pdf(viaggio: dict, articoli_viaggio: dict, out_path: Path, 
 # RIEPILOGO ZONE
 # ──────────────────────────────────────────────────────────────────────────────
 
-def _genera_pagina_riepilogo_zone(viaggi: list, out_path: Path, data_ddt: str) -> Path | None:
+def _genera_pagina_riepilogo_zone(viaggi: list, out_path: Path, data_ddt: str, pdf_non_trovati: list[str] = None) -> Path | None:
     """
     Genera un PDF a COPIA UNICA con l'elenco di tutte le zone trovate
     nei DDT di tutti i viaggi del giorno. Va come prima pagina del Master PDF.
     Contiene: elenco zone in grande (leggibile a colpo d'occhio) + tabella
     riepilogativa Giro -> Zone.
     """
+    if pdf_non_trovati is None: pdf_non_trovati = []
     try:
         from reportlab.lib import colors
         from reportlab.lib.pagesizes import A4
@@ -630,9 +680,18 @@ def _genera_pagina_riepilogo_zone(viaggi: list, out_path: Path, data_ddt: str) -
                                    leading=22,
                                    textColor=colors.HexColor("#1e293b"),
                                    fontName="Helvetica-Bold")
+        st_err    = ParagraphStyle("zerr", parent=styles["Normal"], fontSize=12,
+                                   spaceBefore=2, spaceAfter=2, textColor=colors.red, fontName="Helvetica-Bold")
 
         elementi = []
         elementi.append(Paragraph(f"RIEPILOGO ZONE — {data_ddt}", st_titolo))
+        
+        if pdf_non_trovati:
+            elementi.append(Paragraph("ATTENZIONE - DDT MANCANTI:", ParagraphStyle("zerr_tit", parent=st_err, fontSize=14)))
+            for err in pdf_non_trovati:
+                elementi.append(Paragraph(f"&#x25cf; {err}", st_err))
+            elementi.append(Spacer(1, 8*mm))
+            
         elementi.append(Paragraph("Zone coperte da tutti i giri di oggi:", st_sub))
         elementi.append(Spacer(1, 8*mm))
 
@@ -721,7 +780,7 @@ def main():
     rientri_usati: set[tuple] = set()     # (codice, data_str) - PDF trovato e allegato
     rientri_assegnati: set[tuple] = set() # (codice, data_str) - Presente in un viaggio
     pdf_generati: list[Path] = []
-    pdf_non_trovati: list[str] = []       # PDF mancanti (normali o rientri)
+    pdf_non_trovati: list[str] = []       # PDF mancanti (normali o rientri) per la MASTER
 
     for viaggio in viaggi:
         nome_giro = viaggio["nome_giro"]
@@ -735,6 +794,7 @@ def main():
         pdf_usati_viaggio: list[Path] = []  # PDF di questo viaggio specifico
         rientri_giro: list[str] = []        # Accumula i rientri di questo viaggio: "codice_cliente (data_storica)"
         zone_punti: set[str] = set()        # Zone raccolte dai singoli punti
+        pdf_non_trovati_giro: list[str] = [] # PDF mancanti per il singolo giro
 
         for punto in punti:
             cf   = punto.get("codice_frutta", "") or ""
@@ -777,6 +837,12 @@ def main():
                 if pdfs_found:
                     for p_f in pdfs_found:
                         pdfs_da_processare.append((p_f, tipo, d_p))
+                else:
+                    # FALLBACK GLOBALE PER CONSEGNA BASE
+                    pf_glob = _cerca_pdf_globale(codice, d_p)
+                    for p_f in pf_glob:
+                        if not any(x[0] == p_f for x in pdfs_da_processare):
+                            pdfs_da_processare.append((p_f, tipo, d_p))
                 
                 # ── 2. CERCA RIENTRI STORICI (Fallback sicuro) ──
                 if codice.lower() in rientri:
@@ -790,23 +856,41 @@ def main():
                         m_data = re.search(r"\d{2}-\d{2}-\d{4}", d_r_norm)
                         d_r_base = m_data.group(0) if m_data else d_r_norm
 
+                        trovato_dr = False
                         try:
                             cartella_r_base = _trova_cartella(d_r_base)
                             cart_storica = cartella_r_base / "DDT-ORIGINALI-DIVISI"
+                            for sotto in ["FRUTTA", "LATTE"]:
+                                pf = _trova_pdf(codice, d_r, cart_storica / sotto)
+                                if pf:
+                                    for p_f in pf:
+                                        # Evita di accodare file duplicati
+                                        if not any(x[0] == p_f for x in pdfs_da_processare):
+                                            pdfs_da_processare.append((p_f, sotto, d_r))
+                                    trovato_dr = True
+                                    break
                         except Exception:
-                            cart_storica = CONSEGNE_DIR / f"CONSEGNE_{d_r_base}" / "DDT-ORIGINALI-DIVISI"
-                        
-                        for sotto in ["FRUTTA", "LATTE"]:
-                            pf = _trova_pdf(codice, d_r, cart_storica / sotto)
-                            if pf:
-                                for p_f in pf:
-                                    # Evita di accodare file duplicati
+                            pass
+                            
+                        # FALLBACK GLOBALE PER RIENTRO STORICO
+                        if not trovato_dr:
+                            pf_glob = _cerca_pdf_globale(codice, d_r)
+                            if pf_glob:
+                                for p_f in pf_glob:
                                     if not any(x[0] == p_f for x in pdfs_da_processare):
-                                        pdfs_da_processare.append((p_f, sotto, d_r))
-                                break
+                                        pdfs_da_processare.append((p_f, "FRUTTA", d_r)) # Assume FRUTTA se trovato globalmente
+                                trovato_dr = True
+                                
+                        if not trovato_dr:
+                            msg_err = f"Rientro mancante: {codice} ({d_r}) al cliente {nome}"
+                            pdf_non_trovati.append(msg_err)
+                            pdf_non_trovati_giro.append(msg_err)
 
                 if not pdfs_da_processare:
-                    pdf_non_trovati.append(f"{codice} ({tipo})")
+                    if d_p == data_v and codice.lower() not in rientri:
+                        msg_err = f"Consegna odierna mancante: {codice} ({tipo}) al cliente {nome}"
+                        pdf_non_trovati.append(msg_err)
+                        pdf_non_trovati_giro.append(msg_err)
                     print(f"       !! {nome:<40} {codice} ({tipo}) -> PDF non trovato")
                 else:
                     for pdf_obj, tp, d_r in pdfs_da_processare:
@@ -827,9 +911,6 @@ def main():
                             rientri_giro.append(f"{codice.upper()} ({d_r})")
 
             # ── RIENTRI DA ALLEGARE (cliente con consegna normale oggi + rientro storico) ──
-            # Campo operativo introdotto dal fix in script 3: quando un rientro viene abbinato
-            # a un punto che ha già una consegna regolare oggi, il codice finisce qui invece
-            # che solo in rientri_alert (che questo script ignora).
             for obj_r in punto.get("rientri_da_allegare", []):
                 codice_r = obj_r["codice"]
                 data_r   = obj_r["data"]
@@ -861,6 +942,10 @@ def main():
                     if pdfs_found:
                         break
 
+                # FALLBACK GLOBALE
+                if not pdfs_found:
+                    pdfs_found = _cerca_pdf_globale(codice_r, data_r)
+
                 if pdfs_found:
                     for p_f in pdfs_found:
                         pdf_usati.add(p_f)
@@ -871,8 +956,10 @@ def main():
                     rientri_usati.add((codice_r.lower(), data_r))
                     rientri_giro.append(f"{codice_r.upper()} ({data_r})")
                 else:
-                    pdf_non_trovati.append(f"{codice_r} ({tipo_r})[RIENTRO]")
-                    print(f"       !! {nome:<40} {codice_r} ({tipo_r})[RIENTRO<-{data_r}] -> PDF non trovato")
+                    msg_err = f"Rientro aggiunto mancante: {codice_r} ({data_r}) al cliente {nome}"
+                    pdf_non_trovati.append(msg_err)
+                    pdf_non_trovati_giro.append(msg_err)
+                    print(f"       !! {nome:<40} {codice_r} ({tipo_r}) [RIENTRO<-{data_r}] -> PDF NON TROVATO")
 
         # Aggrega articoli del viaggio
         articoli_agg = _aggrega_articoli(articoli_giro)
@@ -889,7 +976,7 @@ def main():
         out_pdf   = out_dir / pdf_name
 
         try:
-            _genera_distinta_pdf(viaggio, articoli_agg, out_pdf, data_ddt, list(pdf_usati_viaggio), rientri_giro)
+            _genera_distinta_pdf(viaggio, articoli_agg, out_pdf, data_ddt, list(pdf_usati_viaggio), rientri_giro, pdf_non_trovati_giro)
             pdf_generati.append(out_pdf)
             print(f"       DOC Salvato: {pdf_name} (doppia copia + {len(pdf_usati_viaggio)} DDT x2)\n")
         except Exception as e:
@@ -897,7 +984,7 @@ def main():
 
     # ── Genera Pagina Riepilogo Zone (COPIA UNICA, va in TESTA al Master) ──
     riepilogo_zone_path = out_dir / f"00_RIEPILOGO_ZONE_{data_ddt}.pdf"
-    rz = _genera_pagina_riepilogo_zone(viaggi, riepilogo_zone_path, data_ddt)
+    rz = _genera_pagina_riepilogo_zone(viaggi, riepilogo_zone_path, data_ddt, pdf_non_trovati)
     if rz:
         print(f"  ZON Riepilogo zone: {riepilogo_zone_path.name}")
 

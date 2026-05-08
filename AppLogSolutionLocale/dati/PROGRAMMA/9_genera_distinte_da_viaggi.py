@@ -899,10 +899,17 @@ def main():
                         articoli = _raccogli_articoli_da_pdf(pdf_obj, tp)
                         articoli_giro.extend(articoli)
                         n_art = len(articoli)
-                        # Un DDT è un rientro se è presente nella mappa rientri.
-                        # Non forziamo il controllo d_r != d_p perché per i rientri manuali
-                        # la data del punto (d_p) viene forzata alla data del DDT (d_r) per trovare il file.
-                        is_rientro = (codice.lower() in rientri)
+                        # Un DDT è un rientro se il suo codice E la sua data sono nella mappa rientri.
+                        # Per le date storiche, d_r (es. 04-05-2026_FNS13400) sarà presente nei rientri.
+                        # La consegna normale odierna (es. 11-05-2026) NON sarà considerata rientro.
+                        is_rientro = False
+                        if codice.lower() in rientri:
+                            # Controlla se la data/nome del file processato (d_r) corrisponde a una data_rientro (d_r_mapped)
+                            for d_r_mapped in rientri[codice.lower()]:
+                                d_r_mapped_norm = d_r_mapped.replace("/", "-")
+                                if d_r == d_r_mapped_norm or d_r == d_r_mapped:
+                                    is_rientro = True
+                                    break
                         
                         tag = f" [RIENTRO<-{d_r}]" if is_rientro else ""
                         print(f"       OK {nome:<40} {codice} ({tp}){tag} -> {n_art} art.")

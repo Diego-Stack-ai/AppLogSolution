@@ -1,9 +1,10 @@
-const CACHE_NAME = 'log-solution-v1.54';
+const CACHE_NAME = 'log-solution-v1.55';
 const ASSETS = [
     './',
     './index.html',
     './login.html',
     './dashboard.html',
+    './gestione.html',
     './inserimento.html',
     './clienti.html',
     './impostazioni.html',

@@ -235,6 +235,7 @@
             const body = document.getElementById('tableBody');
             
             if(currentTab === 'clienti') {
+                console.log(`[Gestione] Rendering ${data.length} clienti...`, data[0]);
                 header.innerHTML = '<th>Codice F</th><th>Codice L</th><th>Nome Consegna</th><th>Indirizzo</th><th>Zona</th><th>Città</th><th>Prov</th><th>Lat/Lon</th><th>Orari (F/L)</th>';
                 body.innerHTML = data.map(d => `
                     <tr>
@@ -245,7 +246,7 @@
                         <td><span class="badge badge-latte">${d.codice_zona || d.zona || '-'}</span></td>
                         <td>${d.citta || ''}</td>
                         <td>${d.provincia || d.prov || ''}</td>
-                        <td style="color: var(--text-muted); font-size: 11px;">${d.lat ? d.lat.toFixed(4) : '-'}/${d.lon ? d.lon.toFixed(4) : '-'}</td>
+                        <td style="color: var(--text-muted); font-size: 11px;">${d.lat ? parseFloat(d.lat).toFixed(4) : '-'}/${d.lon ? parseFloat(d.lon).toFixed(4) : '-'}</td>
                         <td style="font-size: 11px;">${d.orario_min_frutta || '-'}/${d.orario_max_frutta || '-'} | ${d.orario_min_latte || '-'}/${d.orario_max_latte || '-'}</td>
                     </tr>
                 `).join('');

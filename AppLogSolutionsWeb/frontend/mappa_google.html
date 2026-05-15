@@ -127,30 +127,52 @@
         let infoWindow;
 
         async function initApp() {
-            const { Map, InfoWindow } = await google.maps.importLibrary("maps");
-            infoWindow = new google.maps.InfoWindow();
-            map = new google.maps.Map(document.getElementById("map"), {
-                center: { lat: 45.42, lng: 11.43 },
-                zoom: 10,
-                mapTypeId: 'hybrid',
-                mapTypeControl: true,
-                streetViewControl: false,
-                fullscreenControl: false
-            });
+            console.log("[Map] Inizializzazione...");
+            
+            // Timeout di sicurezza per nascondere il caricamento se qualcosa va storto con le API di Google
+            const loadingTimeout = setTimeout(() => {
+                const overlay = document.getElementById('loading-overlay');
+                if(overlay && overlay.style.display !== 'none') {
+                    console.warn("[Map] Caricamento forzatamente rimosso dopo timeout");
+                    overlay.style.display = 'none';
+                }
+            }, 8000);
 
-            // Listener Firestore Realtime
-            onSnapshot(collection(db, "customers/DNR/clienti"), (snapshot) => {
-                ALL_POINTS = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data(),
-                    lat: parseFloat(doc.data().lat) || 0,
-                    lon: parseFloat(doc.data().lon) || 0
-                }));
-                
-                initFilters();
-                updateListAndMap();
+            try {
+                const { Map, InfoWindow } = await google.maps.importLibrary("maps");
+                infoWindow = new google.maps.InfoWindow();
+                map = new google.maps.Map(document.getElementById("map"), {
+                    center: { lat: 45.42, lng: 11.43 },
+                    zoom: 10,
+                    mapTypeId: 'hybrid',
+                    mapTypeControl: true,
+                    streetViewControl: false,
+                    fullscreenControl: false
+                });
+
+                // Listener Firestore Realtime
+                onSnapshot(collection(db, "customers/DNR/clienti"), (snapshot) => {
+                    console.log(`[Map] Ricevuti ${snapshot.size} punti da Firestore`);
+                    ALL_POINTS = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data(),
+                        lat: parseFloat(doc.data().lat) || 0,
+                        lon: parseFloat(doc.data().lon) || 0
+                    }));
+                    
+                    initFilters();
+                    updateListAndMap();
+                    clearTimeout(loadingTimeout);
+                    document.getElementById('loading-overlay').style.display = 'none';
+                }, (error) => {
+                    console.error("[Map] Errore Firestore:", error);
+                    alert("Errore accesso dati: " + error.message);
+                });
+            } catch (err) {
+                console.error("[Map] Errore critico inizializzazione Google Maps:", err);
                 document.getElementById('loading-overlay').style.display = 'none';
-            });
+                alert("Errore nel caricamento delle mappe di Google. Verifica la tua connessione o le impostazioni della chiave API.");
+            }
         }
 
         function initFilters() {

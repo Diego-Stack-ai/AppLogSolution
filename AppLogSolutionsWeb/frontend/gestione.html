@@ -7,6 +7,9 @@
     <title>Gestione Anagrafiche - Log Solution</title>
     <link rel="stylesheet" href="styles.css?v=1.51">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <!-- Leaflet per Mappe -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         .tabs-header {
             display: flex;
@@ -123,6 +126,34 @@
 
         .btn-add:hover {
             background: var(--primary-hover);
+            transform: scale(1.02);
+        }
+
+        #modalMap {
+            height: 300px;
+            width: 100%;
+            border-radius: 12px;
+            margin-top: 12px;
+            border: 1px solid #e2e8f0;
+            grid-column: span 2;
+        }
+
+        .btn-map {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-map:hover {
+            background: #059669;
             transform: scale(1.02);
         }
 
@@ -257,6 +288,9 @@
         <div class="glass-panel" style="padding: 24px;">
             <div class="search-bar">
                 <input type="text" id="searchInput" placeholder="Cerca..." onkeyup="filterTable()">
+                <button class="btn-map" onclick="window.navigateWithState('mappa_consegne.html')">
+                    <span class="material-icons-round">map</span> Mappa
+                </button>
                 <button class="btn-add" onclick="openModal()">
                     <span class="material-icons-round">add</span> Aggiungi
                 </button>
@@ -380,8 +414,11 @@
                             </div>
                         </div>
                         <div class="card-actions">
-                             <button class="btn-edit" onclick="editItem('${d.id}')">
+                             <button class="btn-edit" onclick="editItem('${d.id}')" title="Modifica dati">
                                 <span class="material-icons-round" style="font-size:18px;">edit</span>
+                             </button>
+                             <button class="btn-edit" onclick="editItem('${d.id}', true)" title="Geolocalizza">
+                                <span class="material-icons-round" style="font-size:18px; color:#10b981;">my_location</span>
                              </button>
                         </div>
                     </div>
@@ -501,7 +538,10 @@
                         <label>Orario Max Latte</label>
                         <input type="text" name="orario_max_latte" placeholder="10:00">
                     </div>
+                    <div id="modalMap"></div>
                 `;
+                // Ritarda inizializzazione mappa per dare tempo al DOM
+                setTimeout(() => initMap(), 300);
             } else if(currentTab === 'articoli') {
                 title.innerText = "Nuovo Articolo";
                 fields.innerHTML = `
@@ -596,23 +636,61 @@
             renderTable(filtered);
         }
 
-        window.editItem = function(id) {
+        let map = null;
+        let marker = null;
+
+        function initMap(lat = 45.4064, lon = 11.8768) {
+            if(map) map.remove();
+            
+            const mapContainer = document.getElementById('modalMap');
+            if(!mapContainer) return;
+
+            map = L.map('modalMap').setView([lat, lon], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            
+            marker = L.marker([lat, lon], {draggable: true}).addTo(map);
+            marker.on('dragend', function() {
+                const pos = marker.getLatLng();
+                const form = document.getElementById('crudForm');
+                form.querySelector('[name="lat"]').value = pos.lat.toFixed(6);
+                form.querySelector('[name="lon"]').value = pos.lng.toFixed(6);
+            });
+
+            map.on('click', function(e) {
+                marker.setLatLng(e.latlng);
+                const form = document.getElementById('crudForm');
+                form.querySelector('[name="lat"]').value = e.latlng.lat.toFixed(6);
+                form.querySelector('[name="lon"]').value = e.latlng.lng.toFixed(6);
+            });
+        }
+
+        window.editItem = function(id, focusMap = false) {
             const item = (window.fullData || []).find(d => d.id === id);
             if(!item) return;
             
-            // Riutilizziamo openModal per caricare i dati
             openModal();
             const form = document.getElementById('crudForm');
             const title = document.getElementById('modalTitle');
-            title.innerText = "Modifica Record";
+            title.innerText = focusMap ? "Geolocalizza Cliente" : "Modifica Record";
             
-            // Popolamento automatico campi
             Object.keys(item).forEach(key => {
                 const input = form.querySelector(`[name="${key}"]`);
                 if(input) input.value = item[key];
             });
+
+            if(currentTab === 'clienti') {
+                const lat = parseFloat(item.lat) || 45.4064;
+                const lon = parseFloat(item.lon) || 11.8768;
+                setTimeout(() => {
+                    initMap(lat, lon);
+                    if(focusMap) {
+                        const mapEl = document.getElementById('modalMap');
+                        mapEl.scrollIntoView({ behavior: 'smooth' });
+                        mapEl.style.border = "2px solid #10b981";
+                    }
+                }, 350);
+            }
             
-            // Caso speciale per ID articolo
             if(currentTab === 'articoli') {
                 const idInput = form.querySelector('[name="id"]');
                 if(idInput) {

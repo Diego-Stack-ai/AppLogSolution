@@ -224,11 +224,13 @@
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
         import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
         import { firebaseConfig } from "./firebase-config.js"; 
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
         const storage = getStorage(app);
         const db = getFirestore(app);
+        const functions = getFunctions(app, "europe-west1");
 
         let fileFrutta = null;
         let fileLatte = null;
@@ -299,6 +301,11 @@
                                 created_at: serverTimestamp(),
                                 updated_at: serverTimestamp()
                             });
+                            
+                            // Avvio immediato della funzione cloud
+                            const processaJob = httpsCallable(functions, 'processa_job_pdf');
+                            processaJob({ job_id: jobDoc.id }).catch(e => console.error("Errore trigger:", e));
+                            
                             resolve({path, jobId: jobDoc.id});
                         } catch (e) {
                             reject(e);

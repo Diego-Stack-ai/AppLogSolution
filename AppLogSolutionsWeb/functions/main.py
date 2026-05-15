@@ -23,6 +23,10 @@ GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "")
 BUCKET_NAME = "log-solution-60007.firebasestorage.app"
 DATA_DDT_RE = re.compile(r'del\s+(\d{2})/(\d{2})/(\d{4})', re.I)
 LUOGO_RE = re.compile(r'(?:[Ll]uogo [Dd]i [Dd]estinazione|[Cc]odice [Dd]estinazione):\s*([pP]\d{4,5})')
+CAP_RE = re.compile(r"\b(\d{5})\b")
+PROVINCIA_RE = re.compile(r"\(([A-Z]{2})\)")
+CAUSALE_RE = re.compile(r'(?:conto di|ordine e conto di)\s+([A-Z]\d{4})(?:\s+H(\d{2}))?(?:\s+(\d{3}))?', re.I)
+NUM_DDT_RE = re.compile(r'DDT\s*[Nn][°º\.\s]*([A-Za-z0-9/-]+)', re.I)
 
 if not firebase_admin._apps:
     initialize_app()
@@ -61,7 +65,114 @@ def _estrai_data_luogo(text):
         data = f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
     luogo_m = LUOGO_RE.search(text)
     luogo = luogo_m.group(1).lower() if luogo_m else None
-    return data, luogo
+    
+    num_m = NUM_DDT_RE.search(text)
+    num_ddt = num_m.group(1).replace("/", "-") if num_m else "UNK"
+    return data, luogo, num_ddt
+
+def _estrai_dati_consegna_completi(text: str, codice: str, da_frutta: bool) -> dict:
+    """Estrae indirizzo, cap, citta, prov e orari per nuovi clienti."""
+    res = {"dest": "", "ind": "", "cap": "", "cit": "", "prov": "", "om": "", "oM": "14:00"}
+    if codice.lower() not in text.lower(): return res
+    
+    idx_l = text.find("Luogo di destinazione")
+    if idx_l < 0: return res
+
+    if da_frutta:
+        blocco = text[idx_l : idx_l + 650]
+        lines = [ln.strip() for ln in blocco.split("\n") if ln.strip()]
+        for i, ln in enumerate(lines):
+            if LUOGO_RE.search(ln):
+                if i + 1 < len(lines): res["dest"] = lines[i + 1].strip().title()
+                if i + 2 < len(lines): res["ind"] = lines[i + 2].strip().title()
+                break
+    else:
+        idx_causale = text.upper().find("CAUSALE DEL TRASPORTO")
+        blocco = text[:idx_causale] if idx_causale > 0 else text[idx_l : idx_l + 900]
+        for ln in blocco.split("\n"):
+            ln = ln.strip()
+            cf_m = re.match(r"^[Cc]\.?[Ff]\.?\s+", ln)
+            if cf_m: res["dest"] = ln[cf_m.end():].strip().title()
+            else:
+                albo_m = re.match(r"^[Aa]lbo\s+", ln, re.I)
+                if albo_m: res["ind"] = ln[albo_m.end():].strip().title()
+
+    idx_resp = text.upper().find("RESPONSABILE DEL TRASPORTO")
+    blocco_prov = text[idx_resp:] if idx_resp >= 0 else text
+    for prov_m in PROVINCIA_RE.finditer(blocco_prov):
+        sigla = prov_m.group(1)
+        if sigla == "MN" and ("Pomponesco" in blocco_prov[max(0, prov_m.start()-40):prov_m.start()] or "46030" in blocco_prov): continue
+        res["prov"] = sigla
+        caps = list(CAP_RE.finditer(blocco_prov[:prov_m.start()]))
+        if caps:
+            res["cap"] = caps[-1].group(1)
+            pre = blocco_prov[caps[-1].end() : caps[-1].end() + 60]
+            citta_m = re.search(r"\s*[-]?\s*([A-Za-zÀ-ÿ\s'.]+?)\s*\([A-Z]{2}\)", pre)
+            if citta_m: res["cit"] = citta_m.group(1).strip().title()
+        break
+        
+    idx_c = text.upper().find("CAUSALE DEL TRASPORTO")
+    if idx_c >= 0:
+        sezione = text[idx_c:idx_c+150]
+        m = CAUSALE_RE.search(sezione)
+        if m:
+            if m.group(2): res["oM"] = f"{int(m.group(2)):02d}:00"
+            if m.group(3):
+                s = m.group(3)
+                if len(s) == 3: res["om"] = f"{int(s[0]):02d}:{int(s[1:3]):02d}"
+    return res
+
+def _processa_pdf_core_logic(pdf_bytes: bytes, etichetta: str, db_mappati: dict) -> dict:
+    nuovi_dati = {}
+    deliveries_list = []
+    split_files = {}
+    visti = {}
+    blocchi = {}
+    
+    reader = PdfReader(io.BytesIO(pdf_bytes))
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        for i in range(len(pdf.pages)):
+            text = pdf.pages[i].extract_text() or ""
+            d, l, num_ddt = _estrai_data_luogo(text)
+            if not d or not l: continue
+            
+            if l not in db_mappati and l not in nuovi_dati:
+                info = _estrai_dati_consegna_completi(text, l, etichetta == "FRUTTA")
+                info["tipo"] = etichetta
+                nuovi_dati[l] = info
+                
+            chiave = (l, d, num_ddt)
+            if chiave not in blocchi: blocchi[chiave] = []
+            blocchi[chiave].append((text, reader.pages[i]))
+            
+    for chiave, lista_pagine in blocchi.items():
+        writer = PdfWriter()
+        l, d, num_ddt = chiave
+        pagine_da_salvare = [p[1] for p in lista_pagine]
+        for pg in pagine_da_salvare: writer.add_page(pg)
+            
+        cnt = visti.get(chiave, 0) + 1
+        visti[chiave] = cnt
+        fname = f"{l}_{d}_{num_ddt}_{cnt}.pdf" if cnt > 1 else f"{l}_{d}_{num_ddt}.pdf"
+        
+        out_stream = io.BytesIO()
+        writer.write(out_stream)
+        out_stream.seek(0)
+        split_files[fname] = out_stream
+        
+        deliveries_list.append({
+            "codice_consegna": l,
+            "data": d,
+            "num_ddt": num_ddt,
+            "pdf_name": fname,
+            "tipo": etichetta
+        })
+
+    return {
+        "split_files": split_files,
+        "nuovi_dati": nuovi_dati,
+        "deliveries": deliveries_list
+    }
 
 def normalize_code(raw, articoli_noti):
     righe = [l.strip() for l in str(raw).split('\n') if l.strip() and not l.strip().startswith("Codice:")]
@@ -1313,7 +1424,89 @@ def core_riepilogo_fatturazione(mese: str, anno: str = "2026"):
     }
 
 
+def core_processa_job_pdf(job_id):
+    start_time = time.time()
+    db = get_db()
+    job_ref = db.collection('customers').document('DNR').collection('processing_jobs').document(job_id)
+    job_doc = job_ref.get()
+    
+    if not job_doc.exists: return {"status": "errore", "message": "Job non trovato"}
+    data = job_doc.to_dict()
+    if data.get("status") != "uploaded": return {"status": "errore", "message": "Stato job non valido per elaborazione"}
+    
+    job_ref.update({"status": "processing", "updated_at": firestore.SERVER_TIMESTAMP})
+    
+    try:
+        bucket = storage.bucket(name=BUCKET_NAME)
+        path = data.get("storage_path")
+        etichetta = data.get("type", "FRUTTA").upper()
+        
+        # 1. Carica Mappatura
+        clienti_ref = db.collection('customers').document('DNR').collection('clienti')
+        db_mappati = {doc.get('codice_frutta') or doc.get('codice_latte'): doc.to_dict() for doc in clienti_ref.stream()}
+        
+        # 2. Download
+        blob = bucket.blob(path)
+        pdf_bytes = blob.download_as_bytes()
+        
+        # 3. Processing
+        risultato = _processa_pdf_core_logic(pdf_bytes, etichetta, db_mappati)
+        
+        split_files = risultato["split_files"]
+        deliveries = risultato["deliveries"]
+        nuovi_dati = risultato["nuovi_dati"]
+        
+        data_elab = deliveries[0]["data"] if deliveries else "01-01-2099"
+        
+        # 4. Upload split e salvataggio DDT
+        for fname, out_stream in split_files.items():
+            out_path = f"split_ddt/{data_elab}/{etichetta}/{fname}"
+            split_blob = bucket.blob(out_path)
+            split_blob.upload_from_file(out_stream, content_type='application/pdf')
+            
+        # 5. Salvataggio nuovi clienti
+        for l, info in nuovi_dati.items():
+            db.collection('customers').document('DNR').collection('gestione_nuovi_clienti').document(l).set(info, merge=True)
+            
+        # 6. Inserimento DDT in Firestore
+        batch = db.batch()
+        for ddt_data in deliveries:
+            # Arricchisci con info cliente se possibile
+            l = ddt_data["codice_consegna"]
+            cliente_info = db_mappati.get(l, {})
+            nome = cliente_info.get('cliente') or cliente_info.get('nome_consegna') or l
+            
+            ddt_ref = db.collection('customers').document('DNR').collection('ddt').document()
+            batch.set(ddt_ref, {
+                **ddt_data,
+                "nome": nome,
+                "storage_path": f"split_ddt/{data_elab}/{etichetta}/{ddt_data['pdf_name']}",
+                "stato": "pronto" if l in db_mappati else "da_mappare",
+                "created_at": firestore.SERVER_TIMESTAMP
+            })
+        batch.commit()
+        
+        elapsed = time.time() - start_time
+        job_ref.update({
+            "status": "completed",
+            "pdf_generati": len(split_files),
+            "nuovi_clienti": len(nuovi_dati),
+            "tempo_sec": round(elapsed, 2),
+            "updated_at": firestore.SERVER_TIMESTAMP
+        })
+        
+        return {"status": "ok", "pdf_generati": len(split_files), "tempo_sec": round(elapsed, 2)}
+        
+    except Exception as e:
+        job_ref.update({"status": "error", "error_message": str(e), "updated_at": firestore.SERVER_TIMESTAMP})
+        return {"status": "errore", "message": str(e)}
+
 # --- ENDPOINTS HTTP ---
+@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=540,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def processa_job_pdf(req: https_fn.CallableRequest):
+    return core_processa_job_pdf(req.data.get("job_id"))
+
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
 def elabora_pdf_estrazione(req: https_fn.CallableRequest):

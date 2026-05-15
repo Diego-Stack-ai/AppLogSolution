@@ -288,7 +288,7 @@
         <div class="glass-panel" style="padding: 24px;">
             <div class="search-bar">
                 <input type="text" id="searchInput" placeholder="Cerca..." onkeyup="filterTable()">
-                <button class="btn-map" onclick="window.navigateWithState('mappa_consegne.html')">
+                <button class="btn-map" onclick="window.navigateWithState('mappa_google.html')">
                     <span class="material-icons-round">map</span> Mappa
                 </button>
                 <button class="btn-add" onclick="openModal()">
@@ -417,7 +417,7 @@
                              <button class="btn-edit" onclick="editItem('${d.id}')" title="Modifica dati">
                                 <span class="material-icons-round" style="font-size:18px;">edit</span>
                              </button>
-                             <button class="btn-edit" onclick="editItem('${d.id}', true)" title="Geolocalizza">
+                             <button class="btn-edit" onclick="window.navigateWithState('mappa_google.html?id=${d.id}')" title="Geolocalizza (Google Maps)">
                                 <span class="material-icons-round" style="font-size:18px; color:#10b981;">my_location</span>
                              </button>
                         </div>

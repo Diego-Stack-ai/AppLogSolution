@@ -72,8 +72,14 @@
             white-space: nowrap;
         }
 
+        /* Forza larghezza minima per colonne importanti */
+        th:nth-child(3), td:nth-child(3) { min-width: 200px; white-space: normal; } /* Nome Consegna */
+        th:nth-child(4), td:nth-child(4) { min-width: 250px; white-space: normal; } /* Indirizzo */
+        th:nth-child(8), td:nth-child(8) { min-width: 120px; } /* Lat/Lon */
+        th:nth-child(9), td:nth-child(9) { min-width: 150px; } /* Orari */
+
         tr:hover td {
-            background: #fdfdfd;
+            background: #f8fafc;
         }
 
         .badge {
@@ -101,17 +107,22 @@
             font-size: 14px;
         }
 
-        .btn-add {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .btn-add:hover {
+            background: var(--primary-hover);
+            transform: scale(1.02);
+        }
+
+        /* Scrollbar personalizzata per tabelle */
+        .data-table-container::-webkit-scrollbar {
+            height: 8px;
+            display: block; /* Assicuriamoci che sia visibile */
+        }
+        .data-table-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .data-table-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
         }
     </style>
 </head>

@@ -105,20 +105,20 @@
         <div id="point-list"></div>
     </div>
 
-    <div id="map">
-        <div class="legend">
-            <div class="legend-item"><div class="dot" style="background:#10b981"></div> OK (Verde)</div>
-            <div class="legend-item"><div class="dot" style="background:#ef4444"></div> MANCANTE (Rosso)</div>
-            <div class="legend-item"><div class="dot" style="background:#4f46e5"></div> MODIFICATO (Blu)</div>
-        </div>
-        <div id="map-controls">
-            <button id="btn-lock" class="btn btn-unlock" onclick="toggleLock()">
-                <span class="material-icons-round">lock</span> SBLOCCA SPOSTAMENTO
-            </button>
-            <button id="btn-save" class="btn btn-save" onclick="saveAll()" disabled>
-                <span class="material-icons-round">save</span> SALVA <span id="save-counter"></span>
-            </button>
-        </div>
+    <div id="map"></div>
+    
+    <div class="legend">
+        <div class="legend-item"><div class="dot" style="background:#10b981"></div> OK (Verde)</div>
+        <div class="legend-item"><div class="dot" style="background:#ef4444"></div> MANCANTE (Rosso)</div>
+        <div class="legend-item"><div class="dot" style="background:#4f46e5"></div> MODIFICATO (Blu)</div>
+    </div>
+    <div id="map-controls">
+        <button id="btn-lock" class="btn btn-unlock" onclick="toggleLock()">
+            <span class="material-icons-round">lock</span> SBLOCCA SPOSTAMENTO
+        </button>
+        <button id="btn-save" class="btn btn-save" onclick="saveAll()" disabled>
+            <span class="material-icons-round">save</span> SALVA <span id="save-counter"></span>
+        </button>
     </div>
 
     <script>

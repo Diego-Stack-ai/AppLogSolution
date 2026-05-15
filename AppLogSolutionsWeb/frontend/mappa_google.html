@@ -50,6 +50,30 @@
         .btn-unlock { background: white; color: var(--text-main); border: 1px solid #e2e8f0; }
         .btn-unlock.active { background: var(--warning); color: white; border-color: transparent; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
         
+        @media (max-width: 768px) {
+            #map-controls {
+                bottom: 20px;
+                padding: 8px;
+                gap: 6px;
+                border-radius: 15px;
+            }
+            .btn {
+                padding: 8px 12px;
+                font-size: 0.7rem;
+                gap: 4px;
+                border-radius: 8px;
+            }
+            .btn span.material-icons-round {
+                font-size: 16px;
+            }
+            .legend {
+                top: 10px;
+                right: 10px;
+                padding: 8px;
+                font-size: 9px;
+            }
+        }
+        
         .legend {
             position: absolute; top: 20px; right: 20px; z-index: 500;
             background: white; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0;

@@ -150,23 +150,34 @@
                     fullscreenControl: false
                 });
 
-                // Listener Firestore Realtime
-                onSnapshot(collection(db, "customers/DNR/clienti"), (snapshot) => {
-                    console.log(`[Map] Ricevuti ${snapshot.size} punti da Firestore`);
-                    ALL_POINTS = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data(),
-                        lat: parseFloat(doc.data().lat) || 0,
-                        lon: parseFloat(doc.data().lon) || 0
-                    }));
-                    
-                    initFilters();
-                    updateListAndMap();
-                    clearTimeout(loadingTimeout);
-                    document.getElementById('loading-overlay').style.display = 'none';
-                }, (error) => {
-                    console.error("[Map] Errore Firestore:", error);
-                    alert("Errore accesso dati: " + error.message);
+                // Attendi l'autenticazione prima di caricare i dati (Risolve Permessi Insufficienti)
+                const { getAuth, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
+                const auth = getAuth(app);
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        console.log("[Map] Utente autenticato, avvio listener Firestore...");
+                        onSnapshot(collection(db, "customers/DNR/clienti"), (snapshot) => {
+                            console.log(`[Map] Ricevuti ${snapshot.size} punti da Firestore`);
+                            ALL_POINTS = snapshot.docs.map(doc => ({
+                                id: doc.id,
+                                ...doc.data(),
+                                lat: parseFloat(doc.data().lat) || 0,
+                                lon: parseFloat(doc.data().lon) || 0
+                            }));
+                            
+                            initFilters();
+                            updateListAndMap();
+                            clearTimeout(loadingTimeout);
+                            document.getElementById('loading-overlay').style.display = 'none';
+                        }, (error) => {
+                            console.error("[Map] Errore Firestore:", error);
+                            alert("Errore accesso dati: " + error.message);
+                        });
+                    } else {
+                        console.warn("[Map] Utente non autenticato, reindirizzamento...");
+                        window.location.href = "login.html";
+                    }
                 });
             } catch (err) {
                 console.error("[Map] Errore critico inizializzazione Google Maps:", err);

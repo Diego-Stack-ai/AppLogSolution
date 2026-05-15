@@ -1,4 +1,4 @@
-const CACHE_NAME = 'log-solution-v1.61';
+const CACHE_NAME = 'log-solution-v1.62';
 const ASSETS = [
     './',
     './index.html',
@@ -56,9 +56,10 @@ self.addEventListener('message', (event) => {
 
 // 4. Fetch: strategie differenziate per tipo di risorsa
 self.addEventListener('fetch', (event) => {
-    if (event.request.method !== 'GET') return;
-
     const url = event.request.url;
+
+    // Ignora richieste non http (es: chrome-extension://) per evitare errori
+    if (!url.startsWith('http')) return;
 
     // ── Bypass totale: Firebase, Firestore, autenticazione ─────────────────
     if (

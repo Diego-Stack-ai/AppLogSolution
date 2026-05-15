@@ -100,14 +100,32 @@
             display: flex;
             gap: 12px;
             margin-bottom: 20px;
+            flex-wrap: wrap; /* Permette di andare a capo su mobile */
         }
 
         .search-bar input {
             flex: 1;
+            min-width: 200px; /* Evita che diventi troppo piccolo */
             padding: 12px 16px;
             border-radius: 12px;
             border: 1px solid #e2e8f0;
             font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .search-bar {
+                flex-direction: column-reverse; /* Ricerca sotto i pulsanti */
+            }
+            .search-bar input {
+                width: 100%;
+                flex: none;
+            }
+            .search-bar button {
+                flex: 1;
+            }
+            .cards-container {
+                grid-template-columns: 1fr; /* Una card per riga su mobile */
+            }
         }
 
         .btn-add {

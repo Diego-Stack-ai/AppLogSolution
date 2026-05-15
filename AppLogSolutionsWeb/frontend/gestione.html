@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Anagrafiche - Log Solution</title>
+    <link rel="stylesheet" href="styles.css?v=1.51">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        .tabs-header {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-muted);
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+
+        .data-table-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f8fafc;
+            text-align: left;
+            padding: 16px;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid #f1f5f9;
+            color: var(--text-main);
+        }
+
+        tr:hover td {
+            background: #fdfdfd;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-frutta { background: #dcfce7; color: #166534; }
+        .badge-latte { background: #e0f2fe; color: #075985; }
+
+        .search-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+
+        .btn-add {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="glass-nav">
+        <div class="nav-content">
+            <button onclick="window.navigateWithState('dashboard.html')" class="logout-btn" style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
+                <span class="material-icons-round">arrow_back</span>
+            </button>
+            <div class="nav-title" style="flex: 1;">Gestione Anagrafiche</div>
+            <a href="#" onclick="window.logoutFirebase(); return false;" class="logout-btn"><span class="material-icons-round">logout</span></a>
+        </div>
+    </nav>
+
+    <main class="main-container">
+        <div class="tabs-header">
+            <button class="tab-btn active" onclick="switchTab('clienti')">
+                <span class="material-icons-round">group</span> Clienti
+            </button>
+            <button class="tab-btn" onclick="switchTab('articoli')">
+                <span class="material-icons-round">inventory_2</span> Articoli
+            </button>
+            <button class="tab-btn" onclick="switchTab('rientri')">
+                <span class="material-icons-round">assignment_return</span> Rientri DDT
+            </button>
+        </div>
+
+        <div class="glass-panel" style="padding: 24px;">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Cerca..." onkeyup="filterTable()">
+                <button class="btn-add" id="btnAdd">
+                    <span class="material-icons-round">add</span> Aggiungi
+                </button>
+            </div>
+
+            <div class="data-table-container">
+                <table id="dataTable">
+                    <thead>
+                        <tr id="tableHeader">
+                            <!-- Headers dinamici -->
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Righe dinamiche -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="loading" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                <span class="material-icons-round" style="font-size: 40px; animation: spin 2s linear infinite;">autorenew</span>
+                <p>Caricamento dati...</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js?v=1.51"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.51"></script>
+    <script type="module">
+        import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { firebaseConfig } from "./firebase-config.js";
+
+        const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currentTab = 'clienti';
+        let unsubscribe = null;
+
+        window.switchTab = function(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.innerText.toLowerCase().includes(tab));
+            });
+            loadData();
+        };
+
+        function loadData() {
+            if(unsubscribe) unsubscribe();
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('tableBody').innerHTML = '';
+            
+            let collPath = '';
+            if(currentTab === 'clienti') collPath = 'customers/DNR/clienti';
+            if(currentTab === 'articoli') collPath = 'customers/DNR/anagrafica_articoli';
+            if(currentTab === 'rientri') collPath = 'customers/DNR/rientri_ddt';
+
+            const q = query(collection(db, collPath));
+            
+            unsubscribe = onSnapshot(q, (snapshot) => {
+                document.getElementById('loading').style.display = 'none';
+                renderTable(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
+            });
+        }
+
+        function renderTable(data) {
+            const header = document.getElementById('tableHeader');
+            const body = document.getElementById('tableBody');
+            
+            if(currentTab === 'clienti') {
+                header.innerHTML = '<th>Codice F</th><th>Codice L</th><th>Nome Consegna</th><th>Indirizzo</th><th>Zona</th>';
+                body.innerHTML = data.map(d => `
+                    <tr>
+                        <td><b>${d.codice_frutta || '-'}</b></td>
+                        <td><b>${d.codice_latte || '-'}</b></td>
+                        <td>${d.cliente || d.nome_consegna || ''}</td>
+                        <td>${d.indirizzo || ''}</td>
+                        <td><span class="badge badge-latte">${d.codice_zona || d.zona || '-'}</span></td>
+                    </tr>
+                `).join('');
+            } else if(currentTab === 'articoli') {
+                header.innerHTML = '<th>Codice</th><th>Descrizione</th><th>Unità P.</th><th>Ratio</th><th>Unità S.</th>';
+                body.innerHTML = data.map(d => `
+                    <tr>
+                        <td><code>${d.id}</code></td>
+                        <td>${d.descrizione || ''}</td>
+                        <td>${d.unita_principale || ''}</td>
+                        <td>${d.ratio || '-'}</td>
+                        <td>${d.unita_secondaria || ''}</td>
+                    </tr>
+                `).join('');
+            } else if(currentTab === 'rientri') {
+                header.innerHTML = '<th>Codice</th><th>Data DDT</th><th>Stato</th><th>Note</th>';
+                body.innerHTML = data.map(d => `
+                    <tr>
+                        <td>${d.codice_consegna || d.id}</td>
+                        <td>${d.data_ddt || ''}</td>
+                        <td><span class="badge badge-frutta">${d.stato || ''}</span></td>
+                        <td>${d.note || ''}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

@@ -294,6 +294,9 @@
                 <span class="material-icons-round">arrow_back</span>
             </button>
             <div class="nav-title" style="flex: 1;">Gestione Anagrafiche</div>
+            <button id="updateBtn" class="btn-map" style="display:none; background:#f59e0b; padding:6px 10px; font-size:11px; margin-right:8px;" onclick="updateApp()">
+                <span class="material-icons-round">update</span> AGGIORNA
+            </button>
             <a href="#" onclick="window.logoutFirebase(); return false;" class="logout-btn"><span class="material-icons-round">logout</span></a>
         </div>
     </nav>
@@ -737,13 +740,34 @@
         };
 
         window.navigateWithState = (url) => window.location.href = url;
-        // Forza aggiornamento Service Worker
+        
+        // Gestione Aggiornamento App
+        let registration = null;
         if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(reg => {
+                registration = reg;
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            document.getElementById('updateBtn').style.display = 'flex';
+                        }
+                    });
+                });
+            });
+
             navigator.serviceWorker.addEventListener('controllerchange', () => {
-                console.log("[SW] Nuova versione rilevata, ricarico...");
                 window.location.reload();
             });
         }
+
+        window.updateApp = function() {
+            if (registration && registration.waiting) {
+                registration.waiting.postMessage('SKIP_WAITING');
+            } else {
+                window.location.reload(true);
+            }
+        };
         
         loadData();
     </script>

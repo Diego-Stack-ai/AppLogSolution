@@ -308,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // PWA: Registrazione Service Worker + gestione aggiornamenti
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').then(reg => {
+        navigator.serviceWorker.register('./sw_v180.js').then(reg => {
             console.log('[SW] Registrato correttamente.');
 
             // Se c'è già un SW in attesa (tab rimasto aperto durante aggiornamento)

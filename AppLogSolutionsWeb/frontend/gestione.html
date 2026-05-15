@@ -744,7 +744,7 @@
         // Gestione Aggiornamento App
         let registration = null;
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(reg => {
+            navigator.serviceWorker.register('sw_v180.js').then(reg => {
                 registration = reg;
                 reg.addEventListener('updatefound', () => {
                     const newWorker = reg.installing;

@@ -114,17 +114,25 @@
 
         @media (max-width: 600px) {
             .search-bar {
-                flex-direction: column-reverse; /* Ricerca sotto i pulsanti */
+                flex-direction: column-reverse;
+                gap: 8px;
+            }
+            .search-bar .action-buttons {
+                display: flex;
+                gap: 8px;
+                width: 100%;
+            }
+            .search-bar .action-buttons button {
+                flex: 1;
+                padding: 10px;
+                font-size: 13px;
             }
             .search-bar input {
                 width: 100%;
                 flex: none;
             }
-            .search-bar button {
-                flex: 1;
-            }
             .cards-container {
-                grid-template-columns: 1fr; /* Una card per riga su mobile */
+                grid-template-columns: 1fr;
             }
         }
 
@@ -305,13 +313,15 @@
 
         <div class="glass-panel" style="padding: 24px;">
             <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="Cerca..." onkeyup="filterTable()">
-                <button class="btn-map" onclick="window.navigateWithState('mappa_google.html')">
-                    <span class="material-icons-round">map</span> Mappa
-                </button>
-                <button class="btn-add" onclick="openModal()">
-                    <span class="material-icons-round">add</span> Aggiungi
-                </button>
+                <input type="text" id="searchInput" placeholder="Cerca cliente, codice o città..." onkeyup="filterTable()">
+                <div class="action-buttons" style="display:flex; gap:12px;">
+                    <button class="btn-map" onclick="window.navigateWithState('mappa_google.html')">
+                        <span class="material-icons-round">map</span> Mappa
+                    </button>
+                    <button class="btn-add" onclick="openModal()">
+                        <span class="material-icons-round">add</span> Aggiungi
+                    </button>
+                </div>
             </div>
 
             <div id="dataContainer" class="cards-container">
@@ -646,11 +656,19 @@
         });
 
         function filterTable() {
-            const q = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = (window.fullData || []).filter(d => {
-                const text = JSON.stringify(d).toLowerCase();
-                return text.includes(q);
+            const q = document.getElementById('searchInput').value.toLowerCase().trim();
+            console.log("[Search] Query:", q);
+            
+            if(!window.fullData) return;
+
+            const filtered = window.fullData.filter(d => {
+                if(!q) return true;
+                // Cerca in tutti i valori dell'oggetto
+                return Object.values(d).some(val => 
+                    String(val).toLowerCase().includes(q)
+                );
             });
+            
             renderTable(filtered);
         }
 

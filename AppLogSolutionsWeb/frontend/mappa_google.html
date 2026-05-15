@@ -172,26 +172,38 @@
         async function initApp() {
             console.log("[Map] Inizializzazione...");
             
-            // Timeout di sicurezza per nascondere il caricamento se qualcosa va storto con le API di Google
+            // Timeout di sicurezza
             const loadingTimeout = setTimeout(() => {
                 const overlay = document.getElementById('loading-overlay');
                 if(overlay && overlay.style.display !== 'none') {
-                    console.warn("[Map] Caricamento forzatamente rimosso dopo timeout");
                     overlay.style.display = 'none';
                 }
             }, 8000);
 
             try {
                 const { Map, InfoWindow } = await google.maps.importLibrary("maps");
+                const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker");
+                
                 infoWindow = new google.maps.InfoWindow();
                 map = new google.maps.Map(document.getElementById("map"), {
                     center: { lat: 45.42, lng: 11.43 },
                     zoom: 10,
                     mapTypeId: 'hybrid',
+                    mapId: "DEMO_MAP_ID", // Richiesto per Advanced Markers
                     mapTypeControl: true,
                     streetViewControl: false,
                     fullscreenControl: false
                 });
+
+                // Helper per creare pin colorati
+                window.createPin = (color) => {
+                    return new PinElement({
+                        background: color,
+                        borderColor: "white",
+                        glyphColor: "white",
+                        scale: 0.8
+                    });
+                };
 
                 // Attendi l'autenticazione prima di caricare i dati (Risolve Permessi Insufficienti)
                 const { getAuth, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
@@ -284,15 +296,15 @@
                 const mLat = (p.lat === 0) ? 45.42 : p.lat;
                 const mLng = (p.lon === 0) ? 11.43 : p.lon;
                 
-                let color = isMissing ? 'red' : (isModified ? 'blue' : 'green');
-                let iconUrl = `https://maps.google.com/mapfiles/ms/icons/${color}-dot.png`;
+                const pinColor = isMissing ? '#ef4444' : (isModified ? '#4f46e5' : '#10b981');
+                const pin = window.createPin(pinColor);
 
-                const m = new google.maps.Marker({
+                const m = new google.maps.marker.AdvancedMarkerElement({
                     position: { lat: mLat, lng: mLng },
                     map: map,
                     title: p.cliente || p.nome_consegna,
-                    icon: iconUrl,
-                    draggable: !IS_LOCKED
+                    content: pin.element,
+                    gmpDraggable: !IS_LOCKED
                 });
 
                 m.addListener('click', () => {
@@ -311,9 +323,13 @@
                 });
 
                 m.addListener('dragend', () => {
-                    const pos = m.getPosition();
-                    MODIFIED[p.id] = { lat: pos.lat().toFixed(6), lon: pos.lng().toFixed(6) };
-                    m.setIcon(`https://maps.google.com/mapfiles/ms/icons/blue-dot.png`);
+                    const pos = m.position;
+                    MODIFIED[p.id] = { lat: pos.lat.toFixed(6), lon: pos.lng.toFixed(6) };
+                    
+                    // Aggiorna colore in blu (modificato)
+                    const newPin = window.createPin('#4f46e5');
+                    m.content = newPin.element;
+                    
                     document.getElementById('btn-save').disabled = false;
                     document.getElementById('save-counter').innerText = `(${Object.keys(MODIFIED).length})`;
                 });
@@ -344,7 +360,7 @@
             const btn = document.getElementById('btn-lock');
             btn.innerHTML = IS_LOCKED ? '<span class="material-icons-round">lock</span> SBLOCCA SPOSTAMENTO' : '<span class="material-icons-round">lock_open</span> BLOCCA SPOSTAMENTO';
             btn.classList.toggle('active', !IS_LOCKED);
-            gMarkers.forEach(m => m.setDraggable(!IS_LOCKED));
+            gMarkers.forEach(m => m.gmpDraggable = !IS_LOCKED);
         };
 
         window.saveAll = async () => {

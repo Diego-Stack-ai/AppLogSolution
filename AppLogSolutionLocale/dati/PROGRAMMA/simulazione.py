@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 (1_2_3_4)_estrai_ddt_consegne.py
-════════════════════════════════
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 Estrae tutti i DDT dai PDF in CONSEGNE/DDT-ORIGINALI/FRUTTA e LATTE.
 Identifica nuovi clienti ed estrae automaticamente i loro dati (Indirizzo, CAP, Orari, ecc.).
 
@@ -43,7 +43,7 @@ LUOGO_RE = re.compile(r'(?:[Ll]uogo [Dd]i [Dd]estinazione|[Cc]odice [Dd]estinazi
 CAP_RE = re.compile(r"\b(\d{5})\b")
 PROVINCIA_RE = re.compile(r"\(([A-Z]{2})\)")
 CAUSALE_RE = re.compile(r'(?:conto di|ordine e conto di)\s+([A-Z]\d{4})(?:\s+H(\d{2}))?(?:\s+(\d{3}))?', re.I)
-NUM_DDT_RE = re.compile(r'DDT\s*[Nn][°º\.\s]*([A-Za-z0-9/-]+)', re.I)
+NUM_DDT_RE = re.compile(r'DDT\s*[Nn][Â°Âº\.\s]*([A-Za-z0-9/-]+)', re.I)
 
 
 def _estrai_data_luogo(text: str) -> tuple[str | None, str | None, str | None]:
@@ -62,7 +62,7 @@ def _estrai_data_luogo(text: str) -> tuple[str | None, str | None, str | None]:
 
 
 def _estrai_dati_consegna_da_testo(text: str, codice: str, da_frutta: bool) -> dict:
-    """Estrae destinatario, indirizzo, CAP, città, provincia e orari dal testo di una pagina DDT."""
+    """Estrae destinatario, indirizzo, CAP, cittÃ , provincia e orari dal testo di una pagina DDT."""
     res = {"dest": "", "ind": "", "cap": "", "cit": "", "prov": "", "om": "", "oM": "14:00"}
     if codice.lower() not in text.lower():
         return res
@@ -90,7 +90,7 @@ def _estrai_dati_consegna_da_testo(text: str, codice: str, da_frutta: bool) -> d
                 albo_m = re.match(r"^[Aa]lbo\s+", ln, re.I)
                 if albo_m: res["ind"] = ln[albo_m.end():].strip().title()
 
-    # 2. CAP, Provincia, Città
+    # 2. CAP, Provincia, CittÃ 
     idx_resp = text.upper().find("RESPONSABILE DEL TRASPORTO")
     blocco_prov = text[idx_resp:] if idx_resp >= 0 else text
     
@@ -103,7 +103,7 @@ def _estrai_dati_consegna_da_testo(text: str, codice: str, da_frutta: bool) -> d
         if caps:
             res["cap"] = caps[-1].group(1)
             pre = blocco_prov[caps[-1].end() : caps[-1].end() + 60]
-            citta_m = re.search(r"\s*[-]?\s*([A-Za-zÀ-ÿ\s'.]+?)\s*\([A-Z]{2}\)", pre)
+            citta_m = re.search(r"\s*[-]?\s*([A-Za-zÃ€-Ã¿\s'.]+?)\s*\([A-Z]{2}\)", pre)
             if citta_m: res["cit"] = citta_m.group(1).strip().title()
         break
         
@@ -164,7 +164,7 @@ def _leggi_codici_mappatura() -> dict:
         wb.close()
         return codici
     except Exception as e:
-        print(f"⚠️ Errore mappatura: {e}")
+        print(f"âš ï¸ Errore mappatura: {e}")
         return {}
 
 
@@ -180,22 +180,22 @@ def _aggiorna_orari_mappatura(row_idx: int, orario_min: str, orario_max: str, ti
         col_om = next((i + 1 for i, h in enumerate(headers) if h == f"Orario min {tipo_cap}"), None)
         col_oM = next((i + 1 for i, h in enumerate(headers) if h == f"Orario max {tipo_cap}"), None)
         if col_om is None or col_oM is None:
-            print(f"    ⚠️  Colonne orario {tipo_cap} non trovate in mappatura.")
+            print(f"    âš ï¸  Colonne orario {tipo_cap} non trovate in mappatura.")
             return
         if orario_min: ws.cell(row=row_idx, column=col_om, value=orario_min)
         if orario_max: ws.cell(row=row_idx, column=col_oM, value=orario_max)
         wb.save(MAPPATURA_XLSX)
-        print(f"    ✅ Mappatura [{tipo_cap}] riga {row_idx}: min={orario_min or '—'}  max={orario_max or '—'}")
+        print(f"    âœ… Mappatura [{tipo_cap}] riga {row_idx}: min={orario_min or 'â€”'}  max={orario_max or 'â€”'}")
     except PermissionError:
-        print(f"    ⚠️  mappatura_destinazioni.xlsx e' aperto — orari non aggiornati.")
+        print(f"    âš ï¸  mappatura_destinazioni.xlsx e' aperto â€” orari non aggiornati.")
     except Exception as e:
-        print(f"    ⚠️  Errore aggiornamento orari: {e}")
+        print(f"    âš ï¸  Errore aggiornamento orari: {e}")
 
 
 def _verifica_nuovi_clienti(dati_nuovi: dict):
     if not dati_nuovi: return True
     print("\n" + "!"*60)
-    print(f"🛑 RILEVATI {len(dati_nuovi)} NUOVI CODICI CLIENTE:")
+    print(f"ðŸ›‘ RILEVATI {len(dati_nuovi)} NUOVI CODICI CLIENTE:")
     for cod, info in sorted(dati_nuovi.items()):
         print(f"   - {cod} ({info['tipo']}): {info['dest']} - {info['cit']}")
     print("!"*60 + "\n")
@@ -204,7 +204,7 @@ def _verifica_nuovi_clienti(dati_nuovi: dict):
         wb = Workbook()
         ws = wb.active
         ws.title = "Nuovi Codici"
-        headers = ["Codice Frutta", "Codice Latte", "A chi va consegnato", "Tipologia grado", "Indirizzo", "CAP", "Città", "Provincia",
+        headers = ["Codice Frutta", "Codice Latte", "A chi va consegnato", "Tipologia grado", "Indirizzo", "CAP", "CittÃ ", "Provincia",
                   "Tipologia consegna", "Tipologia consegna.1", "Email", "Sito web", "Orario min", "Orario max"]
         ws.append(headers)
         for cod, info in sorted(dati_nuovi.items()):
@@ -215,8 +215,8 @@ def _verifica_nuovi_clienti(dati_nuovi: dict):
             ws.append(row)
         hp = BASE_DIR / "nuovi_codici_consegna.xlsx"
         wb.save(hp)
-        print(f"📄 File generato: {hp.name}\n💡 Copia i dati in mappatura_destinazioni.xlsx per proseguire.\n")
-    except Exception as e: print(f"⚠️ Errore excel: {e}")
+        print(f"ðŸ“„ File generato: {hp.name}\nðŸ’¡ Copia i dati in mappatura_destinazioni.xlsx per proseguire.\n")
+    except Exception as e: print(f"âš ï¸ Errore excel: {e}")
     return False
 
 
@@ -318,11 +318,11 @@ def _estrai_da_cartella(cart_in: Path, cart_out: Path, etichetta: str, date_vali
         if duplicata:
             doppioni_totali += 1 if n > 1 else 0
             if is_fascicolato:
-                # Tieni la prima metà
+                # Tieni la prima metÃ 
                 half = n // 2
                 pagine_da_salvare = [p[1] for p in lista_pagine[:half]]
             else:
-                # Tieni una pagina sì e una no (indici pari)
+                # Tieni una pagina sÃ¬ e una no (indici pari)
                 pagine_da_salvare = [lista_pagine[i][1] for i in range(0, n, 2)]
         else:
         '''
@@ -336,8 +336,7 @@ def _estrai_da_cartella(cart_in: Path, cart_out: Path, etichetta: str, date_vali
         cnt = visti.get(chiave, 0) + 1
         visti[chiave] = cnt
         fname = f"{l}_{d}_{num_ddt}_{cnt}.pdf" if cnt > 1 else f"{l}_{d}_{num_ddt}.pdf"
-        with open(cart_out / fname, "wb") as f:
-            writer.write(f)
+        # file non salvato in simulazione
         creati += 1
         if creati <= 3 or creati % 50 == 0: print(f"    {fname}")
 
@@ -364,7 +363,7 @@ def _pulisci_output(base: Path, data_v: str):
             except: pass
 
 
-# --- ARTICOLI NOTI (SORGENTE DI VERITÀ) ---
+# --- ARTICOLI NOTI (SORGENTE DI VERITÃ€) ---
 ARTICOLI_NOTI = {
     "10-FLYER", "10-GEL", "10-MANIFESTO", "10-AT-01", "10-BICC", "10-CUCCH", "10-PIATTO",
     "AP-SU-PC", "FO-DI-PV-04-LB", "FO-DI-GP-01-NI", "FVNS-03", "FVNS-03-", 
@@ -373,11 +372,10 @@ ARTICOLI_NOTI = {
     "YO-BI-MN-04-LB", "YO-DL-02-LC", "FI-Z-BI-L3-NA", "FR-M-BI-L3-NI",
     "LNS-04-GADGET", "LNS-04-", "CA-Z-BI-L3-NA", "KI-S-BI-L3-NA", "ME-S-DI-L3-NA", "FO-DI-AS-04-LV",
     "AL-M-BI-L3-NI", "SUCCO-REC", "PF-T-LI-L3-NA", "SU-M-BI-L3-NI", "YO-CN-MN-04-",
-    "AL-T-LI-NA",
 }
 
 def _is_primary_code(text: str) -> bool:
-    """Verifica se una stringa corrisponde a un codice base noto (Sorgente di Verità)."""
+    """Verifica se una stringa corrisponde a un codice base noto (Sorgente di VeritÃ )."""
     if not text: return False
     t = text.strip().upper()
     if t in ARTICOLI_NOTI: return True
@@ -399,7 +397,7 @@ def _normalizza_cella_codice_base(raw: str) -> str:
     
     codice_base = righe[0]
     
-    # ── OPZIONE A: Ricomposizione per codici troncati ──
+    # â”€â”€ OPZIONE A: Ricomposizione per codici troncati â”€â”€
     # Se la prima riga finisce col trattino, uniamo la prima parola della riga successiva
     if len(righe) > 1 and codice_base.endswith('-'):
         pezzi = righe[1].split()
@@ -464,7 +462,7 @@ def _verifica_nuovi_articoli(base):
 
 
 def main():
-    # ── Determina le date valide ────────────────────────────────────────────
+    # â”€â”€ Determina le date valide â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     arg = sys.argv[1].strip() if len(sys.argv) > 1 else None
     if arg:
         # Supporta: "27-03", "27-03-2026", "27-03-2026_28-03-2026"
@@ -474,20 +472,20 @@ def main():
             date_valide.add(parte)
     else:
         date_list = _ricava_date_da_pdf()
-        if not date_list: return print("❌ Nessun PDF trovato.")
+        if not date_list: return print("âŒ Nessun PDF trovato.")
         date_valide = set(date_list)
 
-    # ── Nome cartella: singola o doppia data ────────────────────────────────
+    # â”€â”€ Nome cartella: singola o doppia data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     data_label = "_".join(sorted(date_valide))   # es. "30-03-2026" o "30-03-2026_31-03-2026"
     base = CONSEGNE_DIR / f"CONSEGNE_{data_label}"
     if base.exists() and not arg:
-        return print(f"⚠️ Cartella {base.name} esiste già. Passa la data come argomento per forzare.")
+        return print(f"âš ï¸ Cartella {base.name} esiste giÃ . Passa la data come argomento per forzare.")
 
     _pulisci_output(base, data_label)
     nd = len(date_valide)
-    print(f"\n--- Estrazione DDT ({data_label}) — {nd} data{'e' if nd > 1 else ''} ---\n")
+    print(f"\n--- Estrazione DDT ({data_label}) â€” {nd} data{'e' if nd > 1 else ''} ---\n")
     if nd > 1:
-        print(f"  ℹ️  Date rilevate: {', '.join(sorted(date_valide))} → elaborazione accorpata\n")
+        print(f"  â„¹ï¸  Date rilevate: {', '.join(sorted(date_valide))} â†’ elaborazione accorpata\n")
 
     out_f = base / "DDT-ORIGINALI-DIVISI" / "FRUTTA"
     out_l = base / "DDT-ORIGINALI-DIVISI" / "LATTE"
@@ -499,21 +497,22 @@ def main():
     if not _verifica_nuovi_articoli(base): sys.exit(1)
 
     print("Pulizia sorgenti e avvio pipeline...")
-    _pulisci_sorgenti(INPUT_FRUTTA, date_valide)
-    _pulisci_sorgenti(INPUT_LATTE,  date_valide)
+    # _pulisci_sorgenti(INPUT_FRUTTA, date_valide)
+    # _pulisci_sorgenti(INPUT_LATTE,  date_valide)
     time.sleep(1)
 
     for s in ["2_crea_punti_consegna.py", "3_crea_lista_unificata.py"]:
         p = PROG_DIR / s
         if p.exists():
-            print(f"⚙️ {s}...")
-            subprocess.run([sys.executable, str(p), data_label], cwd=BASE_DIR)
+            print(f"âš™ï¸ {s}...")
+            # subprocess.run([sys.executable, str(p), data_label], cwd=BASE_DIR)
 
     p_mappa = PROG_DIR / "4_mappa_zone_google.py"
     if p_mappa.exists():
-        print(f"⚙️ 4_mappa_zone_google.py (generazione file, server disabilitato)...")
-        subprocess.run([sys.executable, str(p_mappa), data_label, "--no-serve"], cwd=BASE_DIR)
+        print(f"âš™ï¸ 4_mappa_zone_google.py (generazione file, server disabilitato)...")
+        # subprocess.run([sys.executable, str(p_mappa), data_label, "--no-serve"], cwd=BASE_DIR)
 
-    print(f"\n✅ COMPLETATO ({data_label})!")
+    print(f"\nâœ… COMPLETATO ({data_label})!")
 
 if __name__ == "__main__": main()
+

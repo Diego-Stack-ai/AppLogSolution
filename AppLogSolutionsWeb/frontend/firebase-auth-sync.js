@@ -192,11 +192,37 @@ onAuthStateChanged(auth, async (user) => {
                 }
 
             } else {
-                console.warn("Auth: Sessione attiva ma profilo Firestore mancante. Logout di sicurezza.");
+                console.warn("Auth: Sessione attiva ma profilo Firestore mancante.");
+                
+                // --- AUTO-FIX DI EMERGENZA ---
+                // Se l'utente si è appena loggato con Firebase Auth ma il suo documento in 'users' non esiste
+                // (ad es. database azzerato), chiediamo se vogliamo ricrearlo come amministratore.
+                const confirmCreate = confirm("ATTENZIONE: Il tuo utente Firebase esiste, ma il profilo nel database è stato cancellato.\n\nVuoi ricreare automaticamente il tuo profilo come AMMINISTRATORE per poter accedere?");
+                
+                if (confirmCreate) {
+                    try {
+                        const newUserData = {
+                            email: user.email,
+                            nome: user.email.split('@')[0],
+                            ruolo: "amministratore",
+                            needsPasswordChange: false
+                        };
+                        await setDoc(doc(db, "users", user.uid), newUserData);
+                        alert("Profilo ricreato con successo! Ora ricaricheremo la pagina per farti entrare.");
+                        window.location.reload();
+                        return;
+                    } catch(e) {
+                        alert("Impossibile ricreare il profilo. Controlla le regole Firestore. Dettaglio: " + e.message);
+                    }
+                }
+
+                alert("ACCESSO NEGATO: Utente autenticato, ma manca il profilo nel Database (Collection 'users'). L'account potrebbe essere stato disabilitato o cancellato.");
                 await window.logoutFirebase();
             }
         } catch (err) {
             console.error("Auth: Errore recupero profilo Firestore:", err);
+            alert("Errore di connessione al database durante il login: " + err.message);
+            await window.logoutFirebase();
         }
     } else {
         // Nessun utente rilevato

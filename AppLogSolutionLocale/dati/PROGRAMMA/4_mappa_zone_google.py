@@ -476,6 +476,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             }
             renderMarkers();
             renderSidebar();
+            updateTotals();
         }
 
         window.addEventListener('beforeunload', function(e) {
@@ -679,8 +680,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         }
 
         function updateTotals() {
-            const total = DATA_ZONE.reduce((acc, z) => acc + z.lista_punti.length, 0);
-            document.getElementById('tot-points').textContent = `${total} Punti`;
+            let totalPunti = 0;
+            let totalDdt = 0;
+            DATA_ZONE.forEach(z => {
+                const isSpeciale = (z.id_zona === 'DDT_DA_INSERIRE');
+                if (VIEW_MODE_PULITA && isSpeciale) return;
+                totalPunti += z.lista_punti.length;
+                totalDdt += calcolaValoreZona(z).tot_ddt;
+            });
+            document.getElementById('tot-points').textContent = `${totalPunti} Punti - ${totalDdt} DDT`;
         }
 
         const VALORE_DDT = 16.50;

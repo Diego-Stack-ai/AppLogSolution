@@ -112,17 +112,106 @@
             transform: scale(1.02);
         }
 
-        /* Scrollbar personalizzata per tabelle */
+        /* Card Layout */
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .item-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .item-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 10px 25px -10px rgba(79, 70, 229, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 12px;
+        }
+
+        .card-title {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--text-main);
+            margin: 0;
+        }
+
+        .card-body {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .card-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .data-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .data-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .data-value {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .card-actions {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-edit {
+            background: #f1f5f9;
+            color: #64748b;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .btn-edit:hover {
+            background: var(--primary-glow);
+            color: var(--primary);
+        }
+
+        /* Scrollbar personalizzata */
         .data-table-container::-webkit-scrollbar {
             height: 8px;
-            display: block; /* Assicuriamoci che sia visibile */
-        }
-        .data-table-container::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-        .data-table-container::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
+            display: block;
         }
     </style>
 </head>
@@ -159,17 +248,8 @@
                 </button>
             </div>
 
-            <div class="data-table-container">
-                <table id="dataTable">
-                    <thead>
-                        <tr id="tableHeader">
-                            <!-- Headers dinamici -->
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        <!-- Righe dinamiche -->
-                    </tbody>
-                </table>
+            <div id="dataContainer" class="cards-container">
+                <!-- Card dinamiche -->
             </div>
             
             <div id="loading" style="text-align: center; padding: 40px; color: var(--text-muted);">
@@ -237,50 +317,107 @@
             
             unsubscribe = onSnapshot(q, (snapshot) => {
                 document.getElementById('loading').style.display = 'none';
-                renderTable(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
+                window.fullData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                renderTable(window.fullData);
             });
         }
 
         function renderTable(data) {
-            const header = document.getElementById('tableHeader');
-            const body = document.getElementById('tableBody');
+            const container = document.getElementById('dataContainer');
+            container.innerHTML = '';
             
             if(currentTab === 'clienti') {
-                console.log(`[Gestione] Rendering ${data.length} clienti...`, data[0]);
-                header.innerHTML = '<th>Codice F</th><th>Codice L</th><th>Nome Consegna</th><th>Indirizzo</th><th>Zona</th><th>Città</th><th>Prov</th><th>Lat/Lon</th><th>Orari (F/L)</th>';
-                body.innerHTML = data.map(d => `
-                    <tr>
-                        <td><b>${d.codice_frutta || '-'}</b></td>
-                        <td><b>${d.codice_latte || '-'}</b></td>
-                        <td>${d.cliente || d.nome_consegna || ''}</td>
-                        <td>${d.indirizzo || ''}</td>
-                        <td><span class="badge badge-latte">${d.codice_zona || d.zona || '-'}</span></td>
-                        <td>${d.citta || ''}</td>
-                        <td>${d.provincia || d.prov || ''}</td>
-                        <td style="color: var(--text-muted); font-size: 11px;">${d.lat ? parseFloat(d.lat).toFixed(4) : '-'}/${d.lon ? parseFloat(d.lon).toFixed(4) : '-'}</td>
-                        <td style="font-size: 11px;">${d.orario_min_frutta || '-'}/${d.orario_max_frutta || '-'} | ${d.orario_min_latte || '-'}/${d.orario_max_latte || '-'}</td>
-                    </tr>
+                container.innerHTML = data.map(d => `
+                    <div class="item-card">
+                        <div class="card-header">
+                            <div>
+                                <h4 class="card-title">${d.cliente || d.nome_consegna || 'N/A'}</h4>
+                                <div style="display:flex; gap:8px; margin-top:4px;">
+                                    <span class="badge badge-frutta">F: ${d.codice_frutta || '-'}</span>
+                                    <span class="badge badge-latte">L: ${d.codice_latte || '-'}</span>
+                                    <span class="badge" style="background:#f1f5f9; color:#64748b">ZONA: ${d.codice_zona || d.zona || '-'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="card-row">
+                                <div class="data-item" style="flex:2">
+                                    <span class="data-label">Indirizzo</span>
+                                    <span class="data-value">${d.indirizzo || ''}</span>
+                                </div>
+                                <div class="data-item" style="flex:1">
+                                    <span class="data-label">Città / Prov</span>
+                                    <span class="data-value">${d.citta || ''} (${d.provincia || d.prov || '-'})</span>
+                                </div>
+                            </div>
+                            <div class="card-row" style="background:#f8fafc; padding:8px; border-radius:8px;">
+                                <div class="data-item">
+                                    <span class="data-label">Orari Frutta</span>
+                                    <span class="data-value">${d.orario_min_frutta || '-'}/${d.orario_max_frutta || '-'}</span>
+                                </div>
+                                <div class="data-item" style="border-left:1px solid #e2e8f0; padding-left:16px;">
+                                    <span class="data-label">Orari Latte</span>
+                                    <span class="data-value">${d.orario_min_latte || '-'}/${d.orario_max_latte || '-'}</span>
+                                </div>
+                                <div class="data-item" style="border-left:1px solid #e2e8f0; padding-left:16px;">
+                                    <span class="data-label">Coordinate GPS</span>
+                                    <span class="data-value">${d.lat ? parseFloat(d.lat).toFixed(4) : '-'}/${d.lon ? parseFloat(d.lon).toFixed(4) : '-'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                             <button class="btn-edit" onclick="editItem('${d.id}')">
+                                <span class="material-icons-round" style="font-size:18px;">edit</span>
+                             </button>
+                        </div>
+                    </div>
                 `).join('');
             } else if(currentTab === 'articoli') {
-                header.innerHTML = '<th>Codice</th><th>Descrizione</th><th>Conf. (U.P.)</th><th>Per (Ratio)</th><th>Unità Secondaria (U.S.)</th>';
-                body.innerHTML = data.map(d => `
-                    <tr>
-                        <td><code>${d.id}</code></td>
-                        <td>${d.descrizione || ''}</td>
-                        <td>${d.unita_principale || ''}</td>
-                        <td><b style="color: var(--primary)">x ${d.ratio || '-'}</b></td>
-                        <td>${d.unita_secondaria || ''}</td>
-                    </tr>
+                container.innerHTML = data.map(d => `
+                    <div class="item-card">
+                        <div class="card-header">
+                            <div>
+                                <h4 class="card-title">${d.id}</h4>
+                                <p style="font-size:12px; color:var(--text-muted); margin:0;">${d.descrizione || ''}</p>
+                            </div>
+                            <span class="badge" style="background:var(--primary-glow); color:var(--primary)">x ${d.ratio || '1'}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="card-row">
+                                <div class="data-item">
+                                    <span class="data-label">Confezionamento</span>
+                                    <span class="data-value">${d.unita_principale || '-'}</span>
+                                </div>
+                                <div class="data-item">
+                                    <span class="data-label">Unità Secondaria</span>
+                                    <span class="data-value">${d.unita_secondaria || '-'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                             <button class="btn-edit" onclick="editItem('${d.id}')">
+                                <span class="material-icons-round" style="font-size:18px;">edit</span>
+                             </button>
+                        </div>
+                    </div>
                 `).join('');
             } else if(currentTab === 'rientri') {
-                header.innerHTML = '<th>Codice</th><th>Data DDT</th><th>Stato</th><th>Note</th>';
-                body.innerHTML = data.map(d => `
-                    <tr>
-                        <td>${d.codice_consegna || d.id}</td>
-                        <td>${d.data_ddt || ''}</td>
-                        <td><span class="badge badge-frutta">${d.stato || ''}</span></td>
-                        <td>${d.note || ''}</td>
-                    </tr>
+                 container.innerHTML = data.map(d => `
+                    <div class="item-card">
+                        <div class="card-header">
+                            <div>
+                                <h4 class="card-title">${d.codice_consegna || d.id}</h4>
+                                <p style="font-size:12px; color:var(--text-muted); margin:0;">Data DDT: ${d.data_ddt || ''}</p>
+                            </div>
+                            <span class="badge badge-frutta">${d.stato || ''}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="data-item">
+                                <span class="data-label">Note</span>
+                                <span class="data-value">${d.note || '-'}</span>
+                            </div>
+                        </div>
+                    </div>
                 `).join('');
             }
         }
@@ -407,6 +544,41 @@
                 alert("Errore durante il salvataggio: " + err.message);
             }
         });
+
+        function filterTable() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = (window.fullData || []).filter(d => {
+                const text = JSON.stringify(d).toLowerCase();
+                return text.includes(q);
+            });
+            renderTable(filtered);
+        }
+
+        window.editItem = function(id) {
+            const item = (window.fullData || []).find(d => d.id === id);
+            if(!item) return;
+            
+            // Riutilizziamo openModal per caricare i dati
+            openModal();
+            const form = document.getElementById('crudForm');
+            const title = document.getElementById('modalTitle');
+            title.innerText = "Modifica Record";
+            
+            // Popolamento automatico campi
+            Object.keys(item).forEach(key => {
+                const input = form.querySelector(`[name="${key}"]`);
+                if(input) input.value = item[key];
+            });
+            
+            // Caso speciale per ID articolo
+            if(currentTab === 'articoli') {
+                const idInput = form.querySelector('[name="id"]');
+                if(idInput) {
+                    idInput.value = item.id;
+                    idInput.readOnly = true;
+                }
+            }
+        };
 
         loadData();
     </script>

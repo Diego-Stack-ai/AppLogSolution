@@ -203,11 +203,16 @@
 
             <!-- Area Jobs (Nascosto all'inizio) -->
             <div id="jobs-area" style="display: none; margin-top: 32px; padding-top: 24px; border-top: 2px dashed #e2e8f0;">
-                <h3 style="color: var(--primary); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-                    <span class="material-icons-round">sync</span> Stato Elaborazione (Realtime)
-                </h3>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <h3 style="color: var(--primary); margin:0; display: flex; align-items: center; gap: 8px;">
+                        <span class="material-icons-round">sync</span> Stato Elaborazione (Realtime)
+                    </h3>
+                    <button onclick="window.svuotaTuttoJobs()" id="btnClearAll" style="background:#fee2e2; color:#ef4444; border:none; padding:8px 12px; border-radius:12px; font-weight:700; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:4px;">
+                        <span class="material-icons-round" style="font-size:18px;">delete_sweep</span> SVUOTA TUTTO
+                    </button>
+                </div>
                 <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">
-                    I job sono stati creati e verranno elaborati asincronamente dal worker Cloud Run. Non chiudere la finestra se vuoi monitorare l'avanzamento.
+                    I job vengono elaborati asincronamente. Puoi eliminare singole voci o svuotare l'intera cronologia.
                 </p>
 
                 <div id="jobs-list" style="display: flex; flex-direction: column; gap: 16px;">
@@ -315,8 +320,8 @@
             });
         }
 
-        window.eliminaJob = async (jobId, storagePath) => {
-            if(!confirm("Sei sicuro di voler eliminare questo Job? Verranno rimossi anche i DDT generati da questa elaborazione.")) return;
+        window.eliminaJob = async (jobId, storagePath, skipConfirm = false) => {
+            if(!skipConfirm && !confirm("Sei sicuro di voler eliminare questo Job? Verranno rimossi anche i DDT associati.")) return;
             
             try {
                 const { doc, deleteDoc, collection, query, where, getDocs, writeBatch } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -325,10 +330,10 @@
                 // 1. Elimina file da Storage
                 if(storagePath) {
                     const fileRef = ref(storage, storagePath);
-                    await deleteObject(fileRef).catch(e => console.warn("File storage non trovato o già rimosso"));
+                    await deleteObject(fileRef).catch(e => console.warn("File non trovato:", storagePath));
                 }
 
-                // 2. Elimina i DDT associati (deliveries con job_id = jobId)
+                // 2. Elimina i DDT associati
                 const ddtRef = collection(db, 'customers', 'DNR', 'deliveries');
                 const q = query(ddtRef, where('job_id', '==', jobId));
                 const ddtSnap = await getDocs(q);
@@ -337,16 +342,36 @@
                     const batch = writeBatch(db);
                     ddtSnap.forEach(d => batch.delete(d.ref));
                     await batch.commit();
-                    console.log(`[Job] Rimossi ${ddtSnap.size} DDT associati.`);
                 }
 
                 // 3. Elimina il Job document
                 await deleteDoc(doc(db, 'customers', 'DNR', 'processing_jobs', jobId));
-                alert("Job ed eventuali DDT associati rimossi con successo.");
+                if(!skipConfirm) console.log(`[Job] ${jobId} rimosso.`);
             } catch (err) {
-                console.error("Errore durante l'eliminazione:", err);
-                alert("Errore durante l'eliminazione: " + err.message);
+                console.error("Errore eliminazione:", err);
             }
+        };
+
+        window.svuotaTuttoJobs = async () => {
+            if(!confirm("⚠️ ATTENZIONE: Questa azione eliminerà TUTTI i Job visibili e tutti i DDT associati. Procedere?")) return;
+            
+            const btn = document.getElementById('btnClearAll');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-icons-round">hourglass_top</span> ELIMINAZIONE...';
+            
+            const jobsRef = collection(db, 'customers', 'DNR', 'processing_jobs');
+            const { getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+            const snap = await getDocs(jobsRef);
+            
+            const promises = [];
+            snap.forEach(doc => {
+                promises.push(window.eliminaJob(doc.id, doc.data().storage_path, true));
+            });
+            
+            await Promise.all(promises);
+            alert("Database e cronologia puliti con successo.");
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons-round">delete_sweep</span> SVUOTA TUTTO';
         };
 
         // Ascolto in realtime della coda dei job (ultimi 10)

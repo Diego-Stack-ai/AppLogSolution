@@ -82,10 +82,19 @@ def process_single_job(job_id, job_data):
                     # Pulizia preventiva della cartella per questa data/tipo (solo la prima volta che la incontriamo nel job)
                     percorso_base = f"split_ddt/{d}/{tipo}/"
                     if d not in date_pulite:
-                        print(f"[WORKER] Pulizia cartella esistente: {percorso_base}")
+                        print(f"[WORKER] Pulizia cartella e database esistente per: {d} ({tipo})")
+                        
+                        # 1. Pulizia Storage
                         blobs_da_eliminare = bucket.list_blobs(prefix=percorso_base)
                         for b_del in blobs_da_eliminare:
                             b_del.delete()
+                        
+                        # 2. Pulizia Firestore (deliveries)
+                        ddt_ref = db.collection('customers').document('DNR').collection('deliveries')
+                        old_docs = ddt_ref.where('data', '==', d).where('tipo', '==', tipo).stream()
+                        for doc_old in old_docs:
+                            doc_old.reference.delete()
+                            
                         date_pulite.add(d)
 
                     chiave = (d, l)

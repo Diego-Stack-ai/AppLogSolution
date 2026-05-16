@@ -23,40 +23,49 @@ ARTICOLI_XLSX = 'g:/Il mio Drive/App/AppLogSolutionLocale/dati/tabella_aggiornam
 
 def sync_articoli():
     print("📦 Sincronizzazione Articoli (da Excel)...")
+    if not os.path.exists(ARTICOLI_XLSX):
+        print(f"⚠️ File articoli non trovato in {ARTICOLI_XLSX}")
+        return
+        
     df = pd.read_excel(ARTICOLI_XLSX)
+    
+    # Normalizza i nomi delle colonne per evitare problemi di spazi o maiuscole
+    df.columns = [c.strip() for c in df.columns]
     df = df.where(pd.notnull(df), None)
     
-    # Leggi anche il consolidamento dal file Python per le regole
-    with open(ARTICOLI_PY, 'r', encoding='utf-8') as f:
-        content = f.read()
-    match_cons = re.search(r'CONSOLIDAMENTO = \{(.*?)\}', content, re.S)
-    consolidamento = {}
-    if match_cons:
-        items = re.findall(r'"(.*?)":\s*\("(.*?)",\s*"(.*?)",\s*(\d+)\)', match_cons.group(1))
-        for cod, p, s, r in items:
-            consolidamento[cod] = {"unita_principale": p, "unita_secondaria": s, "ratio": int(r)}
-
     batch = db.batch()
     count = 0
     for _, row in df.iterrows():
         art = str(row.get('Codice') or '').strip()
         if not art: continue
         
-        # Pulisci eventuale newline
         art = art.replace('\n', ' ')
-        
         doc_ref = db.collection('customers').document('DNR').collection('anagrafica_articoli').document(art)
-        data = consolidamento.get(art, {})
-        data['descrizione'] = row.get('Descrizione') or ''
-        data['is_articolo_noto'] = True
+        
+        # Mappatura con i nomi ESATTI rilevati nel file Excel
+        data = {
+            'descrizione': row.get('Descrizione') or '',
+            'confezionamento': row.get('Confezionamento'),
+            'unita_principale': row.get('Unità principale'),
+            'per': row.get('Per'),
+            'unita_secondaria': row.get('Unità secondaria'),
+            'ratio': row.get('Ratio'),
+            'porzioni': row.get('Porzioni/Unità'),
+            'is_articolo_noto': True
+        }
+        
         if art.endswith('-'):
             data['is_wildcard_prefix'] = True
         
         batch.set(doc_ref, data, merge=True)
         count += 1
+        
+        if count % 400 == 0:
+            batch.commit()
+            batch = db.batch()
     
     batch.commit()
-    print(f"✅ Sincronizzati {count} articoli.")
+    print(f"✅ Sincronizzati {count} articoli con anagrafica completa (v1.95).")
 
 def sync_clienti():
     print("👥 Sincronizzazione Clienti...")

@@ -342,11 +342,11 @@
                     position: { lat: mLat, lng: mLng },
                     map: map,
                     title: p.cliente || p.nome_consegna,
-                    content: pin.element,
+                    content: pin, // Rimosso .element (deprecato)
                     gmpDraggable: !IS_LOCKED
                 });
 
-                m.addListener('click', () => {
+                m.addListener('gmp-click', () => { // Cambiato 'click' in 'gmp-click'
                     infoWindow.setContent(`
                         <div class="popup-info">
                             <div style="font-weight:800; font-size:0.95rem; margin-bottom:4px;">${p.cliente || p.nome_consegna}</div>
@@ -404,7 +404,11 @@
 
         window.saveAll = async () => {
             const btn = document.getElementById('btn-save');
-            btn.disabled = true; btn.innerText = "Salvataggio...";
+            const counter = document.getElementById('save-counter');
+            
+            btn.disabled = true;
+            const oldContent = btn.innerHTML; // Salva icona e tutto
+            btn.innerHTML = '<span class="material-icons-round">sync</span> SALVATAGGIO...';
             
             try {
                 const batch = writeBatch(db);
@@ -415,13 +419,14 @@
                 await batch.commit();
                 alert("Posizioni salvate nel Cloud con successo!");
                 MODIFIED = {};
-                btn.innerText = "SALVA";
-                document.getElementById('save-counter').innerText = "";
+                
+                // Ripristina stato originale
+                btn.innerHTML = '<span class="material-icons-round">save</span> SALVA <span id="save-counter"></span>';
                 updateListAndMap();
             } catch (err) {
                 alert("Errore salvataggio: " + err.message);
                 btn.disabled = false;
-                btn.innerText = "SALVA";
+                btn.innerHTML = oldContent;
             }
         };
 
@@ -430,14 +435,26 @@
             const urlParams = new URLSearchParams(window.location.search);
             const focusId = urlParams.get('id');
             if(focusId) {
+                console.log("[Map] Deep link rilevato per ID:", focusId);
                 setTimeout(() => {
                     const item = ALL_POINTS.find(p => p.id === focusId);
                     if(item) {
                         const search = document.getElementById('search-box');
-                        search.value = item.codice_frutta || item.codice_latte || item.cliente;
+                        search.value = item.codice_frutta || item.codice_latte || "";
                         updateListAndMap();
+                        
+                        // Centratura forzata sul marker
+                        setTimeout(() => {
+                            if (gMarkers.length > 0) {
+                                const targetMarker = gMarkers[0]; // Dovrebbe essere l'unico se il filtro ha funzionato
+                                map.setCenter(targetMarker.position);
+                                map.setZoom(18);
+                                google.maps.event.trigger(targetMarker, 'click');
+                            }
+                        }, 500);
+
                         // Sblocca se è per un singolo punto
-                        toggleLock();
+                        if(IS_LOCKED) toggleLock();
                     }
                 }, 1500);
             }

@@ -135,6 +135,40 @@
             width: 0%;
             transition: width 0.5s ease;
         }
+
+        /* Nuovi stili per i Tab del Workflow */
+        .nav-tab {
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 13px;
+            color: #64748b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .nav-tab:hover {
+            background: white;
+            color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .nav-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px -4px var(--primary-glow);
+        }
+
+        .nav-tab .material-icons-round {
+            font-size: 18px;
+        }
     </style>
 </head>
 
@@ -147,12 +181,36 @@
                 <span class="material-icons-round">arrow_back</span>
             </button>
             <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
-            <div class="nav-title" style="flex: 1;">Elaborazione Distinte in Cloud</div>
+            <div class="nav-title" style="flex: 1;">Workflow Logistico Cloud</div>
             <a href="#" onclick="window.logoutFirebase(); return false;" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
         </div>
     </nav>
 
-    <main class="main-container">
+    <div class="main-container" style="padding-top: 80px;">
+        <!-- Navigazione Workflow (Basata sui .bat locali) -->
+        <div style="display: flex; gap: 8px; margin-bottom: 24px; overflow-x: auto; padding: 8px 0;">
+            <button class="nav-tab active" title="1_2_3_4_estrai_ddt_consegne.py" onclick="location.reload()">
+                <span class="material-icons-round">upload_file</span> 1. CARICAMENTO PDF
+            </button>
+            <div style="display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.4); padding: 4px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <button class="nav-tab" style="border:none; background:none;" title="2_apri_mappa.bat" onclick="window.apriMappaGenerale()">
+                    <span class="material-icons-round">map</span> 2. MAPPA
+                </button>
+                <input type="date" id="map-date-selector" style="border:none; background:none; font-family:'Outfit'; font-size:12px; font-weight:700; color:var(--primary); cursor:pointer;">
+            </div>
+            <button class="nav-tab" title="3_genera_percorsi.bat" onclick="window.navigateWithState('gestione_viaggi.html')">
+                <span class="material-icons-round">auto_fix_high</span> 3. PERCORSI
+            </button>
+            <button class="nav-tab" title="4_H10.bat" onclick="window.navigateWithState('gestione_viaggi.html?mode=h10')">
+                <span class="material-icons-round">rule</span> 4. VERIFICA H10
+            </button>
+            <button class="nav-tab" title="5_invio_mobile_autisti.bat" onclick="window.navigateWithState('invio_mobile.html')">
+                <span class="material-icons-round">send_to_mobile</span> 5. INVIO MOBILE
+            </button>
+            <button class="nav-tab" title="6_genera_distinte.bat" onclick="window.navigateWithState('distinte_finali.html')">
+                <span class="material-icons-round">assignment</span> 6. DISTINTE
+            </button>
+        </div>
         <div class="glass-panel form-card">
             <h2 style="margin-bottom: 8px;">Generazione Distinte per Autisti</h2>
             <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 14px;">
@@ -219,12 +277,34 @@
                     <!-- I job appariranno qui -->
                 </div>
             </div>
+
+            <!-- Area Report e Mappe (Step 2-4) -->
+            <div id="reports-area" style="display: none; margin-top: 32px; padding-top: 24px; border-top: 2px solid #e2e8f0;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <h3 style="color: #10b981; margin:0; display: flex; align-items: center; gap: 8px;">
+                        <span class="material-icons-round">map</span> Report e Mappe Generali
+                    </h3>
+                </div>
+                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">
+                    Dopo aver elaborato i PDF, genera la mappa generale delle zone e la lista unificata dei punti di consegna.
+                </p>
+                
+                <div style="margin-bottom: 20px;">
+                    <button id="btn-genera-report" onclick="window.generaReport()" class="btn-elabora" style="background: #10b981; padding: 12px; font-size: 15px;">
+                        <span class="material-icons-round">auto_awesome</span> GENERA MAPPA ZONE E LISTA PUNTI
+                    </button>
+                </div>
+
+                <div id="reports-list" style="display: flex; flex-direction: column; gap: 12px;">
+                    <!-- I report appariranno qui -->
+                </div>
+            </div>
             
         </div>
     </main>
 
-    <script src="script.js?v=1.50"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.50"></script>
+    <script src="script.js?v=1.95"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.95"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
@@ -382,8 +462,10 @@
             onSnapshot(q, (snapshot) => {
                 const jobsList = document.getElementById('jobs-list');
                 let html = '';
+                let hasCompleted = false;
                 snapshot.forEach(doc => {
                     const data = doc.data();
+                    if (data.status === 'completed') hasCompleted = true;
                     let icon = 'hourglass_empty';
                     let color = '#f59e0b';
                     if (data.status === 'completed') { icon = 'check_circle'; color = '#10b981'; }
@@ -407,8 +489,94 @@
                     `;
                 });
                 jobsList.innerHTML = html;
+                
+                // Se c'è almeno un job completato, mostriamo l'area report
+                if (hasCompleted) {
+                    document.getElementById('reports-area').style.display = 'block';
+                    listenToReports();
+                }
             });
         }
+
+        window.generaReport = async () => {
+            const btn = document.getElementById('btn-genera-report');
+            const dateInput = document.getElementById('map-date-selector').value;
+            if (!dateInput) return alert("Seleziona una data nel calendario.");
+            
+            const formattedDate = dateInput.split('-').reverse().join('-');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-icons-round">sync</span> GENERAZIONE IN CORSO...';
+            
+            try {
+                const generaReportFn = httpsCallable(functions, 'genera_report_giornaliero');
+                const result = await generaReportFn({ data_consegna: formattedDate });
+                
+                if (result.data.status === 'ok') {
+                    console.log("Report generato con successo!");
+                    // Opzionale: apri automaticamente la mappa dopo la generazione
+                    window.apriMappaGenerale();
+                } else {
+                    alert("Errore durante la generazione: " + result.data.message);
+                }
+            } catch (err) {
+                console.error("Errore chiamata report:", err);
+                alert("Errore di sistema nella generazione del report.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        };
+
+        function listenToReports() {
+            const reportsRef = collection(db, 'customers', 'DNR', 'reports_logistici');
+            const q = query(reportsRef, orderBy('created_at', 'desc'), limit(5));
+            
+            onSnapshot(q, (snapshot) => {
+                const reportsList = document.getElementById('reports-list');
+                let html = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    html += `
+                        <div style="background: #f1f5f9; border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <div style="font-weight: 700; color: #1e293b;">Mappa Zone del ${data.data_consegna}</div>
+                                <div style="font-size: 12px; color: #64748b;">${data.punti_totali} punti in ${data.zone_totali} zone</div>
+                            </div>
+                            <a href="${data.mappa_url}" target="_blank" style="background: #4f46e5; color: white; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                                <span class="material-icons-round">open_in_new</span> VEDI MAPPA
+                            </a>
+                        </div>
+                    `;
+                });
+                reportsList.innerHTML = html;
+            });
+        }
+
+        window.apriMappaGenerale = async () => {
+            const dateInput = document.getElementById('map-date-selector').value;
+            if (!dateInput) return alert("Seleziona una data.");
+            
+            const formattedDate = dateInput.split('-').reverse().join('-');
+            const path = `REPORTS/${formattedDate}/4_mappa_zone_google.html`;
+            
+            const { getStorage, ref, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js");
+            const storage = getStorage();
+            
+            try {
+                const fileRef = ref(storage, path);
+                const url = await getDownloadURL(fileRef);
+                window.open(url, '_blank');
+            } catch (err) {
+                console.error("Errore recupero mappa:", err);
+                alert(`Mappa non trovata per il ${formattedDate}. Assicurati di aver cliccato su 'GENERA MAPPA ZONE' dopo aver elaborato i PDF.`);
+            }
+        };
+
+        // Inizializza la data odierna nel selettore
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('map-date-selector').value = new Date().toISOString().split('T')[0];
+        });
 
         document.getElementById('btn-avvia').addEventListener('click', async () => {
             document.getElementById('btn-avvia').style.display = 'none';

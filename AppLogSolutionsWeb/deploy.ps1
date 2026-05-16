@@ -16,7 +16,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $frontendPath = Join-Path $PSScriptRoot "frontend"
-$swFile       = Join-Path $frontendPath "sw_v180.js"
+$swFile       = Join-Path $frontendPath "sw_v195.js"
 
 # ─── 1. LEGGI VERSIONE ATTUALE ────────────────────────────────────────────────
 $swContent = Get-Content $swFile -Raw

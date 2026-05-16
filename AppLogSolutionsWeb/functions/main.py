@@ -47,7 +47,7 @@ def get_config_app():
     if _CACHED_ARTICOLI_NOTI is None or _CACHED_CONSOLIDAMENTO is None or (now - _CACHE_TIMESTAMP) > CACHE_TTL:
         print("[INFO] Fetching config da Firestore (customers/DNR/anagrafica_articoli)")
         
-        docs = get_db().collection('customers').document('DNR').collection('anagrafica_articoli').stream()
+        docs = get_db().collection('clienti').document('DNR').collection('gestione nuovi articoli').stream()
         _CACHED_CONSOLIDAMENTO = {d.id: d.to_dict() for d in docs}
         
         # Merge ARTICOLI_NOTI dall'anagrafica
@@ -287,11 +287,11 @@ def core_check_giornaliero(uid):
     db = get_db()
     
     # 1. DDT nuovi non assegnati
-    ddts = list(db.collection('customers').document('DNR').collection('ddt').stream())
+    ddts = list(db.collection('clienti').document('DNR').collection('ddt').stream())
     ddt_non_assegnati = sum(1 for d in ddts if d.to_dict().get('stato') != 'assegnato')
 
     # 2. Clienti senza coordinate
-    clienti = list(db.collection('customers').document('DNR').collection('clienti').stream())
+    clienti = list(db.collection('clienti').document('DNR').collection('anagrafica').stream())
     clienti_senza_coordinate = 0
     for c in clienti:
         data = c.to_dict()
@@ -300,7 +300,7 @@ def core_check_giornaliero(uid):
             clienti_senza_coordinate += 1
 
     # 3. Viaggi incompleti (senza ddt o non completati)
-    viaggi = list(db.collection('customers').document('DNR').collection('Viaggi_DNR').stream())
+    viaggi = list(db.collection('clienti').document('DNR').collection('viaggi ddt').stream())
     viaggi_non_validi = 0
     for v in viaggi:
         data = v.to_dict()
@@ -344,7 +344,7 @@ def core_chiudi_giornata(uid):
     print("[INFO] Tentativo chiusura giornata")
     db = get_db()
     
-    ddts = list(db.collection('customers').document('DNR').collection('ddt').stream())
+    ddts = list(db.collection('clienti').document('DNR').collection('ddt').stream())
     ddt_non_assegnati = sum(1 for d in ddts if d.to_dict().get('stato') != 'assegnato')
     
     if ddt_non_assegnati > 0:
@@ -355,7 +355,7 @@ def core_chiudi_giornata(uid):
             "data": {}
         }
         
-    viaggi = list(db.collection('customers').document('DNR').collection('Viaggi_DNR').stream())
+    viaggi = list(db.collection('clienti').document('DNR').collection('viaggi ddt').stream())
     viaggi_non_completati = [v.id for v in viaggi if v.to_dict().get('status') != 'completato']
     
     if viaggi_non_completati:
@@ -391,7 +391,7 @@ def core_elabora_pdf_estrazione(uid):
     visti = {}
     creati = 0
     errori_lista = []
-    date_valide = set()
+    date_pulite = set()
 
     for blob in pdf_blobs:
         print(f"[INFO] Elaborando blob {blob.name}")
@@ -407,10 +407,27 @@ def core_elabora_pdf_estrazione(uid):
                 for i in range(0, len(pdf.pages), step):
                     try:
                         text = pdf.pages[i].extract_text() or ""
-                        d, l = _estrai_data_luogo(text)
-                        if not d or not l: continue
+                        data_estratta, l, num_ddt = _estrai_data_luogo(text)
+                        if not data_estratta or not l: continue
+                        
+                        # --- PULIZIA PREVENTIVA (Solo alla prima occorrenza di data/tipo nel job) ---
+                        chiave_pulizia = (data_estratta, tipo_label)
+                        if chiave_pulizia not in date_pulite:
+                            print(f"[INFO] Pulizia preventiva per {data_estratta} - {tipo_label}")
+                            cart_out_base = f"CONSEGNE/CONSEGNE_{data_estratta}/DDT-ORIGINALI-DIVISI/{tipo_label}/"
                             
-                        date_valide.add(d)
+                            # 1. Svuota Storage
+                            blobs_del = bucket.list_blobs(prefix=cart_out_base)
+                            for b in blobs_del: b.delete()
+                            
+                            # 2. Svuota Firestore (deliveries)
+                            old_docs = db.collection('clienti').document('DNR').collection('deliveries')\
+                                         .where('data', '==', data_estratta).where('tipo', '==', tipo_label).stream()
+                            for od in old_docs: od.reference.delete()
+                            
+                            date_pulite.add(chiave_pulizia)
+
+                        d = data_estratta
                         chiave = (d, l)
                         cnt = visti.get(chiave, 0) + 1
                         visti[chiave] = cnt
@@ -452,7 +469,7 @@ def core_elabora_pdf_estrazione(uid):
 
                         stato_iniziale = "pronto" if cliente_trovato else "da_mappare"
 
-                        get_db().collection('customers').document('DNR').collection('ddt').add({
+                        get_db().collection('clienti').document('DNR').collection('ddt').add({
                             "codice_cliente": l,
                             "codice_frutta":  cod_frutta,
                             "codice_latte":   cod_latte,
@@ -531,7 +548,7 @@ def _cerca_cliente_cloud(codice: str):
         return None, None
 
     db = get_db()
-    col = db.collection('customers').document('DNR').collection('clienti')
+    col = db.collection('clienti').document('DNR').collection('anagrafica')
 
     # Cerca per codice_frutta
     for val in [codice_l, codice_l.upper()]:
@@ -565,7 +582,7 @@ def _salva_nuovo_cliente_tripla_chiave(cod_f: str, cod_l: str, nome: str, extra:
     }
     if extra:
         doc_data.update(extra)
-    get_db().collection('customers').document('DNR').collection('clienti').document(doc_id).set(doc_data, merge=True)
+    get_db().collection('clienti').document('DNR').collection('anagrafica').document(doc_id).set(doc_data, merge=True)
     return doc_id
 
 
@@ -715,7 +732,7 @@ def core_ottimizza_viaggio(viaggio_id):
     if not viaggio_id:
         return {"status": "errore", "message": "viaggio_id mancante", "errori": ["viaggio_id mancante"], "data": {}}
         
-    doc_ref = get_db().collection('customers').document('DNR').collection('Viaggi_DNR').document(viaggio_id)
+    doc_ref = get_db().collection('clienti').document('DNR').collection('viaggi ddt').document(viaggio_id)
     doc_viaggio = doc_ref.get()
     if not doc_viaggio.exists:
         return {"status": "errore", "message": "Viaggio non trovato", "errori": ["Viaggio non trovato"], "data": {}}
@@ -838,7 +855,7 @@ def core_genera_distinta_viaggio(viaggio_id):
     
     for ddt_id in ddt_ids:
         try:
-            ddt_doc = get_db().collection('customers').document('DNR').collection('ddt').document(ddt_id).get()
+            ddt_doc = get_db().collection('clienti').document('DNR').collection('ddt').document(ddt_id).get()
             if not ddt_doc.exists: continue
             ddt = ddt_doc.to_dict()
             blob = bucket.blob(ddt['storage_path'])
@@ -931,7 +948,7 @@ def core_genera_distinta_viaggio(viaggio_id):
         # AGGIORNA STATO A COMPLETATO E AGGIORNA STATO DDT AD ASSEGNATO
         doc_ref.update({"status": "completato"})
         for ddt_id in ddt_ids:
-            get_db().collection('customers').document('DNR').collection('ddt').document(ddt_id).update({"stato": "assegnato"})
+            get_db().collection('clienti').document('DNR').collection('ddt').document(ddt_id).update({"stato": "assegnato"})
             
     except Exception as e_pdf:
         err_msg = f"Errore generazione PDF: {e_pdf}"
@@ -1427,7 +1444,7 @@ def core_riepilogo_fatturazione(mese: str, anno: str = "2026"):
 def core_processa_job_pdf(job_id):
     start_time = time.time()
     db = get_db()
-    job_ref = db.collection('customers').document('DNR').collection('processing_jobs').document(job_id)
+    job_ref = db.collection('clienti').document('DNR').collection('processing_jobs').document(job_id)
     job_doc = job_ref.get()
     
     if not job_doc.exists: return {"status": "errore", "message": "Job non trovato"}
@@ -1442,7 +1459,7 @@ def core_processa_job_pdf(job_id):
         etichetta = data.get("type", "FRUTTA").upper()
         
         # 1. Carica Mappatura
-        clienti_ref = db.collection('customers').document('DNR').collection('clienti')
+        clienti_ref = db.collection('clienti').document('DNR').collection('anagrafica')
         db_mappati = {doc.get('codice_frutta') or doc.get('codice_latte'): doc.to_dict() for doc in clienti_ref.stream()}
         
         # 2. Download
@@ -1456,8 +1473,26 @@ def core_processa_job_pdf(job_id):
         deliveries = risultato["deliveries"]
         nuovi_dati = risultato["nuovi_dati"]
         
-        data_elab = deliveries[0]["data"] if deliveries else "01-01-2099"
+        if not deliveries:
+            job_ref.update({"status": "completed", "message": "Nessun DDT trovato nel PDF"})
+            return {"status": "ok", "pdf_generati": 0}
+
+        data_elab = deliveries[0]["data"]
         
+        # --- PULIZIA PREVENTIVA (Sovrascrittura pulita) ---
+        print(f"[INFO] Pulizia preventiva per {data_elab} - {etichetta}")
+        
+        # 1. Rimuovi vecchi file da Storage
+        cart_out_base = f"split_ddt/{data_elab}/{etichetta}/"
+        blobs_del = bucket.list_blobs(prefix=cart_out_base)
+        for b in blobs_del: b.delete()
+        
+        # 2. Rimuovi vecchi dati (Solo Storage)
+        cart_out_base = f"split_ddt/{data_elab}/{etichetta}/"
+        blobs_del = bucket.list_blobs(prefix=cart_out_base)
+        for b in blobs_del: b.delete()
+        print(f"[INFO] Pulizia Storage completata per {data_elab}.")
+
         # 4. Upload split e salvataggio DDT
         for fname, out_stream in split_files.items():
             out_path = f"split_ddt/{data_elab}/{etichetta}/{fname}"
@@ -1466,25 +1501,19 @@ def core_processa_job_pdf(job_id):
             
         # 5. Salvataggio nuovi clienti
         for l, info in nuovi_dati.items():
-            db.collection('customers').document('DNR').collection('gestione_nuovi_clienti').document(l).set(info, merge=True)
+            db.collection('clienti').document('DNR').collection('gestione nuovi clienti').document(l).set(info, merge=True)
             
-        # 6. Inserimento DDT in Firestore
-        batch = db.batch()
-        for ddt_data in deliveries:
-            # Arricchisci con info cliente se possibile
-            l = ddt_data["codice_consegna"]
-            cliente_info = db_mappati.get(l, {})
-            nome = cliente_info.get('cliente') or cliente_info.get('nome_consegna') or l
-            
-            ddt_ref = db.collection('customers').document('DNR').collection('ddt').document()
-            batch.set(ddt_ref, {
-                **ddt_data,
-                "nome": nome,
-                "storage_path": f"split_ddt/{data_elab}/{etichetta}/{ddt_data['pdf_name']}",
-                "stato": "pronto" if l in db_mappati else "da_mappare",
-                "created_at": firestore.SERVER_TIMESTAMP
-            })
-        batch.commit()
+        # 6. Salvataggio Metadati Temporanei (per Step 2)
+        metadata_ddt = {
+            "data_elab": data_elab,
+            "tipo": etichetta,
+            "deliveries": deliveries
+        }
+        meta_path = f"split_ddt/{data_elab}/{etichetta}/ddt_estratti.json"
+        bucket.blob(meta_path).upload_from_string(
+            json.dumps(metadata_ddt, indent=2), 
+            content_type='application/json'
+        )
         
         elapsed = time.time() - start_time
         job_ref.update({
@@ -1500,6 +1529,231 @@ def core_processa_job_pdf(job_id):
     except Exception as e:
         job_ref.update({"status": "error", "error_message": str(e), "updated_at": firestore.SERVER_TIMESTAMP})
         return {"status": "errore", "message": str(e)}
+
+def core_genera_report_giornaliero(uid, data_consegna):
+    """
+    Implementa gli step 2, 3 e 4 del workflow locale:
+    - Aggrega i DDT per la data indicata (Step 2)
+    - Crea la struttura della Lista Unificata (Step 3)
+    - Genera la Mappa Generale delle Zone HTML (Step 4)
+    """
+    start_time = time.time()
+    db = get_db()
+    bucket = storage.bucket(name=BUCKET_NAME)
+    
+    if not data_consegna:
+        return {"status": "errore", "message": "Data mancante"}
+
+    print(f"[INFO] Generazione report per il {data_consegna}")
+    
+    # 1. Recupera i DDT dai file ddt_estratti.json nello Storage (Frutta e Latte)
+    ddt_list = []
+    for tipo in ["FRUTTA", "LATTE"]:
+        try:
+            meta_path = f"split_ddt/{data_consegna}/{tipo}/ddt_estratti.json"
+            blob = bucket.blob(meta_path)
+            if blob.exists():
+                meta_data = json.loads(blob.download_as_string())
+                for ddt in meta_data.get("deliveries", []):
+                    cod = ddt.get("codice_consegna")
+                    cliente_info, _ = _cerca_cliente_cloud(cod)
+                    ddt["nome"] = cliente_info.get('cliente') or cliente_info.get('nome_consegna') or cod
+                    ddt_list.append(ddt)
+        except Exception as e:
+            print(f"[WARN] Impossibile leggere ddt_estratti per {tipo}: {e}")
+
+    if not ddt_list:
+        return {"status": "errore", "message": f"Nessun dato trovato nello Storage per il {data_consegna}"}
+
+    # 2. Aggrega per cliente (Step 2 locale)
+    punti_map = {} # chiave: tripla_chiave o codice_cliente
+    for ddt in ddt_list:
+        cod = ddt.get('codice_cliente')
+        tipo = ddt.get('tipo', 'FRUTTA')
+        
+        # Cerchiamo il cliente per avere info complete
+        cliente_info, _ = _cerca_cliente_cloud(cod)
+        nome = ddt.get('nome', cod)
+        
+        # Identificativo unico del punto di consegna (per evitare duplicati nello stesso giro)
+        chiave = ddt.get('tripla_chiave') or cod
+        
+        if chiave not in punti_map:
+            punti_map[chiave] = {
+                "nome": nome,
+                "indirizzo": cliente_info.get('indirizzo', '') if cliente_info else '',
+                "codice_frutta": ddt.get('codice_frutta', 'p00000'),
+                "codice_latte": ddt.get('codice_latte', 'p00000'),
+                "codici_ddt_frutta": [],
+                "codici_ddt_latte": [],
+                "zona": cliente_info.get('zona', '0000') if cliente_info else '0000',
+                "lat": float(cliente_info.get('lat', 0)) if cliente_info and cliente_info.get('lat') else 0,
+                "lon": float(cliente_info.get('lon', 0)) if cliente_info and cliente_info.get('lon') else 0,
+                "rientri_alert": [] # Qui andrebbero i rientri se implementati
+            }
+        
+        if tipo == 'FRUTTA':
+            punti_map[chiave]["codici_ddt_frutta"].append(ddt.get('num_ddt', 'UNK'))
+        else:
+            punti_map[chiave]["codici_ddt_latte"].append(ddt.get('num_ddt', 'UNK'))
+
+    # 3. Organizza per Zone (Step 4 locale)
+    zone_dict = defaultdict(list)
+    for p in punti_map.values():
+        zone_dict[p['zona']].append(p)
+        
+    # Colori per le zone (stessa palette dello script 4)
+    palette = ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#14b8a6", "#6366f1", "#a855f7", "#3b82f6", "#22c55e", "#d946ef", "#84cc16"]
+    
+    zone_finali = []
+    chiavi_zone = sorted(zone_dict.keys())
+    for i, zid in enumerate(chiavi_zone):
+        zone_finali.append({
+            "id_zona": zid,
+            "nome_giro": f"V{i+1:02d}" if zid != "0000" else "SENZA ZONA",
+            "color": palette[i % len(palette)],
+            "lista_punti": zone_dict[zid]
+        })
+
+    # 4. Salvataggio file JSON storici nello Storage (Standard Johnson)
+    path_base = f"REPORTS/{data_consegna}"
+    
+    # punti_consegna.json
+    bucket.blob(f"{path_base}/punti_consegna.json").upload_from_string(
+        json.dumps(list(punti_map.values()), indent=2), content_type='application/json'
+    )
+    
+    # punti_consegna_unificati_Johnson.json
+    bucket.blob(f"{path_base}/punti_consegna_unificati_Johnson.json").upload_from_string(
+        json.dumps(list(punti_map.values()), indent=2), content_type='application/json'
+    )
+    
+    # viaggi_giornalieri_Johnson.json
+    bucket.blob(f"{path_base}/viaggi_giornalieri_Johnson.json").upload_from_string(
+        json.dumps(zone_finali, indent=2), content_type='application/json'
+    )
+
+    # 5. Genera KML (zona_google_{data}.kml)
+    kml_content = _genera_kml_zone(data_consegna, zone_finali)
+    bucket.blob(f"{path_base}/zona_google_{data_consegna}.kml").upload_from_string(
+        kml_content.encode('utf-8'), content_type='application/vnd.google-earth.kml+xml'
+    )
+
+    # 6. Genera HTML Mappa Generale (4_mappa_zone_google.html)
+    html_mappa = _genera_html_mappa_generale(data_consegna, zone_finali)
+    path_mappa = f"{path_base}/4_mappa_zone_google.html"
+    blob_mappa = bucket.blob(path_mappa)
+    blob_mappa.upload_from_string(html_mappa.encode('utf-8'), content_type='text/html')
+    blob_mappa.make_public()
+    
+    # 7. Registra il report su Firestore
+    report_meta = {
+        "data_consegna": data_consegna,
+        "punti_totali": len(punti_map),
+        "zone_totali": len(zone_finali),
+        "mappa_url": blob_mappa.public_url,
+        "created_at": firestore.SERVER_TIMESTAMP,
+        "tipo": "REPORT_GENERALE"
+    }
+    db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna).set(report_meta)
+    
+    elapsed = time.time() - start_time
+    _registra_statistica('genera_report_generale', elapsed)
+    
+    return {
+        "status": "ok",
+        "message": "Report Johnson generati con successo",
+        "data": report_meta
+    }
+
+def _genera_kml_zone(data, zone_list):
+    """Genera un file KML base per Google Earth"""
+    kml = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<kml xmlns="http://www.opengis.net/kml/2.2">',
+        '<Document>',
+        f'<name>Zone {data}</name>'
+    ]
+    for z in zone_list:
+        kml.append(f'<Folder><name>Zona {z["id_zona"]}</name>')
+        for p in z["lista_punti"]:
+            if p["lat"] and p["lon"]:
+                kml.append(f'<Placemark><name>{p["nome"]}</name><Point><coordinates>{p["lon"]},{p["lat"]},0</coordinates></Point></Placemark>')
+        kml.append('</Folder>')
+    kml.append('</Document></kml>')
+    return "\n".join(kml)
+
+def _genera_html_mappa_generale(data, zone_list):
+    """Template semplificato della mappa generale (Step 4 locale)"""
+    zone_json = json.dumps(zone_list)
+    return f"""<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Mappa Zone - {data}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key={GOOGLE_MAPS_API_KEY}&libraries=marker"></script>
+    <style>
+        :root {{ --p: #4f46e5; --bg: #f8fafc; }}
+        body {{ margin: 0; font-family: 'Outfit', sans-serif; display: flex; height: 100vh; }}
+        #sidebar {{ width: 350px; background: white; border-right: 1px solid #e2e8f0; overflow-y: auto; padding: 20px; }}
+        #map {{ flex: 1; }}
+        .zone-card {{ border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; margin-bottom: 10px; cursor: pointer; }}
+        .zone-header {{ display: flex; align-items: center; gap: 10px; font-weight: 800; }}
+        .color-pill {{ width: 15px; height: 15px; border-radius: 4px; }}
+        .point-item {{ font-size: 0.8rem; margin-top: 5px; color: #64748b; }}
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h2>Zone del {data}</h2>
+        <div id="zone-list"></div>
+    </div>
+    <div id="map"></div>
+    <script>
+        const ZONE = {zone_json};
+        let map;
+        function initMap() {{
+            map = new google.maps.Map(document.getElementById("map"), {{
+                center: {{ lat: 45.44, lng: 11.71 }}, zoom: 10
+            }});
+            
+            const list = document.getElementById("zone-list");
+            ZONE.forEach(z => {{
+                // Sidebar
+                const div = document.createElement("div");
+                div.className = "zone-card";
+                div.innerHTML = `<div class="zone-header">
+                    <div class="color-pill" style="background:${{z.color}}"></div>
+                    ${{z.nome_giro}} (${{z.lista_punti.length}} tappe)
+                </div>`;
+                list.appendChild(div);
+                
+                // Markers
+                z.lista_punti.forEach(p => {{
+                    if(p.lat && p.lon) {{
+                        new google.maps.Marker({{
+                            position: {{lat: p.lat, lng: p.lon}},
+                            map: map,
+                            title: p.nome,
+                            icon: {{
+                                path: google.maps.SymbolPath.CIRCLE,
+                                scale: 8,
+                                fillColor: z.color,
+                                fillOpacity: 1,
+                                strokeWeight: 2,
+                                strokeColor: "white"
+                            }}
+                        }});
+                    }}
+                }});
+            }});
+        }}
+        window.onload = initMap;
+    </script>
+</body>
+</html>"""
 
 # --- ENDPOINTS HTTP ---
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=540,
@@ -1558,3 +1812,11 @@ def stats_giornaliere(req: https_fn.CallableRequest):
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
 def chiudi_giornata(req: https_fn.CallableRequest):
     return core_chiudi_giornata(req.auth.uid if req.auth else None)
+
+@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def genera_report_giornaliero(req: https_fn.CallableRequest):
+    return core_genera_report_giornaliero(
+        req.auth.uid if req.auth else None,
+        req.data.get("data_consegna")
+    )

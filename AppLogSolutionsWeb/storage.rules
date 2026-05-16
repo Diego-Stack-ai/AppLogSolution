@@ -31,5 +31,19 @@ service firebase.storage {
       allow read: if isAuthenticated();
       allow write: if false; // Scrittura solo da CF
     }
+
+    // NUOVE REGOLE PER IL WORKFLOW CLOUD
+    
+    // Cartella dei report e mappe Johnson
+    match /REPORTS/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Scrittura solo da backend
+    }
+
+    // Cartella temporanea dei DDT splittati
+    match /split_ddt/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Scrittura solo da backend
+    }
   }
 }

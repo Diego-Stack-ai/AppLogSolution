@@ -212,6 +212,14 @@
             margin-bottom: 12px;
             border-bottom: 1px solid #f1f5f9;
             padding-bottom: 12px;
+            padding-right: 80px; /* Spazio per i pulsanti assoluti */
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
         }
 
         .card-title {
@@ -260,23 +268,80 @@
             gap: 8px;
         }
 
-        .btn-edit {
-            background: #f1f5f9;
-            color: #64748b;
-            border: none;
-            width: 32px;
-            height: 32px;
+        .btn-edit, .btn-delete {
+            background: white;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
+            padding: 6px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            justify-content: center;
             transition: all 0.2s;
         }
+        .btn-edit:hover { background: #f8fafc; border-color: var(--primary); }
+        .btn-delete:hover { background: #fef2f2; border-color: #ef4444; }
 
-        .btn-edit:hover {
-            background: var(--primary-glow);
-            color: var(--primary);
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 16px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            grid-column: span 3;
+        }
+
+        .input-group label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .input-group input, .input-group select {
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .orari-inputs {
+            display: flex;
+            gap: 8px;
+        }
+
+        @media (max-width: 900px) {
+            .form-grid { 
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 20px !important;
+            }
+            .input-group { 
+                grid-column: auto !important;
+                width: 100% !important;
+            }
+            .orari-inputs {
+                flex-direction: column;
+                gap: 12px;
+            }
+            /* Assicura che anche la mappa sia a tutta larghezza */
+            #modalMap {
+                width: 100% !important;
+                grid-column: auto !important;
+            }
+        }
+
+        #modalMap {
+            height: 250px;
+            width: 100%;
+            border-radius: 12px;
+            margin-top: 12px;
+            border: 1px solid #e2e8f0;
+            grid-column: span 6;
         }
 
         /* Scrollbar personalizzata */
@@ -318,7 +383,7 @@
             <div class="search-bar">
                 <input type="text" id="searchInput" placeholder="Cerca cliente, codice o città..." onkeyup="filterTable()">
                 <div class="action-buttons" style="display:flex; gap:12px;">
-                    <button class="btn-map" onclick="window.navigateWithState('mappa_google.html')">
+                    <button id="btnShowMap" class="btn-map" onclick="window.navigateWithState('mappa_google.html')">
                         <span class="material-icons-round">map</span> Mappa
                     </button>
                     <button class="btn-add" onclick="openModal()">
@@ -361,11 +426,11 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.51"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.51"></script>
+    <script src="script.js?v=1.95"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.95"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
@@ -379,6 +444,13 @@
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.innerText.toLowerCase().includes(tab));
             });
+            
+            // Gestione visibilità pulsante Mappa
+            const btnMap = document.getElementById('btnShowMap');
+            if(btnMap) {
+                btnMap.style.display = (tab === 'clienti') ? 'flex' : 'none';
+            }
+
             loadData();
         };
 
@@ -448,6 +520,9 @@
                              <button class="btn-edit" onclick="editItem('${d.id}')" title="Modifica dati">
                                 <span class="material-icons-round" style="font-size:18px;">edit</span>
                              </button>
+                             <button class="btn-delete" onclick="window.deleteItem('${d.id}')" title="Elimina record">
+                                <span class="material-icons-round" style="font-size:18px; color: #ef4444;">delete</span>
+                             </button>
                              <button class="btn-edit" onclick="window.navigateWithState('mappa_google.html?id=${d.id}')" title="Geolocalizza (Google Maps)">
                                 <span class="material-icons-round" style="font-size:18px; color:#10b981;">my_location</span>
                              </button>
@@ -457,29 +532,37 @@
             } else if(currentTab === 'articoli') {
                 container.innerHTML = data.map(d => `
                     <div class="item-card">
+                        <div class="card-actions">
+                             <button class="btn-edit" onclick="editItem('${d.id}')" title="Modifica">
+                                <span class="material-icons-round" style="font-size:18px;">edit</span>
+                             </button>
+                             <button class="btn-delete" onclick="window.deleteItem('${d.id}')" title="Elimina">
+                                <span class="material-icons-round" style="font-size:18px; color: #ef4444;">delete</span>
+                             </button>
+                        </div>
                         <div class="card-header">
                             <div>
                                 <h4 class="card-title">${d.id}</h4>
-                                <p style="font-size:12px; color:var(--text-muted); margin:0;">${d.descrizione || ''}</p>
-                            </div>
-                            <span class="badge" style="background:var(--primary-glow); color:var(--primary)">x ${d.ratio || '1'}</span>
-                        </div>
-                        <div class="card-body">
-                            <div class="card-row">
-                                <div class="data-item">
-                                    <span class="data-label">Confezionamento</span>
-                                    <span class="data-value">${d.unita_principale || '-'}</span>
-                                </div>
-                                <div class="data-item">
-                                    <span class="data-label">Unità Secondaria</span>
-                                    <span class="data-value">${d.unita_secondaria || '-'}</span>
-                                </div>
+                                <p style="font-size:13px; font-weight:600; color:var(--primary); margin:4px 0 0 0;">${d.descrizione || ''}</p>
                             </div>
                         </div>
-                        <div class="card-actions">
-                             <button class="btn-edit" onclick="editItem('${d.id}')">
-                                <span class="material-icons-round" style="font-size:18px;">edit</span>
-                             </button>
+                        <div class="card-grid">
+                            <div class="data-item">
+                                <span class="data-label">Confezione</span>
+                                <span class="data-value">${d.confezionamento || '-'}</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-label">U. Principale</span>
+                                <span class="data-value">${d.unita_principale || '-'} (${d.per || '1'})</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-label">U. Secondaria</span>
+                                <span class="data-value">${d.unita_secondaria || '-'}</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-label">Ratio / Porz.</span>
+                                <span class="data-value">${d.ratio || '1'} / ${d.porzioni || '-'}</span>
+                            </div>
                         </div>
                     </div>
                 `).join('');
@@ -499,6 +582,11 @@
                                 <span class="data-value">${d.note || '-'}</span>
                             </div>
                         </div>
+                        <div class="card-actions">
+                             <button class="btn-delete" onclick="window.deleteItem('${d.id}')" title="Elimina">
+                                <span class="material-icons-round" style="font-size:18px; color: #ef4444;">delete</span>
+                             </button>
+                        </div>
                     </div>
                 `).join('');
             }
@@ -513,10 +601,10 @@
             
             form.reset();
             modal.classList.add('active');
-            
-            if(currentTab === 'clienti') {
+                      if(currentTab === 'clienti') {
                 title.innerText = "Nuovo Cliente";
                 fields.innerHTML = `
+                    <!-- 1. CODICI -->
                     <div class="input-group">
                         <label>Codice Frutta</label>
                         <input type="text" name="codice_frutta" placeholder="es: p2000">
@@ -525,76 +613,99 @@
                         <label>Codice Latte</label>
                         <input type="text" name="codice_latte" placeholder="es: p2000">
                     </div>
-                    <div class="input-group" style="grid-column: span 2">
+
+                    <!-- 2. ANAGRAFICA -->
+                    <div class="input-group" style="grid-column: span 6">
                         <label>Nome Consegna (Scuola)</label>
                         <input type="text" name="cliente" required>
                     </div>
-                    <div class="input-group" style="grid-column: span 2">
-                        <label>Indirizzo</label>
-                        <input type="text" name="indirizzo">
+                    <div class="input-group" style="grid-column: span 6">
+                        <label>Indirizzo (Via e Civico)</label>
+                        <input type="text" name="indirizzo" placeholder="es: Via Roma 10">
                     </div>
-                    <div class="input-group">
+
+                    <!-- 3. GEOGRAFIA -->
+                    <div class="input-group" style="grid-column: span 2">
                         <label>Città</label>
                         <input type="text" name="citta">
                     </div>
-                    <div class="input-group">
+                    <div class="input-group" style="grid-column: span 2">
                         <label>Provincia</label>
-                        <input type="text" name="provincia" maxlength="2">
+                        <input type="text" name="provincia" maxlength="2" placeholder="PD">
                     </div>
-                    <div class="input-group">
+                    <div class="input-group" style="grid-column: span 2">
                         <label>Zona (Giro)</label>
                         <input type="text" name="codice_zona" placeholder="es: PD1">
                     </div>
-                    <div class="input-group">
+
+                    <!-- 4. ORARI -->
+                    <div class="input-group" style="grid-column: span 3">
+                        <label>Orario Frutta (Min/Max)</label>
+                        <div class="orari-inputs">
+                            <input type="text" name="orario_min_frutta" placeholder="08:00">
+                            <input type="text" name="orario_max_frutta" placeholder="10:00">
+                        </div>
+                    </div>
+                    <div class="input-group" style="grid-column: span 3">
+                        <label>Orario Latte (Min/Max)</label>
+                        <div class="orari-inputs">
+                            <input type="text" name="orario_min_latte" placeholder="08:00">
+                            <input type="text" name="orario_max_latte" placeholder="10:00">
+                        </div>
+                    </div>
+
+                    <!-- 5. GPS -->
+                    <div class="input-group" style="grid-column: span 3">
                         <label>Latitudine</label>
-                        <input type="text" name="lat">
+                        <input type="text" name="lat" readonly style="background:#f8fafc">
                     </div>
-                    <div class="input-group">
+                    <div class="input-group" style="grid-column: span 3">
                         <label>Longitudine</label>
-                        <input type="text" name="lon">
+                        <input type="text" name="lon" readonly style="background:#f8fafc">
                     </div>
-                    <div class="input-group">
-                        <label>Orario Min Frutta</label>
-                        <input type="text" name="orario_min_frutta" placeholder="08:00">
+                    
+                    <div style="grid-column: span 6; margin-top: 12px;">
+                        <button type="button" id="btnUnlockMarker" onclick="unlockMarker()" class="btn-edit" style="width:100%; justify-content:center; background:#f1f5f9; color:var(--primary); border: 1px dashed var(--primary)">
+                            <span class="material-icons-round">lock</span> SBLOCCA MARKER PER MODIFICA POSIZIONE
+                        </button>
+                        <div id="modalMap"></div>
                     </div>
-                    <div class="input-group">
-                        <label>Orario Max Frutta</label>
-                        <input type="text" name="orario_max_frutta" placeholder="10:00">
-                    </div>
-                    <div class="input-group">
-                        <label>Orario Min Latte</label>
-                        <input type="text" name="orario_min_latte" placeholder="08:00">
-                    </div>
-                    <div class="input-group">
-                        <label>Orario Max Latte</label>
-                        <input type="text" name="orario_max_latte" placeholder="10:00">
-                    </div>
-                    <div id="modalMap"></div>
                 `;
-                // Ritarda inizializzazione mappa per dare tempo al DOM
                 setTimeout(() => initMap(), 300);
             } else if(currentTab === 'articoli') {
                 title.innerText = "Nuovo Articolo";
                 fields.innerHTML = `
-                    <div class="input-group">
-                        <label>Codice Articolo</label>
+                    <div class="input-group" style="grid-column: span 6">
+                        <label>Codice Articolo (ID)</label>
                         <input type="text" name="id" required placeholder="es: AL-T-LI-NA">
                     </div>
+                    <div class="input-group" style="grid-column: span 6">
+                        <label>Descrizione Estesa</label>
+                        <input type="text" name="descrizione" required>
+                    </div>
+                    <div class="input-group" style="grid-column: span 3">
+                        <label>Confezionamento</label>
+                        <input type="text" name="confezionamento" placeholder="es: Busta 5kg">
+                    </div>
+                    <div class="input-group" style="grid-column: span 3">
+                        <label>Unità Principale</label>
+                        <input type="text" name="unita_principale" placeholder="es: KG">
+                    </div>
                     <div class="input-group" style="grid-column: span 2">
-                        <label>Descrizione</label>
-                        <input type="text" name="descrizione">
+                        <label>Per (Quantità)</label>
+                        <input type="number" name="per" step="0.01" value="1">
                     </div>
-                    <div class="input-group">
-                        <label>Unità Principale (Confezionamento)</label>
-                        <input type="text" name="unita_principale" placeholder="es: Cartoni">
-                    </div>
-                    <div class="input-group">
-                        <label>Ratio (Pezzi per Unità)</label>
-                        <input type="number" name="ratio" value="1">
-                    </div>
-                    <div class="input-group">
+                    <div class="input-group" style="grid-column: span 2">
                         <label>Unità Secondaria</label>
-                        <input type="text" name="unita_secondaria" placeholder="es: Porzioni">
+                        <input type="text" name="unita_secondaria" placeholder="es: PZ">
+                    </div>
+                    <div class="input-group" style="grid-column: span 2">
+                        <label>Ratio (Resa)</label>
+                        <input type="number" name="ratio" step="0.01" value="1">
+                    </div>
+                    <div class="input-group" style="grid-column: span 6">
+                        <label>Porzioni (Note)</label>
+                        <input type="text" name="porzioni" placeholder="es: 100g">
                     </div>
                 `;
             } else {
@@ -640,9 +751,6 @@
                 } else {
                     collPath = 'customers/DNR/rientri_ddt';
                 }
-
-                // Import dynamically to use the common firestore service if possible, or direct
-                const { doc, setDoc, collection, addDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
                 
                 if(docId) {
                     await setDoc(doc(db, collPath, docId), data, { merge: true });
@@ -658,20 +766,30 @@
             }
         });
 
+        window.deleteItem = async function(id) {
+            if(!confirm("⚠️ ATTENZIONE: Sei sicuro di voler eliminare questo record definitivamente dal database?")) return;
+            
+            let collPath = '';
+            if(currentTab === 'clienti') collPath = 'customers/DNR/clienti';
+            if(currentTab === 'articoli') collPath = 'customers/DNR/anagrafica_articoli';
+            if(currentTab === 'rientri') collPath = 'customers/DNR/rientri_ddt';
+            
+            try {
+                await deleteDoc(doc(db, collPath, id));
+                console.log("[Anagrafica] Record eliminato:", id);
+            } catch (err) {
+                console.error("Errore eliminazione:", err);
+                alert("Errore durante l'eliminazione: " + err.message);
+            }
+        };
+
         window.filterTable = function() {
             const q = document.getElementById('searchInput').value.toLowerCase().trim();
-            console.log("[Search] Query:", q);
-            
             if(!window.fullData) return;
-
             const filtered = window.fullData.filter(d => {
                 if(!q) return true;
-                // Cerca in tutti i valori dell'oggetto
-                return Object.values(d).some(val => 
-                    String(val).toLowerCase().includes(q)
-                );
+                return Object.values(d).some(val => String(val).toLowerCase().includes(q));
             });
-            
             renderTable(filtered);
         }
 
@@ -680,14 +798,15 @@
 
         function initMap(lat = 45.4064, lon = 11.8768) {
             if(map) map.remove();
-            
             const mapContainer = document.getElementById('modalMap');
             if(!mapContainer) return;
-
+            
             map = L.map('modalMap').setView([lat, lon], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
             
-            marker = L.marker([lat, lon], {draggable: true}).addTo(map);
+            // Marker BLOCCATO di default
+            marker = L.marker([lat, lon], {draggable: false}).addTo(map);
+            
             marker.on('dragend', function() {
                 const pos = marker.getLatLng();
                 const form = document.getElementById('crudForm');
@@ -696,6 +815,7 @@
             });
 
             map.on('click', function(e) {
+                if(!marker.dragging.enabled()) return; // Non fare nulla se bloccato
                 marker.setLatLng(e.latlng);
                 const form = document.getElementById('crudForm');
                 form.querySelector('[name="lat"]').value = e.latlng.lat.toFixed(6);
@@ -703,10 +823,22 @@
             });
         }
 
+        window.unlockMarker = function() {
+            if(!marker) return;
+            marker.dragging.enable();
+            const btn = document.getElementById('btnUnlockMarker');
+            btn.innerHTML = '<span class="material-icons-round">lock_open</span> MARKER SBLOCCATO - TRASCINA O CLICCA SULLA MAPPA';
+            btn.style.background = "#dcfce7";
+            btn.style.color = "#166534";
+            btn.style.border = "1px solid #166534";
+            
+            // Forza focus sulla mappa
+            document.getElementById('modalMap').scrollIntoView({ behavior: 'smooth' });
+        };
+
         window.editItem = function(id, focusMap = false) {
             const item = (window.fullData || []).find(d => d.id === id);
             if(!item) return;
-            
             openModal();
             const form = document.getElementById('crudForm');
             const title = document.getElementById('modalTitle');
@@ -744,7 +876,7 @@
         // Gestione Aggiornamento App
         let registration = null;
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw_v180.js').then(reg => {
+            navigator.serviceWorker.register('sw_v195.js').then(reg => {
                 registration = reg;
                 reg.addEventListener('updatefound', () => {
                     const newWorker = reg.installing;

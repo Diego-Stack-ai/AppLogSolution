@@ -1,10 +1,10 @@
 /**
- * script.js - v1.33
+ * script.js - v1.95
  * Modulo principale per la gestione della UI, validazioni e wizard.
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "1.33";
+const APP_VERSION = "1.95";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -308,8 +308,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // PWA: Registrazione Service Worker + gestione aggiornamenti
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw_v180.js').then(reg => {
-            console.log('[SW] Registrato correttamente.');
+        navigator.serviceWorker.register('./sw_v195.js').then(reg => {
+            console.log('[SW] Registrato correttamente alla v1.95.');
 
             // Se c'è già un SW in attesa (tab rimasto aperto durante aggiornamento)
             // → invia subito SKIP_WAITING per forzare l'attivazione

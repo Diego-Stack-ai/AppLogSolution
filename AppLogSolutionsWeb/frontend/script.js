@@ -8,7 +8,7 @@ const APP_VERSION = "1.96";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
-console.log("%c[App] Log Solution PWA — versione 1.98", "color: #4f46e5; font-weight: bold; font-size: 12px;");
+console.log("%c[App] Log Solution PWA — versione 2.02", "color: #4f46e5; font-weight: bold; font-size: 12px;");
 
 
 // --- STATO GLOBALE ---
@@ -308,8 +308,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // PWA: Registrazione Service Worker + gestione aggiornamenti
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw_v198.js').then(reg => {
-            console.log('[SW] Registrato correttamente alla v1.98.');
+        navigator.serviceWorker.register('./sw_v202.js').then(reg => {
+            console.log('[SW] Registrato correttamente alla v2.02.');
 
             // Se c'è già un SW in attesa (tab rimasto aperto durante aggiornamento)
             // → invia subito SKIP_WAITING per forzare l'attivazione

@@ -1455,7 +1455,7 @@ def core_processa_job_pdf(job_id):
     job_ref.update({"status": "processing", "updated_at": firestore.SERVER_TIMESTAMP})
     
     try:
-        bucket = storage.bucket(name=BUCKET_NAME)
+        bucket = storage.bucket()
         path = data.get("storage_path")
         etichetta = data.get("type", "FRUTTA").upper()
         
@@ -1526,6 +1526,7 @@ def core_processa_job_pdf(job_id):
         job_ref.update({
             "status": "completed",
             "data_rilevata": data_elab,
+            "meta_path_json": meta_path,
             "pdf_generati": len(split_files),
             "nuovi_clienti": len(nuovi_dati),
             "tempo_sec": round(elapsed, 2),
@@ -1547,7 +1548,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
     """
     start_time = time.time()
     db = get_db()
-    bucket = storage.bucket(name=BUCKET_NAME)
+    bucket = storage.bucket()
     
     if not data_consegna:
         return {"status": "errore", "message": "Data mancante"}

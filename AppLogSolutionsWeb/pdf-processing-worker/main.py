@@ -69,6 +69,7 @@ def process_single_job(job_id, job_data):
         creati = 0
         errori = []
         visti = {}
+        date_pulite = set()
         
         with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
             # 2. Loop per split DDT
@@ -78,12 +79,21 @@ def process_single_job(job_id, job_data):
                     d, l = _estrai_data_luogo(text)
                     if not d or not l: continue
                     
+                    # Pulizia preventiva della cartella per questa data/tipo (solo la prima volta che la incontriamo nel job)
+                    percorso_base = f"split_ddt/{d}/{tipo}/"
+                    if d not in date_pulite:
+                        print(f"[WORKER] Pulizia cartella esistente: {percorso_base}")
+                        blobs_da_eliminare = bucket.list_blobs(prefix=percorso_base)
+                        for b_del in blobs_da_eliminare:
+                            b_del.delete()
+                        date_pulite.add(d)
+
                     chiave = (d, l)
                     cnt = visti.get(chiave, 0) + 1
                     visti[chiave] = cnt
                     
                     fname = f"{l}_{d}_{cnt}.pdf" if cnt > 1 else f"{l}_{d}.pdf"
-                    percorso_out = f"split_ddt/{d}/{tipo}/{fname}"
+                    percorso_out = f"{percorso_base}{fname}"
                     
                     # Estrazione e Split del singolo DDT
                     writer = PdfWriter()

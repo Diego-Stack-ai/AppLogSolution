@@ -1518,6 +1518,7 @@ def core_processa_job_pdf(job_id):
         elapsed = time.time() - start_time
         job_ref.update({
             "status": "completed",
+            "data_rilevata": data_elab,
             "pdf_generati": len(split_files),
             "nuovi_clienti": len(nuovi_dati),
             "tempo_sec": round(elapsed, 2),

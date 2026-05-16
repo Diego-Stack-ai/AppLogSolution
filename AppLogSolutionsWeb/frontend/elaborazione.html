@@ -303,8 +303,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=1.95"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.95"></script>
+    <script src="script.js?v=1.96"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.96"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
@@ -378,7 +378,7 @@
                     (error) => reject(error), 
                     async () => {
                         try {
-                            const jobsRef = collection(db, 'customers', 'DNR', 'processing_jobs');
+                            const jobsRef = collection(db, 'clienti', 'DNR', 'processing_jobs');
                             const jobDoc = await addDoc(jobsRef, {
                                 status: "uploaded",
                                 type: typeName.toUpperCase(),
@@ -425,7 +425,7 @@
                 }
 
                 // 3. Elimina il Job document
-                await deleteDoc(doc(db, 'customers', 'DNR', 'processing_jobs', jobId));
+                await deleteDoc(doc(db, 'clienti', 'DNR', 'processing_jobs', jobId));
                 if(!skipConfirm) console.log(`[Job] ${jobId} rimosso.`);
             } catch (err) {
                 console.error("Errore eliminazione:", err);
@@ -439,7 +439,7 @@
             btn.disabled = true;
             btn.innerHTML = '<span class="material-icons-round">hourglass_top</span> ELIMINAZIONE...';
             
-            const jobsRef = collection(db, 'customers', 'DNR', 'processing_jobs');
+            const jobsRef = collection(db, 'clienti', 'DNR', 'processing_jobs');
             const { getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
             const snap = await getDocs(jobsRef);
             
@@ -456,7 +456,7 @@
 
         // Ascolto in realtime della coda dei job (ultimi 10)
         function listenToJobs() {
-            const jobsRef = collection(db, 'customers', 'DNR', 'processing_jobs');
+            const jobsRef = collection(db, 'clienti', 'DNR', 'processing_jobs');
             const q = query(jobsRef, orderBy('created_at', 'desc'), limit(10));
             
             onSnapshot(q, (snapshot) => {
@@ -529,7 +529,7 @@
         };
 
         function listenToReports() {
-            const reportsRef = collection(db, 'customers', 'DNR', 'reports_logistici');
+            const reportsRef = collection(db, 'clienti', 'DNR', 'reports_logistici');
             const q = query(reportsRef, orderBy('created_at', 'desc'), limit(5));
             
             onSnapshot(q, (snapshot) => {

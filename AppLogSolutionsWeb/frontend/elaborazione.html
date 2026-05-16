@@ -328,8 +328,8 @@
                     await deleteObject(fileRef).catch(e => console.warn("File storage non trovato o già rimosso"));
                 }
 
-                // 2. Elimina i DDT associati (rientri_ddt con job_id = jobId)
-                const ddtRef = collection(db, 'customers', 'DNR', 'rientri_ddt');
+                // 2. Elimina i DDT associati (deliveries con job_id = jobId)
+                const ddtRef = collection(db, 'customers', 'DNR', 'deliveries');
                 const q = query(ddtRef, where('job_id', '==', jobId));
                 const ddtSnap = await getDocs(q);
                 

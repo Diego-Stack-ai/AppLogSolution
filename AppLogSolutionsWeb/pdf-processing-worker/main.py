@@ -100,16 +100,18 @@ def process_single_job(job_id, job_data):
                     cliente_data = map_customer_from_firestore(l)
                     nome_cliente = cliente_data.get('A chi va consegnato') if cliente_data else "Sconosciuto"
                     
-                    # 4. Creazione delivery log in Firestore
-                    db.collection('customers').document('DNR').collection('deliveries').add({
+                    # 4. Creazione/Aggiornamento delivery log in Firestore (ID univoco per evitare duplicati)
+                    doc_id = f"{tipo}_{l}_{d}_{cnt}"
+                    db.collection('customers').document('DNR').collection('deliveries').document(doc_id).set({
                         "job_id": job_id,
                         "codice_cliente": l,
                         "nome_cliente": nome_cliente,
                         "data": d,
                         "tipo": tipo,
                         "storage_path": percorso_out,
-                        "stato": "processato"
-                    })
+                        "stato": "processato",
+                        "updated_at": firestore.SERVER_TIMESTAMP
+                    }, merge=True)
                     
                 except Exception as ex_page:
                     errori.append(f"Errore pag {i}: {str(ex_page)}")

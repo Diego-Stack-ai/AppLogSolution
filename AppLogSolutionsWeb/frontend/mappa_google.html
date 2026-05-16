@@ -268,8 +268,8 @@
             }
 
             const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-            const ddtRef = collection(db, "customers/DNR/rientri_ddt");
-            const q = query(ddtRef, where('data_consegna', '==', dateVal));
+            const ddtRef = collection(db, "customers/DNR/deliveries");
+            const q = query(ddtRef, where('data', '==', dateVal));
             
             try {
                 const snap = await getDocs(q);

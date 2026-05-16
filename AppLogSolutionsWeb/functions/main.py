@@ -1449,6 +1449,7 @@ def core_processa_job_pdf(job_id):
     
     if not job_doc.exists: return {"status": "errore", "message": "Job non trovato"}
     data = job_doc.to_dict()
+    data_lavoro_forzata = data.get('data_lavoro')
     if data.get("status") != "uploaded": return {"status": "errore", "message": "Stato job non valido per elaborazione"}
     
     job_ref.update({"status": "processing", "updated_at": firestore.SERVER_TIMESTAMP})
@@ -1477,7 +1478,13 @@ def core_processa_job_pdf(job_id):
             job_ref.update({"status": "completed", "message": "Nessun DDT trovato nel PDF"})
             return {"status": "ok", "pdf_generati": 0}
 
-        data_elab = deliveries[0]["data"]
+        # Se l'utente ha scelto una data nel calendario, ha la precedenza
+        if data_lavoro_forzata:
+            data_elab = data_lavoro_forzata
+            print(f"[INFO] Uso data forzata dal calendario: {data_elab}")
+        else:
+            data_elab = deliveries[0]["data"]
+            print(f"[INFO] Uso data estratta dal PDF: {data_elab}")
         
         # --- PULIZIA PREVENTIVA (Sovrascrittura pulita) ---
         print(f"[INFO] Pulizia preventiva per {data_elab} - {etichetta}")

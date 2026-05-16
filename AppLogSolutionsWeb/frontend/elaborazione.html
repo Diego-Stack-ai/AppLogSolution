@@ -188,21 +188,23 @@
     </nav>
 
     <div class="main-container" style="padding-top: 80px;">
-        <h1 style="margin-bottom: 16px; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 12px;">
-            <span class="material-icons-round" style="font-size: 32px;">description</span>
-            Elaborazione Distinte (v1.96)
-        </h1>
+        <!-- Pannello Controllo Data Centrale -->
+        <div class="glass-panel" style="margin-bottom: 24px; padding: 20px; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(255, 255, 255, 0.8));">
+            <div>
+                <h3 style="margin:0; color: var(--primary); font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Data di Lavoro Referenziale</h3>
+                <p style="margin:0; font-size: 12px; color: #64748b;">Tutte le operazioni (1-6) faranno riferimento a questo giorno</p>
+            </div>
+            <input type="date" id="master-date-selector" style="padding: 12px 20px; border-radius: 14px; border: 2px solid var(--primary); font-family:'Outfit'; font-size: 18px; font-weight: 800; color: var(--primary); outline: none; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);">
+        </div>
+
         <!-- Navigazione Workflow (Basata sui .bat locali) -->
-        <div style="display: flex; gap: 8px; margin-bottom: 24px; overflow-x: auto; padding: 8px 0;">
+        <div style="display: flex; gap: 8px; margin-bottom: 24px; overflow-x: auto; padding: 8px 0; scrollbar-width: none;">
             <button class="nav-tab active" title="1_2_3_4_estrai_ddt_consegne.py" onclick="location.reload()">
                 <span class="material-icons-round">upload_file</span> 1. CARICAMENTO PDF
             </button>
-            <div style="display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.4); padding: 4px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                <button class="nav-tab" style="border:none; background:none;" title="2_apri_mappa.bat" onclick="window.apriMappaGenerale()">
-                    <span class="material-icons-round">map</span> 2. MAPPA
-                </button>
-                <input type="date" id="map-date-selector" style="border:none; background:none; font-family:'Outfit'; font-size:12px; font-weight:700; color:var(--primary); cursor:pointer;">
-            </div>
+            <button class="nav-tab" title="2_apri_mappa.bat" onclick="window.apriMappaGenerale()">
+                <span class="material-icons-round">map</span> 2. MAPPA
+            </button>
             <button class="nav-tab" title="3_genera_percorsi.bat" onclick="window.navigateWithState('gestione_viaggi.html')">
                 <span class="material-icons-round">auto_fix_high</span> 3. PERCORSI
             </button>
@@ -361,7 +363,8 @@
 
         async function uploadFileToStorage(file, typeName) {
             if (!file) return null;
-            const dateStr = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('master-date-selector').value;
+            const dateStr = dateInput.split('-').reverse().join('-');
             const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
             const path = `input_pdf_fornitore/${typeName}_${dateStr}_${safeName}`;
             const storageRef = ref(storage, path);
@@ -387,6 +390,7 @@
                             const jobDoc = await addDoc(jobsRef, {
                                 status: "uploaded",
                                 type: typeName.toUpperCase(),
+                                data_lavoro: dateStr, // Forziamo la data scelta nel calendario
                                 storage_path: path,
                                 created_at: serverTimestamp(),
                                 updated_at: serverTimestamp()
@@ -506,7 +510,7 @@
 
         window.generaReport = async () => {
             const btn = document.getElementById('btn-genera-report');
-            const dateInput = document.getElementById('map-date-selector').value;
+            const dateInput = document.getElementById('master-date-selector').value;
             if (!dateInput) return alert("Seleziona una data nel calendario.");
             
             const formattedDate = dateInput.split('-').reverse().join('-');
@@ -560,7 +564,7 @@
         }
 
         window.apriMappaGenerale = async () => {
-            const dateInput = document.getElementById('map-date-selector').value;
+            const dateInput = document.getElementById('master-date-selector').value;
             if (!dateInput) return alert("Seleziona una data.");
             
             const formattedDate = dateInput.split('-').reverse().join('-');
@@ -581,7 +585,8 @@
 
         // Inizializza la data odierna nel selettore
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('map-date-selector').value = new Date().toISOString().split('T')[0];
+            const selector = document.getElementById('master-date-selector');
+            if(selector) selector.value = new Date().toISOString().split('T')[0];
         });
 
         document.getElementById('btn-avvia').addEventListener('click', async () => {

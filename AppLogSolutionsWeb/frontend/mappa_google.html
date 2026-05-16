@@ -110,6 +110,8 @@
             </div>
         </div>
         <div class="filter-group">
+            <label>Visualizzazione per Data (Giri)</label>
+            <input type="date" id="sel-data" onchange="onDataChange()">
             <input type="text" id="search-box" placeholder="Cerca scuola o 'mancanti'..." onkeyup="updateListAndMap()">
             <div style="display:flex; gap:8px;">
                 <div style="flex:1">
@@ -164,6 +166,7 @@
 
         let map;
         let ALL_POINTS = [];
+        let DDT_POINTS = []; // DDT filtrati per data
         let MODIFIED = {};
         let IS_LOCKED = true;
         let gMarkers = [];
@@ -254,6 +257,30 @@
             sel.value = currentVal;
         }
 
+        window.onDataChange = async () => {
+            const dateVal = document.getElementById('sel-data').value;
+            console.log("[Map] Cambio data:", dateVal);
+            
+            if(!dateVal) {
+                DDT_POINTS = [];
+                updateListAndMap();
+                return;
+            }
+
+            const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+            const ddtRef = collection(db, "customers/DNR/rientri_ddt");
+            const q = query(ddtRef, where('data_consegna', '==', dateVal));
+            
+            try {
+                const snap = await getDocs(q);
+                DDT_POINTS = snap.docs.map(doc => doc.data());
+                console.log(`[Map] Trovate ${DDT_POINTS.length} consegne per il ${dateVal}`);
+                updateListAndMap();
+            } catch (err) {
+                console.error("Errore caricamento DDT:", err);
+            }
+        };
+
         window.onProvChange = () => {
             const prov = document.getElementById('sel-prov').value;
             const selCom = document.getElementById('sel-comune');
@@ -268,11 +295,23 @@
         };
 
         window.updateListAndMap = () => {
+            const dateVal = document.getElementById('sel-data').value;
             const prov = document.getElementById('sel-prov').value;
             const com = document.getElementById('sel-comune').value;
             const searchInput = document.getElementById('search-box').value.toLowerCase();
             
+            // Se c'è una data, filtriamo solo chi ha un DDT
             const filtered = ALL_POINTS.filter(p => {
+                if(dateVal && DDT_POINTS.length > 0) {
+                    const hasDDT = DDT_POINTS.some(d => 
+                        (d.codice_frutta && d.codice_frutta === p.codice_frutta) || 
+                        (d.codice_latte && d.codice_latte === p.codice_latte)
+                    );
+                    if(!hasDDT) return false;
+                } else if(dateVal) {
+                    return false; // Se data selezionata ma nessun DDT trovato
+                }
+
                 const mProv = (!prov || (p.provincia || p.prov) === prov);
                 const mCom = (!com || (p.citta || p.comune) === com);
                 const isRossiSearch = searchInput === 'rossi' || searchInput === 'mancanti';

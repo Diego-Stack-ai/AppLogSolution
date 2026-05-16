@@ -315,6 +315,40 @@
             });
         }
 
+        window.eliminaJob = async (jobId, storagePath) => {
+            if(!confirm("Sei sicuro di voler eliminare questo Job? Verranno rimossi anche i DDT generati da questa elaborazione.")) return;
+            
+            try {
+                const { doc, deleteDoc, collection, query, where, getDocs, writeBatch } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                const { getStorage, ref, deleteObject } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js");
+                
+                // 1. Elimina file da Storage
+                if(storagePath) {
+                    const fileRef = ref(storage, storagePath);
+                    await deleteObject(fileRef).catch(e => console.warn("File storage non trovato o già rimosso"));
+                }
+
+                // 2. Elimina i DDT associati (rientri_ddt con job_id = jobId)
+                const ddtRef = collection(db, 'customers', 'DNR', 'rientri_ddt');
+                const q = query(ddtRef, where('job_id', '==', jobId));
+                const ddtSnap = await getDocs(q);
+                
+                if(!ddtSnap.empty) {
+                    const batch = writeBatch(db);
+                    ddtSnap.forEach(d => batch.delete(d.ref));
+                    await batch.commit();
+                    console.log(`[Job] Rimossi ${ddtSnap.size} DDT associati.`);
+                }
+
+                // 3. Elimina il Job document
+                await deleteDoc(doc(db, 'customers', 'DNR', 'processing_jobs', jobId));
+                alert("Job ed eventuali DDT associati rimossi con successo.");
+            } catch (err) {
+                console.error("Errore durante l'eliminazione:", err);
+                alert("Errore durante l'eliminazione: " + err.message);
+            }
+        };
+
         // Ascolto in realtime della coda dei job (ultimi 10)
         function listenToJobs() {
             const jobsRef = collection(db, 'customers', 'DNR', 'processing_jobs');
@@ -332,13 +366,18 @@
                     if (data.status === 'processing') { icon = 'autorenew'; color = '#3b82f6'; }
 
                     html += `
-                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 16px;">
+                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 16px; transition: 0.2s;" id="job-${doc.id}">
                             <span class="material-icons-round" style="color: ${color}; font-size: 28px;">${icon}</span>
                             <div style="flex: 1;">
                                 <div style="font-weight: 600; font-size: 15px;">Job ${data.type}</div>
                                 <div style="color: var(--text-muted); font-size: 13px;">Stato: <b style="color: ${color}; text-transform: uppercase;">${data.status}</b></div>
+                                <div style="font-size: 10px; color: #94a3b8; margin-top:4px;">${new Date(data.created_at?.toDate()).toLocaleString()}</div>
                             </div>
-                            <div style="font-size: 12px; color: #94a3b8; font-family: monospace;">${doc.id}</div>
+                            <div style="display:flex; gap:8px;">
+                                <button onclick="window.eliminaJob('${doc.id}', '${data.storage_path}')" style="background:#fee2e2; color:#ef4444; border:none; padding:8px; border-radius:8px; cursor:pointer;" title="Elimina Job e DDT associati">
+                                    <span class="material-icons-round" style="font-size:18px;">delete</span>
+                                </button>
+                            </div>
                         </div>
                     `;
                 });

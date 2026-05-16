@@ -31,6 +31,10 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
+    match /clienti/{tenant}/{collection=**} {
+      allow read, write: if isAuthenticated();
+    }
+
     // Legacy (mantenute per compatibilità, da rimuovere in futuro)
     match /mappatura/{docId} { allow read, write: if isAuthenticated(); }
     match /articoli/{docId} { allow read, write: if isAuthenticated(); }

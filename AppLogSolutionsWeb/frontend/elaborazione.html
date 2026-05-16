@@ -190,7 +190,7 @@
     <div class="main-container" style="padding-top: 80px;">
         <h1 style="margin-bottom: 16px; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 12px;">
             <span class="material-icons-round" style="font-size: 32px;">description</span>
-            Elaborazione Distinte (v2.03)
+            Elaborazione Distinte (v2.05)
         </h1>
         <!-- Pannello Controllo Data Centrale -->
         <div class="glass-panel" style="margin-bottom: 24px; padding: 20px; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(255, 255, 255, 0.8));">
@@ -406,8 +406,11 @@
                             });
                             
                             // Avvio immediato della funzione cloud
-                            const processaJob = httpsCallable(functions, 'processa_job_pdf');
-                            processaJob({ job_id: jobDoc.id }).catch(e => console.error("Errore trigger:", e));
+                            const processaJob = httpsCallable(functions, 'processa_job_pdf', { timeout: 540000 });
+                            processaJob({ job_id: jobDoc.id }).catch(e => {
+                                console.error("Errore trigger:", e);
+                                alert("Errore durante l'elaborazione: " + e.message);
+                            });
                             
                             resolve({path, jobId: jobDoc.id});
                         } catch (e) {
@@ -529,7 +532,7 @@
             btn.innerHTML = '<span class="material-icons-round">sync</span> GENERAZIONE IN CORSO...';
             
             try {
-                const generaReportFn = httpsCallable(functions, 'genera_report_giornaliero');
+                const generaReportFn = httpsCallable(functions, 'genera_report_giornaliero', { timeout: 300000 });
                 const result = await generaReportFn({ data_consegna: formattedDate });
                 
                 if (result.data.status === 'ok') {

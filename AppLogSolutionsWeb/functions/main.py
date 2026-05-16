@@ -1548,22 +1548,29 @@ def core_genera_report_giornaliero(uid, data_consegna):
     
     # 1. Recupera i DDT dai file ddt_estratti.json nello Storage (Frutta e Latte)
     ddt_list = []
+    cercati = []
     for tipo in ["FRUTTA", "LATTE"]:
+        meta_path = f"split_ddt/{data_consegna}/{tipo}/ddt_estratti.json"
+        cercati.append(meta_path)
         try:
-            meta_path = f"split_ddt/{data_consegna}/{tipo}/ddt_estratti.json"
             blob = bucket.blob(meta_path)
             if blob.exists():
+                print(f"[INFO] Trovati metadati in {meta_path}")
                 meta_data = json.loads(blob.download_as_string())
                 for ddt in meta_data.get("deliveries", []):
                     cod = ddt.get("codice_consegna")
                     cliente_info, _ = _cerca_cliente_cloud(cod)
                     ddt["nome"] = cliente_info.get('cliente') or cliente_info.get('nome_consegna') or cod
                     ddt_list.append(ddt)
+            else:
+                print(f"[WARN] File non trovato: {meta_path}")
         except Exception as e:
-            print(f"[WARN] Impossibile leggere ddt_estratti per {tipo}: {e}")
+            print(f"[ERROR] Errore lettura {meta_path}: {e}")
 
     if not ddt_list:
-        return {"status": "errore", "message": f"Nessun dato trovato nello Storage per il {data_consegna}"}
+        msg = f"Nessun dato trovato per il {data_consegna}. Percorsi cercati: {', '.join(cercati)}"
+        print(f"[ERROR] {msg}")
+        return {"status": "errore", "message": msg}
 
     # 2. Aggrega per cliente (Step 2 locale)
     punti_map = {} # chiave: tripla_chiave o codice_cliente

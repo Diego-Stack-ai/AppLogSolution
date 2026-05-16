@@ -198,7 +198,12 @@
                 <h3 style="margin:0; color: var(--primary); font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Data di Lavoro Referenziale</h3>
                 <p style="margin:0; font-size: 12px; color: #64748b;">Tutte le operazioni (1-6) faranno riferimento a questo giorno</p>
             </div>
-            <input type="date" id="master-date-selector" style="padding: 12px 20px; border-radius: 14px; border: 2px solid var(--primary); font-family:'Outfit'; font-size: 18px; font-weight: 800; color: var(--primary); outline: none; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <input type="date" id="master-date-selector" style="padding: 10px 16px; border-radius: 12px; border: 2px solid var(--primary); font-family:'Outfit'; font-size: 16px; font-weight: 800; color: var(--primary); outline: none; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);">
+                <button id="lock-date-btn" class="glass-btn" style="padding: 8px; border-radius: 10px; color: var(--primary); border: 2px solid var(--primary);" title="Blocca/Sblocca Data">
+                    <span class="material-icons-round" id="lock-icon">lock_open</span>
+                </button>
+            </div>
         </div>
 
         <!-- Navigazione Workflow (Basata sui .bat locali) -->
@@ -588,10 +593,53 @@
             }
         };
 
-        // Inizializza la data odierna nel selettore
+        // Inizializza la data e il lucchetto
         document.addEventListener('DOMContentLoaded', () => {
             const selector = document.getElementById('master-date-selector');
-            if(selector) selector.value = new Date().toISOString().split('T')[0];
+            const lockBtn = document.getElementById('lock-date-btn');
+            const lockIcon = document.getElementById('lock-icon');
+            
+            // Carica da localStorage
+            const savedDate = localStorage.getItem('master_date');
+            const isLocked = localStorage.getItem('master_date_locked') === 'true';
+            
+            if (savedDate) {
+                selector.value = savedDate;
+            } else {
+                selector.value = new Date().toISOString().split('T')[0];
+            }
+            
+            if (isLocked) {
+                selector.disabled = true;
+                lockIcon.innerText = 'lock';
+                lockBtn.style.background = 'var(--primary)';
+                lockBtn.style.color = 'white';
+            }
+            
+            // Eventi
+            selector.addEventListener('change', () => {
+                localStorage.setItem('master_date', selector.value);
+            });
+            
+            lockBtn.addEventListener('click', () => {
+                const nowLocked = selector.disabled;
+                if (nowLocked) {
+                    // Sblocca
+                    selector.disabled = false;
+                    lockIcon.innerText = 'lock_open';
+                    lockBtn.style.background = 'none';
+                    lockBtn.style.color = 'var(--primary)';
+                    localStorage.setItem('master_date_locked', 'false');
+                } else {
+                    // Blocca
+                    selector.disabled = true;
+                    lockIcon.innerText = 'lock';
+                    lockBtn.style.background = 'var(--primary)';
+                    lockBtn.style.color = 'white';
+                    localStorage.setItem('master_date_locked', 'true');
+                    localStorage.setItem('master_date', selector.value);
+                }
+            });
         });
 
         document.getElementById('btn-avvia').addEventListener('click', async () => {

@@ -4,11 +4,11 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "1.95";
+const APP_VERSION = "1.96";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
-console.log(`[App] Log Solution PWA — versione ${APP_VERSION}`);
+console.log("%c[App] Log Solution PWA — versione 1.96", "color: #4f46e5; font-weight: bold; font-size: 12px;");
 
 
 // --- STATO GLOBALE ---

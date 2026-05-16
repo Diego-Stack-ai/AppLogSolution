@@ -565,8 +565,8 @@
             const formattedDate = dateInput.split('-').reverse().join('-');
             const path = `REPORTS/${formattedDate}/4_mappa_zone_google.html`;
             
-            const { getStorage, ref, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js");
-            const storage = getStorage();
+            const { ref, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js");
+            console.log(`[Storage] Tentativo apertura mappa: ${path}`);
             
             try {
                 const fileRef = ref(storage, path);

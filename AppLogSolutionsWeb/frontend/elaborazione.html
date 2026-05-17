@@ -200,6 +200,9 @@
                 <p style="margin:0; font-size: 12px; color: #64748b;">Tutte le operazioni (1-6) faranno riferimento a questo giorno</p>
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
+                <button class="glass-btn" onclick="window.navigateWithState('gestione_anomalie.html')" style="padding: 10px 16px; border-radius: 12px; font-weight: 700; color: #ef4444; border: 2px solid #ef4444; display: flex; align-items: center; gap: 8px;" title="Risolvi clienti, articoli e orari non riconosciuti">
+                    <span class="material-icons-round">fact_check</span> GESTISCI ANOMALIE
+                </button>
                 <input type="date" id="master-date-selector" style="padding: 10px 16px; border-radius: 12px; border: 2px solid var(--primary); font-family:'Outfit'; font-size: 16px; font-weight: 800; color: var(--primary); outline: none; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);">
                 <button id="lock-date-btn" class="glass-btn" style="padding: 8px; border-radius: 10px; color: var(--primary); border: 2px solid var(--primary);" title="Blocca/Sblocca Data">
                     <span class="material-icons-round" id="lock-icon">lock_open</span>
@@ -569,9 +572,15 @@
                         title: 'Nuove Anomalie Rilevate!',
                         html: combinedMsg,
                         icon: 'warning',
-                        confirmButtonText: 'Ho Capito',
-                        confirmButtonColor: '#f59e0b',
+                        showCancelButton: true,
+                        confirmButtonText: 'Vai a Gestione Anomalie',
+                        cancelButtonText: 'Ignora per ora',
+                        confirmButtonColor: '#ef4444',
                         width: '600px'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.navigateWithState('gestione_anomalie.html');
+                        }
                     });
                 }
                 

@@ -1579,11 +1579,12 @@ def core_genera_report_giornaliero(uid, data_consegna):
 
     if not ddt_list:
         # Debug Radar: vediamo cosa c'e' effettivamente nello Storage
+        cercati = [f"split_ddt/{data_consegna}/FRUTTA/ddt_estratti.json", f"split_ddt/{data_consegna}/LATTE/ddt_estratti.json"]
         try:
             prefix_check = f"split_ddt/{data_consegna}/"
             blobs_esistenti = list(bucket.list_blobs(prefix=prefix_check))
             files_trovati = [b.name for b in blobs_esistenti]
-            msg = f"Nessun dato trovato per il {data_consegna}. Percorsi cercati: {', '.join(cercati)}. Nello Storage vedo: {', '.join(files_trovati) if files_trovati else 'NULLA'}"
+            msg = f"Nessun dato trovato per il {data_consegna}. Percorsi attesi: {', '.join(cercati)}. Nello Storage vedo: {', '.join(files_trovati) if files_trovati else 'NULLA'}"
         except Exception as e_debug:
             msg = f"Nessun dato trovato per il {data_consegna} e errore durante il radar: {e_debug}"
             

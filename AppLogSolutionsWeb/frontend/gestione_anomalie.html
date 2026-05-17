@@ -10,8 +10,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
     <style>
-        .tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
-        .tab { padding: 12px 24px; border: none; background: transparent; cursor: pointer; font-weight: 700; font-size: 16px; color: var(--text-muted); border-radius: 8px; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; overflow-x: auto; }
+        .tab { padding: 12px 24px; border: none; background: transparent; cursor: pointer; font-weight: 700; font-size: 16px; color: var(--text-muted); border-radius: 8px; transition: 0.2s; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
         .tab:hover { background: #f8fafc; color: var(--primary); }
         .tab.active { background: var(--primary); color: white; box-shadow: 0 4px 12px -4px var(--primary-glow); }
         .tab-content { display: none; }
@@ -20,12 +20,14 @@
         .anomaly-card { background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .anomaly-card h3 { margin: 0 0 16px 0; color: #0f172a; display: flex; align-items: center; justify-content: space-between;}
         
-        .grid-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px; }
+        .grid-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px; }
         .input-group { display: flex; flex-direction: column; gap: 4px; }
         .input-group label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; }
-        .input-group input { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Outfit'; font-size: 14px; outline: none; }
-        .input-group input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        .input-group input, .input-group select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Outfit'; font-size: 14px; outline: none; }
+        .input-group input:focus, .input-group select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
         
+        .section-title { font-size: 14px; font-weight: 800; color: var(--primary); margin: 24px 0 12px 0; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; grid-column: 1 / -1; }
+
         .action-btn { background: var(--success); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
         .action-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
         
@@ -130,23 +132,38 @@
                             <span style="display:flex; align-items:center; gap:8px;">
                                 <span class="material-icons-round" style="color:#ef4444;">storefront</span> 
                                 Codice Rilevato: <span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-family:monospace; color:#475569;">${id}</span>
-                                <span style="font-size:12px; background:#e0e7ff; color:#4f46e5; padding:4px 8px; border-radius:6px; margin-left:8px;">Fonte: ${d.tipo || 'Sconosciuto'}</span>
+                                <span style="font-size:12px; background:#e0e7ff; color:#4f46e5; padding:4px 8px; border-radius:6px; margin-left:8px;">Fonte PDF: ${d.tipo || 'Sconosciuto'}</span>
                             </span>
-                            <button class="delete-btn" onclick="eliminaAnomalia('nuovi codici consegna', '${id}')" title="Scarta">
+                            <button class="delete-btn" onclick="eliminaAnomalia('nuovi codici consegna', '${id}')" title="Scarta Segnalazione">
                                 <span class="material-icons-round">delete</span>
                             </button>
                         </h3>
                         <div class="grid-form">
-                            <div class="input-group"><label>Ragione Sociale</label><input type="text" id="cli-${id}-dest" value="${d.dest || ''}"></div>
+                            <div class="section-title">Dati Anagrafici</div>
+                            <div class="input-group"><label>Ragione Sociale</label><input type="text" id="cli-${id}-cliente" value="${d.dest || ''}"></div>
                             <div class="input-group"><label>Indirizzo</label><input type="text" id="cli-${id}-ind" value="${d.ind || ''}"></div>
                             <div class="input-group"><label>Città</label><input type="text" id="cli-${id}-cit" value="${d.cit || ''}"></div>
                             <div class="input-group"><label>CAP</label><input type="text" id="cli-${id}-cap" value="${d.cap || ''}"></div>
                             <div class="input-group"><label>Provincia</label><input type="text" id="cli-${id}-prov" value="${d.prov || ''}"></div>
-                            <div class="input-group"><label>Orario Minimo</label><input type="time" id="cli-${id}-om" value="${d.om || ''}"></div>
-                            <div class="input-group"><label>Orario Massimo</label><input type="time" id="cli-${id}-oM" value="${d.oM || ''}"></div>
+                            
+                            <div class="section-title">Coordinate</div>
+                            <div class="input-group"><label>Latitudine</label><input type="number" step="0.000001" id="cli-${id}-lat" value=""></div>
+                            <div class="input-group"><label>Longitudine</label><input type="number" step="0.000001" id="cli-${id}-lon" value=""></div>
+
+                            <div class="section-title">Codici di Consegna</div>
+                            <div class="input-group"><label>Codice Frutta</label><input type="text" id="cli-${id}-codF" value="${d.tipo === 'FRUTTA' ? id : 'p00000'}"></div>
+                            <div class="input-group"><label>Codice Latte</label><input type="text" id="cli-${id}-codL" value="${d.tipo === 'LATTE' ? id : 'p00000'}"></div>
+                            
+                            <div class="section-title">Orari di Consegna (Frutta)</div>
+                            <div class="input-group"><label>Minimo Frutta</label><input type="time" id="cli-${id}-omF" value="${d.tipo === 'FRUTTA' ? (d.om || '') : ''}"></div>
+                            <div class="input-group"><label>Massimo Frutta</label><input type="time" id="cli-${id}-oMF" value="${d.tipo === 'FRUTTA' ? (d.oM || '') : ''}"></div>
+                            
+                            <div class="section-title">Orari di Consegna (Latte)</div>
+                            <div class="input-group"><label>Minimo Latte</label><input type="time" id="cli-${id}-omL" value="${d.tipo === 'LATTE' ? (d.om || '') : ''}"></div>
+                            <div class="input-group"><label>Massimo Latte</label><input type="time" id="cli-${id}-oML" value="${d.tipo === 'LATTE' ? (d.oM || '') : ''}"></div>
                         </div>
-                        <button class="action-btn" onclick="salvaNuovoCliente('${id}', '${d.tipo}')">
-                            <span class="material-icons-round">add_circle</span> Aggiungi in Anagrafica Master
+                        <button class="action-btn" onclick="salvaNuovoCliente('${id}')">
+                            <span class="material-icons-round">add_circle</span> Salva Anagrafica Master
                         </button>
                     </div>
                 `;
@@ -154,49 +171,30 @@
             list.innerHTML = html;
         });
 
-        window.salvaNuovoCliente = async (id, tipo) => {
-            const dest = document.getElementById(`cli-${id}-dest`).value;
-            const ind = document.getElementById(`cli-${id}-ind`).value;
-            const cit = document.getElementById(`cli-${id}-cit`).value;
-            const cap = document.getElementById(`cli-${id}-cap`).value;
-            const prov = document.getElementById(`cli-${id}-prov`).value;
-            const om = document.getElementById(`cli-${id}-om`).value;
-            const oM = document.getElementById(`cli-${id}-oM`).value;
-
-            // Il docId in raccolta clienti cerchiamo di usare un identificativo progressivo o il codice stesso
-            // Usiamo il codice stesso come ID documento (es. p8366)
-            let docRef = doc(db, 'clienti', 'DNR', 'raccolta clienti', id);
-            
+        window.salvaNuovoCliente = async (id) => {
             let dataToSave = {
-                cliente: dest,
-                indirizzo: ind,
-                citta: cit,
-                cap: cap,
-                provincia: prov
+                cliente: document.getElementById(`cli-${id}-cliente`).value,
+                indirizzo: document.getElementById(`cli-${id}-ind`).value,
+                citta: document.getElementById(`cli-${id}-cit`).value,
+                cap: document.getElementById(`cli-${id}-cap`).value,
+                provincia: document.getElementById(`cli-${id}-prov`).value,
+                lat: parseFloat(document.getElementById(`cli-${id}-lat`).value) || null,
+                lon: parseFloat(document.getElementById(`cli-${id}-lon`).value) || null,
+                codice_frutta: document.getElementById(`cli-${id}-codF`).value,
+                codice_latte: document.getElementById(`cli-${id}-codL`).value,
+                orario_min_frutta: document.getElementById(`cli-${id}-omF`).value,
+                orario_max_frutta: document.getElementById(`cli-${id}-oMF`).value,
+                orario_min_latte: document.getElementById(`cli-${id}-omL`).value,
+                orario_max_latte: document.getElementById(`cli-${id}-oML`).value
             };
-            
-            if (tipo === 'FRUTTA') {
-                dataToSave.codice_frutta = id;
-                dataToSave.codice_latte = 'p00000';
-                dataToSave.orario_min_frutta = om;
-                dataToSave.orario_max_frutta = oM;
-                dataToSave.orario_min_latte = '';
-                dataToSave.orario_max_latte = '';
-            } else {
-                dataToSave.codice_latte = id;
-                dataToSave.codice_frutta = 'p00000';
-                dataToSave.orario_min_latte = om;
-                dataToSave.orario_max_latte = oM;
-                dataToSave.orario_min_frutta = '';
-                dataToSave.orario_max_frutta = '';
-            }
+
+            let docId = dataToSave.codice_frutta !== 'p00000' ? dataToSave.codice_frutta : dataToSave.codice_latte;
+            if (!docId || docId === 'p00000') docId = id;
 
             try {
-                // Scrive/Sovrascrive in raccolta clienti
-                await setDoc(docRef, dataToSave, { merge: true });
-                // Elimina dalla sala d'attesa
+                await setDoc(doc(db, 'clienti', 'DNR', 'raccolta clienti', docId), dataToSave, { merge: true });
                 await deleteDoc(doc(db, 'clienti', 'DNR', 'nuovi codici consegna', id));
-                Swal.fire({icon: 'success', title: 'Aggiunto!', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000});
+                Swal.fire({icon: 'success', title: 'Cliente Salvato!', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000});
             } catch (e) {
                 console.error(e);
                 Swal.fire('Errore', e.message, 'error');
@@ -225,17 +223,33 @@
                             <span style="display:flex; align-items:center; gap:8px;">
                                 <span class="material-icons-round" style="color:#d97706;">category</span> 
                                 Codice Articolo: <span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-family:monospace; color:#475569;">${id}</span>
-                                <span style="font-size:12px; background:#e0e7ff; color:#4f46e5; padding:4px 8px; border-radius:6px; margin-left:8px;">Famiglia: ${d.tipo || 'Sconosciuta'}</span>
+                                <span style="font-size:12px; background:#e0e7ff; color:#4f46e5; padding:4px 8px; border-radius:6px; margin-left:8px;">Fonte PDF: ${d.tipo || 'Sconosciuta'}</span>
                             </span>
-                            <button class="delete-btn" onclick="eliminaAnomalia('nuovi articoli rilevati', '${id}')" title="Scarta">
+                            <button class="delete-btn" onclick="eliminaAnomalia('nuovi articoli rilevati', '${id}')" title="Scarta Segnalazione">
                                 <span class="material-icons-round">delete</span>
                             </button>
                         </h3>
                         <div class="grid-form">
-                            <div class="input-group" style="grid-column: 1 / -1;"><label>Descrizione Articolo</label><input type="text" id="art-${id}-desc" value="${d.descrizione || ''}"></div>
+                            <div class="input-group"><label>Codice Articolo</label><input type="text" id="art-${id}-codice" value="${id}"></div>
+                            <div class="input-group" style="grid-column: span 2;"><label>Descrizione Articolo</label><input type="text" id="art-${id}-desc" value="${d.descrizione || ''}"></div>
+                            <div class="input-group">
+                                <label>Famiglia</label>
+                                <select id="art-${id}-fam">
+                                    <option value="LATTE" ${d.tipo==='LATTE'?'selected':''}>LATTE</option>
+                                    <option value="FRUTTA" ${d.tipo==='FRUTTA'?'selected':''}>FRUTTA</option>
+                                </select>
+                            </div>
+                            
+                            <div class="section-title">Dettagli Confezionamento</div>
+                            <div class="input-group"><label>Confezionamento</label><input type="text" id="art-${id}-conf" value=""></div>
+                            <div class="input-group"><label>Porzioni</label><input type="number" step="0.01" id="art-${id}-porz" value="1"></div>
+                            <div class="input-group"><label>Unità Principale</label><input type="text" id="art-${id}-u1" value=""></div>
+                            <div class="input-group"><label>Unità Secondaria</label><input type="text" id="art-${id}-u2" value=""></div>
+                            <div class="input-group"><label>Ratio (Conversione)</label><input type="number" step="0.001" id="art-${id}-ratio" value=""></div>
+                            <div class="input-group"><label>Per</label><input type="text" id="art-${id}-per" value=""></div>
                         </div>
-                        <button class="action-btn" onclick="salvaNuovoArticolo('${id}', '${d.tipo}')">
-                            <span class="material-icons-round">add_circle</span> Inserisci in Database Articoli
+                        <button class="action-btn" onclick="salvaNuovoArticolo('${id}')">
+                            <span class="material-icons-round">add_circle</span> Salva in Database Articoli
                         </button>
                     </div>
                 `;
@@ -243,15 +257,25 @@
             list.innerHTML = html;
         });
 
-        window.salvaNuovoArticolo = async (id, tipo) => {
-            const desc = document.getElementById(`art-${id}-desc`).value;
+        window.salvaNuovoArticolo = async (originalId) => {
+            const newCode = document.getElementById(`art-${originalId}-codice`).value;
+            let dataToSave = {
+                descrizione: document.getElementById(`art-${originalId}-desc`).value,
+                famiglia: document.getElementById(`art-${originalId}-fam`).value,
+                confezionamento: document.getElementById(`art-${originalId}-conf`).value,
+                porzioni: parseFloat(document.getElementById(`art-${originalId}-porz`).value) || 1,
+                unita_principale: document.getElementById(`art-${originalId}-u1`).value,
+                unita_secondaria: document.getElementById(`art-${originalId}-u2`).value,
+                ratio: parseFloat(document.getElementById(`art-${originalId}-ratio`).value) || null,
+                per: document.getElementById(`art-${originalId}-per`).value,
+                is_articolo_noto: true
+            };
+            
             try {
-                await setDoc(doc(db, 'clienti', 'DNR', 'codici articoli', id), {
-                    descrizione: desc,
-                    famiglia: tipo || 'LATTE'
-                }, { merge: true });
-                await deleteDoc(doc(db, 'clienti', 'DNR', 'nuovi articoli rilevati', id));
-                Swal.fire({icon: 'success', title: 'Articolo Aggiunto!', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000});
+                await setDoc(doc(db, 'clienti', 'DNR', 'codici articoli', newCode), dataToSave, { merge: true });
+                // Elimina l'originale dalla sala d'attesa (anche se ha cambiato codice, scartiamo la notifica)
+                await deleteDoc(doc(db, 'clienti', 'DNR', 'nuovi articoli rilevati', originalId));
+                Swal.fire({icon: 'success', title: 'Articolo Salvato!', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000});
             } catch (e) {
                 console.error(e);
                 Swal.fire('Errore', e.message, 'error');
@@ -259,7 +283,7 @@
         };
 
         // --- GESTIONE ORARI ---
-        onSnapshot(collection(db, 'clienti', 'DNR', 'nuovi orari mancanti'), (snapshot) => {
+        onSnapshot(collection(db, 'clienti', 'DNR', 'nuovi orari mancanti'), async (snapshot) => {
             const list = document.getElementById('list-orari');
             const badge = document.getElementById('badge-orari');
             if (snapshot.empty) {
@@ -271,77 +295,117 @@
             badge.textContent = snapshot.size;
             badge.style.display = 'inline-block';
             let html = '';
-            snapshot.forEach(docSnap => {
+            
+            // Per renderizzare TUTTI i campi del cliente, li andiamo a pescare in tempo reale
+            for (const docSnap of snapshot.docs) {
                 const id = docSnap.id;
                 const d = docSnap.data();
-                const om = d.new_orari ? d.new_orari[0] : '';
-                const oM = d.new_orari ? d.new_orari[1] : '';
+                
+                let clientData = {
+                    cliente: d.cliente || '', indirizzo: '', citta: '', cap: '', provincia: '',
+                    codice_frutta: d.tipo === 'FRUTTA' ? id : 'p00000',
+                    codice_latte: d.tipo === 'LATTE' ? id : 'p00000',
+                    orario_min_frutta: '', orario_max_frutta: '',
+                    orario_min_latte: '', orario_max_latte: '',
+                    lat: '', lon: ''
+                };
+                let docIdToUpdate = id;
+
+                try {
+                    const rcRef = collection(db, 'clienti', 'DNR', 'raccolta clienti');
+                    const qF = query(rcRef, where("codice_frutta", "==", id));
+                    const qL = query(rcRef, where("codice_latte", "==", id));
+                    let docsF = await getDocs(qF);
+                    let docsL = await getDocs(qL);
+                    
+                    if (!docsF.empty) { clientData = {...clientData, ...docsF.docs[0].data()}; docIdToUpdate = docsF.docs[0].id; }
+                    else if (!docsL.empty) { clientData = {...clientData, ...docsL.docs[0].data()}; docIdToUpdate = docsL.docs[0].id; }
+                    else {
+                        const directDoc = await getDocs(query(rcRef, where("__name__", "==", id)));
+                        if (!directDoc.empty) { clientData = {...clientData, ...directDoc.docs[0].data()}; docIdToUpdate = directDoc.docs[0].id; }
+                    }
+                } catch(e) { console.error(e); }
+
+                // Applichiamo la proposta del nuovo orario estratto
+                if (d.tipo === 'FRUTTA') {
+                    clientData.orario_min_frutta = d.new_orari ? d.new_orari[0] : clientData.orario_min_frutta;
+                    clientData.orario_max_frutta = d.new_orari ? d.new_orari[1] : clientData.orario_max_frutta;
+                } else {
+                    clientData.orario_min_latte = d.new_orari ? d.new_orari[0] : clientData.orario_min_latte;
+                    clientData.orario_max_latte = d.new_orari ? d.new_orari[1] : clientData.orario_max_latte;
+                }
+
                 html += `
                     <div class="anomaly-card">
                         <h3>
                             <span style="display:flex; align-items:center; gap:8px;">
                                 <span class="material-icons-round" style="color:#4f46e5;">schedule</span> 
-                                Codice Cliente: <span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-family:monospace; color:#475569;">${id}</span>
-                                <span style="font-size:14px; font-weight:400; margin-left:8px;">${d.cliente || ''}</span>
-                                <span style="font-size:12px; background:#fee2e2; color:#ef4444; padding:4px 8px; border-radius:6px; margin-left:8px;">Sorgente PDF: ${d.tipo || ''}</span>
+                                Aggiornamento Orari: <span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-family:monospace; color:#475569;">${id}</span>
+                                <span style="font-size:14px; font-weight:400; margin-left:8px;">${clientData.cliente || ''}</span>
+                                <span style="font-size:12px; background:#fee2e2; color:#ef4444; padding:4px 8px; border-radius:6px; margin-left:8px;">Fonte PDF: ${d.tipo || ''}</span>
                             </span>
-                            <button class="delete-btn" onclick="eliminaAnomalia('nuovi orari mancanti', '${id}')" title="Scarta">
+                            <button class="delete-btn" onclick="eliminaAnomalia('nuovi orari mancanti', '${id}')" title="Scarta Segnalazione">
                                 <span class="material-icons-round">delete</span>
                             </button>
                         </h3>
-                        <div style="font-size:13px; color:#64748b; margin-bottom:16px;">Orario precedente in archivio: <b>${d.old_orari ? d.old_orari.join(' - ') : 'Nessuno'}</b></div>
+                        <div style="font-size:13px; color:#64748b; margin-bottom:16px;">Orario precedentemente archiviato per ${d.tipo}: <b>${d.old_orari ? d.old_orari.join(' - ') : 'Nessuno'}</b></div>
+                        
                         <div class="grid-form">
-                            <div class="input-group"><label>Nuovo Orario Minimo (${d.tipo})</label><input type="time" id="ora-${id}-min" value="${om}"></div>
-                            <div class="input-group"><label>Nuovo Orario Massimo (${d.tipo})</label><input type="time" id="ora-${id}-max" value="${oM}"></div>
+                            <div class="section-title">Dati Anagrafici Correnti</div>
+                            <div class="input-group"><label>Ragione Sociale</label><input type="text" id="ora-${id}-cliente" value="${clientData.cliente || ''}"></div>
+                            <div class="input-group"><label>Indirizzo</label><input type="text" id="ora-${id}-ind" value="${clientData.indirizzo || ''}"></div>
+                            <div class="input-group"><label>Città</label><input type="text" id="ora-${id}-cit" value="${clientData.citta || ''}"></div>
+                            <div class="input-group"><label>CAP</label><input type="text" id="ora-${id}-cap" value="${clientData.cap || ''}"></div>
+                            <div class="input-group"><label>Provincia</label><input type="text" id="ora-${id}-prov" value="${clientData.provincia || ''}"></div>
+                            
+                            <div class="section-title">Coordinate</div>
+                            <div class="input-group"><label>Latitudine</label><input type="number" step="0.000001" id="ora-${id}-lat" value="${clientData.lat || ''}"></div>
+                            <div class="input-group"><label>Longitudine</label><input type="number" step="0.000001" id="ora-${id}-lon" value="${clientData.lon || ''}"></div>
+
+                            <div class="section-title">Codici di Consegna</div>
+                            <div class="input-group"><label>Codice Frutta</label><input type="text" id="ora-${id}-codF" value="${clientData.codice_frutta || ''}"></div>
+                            <div class="input-group"><label>Codice Latte</label><input type="text" id="ora-${id}-codL" value="${clientData.codice_latte || ''}"></div>
+                            
+                            <div class="section-title">Orari di Consegna (Frutta)</div>
+                            <div class="input-group"><label>Minimo Frutta</label><input type="time" id="ora-${id}-omF" value="${clientData.orario_min_frutta || ''}" ${d.tipo==='FRUTTA' ? 'style="border-color:#4f46e5; background:#eef2ff;"' : ''}></div>
+                            <div class="input-group"><label>Massimo Frutta</label><input type="time" id="ora-${id}-oMF" value="${clientData.orario_max_frutta || ''}" ${d.tipo==='FRUTTA' ? 'style="border-color:#4f46e5; background:#eef2ff;"' : ''}></div>
+                            
+                            <div class="section-title">Orari di Consegna (Latte)</div>
+                            <div class="input-group"><label>Minimo Latte</label><input type="time" id="ora-${id}-omL" value="${clientData.orario_min_latte || ''}" ${d.tipo==='LATTE' ? 'style="border-color:#4f46e5; background:#eef2ff;"' : ''}></div>
+                            <div class="input-group"><label>Massimo Latte</label><input type="time" id="ora-${id}-oML" value="${clientData.orario_max_latte || ''}" ${d.tipo==='LATTE' ? 'style="border-color:#4f46e5; background:#eef2ff;"' : ''}></div>
                         </div>
-                        <button class="action-btn" onclick="aggiornaOrarioCliente('${id}', '${d.tipo}')">
-                            <span class="material-icons-round">update</span> Sovrascrivi Orario Cliente
+                        <button class="action-btn" onclick="salvaAggiornamentoOrario('${id}', '${docIdToUpdate}')">
+                            <span class="material-icons-round">update</span> Sovrascrivi Anagrafica Cliente
                         </button>
                     </div>
                 `;
-            });
+            }
             list.innerHTML = html;
         });
 
-        window.aggiornaOrarioCliente = async (id, tipo) => {
-            const min = document.getElementById(`ora-${id}-min`).value;
-            const max = document.getElementById(`ora-${id}-max`).value;
+        window.salvaAggiornamentoOrario = async (idFromPdf, docIdToUpdate) => {
+            let dataToSave = {
+                cliente: document.getElementById(`ora-${idFromPdf}-cliente`).value,
+                indirizzo: document.getElementById(`ora-${idFromPdf}-ind`).value,
+                citta: document.getElementById(`ora-${idFromPdf}-cit`).value,
+                cap: document.getElementById(`ora-${idFromPdf}-cap`).value,
+                provincia: document.getElementById(`ora-${idFromPdf}-prov`).value,
+                lat: parseFloat(document.getElementById(`ora-${idFromPdf}-lat`).value) || null,
+                lon: parseFloat(document.getElementById(`ora-${idFromPdf}-lon`).value) || null,
+                codice_frutta: document.getElementById(`ora-${idFromPdf}-codF`).value,
+                codice_latte: document.getElementById(`ora-${idFromPdf}-codL`).value,
+                orario_min_frutta: document.getElementById(`ora-${idFromPdf}-omF`).value,
+                orario_max_frutta: document.getElementById(`ora-${idFromPdf}-oMF`).value,
+                orario_min_latte: document.getElementById(`ora-${idFromPdf}-omL`).value,
+                orario_max_latte: document.getElementById(`ora-${idFromPdf}-oML`).value
+            };
 
             try {
-                // Dobbiamo cercare il cliente in raccolta clienti. L'id qui potrebbe essere il doc.id oppure no.
-                // Cerchiamo dove codice_frutta == id OPPURE codice_latte == id
-                const rcRef = collection(db, 'clienti', 'DNR', 'raccolta clienti');
-                let qF = query(rcRef, where("codice_frutta", "==", id));
-                let qL = query(rcRef, where("codice_latte", "==", id));
-                
-                let docsF = await getDocs(qF);
-                let docsL = await getDocs(qL);
-                
-                const batch = writeBatch(db);
-                let found = false;
-
-                const updateData = {};
-                if (tipo === 'FRUTTA') {
-                    updateData.orario_min_frutta = min;
-                    updateData.orario_max_frutta = max;
-                } else {
-                    updateData.orario_min_latte = min;
-                    updateData.orario_max_latte = max;
-                }
-
-                docsF.forEach(d => { found = true; batch.update(d.ref, updateData); });
-                docsL.forEach(d => { found = true; batch.update(d.ref, updateData); });
-                
-                // Se non troviamo per campo codice_*, proviamo ad aggiornare per Document ID
-                if (!found) {
-                    const docRef = doc(db, 'clienti', 'DNR', 'raccolta clienti', id);
-                    batch.set(docRef, updateData, { merge: true });
-                }
-
-                await batch.commit();
-                await deleteDoc(doc(db, 'clienti', 'DNR', 'nuovi orari mancanti', id));
-                Swal.fire({icon: 'success', title: 'Orario Aggiornato!', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000});
-                
+                // Aggiorniamo interamente il documento del cliente
+                await setDoc(doc(db, 'clienti', 'DNR', 'raccolta clienti', docIdToUpdate), dataToSave, { merge: true });
+                // Rimuoviamo l'anomalia
+                await deleteDoc(doc(db, 'clienti', 'DNR', 'nuovi orari mancanti', idFromPdf));
+                Swal.fire({icon: 'success', title: 'Cliente Aggiornato!', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000});
             } catch (e) {
                 console.error(e);
                 Swal.fire('Errore', e.message, 'error');

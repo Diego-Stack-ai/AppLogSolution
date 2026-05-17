@@ -1225,8 +1225,7 @@ def core_genera_mappa_autista(viaggio_id):
     html_path = f"CONSEGNE/CONSEGNE_{data_viaggio}/MAPPE_AUTISTI/{viaggio_id}.html"
     blob = bucket.blob(html_path)
     blob.upload_from_string(html.encode("utf-8"), content_type="text/html; charset=utf-8")
-    blob.make_public()
-    url_pubblica = blob.public_url
+    url_pubblica = f"https://storage.googleapis.com/{BUCKET_NAME}/{html_path}"
 
     doc_ref.update({
         "mappa_url": url_pubblica,
@@ -1342,9 +1341,10 @@ def core_ricalcola_percorso(viaggio_id, nuovi_punti, num_locked=0):
     html = _genera_html_mappa(viaggio_id, punti_finali, km, sec_guida, polylines)
     bucket = storage.bucket(name=BUCKET_NAME)
     data_v = viaggio.get("data", "sconosciuta").replace("/", "-")
-    blob = bucket.blob(f"CONSEGNE/CONSEGNE_{data_v}/MAPPE_AUTISTI/{viaggio_id}.html")
+    html_path = f"CONSEGNE/CONSEGNE_{data_v}/MAPPE_AUTISTI/{viaggio_id}.html"
+    blob = bucket.blob(html_path)
     blob.upload_from_string(html.encode("utf-8"), content_type="text/html; charset=utf-8")
-    blob.make_public()
+    url_pubblica = f"https://storage.googleapis.com/{BUCKET_NAME}/{html_path}"
 
     elapsed = time.time() - start_time
     _registra_statistica("ricalcola_percorso", elapsed)
@@ -1776,7 +1776,6 @@ def core_genera_report_giornaliero(uid, data_consegna):
     path_mappa = f"{path_base}/4_mappa_zone_google.html"
     blob_mappa = bucket.blob(path_mappa)
     blob_mappa.upload_from_string(html_mappa.encode('utf-8'), content_type='text/html')
-    blob_mappa.make_public()
     
     # 7. Registra il report su Firestore
     report_meta = {

@@ -1617,6 +1617,9 @@ def core_processa_job_pdf(job_id):
             "nuovi_clienti": len(nuovi_dati),
             "nuovi_articoli": len(nuovi_articoli),
             "nuovi_orari": len(nuovi_orari),
+            "nuovi_clienti_list": list(nuovi_dati.keys()),
+            "nuovi_articoli_list": list(nuovi_articoli.keys()),
+            "nuovi_orari_list": list(nuovi_orari.keys()),
             "tempo_sec": round(elapsed, 2),
             "updated_at": firestore.SERVER_TIMESTAMP
         })

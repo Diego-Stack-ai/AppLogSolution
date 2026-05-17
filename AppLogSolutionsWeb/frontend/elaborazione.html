@@ -488,6 +488,10 @@
                 const jobsList = document.getElementById('jobs-list');
                 let html = '';
                 let hasCompleted = false;
+                
+                let combinedMsg = '';
+                let hasNewAnomalies = false;
+
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     if (data.status === 'completed') {
@@ -499,19 +503,32 @@
                             let n_o = data.nuovi_orari || 0;
                             
                             if (n_c > 0 || n_a > 0 || n_o > 0) {
-                                let msg = `<div style='text-align:left; font-size:15px'>L'elaborazione di <b>${data.type}</b> è terminata.<br><br>Sono state parcheggiate le seguenti anomalie nelle sale d'attesa:<br><br>`;
-                                if (n_c > 0) msg += `👥 <b>${n_c}</b> Nuovi Clienti (Codici Consegna)<br>`;
-                                if (n_a > 0) msg += `📦 <b>${n_a}</b> Nuovi Articoli Rilevati<br>`;
-                                if (n_o > 0) msg += `🕒 <b>${n_o}</b> Orari Mancanti/Discordanti<br>`;
-                                msg += `</div>`;
+                                hasNewAnomalies = true;
+                                combinedMsg += `<div style='text-align:left; font-size:14px; margin-top:10px; padding:12px; background:#f8fafc; border-radius:8px; border: 1px solid #e2e8f0;'>`;
+                                combinedMsg += `<div style='color:#0f172a; font-size:15px; font-weight:800; text-transform:uppercase; margin-bottom:10px;'>📌 JOB ${data.type} <span style='font-size:11px; color:#64748b; font-weight:400;'>(${data.data_rilevata || ''})</span></div>`;
                                 
-                                Swal.fire({
-                                    title: `Eccezioni Rilevate (${data.type})!`,
-                                    html: msg,
-                                    icon: 'warning',
-                                    confirmButtonText: 'Capito',
-                                    confirmButtonColor: '#f59e0b'
-                                });
+                                if (n_c > 0) {
+                                    let listC = data.nuovi_clienti_list ? data.nuovi_clienti_list.join(', ') : '';
+                                    combinedMsg += `<div style='margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;'>
+                                        <span style='background:#fee2e2; color:#ef4444; padding:3px 8px; border-radius:4px; font-weight:700; white-space:nowrap; font-size:11px;'>👥 ${n_c} Clienti</span>
+                                        <span style='font-size:12px; color:#475569; word-wrap: break-word; line-height: 1.4;'>${listC}</span>
+                                    </div>`;
+                                }
+                                if (n_a > 0) {
+                                    let listA = data.nuovi_articoli_list ? data.nuovi_articoli_list.join(', ') : '';
+                                    combinedMsg += `<div style='margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;'>
+                                        <span style='background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px; font-weight:700; white-space:nowrap; font-size:11px;'>📦 ${n_a} Articoli</span>
+                                        <span style='font-size:12px; color:#475569; word-wrap: break-word; line-height: 1.4;'>${listA}</span>
+                                    </div>`;
+                                }
+                                if (n_o > 0) {
+                                    let listO = data.nuovi_orari_list ? data.nuovi_orari_list.join(', ') : '';
+                                    combinedMsg += `<div style='margin-bottom:0px; display:flex; align-items:flex-start; gap:8px;'>
+                                        <span style='background:#e0e7ff; color:#4f46e5; padding:3px 8px; border-radius:4px; font-weight:700; white-space:nowrap; font-size:11px;'>🕒 ${n_o} Orari</span>
+                                        <span style='font-size:12px; color:#475569; word-wrap: break-word; line-height: 1.4;'>${listO}</span>
+                                    </div>`;
+                                }
+                                combinedMsg += `</div>`;
                             }
                         }
                         if (initialLoad) notifiedJobs.add(doc.id);
@@ -546,6 +563,18 @@
                         </div>
                     `;
                 });
+                
+                if (hasNewAnomalies) {
+                    Swal.fire({
+                        title: 'Nuove Anomalie Rilevate!',
+                        html: combinedMsg,
+                        icon: 'warning',
+                        confirmButtonText: 'Ho Capito',
+                        confirmButtonColor: '#f59e0b',
+                        width: '600px'
+                    });
+                }
+                
                 jobsList.innerHTML = html;
                 
                 // Se c'è almeno un job completato, mostriamo l'area report

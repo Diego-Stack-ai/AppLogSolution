@@ -1570,7 +1570,10 @@ def core_genera_report_giornaliero(uid, data_consegna):
                     for ddt in meta_data.get("deliveries", []):
                         cod = ddt.get("codice_consegna")
                         cliente_info, _ = _cerca_cliente_cloud(cod)
-                        ddt["nome"] = cliente_info.get('cliente') or cliente_info.get('nome_consegna') or cod
+                        if cliente_info:
+                            ddt["nome"] = cliente_info.get('cliente') or cliente_info.get('nome_consegna') or cod
+                        else:
+                            ddt["nome"] = cod
                         ddt_list.append(ddt)
                 except Exception as e_read:
                     print(f"[ERROR] Impossibile leggere {blob.name}: {e_read}")

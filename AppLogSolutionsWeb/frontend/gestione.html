@@ -462,7 +462,7 @@
             let collPath = '';
             if(currentTab === 'clienti') collPath = 'clienti/DNR/raccolta clienti';
             if(currentTab === 'articoli') collPath = 'clienti/DNR/codici articoli';
-            if(currentTab === 'rientri') collPath = 'clienti/DNR/rientri_ddt';
+            if(currentTab === 'rientri') collPath = 'clienti/DNR/rientri ddt';
 
             const q = query(collection(db, collPath));
             
@@ -544,6 +544,7 @@
                             <div>
                                 <h4 class="card-title">${d.id}</h4>
                                 <p style="font-size:13px; font-weight:600; color:var(--primary); margin:4px 0 0 0;">${d.descrizione || ''}</p>
+                                <span class="badge" style="background:#e0e7ff; color:#4f46e5; margin-top:4px; display:inline-block;">Famiglia: ${d.famiglia || 'Non assegnata'}</span>
                             </div>
                         </div>
                         <div class="card-grid">
@@ -683,6 +684,14 @@
                         <label>Descrizione Estesa</label>
                         <input type="text" name="descrizione" required>
                     </div>
+                    <div class="input-group" style="grid-column: span 6">
+                        <label>Famiglia</label>
+                        <select name="famiglia">
+                            <option value="LATTE">LATTE</option>
+                            <option value="FRUTTA">FRUTTA</option>
+                            <option value="ALTRO">ALTRO (es. Attrezzatura)</option>
+                        </select>
+                    </div>
                     <div class="input-group" style="grid-column: span 3">
                         <label>Confezionamento</label>
                         <input type="text" name="confezionamento" placeholder="es: Busta 5kg">
@@ -749,7 +758,7 @@
                     docId = data.id;
                     delete data.id;
                 } else {
-                    collPath = 'clienti/DNR/rientri_ddt';
+                    collPath = 'clienti/DNR/rientri ddt';
                 }
                 
                 if(docId) {
@@ -772,7 +781,7 @@
             let collPath = '';
             if(currentTab === 'clienti') collPath = 'clienti/DNR/raccolta clienti';
             if(currentTab === 'articoli') collPath = 'clienti/DNR/codici articoli';
-            if(currentTab === 'rientri') collPath = 'clienti/DNR/rientri_ddt';
+            if(currentTab === 'rientri') collPath = 'clienti/DNR/rientri ddt';
             
             try {
                 await deleteDoc(doc(db, collPath, id));

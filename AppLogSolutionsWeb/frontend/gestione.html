@@ -460,9 +460,9 @@
             document.getElementById('dataContainer').innerHTML = '';
             
             let collPath = '';
-            if(currentTab === 'clienti') collPath = 'customers/DNR/clienti';
-            if(currentTab === 'articoli') collPath = 'customers/DNR/anagrafica_articoli';
-            if(currentTab === 'rientri') collPath = 'customers/DNR/rientri_ddt';
+            if(currentTab === 'clienti') collPath = 'clienti/DNR/raccolta clienti';
+            if(currentTab === 'articoli') collPath = 'clienti/DNR/codici articoli';
+            if(currentTab === 'rientri') collPath = 'clienti/DNR/rientri_ddt';
 
             const q = query(collection(db, collPath));
             
@@ -742,14 +742,14 @@
                 let docId = null;
                 
                 if(currentTab === 'clienti') {
-                    collPath = 'customers/DNR/clienti';
+                    collPath = 'clienti/DNR/raccolta clienti';
                     docId = data.codice_frutta || data.codice_latte || null;
                 } else if(currentTab === 'articoli') {
-                    collPath = 'customers/DNR/anagrafica_articoli';
+                    collPath = 'clienti/DNR/codici articoli';
                     docId = data.id;
                     delete data.id;
                 } else {
-                    collPath = 'customers/DNR/rientri_ddt';
+                    collPath = 'clienti/DNR/rientri_ddt';
                 }
                 
                 if(docId) {
@@ -770,9 +770,9 @@
             if(!confirm("⚠️ ATTENZIONE: Sei sicuro di voler eliminare questo record definitivamente dal database?")) return;
             
             let collPath = '';
-            if(currentTab === 'clienti') collPath = 'customers/DNR/clienti';
-            if(currentTab === 'articoli') collPath = 'customers/DNR/anagrafica_articoli';
-            if(currentTab === 'rientri') collPath = 'customers/DNR/rientri_ddt';
+            if(currentTab === 'clienti') collPath = 'clienti/DNR/raccolta clienti';
+            if(currentTab === 'articoli') collPath = 'clienti/DNR/codici articoli';
+            if(currentTab === 'rientri') collPath = 'clienti/DNR/rientri_ddt';
             
             try {
                 await deleteDoc(doc(db, collPath, id));

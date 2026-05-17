@@ -47,7 +47,7 @@ def get_config_app():
     if _CACHED_ARTICOLI_NOTI is None or _CACHED_CONSOLIDAMENTO is None or (now - _CACHE_TIMESTAMP) > CACHE_TTL:
         print("[INFO] Fetching config da Firestore (customers/DNR/anagrafica_articoli)")
         
-        docs = get_db().collection('clienti').document('DNR').collection('anagrafica_articoli').stream()
+        docs = get_db().collection('clienti').document('DNR').collection('codici articoli').stream()
         _CACHED_CONSOLIDAMENTO = {d.id: d.to_dict() for d in docs}
         
         # Merge ARTICOLI_NOTI dall'anagrafica
@@ -122,8 +122,26 @@ def _estrai_dati_consegna_completi(text: str, codice: str, da_frutta: bool) -> d
                 if len(s) == 3: res["om"] = f"{int(s[0]):02d}:{int(s[1:3]):02d}"
     return res
 
-def _processa_pdf_core_logic(pdf_bytes: bytes, etichetta: str, db_mappati: dict) -> dict:
+def _normalizza_cella_codice_base(raw: str) -> str:
+    righe = [l.strip() for l in str(raw).split('\n') if l.strip() and not l.strip().startswith("Codice:")]
+    if not righe: return ""
+    codice_base = righe[0]
+    if len(righe) > 1 and codice_base.endswith('-'):
+        pezzi = righe[1].split()
+        if pezzi: codice_base += pezzi[0]
+    return codice_base
+
+def _is_primary_code(t, db_articoli):
+    t = str(t).strip().upper()
+    if t in db_articoli: return True
+    for key in db_articoli:
+        if key.endswith('-') and t.startswith(key.upper()): return True
+    return False
+
+def _processa_pdf_core_logic(pdf_bytes: bytes, etichetta: str, db_mappati: dict, db_articoli: dict) -> dict:
     nuovi_dati = {}
+    nuovi_orari = {}
+    nuovi_articoli = {}
     deliveries_list = []
     split_files = {}
     visti = {}
@@ -132,7 +150,8 @@ def _processa_pdf_core_logic(pdf_bytes: bytes, etichetta: str, db_mappati: dict)
     reader = PdfReader(io.BytesIO(pdf_bytes))
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
         for i in range(len(pdf.pages)):
-            text = pdf.pages[i].extract_text() or ""
+            pg = pdf.pages[i]
+            text = pg.extract_text() or ""
             d, l, num_ddt = _estrai_data_luogo(text)
             if not d or not l: continue
             
@@ -140,6 +159,53 @@ def _processa_pdf_core_logic(pdf_bytes: bytes, etichetta: str, db_mappati: dict)
                 info = _estrai_dati_consegna_completi(text, l, etichetta == "FRUTTA")
                 info["tipo"] = etichetta
                 nuovi_dati[l] = info
+            elif l in db_mappati and l not in nuovi_orari:
+                # Confronto Orari
+                om_mappa = db_mappati[l].get(f"orario_min_{etichetta.lower()}") or ""
+                oM_mappa = db_mappati[l].get(f"orario_max_{etichetta.lower()}") or ""
+                idx_c = text.upper().find("CAUSALE DEL TRASPORTO")
+                if idx_c >= 0:
+                    m_c = CAUSALE_RE.search(text[idx_c:idx_c+150])
+                    if m_c:
+                        oM_ddt = f"{int(m_c.group(2)):02d}:00" if m_c.group(2) else ""
+                        om_ddt = ""
+                        if m_c.group(3):
+                            s = m_c.group(3)
+                            if len(s) == 3: om_ddt = f"{int(s[0]):02d}:{int(s[1:3]):02d}"
+                            elif len(s) == 4: om_ddt = f"{int(s[:2]):02d}:{int(s[2:]):02d}"
+                        
+                        if (oM_ddt and oM_ddt != oM_mappa) or (om_ddt and om_ddt != om_mappa):
+                            nuovi_orari[l] = {
+                                "cliente": db_mappati[l].get("cliente", ""),
+                                "citta": db_mappati[l].get("citta", ""),
+                                "orario_min_mappa": om_mappa,
+                                "orario_max_mappa": oM_mappa,
+                                "orario_min_ddt": om_ddt,
+                                "orario_max_ddt": oM_ddt,
+                                "data_rilevazione": d,
+                                "tipo": etichetta
+                            }
+
+            # Estrazione Articoli
+            try:
+                tables = pg.extract_tables()
+                if tables:
+                    tab = next((t for t in tables if t and len(t) > 1 and "Cod. Articolo" in " ".join(str(c or "") for c in t[0])), None)
+                    if tab:
+                        for row in tab[1:]:
+                            if row and row[0]:
+                                cod_base = _normalizza_cella_codice_base(str(row[0]))
+                                if cod_base and cod_base not in nuovi_articoli:
+                                    if not _is_primary_code(cod_base, db_articoli):
+                                        nuovi_articoli[cod_base] = {
+                                            "codice_rilevato": cod_base,
+                                            "rilevato_il": d,
+                                            "ddt_rif": num_ddt,
+                                            "cliente_rif": l,
+                                            "tipo": etichetta
+                                        }
+            except Exception as e:
+                print(f"[WARN] Errore estrazione articoli pagina {i}: {e}")
                 
             chiave = (l, d, num_ddt)
             if chiave not in blocchi: blocchi[chiave] = []
@@ -171,6 +237,8 @@ def _processa_pdf_core_logic(pdf_bytes: bytes, etichetta: str, db_mappati: dict)
     return {
         "split_files": split_files,
         "nuovi_dati": nuovi_dati,
+        "nuovi_orari": nuovi_orari,
+        "nuovi_articoli": nuovi_articoli,
         "deliveries": deliveries_list
     }
 
@@ -291,7 +359,7 @@ def core_check_giornaliero(uid):
     ddt_non_assegnati = sum(1 for d in ddts if d.to_dict().get('stato') != 'assegnato')
 
     # 2. Clienti senza coordinate
-    clienti = list(db.collection('clienti').document('DNR').collection('anagrafica_clienti').stream())
+    clienti = list(db.collection('clienti').document('DNR').collection('raccolta clienti').stream())
     clienti_senza_coordinate = 0
     for c in clienti:
         data = c.to_dict()
@@ -548,7 +616,7 @@ def _cerca_cliente_cloud(codice: str):
         return None, None
 
     db = get_db()
-    col = db.collection('clienti').document('DNR').collection('anagrafica_clienti')
+    col = db.collection('clienti').document('DNR').collection('raccolta clienti')
 
     # Cerca per codice_frutta
     for val in [codice_l, codice_l.upper()]:
@@ -582,7 +650,7 @@ def _salva_nuovo_cliente_tripla_chiave(cod_f: str, cod_l: str, nome: str, extra:
     }
     if extra:
         doc_data.update(extra)
-    get_db().collection('clienti').document('DNR').collection('anagrafica_clienti').document(doc_id).set(doc_data, merge=True)
+    get_db().collection('clienti').document('DNR').collection('raccolta clienti').document(doc_id).set(doc_data, merge=True)
     return doc_id
 
 
@@ -1459,20 +1527,25 @@ def core_processa_job_pdf(job_id):
         path = data.get("storage_path")
         etichetta = data.get("type", "FRUTTA").upper()
         
-        # 1. Carica Mappatura
-        clienti_ref = db.collection('clienti').document('DNR').collection('anagrafica_clienti')
+        # 1. Carica Mappatura e Articoli
+        clienti_ref = db.collection('clienti').document('DNR').collection('raccolta clienti')
         db_mappati = {doc.get('codice_frutta') or doc.get('codice_latte'): doc.to_dict() for doc in clienti_ref.stream()}
+        
+        articoli_ref = db.collection('clienti').document('DNR').collection('codici articoli')
+        db_articoli = {doc.id: doc.to_dict() for doc in articoli_ref.stream()}
         
         # 2. Download
         blob = bucket.blob(path)
         pdf_bytes = blob.download_as_bytes()
         
         # 3. Processing
-        risultato = _processa_pdf_core_logic(pdf_bytes, etichetta, db_mappati)
+        risultato = _processa_pdf_core_logic(pdf_bytes, etichetta, db_mappati, db_articoli)
         
         split_files = risultato["split_files"]
         deliveries = risultato["deliveries"]
         nuovi_dati = risultato["nuovi_dati"]
+        nuovi_orari = risultato.get("nuovi_orari", {})
+        nuovi_articoli = risultato.get("nuovi_articoli", {})
         
         if not deliveries:
             job_ref.update({"status": "completed", "message": "Nessun DDT trovato nel PDF"})
@@ -1506,9 +1579,16 @@ def core_processa_job_pdf(job_id):
             split_blob = bucket.blob(out_path)
             split_blob.upload_from_file(out_stream, content_type='application/pdf')
             
-        # 5. Salvataggio nuovi clienti
+        # 5. Salvataggio nuovi dati dinamici
         for l, info in nuovi_dati.items():
-            db.collection('clienti').document('DNR').collection('gestione nuovi clienti').document(l).set(info, merge=True)
+            db.collection('clienti').document('DNR').collection('nuovi codici consegna').document(l).set(info, merge=True)
+            
+        for l, info in nuovi_orari.items():
+            db.collection('clienti').document('DNR').collection('nuovi orari mancanti').document(l).set(info, merge=True)
+            
+        for c, info in nuovi_articoli.items():
+            doc_id = str(c).replace('/', '-').replace(' ', '_')
+            db.collection('clienti').document('DNR').collection('nuovi articoli rilevati').document(doc_id).set(info, merge=True)
             
         # 6. Salvataggio Metadati Temporanei (per Step 2)
         metadata_ddt = {
@@ -1529,6 +1609,8 @@ def core_processa_job_pdf(job_id):
             "meta_path_json": meta_path,
             "pdf_generati": len(split_files),
             "nuovi_clienti": len(nuovi_dati),
+            "nuovi_articoli": len(nuovi_articoli),
+            "nuovi_orari": len(nuovi_orari),
             "tempo_sec": round(elapsed, 2),
             "updated_at": firestore.SERVER_TIMESTAMP
         })

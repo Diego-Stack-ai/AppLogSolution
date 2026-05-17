@@ -7,6 +7,7 @@
     <title>Elaborazione Distinte - Log Solution</title>
     <link rel="stylesheet" href="styles.css?v=1.42">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
     <style>
         .upload-section {
@@ -480,13 +481,41 @@
             const jobsRef = collection(db, 'clienti', 'DNR', 'processing_jobs');
             const q = query(jobsRef, orderBy('created_at', 'desc'), limit(10));
             
+            let initialLoad = true;
+            let notifiedJobs = new Set();
+            
             onSnapshot(q, (snapshot) => {
                 const jobsList = document.getElementById('jobs-list');
                 let html = '';
                 let hasCompleted = false;
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    if (data.status === 'completed') hasCompleted = true;
+                    if (data.status === 'completed') {
+                        hasCompleted = true;
+                        if (!initialLoad && !notifiedJobs.has(doc.id)) {
+                            notifiedJobs.add(doc.id);
+                            let n_c = data.nuovi_clienti || 0;
+                            let n_a = data.nuovi_articoli || 0;
+                            let n_o = data.nuovi_orari || 0;
+                            
+                            if (n_c > 0 || n_a > 0 || n_o > 0) {
+                                let msg = `<div style='text-align:left; font-size:15px'>L'elaborazione di <b>${data.type}</b> è terminata.<br><br>Sono state parcheggiate le seguenti anomalie nelle sale d'attesa:<br><br>`;
+                                if (n_c > 0) msg += `👥 <b>${n_c}</b> Nuovi Clienti (Codici Consegna)<br>`;
+                                if (n_a > 0) msg += `📦 <b>${n_a}</b> Nuovi Articoli Rilevati<br>`;
+                                if (n_o > 0) msg += `🕒 <b>${n_o}</b> Orari Mancanti/Discordanti<br>`;
+                                msg += `</div>`;
+                                
+                                Swal.fire({
+                                    title: 'Eccezioni Rilevate!',
+                                    html: msg,
+                                    icon: 'warning',
+                                    confirmButtonText: 'Capito',
+                                    confirmButtonColor: '#f59e0b'
+                                });
+                            }
+                        }
+                        if (initialLoad) notifiedJobs.add(doc.id);
+                    }
                     let icon = 'hourglass_empty';
                     let color = '#f59e0b';
                     if (data.status === 'completed') { icon = 'check_circle'; color = '#10b981'; }
@@ -500,9 +529,15 @@
                                 <div style="font-weight: 600; font-size: 15px;">Job ${data.type}</div>
                                 <div style="color: var(--text-muted); font-size: 13px;">Stato: <b style="color: ${color}; text-transform: uppercase;">${data.status}</b></div>
                                 ${data.data_rilevata ? `<div style="font-size: 12px; color: #4f46e5; font-weight: 700; margin-top:2px;">📅 Data nel PDF: ${data.data_rilevata}</div>` : ''}
-                                ${data.meta_path_json ? `<div style="font-size: 9px; color: #94a3b8; font-family: monospace; margin-top:2px;">📁 Path: ${data.meta_path_json}</div>` : ''}
-                                <div style="font-size: 10px; color: #94a3b8; margin-top:4px;">${new Date(data.created_at?.toDate()).toLocaleString()}</div>
+                                <div style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">
+                                    ${data.nuovi_clienti ? `<span style="background:#fee2e2; color:#ef4444; padding:2px 6px; border-radius:4px; font-weight:700; font-size:10px;">${data.nuovi_clienti} Clienti Ignoti</span>` : ''}
+                                    ${data.nuovi_articoli ? `<span style="background:#fef3c7; color:#d97706; padding:2px 6px; border-radius:4px; font-weight:700; font-size:10px;">${data.nuovi_articoli} Articoli Ignoti</span>` : ''}
+                                    ${data.nuovi_orari ? `<span style="background:#e0e7ff; color:#4f46e5; padding:2px 6px; border-radius:4px; font-weight:700; font-size:10px;">${data.nuovi_orari} Orari Rilevati</span>` : ''}
+                                </div>
+                                ${data.meta_path_json ? `<div style="font-size: 9px; color: #94a3b8; font-family: monospace; margin-top:4px;">📁 Path: ${data.meta_path_json}</div>` : ''}
+                                <div style="font-size: 10px; color: #94a3b8; margin-top:2px;">${new Date(data.created_at?.toDate()).toLocaleString()}</div>
                             </div>
+
                             <div style="display:flex; gap:8px;">
                                 <button onclick="window.eliminaJob('${doc.id}', '${data.storage_path}')" style="background:#fee2e2; color:#ef4444; border:none; padding:8px; border-radius:8px; cursor:pointer;" title="Elimina Job e DDT associati">
                                     <span class="material-icons-round" style="font-size:18px;">delete</span>
@@ -518,6 +553,7 @@
                     document.getElementById('reports-area').style.display = 'block';
                     listenToReports();
                 }
+                initialLoad = false;
             });
         }
 

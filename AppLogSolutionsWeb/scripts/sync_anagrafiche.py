@@ -40,7 +40,7 @@ def sync_articoli():
         if not art: continue
         
         art = art.replace('\n', ' ')
-        doc_ref = db.collection('clienti').document('DNR').collection('anagrafica_articoli').document(art)
+        doc_ref = db.collection('clienti').document('DNR').collection('codici articoli').document(art)
         
         # Mappatura con i nomi ESATTI rilevati nel file Excel
         data = {
@@ -83,7 +83,7 @@ def sync_clienti():
         # ID documento: codice_frutta se esiste, altrimenti codice_latte
         doc_id = cod_f if cod_f and cod_f != 'p00000' else (cod_l if cod_l else 'p00000_gen_' + str(count))
         
-        doc_ref = db.collection('clienti').document('DNR').collection('anagrafica_clienti').document(doc_id)
+        doc_ref = db.collection('clienti').document('DNR').collection('raccolta clienti').document(doc_id)
         
         data = {
             "codice_frutta": row.get('Codice Frutta'),
@@ -127,7 +127,7 @@ def sync_rientri():
         if not cod: continue
         
         doc_id = f"{cod}_{row.get('Data DDT')}".replace(" ", "_").replace("/", "-")
-        doc_ref = db.collection('clienti').document('DNR').collection('gestione rientri').document(doc_id)
+        doc_ref = db.collection('clienti').document('DNR').collection('rientri ddt').document(doc_id)
         
         data = {
             "codice_consegna": cod,

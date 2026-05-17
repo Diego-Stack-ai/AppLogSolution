@@ -1639,8 +1639,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
     """
     start_time = time.time()
     db = get_db()
-    bucket = storage.bucket()
-    
+    bucket = storage.bucket(name=BUCKET_NAME)
     if not data_consegna:
         return {"status": "errore", "message": "Data mancante"}
 
@@ -1652,6 +1651,16 @@ def core_genera_report_giornaliero(uid, data_consegna):
     print(f"[INFO] Scansione Storage per data {data_consegna}...")
     
     try:
+        # Caricamento bulk clienti per evitare timeout (Deadline Exceeded)
+        clienti_ref = db.collection('clienti').document('DNR').collection('raccolta clienti')
+        db_mappati = {}
+        for doc in clienti_ref.stream():
+            d = doc.to_dict()
+            cf = str(d.get('codice_frutta') or '').strip().lower()
+            cl = str(d.get('codice_latte') or '').strip().lower()
+            if cf and cf != 'p00000' and cf != 'nan': db_mappati[cf] = d
+            if cl and cl != 'p00000' and cl != 'nan': db_mappati[cl] = d
+
         blobs = bucket.list_blobs(prefix=prefix_search)
         for blob in blobs:
             if blob.name.endswith("ddt_estratti.json"):
@@ -1660,7 +1669,9 @@ def core_genera_report_giornaliero(uid, data_consegna):
                     meta_data = json.loads(blob.download_as_string())
                     for ddt in meta_data.get("deliveries", []):
                         cod = ddt.get("codice_consegna")
-                        cliente_info, _ = _cerca_cliente_cloud(cod)
+                        cod_l = str(cod).strip().lower()
+                        cliente_info = db_mappati.get(cod_l)
+                        
                         if cliente_info:
                             ddt["nome"] = cliente_info.get('cliente') or cliente_info.get('nome_consegna') or cod
                         else:
@@ -1689,10 +1700,11 @@ def core_genera_report_giornaliero(uid, data_consegna):
     punti_map = {} # chiave: tripla_chiave o codice_cliente
     for ddt in ddt_list:
         cod = ddt.get('codice_cliente')
+        cod_l = str(cod).strip().lower()
         tipo = ddt.get('tipo', 'FRUTTA')
         
-        # Cerchiamo il cliente per avere info complete
-        cliente_info, _ = _cerca_cliente_cloud(cod)
+        # Cerchiamo il cliente nel dizionario pre-caricato
+        cliente_info = db_mappati.get(cod_l)
         nome = ddt.get('nome', cod)
         
         # Identificativo unico del punto di consegna (per evitare duplicati nello stesso giro)

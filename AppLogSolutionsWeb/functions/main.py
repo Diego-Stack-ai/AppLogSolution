@@ -291,7 +291,7 @@ def core_check_giornaliero(uid):
     ddt_non_assegnati = sum(1 for d in ddts if d.to_dict().get('stato') != 'assegnato')
 
     # 2. Clienti senza coordinate
-    clienti = list(db.collection('clienti').document('DNR').collection('anagrafica').stream())
+    clienti = list(db.collection('clienti').document('DNR').collection('anagrafica_clienti').stream())
     clienti_senza_coordinate = 0
     for c in clienti:
         data = c.to_dict()
@@ -548,7 +548,7 @@ def _cerca_cliente_cloud(codice: str):
         return None, None
 
     db = get_db()
-    col = db.collection('clienti').document('DNR').collection('anagrafica')
+    col = db.collection('clienti').document('DNR').collection('anagrafica_clienti')
 
     # Cerca per codice_frutta
     for val in [codice_l, codice_l.upper()]:
@@ -582,7 +582,7 @@ def _salva_nuovo_cliente_tripla_chiave(cod_f: str, cod_l: str, nome: str, extra:
     }
     if extra:
         doc_data.update(extra)
-    get_db().collection('clienti').document('DNR').collection('anagrafica').document(doc_id).set(doc_data, merge=True)
+    get_db().collection('clienti').document('DNR').collection('anagrafica_clienti').document(doc_id).set(doc_data, merge=True)
     return doc_id
 
 
@@ -1460,7 +1460,7 @@ def core_processa_job_pdf(job_id):
         etichetta = data.get("type", "FRUTTA").upper()
         
         # 1. Carica Mappatura
-        clienti_ref = db.collection('clienti').document('DNR').collection('anagrafica')
+        clienti_ref = db.collection('clienti').document('DNR').collection('anagrafica_clienti')
         db_mappati = {doc.get('codice_frutta') or doc.get('codice_latte'): doc.to_dict() for doc in clienti_ref.stream()}
         
         # 2. Download

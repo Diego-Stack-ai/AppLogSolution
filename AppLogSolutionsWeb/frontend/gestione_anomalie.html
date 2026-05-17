@@ -259,15 +259,26 @@
 
         window.salvaNuovoArticolo = async (originalId) => {
             const newCode = document.getElementById(`art-${originalId}-codice`).value;
+            const desc = document.getElementById(`art-${originalId}-desc`).value;
+            const fam = document.getElementById(`art-${originalId}-fam`).value;
+            const conf = document.getElementById(`art-${originalId}-conf`).value;
+            
+            const porzStr = document.getElementById(`art-${originalId}-porz`).value;
+            const ratioStr = document.getElementById(`art-${originalId}-ratio`).value;
+            
+            // Gestione precisa dei numeri: se vuoto salva null, se 0 salva 0
+            const porzioniVal = porzStr === '' ? null : parseFloat(porzStr);
+            const ratioVal = ratioStr === '' ? null : parseFloat(ratioStr);
+            
             let dataToSave = {
-                descrizione: document.getElementById(`art-${originalId}-desc`).value,
-                famiglia: document.getElementById(`art-${originalId}-fam`).value,
-                confezionamento: document.getElementById(`art-${originalId}-conf`).value,
-                porzioni: parseFloat(document.getElementById(`art-${originalId}-porz`).value) || 1,
-                unita_principale: document.getElementById(`art-${originalId}-u1`).value,
-                unita_secondaria: document.getElementById(`art-${originalId}-u2`).value,
-                ratio: parseFloat(document.getElementById(`art-${originalId}-ratio`).value) || null,
-                per: document.getElementById(`art-${originalId}-per`).value,
+                descrizione: desc,
+                famiglia: fam,
+                confezionamento: conf,
+                porzioni: porzioniVal,
+                unita_principale: document.getElementById(`art-${originalId}-u1`).value || null,
+                unita_secondaria: document.getElementById(`art-${originalId}-u2`).value || null,
+                ratio: ratioVal,
+                per: document.getElementById(`art-${originalId}-per`).value || null,
                 is_articolo_noto: true
             };
             

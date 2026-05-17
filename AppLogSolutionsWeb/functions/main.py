@@ -47,7 +47,7 @@ def get_config_app():
     if _CACHED_ARTICOLI_NOTI is None or _CACHED_CONSOLIDAMENTO is None or (now - _CACHE_TIMESTAMP) > CACHE_TTL:
         print("[INFO] Fetching config da Firestore (customers/DNR/anagrafica_articoli)")
         
-        docs = get_db().collection('clienti').document('DNR').collection('gestione nuovi articoli').stream()
+        docs = get_db().collection('clienti').document('DNR').collection('anagrafica_articoli').stream()
         _CACHED_CONSOLIDAMENTO = {d.id: d.to_dict() for d in docs}
         
         # Merge ARTICOLI_NOTI dall'anagrafica

@@ -181,6 +181,13 @@ def _carica_rientri(map_codice: dict):
         else:
             data_orig = ""
 
+        # ── Leggi colonna D (parziale) ed E (nota) ───────────────────────────
+        val_d = row[3].value if len(row) > 3 else None
+        is_parziale = (str(val_d).strip().lower() == "parziale") if val_d else False
+        
+        val_e = row[4].value if len(row) > 4 else None
+        nota_integrativa = str(val_e).strip() if val_e else ""
+
         c = cod_r.lower()
         if c in map_codice:
             row_idx_mappa, _ = map_codice[c]
@@ -191,7 +198,9 @@ def _carica_rientri(map_codice: dict):
             rientri_per_riga[row_idx_mappa].append({
                 "codice": c, 
                 "data": data_orig, 
-                "r_idx": r_idx
+                "r_idx": r_idx,
+                "is_parziale": is_parziale,
+                "nota_integrativa": nota_integrativa
             })
     wb.close()
     return rientri_per_riga, []
@@ -326,9 +335,12 @@ def main():
                     cr = obj_r["codice"]
                     data_orig = obj_r["data"]
                     r_idx = obj_r["r_idx"]
+                    is_parziale = obj_r.get("is_parziale", False)
+                    nota = obj_r.get("nota_integrativa", "")
+                    
                     status = "yellow" if cr in current_codes else "red"
                     if not any(a["codice"] == cr and a["data_ddt"] == data_orig for a in up["rientri_alert"]):
-                        up["rientri_alert"].append({"codice": cr, "status": status, "data_ddt": data_orig})
+                        up["rientri_alert"].append({"codice": cr, "status": status, "data_ddt": data_orig, "is_parziale": is_parziale, "nota_integrativa": nota})
                         righe_rientri_da_marcare.append(r_idx)
                     # ── FIX: propaga il rientro come campo operativo per script 9 ──
                     # Senza questo, script 9 non allega mai il PDF del rientro quando
@@ -340,7 +352,9 @@ def main():
                         up.setdefault("rientri_da_allegare", []).append({
                             "codice": cr,
                             "data":   data_orig,
-                            "tipo":   "FRUTTA" if tipo_r == "F" else "LATTE"
+                            "tipo":   "FRUTTA" if tipo_r == "F" else "LATTE",
+                            "is_parziale": is_parziale,
+                            "nota_integrativa": nota
                         })
         else:
             # DDT non abbinato ad alcuna consegna oggi → zona speciale sulla mappa
@@ -393,7 +407,7 @@ def main():
                 "zona": "DDT_DA_INSERIRE",
                 "codici_ddt_frutta": [],
                 "codici_ddt_latte":  [],
-                "rientri_alert": [{"codice": dr["codice"], "status": "red", "data_ddt": dr["data"]} for dr in codici_con_date],
+                "rientri_alert": [{"codice": dr["codice"], "status": "red", "data_ddt": dr["data"], "is_parziale": dr.get("is_parziale", False), "nota_integrativa": dr.get("nota_integrativa", "")} for dr in codici_con_date],
                 "row_idx_mappatura": idx_mappa,
                 "_is_rientro_speciale": True
             }

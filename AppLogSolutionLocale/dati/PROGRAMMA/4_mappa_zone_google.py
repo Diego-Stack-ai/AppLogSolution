@@ -540,7 +540,26 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     
                     const el = document.createElement("div");
                     el.className = `custom-marker ${shape}`;
-                    if (shape === 'm-triangolo') el.style.borderBottomColor = z.color; else el.style.backgroundColor = z.color;
+                    
+                    let isParziale = false;
+                    if (isSpeciale && p.rientri_alert) {
+                        isParziale = p.rientri_alert.some(r => r.is_parziale === true);
+                    }
+                    
+                    if (isParziale) {
+                        if (shape === 'm-triangolo') {
+                            el.style.borderBottomColor = "#f59e0b";
+                            el.style.backgroundImage = "repeating-linear-gradient(45deg, black, black 4px, transparent 4px, transparent 8px)";
+                        } else {
+                            el.style.backgroundImage = "repeating-linear-gradient(45deg, #000, #000 4px, #f59e0b 4px, #f59e0b 8px)";
+                            el.style.color = "white";
+                            el.style.textShadow = "1px 1px 2px black, -1px -1px 2px black, 0px 0px 3px black";
+                            el.style.border = "2px solid black";
+                        }
+                    } else {
+                        if (shape === 'm-triangolo') el.style.borderBottomColor = z.color; else el.style.backgroundColor = z.color;
+                    }
+                    
                     el.innerHTML = `<span>${idx+1}</span>`;
                     
                     const m = new AdvancedMarkerElement({ position: {lat: p.lat, lng: p.lon}, map: map, title: p.nome, content: el, gmpDraggable: DRAGGING_ENABLED && !isLockedGlobal });
@@ -606,6 +625,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     ${isSelected ? `
                         <div style="margin-top:10px; border-top:1px solid #e2e8f0; padding-top:10px; max-height:320px; overflow-y:auto;">
                             ${z.lista_punti.map((p, idx) => {
+                                const isParzList = isSpeciale && p.rientri_alert && p.rientri_alert.some(r => r.is_parziale);
+                                const bgStyle = isParzList ? 'background: repeating-linear-gradient(45deg, #000, #000 3px, #f59e0b 3px, #f59e0b 6px); color: white; text-shadow: 1px 1px 2px black; border: 1px solid black;' : `background: ${z.color};`;
                                 const pid = (p.codice_frutta + "_" + p.nome).replace(/[^a-zA-Z0-9]/g, '_');
                                 const parts = (p.indirizzo || '').split(',');
                                 const via = parts[0] || '';
@@ -617,7 +638,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                                 return `<div class="point-card">
                                     <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
                                         <div style="display:flex; align-items:center; flex:1; min-width:0; gap:0;">
-                                            <span class="point-num" style="background:${z.color};">${idx+1}</span>
+                                            <span class="point-num" style="${bgStyle}">${idx+1}</span>
                                             <span class="point-name" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.nome}</span>
                                         </div>
                                          ${activeAction === 'dividi' ? ctrl : ''}

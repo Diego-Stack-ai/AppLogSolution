@@ -480,9 +480,31 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
     elementi.append(Paragraph(f"Zone: {zone}  |  Fermate Totali: {n_fermate}  |  DDT Totali: {n_ddt_totali}  |  Data: {data_ddt}", st_sub))
     
     if rientri_giro:
-        rientri_unici = sorted(list(set(rientri_giro)))
-        riga2 = f"<font color='red'><b>DDT da Rientri:</b></font> {', '.join(rientri_unici)}"
-        elementi.append(Paragraph(riga2, st_sub))
+        visti = set()
+        normali = []
+        parziali = []
+        for r in rientri_giro:
+            k = f"{r['codice']} ({r['data']})"
+            if k not in visti:
+                visti.add(k)
+                if r.get("is_parziale"):
+                    parziali.append(r)
+                else:
+                    normali.append(k)
+        
+        if normali:
+            normali.sort()
+            riga2 = f"<font color='red'><b>DDT da Rientri:</b></font> {', '.join(normali)} <font color='gray'><i>(merce già in distinta di carico)</i></font>"
+            elementi.append(Paragraph(riga2, st_sub))
+            
+        if parziali:
+            for p in sorted(parziali, key=lambda x: x["codice"]):
+                r_parz = f"<font color='red'><b>DDT da rientri con merce:</b></font> {p['codice']} ({p['data']})"
+                elementi.append(Paragraph(r_parz, st_sub))
+                elementi.append(Paragraph("<i>Merce non presente nella distinta di carico, procedere con la presa manuale come da nota integrativa:</i>", st_sub))
+                if p.get("nota_integrativa"):
+                    elementi.append(Paragraph(f"<b>NOTA:</b> {p['nota_integrativa']}", st_sub))
+                elementi.append(Spacer(1, 2*mm))
         
     if pdf_non_trovati_giro:
         elementi.append(Spacer(1, 2*mm))
@@ -820,6 +842,17 @@ def main():
                 dir_frutta_r = dir_frutta
                 dir_latte_r  = dir_latte
 
+            # Estraiamo le informazioni specifiche degli alert per non perderle durante la deduplicazione
+            alert_info = {}
+            for alert in punto.get("rientri_alert", []):
+                ac = alert.get("codice", "").lower()
+                ad = alert.get("data_ddt", "")
+                if ac and ad:
+                    alert_info[(ac, ad)] = {
+                        "is_parziale": alert.get("is_parziale", False),
+                        "nota_integrativa": alert.get("nota_integrativa", "")
+                    }
+
             # Prepariamo la lista dei codici da cercare. Includiamo cf, cl e i codici di eventuali rientri_alert.
             codici_da_cercare = [(cf, "FRUTTA", d_p), (cl, "LATTE", d_p)]
             for alert in punto.get("rientri_alert", []):
@@ -913,12 +946,7 @@ def main():
                     for pdf_obj, tp, d_r in pdfs_da_processare:
                         pdf_usati.add(pdf_obj)
                         pdf_usati_viaggio.append(pdf_obj)
-                        articoli = _raccogli_articoli_da_pdf(pdf_obj, tp)
-                        articoli_giro.extend(articoli)
-                        n_art = len(articoli)
-                        # Un DDT è un rientro se il suo codice E la sua data sono nella mappa rientri.
-                        # Per le date storiche, d_r (es. 04-05-2026_FNS13400) sarà presente nei rientri.
-                        # La consegna normale odierna (es. 11-05-2026) NON sarà considerata rientro.
+                        
                         is_rientro = False
                         if codice.lower() in rientri:
                             # Controlla se la data/nome del file processato (d_r) corrisponde a una data_rientro (d_r_mapped)
@@ -927,12 +955,31 @@ def main():
                                 if d_r == d_r_mapped_norm or d_r == d_r_mapped:
                                     is_rientro = True
                                     break
+                        if tipo == "RIENTRO":
+                            is_rientro = True
+                            
+                        info = alert_info.get((codice.lower(), d_r), {})
+                        is_parz_effettivo = info.get("is_parziale", False)
+                        nota_effettiva = info.get("nota_integrativa", "")
+                            
+                        if is_parz_effettivo:
+                            tag = f" [RIENTRO PARZIALE<-{d_r}]"
+                            print(f"       OK {nome:<40} {codice} ({tp}){tag} -> 0 art. (ignorati)")
+                        else:
+                            articoli = _raccogli_articoli_da_pdf(pdf_obj, tp)
+                            articoli_giro.extend(articoli)
+                            n_art = len(articoli)
+                            tag = f" [RIENTRO<-{d_r}]" if is_rientro else ""
+                            print(f"       OK {nome:<40} {codice} ({tp}){tag} -> {n_art} art.")
                         
-                        tag = f" [RIENTRO<-{d_r}]" if is_rientro else ""
-                        print(f"       OK {nome:<40} {codice} ({tp}){tag} -> {n_art} art.")
                         if is_rientro:
                             rientri_usati.add((codice.lower(), d_r))
-                            rientri_giro.append(f"{codice.upper()} ({d_r})")
+                            rientri_giro.append({
+                                "codice": codice.upper(), 
+                                "data": d_r, 
+                                "is_parziale": is_parz_effettivo, 
+                                "nota_integrativa": nota_effettiva
+                            })
 
             # ── RIENTRI DA ALLEGARE (cliente con consegna normale oggi + rientro storico) ──
             for obj_r in punto.get("rientri_da_allegare", []):
@@ -978,11 +1025,21 @@ def main():
                     for p_f in pdfs_found:
                         pdf_usati.add(p_f)
                         pdf_usati_viaggio.append(p_f)
-                        articoli = _raccogli_articoli_da_pdf(p_f, tipo_r)
-                        articoli_giro.extend(articoli)
-                        print(f"       OK {nome:<40} {codice_r} ({tipo_r})[RIENTRO<-{data_r}] -> {len(articoli)} art.")
+                        
+                        if is_parz_r:
+                            print(f"       OK {nome:<40} {codice_r} ({tipo_r})[RIENTRO PARZIALE<-{data_r}] -> 0 art. (ignorati)")
+                        else:
+                            articoli = _raccogli_articoli_da_pdf(p_f, tipo_r)
+                            articoli_giro.extend(articoli)
+                            print(f"       OK {nome:<40} {codice_r} ({tipo_r})[RIENTRO<-{data_r}] -> {len(articoli)} art.")
+                            
                     rientri_usati.add((codice_r.lower(), data_r))
-                    rientri_giro.append(f"{codice_r.upper()} ({data_r})")
+                    rientri_giro.append({
+                        "codice": codice_r.upper(), 
+                        "data": data_r, 
+                        "is_parziale": is_parz_r, 
+                        "nota_integrativa": nota_r
+                    })
                 else:
                     msg_err = f"Rientro aggiunto mancante: {codice_r} ({data_r}) al cliente {nome}"
                     pdf_non_trovati.append(msg_err)

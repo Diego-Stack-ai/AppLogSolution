@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V04</title>
+    <title>V08</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
@@ -69,13 +69,13 @@
         </div>
         <div id="sidebar">
             <div class="header">
-                <div class="trip-title">🏎️ V04 | Zone: 3202</div>
+                <div class="trip-title">🏎️ V08 | Zone: 4113</div>
                 <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
                 <div class="stats-row">
-                    <div class="stat-item"><span class="stat-val">309.7km</span><span class="stat-lbl">Strada</span></div>
-                    <div class="stat-item"><span class="stat-val">4h 13m</span><span class="stat-lbl">Guida</span></div>
-                    <div class="stat-item"><span class="stat-val">56m</span><span class="stat-lbl">Soste</span></div>
-                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">5h 9m</span><span class="stat-lbl">Totale</span></div>
+                    <div class="stat-item"><span class="stat-val">309.6km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">4h 33m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">40m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">5h 13m</span><span class="stat-lbl">Totale</span></div>
                 </div>
             </div>
             <div id="delivery-list">
@@ -88,70 +88,50 @@
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(0, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">E. De Amicis - Alano Di Piave</b>
-                    <span class="addr"><b>Piazza Martiri</b><br>3, 32038 Alano Di Piave Del Comune Di Setteville (BELLUNO)</span>
+                    <b class="name">"ROMANO OCRI" CESIOM.-SORANZEN</b>
+                    <span class="addr"><b>VIA SCUOLE 14</b><br>32030 CESIOMAGGIORE (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.9076756150071,11.90877162694929&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=46.07358887371196,11.94613988304191&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(2)">
                 <div class="stop-num">2</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(1, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">"SEGATO" CHIESURAZZA</b>
-                    <span class="addr"><b>VIA AGORDO 578</b><br>32100 BELLUNO (BELLUNO)</span>
+                    <b class="name">SAN GREGORIO NELLE ALPI</b>
+                    <span class="addr"><b>VIA MONTE PIZZOCCO 2</b><br>32030 SAN GREGORIO NELLE ALPI (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=46.14119288848221,12.17254017869874&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=46.10446850259822,12.02748591804557&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(3)">
                 <div class="stop-num">3</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(2, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">"RINO SORIO" MUSSOI</b>
-                    <span class="addr"><b>VIA FRATELLI ROSSELLI</b><br>32100 BELLUNO (BELLUNO)</span>
+                    <b class="name">Fraz. Oltrerai</b>
+                    <span class="addr"><b>Via I Novembre</b><br>1 -Paiane, 32014 Ponte Nelle Alpi (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=46.14364034277298,12.19934169416502&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=46.17610952830536,12.31321091556602&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(4)">
                 <div class="stop-num">4</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(3, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">A.Gabelli Belluno</b>
-                    <span class="addr"><b>Piazzale Cesare Battisti</b><br>32100 Belluno (BELLUNO)</span>
+                    <b class="name">"BRUSTOLON" BADILET</b>
+                    <span class="addr"><b>VIA CIRVOI N. 11/A</b><br>32100 BELLUNO (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=46.14145171390994,12.21280007071495&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=46.11011797531502,12.23923022651725&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(5)">
                 <div class="stop-num">5</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(4, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Scuola Primaria Agosti</b>
-                    <span class="addr"><b>Piazza S.Giovanni Bosco</b><br>12, 32100 Belluno (BELLUNO)</span>
+                    <b class="name">Dante Alighieri - Mel</b>
+                    <span class="addr"><b>Via D. R. Zannoni</b><br>37, 32026 Borgo Valbelluna (BELLUNO)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=46.14334304461654,12.22477933995056&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(6)">
-                <div class="stop-num">6</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(5, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">"LUDWIG VAN BEETHOVEN"</b>
-                    <span class="addr"><b>VIA CATISANA 10</b><br>32010 ALPAGO (BELLUNO)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=46.16671138955248,12.35653422012938&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(7)">
-                <div class="stop-num">7</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(6, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">"DON UMBERTO TRAME" LAMOSANO</b>
-                    <span class="addr"><b>VIA TARCOGNA 116</b><br>32010 CHIES D'ALPAGO (BELLUNO)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=46.17457349603256,12.38635851559142&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=46.04399146457267,12.06463451290184&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div>
             <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
                 <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
@@ -214,8 +194,8 @@
     </script>
 
     <script>
-        const v_id = "V04";
-        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}, {"cliente": "E. De Amicis - Alano Di Piave", "indirizzo": "Piazza Martiri, 3, 32038 Alano Di Piave Del Comune Di Setteville (BELLUNO)", "lat": 45.9076756150071, "lon": 11.90877162694929, "codice_frutta": "p2130", "codice_latte": "p1760"}, {"cliente": "\"SEGATO\" CHIESURAZZA", "indirizzo": "VIA AGORDO 578, 32100 BELLUNO (BELLUNO)", "lat": 46.14119288848221, "lon": 12.17254017869874, "codice_frutta": "p2113", "codice_latte": "p00000"}, {"cliente": "\"RINO SORIO\" MUSSOI", "indirizzo": "VIA FRATELLI ROSSELLI, 32100 BELLUNO (BELLUNO)", "lat": 46.14364034277298, "lon": 12.19934169416502, "codice_frutta": "p2112", "codice_latte": "p00000"}, {"cliente": "A.Gabelli Belluno", "indirizzo": "Piazzale Cesare Battisti, 32100 Belluno (BELLUNO)", "lat": 46.14145171390994, "lon": 12.21280007071495, "codice_frutta": "p2169", "codice_latte": "p1914"}, {"cliente": "Scuola Primaria Agosti", "indirizzo": "Piazza S.Giovanni Bosco,12, 32100 Belluno (BELLUNO)", "lat": 46.14334304461654, "lon": 12.22477933995056, "codice_frutta": "p2061", "codice_latte": "p00000"}, {"cliente": "\"LUDWIG VAN BEETHOVEN\"", "indirizzo": "VIA CATISANA 10, 32010 ALPAGO (BELLUNO)", "lat": 46.16671138955248, "lon": 12.35653422012938, "codice_frutta": "p2385", "codice_latte": "p00000"}, {"cliente": "\"DON UMBERTO TRAME\" LAMOSANO", "indirizzo": "VIA TARCOGNA 116, 32010 CHIES D'ALPAGO (BELLUNO)", "lat": 46.17457349603256, "lon": 12.38635851559142, "codice_frutta": "p2384", "codice_latte": "p00000"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}];
+        const v_id = "V08";
+        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}, {"cliente": "\"ROMANO OCRI\" CESIOM.-SORANZEN", "indirizzo": "VIA SCUOLE 14, 32030 CESIOMAGGIORE (BELLUNO)", "lat": 46.07358887371196, "lon": 11.94613988304191, "codice_frutta": "p00000", "codice_latte": "p2009"}, {"cliente": "SAN GREGORIO NELLE ALPI", "indirizzo": "VIA MONTE PIZZOCCO 2, 32030 SAN GREGORIO NELLE ALPI (BELLUNO)", "lat": 46.10446850259822, "lon": 12.02748591804557, "codice_frutta": "p00000", "codice_latte": "p1988"}, {"cliente": "Fraz. Oltrerai", "indirizzo": "Via I Novembre,1 -Paiane, 32014 Ponte Nelle Alpi (BELLUNO)", "lat": 46.17610952830536, "lon": 12.31321091556602, "codice_frutta": "p00000", "codice_latte": "p1948"}, {"cliente": "\"BRUSTOLON\" BADILET", "indirizzo": "VIA CIRVOI N. 11/A, 32100 BELLUNO (BELLUNO)", "lat": 46.11011797531502, "lon": 12.23923022651725, "codice_frutta": "p00000", "codice_latte": "p1719"}, {"cliente": "Dante Alighieri - Mel", "indirizzo": "Via D. R. Zannoni, 37, 32026 Borgo Valbelluna (BELLUNO)", "lat": 46.04399146457267, "lon": 12.06463451290184, "codice_frutta": "p00000", "codice_latte": "p1922"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}];
         window.data = data; window.v_id = v_id;
         let map, markers = [], userMarker;
         window.currentPos = null;

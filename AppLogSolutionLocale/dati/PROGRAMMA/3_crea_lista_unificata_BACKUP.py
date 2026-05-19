@@ -399,14 +399,11 @@ def main():
             }
             for dr in codici_con_date:
                 cr = dr["codice"]
-                c_f_mappa = _val(row[0].value).lower()
-                c_l_mappa = _val(row[1].value).lower()
-                if cr == c_f_mappa:
+                tipo = _val(row[0].value).lower()
+                if tipo:
                     punto_r["codici_ddt_frutta"].append(cr)
-                elif cr == c_l_mappa:
-                    punto_r["codici_ddt_latte"].append(cr)
                 else:
-                    punto_r["codici_ddt_frutta"].append(cr)
+                    punto_r["codici_ddt_latte"].append(cr)
             unificati.append(punto_r)
             wb_m.close()
             # Marca come 'In lavorazione' diretto usando la riga già salvata

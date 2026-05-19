@@ -820,28 +820,15 @@ def main():
                 dir_frutta_r = dir_frutta
                 dir_latte_r  = dir_latte
 
-            # Prepariamo la lista dei codici da cercare. Includiamo cf, cl e i codici di eventuali rientri_alert.
-            codici_da_cercare = [(cf, "FRUTTA", d_p), (cl, "LATTE", d_p)]
-            for alert in punto.get("rientri_alert", []):
-                ac = alert.get("codice")
-                ad = alert.get("data_ddt")
-                if ac and ac != CODICE_VUOTO:
-                    codici_da_cercare.append((ac, "RIENTRO", ad))
+            for codice, tipo in [(cf, "FRUTTA"), (cl, "LATTE")]:
+                if codice == CODICE_VUOTO or not codice:
+                    continue
 
-            # Rimuoviamo duplicati (se un codice è sia cf che rientro_alert)
-            visti = set()
-            codici_unici = []
-            for c_val, c_tipo, c_data in codici_da_cercare:
-                if not c_val or c_val == CODICE_VUOTO: continue
-                if c_val.lower() not in visti:
-                    visti.add(c_val.lower())
-                    codici_unici.append((c_val, c_tipo, c_data))
-
-            for codice, tipo, data_doc in codici_unici:
-                # Se si tratta di un punto con data storica (rientro da file json principale), aggiungi solo
+                # Se si tratta di un punto con data storica (rientro), aggiungi solo
                 # se il singolo codice è tra quelli da rientrare su rientri_ddt.xlsx.
-                if data_doc != data_v and codice.lower() not in rientri:
-                    # Questo previene l'aggiunta automatica di codici non necessari
+                if d_p != data_v and codice.lower() not in rientri:
+                    # Questo previene l'aggiunta automatica di codici Latte non necessari
+                    # recuperati via Mappatura Master.
                     continue
 
                 pdfs_da_processare = []
@@ -860,10 +847,8 @@ def main():
                             pdfs_da_processare.append((p_f, tipo, d_p))
                 
                 # ── 2. CERCA RIENTRI STORICI (Fallback sicuro) ──
-                if codice.lower() in rientri or tipo == "RIENTRO":
-                    # Se è di tipo RIENTRO ma non è in rientri, usiamo la data da json
-                    date_da_usare = rientri.get(codice.lower(), [data_doc])
-                    for d_r in date_da_usare:
+                if codice.lower() in rientri:
+                    for d_r in rientri[codice.lower()]:
                         rientri_assegnati.add((codice.lower(), d_r))
                         
                         # Normalizza gli slash in trattini (es. 04/05/2026 -> 04-05-2026)

@@ -569,6 +569,9 @@
                 `).join('');
             } else if(currentTab === 'rientri') {
                  container.innerHTML = data.map(d => {
+                    console.log("[DEBUG RIENTRI] Documento intero:", d);
+                    console.log("[DEBUG RIENTRI] Chiavi disponibili:", Object.keys(d));
+                    
                     const codice = d['Codice consegna'] || d.id;
                     const ddt = d['Data e Num DDT'] || '';
                     const stato = d['Stato'] || '';

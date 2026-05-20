@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'log-solution-v2.13';
+﻿const CACHE_NAME = 'log-solution-v2.14';
 const ASSETS = [
     './',
     './index.html',
@@ -17,7 +17,7 @@ const ASSETS = [
     './img/logo.png',
     'https://fonts.googleapis.com/icon?family=Material+Icons+Round'
 ];
-// Nota: JS/CSS con ?v= non sono in ASSETS perchÃ© usano strategia Network-First
+// Nota: JS/CSS con ?v= non sono in ASSETS perchÃƒÂ© usano strategia Network-First
 // e vengono cachati dinamicamente al primo accesso.
 
 // 1. Installazione: cache solo asset statici puri
@@ -49,7 +49,7 @@ self.addEventListener('activate', (event) => {
 // 3. SKIP_WAITING via messaggio (forza aggiornamento immediato)
 self.addEventListener('message', (event) => {
     if (event.data === 'SKIP_WAITING' || event.data?.type === 'SKIP_WAITING') {
-        console.log(`[SW ${CACHE_NAME}] SKIP_WAITING ricevuto â€” attivazione forzata.`);
+        console.log(`[SW ${CACHE_NAME}] SKIP_WAITING ricevuto Ã¢â‚¬â€ attivazione forzata.`);
         self.skipWaiting();
     }
 });
@@ -62,7 +62,7 @@ self.addEventListener('fetch', (event) => {
     // Ignora richieste non http (es: chrome-extension://) per evitare errori
     if (!url.startsWith('http')) return;
 
-    // â”€ Bypass totale: Firebase, Firestore, autenticazione â”€â”€â”€â”€â”€â”€â”€â”€
+    // Ã¢â€â‚¬ Bypass totale: Firebase, Firestore, autenticazione Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     if (
         url.includes('firebaseio.com') ||
         url.includes('firestore.googleapis.com') ||
@@ -73,10 +73,9 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // â”€ Network-First: HTML (navigazione) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (event.request.mode === 'navigate' || url.endsWith('.html')) {
         event.respondWith(
-            fetch(event.request)
+            fetch(event.request.url, { cache: 'no-store' })
                 .then((response) => {
                     const copy = response.clone();
                     caches.open(CACHE_NAME).then((c) => c.put(event.request, copy));
@@ -87,26 +86,26 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // â”€ Network-First: JS e CSS (sempre freschi, fallback offline) â”€â”€â”€â”€â”€
+    // Ã¢â€â‚¬ Network-First: JS e CSS (sempre freschi, fallback offline) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     // Questa strategia elimina il bisogno di bumping manuale del ?v=
     if (url.match(/\.(js|css)(\?|$)/)) {
         event.respondWith(
-            fetch(event.request)
+            fetch(event.request.url, { cache: 'no-store' })
                 .then((response) => {
                     const copy = response.clone();
                     caches.open(CACHE_NAME).then((c) => c.put(event.request, copy));
                     return response;
                 })
                 .catch(() =>
-                    // Offline: prova esatto, poi ignora query string
-                    caches.match(event.request)
-                        .then((r) => r || caches.match(event.request, { ignoreSearch: true }))
+                    caches.match(event.request).then((res) => {
+                        return res || new Response('', { status: 404 });
+                    })
                 )
         );
         return;
     }
 
-    // â”€ Cache-First: immagini e altri asset statici (cambiano raramente) â”€â”€
+    // Ã¢â€â‚¬ Cache-First: immagini e altri asset statici (cambiano raramente) Ã¢â€â‚¬Ã¢â€â‚¬
     event.respondWith(
         caches.match(event.request).then((cached) => {
             if (cached) return cached;

@@ -8,7 +8,7 @@
     ],
     "headers": [
       {
-        "source": "**/sw*.js",
+        "source": "**/*.@(html|js)",
         "headers": [
           {
             "key": "Cache-Control",

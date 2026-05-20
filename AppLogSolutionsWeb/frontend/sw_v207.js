@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'log-solution-v2.09';
+﻿const CACHE_NAME = 'log-solution-v2.10';
 const ASSETS = [
     './',
     './index.html',
@@ -62,7 +62,7 @@ self.addEventListener('fetch', (event) => {
     // Ignora richieste non http (es: chrome-extension://) per evitare errori
     if (!url.startsWith('http')) return;
 
-    // Ã¢â€â‚¬Ã¢â€â‚¬ Bypass totale: Firebase, Firestore, autenticazione Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    // â”€ Bypass totale: Firebase, Firestore, autenticazione â”€â”€â”€â”€â”€â”€â”€â”€
     if (
         url.includes('firebaseio.com') ||
         url.includes('firestore.googleapis.com') ||
@@ -73,7 +73,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Ã¢â€â‚¬Ã¢â€â‚¬ Network-First: HTML (navigazione) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    // â”€ Network-First: HTML (navigazione) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (event.request.mode === 'navigate' || url.endsWith('.html')) {
         event.respondWith(
             fetch(event.request)
@@ -87,7 +87,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Ã¢â€â‚¬Ã¢â€â‚¬ Network-First: JS e CSS (sempre freschi, fallback offline) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    // â”€ Network-First: JS e CSS (sempre freschi, fallback offline) â”€â”€â”€â”€â”€
     // Questa strategia elimina il bisogno di bumping manuale del ?v=
     if (url.match(/\.(js|css)(\?|$)/)) {
         event.respondWith(
@@ -106,7 +106,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Ã¢â€â‚¬Ã¢â€â‚¬ Cache-First: immagini e altri asset statici (cambiano raramente) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    // â”€ Cache-First: immagini e altri asset statici (cambiano raramente) â”€â”€
     event.respondWith(
         caches.match(event.request).then((cached) => {
             if (cached) return cached;

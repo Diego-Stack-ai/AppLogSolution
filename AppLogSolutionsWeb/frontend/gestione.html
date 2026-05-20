@@ -568,19 +568,30 @@
                     </div>
                 `).join('');
             } else if(currentTab === 'rientri') {
-                 container.innerHTML = data.map(d => `
-                    <div class="item-card">
+                 container.innerHTML = data.map(d => {
+                    const codice = d['Codice consegna'] || d.id;
+                    const ddt = d['Data e Num DDT'] || '';
+                    const stato = d['Stato'] || '';
+                    const tipo = (d['Tipo'] || '').toLowerCase();
+                    const note = d['Note'] || '';
+                    const isParziale = tipo === 'parziale';
+                    
+                    return `
+                    <div class="item-card${isParziale ? ' parziale' : ''}">
                         <div class="card-header">
                             <div>
-                                <h4 class="card-title">${d.codice_consegna || d.id}</h4>
-                                <p style="font-size:12px; color:var(--text-muted); margin:0;">Data DDT: ${d.data_ddt || ''}</p>
+                                <h4 class="card-title">${codice}</h4>
+                                <p style="font-size:12px; color:var(--text-muted); margin:0;">${ddt}</p>
                             </div>
-                            <span class="badge badge-frutta">${d.stato || ''}</span>
+                            <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
+                                ${stato ? `<span class="badge badge-stato">${stato}</span>` : ''}
+                                ${isParziale ? `<span class="badge badge-parziale">⚠️ parziale</span>` : ''}
+                            </div>
                         </div>
                         <div class="card-body">
-                            <div class="data-item">
+                            <div class="data-item" style="grid-column: span 12;">
                                 <span class="data-label">Note</span>
-                                <span class="data-value">${d.note || '-'}</span>
+                                <span class="data-value" style="white-space: pre-wrap;">${note || '-'}</span>
                             </div>
                         </div>
                         <div class="card-actions">
@@ -592,7 +603,7 @@
                              </button>
                         </div>
                     </div>
-                `).join('');
+                `;}).join('');
             }
         }
 
@@ -725,23 +736,26 @@
                 fields.innerHTML = `
                     <div class="input-group">
                         <label>Codice Consegna</label>
-                        <input type="text" name="codice_consegna" required>
+                        <input type="text" name="Codice consegna" required>
                     </div>
                     <div class="input-group">
                         <label>Data e Num DDT</label>
-                        <input type="text" name="data_ddt" placeholder="es: 19/05/2026 - 1234">
+                        <input type="text" name="Data e Num DDT" placeholder="es: 19/05/2026_FNS1234">
                     </div>
                     <div class="input-group">
-                        <label>Stato</label>
-                        <input type="text" name="stato" placeholder="Lascia vuoto per default">
+                        <label>Stato allegato</label>
+                        <input type="text" name="Stato" placeholder="es: allegato DDT 19-05-2026">
                     </div>
-                    <div class="input-group" style="flex-direction:row; align-items:center; gap:8px; grid-column: span 6;">
-                        <input type="checkbox" name="is_parziale" id="f_is_parziale" style="width:auto; margin:0;">
-                        <label for="f_is_parziale" style="margin:0; cursor:pointer; font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Rientro Parziale (Escludi articoli da distinta)</label>
+                    <div class="input-group">
+                        <label>Tipo</label>
+                        <select name="Tipo" style="padding:10px; border-radius:8px; border:1px solid #e2e8f0; font-size:14px; width:100%; font-family:inherit;">
+                            <option value="">— completo —</option>
+                            <option value="parziale">parziale</option>
+                        </select>
                     </div>
-                    <div class="input-group" style="grid-column: span 6;">
+                    <div class="input-group" style="grid-column: span 12;">
                         <label>Note / Dettagli</label>
-                        <input type="text" name="note" placeholder="es: Frutta non conforme o reso parziale">
+                        <textarea name="Note" rows="2" placeholder="Dettagli da consegnare / ritirare..." style="padding:10px; border-radius:8px; border:1px solid #e2e8f0; font-size:14px; width:100%; font-family:inherit;"></textarea>
                     </div>
                 `;
             }
@@ -751,25 +765,29 @@
 
         document.getElementById('crudForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const formData = new FormData(e.target);
+            const formEl = e.target;
+            const formData = new FormData(formEl);
             const data = Object.fromEntries(formData.entries());
-            if (currentTab === 'rientri') {
-                data.is_parziale = document.getElementById('f_is_parziale') ? document.getElementById('f_is_parziale').checked : false;
-            }
-            
+            const formId = formEl.dataset.id; // L'ID del record in modifica (se esiste)
+
             try {
                 let collPath = '';
-                let docId = null;
+                let docId = formId || null;
                 
                 if(currentTab === 'clienti') {
                     collPath = 'clienti/DNR/raccolta clienti';
-                    docId = data.codice_frutta || data.codice_latte || null;
+                    docId = docId || data.codice_frutta || data.codice_latte || null;
                 } else if(currentTab === 'articoli') {
                     collPath = 'clienti/DNR/codici articoli';
-                    docId = data.id;
+                    docId = docId || data.id;
                     delete data.id;
-                } else {
+                } else if (currentTab === 'rientri') {
                     collPath = 'clienti/DNR/rientri ddt';
+                    // Se è un inserimento manuale da zero, creiamo un ID univoco dal codice
+                    if (!docId && data['Codice consegna']) {
+                        const ddtStr = (data['Data e Num DDT'] || '').replace(/\s+/g, '_');
+                        docId = ddtStr ? `${data['Codice consegna']}_${ddtStr}` : data['Codice consegna'];
+                    }
                 }
                 
                 if(docId) {
@@ -862,6 +880,8 @@
             openModal();
             const form = document.getElementById('crudForm');
             const title = document.getElementById('modalTitle');
+            
+            form.dataset.id = item.id;
             title.innerText = focusMap ? "Geolocalizza Cliente" : "Modifica Record";
             
             Object.keys(item).forEach(key => {

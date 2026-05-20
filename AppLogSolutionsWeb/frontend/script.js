@@ -4,11 +4,11 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "2.08";
+const APP_VERSION = "2.09";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
-console.log("%c[App] Log Solution PWA â€” versione 2.07", "color: #4f46e5; font-weight: bold; font-size: 12px;");
+console.log("%c[App] Log Solution PWA â€” versione " + APP_VERSION, "color: #4f46e5; font-weight: bold; font-size: 12px;");
 
 
 // --- STATO GLOBALE ---
@@ -79,7 +79,7 @@ function updateStepUI() {
     for (let i = 1; i <= totalSteps; i++) {
         const dot = document.getElementById(`dot-${i}`);
         if (!dot) continue;
-        if (i < currentStep) { dot.classList.add('completed'); dot.innerHTML = 'âœ“'; }
+        if (i < currentStep) { dot.classList.add('completed'); dot.innerHTML = 'Ã¢Å“â€œ'; }
         else if (i === currentStep) { dot.classList.add('active'); dot.classList.remove('completed'); dot.innerHTML = i; }
         else { dot.classList.remove('active', 'completed'); dot.innerHTML = i; }
     }
@@ -166,7 +166,7 @@ window.discardDraft = () => {
     window.location.reload();
 };
 
-// --- MENÃ™ DINAMICI ---
+// --- MENÃƒâ„¢ DINAMICI ---
 window.renderMezziInserimento = function() {
     const select = document.getElementById('automezzo');
     if (!select) return;
@@ -191,7 +191,7 @@ window.renderClientiInserimento = function() {
     const progetti = window.appData.lista_progetti || [];
     let nomi = progetti.map(p => p.nome).filter(Boolean);
 
-    // 2. Fallback hardcoded se Firestore Ã¨ vuoto
+    // 2. Fallback hardcoded se Firestore ÃƒÂ¨ vuoto
     if (nomi.length === 0) {
         nomi = ["PROGETTO SCUOLE", "CATTEL", "GRAN CHEF", "BAUER"];
     }
@@ -311,10 +311,10 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.serviceWorker.register('./sw_v207.js').then(reg => {
             console.log('[SW] Registrato correttamente alla v2.07.');
 
-            // Se c'Ã¨ giÃ  un SW in attesa (tab rimasto aperto durante aggiornamento)
-            // â†’ invia subito SKIP_WAITING per forzare l'attivazione
+            // Se c'ÃƒÂ¨ giÃƒÂ  un SW in attesa (tab rimasto aperto durante aggiornamento)
+            // Ã¢â€ â€™ invia subito SKIP_WAITING per forzare l'attivazione
             if (reg.waiting) {
-                console.log('[SW] SW in attesa trovato â€” invio SKIP_WAITING.');
+                console.log('[SW] SW in attesa trovato Ã¢â‚¬â€ invio SKIP_WAITING.');
                 reg.waiting.postMessage({ type: 'SKIP_WAITING' });
                 showUpdateToast(reg);
             }
@@ -332,13 +332,13 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('[SW] Errore registrazione:', err);
         });
 
-        // âš¡ CRITICO: Quando il nuovo SW prende il controllo, ricarica la pagina automaticamente
+        // Ã¢Å¡Â¡ CRITICO: Quando il nuovo SW prende il controllo, ricarica la pagina automaticamente
         // Questo garantisce che il telefono non rimanga su una versione vecchia.
         let swRefreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (swRefreshing) return;
             swRefreshing = true;
-            console.log('[SW] Nuova versione attiva â€” ricarico la pagina...');
+            console.log('[SW] Nuova versione attiva Ã¢â‚¬â€ ricarico la pagina...');
             window.location.reload();
         });
     }
@@ -352,7 +352,7 @@ function showUpdateToast(reg) {
     toast.id = 'sw-update-toast';
     toast.className = 'sw-update-toast show';
     toast.innerHTML = `
-        <div style="flex:1;">ðŸ†• Nuova versione disponibile (v${APP_VERSION})</div>
+        <div style="flex:1;">ðŸ†• Nuova versione disponibile!</div>
         <button class="btn-update" id="btn-sw-update">Aggiorna ora</button>
     `;
     document.body.appendChild(toast);
@@ -378,11 +378,11 @@ window.onUserProfileLoaded = (user) => {
     const role = (user.ruolo || 'autista').toLowerCase();
     if (dashBtn) dashBtn.style.display = (role === 'amministratore' || role === 'impiegata') ? 'flex' : 'none';
 
-    // Inizializza i menu a tendina dinamici se i dati sono giÃ  pronti
+    // Inizializza i menu a tendina dinamici se i dati sono giÃƒÂ  pronti
     if (typeof window.renderMezziInserimento === 'function') window.renderMezziInserimento();
     if (typeof window.renderClientiInserimento === 'function') window.renderClientiInserimento();
 
-    // Se siamo in inserimento e c'Ã¨ una bozza, mostriamo il modale
+    // Se siamo in inserimento e c'ÃƒÂ¨ una bozza, mostriamo il modale
     if (document.getElementById('presenzeForm') && sessionStorage.getItem('currentDraft')) {
         document.getElementById('recoveryTripModal')?.classList.add('active');
     }

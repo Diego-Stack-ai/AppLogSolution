@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="utf-8">
@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2.08">
+    <link rel="stylesheet" href="styles.css?v=2.09">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
@@ -921,7 +921,7 @@
         // Lock/Unlock Button UI Updates
         function _updateLockUI() {
             const btn = document.getElementById('btn-lock-map');
-            btn.innerHTML = isLockedGlobal ? '<span class="material-icons-round">lock</span> BLOCCATA 🔒' : '<span class="material-icons-round">lock_open</span> SBLOCCATA 🔓';
+            btn.innerHTML = isLockedGlobal ? '<span class="material-icons-round">lock</span> BLOCCATA ðŸ”’' : '<span class="material-icons-round">lock_open</span> SBLOCCATA ðŸ”“';
             btn.className = 'btn-control btn-lock' + (isLockedGlobal ? ' locked' : '');
             
             // If locked, we disable dragging immediately
@@ -936,7 +936,7 @@
             _updateLockUI();
             
             // Notify user
-            showSaveBanner(isLockedGlobal ? "Mappa Bloccata 🔒" : "Mappa Sbloccata per Modifiche 🔓", isLockedGlobal ? "#ef4444" : "#10b981");
+            showSaveBanner(isLockedGlobal ? "Mappa Bloccata ðŸ”’" : "Mappa Sbloccata per Modifiche ðŸ”“", isLockedGlobal ? "#ef4444" : "#10b981");
             
             // Re-render markers to update drag states
             await renderMarkers();
@@ -1109,16 +1109,16 @@
                         masterClientiList[idx].lon = lon;
                     }
 
-                    showSaveBanner(`📍 Coordinata Salvata: ${nome}`, "var(--accent)");
+                    showSaveBanner(`ðŸ“ Coordinata Salvata: ${nome}`, "var(--accent)");
                     console.log(`[Firestore] Sincronizzato con successo: ${nome} (doc: ${docId})`);
                 } else {
                     console.warn(`[Firestore] Nessun cliente corrispondente trovato nel Master DB per: ${nome}.`);
                     // We will save to Storage only on Save All
-                    showSaveBanner(`💾 Modificato in locale: ${nome}`, "var(--warning)");
+                    showSaveBanner(`ðŸ’¾ Modificato in locale: ${nome}`, "var(--warning)");
                 }
             } catch (err) {
                 console.error("[Firestore] Errore salvataggio atomico coordinata:", err);
-                showSaveBanner("❌ Errore sincronizzazione database!", "var(--danger)");
+                showSaveBanner("âŒ Errore sincronizzazione database!", "var(--danger)");
             }
         }
 
@@ -1159,7 +1159,7 @@
                             </div>
                             <div class="zone-meta-right">
                                 <span class="badge-points">${z.lista_punti.length} fermate</span>
-                                ${stats.tot_ddt > 0 ? `<div class="zone-value-summary">${stats.tot_ddt} DDT · € ${stats.valore}</div>` : ''}
+                                ${stats.tot_ddt > 0 ? `<div class="zone-value-summary">${stats.tot_ddt} DDT Â· â‚¬ ${stats.valore}</div>` : ''}
                             </div>
                         </div>
 
@@ -1187,7 +1187,7 @@
                                     if (activeAction === 'dividi' && !isSpeciale) {
                                         controlHtml = `
                                             <input type="checkbox" id="chk-${pointHash}" class="chk-box dividi-chk" value="${pointHash}">
-                                            <label for="chk-${pointHash}" class="chk-lbl">✓</label>
+                                            <label for="chk-${pointHash}" class="chk-lbl">âœ“</label>
                                         `;
                                     } else if (activeAction === 'sposta') {
                                         // Generate list of available target voyages
@@ -1241,7 +1241,7 @@
                                         </button>
                                     ` : ''}
                                     <button class="btn-action-trigger" ${isLockedGlobal ? 'disabled' : ''} onclick="startAction('sposta', '${z.id_zona}')">
-                                        ${isSpeciale ? '📦 ASSEGNA A AUTISTA' : 'SPOSTA FERMATE'}
+                                        ${isSpeciale ? 'ðŸ“¦ ASSEGNA A AUTISTA' : 'SPOSTA FERMATE'}
                                     </button>
                                 `}
                             </div>
@@ -1512,7 +1512,7 @@
                 Swal.close();
                 
                 // Show floating banner
-                showSaveBanner("💾 SALVATAGGIO COMPLETATO!", "var(--accent)");
+                showSaveBanner("ðŸ’¾ SALVATAGGIO COMPLETATO!", "var(--accent)");
 
                 Swal.fire({
                     title: 'Successo!',

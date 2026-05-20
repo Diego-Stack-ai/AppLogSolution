@@ -239,24 +239,29 @@ if HAS_FLASK:
             nome = p.get('nome', '')
             lat = p['lat']
             lon = p['lon']
+            cod_univoco = p.get('codice_univoco', '')
+
+            # IGNORA p00000 per il salvataggio Excel basato sui vecchi codici
+            if cod_f.strip().lower() == "p00000": cod_f = ""
+            if cod_l.strip().lower() == "p00000": cod_l = ""
 
             res = _aggiorna_entrambi_excel(cod_f, cod_l, lat, lon, nome=nome)
             if res is True:
                 global ZONE_LIST_CACHE
                 for z in ZONE_LIST_CACHE:
                     for pt in z.get("lista_punti", []):
-                        if (cod_f and str(pt.get("codice_frutta", "")).strip().lower() == cod_f.strip().lower()) or \
-                           (cod_l and str(pt.get("codice_latte", "")).strip().lower() == cod_l.strip().lower()):
+                        pt_univoco = pt.get("codice_univoco") or f"{pt.get('codice_frutta', '')}_{pt.get('codice_latte', '')}"
+                        if cod_univoco and pt_univoco == cod_univoco:
                             pt['lat'], pt['lon'] = lat, lon
 
-                # Aggiorna JSON Unificato e Viaggi al volo
+                # Aggiorna JSON Unificato e Viaggi al volo tramite codice univoco
                 for f_path, is_unif in [(TARGET_FILE_UNIFICATO, True), (TARGET_FILE_VIAGGI, False)]:
                     if f_path and f_path.exists():
                         d = json.loads(f_path.read_text(encoding='utf-8'))
                         lista = d.get('punti', []) if is_unif else [x for zz in d for x in zz.get('lista_punti', [])]
                         for pt in lista:
-                            if (cod_f and str(pt.get("codice_frutta", "")).strip().lower() == cod_f.strip().lower()) or \
-                               (cod_l and str(pt.get("codice_latte", "")).strip().lower() == cod_l.strip().lower()):
+                            pt_univoco = pt.get("codice_univoco") or f"{pt.get('codice_frutta', '')}_{pt.get('codice_latte', '')}"
+                            if cod_univoco and pt_univoco == cod_univoco:
                                 pt['lat'], pt['lon'] = lat, lon
                         f_path.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding='utf-8')
                 return jsonify({"status": "ok", "msg": "Sincronizzazione completata!"})
@@ -471,6 +476,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             }
             renderMarkers();
             renderSidebar();
+            updateTotals();
         }
 
         window.addEventListener('beforeunload', function(e) {
@@ -534,14 +540,34 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     
                     const el = document.createElement("div");
                     el.className = `custom-marker ${shape}`;
-                    if (shape === 'm-triangolo') el.style.borderBottomColor = z.color; else el.style.backgroundColor = z.color;
+                    
+                    let isParziale = false;
+                    if (isSpeciale && p.rientri_alert) {
+                        isParziale = p.rientri_alert.some(r => r.is_parziale === true);
+                    }
+                    
+                    if (isParziale) {
+                        if (shape === 'm-triangolo') {
+                            el.style.borderBottomColor = "#f59e0b";
+                            el.style.backgroundImage = "repeating-linear-gradient(45deg, black, black 4px, transparent 4px, transparent 8px)";
+                        } else {
+                            el.style.backgroundImage = "repeating-linear-gradient(45deg, #000, #000 4px, #f59e0b 4px, #f59e0b 8px)";
+                            el.style.color = "white";
+                            el.style.textShadow = "1px 1px 2px black, -1px -1px 2px black, 0px 0px 3px black";
+                            el.style.border = "2px solid black";
+                        }
+                    } else {
+                        if (shape === 'm-triangolo') el.style.borderBottomColor = z.color; else el.style.backgroundColor = z.color;
+                    }
+                    
                     el.innerHTML = `<span>${idx+1}</span>`;
                     
                     const m = new AdvancedMarkerElement({ position: {lat: p.lat, lng: p.lon}, map: map, title: p.nome, content: el, gmpDraggable: DRAGGING_ENABLED && !isLockedGlobal });
                     m.addListener("dragend", () => {
                         p.lat = m.position.lat; p.lon = m.position.lng;
                         _hasUnsavedChanges = true;
-                        _salvaSingolo(p.codice_frutta || '', p.codice_latte || '', p.nome || '', p.lat, p.lon);
+                        let c_u = p.codice_univoco || (p.codice_frutta + '_' + p.codice_latte);
+                        _salvaSingolo(p.codice_frutta || '', p.codice_latte || '', p.nome || '', p.lat, p.lon, c_u);
                     });
                     m.addListener("gmp-click", () => {
                         new google.maps.InfoWindow({ content: `<div style="padding:10px;"><b>${p.nome}</b><br>${p.indirizzo}<br><br><button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}')" style="width:100%; cursor:pointer;">VEDI SU GOOGLE</button></div>` }).open(map, m);
@@ -551,8 +577,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             });
         }
 
-        function _salvaSingolo(cod_f, cod_l, nome, lat, lon) {
-            fetch('/save_coord', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cod_f, cod_l, nome, lat, lon}) })
+        function _salvaSingolo(cod_f, cod_l, nome, lat, lon, codice_univoco) {
+            fetch('/save_coord', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cod_f, cod_l, nome, lat, lon, codice_univoco}) })
             .then(r => r.json())
             .then(d => { 
                 let st = document.getElementById('save-status');
@@ -599,6 +625,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     ${isSelected ? `
                         <div style="margin-top:10px; border-top:1px solid #e2e8f0; padding-top:10px; max-height:320px; overflow-y:auto;">
                             ${z.lista_punti.map((p, idx) => {
+                                const isParzList = isSpeciale && p.rientri_alert && p.rientri_alert.some(r => r.is_parziale);
+                                const bgStyle = isParzList ? 'background: repeating-linear-gradient(45deg, #000, #000 3px, #f59e0b 3px, #f59e0b 6px); color: white; text-shadow: 1px 1px 2px black; border: 1px solid black;' : `background: ${z.color};`;
                                 const pid = (p.codice_frutta + "_" + p.nome).replace(/[^a-zA-Z0-9]/g, '_');
                                 const parts = (p.indirizzo || '').split(',');
                                 const via = parts[0] || '';
@@ -610,7 +638,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                                 return `<div class="point-card">
                                     <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
                                         <div style="display:flex; align-items:center; flex:1; min-width:0; gap:0;">
-                                            <span class="point-num" style="background:${z.color};">${idx+1}</span>
+                                            <span class="point-num" style="${bgStyle}">${idx+1}</span>
                                             <span class="point-name" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.nome}</span>
                                         </div>
                                          ${activeAction === 'dividi' ? ctrl : ''}
@@ -673,8 +701,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         }
 
         function updateTotals() {
-            const total = DATA_ZONE.reduce((acc, z) => acc + z.lista_punti.length, 0);
-            document.getElementById('tot-points').textContent = `${total} Punti`;
+            let totalPunti = 0;
+            let totalDdt = 0;
+            DATA_ZONE.forEach(z => {
+                const isSpeciale = (z.id_zona === 'DDT_DA_INSERIRE');
+                if (VIEW_MODE_PULITA && isSpeciale) return;
+                totalPunti += z.lista_punti.length;
+                totalDdt += calcolaValoreZona(z).tot_ddt;
+            });
+            document.getElementById('tot-points').textContent = `${totalPunti} Punti - ${totalDdt} DDT`;
         }
 
         const VALORE_DDT = 16.50;
@@ -721,21 +756,48 @@ def _carica_e_genera(data_giorno):
     try:
         unif_data = json.loads(TARGET_FILE_UNIFICATO.read_text(encoding="utf-8"))
         punti = unif_data.get("punti", [])
-        zone_dict = {}
+        # Raggruppa i punti per zona
+        temp_dict = {}
         for p in punti:
-            zid = p.get("zona") or "SENZA_ZONA"
-            if zid not in zone_dict:
-                if zid == "DDT_DA_INSERIRE":
-                    nome_z = "⚠️ DDT DA INSERIRE"
-                    colore_z = "#f59e0b"  # arancio per distinguerla
-                else:
-                    nome_z = f"Viaggio {len([z for z in zone_dict if z != 'DDT_DA_INSERIRE'])+1}"
-                    colore_z = _get_color(len(zone_dict))
-                zone_dict[zid] = {"id_zona": zid, "lista_punti": [], "color": colore_z, "nome_giro": nome_z}
-            zone_dict[zid]["lista_punti"].append(p)
-        # Ordina: zone normali per id, DDT_DA_INSERIRE alla fine
-        zone_normali = sorted([z for z in zone_dict.values() if z["id_zona"] != "DDT_DA_INSERIRE"], key=lambda x: str(x["id_zona"]))
-        zone_speciali = [z for z in zone_dict.values() if z["id_zona"] == "DDT_DA_INSERIRE"]
+            zid = str(p.get("zona") or "SENZA_ZONA")
+            if zid not in temp_dict:
+                temp_dict[zid] = []
+            temp_dict[zid].append(p)
+
+        # Ordina le chiavi numericamente/alfabeticamente (escludendo le speciali)
+        chiavi_ordinate = sorted([k for k in temp_dict.keys() if k not in ("DDT_DA_INSERIRE", "SENZA_ZONA")])
+
+        zone_dict = {}
+        # Assegna i nomi V01, V02... in base all'ordine di zona
+        for i, zid in enumerate(chiavi_ordinate, start=1):
+            zone_dict[zid] = {
+                "id_zona": zid,
+                "lista_punti": temp_dict[zid],
+                "color": _get_color(i - 1),
+                "nome_giro": f"V{i:02d}"
+            }
+
+        # Aggiungi SENZA_ZONA alla fine se presente
+        if "SENZA_ZONA" in temp_dict:
+            zone_dict["SENZA_ZONA"] = {
+                "id_zona": "SENZA_ZONA",
+                "lista_punti": temp_dict["SENZA_ZONA"],
+                "color": "#9ca3af",
+                "nome_giro": "Senza Zona"
+            }
+
+        # Aggiungi DDT_DA_INSERIRE alla fine
+        if "DDT_DA_INSERIRE" in temp_dict:
+            zone_dict["DDT_DA_INSERIRE"] = {
+                "id_zona": "DDT_DA_INSERIRE",
+                "lista_punti": temp_dict["DDT_DA_INSERIRE"],
+                "color": "#f59e0b",
+                "nome_giro": "⚠️ DDT DA INSERIRE"
+            }
+
+        # Ricostruisci la lista cache in ordine
+        zone_normali = [zone_dict[k] for k in chiavi_ordinate] + ([zone_dict["SENZA_ZONA"]] if "SENZA_ZONA" in zone_dict else [])
+        zone_speciali = [zone_dict["DDT_DA_INSERIRE"]] if "DDT_DA_INSERIRE" in zone_dict else []
         ZONE_LIST_CACHE = zone_normali + zone_speciali
         
         if not TARGET_FILE_VIAGGI.exists():

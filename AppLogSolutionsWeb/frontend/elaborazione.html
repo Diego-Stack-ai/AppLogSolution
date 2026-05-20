@@ -191,23 +191,25 @@
     <div class="main-container" style="padding-top: 80px;">
         <h1 style="margin-bottom: 16px; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 12px;">
             <span class="material-icons-round" style="font-size: 32px;">description</span>
-            Elaborazione Distinte (v2.05)
+            Elaborazione Distinte
         </h1>
-        <!-- Pannello Controllo Data Centrale -->
-        <div class="glass-panel" style="margin-bottom: 24px; padding: 20px; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(255, 255, 255, 0.8));">
-            <div>
-                <h3 style="margin:0; color: var(--primary); font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Data di Lavoro Referenziale</h3>
-                <p style="margin:0; font-size: 12px; color: #64748b;">Tutte le operazioni (1-6) faranno riferimento a questo giorno</p>
+        <div class="glass-panel" style="margin-bottom: 24px; padding: 20px; background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(255, 255, 255, 0.8));">
+            <div style="margin-bottom: 16px;">
+                <h3 style="margin:0; color: var(--primary); font-size: 16px; text-transform: uppercase; letter-spacing: 1px;">Data di Lavoro Referenziale</h3>
+                <p style="margin:4px 0 0 0; font-size: 13px; color: #64748b;">Tutte le operazioni (1-6) faranno riferimento a questo giorno</p>
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
-                <button class="glass-btn" onclick="window.navigateWithState('gestione_anomalie.html')" style="padding: 10px 16px; border-radius: 12px; font-weight: 700; color: #ef4444; border: 2px solid #ef4444; display: flex; align-items: center; gap: 8px;" title="Risolvi clienti, articoli e orari non riconosciuti">
-                    <span class="material-icons-round">fact_check</span> GESTISCI ANOMALIE
-                </button>
                 <input type="date" id="master-date-selector" style="padding: 10px 16px; border-radius: 12px; border: 2px solid var(--primary); font-family:'Outfit'; font-size: 16px; font-weight: 800; color: var(--primary); outline: none; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);">
                 <button id="lock-date-btn" class="glass-btn" style="padding: 8px; border-radius: 10px; color: var(--primary); border: 2px solid var(--primary);" title="Blocca/Sblocca Data">
                     <span class="material-icons-round" id="lock-icon">lock_open</span>
                 </button>
             </div>
+        </div>
+
+        <div style="margin-bottom: 24px; display: flex;">
+            <button class="glass-btn" onclick="window.navigateWithState('gestione_anomalie.html')" style="padding: 10px 16px; border-radius: 12px; font-weight: 700; color: #ef4444; border: 2px solid #ef4444; background: white; display: flex; align-items: center; gap: 8px;" title="Risolvi clienti, articoli e orari non riconosciuti">
+                <span class="material-icons-round">fact_check</span> GESTISCI ANOMALIE
+            </button>
         </div>
 
         <!-- Navigazione Workflow (Basata sui .bat locali) -->

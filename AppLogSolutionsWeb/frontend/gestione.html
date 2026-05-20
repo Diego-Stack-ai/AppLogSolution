@@ -584,6 +584,9 @@
                             </div>
                         </div>
                         <div class="card-actions">
+                             <button class="btn-edit" onclick="editItem('${d.id}')" title="Modifica">
+                                <span class="material-icons-round" style="font-size:18px;">edit</span>
+                             </button>
                              <button class="btn-delete" onclick="window.deleteItem('${d.id}')" title="Elimina">
                                 <span class="material-icons-round" style="font-size:18px; color: #ef4444;">delete</span>
                              </button>
@@ -725,15 +728,20 @@
                         <input type="text" name="codice_consegna" required>
                     </div>
                     <div class="input-group">
-                        <label>Data DDT</label>
-                        <input type="date" name="data_ddt">
+                        <label>Data e Num DDT</label>
+                        <input type="text" name="data_ddt" placeholder="es: 19/05/2026 - 1234">
                     </div>
                     <div class="input-group">
                         <label>Stato</label>
-                        <select name="stato">
-                            <option value="rientrato">Rientrato</option>
-                            <option value="mancante">Mancante</option>
-                        </select>
+                        <input type="text" name="stato" placeholder="Lascia vuoto per default">
+                    </div>
+                    <div class="input-group" style="flex-direction:row; align-items:center; gap:8px; grid-column: span 6;">
+                        <input type="checkbox" name="is_parziale" id="f_is_parziale" style="width:auto; margin:0;">
+                        <label for="f_is_parziale" style="margin:0; cursor:pointer; font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Rientro Parziale (Escludi articoli da distinta)</label>
+                    </div>
+                    <div class="input-group" style="grid-column: span 6;">
+                        <label>Note / Dettagli</label>
+                        <input type="text" name="note" placeholder="es: Frutta non conforme o reso parziale">
                     </div>
                 `;
             }
@@ -745,6 +753,9 @@
             e.preventDefault();
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
+            if (currentTab === 'rientri') {
+                data.is_parziale = document.getElementById('f_is_parziale') ? document.getElementById('f_is_parziale').checked : false;
+            }
             
             try {
                 let collPath = '';
@@ -878,6 +889,10 @@
                     idInput.readOnly = true;
                 }
             }
+            if(currentTab === 'rientri') {
+                const chk = form.querySelector('[name="is_parziale"]');
+                if(chk) chk.checked = !!item.is_parziale;
+            }
         };
 
         window.navigateWithState = (url) => window.location.href = url;
@@ -885,7 +900,7 @@
         // Gestione Aggiornamento App
         let registration = null;
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw_v205.js').then(reg => {
+            navigator.serviceWorker.register('sw_v207.js').then(reg => {
                 registration = reg;
                 reg.addEventListener('updatefound', () => {
                     const newWorker = reg.installing;

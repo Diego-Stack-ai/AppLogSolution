@@ -17,7 +17,16 @@ except ImportError:
 
 # --- CHIAVE API GOOGLE (da impostare nelle variabili d'ambiente della Cloud Function) ---
 import os
+import logging
+
+# Configurazione logging strutturato nativo GCP
+logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
+logger = logging.getLogger("AppLogSolutions")
+
 GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "")
+
+if not GOOGLE_MAPS_API_KEY:
+    logger.error("CRITICAL: GOOGLE_MAPS_API_KEY non trovata nell'ambiente! Le API Mappe/Matrix falliranno in Cloud.")
 
 # --- CONFIGURAZIONI ---
 BUCKET_NAME = "log-solution-60007.firebasestorage.app"
@@ -433,6 +442,48 @@ def core_chiudi_giornata(uid):
             "errori": [f"Viaggi aperti: {len(viaggi_non_completati)}"],
             "data": {}
         }
+        
+    # --- FINALIZZAZIONE RIENTRI ---
+    try:
+        # Trova tutti i codici assegnati nei viaggi completati
+        codici_assegnati = set()
+        data_giornata = ""
+        for v in viaggi:
+            v_data = v.to_dict()
+            if not data_giornata and v_data.get('data'):
+                data_giornata = v_data.get('data')
+                
+            for p in v_data.get('punti', []):
+                if p.get('codice_frutta') and str(p.get('codice_frutta')) != 'p00000':
+                    codici_assegnati.add(str(p['codice_frutta']).lower())
+                if p.get('codice_latte') and str(p.get('codice_latte')) != 'p00000':
+                    codici_assegnati.add(str(p['codice_latte']).lower())
+                # Rientri associati come alert
+                for r_alert in p.get('rientri_alert', []):
+                    if r_alert.get('codice'):
+                        codici_assegnati.add(str(r_alert['codice']).lower())
+
+        if not data_giornata:
+            from datetime import datetime
+            data_giornata = datetime.now().strftime("%d-%m-%Y")
+            
+        rientri = list(db.collection('clienti').document('DNR').collection('rientri ddt').stream())
+        for r_doc in rientri:
+            r_data = r_doc.to_dict()
+            stato = str(r_data.get('stato') or r_data.get('Stato') or '').strip().lower()
+            if "lavorazione" in stato:
+                r_cod = str(r_data.get('codice_consegna') or r_data.get('Codice consegna') or '').strip().lower()
+                if r_cod in codici_assegnati:
+                    db.collection('clienti').document('DNR').collection('rientri ddt').document(r_doc.id).update({
+                        "stato": f"allegato DDT {data_giornata}"
+                    })
+                else:
+                    db.collection('clienti').document('DNR').collection('rientri ddt').document(r_doc.id).update({
+                        "stato": ""
+                    })
+    except Exception as e_r:
+        print(f"[WARN] Errore durante aggiornamento finale rientri: {e_r}")
+
 
     return {
         "status": "ok",
@@ -1106,14 +1157,27 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines):
         lat  = p.get("lat", "")
         lon  = p.get("lon", p.get("lng", ""))
         nav  = f"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}"
+        
+        is_parz = any(r.get("is_parziale") for r in p.get("rientri_alert", []) if isinstance(r, dict))
+        warn_class = " warning" if is_parz else ""
+        
         fermate_html += (
             f'<div class="card" id="card-{idx}" onclick="selectCard({idx})">'
-            f'<div class="stop-num">{idx+1}</div>'
+            f'<div class="stop-num{warn_class}">{idx+1}</div>'
             f'<div class="stop-info"><span class="name">{nome}</span><span class="addr">{ind}</span></div>'
             f'<a href="{nav}" target="_blank" class="btn-nav">&#x2BAC;</a></div>'
         )
 
-    punti_js     = json.dumps([{"lat": float(p.get("lat",0)), "lng": float(p.get("lon", p.get("lng",0))), "nome": p.get("nome","")} for p in punti])
+    punti_js_list = []
+    for p in punti:
+        is_parz = any(r.get("is_parziale") for r in p.get("rientri_alert", []) if isinstance(r, dict))
+        punti_js_list.append({
+            "lat": float(p.get("lat", 0)),
+            "lng": float(p.get("lon", p.get("lng", 0))),
+            "nome": p.get("nome", ""),
+            "is_parziale": is_parz
+        })
+    punti_js     = json.dumps(punti_js_list)
     polylines_js = json.dumps(polylines)
 
     return f"""<!DOCTYPE html>
@@ -1139,6 +1203,12 @@ body,html{{margin:0;padding:0;height:100%;font-family:'Outfit',sans-serif;overfl
 .card{{background:white;border-radius:12px;padding:10px;margin-bottom:8px;display:grid;grid-template-columns:42px 1fr 40px;gap:8px;align-items:center;border:1px solid #cbd5e1;cursor:pointer;transition:all .2s}}
 .card.active{{border-color:var(--p);border-left:5px solid var(--p);background:#eef2ff}}
 .stop-num{{width:32px;height:32px;background:var(--p);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}}
+.stop-num.warning {{
+background: repeating-linear-gradient(45deg, #000, #000 4px, #f59e0b 4px, #f59e0b 8px) !important;
+color: white !important;
+text-shadow: 1px 1px 2px black, -1px -1px 2px black, 0px 0px 3px black;
+border: 2px solid black;
+}}
 .stop-info{{display:flex;flex-direction:column;gap:3px;min-width:0}}
 .name{{font-size:.85rem;font-weight:800;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
 .addr{{font-size:.75rem;color:#64748b;font-weight:600}}
@@ -1178,9 +1248,19 @@ new google.maps.Marker({{position:DEPOT,map,
 icon:{{path:google.maps.SymbolPath.CIRCLE,scale:14,fillColor:"#1e293b",fillOpacity:1,strokeWeight:0}},
 label:{{text:"D",color:"white",fontWeight:"bold"}}}});
 PUNTI.forEach((p,i)=>{{
+let fillColor = "#4f46e5";
+let strokeColor = "white";
+let strokeWeight = 2;
+let labelColor = "white";
+if (p.is_parziale) {{
+fillColor = "#f59e0b";
+strokeColor = "#000000";
+strokeWeight = 3;
+labelColor = "#000000";
+}}
 const m=new google.maps.Marker({{position:{{lat:p.lat,lng:p.lng}},map,
-icon:{{path:google.maps.SymbolPath.CIRCLE,scale:13,fillColor:"#4f46e5",fillOpacity:1,strokeWeight:2,strokeColor:"white"}},
-label:{{text:String(i+1),color:"white",fontWeight:"bold",fontSize:"12px"}}}});
+icon:{{path:google.maps.SymbolPath.CIRCLE,scale:13,fillColor:fillColor,fillOpacity:1,strokeWeight:strokeWeight,strokeColor:strokeColor}},
+label:{{text:String(i+1),color:labelColor,fontWeight:"bold",fontSize:"12px"}}}});
 m.addListener("click",()=>selectCard(i));
 markers.push(m);
 }});
@@ -1699,7 +1779,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
     # 2. Aggrega per cliente (Step 2 locale)
     punti_map = {} # chiave: tripla_chiave o codice_cliente
     for ddt in ddt_list:
-        cod = ddt.get('codice_cliente')
+        cod = ddt.get('codice_consegna')
         cod_l = str(cod).strip().lower()
         tipo = ddt.get('tipo', 'FRUTTA')
         
@@ -1728,6 +1808,80 @@ def core_genera_report_giornaliero(uid, data_consegna):
             punti_map[chiave]["codici_ddt_frutta"].append(ddt.get('num_ddt', 'UNK'))
         else:
             punti_map[chiave]["codici_ddt_latte"].append(ddt.get('num_ddt', 'UNK'))
+
+    # --- INTEGRAZIONE RIENTRI DDT ---
+    try:
+        rientri_ref = db.collection('clienti').document('DNR').collection('gestione_rientri')
+        # Wait, the collection used in gestione.html is 'rientri ddt'!
+        # Let's check gestione.html line 465: if(currentTab === 'rientri') collPath = 'clienti/DNR/rientri ddt';
+        # OH WOW. In main.py I used 'gestione_rientri'. I need to use 'rientri ddt'!
+        rientri_ref = db.collection('clienti').document('DNR').collection('rientri ddt')
+        
+        for r_doc in rientri_ref.stream():
+            r_data = r_doc.to_dict()
+            stato = str(r_data.get('stato') or r_data.get('Stato') or '').strip().lower()
+            
+            # Ignora se già allegato a una data diversa da quella in elaborazione
+            if 'allegato' in stato and data_consegna not in stato:
+                continue
+                
+            r_cod = str(r_data.get('codice_consegna') or r_data.get('Codice consegna') or '').strip()
+            if not r_cod: continue
+            r_data_ddt = r_data.get('data_ddt') or r_data.get('Data e Num DDT') or ''
+            r_cod_l = r_cod.lower()
+            
+            # Cerca match tra le consegne odierne
+            chiave_esistente = None
+            for k in punti_map.keys():
+                if str(k).strip().lower() == r_cod_l:
+                    chiave_esistente = k
+                    break
+                    
+            stato_attuale = str(r_data.get('stato') or r_data.get('Stato') or '')
+            nuovo_stato = ""
+            
+            is_parz = bool(r_data.get('is_parziale') or False)
+            note_val = str(r_data.get('note') or r_data.get('Note') or r_data.get('nota_integrativa') or '').strip()
+            
+            rientro_obj = {
+                "codice": r_cod,
+                "status": "red",
+                "data_ddt": r_data_ddt,
+                "is_parziale": is_parz,
+                "nota_integrativa": note_val
+            }
+            
+            if chiave_esistente:
+                punti_map[chiave_esistente]['rientri_alert'].append(rientro_obj)
+                nuovo_stato = f"allegato DDT {data_consegna}"
+            else:
+                # Crea punto isolato in zona speciale
+                cliente_info = db_mappati.get(r_cod_l)
+                if r_cod not in punti_map:
+                    punti_map[r_cod] = {
+                        "nome": (cliente_info.get('cliente') or cliente_info.get('nome_consegna') or r_cod) if cliente_info else r_cod,
+                        "indirizzo": cliente_info.get('indirizzo', '') if cliente_info else '',
+                        "codice_frutta": cliente_info.get('codice_frutta', 'p00000') if cliente_info else 'p00000',
+                        "codice_latte": cliente_info.get('codice_latte', 'p00000') if cliente_info else 'p00000',
+                        "codici_ddt_frutta": [],
+                        "codici_ddt_latte": [],
+                        "zona": "DDT_DA_INSERIRE",
+                        "lat": float(cliente_info.get('lat', 0)) if cliente_info and cliente_info.get('lat') else 0,
+                        "lon": float(cliente_info.get('lon', 0)) if cliente_info and cliente_info.get('lon') else 0,
+                        "rientri_alert": [],
+                        "_is_rientro_speciale": True
+                    }
+                punti_map[r_cod]['rientri_alert'].append(rientro_obj)
+                nuovo_stato = "In lavorazione"
+                
+            # Aggiorna DB se lo stato è cambiato
+            if stato_attuale != nuovo_stato:
+                try:
+                    db.collection('clienti').document('DNR').collection('rientri ddt').document(r_doc.id).update({'stato': nuovo_stato})
+                except Exception as e_up:
+                    print(f"[WARN] Impossibile aggiornare stato rientro {r_doc.id}: {e_up}")
+    except Exception as e_r:
+        print(f"[ERROR] Errore integrazione rientri: {e_r}")
 
     # 3. Organizza per Zone (Step 4 locale)
     zone_dict = defaultdict(list)
@@ -1834,6 +1988,7 @@ def _genera_html_mappa_generale(data, zone_list):
         .zone-header {{ display: flex; align-items: center; gap: 10px; font-weight: 800; }}
         .color-pill {{ width: 15px; height: 15px; border-radius: 4px; }}
         .point-item {{ font-size: 0.8rem; margin-top: 5px; color: #64748b; }}
+        .badge-parziale {{ background: #f59e0b; color: black; font-weight: 800; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px; }}
     </style>
 </head>
 <body>
@@ -1864,17 +2019,38 @@ def _genera_html_mappa_generale(data, zone_list):
                 // Markers
                 z.lista_punti.forEach(p => {{
                     if(p.lat && p.lon) {{
+                        let isParziale = false;
+                        if (p.rientri_alert && Array.isArray(p.rientri_alert)) {{
+                            isParziale = p.rientri_alert.some(r => r.is_parziale);
+                        }}
+                        
+                        let fillColor = z.color;
+                        let strokeColor = "white";
+                        let strokeWeight = 2;
+                        let scale = 8;
+                        
+                        if (isParziale) {{
+                            fillColor = "#f59e0b";
+                            strokeColor = "#000000";
+                            strokeWeight = 3;
+                            scale = 10;
+                            const badge = document.createElement("div");
+                            badge.className = "point-item";
+                            badge.innerHTML = `• ${{p.nome}} <span class="badge-parziale">PARZIALE</span>`;
+                            div.appendChild(badge);
+                        }}
+                        
                         new google.maps.Marker({{
                             position: {{lat: p.lat, lng: p.lon}},
                             map: map,
                             title: p.nome,
                             icon: {{
                                 path: google.maps.SymbolPath.CIRCLE,
-                                scale: 8,
-                                fillColor: z.color,
+                                scale: scale,
+                                fillColor: fillColor,
                                 fillOpacity: 1,
-                                strokeWeight: 2,
-                                strokeColor: "white"
+                                strokeWeight: strokeWeight,
+                                strokeColor: strokeColor
                             }}
                         }});
                     }}

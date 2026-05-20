@@ -337,13 +337,20 @@
                     }
                 } catch(e) { console.error(e); }
 
+                // Retro-compatibilità tra vecchio formato locale e nuovo formato Cloud
+                let ddtMin = d.orario_min_ddt !== undefined ? d.orario_min_ddt : (d.new_orari ? d.new_orari[0] : undefined);
+                let ddtMax = d.orario_max_ddt !== undefined ? d.orario_max_ddt : (d.new_orari ? d.new_orari[1] : undefined);
+                
+                let oldMin = d.orario_min_mappa !== undefined ? d.orario_min_mappa : (d.old_orari ? d.old_orari[0] : '');
+                let oldMax = d.orario_max_mappa !== undefined ? d.orario_max_mappa : (d.old_orari ? d.old_orari[1] : '');
+
                 // Applichiamo la proposta del nuovo orario estratto
                 if (d.tipo === 'FRUTTA') {
-                    clientData.orario_min_frutta = d.new_orari ? d.new_orari[0] : clientData.orario_min_frutta;
-                    clientData.orario_max_frutta = d.new_orari ? d.new_orari[1] : clientData.orario_max_frutta;
+                    clientData.orario_min_frutta = ddtMin !== undefined ? ddtMin : clientData.orario_min_frutta;
+                    clientData.orario_max_frutta = ddtMax !== undefined ? ddtMax : clientData.orario_max_frutta;
                 } else {
-                    clientData.orario_min_latte = d.new_orari ? d.new_orari[0] : clientData.orario_min_latte;
-                    clientData.orario_max_latte = d.new_orari ? d.new_orari[1] : clientData.orario_max_latte;
+                    clientData.orario_min_latte = ddtMin !== undefined ? ddtMin : clientData.orario_min_latte;
+                    clientData.orario_max_latte = ddtMax !== undefined ? ddtMax : clientData.orario_max_latte;
                 }
 
                 html += `
@@ -359,7 +366,7 @@
                                 <span class="material-icons-round">delete</span>
                             </button>
                         </h3>
-                        <div style="font-size:13px; color:#64748b; margin-bottom:16px;">Orario precedentemente archiviato per ${d.tipo}: <b>${d.old_orari ? d.old_orari.join(' - ') : 'Nessuno'}</b></div>
+                        <div style="font-size:13px; color:#64748b; margin-bottom:16px;">Orario precedentemente archiviato per ${d.tipo}: <b>${(oldMin || oldMax) ? `${oldMin} - ${oldMax}` : 'Nessuno'}</b></div>
                         
                         <div class="grid-form">
                             <div class="section-title">Dati Anagrafici Correnti</div>

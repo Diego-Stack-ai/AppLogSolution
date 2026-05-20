@@ -25,19 +25,26 @@ if ($swContent -notmatch "CACHE_NAME = 'log-solution-v(\d+)\.(\d+)'") {
     exit 1
 }
 
-$vMajor = [int]$Matches[1]
-$vMinor = [int]$Matches[2]
+$vMajorStr = $Matches[1]
+$vMinorStr = $Matches[2]
+
+$vMajor = [int]$vMajorStr
+$vMinor = [int]$vMinorStr
 
 if ($Major) {
     $newMajor = $vMajor + 1
-    $newMinor = 0
+    $newMinorVal = 0
+    $newMinor = $newMinorVal.ToString("D" + $vMinorStr.Length)
+    $newMajorStr = $newMajor.ToString()
 } else {
     $newMajor = $vMajor
-    $newMinor = $vMinor + 1
+    $newMinorVal = $vMinor + 1
+    $newMinor = $newMinorVal.ToString("D" + $vMinorStr.Length)
+    $newMajorStr = $vMajorStr
 }
 
-$oldVersion = "$vMajor.$vMinor"
-$newVersion = "$newMajor.$newMinor"
+$oldVersion = "$vMajorStr.$vMinorStr"
+$newVersion = "$newMajorStr.$newMinor"
 
 Write-Host ""
 Write-Host "======================================================" -ForegroundColor Cyan

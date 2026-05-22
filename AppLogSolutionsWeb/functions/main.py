@@ -77,7 +77,17 @@ def _estrai_data_luogo(text):
     
     num_m = NUM_DDT_RE.search(text)
     num_ddt = num_m.group(1).replace("/", "-") if num_m else "UNK"
-    return data, luogo, num_ddt
+    
+    # Estrazione dinamica della zona
+    idx_c = text.upper().find("CAUSALE DEL TRASPORTO")
+    zona = ""
+    if idx_c >= 0:
+        sezione = text[idx_c:idx_c+200]
+        m_z = CAUSALE_RE.search(sezione)
+        if m_z:
+            zona = m_z.group(1)[1:5]
+            
+    return data, luogo, num_ddt, zona
 
 def _estrai_dati_consegna_completi(text: str, codice: str, da_frutta: bool) -> dict:
     """Estrae indirizzo, cap, citta, prov e orari per nuovi clienti."""
@@ -155,14 +165,19 @@ def _processa_pdf_core_logic(pdf_bytes: bytes, etichetta: str, db_mappati: dict,
     split_files = {}
     visti = {}
     blocchi = {}
+    chiave_zona = {}
     
     reader = PdfReader(io.BytesIO(pdf_bytes))
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
         for i in range(len(pdf.pages)):
             pg = pdf.pages[i]
             text = pg.extract_text() or ""
-            d, l, num_ddt = _estrai_data_luogo(text)
+            d, l, num_ddt, zona = _estrai_data_luogo(text)
             if not d or not l: continue
+            
+            chiave = (l, d, num_ddt)
+            if chiave not in chiave_zona and zona:
+                chiave_zona[chiave] = zona
             
             if l not in db_mappati and l not in nuovi_dati:
                 info = _estrai_dati_consegna_completi(text, l, etichetta == "FRUTTA")
@@ -240,7 +255,8 @@ def _processa_pdf_core_logic(pdf_bytes: bytes, etichetta: str, db_mappati: dict,
             "data": d,
             "num_ddt": num_ddt,
             "pdf_name": fname,
-            "tipo": etichetta
+            "tipo": etichetta,
+            "zona": chiave_zona.get(chiave, "")
         })
 
     return {
@@ -528,7 +544,7 @@ def core_elabora_pdf_estrazione(uid):
                 for i in range(0, len(pdf.pages), step):
                     try:
                         text = pdf.pages[i].extract_text() or ""
-                        data_estratta, l, num_ddt = _estrai_data_luogo(text)
+                        data_estratta, l, num_ddt, zona = _estrai_data_luogo(text)
                         if not data_estratta or not l: continue
                         
                         # --- PULIZIA PREVENTIVA (Solo alla prima occorrenza di data/tipo nel job) ---
@@ -599,7 +615,8 @@ def core_elabora_pdf_estrazione(uid):
                             "data": d,
                             "storage_path": percorso_out,
                             "tipo": tipo_label,
-                            "stato": stato_iniziale
+                            "stato": stato_iniziale,
+                            "zona": zona
                         })
 
                     except Exception as ex_page:
@@ -1806,7 +1823,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
                 "codice_latte": ddt.get('codice_latte', 'p00000'),
                 "codici_ddt_frutta": [],
                 "codici_ddt_latte": [],
-                "zona": (cliente_info.get('codice_zona') or cliente_info.get('zona') or '0000') if cliente_info else '0000',
+                "zona": ddt.get('zona') or ((cliente_info.get('codice_zona') or cliente_info.get('zona') or '0000') if cliente_info else '0000'),
                 "lat": float(cliente_info.get('lat', 0)) if cliente_info and cliente_info.get('lat') else 0,
                 "lon": float(cliente_info.get('lon', 0)) if cliente_info and cliente_info.get('lon') else 0,
                 "rientri_alert": [] # Qui andrebbero i rientri se implementati

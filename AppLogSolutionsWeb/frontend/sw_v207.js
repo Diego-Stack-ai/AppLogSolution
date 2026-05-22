@@ -1,4 +1,4 @@
-const CACHE_NAME = 'log-solution-v2.14';
+﻿const CACHE_NAME = 'log-solution-v2.15';
 const ASSETS = [
     './',
     './index.html',
@@ -17,7 +17,7 @@ const ASSETS = [
     './img/logo.png',
     'https://fonts.googleapis.com/icon?family=Material+Icons+Round'
 ];
-// Nota: JS/CSS con ?v= non sono in ASSETS perchÃƒÂ© usano strategia Network-First
+// Nota: JS/CSS con ?v= non sono in ASSETS perchÃƒÆ’Ã‚Â© usano strategia Network-First
 // e vengono cachati dinamicamente al primo accesso.
 
 // 1. Installazione: cache solo asset statici puri
@@ -49,7 +49,7 @@ self.addEventListener('activate', (event) => {
 // 3. SKIP_WAITING via messaggio (forza aggiornamento immediato)
 self.addEventListener('message', (event) => {
     if (event.data === 'SKIP_WAITING' || event.data?.type === 'SKIP_WAITING') {
-        console.log(`[SW ${CACHE_NAME}] SKIP_WAITING ricevuto Ã¢â‚¬â€ attivazione forzata.`);
+        console.log(`[SW ${CACHE_NAME}] SKIP_WAITING ricevuto ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â attivazione forzata.`);
         self.skipWaiting();
     }
 });
@@ -62,7 +62,7 @@ self.addEventListener('fetch', (event) => {
     // Ignora richieste non http (es: chrome-extension://) per evitare errori
     if (!url.startsWith('http')) return;
 
-    // Ã¢â€â‚¬ Bypass totale: Firebase, Firestore, autenticazione Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Bypass totale: Firebase, Firestore, autenticazione ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
     if (
         url.includes('firebaseio.com') ||
         url.includes('firestore.googleapis.com') ||
@@ -87,7 +87,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Ã¢â€â‚¬ Network-First: JS e CSS (sempre freschi, fallback offline) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Network-First: JS e CSS (sempre freschi, fallback offline) ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
     // Questa strategia elimina il bisogno di bumping manuale del ?v=
     if (url.match(/\.(js|css)(\?|$)/)) {
         event.respondWith(
@@ -106,7 +106,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Ã¢â€â‚¬ Cache-First: immagini e altri asset statici (cambiano raramente) Ã¢â€â‚¬Ã¢â€â‚¬
+    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Cache-First: immagini e altri asset statici (cambiano raramente) ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
     event.respondWith(
         caches.match(event.request).then((cached) => {
             if (cached) return cached;

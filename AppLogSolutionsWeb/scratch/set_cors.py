@@ -13,7 +13,9 @@ cors = [
             "https://log-solution-60007.firebaseapp.com",
             "http://localhost",
             "http://localhost:5000",
-            "http://127.0.0.1:5000"
+            "http://127.0.0.1:5000",
+            "http://localhost:8000",
+            "http://127.0.0.1:8000"
         ],
         "method": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
         "responseHeader": [

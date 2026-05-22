@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'log-solution-v2.14';
+const CACHE_NAME = 'log-solution-v2.14';
 const ASSETS = [
     './',
     './index.html',
@@ -68,6 +68,7 @@ self.addEventListener('fetch', (event) => {
         url.includes('firestore.googleapis.com') ||
         url.includes('identitytoolkit.googleapis.com') ||
         url.includes('securetoken.googleapis.com') ||
+        url.includes('maps.googleapis.com') ||
         url.endsWith('.json')
     ) {
         return;

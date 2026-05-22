@@ -633,7 +633,7 @@
 
         window.initAutocomplete = async function() {
             try {
-                const { PlaceAutocompleteElement } = await google.maps.importLibrary("places");
+                const PlaceAutocompleteElement = google.maps.places.PlaceAutocompleteElement;
                 const field = new PlaceAutocompleteElement({ componentRestrictions: { country: "it" } });
                 field.id = 'quickMapSearch'; field.placeholder = "Cerca via, città o attività...";
                 field.style.width = "100%";

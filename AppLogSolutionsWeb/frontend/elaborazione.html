@@ -189,8 +189,7 @@
     </nav>
 
     <div class="main-container" style="padding-top: 80px;">
-        <h1 style="margin-bottom: 16px; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 12px;">
-            <span class="material-icons-round" style="font-size: 32px;">description</span>
+        <h1 style="display:none;">
             Elaborazione Distinte
         </h1>
         <div class="glass-panel" style="margin-bottom: 24px; padding: 20px; background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(255, 255, 255, 0.8));">
@@ -588,11 +587,7 @@
                 
                 jobsList.innerHTML = html;
                 
-                // Se c'è almeno un job completato, mostriamo l'area report
-                if (hasCompleted) {
-                    document.getElementById('reports-area').style.display = 'block';
-                    listenToReports();
-                }
+                // (rimosso if hasCompleted)
                 initialLoad = false;
             });
         }
@@ -642,7 +637,7 @@
                                 <div style="font-weight: 700; color: #1e293b;">Mappa Zone del ${data.data_consegna}</div>
                                 <div style="font-size: 12px; color: #64748b;">${data.punti_totali} punti in ${data.zone_totali} zone</div>
                             </div>
-                            <button onclick="window.navigateWithState('mappa_zone.html?data=${data.data_consegna}')" style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                            <button onclick="window.navigateWithState('mappa_zone.html?data=${data.data_consegna}&cb=' + Date.now())" style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
                                 <span class="material-icons-round">open_in_new</span> VEDI MAPPA
                             </button>
                         </div>
@@ -660,53 +655,55 @@
             window.navigateWithState(`mappa_zone.html?data=${formattedDate}`);
         };
 
-        // Inizializza la data e il lucchetto
-        document.addEventListener('DOMContentLoaded', () => {
-            const selector = document.getElementById('master-date-selector');
-            const lockBtn = document.getElementById('lock-date-btn');
-            const lockIcon = document.getElementById('lock-icon');
-            
-            // Carica da localStorage
-            const savedDate = localStorage.getItem('master_date');
-            const isLocked = localStorage.getItem('master_date_locked') === 'true';
-            
-            if (savedDate) {
-                selector.value = savedDate;
+        // Inizializza la data e il lucchetto (eseguito direttamente poiché type=module è già defer)
+        const selector = document.getElementById('master-date-selector');
+        const lockBtn = document.getElementById('lock-date-btn');
+        const lockIcon = document.getElementById('lock-icon');
+        
+        // Carica da localStorage
+        const savedDate = localStorage.getItem('master_date');
+        const isLocked = localStorage.getItem('master_date_locked') === 'true';
+        
+        if (savedDate) {
+            selector.value = savedDate;
+        } else {
+            selector.value = new Date().toISOString().split('T')[0];
+        }
+        
+        if (isLocked) {
+            selector.disabled = true;
+            lockIcon.innerText = 'lock';
+            lockBtn.style.background = 'var(--primary)';
+            lockBtn.style.color = 'white';
+        }
+        
+        // Inizializza l'ascolto dei report indipendentemente dai job (Risoluzione BUG 4)
+        document.getElementById('reports-area').style.display = 'block';
+        listenToReports();
+        
+        // Eventi
+        selector.addEventListener('change', () => {
+            localStorage.setItem('master_date', selector.value);
+        });
+        
+        lockBtn.addEventListener('click', () => {
+            const nowLocked = selector.disabled;
+            if (nowLocked) {
+                // Sblocca
+                selector.disabled = false;
+                lockIcon.innerText = 'lock_open';
+                lockBtn.style.background = 'none';
+                lockBtn.style.color = 'var(--primary)';
+                localStorage.setItem('master_date_locked', 'false');
             } else {
-                selector.value = new Date().toISOString().split('T')[0];
-            }
-            
-            if (isLocked) {
+                // Blocca
                 selector.disabled = true;
                 lockIcon.innerText = 'lock';
                 lockBtn.style.background = 'var(--primary)';
                 lockBtn.style.color = 'white';
-            }
-            
-            // Eventi
-            selector.addEventListener('change', () => {
+                localStorage.setItem('master_date_locked', 'true');
                 localStorage.setItem('master_date', selector.value);
-            });
-            
-            lockBtn.addEventListener('click', () => {
-                const nowLocked = selector.disabled;
-                if (nowLocked) {
-                    // Sblocca
-                    selector.disabled = false;
-                    lockIcon.innerText = 'lock_open';
-                    lockBtn.style.background = 'none';
-                    lockBtn.style.color = 'var(--primary)';
-                    localStorage.setItem('master_date_locked', 'false');
-                } else {
-                    // Blocca
-                    selector.disabled = true;
-                    lockIcon.innerText = 'lock';
-                    lockBtn.style.background = 'var(--primary)';
-                    lockBtn.style.color = 'white';
-                    localStorage.setItem('master_date_locked', 'true');
-                    localStorage.setItem('master_date', selector.value);
-                }
-            });
+            }
         });
 
         document.getElementById('btn-avvia').addEventListener('click', async () => {

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="utf-8">
@@ -714,12 +714,43 @@
     <div id="map"></div>
 
     <script>
-        // Inject Google Maps Bootstrap Loader script dynamically
+        window.navigateWithState = (url) => window.location.href = url;
+        // Caricamento classico Script Google Maps con Promise globale
         const GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4";
-        (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once."):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
-            key: GOOGLE_MAPS_API_KEY,
-            v: "beta"
+        
+        window.googleMapsPromise = new Promise((resolve) => {
+            window.initMap = function() {
+                if (window.__MAP_INIT__) return;
+
+                const mapEl = document.getElementById("map");
+                // BUG 1 FIX: Se initMap viene chiamato prima che il DOM sia completamente pronto
+                if (!mapEl) {
+                    console.warn("[MAP] div#map non ancora nel DOM. Riprovo...");
+                    setTimeout(window.initMap, 50);
+                    return;
+                }
+                window.__MAP_INIT__ = true;
+
+                window.mapInstance = new google.maps.Map(mapEl, {
+                    center: { lat: 45.4642, lng: 9.1900 },
+                    zoom: 10,
+                    mapId: "LOG_SOLUTION_MAP",
+                    disableDefaultUI: true,
+                    zoomControl: true,
+                    streetViewControl: true,
+                    gestureHandling: "greedy" // Mantiene greedy per il mobile pan
+                });
+
+                console.log("[MAP] inizializzata UNA sola volta");
+                resolve();
+            };
         });
+
+        const script = document.createElement("script");
+        script.async = true;
+        script.defer = true;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=marker,geometry,places&callback=initMap&v=weekly&loading=async`;
+        document.head.appendChild(script);
 
         // Mobile Sidebar toggler
         function toggleMobileSidebar() {
@@ -857,25 +888,21 @@
                     // In real-time web, we parse the JSON data.
                     DATA_ZONE = unparsedData;
                     
-                    // Verify if is_locked exists in the storage file structure or check locked status
-                    // Sometimes is_locked is a global key, in other places it's checked per-day.
-                    // We can also retrieve the lock status from the JSON if structured differently, or set default to true
                     console.log("[Map] Dati viaggi caricati:", DATA_ZONE);
 
-                    // 3. Initialize Google Maps
+                    // 3. Wait for Google Maps and set local map ref
                     setLoaderMsg("Inizializzazione Google Maps SDK...");
-                    const { Map, InfoWindow } = await google.maps.importLibrary("maps");
-                    infoWindow = new google.maps.InfoWindow();
-
-                    map = new google.maps.Map(document.getElementById("map"), {
-                        center: { lat: 45.45, lng: 11.85 },
-                        zoom: 10,
-                        mapTypeId: 'hybrid',
-                        mapId: "MAPPA_ZONE_INTERATTIVA_ID", // Required for AdvancedMarkerElement
-                        mapTypeControl: true,
-                        streetViewControl: false,
-                        fullscreenControl: false
-                    });
+                    await window.googleMapsPromise;
+                    
+                    if (!window.mapInstance) {
+                        throw new Error("Map non inizializzata");
+                    }
+                    map = window.mapInstance;
+                    
+                    const InfoWindow = google.maps.InfoWindow;
+                    if (!infoWindow) {
+                        infoWindow = new InfoWindow();
+                    }
 
                     // Set up beforeunload alerts
                     window.addEventListener('beforeunload', function(e) {
@@ -921,7 +948,7 @@
         // Lock/Unlock Button UI Updates
         function _updateLockUI() {
             const btn = document.getElementById('btn-lock-map');
-            btn.innerHTML = isLockedGlobal ? '<span class="material-icons-round">lock</span> BLOCCATA ðŸ”’' : '<span class="material-icons-round">lock_open</span> SBLOCCATA ðŸ”“';
+            btn.innerHTML = isLockedGlobal ? '<span class="material-icons-round">lock</span> BLOCCATA 🔒' : '<span class="material-icons-round">lock_open</span> SBLOCCATA 🔓';
             btn.className = 'btn-control btn-lock' + (isLockedGlobal ? ' locked' : '');
             
             // If locked, we disable dragging immediately
@@ -936,7 +963,7 @@
             _updateLockUI();
             
             // Notify user
-            showSaveBanner(isLockedGlobal ? "Mappa Bloccata ðŸ”’" : "Mappa Sbloccata per Modifiche ðŸ”“", isLockedGlobal ? "#ef4444" : "#10b981");
+            showSaveBanner(isLockedGlobal ? "Mappa Bloccata 🔒" : "Mappa Sbloccata per Modifiche 🔓", isLockedGlobal ? "#ef4444" : "#10b981");
             
             // Re-render markers to update drag states
             await renderMarkers();
@@ -960,18 +987,30 @@
             await renderMarkers();
         };
 
+        const LOCAL_PALETTE = ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#14b8a6", "#6366f1", "#a855f7", "#3b82f6", "#22c55e", "#d946ef", "#84cc16"];
+        function _get_color(idx) { return LOCAL_PALETTE[idx % LOCAL_PALETTE.length]; }
+
         // Render Custom Advanced Markers
         async function renderMarkers() {
+            await window.googleMapsPromise;
+            if (!window.mapInstance) {
+                console.error("Map non inizializzata");
+                return;
+            }
+            const map = window.mapInstance;
+            const AdvancedMarkerElement = google.maps.marker.AdvancedMarkerElement;
+            
             // Remove previous markers
             gMarkers.forEach(m => m.setMap(null));
             gMarkers = [];
-
-            const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+            
             const coordCounts = {};
-
-            DATA_ZONE.forEach(z => {
+            
+            DATA_ZONE.forEach((z, zIdx) => {
                 const isSpeciale = (z.id_zona === 'DDT_DA_INSERIRE');
                 if (VIEW_MODE_PULITA && isSpeciale) return;
+
+                const resolvedColor = z.color || _get_color(zIdx);
 
                 z.lista_punti.forEach((p, idx) => {
                     if (!p.lat || !p.lon) return;
@@ -1008,13 +1047,13 @@
                         }
                     } else {
                         if (shape === 'm-triangolo') {
-                            el.style.borderBottomColor = z.color;
+                            el.style.borderBottomColor = resolvedColor;
                         } else {
-                            el.style.backgroundColor = z.color;
+                            el.style.backgroundColor = resolvedColor;
                         }
                     }
 
-                    el.innerHTML = `<span>${idx + 1}</span>`;
+                    el.innerHTML = `<span style="pointer-events: none;">${idx + 1}</span>`;
 
                     // Create advanced marker
                     const m = new AdvancedMarkerElement({
@@ -1039,7 +1078,7 @@
                     });
 
                     // Add click popup
-                    m.addListener("click", () => {
+                    m.addEventListener("gmp-click", () => {
                         const ddtListText = [...(p.codici_ddt_frutta || []), ...(p.codici_ddt_latte || [])].join(', ');
                         const contentHtml = `
                             <div style="padding:12px; font-family:'Outfit', sans-serif; max-width:280px;">
@@ -1109,16 +1148,16 @@
                         masterClientiList[idx].lon = lon;
                     }
 
-                    showSaveBanner(`ðŸ“ Coordinata Salvata: ${nome}`, "var(--accent)");
+                    showSaveBanner(`📌 Coordinata Salvata: ${nome}`, "var(--accent)");
                     console.log(`[Firestore] Sincronizzato con successo: ${nome} (doc: ${docId})`);
                 } else {
                     console.warn(`[Firestore] Nessun cliente corrispondente trovato nel Master DB per: ${nome}.`);
                     // We will save to Storage only on Save All
-                    showSaveBanner(`ðŸ’¾ Modificato in locale: ${nome}`, "var(--warning)");
+                    showSaveBanner(`💾 Modificato in locale: ${nome}`, "var(--warning)");
                 }
             } catch (err) {
                 console.error("[Firestore] Errore salvataggio atomico coordinata:", err);
-                showSaveBanner("âŒ Errore sincronizzazione database!", "var(--danger)");
+                showSaveBanner("❌ Errore sincronizzazione database!", "var(--danger)");
             }
         }
 
@@ -1141,25 +1180,25 @@
                         <p style="font-size:0.75rem; color:var(--text-muted);">Disattiva 'VERIFICA VIAGGI' per visualizzare i DDT da smistare.</p>
                     </div>
                 `;
-                return;
-            }
-
-            listContainer.innerHTML = activeZones.map(z => {
+            } else {
+                listContainer.innerHTML = activeZones.map(z => {
                 const isSpeciale = (z.id_zona === 'DDT_DA_INSERIRE');
                 const isSelected = (activeExpandedZid === z.id_zona) || (activeSourceZid === z.id_zona);
                 const stats = calcolaValoreZona(z);
+                const zIdx = DATA_ZONE.indexOf(z);
+                const resolvedColor = z.color || _get_color(zIdx);
 
                 return `
                     <div class="zone-card ${isSelected ? 'selected' : ''} ${isSpeciale ? 'speciale' : ''}" onclick="focusZone('${z.id_zona}')">
                         <div class="zone-header">
-                            <div class="color-pill" style="background: ${z.color}"></div>
+                            <div class="color-pill" style="background: ${resolvedColor}"></div>
                             <div class="zone-title">
                                 <span>${z.nome_giro || z.id_zona}${isSpeciale ? '<span class="badge-speciale-label">RIENTRI</span>' : ''}</span>
                                 <span>${isSpeciale ? 'Assegna i DDT ad un autista' : 'Viaggio Zona ' + z.id_zona}</span>
                             </div>
                             <div class="zone-meta-right">
                                 <span class="badge-points">${z.lista_punti.length} fermate</span>
-                                ${stats.tot_ddt > 0 ? `<div class="zone-value-summary">${stats.tot_ddt} DDT Â· â‚¬ ${stats.valore}</div>` : ''}
+                                ${stats.tot_ddt > 0 ? `<div class="zone-value-summary">${stats.tot_ddt} DDT · € ${stats.valore}</div>` : ''}
                             </div>
                         </div>
 
@@ -1174,7 +1213,7 @@
 
                                     const bgStyle = isParz 
                                         ? 'background: repeating-linear-gradient(45deg, #000, #000 4px, #f59e0b 4px, #f59e0b 8px); color: white; text-shadow: 1px 1px 2px black; border: 1px solid black;' 
-                                        : `background: ${z.color};`;
+                                        : `background: ${resolvedColor};`;
                                     
                                     const pointHash = (p.codice_frutta + "_" + p.nome).replace(/[^a-zA-Z0-9]/g, '_');
                                     const addressParts = (p.indirizzo || '').split(',');
@@ -1187,17 +1226,21 @@
                                     if (activeAction === 'dividi' && !isSpeciale) {
                                         controlHtml = `
                                             <input type="checkbox" id="chk-${pointHash}" class="chk-box dividi-chk" value="${pointHash}">
-                                            <label for="chk-${pointHash}" class="chk-lbl">âœ“</label>
+                                            <label for="chk-${pointHash}" class="chk-lbl">✓</label>
                                         `;
                                     } else if (activeAction === 'sposta') {
                                         // Generate list of available target voyages
                                         const chips = DATA_ZONE
                                             .filter(o => o.id_zona !== z.id_zona && o.id_zona !== 'DDT_DA_INSERIRE' && o.lista_punti.length >= 0)
-                                            .map(o => `
-                                                <span class="zone-chip" data-zone="${o.id_zona}" onclick="_selectDestChip(this, '${o.color}')">
-                                                    ${o.nome_giro || o.id_zona}
-                                                </span>
-                                            `).join('');
+                                            .map(o => {
+                                                const oIdx = DATA_ZONE.indexOf(o);
+                                                const resolvedOColor = o.color || _get_color(oIdx);
+                                                return `
+                                                    <span class="zone-chip" data-zone="${o.id_zona}" onclick="_selectDestChip(this, '${resolvedOColor}')">
+                                                        ${o.nome_giro || o.id_zona}
+                                                    </span>
+                                                `;
+                                            }).join('');
 
                                         controlHtml = `
                                             <div class="zone-chips-container" data-pid="${pointHash}">
@@ -1241,7 +1284,7 @@
                                         </button>
                                     ` : ''}
                                     <button class="btn-action-trigger" ${isLockedGlobal ? 'disabled' : ''} onclick="startAction('sposta', '${z.id_zona}')">
-                                        ${isSpeciale ? 'ðŸ“¦ ASSEGNA A AUTISTA' : 'SPOSTA FERMATE'}
+                                        ${isSpeciale ? '📦 ASSEGNA A AUTISTA' : 'SPOSTA FERMATE'}
                                     </button>
                                 `}
                             </div>
@@ -1249,6 +1292,7 @@
                     </div>
                 `;
             }).join('');
+            }
         };
 
         // Focus and pan map to zone bounding box
@@ -1512,7 +1556,7 @@
                 Swal.close();
                 
                 // Show floating banner
-                showSaveBanner("ðŸ’¾ SALVATAGGIO COMPLETATO!", "var(--accent)");
+                showSaveBanner("💾 SALVATAGGIO COMPLETATO!", "var(--accent)");
 
                 Swal.fire({
                     title: 'Successo!',

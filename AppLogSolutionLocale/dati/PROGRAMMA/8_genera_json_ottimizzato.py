@@ -43,6 +43,12 @@ DATA_RE = re.compile(r'const\s+data\s*=\s*(\[.*?\]);\s*const\s+polys', re.DOTALL
 # Regex per estrarre nome e zone dal nomefile  (es. V01_Zone_3110_4110.html)
 FILE_RE = re.compile(r'^(V\d+)_Zone_([\w_]+)\.html$', re.IGNORECASE)
 
+PALETTE = [
+    "#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
+    "#ec4899", "#06b6d4", "#f97316", "#14b8a6", "#6366f1",
+    "#a855f7", "#3b82f6", "#22c55e", "#d946ef", "#84cc16"
+]
+
 
 def _trova_cartella(data_arg: str | None) -> Path:
     """Restituisce la cartella CONSEGNE_{data} corretta."""
@@ -145,7 +151,7 @@ def main():
 
     viaggi_ottimizzati = []
 
-    for html_path in html_files:
+    for i, html_path in enumerate(html_files):
         nome_giro, _ = _parse_filename(html_path.name)
         punti = _estrai_data_da_html(html_path)
 
@@ -168,7 +174,9 @@ def main():
         zone_effettive = sorted(list(zone_reali_giro))
 
         viaggio = {
+            "id_zona": zone_effettive[0] if zone_effettive else "0000",
             "nome_giro": nome_giro,
+            "color": PALETTE[i % len(PALETTE)],
             "file_sorgente": html_path.name,
             "zone": zone_effettive,
             "num_fermate": len(punti),

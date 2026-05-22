@@ -714,6 +714,7 @@
     <div id="map"></div>
 
     <script>
+        window.navigateWithState = (url) => window.location.href = url;
         // Caricamento classico Script Google Maps con Promise globale
         const GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4";
         
@@ -947,7 +948,7 @@
         // Lock/Unlock Button UI Updates
         function _updateLockUI() {
             const btn = document.getElementById('btn-lock-map');
-            btn.innerHTML = isLockedGlobal ? '<span class="material-icons-round">lock</span> BLOCCATA ðŸ”’' : '<span class="material-icons-round">lock_open</span> SBLOCCATA ðŸ”“';
+            btn.innerHTML = isLockedGlobal ? '<span class="material-icons-round">lock</span> BLOCCATA 🔒' : '<span class="material-icons-round">lock_open</span> SBLOCCATA 🔓';
             btn.className = 'btn-control btn-lock' + (isLockedGlobal ? ' locked' : '');
             
             // If locked, we disable dragging immediately
@@ -962,7 +963,7 @@
             _updateLockUI();
             
             // Notify user
-            showSaveBanner(isLockedGlobal ? "Mappa Bloccata ðŸ”’" : "Mappa Sbloccata per Modifiche ðŸ”“", isLockedGlobal ? "#ef4444" : "#10b981");
+            showSaveBanner(isLockedGlobal ? "Mappa Bloccata 🔒" : "Mappa Sbloccata per Modifiche 🔓", isLockedGlobal ? "#ef4444" : "#10b981");
             
             // Re-render markers to update drag states
             await renderMarkers();
@@ -1147,16 +1148,16 @@
                         masterClientiList[idx].lon = lon;
                     }
 
-                    showSaveBanner(`ðŸ“ Coordinata Salvata: ${nome}`, "var(--accent)");
+                    showSaveBanner(`📌 Coordinata Salvata: ${nome}`, "var(--accent)");
                     console.log(`[Firestore] Sincronizzato con successo: ${nome} (doc: ${docId})`);
                 } else {
                     console.warn(`[Firestore] Nessun cliente corrispondente trovato nel Master DB per: ${nome}.`);
                     // We will save to Storage only on Save All
-                    showSaveBanner(`ðŸ’¾ Modificato in locale: ${nome}`, "var(--warning)");
+                    showSaveBanner(`💾 Modificato in locale: ${nome}`, "var(--warning)");
                 }
             } catch (err) {
                 console.error("[Firestore] Errore salvataggio atomico coordinata:", err);
-                showSaveBanner("âŒ Errore sincronizzazione database!", "var(--danger)");
+                showSaveBanner("❌ Errore sincronizzazione database!", "var(--danger)");
             }
         }
 
@@ -1283,7 +1284,7 @@
                                         </button>
                                     ` : ''}
                                     <button class="btn-action-trigger" ${isLockedGlobal ? 'disabled' : ''} onclick="startAction('sposta', '${z.id_zona}')">
-                                        ${isSpeciale ? 'ðŸ“¦ ASSEGNA A AUTISTA' : 'SPOSTA FERMATE'}
+                                        ${isSpeciale ? '📦 ASSEGNA A AUTISTA' : 'SPOSTA FERMATE'}
                                     </button>
                                 `}
                             </div>
@@ -1555,7 +1556,7 @@
                 Swal.close();
                 
                 // Show floating banner
-                showSaveBanner("ðŸ’¾ SALVATAGGIO COMPLETATO!", "var(--accent)");
+                showSaveBanner("💾 SALVATAGGIO COMPLETATO!", "var(--accent)");
 
                 Swal.fire({
                     title: 'Successo!',

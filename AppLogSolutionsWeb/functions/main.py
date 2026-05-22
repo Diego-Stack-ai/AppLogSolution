@@ -475,11 +475,13 @@ def core_chiudi_giornata(uid):
                 r_cod = str(r_data.get('codice_consegna') or r_data.get('Codice consegna') or '').strip().lower()
                 if r_cod in codici_assegnati:
                     db.collection('clienti').document('DNR').collection('rientri ddt').document(r_doc.id).update({
-                        "stato": f"allegato DDT {data_giornata}"
+                        "Stato": f"allegato DDT {data_giornata}",
+                        "stato": firestore.DELETE_FIELD
                     })
                 else:
                     db.collection('clienti').document('DNR').collection('rientri ddt').document(r_doc.id).update({
-                        "stato": ""
+                        "Stato": "",
+                        "stato": firestore.DELETE_FIELD
                     })
     except Exception as e_r:
         print(f"[WARN] Errore durante aggiornamento finale rientri: {e_r}")
@@ -727,6 +729,12 @@ def _leggi_cache_firestore(p1, p2):
         doc = get_db().collection('distanze_cache').document(key).get()
         if doc.exists:
             return doc.to_dict().get('dist')
+        
+        # Fallback bidirezionale: controlla la rotta inversa
+        rev_key = _cache_key(p2, p1)
+        doc_rev = get_db().collection('distanze_cache').document(rev_key).get()
+        if doc_rev.exists:
+            return doc_rev.to_dict().get('dist')
     except:
         pass
     return None
@@ -1798,7 +1806,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
                 "codice_latte": ddt.get('codice_latte', 'p00000'),
                 "codici_ddt_frutta": [],
                 "codici_ddt_latte": [],
-                "zona": cliente_info.get('zona', '0000') if cliente_info else '0000',
+                "zona": (cliente_info.get('codice_zona') or cliente_info.get('zona') or '0000') if cliente_info else '0000',
                 "lat": float(cliente_info.get('lat', 0)) if cliente_info and cliente_info.get('lat') else 0,
                 "lon": float(cliente_info.get('lon', 0)) if cliente_info and cliente_info.get('lon') else 0,
                 "rientri_alert": [] # Qui andrebbero i rientri se implementati
@@ -1818,7 +1826,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
         rientri_ref = db.collection('clienti').document('DNR').collection('rientri ddt')
         
         for r_doc in rientri_ref.stream():
-            r_data = r_doc.to_dict()
+            r_data = r_doc.to_dict() or {}
             stato = str(r_data.get('stato') or r_data.get('Stato') or '').strip().lower()
             
             # Ignora se già allegato a una data diversa da quella in elaborazione
@@ -1840,7 +1848,8 @@ def core_genera_report_giornaliero(uid, data_consegna):
             stato_attuale = str(r_data.get('stato') or r_data.get('Stato') or '')
             nuovo_stato = ""
             
-            is_parz = bool(r_data.get('is_parziale') or False)
+            tipo_val = str(r_data.get('Tipo') or r_data.get('tipo') or '').lower().strip()
+            is_parz = bool(r_data.get('is_parziale') or False) or (tipo_val == 'parziale')
             note_val = str(r_data.get('note') or r_data.get('Note') or r_data.get('nota_integrativa') or '').strip()
             
             rientro_obj = {
@@ -1877,7 +1886,10 @@ def core_genera_report_giornaliero(uid, data_consegna):
             # Aggiorna DB se lo stato è cambiato
             if stato_attuale != nuovo_stato:
                 try:
-                    db.collection('clienti').document('DNR').collection('rientri ddt').document(r_doc.id).update({'stato': nuovo_stato})
+                    db.collection('clienti').document('DNR').collection('rientri ddt').document(r_doc.id).update({
+                        'Stato': nuovo_stato,
+                        'stato': firestore.DELETE_FIELD
+                    })
                 except Exception as e_up:
                     print(f"[WARN] Impossibile aggiornare stato rientro {r_doc.id}: {e_up}")
     except Exception as e_r:
@@ -1945,10 +1957,14 @@ def core_genera_report_giornaliero(uid, data_consegna):
     elapsed = time.time() - start_time
     _registra_statistica('genera_report_generale', elapsed)
     
+    # Safe return object (SERVER_TIMESTAMP is not JSON serializable)
+    return_meta = report_meta.copy()
+    return_meta["created_at"] = "timestamp"
+    
     return {
         "status": "ok",
         "message": "Report Johnson generati con successo",
-        "data": report_meta
+        "data": return_meta
     }
 
 def _genera_kml_zone(data, zone_list):
@@ -2123,7 +2139,13 @@ def chiudi_giornata(req: https_fn.CallableRequest):
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
 def genera_report_giornaliero(req: https_fn.CallableRequest):
-    return core_genera_report_giornaliero(
-        req.auth.uid if req.auth else None,
-        req.data.get("data_consegna")
-    )
+    try:
+        data_consegna = req.data.get("data_consegna") if isinstance(req.data, dict) else None
+        return core_genera_report_giornaliero(
+            req.auth.uid if req.auth else None,
+            data_consegna
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"status": "errore", "message": f"Global exception: {str(e)}"}

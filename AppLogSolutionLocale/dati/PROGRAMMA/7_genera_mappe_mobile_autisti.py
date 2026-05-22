@@ -501,9 +501,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </html>"""
 
 def cleanup_webapp_folder():
+    now = time.time()
+    # 1. Pulisce la cartella locale
     if WEBAPP_FOLDER.exists():
-        print(f" Pulizia cartella webapp '{WEBAPP_FOLDER.name}' (mantengo storici 10 giorni)...")
-        now = time.time()
+        print(f" Pulizia cartella webapp locale '{WEBAPP_FOLDER.name}' (mantengo storici 10 giorni)...")
         for ext in ["*.html", "*.txt"]:
             for f in WEBAPP_FOLDER.glob(ext):
                 try:
@@ -512,6 +513,31 @@ def cleanup_webapp_folder():
                         f.unlink()
                 except Exception:
                     pass
+
+    # 2. Pulisce la cartella web di parità
+    webapp_web = ROOT_DIR.parent / "AppLogSolutionsWeb" / "frontend" / "mappe_autisti"
+    if webapp_web.exists():
+        print(f" Pulizia cartella webapp di parità '{webapp_web.name}' (mantengo storici 10 giorni)...")
+        for ext in ["*.html", "*.txt"]:
+            for f in webapp_web.glob(ext):
+                try:
+                    # Elimina solo i file più vecchi di 10 giorni (86400 secondi * 10)
+                    if now - f.stat().st_mtime > 10 * 86400:
+                        f.unlink()
+                except Exception:
+                    pass
+
+    # 3. Sincronizza lo storico attivo da locale a web
+    if webapp_web.exists():
+        print(f" Sincronizzazione storico attivo da '{WEBAPP_FOLDER.name}' a '{webapp_web.name}'...")
+        webapp_web.mkdir(exist_ok=True, parents=True)
+        for f in WEBAPP_FOLDER.glob("*"):
+            if f.is_file():
+                try:
+                    dest = webapp_web / f.name
+                    dest.write_bytes(f.read_bytes())
+                except Exception as e:
+                    print(f"⚠️ Errore copia storico {f.name}: {e}")
 
 def generate_links_manifest():
     """Genera un file JSON con tutti i link attivi delle mappe autisti per la webapp."""

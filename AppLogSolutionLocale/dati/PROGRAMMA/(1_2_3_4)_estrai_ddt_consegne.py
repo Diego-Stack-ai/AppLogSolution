@@ -373,7 +373,7 @@ ARTICOLI_NOTI = {
     "YO-BI-MN-04-LB", "YO-DL-02-LC", "FI-Z-BI-L3-NA", "FR-M-BI-L3-NI",
     "LNS-04-GADGET", "LNS-04-", "CA-Z-BI-L3-NA", "KI-S-BI-L3-NA", "ME-S-DI-L3-NA", "FO-DI-AS-04-LV",
     "AL-M-BI-L3-NI", "SUCCO-REC", "PF-T-LI-L3-NA", "SU-M-BI-L3-NI", "YO-CN-MN-04-",
-    "AL-T-LI-NA",
+    "AL-T-LI-NA", "NE-M-BI-L3-NI",
 }
 
 def _is_primary_code(text: str) -> bool:

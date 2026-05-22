@@ -49,7 +49,7 @@ ARTICOLI_NOTI_SET = frozenset({
     "AL-M-BI-L3-NI", "SUCCO-REC",
     "FO-DI-AS-04-LV", "ME-S-DI-L3-NA",
     "PF-T-LI-L3-NA", "SU-M-BI-L3-NI", "YO-CN-MN-04-",
-    "AL-T-LI-NA"
+    "AL-T-LI-NA", "NE-M-BI-L3-NI"
 })
 
 def _is_primary_code(text):
@@ -86,6 +86,7 @@ CONSOLIDAMENTO = {
     "SU-M-BI-L3-NI": ("Cartoni",   "Porzioni",  18),
     "YO-CN-MN-04-":  ("Cartoni",   "Cluster",   10),
     "AL-T-LI-NA":    ("Cartoni",   "Porzioni",  12),
+    "NE-M-BI-L3-NI": ("Colli",     "Porzioni",  10),
 }
 
 UNITA_QTY = r"(Confezioni|Confezione|confezioni|confezione|Colli|Collo|colli|collo|Brick|brick|Fardelli|Fardello|fardelli|fardello|Bottiglie|Bottiglia|bottiglie|bottiglia|Cartoni|Cartone|cartoni|cartone|Cluster|cluster|Porzioni|Porzione|porzioni|porzione|Fascette|Fascetta|fascette|fascetta|Manifesti|Manifesto|manifesti|manifesto|Fette|Fetta|fette|fetta|Buste|Busta|buste|busta|pz)"

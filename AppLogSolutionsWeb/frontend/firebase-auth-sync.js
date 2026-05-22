@@ -100,7 +100,7 @@ onAuthStateChanged(auth, async (user) => {
     
     // Classificazione Pagine
     const isPublicPage = page === 'login.html' || page === 'index.html' || page === '';
-    const isAdminOnlyPage = ['clienti.html', 'impostazioni.html', 'visualizzazione.html', 'mappa_consegne.html', 'dashboard.html'].includes(page);
+    const isAdminOnlyPage = ['clienti.html', 'impostazioni.html', 'visualizzazione.html', 'mappa_consegne.html', 'dashboard.html', 'link_viaggi.html'].includes(page);
     const isAutistaOnlyPage = ['inserimento.html'].includes(page);
 
     console.log(`Auth Listener: Utente = ${user ? user.uid : 'NULL'}, Pagina Corrente = ${page}`);

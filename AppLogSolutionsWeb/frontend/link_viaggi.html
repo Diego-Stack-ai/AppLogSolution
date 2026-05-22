@@ -442,21 +442,14 @@
 
         let allLinks = [];
         let datesGrouped = {};
+        let linksLoaded = false;
 
-        // Inizializzazione al caricamento
-        window.addEventListener('DOMContentLoaded', () => {
-            // Controlla se l'utente è loggato via Firebase (attendi inizializzazione)
-            const checkAuthInterval = setInterval(() => {
-                if (auth.currentUser) {
-                    clearInterval(checkAuthInterval);
-                    loadLinks();
-                } else if (auth.currentUser === null) {
-                    // Nessun utente loggato, reindirizza
-                    clearInterval(checkAuthInterval);
-                    window.location.replace('login.html');
-                }
-            }, 100);
-        });
+        // Inizializzazione al caricamento del profilo utente
+        window.onUserProfileLoaded = function(user) {
+            if (linksLoaded) return;
+            linksLoaded = true;
+            loadLinks();
+        };
 
         // Caricamento dei link dal manifest statico
         async function loadLinks(forceRefresh = false) {

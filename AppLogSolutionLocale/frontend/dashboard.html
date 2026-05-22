@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.37">
+    <link rel="stylesheet" href="styles.css?v=1.80">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -101,7 +101,7 @@
     <nav class="glass-nav">
         <div class="nav-content">
             <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
-            <div class="nav-title" style="flex: 1; margin-left: 4px;">Pannello di Controllo <span style="font-size: 11px; background: rgba(79, 70, 229, 0.1); color: var(--primary); padding: 2px 8px; border-radius: 20px; margin-left: 8px; font-weight: 600; vertical-align: middle;">v1.32</span></div>
+            <div class="nav-title" style="flex: 1; margin-left: 4px;">Pannello di Controllo <span class="app-version-badge" style="font-size: 11px; background: rgba(79, 70, 229, 0.1); color: var(--primary); padding: 2px 8px; border-radius: 20px; margin-left: 8px; font-weight: 600; vertical-align: middle;">v2.07</span></div>
             <a href="login.html" class="logout-link logout-btn" title="Esci">
                 <span class="material-icons-round">logout</span>
                 Logout
@@ -116,6 +116,15 @@
         </div>
 
         <div class="dashboard-grid">
+            <!-- Elaborazione Distinte (Novità Cloud) -->
+            <a href="javascript:void(0)" onclick="window.navigateWithState('elaborazione.html')" class="nav-card" style="border: 2px solid var(--primary); background: linear-gradient(145deg, #ffffff, #f0f4ff);">
+                <div class="icon-circle" style="background: var(--primary); color: white;">
+                    <span class="material-icons-round" style="font-size: 32px;">cloud_upload</span>
+                </div>
+                <h3>Elaborazione Distinte</h3>
+                <p>Carica i PDF del fornitore nella Nuvola e genera le stampe per i furgoni.</p>
+            </a>
+
             <!-- Link Viaggi -->
             <a href="javascript:void(0)" onclick="window.navigateWithState('link_viaggi.html')" class="nav-card">
                 <div class="icon-circle" style="background: #e0f2fe; color: #0284c7;">
@@ -125,13 +134,13 @@
                 <p>Visualizza e copia i link delle mappe autisti generati per WhatsApp.</p>
             </a>
 
-            <!-- Gestione Clienti -->
-            <a href="javascript:void(0)" onclick="window.navigateWithState('clienti.html')" class="nav-card">
-                <div class="icon-circle">
-                    <span class="material-icons-round" style="font-size: 32px;">business</span>
+            <!-- Gestione Anagrafiche -->
+            <a href="javascript:void(0)" onclick="window.navigateWithState('gestione.html')" class="nav-card">
+                <div class="icon-circle" style="background: #fef2f2; color: #ef4444;">
+                    <span class="material-icons-round" style="font-size: 32px;">dvr</span>
                 </div>
-                <h3>Gestione Clienti</h3>
-                <p>Visualizza e modifica le destinazioni e i dati dei clienti</p>
+                <h3>Gestione Anagrafiche</h3>
+                <p>Modifica Clienti, Articoli e Rientri DDT (Source of Truth).</p>
             </a>
 
             <!-- Visualizzazione Turni -->
@@ -173,8 +182,8 @@
     </main>
 
 
-    <script src="script.js?v=1.37"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.37"></script>
+    <script src="script.js?v=1.95"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.95"></script>
 </body>
 </html>
 

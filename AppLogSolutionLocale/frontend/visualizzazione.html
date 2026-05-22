@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 
 <head>
@@ -325,7 +325,7 @@
                 if (!mapInstance) {
                     mapInstance = L.map('logMap').setView([45.46427, 9.18951], 10);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: 'Â© OpenStreetMap'
+                        attribution: '© OpenStreetMap'
                     }).addTo(mapInstance);
                 }
 
@@ -362,7 +362,7 @@
          */
         window.confirmDeleteTrip = async (tripId, btnEl) => {
             // Conferma di sicurezza prima di procedere
-            if (!confirm('Sei sicuro di voler eliminare questo viaggio e tutti i suoi log GPS?\nL\'operazione non Ã¨ reversibile.')) return;
+            if (!confirm('Sei sicuro di voler eliminare questo viaggio e tutti i suoi log GPS?\nL\'operazione non è reversibile.')) return;
 
             // Feedback visivo: spinner sul pulsante durante l'operazione
             if (btnEl) {

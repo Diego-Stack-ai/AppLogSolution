@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progetto Scuole - Log Solution</title>
+    <link rel="stylesheet" href="styles.css?v=1.37">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    
+    <!-- PWA & Mobile Optimization -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#4f46e5">
+
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .nav-card {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .nav-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -10px rgba(79, 70, 229, 0.15);
+            border-color: var(--primary);
+        }
+
+        .icon-circle {
+            width: 72px;
+            height: 72px;
+            border-radius: 24px;
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 16px -8px rgba(0,0,0,0.1);
+        }
+
+        .nav-card:hover .icon-circle {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .nav-card h3 {
+            font-size: 1.1rem;
+            margin: 0 0 10px 0;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-card p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin: 0;
+            line-height: 1.5;
+            flex: 1;
+        }
+        
+        .badge-alert {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #ef4444;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+            animation: pulse-red 2s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="glass-nav">
+        <div class="nav-content">
+            <button onclick="window.history.back()" class="logout-btn" style="border:none; background:none; cursor:pointer; margin-right:15px; display:flex;">
+                <span class="material-icons-round">arrow_back</span>
+            </button>
+            <div class="nav-title" style="flex: 1;">Progetto Scuole</div>
+            <a href="login.html" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
+        </div>
+    </nav>
+
+    <main class="main-container">
+        <div style="margin-bottom: 30px;">
+            <h2 style="font-size: 1.6rem; color: var(--text-main); margin: 0 0 8px 0; font-weight: 800;">
+                Area Gestione &nbsp;🏫
+            </h2>
+            <p style="color: var(--text-muted); margin: 0;">Supervisioni, anomalie, anagrafiche e configurazioni dell'appalto scolastico.</p>
+        </div>
+
+        <div class="dashboard-grid">
+            
+            <!-- 1. Anagrafica Clienti -->
+            <a href="javascript:void(0)" onclick="window.navigateWithState('clienti.html')" class="nav-card">
+                <div class="icon-circle" style="background: #eef2ff; color: #4f46e5;">
+                    <span class="material-icons-round" style="font-size: 32px;">business</span>
+                </div>
+                <h3>Anagrafica Clienti</h3>
+                <p>Gestisci l'elenco generale dei punti di consegna, le loro coordinate e anagrafiche.</p>
+            </a>
+
+            <!-- 2. Nuovi Articoli -->
+            <a href="javascript:void(0)" onclick="window.navigateWithState('gestione_articoli.html')" class="nav-card">
+                <!-- Se Firebase trova articoli nuovi, de-commentalo -->
+                <!-- <div class="badge-alert">2 Da Verificare</div> -->
+                <div class="icon-circle" style="background: #fffbeb; color: #f59e0b;">
+                    <span class="material-icons-round" style="font-size: 32px;">category</span>
+                </div>
+                <h3>Gestione Nuovi Articoli</h3>
+                <p>Gestisci e censisci nuovi articoli promozionali, latte o frutta non riconosciuti.</p>
+            </a>
+
+            <!-- 3. Nuovi Clienti -->
+            <a href="javascript:void(0)" onclick="window.navigateWithState('gestione_nuovi_clienti.html')" class="nav-card">
+                <div class="icon-circle" style="background: #f0fdf4; color: #3b82f6;">
+                    <span class="material-icons-round" style="font-size: 32px;">person_add_alt_1</span>
+                </div>
+                <h3>Gestione Nuovi Clienti</h3>
+                <p>Mappa e autorizza nuovi plessi o sedi rilevate nei recenti flussi di consegna.</p>
+            </a>
+
+            <!-- 4. Orari Mancanti -->
+            <a href="javascript:void(0)" onclick="window.navigateWithState('gestione_orari.html')" class="nav-card">
+                <div class="icon-circle" style="background: #fef2f2; color: #ef4444;">
+                    <span class="material-icons-round" style="font-size: 32px;">schedule</span>
+                </div>
+                <h3>Gestione Orari Mancanti</h3>
+                <p>Completa le anagrafiche delle scuole sprovviste di un orario di apertura o chiusura.</p>
+            </a>
+
+            <!-- 5. Gestione Rientri -->
+            <a href="javascript:void(0)" onclick="window.navigateWithState('gestione_rientri.html')" class="nav-card">
+                <div class="icon-circle" style="background: #fdf4ff; color: #d946ef;">
+                    <span class="material-icons-round" style="font-size: 32px;">assignment_return</span>
+                </div>
+                <h3>Gestione Rientri</h3>
+                <p>Monitora lo stato di lavorazione e i documenti di rientro, DDT firmati e fatturazione.</p>
+            </a>
+
+        </div>
+    </main>
+
+    <script src="script.js?v=1.37"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.37"></script>
+</body>
+</html>

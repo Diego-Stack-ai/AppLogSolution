@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Anomalie - Log Solution</title>
+    <link rel="stylesheet" href="styles.css?v=1.42">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <meta name="theme-color" content="#4f46e5">
+    <style>
+        .tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; overflow-x: auto; }
+        .tab { padding: 12px 24px; border: none; background: transparent; cursor: pointer; font-weight: 700; font-size: 16px; color: var(--text-muted); border-radius: 8px; transition: 0.2s; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+        .tab:hover { background: #f8fafc; color: var(--primary); }
+        .tab.active { background: var(--primary); color: white; box-shadow: 0 4px 12px -4px var(--primary-glow); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .anomaly-card { background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .anomaly-card h3 { margin: 0 0 16px 0; color: #0f172a; display: flex; align-items: center; justify-content: space-between;}
+        
+        .grid-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px; }
+        .input-group { display: flex; flex-direction: column; gap: 4px; }
+        .input-group label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+        .input-group input, .input-group select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Outfit'; font-size: 14px; outline: none; }
+        .input-group input:focus, .input-group select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        
+        .section-title { font-size: 14px; font-weight: 800; color: var(--primary); margin: 24px 0 12px 0; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; grid-column: 1 / -1; }
+
+        .action-btn { background: var(--success); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
+        .action-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        
+        .delete-btn { background: #fee2e2; color: #ef4444; border: none; padding: 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: 0.2s;}
+        .delete-btn:hover { background: #fca5a5; color: white;}
+        .search-result-item { border-bottom: 1px solid #cbd5e1; transition: 0.15s ease-in-out; }
+        .search-result-item:hover { background: #f1f5f9; }
+        .search-result-item:last-child { border-bottom: none; }
+    </style>
+</head>
+
+<body>
+    <nav class="glass-nav">
+        <div class="nav-content">
+            <button id="dashboardBtn" class="logout-btn" title="Torna a Elaborazione"
+                onclick="window.navigateWithState('elaborazione.html')"
+                style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
+                <span class="material-icons-round">arrow_back</span>
+            </button>
+            <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
+            <div class="nav-title" style="flex: 1;">Gestione Anomalie Database</div>
+        </div>
+    </nav>
+
+    <div class="main-container" style="padding-top: 80px;">
+        <h1 style="margin-bottom: 8px; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 12px;">
+            <span class="material-icons-round" style="font-size: 32px;">fact_check</span>
+            Sale d'Attesa Dati
+        </h1>
+        <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 14px;">
+            Riconcilia i dati non riconosciuti durante l'elaborazione dei PDF. Aggiungili alle Master Collection di Firebase per istruire il sistema per le prossime volte.
+        </p>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('clienti')">
+                <span class="material-icons-round">storefront</span> Nuovi Clienti <span id="badge-clienti" style="background:#ef4444; color:white; padding:2px 8px; border-radius:12px; font-size:12px; display:none;">0</span>
+            </button>
+            <button class="tab" onclick="switchTab('articoli')">
+                <span class="material-icons-round">category</span> Nuovi Articoli <span id="badge-articoli" style="background:#f59e0b; color:white; padding:2px 8px; border-radius:12px; font-size:12px; display:none;">0</span>
+            </button>
+            <button class="tab" onclick="switchTab('orari')">
+                <span class="material-icons-round">schedule</span> Orari Variati <span id="badge-orari" style="background:#4f46e5; color:white; padding:2px 8px; border-radius:12px; font-size:12px; display:none;">0</span>
+            </button>
+        </div>
+
+        <!-- TAB CLIENTI -->
+        <div id="tab-clienti" class="tab-content active">
+            <div id="list-clienti">
+                <div style="text-align:center; padding:40px; color:#94a3b8;"><span class="material-icons-round" style="font-size:48px; opacity:0.5;">hourglass_empty</span><br>Caricamento...</div>
+            </div>
+        </div>
+
+        <!-- TAB ARTICOLI -->
+        <div id="tab-articoli" class="tab-content">
+            <div id="list-articoli">
+                <div style="text-align:center; padding:40px; color:#94a3b8;"><span class="material-icons-round" style="font-size:48px; opacity:0.5;">hourglass_empty</span><br>Caricamento...</div>
+            </div>
+        </div>
+
+        <!-- TAB ORARI -->
+        <div id="tab-orari" class="tab-content">
+            <div id="list-orari">
+                <div style="text-align:center; padding:40px; color:#94a3b8;"><span class="material-icons-round" style="font-size:48px; opacity:0.5;">hourglass_empty</span><br>Caricamento...</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="script.js?v=2.03"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.03"></script>
+    <script type="module">
+        import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { firebaseConfig } from "./firebase-config.js";
+
+        const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let masterClientiList = [];
+        async function caricaMasterClienti() {
+            try {
+                const snap = await getDocs(collection(db, 'clienti', 'DNR', 'raccolta clienti'));
+                masterClientiList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                console.log("Database Master Clienti caricato:", masterClientiList.length);
+            } catch (error) {
+                console.error("Errore durante il caricamento dei clienti master:", error);
+            }
+        }
+        caricaMasterClienti();
+
+        window.switchTab = (tabId) => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector(`button[onclick="switchTab('${tabId}')"]`).classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        };
+
+        // --- GESTIONE CLIENTI ---
+        onSnapshot(collection(db, 'clienti', 'DNR', 'nuovi codici consegna'), (snapshot) => {
+            const list = document.getElementById('list-clienti');
+            const badge = document.getElementById('badge-clienti');
+            if (snapshot.empty) {
+                list.innerHTML = `<div style="text-align:center; padding:40px; color:#10b981;"><span class="material-icons-round" style="font-size:48px;">check_circle</span><br>Nessun nuovo cliente in attesa!</div>`;
+                badge.style.display = 'none';
+                return;
+            }
+            
+            badge.textContent = snapshot.size;
+            badge.style.display = 'inline-block';
+            let html = '';
+            window.defaultAnomalyData = window.defaultAnomalyData || {};
+            snapshot.forEach(docSnap => {
+                const id = docSnap.id;
+                const d = docSnap.data();
+                
+                window.defaultAnomalyData[id] = {
+                    dest: d.dest || '',
+                    ind: d.ind || '',
+                    cit: d.cit || '',
+                    cap: d.cap || '',
+                    prov: d.prov || '',
+                    tipo: d.tipo || '',
+                    om: d.om || '',
+                    oM: d.oM || ''
+                };
+
+                html += `
+                    <div class="anomaly-card" id="card-cli-${id}">
+                        <h3>
+                            <span style="display:flex; align-items:center; gap:8px;">
+                                <span class="material-icons-round" style="color:#ef4444;">storefront</span> 
+                                Codice Rilevato: <span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-family:monospace; color:#475569;">${id}</span>
+                                <span style="font-size:12px; background:#e0e7ff; color:#4f46e5; padding:4px 8px; border-radius:6px; margin-left:8px;">Fonte PDF: ${d.tipo || 'Sconosciuto'}</span>
+                            </span>
+                            <button class="delete-btn" onclick="eliminaAnomalia('nuovi codici consegna', '${id}')" title="Scarta Segnalazione">
+                                <span class="material-icons-round">delete</span>
+                            </button>
+                        </h3>
+                        <div class="grid-form">
+                            <div class="section-title">Dati Anagrafici</div>
+                            <div class="input-group"><label>Ragione Sociale</label><input type="text" id="cli-${id}-cliente" value="${d.dest || ''}"></div>
+                            <div class="input-group"><label>Indirizzo</label><input type="text" id="cli-${id}-ind" value="${d.ind || ''}"></div>
+                            <div class="input-group"><label>Città</label><input type="text" id="cli-${id}-cit" value="${d.cit || ''}"></div>
+                            <div class="input-group"><label>CAP</label><input type="text" id="cli-${id}-cap" value="${d.cap || ''}"></div>
+                            <div class="input-group"><label>Provincia</label><input type="text" id="cli-${id}-prov" value="${d.prov || ''}"></div>
+                            
+                            <div class="section-title">Coordinate</div>
+                            <div class="input-group"><label>Latitudine</label><input type="number" step="0.000001" id="cli-${id}-lat" value=""></div>
+                            <div class="input-group"><label>Longitudine</label><input type="number" step="0.000001" id="cli-${id}-lon" value=""></div>
+                            
+                            <div class="section-title">Codici di Consegna</div>
+                            <div class="input-group"><label>Codice Frutta</label><input type="text" id="cli-${id}-codF" value="${d.tipo === 'FRUTTA' ? id : 'p00000'}"></div>
+                            <div class="input-group"><label>Codice Latte</label><input type="text" id="cli-${id}-codL" value="${d.tipo === 'LATTE' ? id : 'p00000'}"></div>
+                            
+                            <div class="section-title">Orari di Consegna (Frutta)</div>
+                            <div class="input-group"><label>Minimo Frutta</label><input type="time" id="cli-${id}-omF" value="${d.tipo === 'FRUTTA' ? (d.om || '') : ''}"></div>
+                            <div class="input-group"><label>Massimo Frutta</label><input type="time" id="cli-${id}-oMF" value="${d.tipo === 'FRUTTA' ? (d.oM || '') : ''}"></div>
+                            
+                            <div class="section-title">Orari di Consegna (Latte)</div>
+                            <div class="input-group"><label>Minimo Latte</label><input type="time" id="cli-${id}-omL" value="${d.tipo === 'LATTE' ? (d.om || '') : ''}"></div>
+                            <div class="input-group"><label>Massimo Latte</label><input type="time" id="cli-${id}-oML" value="${d.tipo === 'LATTE' ? (d.oM || '') : ''}"></div>
+
+                            <div class="section-title" style="margin-top: 16px; border-bottom: 2px dashed #cbd5e1;">Accoppiamento con Cliente Esistente</div>
+                            <div style="grid-column: 1 / -1; display: flex; gap: 8px; align-items: flex-end;">
+                                <div class="input-group" style="flex: 1;">
+                                    <label style="color:#4f46e5;">Cerca nel Database Master (CAP, Nome, Indirizzo, Codici)</label>
+                                    <input type="text" id="cli-${id}-search-input" placeholder="Es: Boschetto, 37100, P1234..." 
+                                           onkeydown="if(event.key === 'Enter') { cercaClientiPerAccoppiamento('${id}'); event.preventDefault(); }">
+                                </div>
+                                <button class="action-btn" onclick="cercaClientiPerAccoppiamento('${id}')" style="background:#4f46e5; height: 42px; display: flex; align-items: center; justify-content: center; padding: 0 16px;">
+                                    <span class="material-icons-round">search</span> Cerca
+                                </button>
+                            </div>
+                            
+                            <div id="cli-${id}-search-results" style="grid-column: 1 / -1; max-height: 220px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; display: none; margin-bottom: 8px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
+                            </div>
+
+                            <div id="cli-${id}-selected-merge-info" style="grid-column: 1 / -1; display: none; padding: 12px; background: #ecfdf5; border: 1px solid #10b981; border-radius: 8px; color: #065f46; font-size: 13px; font-weight: bold; margin-bottom: 8px;">
+                            </div>
+                        </div>
+                        <button class="action-btn" onclick="salvaNuovoCliente('${id}')">
+                            <span class="material-icons-round">add_circle</span> Salva Anagrafica Master
+                        </button>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+        });
+
+        window.selectedMergeTarget = {}; // Tiene traccia degli ID di merge per ciascuna card
+
+        // Ricerca locale fuzzy basata sulla cache caricata
+        window.cercaClientiPerAccoppiamento = (id) => {
+            const queryText = document.getElementById(`cli-${id}-search-input`).value.trim().toLowerCase();
+            const resultsContainer = document.getElementById(`cli-${id}-search-results`);
+            
+            if (!queryText) {
+                resultsContainer.style.display = 'none';
+                resultsContainer.innerHTML = '';
+                return;
+            }
+
+            const matches = masterClientiList.filter(c => {
+                const nome = (c.cliente || c.nome_consegna || '').toLowerCase();
+                const ind = (c.indirizzo || '').toLowerCase();
+                const cap = (c.cap || '').toLowerCase();
+                const citta = (c.citta || '').toLowerCase();
+                const codF = (c.codice_frutta || '').toLowerCase();
+                const codL = (c.codice_latte || '').toLowerCase();
+                
+                return nome.includes(queryText) || 
+                       ind.includes(queryText) || 
+                       cap.includes(queryText) || 
+                       citta.includes(queryText) || 
+                       codF.includes(queryText) || 
+                       codL.includes(queryText);
+            });
+
+            if (matches.length === 0) {
+                resultsContainer.innerHTML = `<div style="padding: 16px; text-align: center; color: #64748b; font-size: 13px;">Nessun cliente esistente corrisponde alla ricerca.</div>`;
+                resultsContainer.style.display = 'block';
+                return;
+            }
+
+            let html = '';
+            matches.forEach(c => {
+                const escapedId = c.id.replace(/'/g, "\\'");
+                html += `
+                    <div class="search-result-item" onclick="selezionaClientePerMerge('${id}', '${escapedId}')" 
+                         style="padding: 10px 14px; border-bottom: 1px solid #cbd5e1; cursor: pointer; transition: 0.15s; display: flex; flex-direction: column; gap: 4px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-weight: 700; color: #0f172a;">${c.cliente || c.nome_consegna || 'Senza Nome'}</span>
+                            <span style="font-size:11px; background:#e2e8f0; color:#475569; padding:2px 6px; border-radius:4px; font-family:monospace;">Doc ID: ${c.id}</span>
+                        </div>
+                        <div style="font-size: 12px; color: #64748b;">${c.indirizzo || ''}, ${c.citta || ''} (${c.cap || ''})</div>
+                        <div style="display: flex; gap: 6px; font-size: 11px; margin-top: 2px;">
+                            <span style="background: #eef2ff; color:#4f46e5; padding: 2px 6px; border-radius: 4px; font-weight:600;">Frutta: ${c.codice_frutta || 'p00000'}</span>
+                            <span style="background: #eef2ff; color:#4f46e5; padding: 2px 6px; border-radius: 4px; font-weight:600;">Latte: ${c.codice_latte || 'p00000'}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            resultsContainer.innerHTML = html;
+            resultsContainer.style.display = 'block';
+        };
+
+        // Selezione del cliente esistente e fusione dei campi
+        window.selezionaClientePerMerge = (idAnomalia, idEsistente) => {
+            const client = masterClientiList.find(c => c.id === idEsistente);
+            if (!client) return;
+
+            window.selectedMergeTarget[idAnomalia] = idEsistente;
+            document.getElementById(`cli-${idAnomalia}-search-results`).style.display = 'none';
+
+            // Aggiorna Banner Informativo
+            const mergeInfo = document.getElementById(`cli-${idAnomalia}-selected-merge-info`);
+            mergeInfo.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span><span class="material-icons-round" style="vertical-align:middle; font-size:16px; margin-right:4px;">link</span> Unione Attiva con: <b>${client.cliente || client.nome_consegna}</b> (DocID: ${client.id})</span>
+                    <button onclick="rimuoviMerge('${idAnomalia}')" style="background:transparent; border:none; color:#065f46; cursor:pointer; font-weight:800; font-size:12px; text-decoration:underline;">Annulla</button>
+                </div>
+            `;
+            mergeInfo.style.display = 'block';
+
+            // Compilazione automatica dei campi anagrafici del Master esistente
+            document.getElementById(`cli-${idAnomalia}-cliente`).value = client.cliente || client.nome_consegna || '';
+            document.getElementById(`cli-${idAnomalia}-ind`).value = client.indirizzo || '';
+            document.getElementById(`cli-${idAnomalia}-cit`).value = client.citta || '';
+            document.getElementById(`cli-${idAnomalia}-cap`).value = client.cap || '';
+            document.getElementById(`cli-${idAnomalia}-prov`).value = client.provincia || client.prov || '';
+            document.getElementById(`cli-${idAnomalia}-lat`).value = client.lat || '';
+            document.getElementById(`cli-${idAnomalia}-lon`).value = client.lon || '';
+
+            // Calcolo fusione codici
+            let codF = client.codice_frutta || 'p00000';
+            let codL = client.codice_latte || 'p00000';
+
+            // Riconoscimento fonte da dizionario default
+            const def = window.defaultAnomalyData[idAnomalia];
+            if (def && def.tipo === 'FRUTTA') {
+                codF = idAnomalia;
+            } else if (def && def.tipo === 'LATTE') {
+                codL = idAnomalia;
+            }
+
+            document.getElementById(`cli-${idAnomalia}-codF`).value = codF;
+            document.getElementById(`cli-${idAnomalia}-codL`).value = codL;
+
+            // Copia orari esistenti
+            document.getElementById(`cli-${idAnomalia}-omF`).value = client.orario_min_frutta || '';
+            document.getElementById(`cli-${idAnomalia}-oMF`).value = client.orario_max_frutta || '';
+            document.getElementById(`cli-${idAnomalia}-omL`).value = client.orario_min_latte || '';
+            document.getElementById(`cli-${idAnomalia}-oML`).value = client.orario_max_latte || '';
+
+            // Aggiorna pulsante grafico
+            const btnSalva = document.getElementById(`card-cli-${idAnomalia}`).querySelector('.action-btn');
+            btnSalva.innerHTML = `<span class="material-icons-round">merge</span> Unisci ed Aggiorna Cliente Esistente`;
+            btnSalva.style.background = '#10b981';
+        };
+
+        // Annullamento dell'unione e ripristino dati estratti dal PDF
+        window.rimuoviMerge = (idAnomalia) => {
+            delete window.selectedMergeTarget[idAnomalia];
+            document.getElementById(`cli-${idAnomalia}-selected-merge-info`).style.display = 'none';
+
+            const btnSalva = document.getElementById(`card-cli-${idAnomalia}`).querySelector('.action-btn');
+            btnSalva.innerHTML = `<span class="material-icons-round">add_circle</span> Salva Anagrafica Master`;
+            btnSalva.style.background = '';
+
+            const def = window.defaultAnomalyData[idAnomalia];
+            if (def) {
+                document.getElementById(`cli-${idAnomalia}-cliente`).value = def.dest;
+                document.getElementById(`cli-${idAnomalia}-ind`).value = def.ind;
+                document.getElementById(`cli-${idAnomalia}-cit`).value = def.cit;
+                document.getElementById(`cli-${idAnomalia}-cap`).value = def.cap;
+                document.getElementById(`cli-${idAnomalia}-prov`).value = def.prov;
+                document.getElementById(`cli-${idAnomalia}-lat`).value = '';
+                document.getElementById(`cli-${idAnomalia}-lon`).value = '';
+                document.getElementById(`cli-${idAnomalia}-codF`).value = def.tipo === 'FRUTTA' ? idAnomalia : 'p00000';
+                document.getElementById(`cli-${idAnomalia}-codL`).value = def.tipo === 'LATTE' ? idAnomalia : 'p00000';
+                document.getElementById(`cli-${idAnomalia}-omF`).value = def.tipo === 'FRUTTA' ? def.om : '';
+                document.getElementById(`cli-${idAnomalia}-oMF`).value = def.tipo === 'FRUTTA' ? def.oM : '';
+                document.getElementById(`cli-${idAnomalia}-omL`).value = def.tipo === 'LATTE' ? def.om : '';
+                document.getElementById(`cli-${idAnomalia}-oML`).value = def.tipo === 'LATTE' ? def.oM : '';
+            }
+        };
+
+        window.salvaNuovoCliente = async (id) => {
+            let dataToSave = {
+                cliente: document.getElementById(`cli-${id}-cliente`).value,
+                indirizzo: document.getElementById(`cli-${id}-ind`).value,
+                citta: document.getElementById(`cli-${id}-cit`).value,
+                cap: document.getElementById(`cli-${id}-cap`).value,
+                provincia: document.getElementById(`cli-${id}-prov`).value,
+                lat: parseFloat(document.getElementById(`cli-${id}-lat`).value) || null,
+                lon: parseFloat(document.getElementById(`cli-${id}-lon`).value) || null,
+                codice_frutta: document.getElementById(`cli-${id}-codF`).value,
+                codice_latte: document.getElementById(`cli-${id}-codL`).value,
+                orario_min_frutta: document.getElementById(`cli-${id}-omF`).value,
+                orario_max_frutta: document.getElementById(`cli-${id}-oMF`).value,
+                orario_min_latte: document.getElementById(`cli-${id}-omL`).value,
+                orario_max_latte: document.getElementById(`cli-${id}-oML`).value
+            };
+
+            let docId = window.selectedMergeTarget[id];
+            if (!docId) {
+                docId = dataToSave.codice_frutta !== 'p00000' ? dataToSave.codice_frutta : dataToSave.codice_latte;
+                if (!docId || docId === 'p00000') docId = id;
+            }
+
+            try {
+                await setDoc(doc(db, 'clienti', 'DNR', 'raccolta clienti', docId), dataToSave, { merge: true });
+                await deleteDoc(doc(db, 'clienti', 'DNR', 'nuovi codici consegna', id));
+                
+                // Aggiornamento cache master locale
+                const idx = masterClientiList.findIndex(c => c.id === docId);
+                if (idx !== -1) {
+                    masterClientiList[idx] = { id: docId, ...dataToSave };
+                } else {
+                    masterClientiList.push({ id: docId, ...dataToSave });
+                }
+
+                delete window.selectedMergeTarget[id];
+
+                Swal.fire({icon: 'success', title: 'Cliente Salvato!', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000});
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Errore', e.message, 'error');
+            }
+        };
+
+        // --- GESTIONE ARTICOLI ---
+        onSnapshot(collection(db, 'clienti', 'DNR', 'nuovi articoli rilevati'), (snapshot) => {
+            const list = document.getElementById('list-articoli');
+            const badge = document.getElementById('badge-articoli');
+            if (snapshot.empty) {
+                list.innerHTML = `<div style="text-align:center; padding:40px; color:#10b981;"><span class="material-icons-round" style="font-size:48px;">check_circle</span><br>Nessun nuovo articolo in attesa!</div>`;
+                badge.style.display = 'none';
+                return;
+            }
+            
+            badge.textContent = snapshot.size;
+            badge.style.display = 'inline-block';
+            let html = '';
+            snapshot.forEach(docSnap => {
+                const id = docSnap.id;
+                const d = docSnap.data();
+                html += `
+                    <div class="anomaly-card">
+                        <h3>
+                            <span style="display:flex; align-items:center; gap:8px;">
+                                <span class="material-icons-round" style="color:#d97706;">category</span> 
+                                Codice Articolo: <span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-family:monospace; color:#475569;">${id}</span>
+                                <span style="font-size:12px; background:#e0e7ff; color:#4f46e5; padding:4px 8px; border-radius:6px; margin-left:8px;">Fonte PDF: ${d.tipo || 'Sconosciuta'}</span>
+                            </span>
+                            <button class="delete-btn" onclick="eliminaAnomalia('nuovi articoli rilevati', '${id}')" title="Scarta Segnalazione">
+                                <span class="material-icons-round">delete</span>
+                            </button>
+                        </h3>
+                        <div class="grid-form">
+                            <div class="input-group"><label>Codice Articolo</label><input type="text" id="art-${id}-codice" value="${id}"></div>
+                            <div class="input-group" style="grid-column: span 2;"><label>Descrizione Articolo</label><input type="text" id="art-${id}-desc" value="${d.descrizione || ''}"></div>
+                            <div class="input-group">
+                                <label>Famiglia</label>
+                                <select id="art-${id}-fam">
+                                    <option value="LATTE" ${d.tipo==='LATTE'?'selected':''}>LATTE</option>
+                                    <option value="FRUTTA" ${d.tipo==='FRUTTA'?'selected':''}>FRUTTA</option>
+                                </select>
+                            </div>
+                            
+                            <div class="section-title">Dettagli Confezionamento</div>
+                            <div class="input-group"><label>Confezionamento</label><input type="text" id="art-${id}-conf" value=""></div>
+                            <div class="input-group"><label>Porzioni</label><input type="number" step="0.01" id="art-${id}-porz" value="1"></div>
+                            <div class="input-group"><label>Unità Principale</label><input type="text" id="art-${id}-u1" value=""></div>
+                            <div class="input-group"><label>Unità Secondaria</label><input type="text" id="art-${id}-u2" value=""></div>
+                            <div class="input-group"><label>Ratio (Conversione)</label><input type="number" step="0.001" id="art-${id}-ratio" value=""></div>
+                            <div class="input-group"><label>Per</label><input type="text" id="art-${id}-per" value=""></div>
+                        </div>
+                        <button class="action-btn" onclick="salvaNuovoArticolo('${id}')">
+                            <span class="material-icons-round">add_circle</span> Salva in Database Articoli
+                        </button>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+        });
+
+        window.salvaNuovoArticolo = async (originalId) => {
+            const newCode = document.getElementById(`art-${originalId}-codice`).value;
+            const desc = document.getElementById(`art-${originalId}-desc`).value;
+            const fam = document.getElementById(`art-${originalId}-fam`).value;
+            const conf = document.getElementById(`art-${originalId}-conf`).value;
+            
+            const porzStr = document.getElementById(`art-${originalId}-porz`).value;
+            const ratioStr = document.getElementById(`art-${originalId}-ratio`).value;
+            
+            // Gestione precisa dei numeri: se vuoto salva null, se 0 salva 0
+            const porzioniVal = porzStr === '' ? null : parseFloat(porzStr);
+            const ratioVal = ratioStr === '' ? null : parseFloat(ratioStr);
+            
+            let dataToSave = {
+                descrizione: desc,
+                famiglia: fam,
+                confezionamento: conf,
+                porzioni: porzioniVal,
+                unita_principale: document.getElementById(`art-${originalId}-u1`).value || null,
+                unita_secondaria: document.getElementById(`art-${originalId}-u2`).value || null,
+                ratio: ratioVal,
+                per: document.getElementById(`art-${originalId}-per`).value || null,
+                is_articolo_noto: true
+            };
+            
+            try {
+                await setDoc(doc(db, 'clienti', 'DNR', 'codici articoli', newCode), dataToSave, { merge: true });
+                // Elimina l'originale dalla sala d'attesa (anche se ha cambiato codice, scartiamo la notifica)
+                await deleteDoc(doc(db, 'clienti', 'DNR', 'nuovi articoli rilevati', originalId));
+                Swal.fire({icon: 'success', title: 'Articolo Salvato!', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000});
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Errore', e.message, 'error');
+            }
+        };
+
+        // --- GESTIONE ORARI ---
+        onSnapshot(collection(db, 'clienti', 'DNR', 'nuovi orari mancanti'), async (snapshot) => {
+            const list = document.getElementById('list-orari');
+            const badge = document.getElementById('badge-orari');
+            if (snapshot.empty) {
+                list.innerHTML = `<div style="text-align:center; padding:40px; color:#10b981;"><span class="material-icons-round" style="font-size:48px;">check_circle</span><br>Nessun nuovo orario in attesa!</div>`;
+                badge.style.display = 'none';
+                return;
+            }
+            
+            badge.textContent = snapshot.size;
+            badge.style.display = 'inline-block';
+            let html = '';
+            
+            // Per renderizzare TUTTI i campi del cliente, li andiamo a pescare in tempo reale
+            for (const docSnap of snapshot.docs) {
+                const id = docSnap.id;
+                const d = docSnap.data();
+                
+                let clientData = {
+                    cliente: d.cliente || '', indirizzo: '', citta: '', cap: '', provincia: '',
+                    codice_frutta: d.tipo === 'FRUTTA' ? id : 'p00000',
+                    codice_latte: d.tipo === 'LATTE' ? id : 'p00000',
+                    orario_min_frutta: '', orario_max_frutta: '',
+                    orario_min_latte: '', orario_max_latte: '',
+                    lat: '', lon: ''
+                };
+                let docIdToUpdate = id;
+
+                try {
+                    const rcRef = collection(db, 'clienti', 'DNR', 'raccolta clienti');
+                    const qF = query(rcRef, where("codice_frutta", "==", id));
+                    const qL = query(rcRef, where("codice_latte", "==", id));
+                    let docsF = await getDocs(qF);
+                    let docsL = await getDocs(qL);
+                    
+                    if (!docsF.empty) { clientData = {...clientData, ...docsF.docs[0].data()}; docIdToUpdate = docsF.docs[0].id; }
+                    else if (!docsL.empty) { clientData = {...clientData, ...docsL.docs[0].data()}; docIdToUpdate = docsL.docs[0].id; }
+                    else {
+                        const directDoc = await getDocs(query(rcRef, where("__name__", "==", id)));
+                        if (!directDoc.empty) { clientData = {...clientData, ...directDoc.docs[0].data()}; docIdToUpdate = directDoc.docs[0].id; }
+                    }
+                } catch(e) { console.error(e); }
+
+                // Retro-compatibilità tra vecchio formato locale e nuovo formato Cloud
+                let ddtMin = d.orario_min_ddt !== undefined ? d.orario_min_ddt : (d.new_orari ? d.new_orari[0] : undefined);
+                let ddtMax = d.orario_max_ddt !== undefined ? d.orario_max_ddt : (d.new_orari ? d.new_orari[1] : undefined);
+                
+                let oldMin = d.orario_min_mappa !== undefined ? d.orario_min_mappa : (d.old_orari ? d.old_orari[0] : '');
+                let oldMax = d.orario_max_mappa !== undefined ? d.orario_max_mappa : (d.old_orari ? d.old_orari[1] : '');
+
+                // Applichiamo la proposta del nuovo orario estratto
+                if (d.tipo === 'FRUTTA') {
+                    clientData.orario_min_frutta = ddtMin !== undefined ? ddtMin : clientData.orario_min_frutta;
+                    clientData.orario_max_frutta = ddtMax !== undefined ? ddtMax : clientData.orario_max_frutta;
+                } else {
+                    clientData.orario_min_latte = ddtMin !== undefined ? ddtMin : clientData.orario_min_latte;
+                    clientData.orario_max_latte = ddtMax !== undefined ? ddtMax : clientData.orario_max_latte;
+                }
+
+                html += `
+                    <div class="anomaly-card">
+                        <h3>
+                            <span style="display:flex; align-items:center; gap:8px;">
+                                <span class="material-icons-round" style="color:#4f46e5;">schedule</span> 
+                                Aggiornamento Orari: <span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-family:monospace; color:#475569;">${id}</span>
+                                <span style="font-size:14px; font-weight:400; margin-left:8px;">${clientData.cliente || ''}</span>
+                                <span style="font-size:12px; background:#fee2e2; color:#ef4444; padding:4px 8px; border-radius:6px; margin-left:8px;">Fonte PDF: ${d.tipo || ''}</span>
+                            </span>
+                            <button class="delete-btn" onclick="eliminaAnomalia('nuovi orari mancanti', '${id}')" title="Scarta Segnalazione">
+                                <span class="material-icons-round">delete</span>
+                            </button>
+                        </h3>
+                        <div style="font-size:13px; color:#64748b; margin-bottom:16px;">Orario precedentemente archiviato per ${d.tipo}: <b>${(oldMin || oldMax) ? `${oldMin} - ${oldMax}` : 'Nessuno'}</b></div>
+                        
+                        <div class="grid-form">
+                            <div class="section-title">Dati Anagrafici Correnti</div>
+                            <div class="input-group"><label>Ragione Sociale</label><input type="text" id="ora-${id}-cliente" value="${clientData.cliente || ''}"></div>
+                            <div class="input-group"><label>Indirizzo</label><input type="text" id="ora-${id}-ind" value="${clientData.indirizzo || ''}"></div>
+                            <div class="input-group"><label>Città</label><input type="text" id="ora-${id}-cit" value="${clientData.citta || ''}"></div>
+                            <div class="input-group"><label>CAP</label><input type="text" id="ora-${id}-cap" value="${clientData.cap || ''}"></div>
+                            <div class="input-group"><label>Provincia</label><input type="text" id="ora-${id}-prov" value="${clientData.provincia || ''}"></div>
+                            
+                            <div class="section-title">Coordinate</div>
+                            <div class="input-group"><label>Latitudine</label><input type="number" step="0.000001" id="ora-${id}-lat" value="${clientData.lat || ''}"></div>
+                            <div class="input-group"><label>Longitudine</label><input type="number" step="0.000001" id="ora-${id}-lon" value="${clientData.lon || ''}"></div>
+
+                            <div class="section-title">Codici di Consegna</div>
+                            <div class="input-group"><label>Codice Frutta</label><input type="text" id="ora-${id}-codF" value="${clientData.codice_frutta || ''}"></div>
+                            <div class="input-group"><label>Codice Latte</label><input type="text" id="ora-${id}-codL" value="${clientData.codice_latte || ''}"></div>
+                            
+                            <div class="section-title">Orari di Consegna (Frutta)</div>
+                            <div class="input-group"><label>Minimo Frutta</label><input type="time" id="ora-${id}-omF" value="${clientData.orario_min_frutta || ''}" ${d.tipo==='FRUTTA' ? 'style="border-color:#4f46e5; background:#eef2ff;"' : ''}></div>
+                            <div class="input-group"><label>Massimo Frutta</label><input type="time" id="ora-${id}-oMF" value="${clientData.orario_max_frutta || ''}" ${d.tipo==='FRUTTA' ? 'style="border-color:#4f46e5; background:#eef2ff;"' : ''}></div>
+                            
+                            <div class="section-title">Orari di Consegna (Latte)</div>
+                            <div class="input-group"><label>Minimo Latte</label><input type="time" id="ora-${id}-omL" value="${clientData.orario_min_latte || ''}" ${d.tipo==='LATTE' ? 'style="border-color:#4f46e5; background:#eef2ff;"' : ''}></div>
+                            <div class="input-group"><label>Massimo Latte</label><input type="time" id="ora-${id}-oML" value="${clientData.orario_max_latte || ''}" ${d.tipo==='LATTE' ? 'style="border-color:#4f46e5; background:#eef2ff;"' : ''}></div>
+                        </div>
+                        <button class="action-btn" onclick="salvaAggiornamentoOrario('${id}', '${docIdToUpdate}')">
+                            <span class="material-icons-round">update</span> Sovrascrivi Anagrafica Cliente
+                        </button>
+                    </div>
+                `;
+            }
+            list.innerHTML = html;
+        });
+
+        window.salvaAggiornamentoOrario = async (idFromPdf, docIdToUpdate) => {
+            let dataToSave = {
+                cliente: document.getElementById(`ora-${idFromPdf}-cliente`).value,
+                indirizzo: document.getElementById(`ora-${idFromPdf}-ind`).value,
+                citta: document.getElementById(`ora-${idFromPdf}-cit`).value,
+                cap: document.getElementById(`ora-${idFromPdf}-cap`).value,
+                provincia: document.getElementById(`ora-${idFromPdf}-prov`).value,
+                lat: parseFloat(document.getElementById(`ora-${idFromPdf}-lat`).value) || null,
+                lon: parseFloat(document.getElementById(`ora-${idFromPdf}-lon`).value) || null,
+                codice_frutta: document.getElementById(`ora-${idFromPdf}-codF`).value,
+                codice_latte: document.getElementById(`ora-${idFromPdf}-codL`).value,
+                orario_min_frutta: document.getElementById(`ora-${idFromPdf}-omF`).value,
+                orario_max_frutta: document.getElementById(`ora-${idFromPdf}-oMF`).value,
+                orario_min_latte: document.getElementById(`ora-${idFromPdf}-omL`).value,
+                orario_max_latte: document.getElementById(`ora-${idFromPdf}-oML`).value
+            };
+
+            try {
+                // Aggiorniamo interamente il documento del cliente
+                await setDoc(doc(db, 'clienti', 'DNR', 'raccolta clienti', docIdToUpdate), dataToSave, { merge: true });
+                // Rimuoviamo l'anomalia
+                await deleteDoc(doc(db, 'clienti', 'DNR', 'nuovi orari mancanti', idFromPdf));
+                Swal.fire({icon: 'success', title: 'Cliente Aggiornato!', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000});
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Errore', e.message, 'error');
+            }
+        };
+
+        window.eliminaAnomalia = async (collectionName, id) => {
+            if (confirm("Sei sicuro di voler scartare questa segnalazione?")) {
+                try {
+                    await deleteDoc(doc(db, 'clienti', 'DNR', collectionName, id));
+                } catch(e) {
+                    Swal.fire('Errore', e.message, 'error');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Anagrafiche - Log Solution</title>
+    <link rel="stylesheet" href="styles.css?v=1.75">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <!-- Leaflet per Mappe -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        .tabs-header {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-muted);
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+
+        .data-table-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            max-height: 70vh;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            background: #f8fafc;
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 700;
+            color: #475569;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            color: var(--text-main);
+            white-space: nowrap;
+        }
+
+        /* Forza larghezza minima per colonne importanti */
+        th:nth-child(3), td:nth-child(3) { min-width: 200px; white-space: normal; } /* Nome Consegna */
+        th:nth-child(4), td:nth-child(4) { min-width: 250px; white-space: normal; } /* Indirizzo */
+        th:nth-child(8), td:nth-child(8) { min-width: 120px; } /* Lat/Lon */
+        th:nth-child(9), td:nth-child(9) { min-width: 150px; } /* Orari */
+
+        tr:hover td {
+            background: #f8fafc;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-frutta { background: #dcfce7; color: #166534; }
+        .badge-latte { background: #e0f2fe; color: #075985; }
+
+        .search-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap; /* Permette di andare a capo su mobile */
+        }
+
+        .search-bar input {
+            flex: 1;
+            min-width: 200px; /* Evita che diventi troppo piccolo */
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .search-bar {
+                flex-direction: column-reverse;
+                gap: 8px;
+            }
+            .search-bar .action-buttons {
+                display: flex;
+                gap: 8px;
+                width: 100%;
+            }
+            .search-bar .action-buttons button {
+                flex: 1;
+                padding: 10px;
+                font-size: 13px;
+            }
+            .search-bar input {
+                width: 100%;
+                flex: none;
+            }
+            .cards-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn-add {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-add:hover {
+            background: var(--primary-hover);
+            transform: scale(1.02);
+        }
+
+        #modalMap {
+            height: 300px;
+            width: 100%;
+            border-radius: 12px;
+            margin-top: 12px;
+            border: 1px solid #e2e8f0;
+            grid-column: span 2;
+        }
+
+        .btn-map {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-map:hover {
+            background: #059669;
+            transform: scale(1.02);
+        }
+
+        /* Card Layout */
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .item-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .item-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 10px 25px -10px rgba(79, 70, 229, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 12px;
+            padding-right: 80px; /* Spazio per i pulsanti assoluti */
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .card-title {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--text-main);
+            margin: 0;
+        }
+
+        .card-body {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .card-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .data-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .data-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .data-value {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .card-actions {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-edit, .btn-delete {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        .btn-edit:hover { background: #f8fafc; border-color: var(--primary); }
+        .btn-delete:hover { background: #fef2f2; border-color: #ef4444; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 16px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            grid-column: span 3;
+        }
+
+        .input-group label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .input-group input, .input-group select {
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .orari-inputs {
+            display: flex;
+            gap: 8px;
+        }
+
+        @media (max-width: 900px) {
+            .form-grid { 
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 20px !important;
+            }
+            .input-group { 
+                grid-column: auto !important;
+                width: 100% !important;
+            }
+            .orari-inputs {
+                flex-direction: column;
+                gap: 12px;
+            }
+            /* Assicura che anche la mappa sia a tutta larghezza */
+            #modalMap {
+                width: 100% !important;
+                grid-column: auto !important;
+            }
+        }
+
+        #modalMap {
+            height: 250px;
+            width: 100%;
+            border-radius: 12px;
+            margin-top: 12px;
+            border: 1px solid #e2e8f0;
+            grid-column: span 6;
+        }
+
+        /* Scrollbar personalizzata */
+        .data-table-container::-webkit-scrollbar {
+            height: 8px;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="glass-nav">
+        <div class="nav-content">
+            <button onclick="window.navigateWithState('dashboard.html')" class="logout-btn" style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
+                <span class="material-icons-round">arrow_back</span>
+            </button>
+            <div class="nav-title" style="flex: 1;">Gestione Anagrafiche</div>
+            <button id="updateBtn" class="btn-map" style="display:none; background:#f59e0b; padding:6px 10px; font-size:11px; margin-right:8px;" onclick="updateApp()">
+                <span class="material-icons-round">update</span> AGGIORNA
+            </button>
+            <a href="#" onclick="window.logoutFirebase(); return false;" class="logout-btn"><span class="material-icons-round">logout</span></a>
+        </div>
+    </nav>
+
+    <main class="main-container">
+        <div class="tabs-header">
+            <button class="tab-btn active" onclick="switchTab('clienti')">
+                <span class="material-icons-round">group</span> Clienti
+            </button>
+            <button class="tab-btn" onclick="switchTab('articoli')">
+                <span class="material-icons-round">inventory_2</span> Articoli
+            </button>
+            <button class="tab-btn" onclick="switchTab('rientri')">
+                <span class="material-icons-round">assignment_return</span> Rientri DDT
+            </button>
+        </div>
+
+        <div class="glass-panel" style="padding: 24px;">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Cerca cliente, codice o città..." onkeyup="filterTable()">
+                <div class="action-buttons" style="display:flex; gap:12px;">
+                    <button id="btnShowMap" class="btn-map" onclick="window.navigateWithState('mappa_google.html')">
+                        <span class="material-icons-round">map</span> Mappa
+                    </button>
+                    <button class="btn-add" onclick="openModal()">
+                        <span class="material-icons-round">add</span> Aggiungi
+                    </button>
+                </div>
+            </div>
+
+            <div id="dataContainer" class="cards-container">
+                <!-- Card dinamiche -->
+            </div>
+            
+            <div id="loading" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                <span class="material-icons-round" style="font-size: 40px; animation: spin 2s linear infinite;">autorenew</span>
+                <p>Caricamento dati...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modale Aggiunta/Modifica -->
+    <div id="crudModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 id="modalTitle" style="margin: 0;">Aggiungi Nuovo</h3>
+                <button onclick="closeModal()" style="border: none; background: none; cursor: pointer; color: var(--text-muted);">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+            
+            <form id="crudForm">
+                <div id="formFields" class="form-grid">
+                    <!-- Campi dinamici basati sul tab attivo -->
+                </div>
+                
+                <div style="margin-top: 32px; display: flex; gap: 12px;">
+                    <button type="button" onclick="closeModal()" class="tab-btn" style="flex: 1; justify-content: center;">Annulla</button>
+                    <button type="submit" class="btn-primary" style="flex: 2; box-shadow: none;">Salva nel Database</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js?v=1.95"></script>
+    <script type="module" src="firebase-auth-sync.js?v=1.95"></script>
+    <script type="module">
+        import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { firebaseConfig } from "./firebase-config.js";
+
+        const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currentTab = 'clienti';
+        let unsubscribe = null;
+
+        window.switchTab = function(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.innerText.toLowerCase().includes(tab));
+            });
+            
+            // Gestione visibilità pulsante Mappa
+            const btnMap = document.getElementById('btnShowMap');
+            if(btnMap) {
+                btnMap.style.display = (tab === 'clienti') ? 'flex' : 'none';
+            }
+
+            loadData();
+        };
+
+        function loadData() {
+            if(unsubscribe) unsubscribe();
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('dataContainer').innerHTML = '';
+            
+            let collPath = '';
+            if(currentTab === 'clienti') collPath = 'clienti/DNR/raccolta clienti';
+            if(currentTab === 'articoli') collPath = 'clienti/DNR/codici articoli';
+            if(currentTab === 'rientri') collPath = 'clienti/DNR/rientri ddt';
+
+            const q = query(collection(db, collPath));
+            
+            unsubscribe = onSnapshot(q, (snapshot) => {
+                document.getElementById('loading').style.display = 'none';
+                window.fullData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                renderTable(window.fullData);
+            });
+        }
+
+        function renderTable(data) {
+            const container = document.getElementById('dataContainer');
+            container.innerHTML = '';
+            
+            if(currentTab === 'clienti') {
+                container.innerHTML = data.map(d => `
+                    <div class="item-card">
+                        <div class="card-header">
+                            <div>
+                                <h4 class="card-title">${d.cliente || d.nome_consegna || 'N/A'}</h4>
+                                <div style="display:flex; gap:8px; margin-top:4px;">
+                                    <span class="badge badge-frutta">F: ${d.codice_frutta || '-'}</span>
+                                    <span class="badge badge-latte">L: ${d.codice_latte || '-'}</span>
+                                    <span class="badge" style="background:#f1f5f9; color:#64748b">ZONA: ${d.codice_zona || d.zona || '-'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="card-row">
+                                <div class="data-item" style="flex:2">
+                                    <span class="data-label">Indirizzo</span>
+                                    <span class="data-value">${d.indirizzo || ''}</span>
+                                </div>
+                                <div class="data-item" style="flex:1">
+                                    <span class="data-label">Città / Prov</span>
+                                    <span class="data-value">${d.citta || ''} (${d.provincia || d.prov || '-'})</span>
+                                </div>
+                            </div>
+                            <div class="card-row" style="background:#f8fafc; padding:8px; border-radius:8px;">
+                                <div class="data-item">
+                                    <span class="data-label">Orari Frutta</span>
+                                    <span class="data-value">${d.orario_min_frutta || '-'}/${d.orario_max_frutta || '-'}</span>
+                                </div>
+                                <div class="data-item" style="border-left:1px solid #e2e8f0; padding-left:16px;">
+                                    <span class="data-label">Orari Latte</span>
+                                    <span class="data-value">${d.orario_min_latte || '-'}/${d.orario_max_latte || '-'}</span>
+                                </div>
+                                <div class="data-item" style="border-left:1px solid #e2e8f0; padding-left:16px;">
+                                    <span class="data-label">Coordinate GPS</span>
+                                    <span class="data-value">${d.lat ? parseFloat(d.lat).toFixed(4) : '-'}/${d.lon ? parseFloat(d.lon).toFixed(4) : '-'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                             <button class="btn-edit" onclick="editItem('${d.id}')" title="Modifica dati">
+                                <span class="material-icons-round" style="font-size:18px;">edit</span>
+                             </button>
+                             <button class="btn-delete" onclick="window.deleteItem('${d.id}')" title="Elimina record">
+                                <span class="material-icons-round" style="font-size:18px; color: #ef4444;">delete</span>
+                             </button>
+                             <button class="btn-edit" onclick="window.navigateWithState('mappa_google.html?id=${d.id}')" title="Geolocalizza (Google Maps)">
+                                <span class="material-icons-round" style="font-size:18px; color:#10b981;">my_location</span>
+                             </button>
+                        </div>
+                    </div>
+                `).join('');
+            } else if(currentTab === 'articoli') {
+                container.innerHTML = data.map(d => `
+                    <div class="item-card">
+                        <div class="card-actions">
+                             <button class="btn-edit" onclick="editItem('${d.id}')" title="Modifica">
+                                <span class="material-icons-round" style="font-size:18px;">edit</span>
+                             </button>
+                             <button class="btn-delete" onclick="window.deleteItem('${d.id}')" title="Elimina">
+                                <span class="material-icons-round" style="font-size:18px; color: #ef4444;">delete</span>
+                             </button>
+                        </div>
+                        <div class="card-header">
+                            <div>
+                                <h4 class="card-title">${d.id}</h4>
+                                <p style="font-size:13px; font-weight:600; color:var(--primary); margin:4px 0 0 0;">${d.descrizione || ''}</p>
+                                <span class="badge" style="background:#e0e7ff; color:#4f46e5; margin-top:4px; display:inline-block;">Famiglia: ${d.famiglia || 'Non assegnata'}</span>
+                            </div>
+                        </div>
+                        <div class="card-grid">
+                            <div class="data-item">
+                                <span class="data-label">Confezione</span>
+                                <span class="data-value">${d.confezionamento || '-'}</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-label">U. Principale</span>
+                                <span class="data-value">${d.unita_principale || '-'} (${d.per || '1'})</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-label">U. Secondaria</span>
+                                <span class="data-value">${d.unita_secondaria || '-'}</span>
+                            </div>
+                            <div class="data-item">
+                                <span class="data-label">Ratio / Porz.</span>
+                                <span class="data-value">${d.ratio || '1'} / ${d.porzioni || '-'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else if(currentTab === 'rientri') {
+                 container.innerHTML = data.map(d => {
+                    console.log("[DEBUG RIENTRI] Documento intero:", d);
+                    console.log("[DEBUG RIENTRI] Chiavi disponibili:", Object.keys(d));
+                    
+                    const codice = d['Codice consegna'] || d.id;
+                    const ddt = d['Data e Num DDT'] || '';
+                    const stato = d['Stato'] || '';
+                    const tipo = (d['Tipo'] || '').toLowerCase();
+                    const note = d['Note'] || '';
+                    const isParziale = tipo === 'parziale';
+                    
+                    return `
+                    <div class="item-card${isParziale ? ' parziale' : ''}">
+                        <div class="card-header">
+                            <div>
+                                <h4 class="card-title">${codice}</h4>
+                                <p style="font-size:12px; color:var(--text-muted); margin:0;">${ddt}</p>
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
+                                ${stato ? `<span class="badge badge-stato">${stato}</span>` : ''}
+                                ${isParziale ? `<span class="badge badge-parziale">⚠️ parziale</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="data-item" style="grid-column: span 12;">
+                                <span class="data-label">Note</span>
+                                <span class="data-value" style="white-space: pre-wrap;">${note || '-'}</span>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                             <button class="btn-edit" onclick="editItem('${d.id}')" title="Modifica">
+                                <span class="material-icons-round" style="font-size:18px;">edit</span>
+                             </button>
+                             <button class="btn-delete" onclick="window.deleteItem('${d.id}')" title="Elimina">
+                                <span class="material-icons-round" style="font-size:18px; color: #ef4444;">delete</span>
+                             </button>
+                        </div>
+                    </div>
+                `;}).join('');
+            }
+        }
+
+        // --- GESTIONE CRUD MODALE ---
+        window.openModal = function() {
+            const modal = document.getElementById('crudModal');
+            const title = document.getElementById('modalTitle');
+            const fields = document.getElementById('formFields');
+            const form = document.getElementById('crudForm');
+            
+            form.reset();
+            modal.classList.add('active');
+                      if(currentTab === 'clienti') {
+                title.innerText = "Nuovo Cliente";
+                fields.innerHTML = `
+                    <!-- 1. CODICI -->
+                    <div class="input-group">
+                        <label>Codice Frutta</label>
+                        <input type="text" name="codice_frutta" placeholder="es: p2000">
+                    </div>
+                    <div class="input-group">
+                        <label>Codice Latte</label>
+                        <input type="text" name="codice_latte" placeholder="es: p2000">
+                    </div>
+
+                    <!-- 2. ANAGRAFICA -->
+                    <div class="input-group" style="grid-column: span 6">
+                        <label>Nome Consegna (Scuola)</label>
+                        <input type="text" name="cliente" required>
+                    </div>
+                    <div class="input-group" style="grid-column: span 6">
+                        <label>Indirizzo (Via e Civico)</label>
+                        <input type="text" name="indirizzo" placeholder="es: Via Roma 10">
+                    </div>
+
+                    <!-- 3. GEOGRAFIA -->
+                    <div class="input-group" style="grid-column: span 2">
+                        <label>Città</label>
+                        <input type="text" name="citta">
+                    </div>
+                    <div class="input-group" style="grid-column: span 2">
+                        <label>Provincia</label>
+                        <input type="text" name="provincia" maxlength="2" placeholder="PD">
+                    </div>
+                    <div class="input-group" style="grid-column: span 2">
+                        <label>Zona (Giro)</label>
+                        <input type="text" name="codice_zona" placeholder="es: PD1">
+                    </div>
+
+                    <!-- 4. ORARI -->
+                    <div class="input-group" style="grid-column: span 3">
+                        <label>Orario Frutta (Min/Max)</label>
+                        <div class="orari-inputs">
+                            <input type="text" name="orario_min_frutta" placeholder="08:00">
+                            <input type="text" name="orario_max_frutta" placeholder="10:00">
+                        </div>
+                    </div>
+                    <div class="input-group" style="grid-column: span 3">
+                        <label>Orario Latte (Min/Max)</label>
+                        <div class="orari-inputs">
+                            <input type="text" name="orario_min_latte" placeholder="08:00">
+                            <input type="text" name="orario_max_latte" placeholder="10:00">
+                        </div>
+                    </div>
+
+                    <!-- 5. GPS -->
+                    <div class="input-group" style="grid-column: span 3">
+                        <label>Latitudine</label>
+                        <input type="text" name="lat" readonly style="background:#f8fafc">
+                    </div>
+                    <div class="input-group" style="grid-column: span 3">
+                        <label>Longitudine</label>
+                        <input type="text" name="lon" readonly style="background:#f8fafc">
+                    </div>
+                    
+                    <div style="grid-column: span 6; margin-top: 12px;">
+                        <button type="button" id="btnUnlockMarker" onclick="unlockMarker()" class="btn-edit" style="width:100%; justify-content:center; background:#f1f5f9; color:var(--primary); border: 1px dashed var(--primary)">
+                            <span class="material-icons-round">lock</span> SBLOCCA MARKER PER MODIFICA POSIZIONE
+                        </button>
+                        <div id="modalMap"></div>
+                    </div>
+                `;
+                setTimeout(() => initMap(), 300);
+            } else if(currentTab === 'articoli') {
+                title.innerText = "Nuovo Articolo";
+                fields.innerHTML = `
+                    <div class="input-group" style="grid-column: span 6">
+                        <label>Codice Articolo (ID)</label>
+                        <input type="text" name="id" required placeholder="es: AL-T-LI-NA">
+                    </div>
+                    <div class="input-group" style="grid-column: span 6">
+                        <label>Descrizione Estesa</label>
+                        <input type="text" name="descrizione" required>
+                    </div>
+                    <div class="input-group" style="grid-column: span 6">
+                        <label>Famiglia</label>
+                        <select name="famiglia">
+                            <option value="LATTE">LATTE</option>
+                            <option value="FRUTTA">FRUTTA</option>
+                            <option value="ALTRO">ALTRO (es. Attrezzatura)</option>
+                        </select>
+                    </div>
+                    <div class="input-group" style="grid-column: span 3">
+                        <label>Confezionamento</label>
+                        <input type="text" name="confezionamento" placeholder="es: Busta 5kg">
+                    </div>
+                    <div class="input-group" style="grid-column: span 3">
+                        <label>Unità Principale</label>
+                        <input type="text" name="unita_principale" placeholder="es: KG">
+                    </div>
+                    <div class="input-group" style="grid-column: span 2">
+                        <label>Per (Quantità)</label>
+                        <input type="number" name="per" step="0.01" value="1">
+                    </div>
+                    <div class="input-group" style="grid-column: span 2">
+                        <label>Unità Secondaria</label>
+                        <input type="text" name="unita_secondaria" placeholder="es: PZ">
+                    </div>
+                    <div class="input-group" style="grid-column: span 2">
+                        <label>Ratio (Resa)</label>
+                        <input type="number" name="ratio" step="0.01" value="1">
+                    </div>
+                    <div class="input-group" style="grid-column: span 6">
+                        <label>Porzioni (Note)</label>
+                        <input type="text" name="porzioni" placeholder="es: 100g">
+                    </div>
+                `;
+            } else {
+                title.innerText = "Nuovo Rientro";
+                fields.innerHTML = `
+                    <div class="input-group">
+                        <label>Codice Consegna</label>
+                        <input type="text" name="Codice consegna" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Data e Num DDT</label>
+                        <input type="text" name="Data e Num DDT" placeholder="es: 19/05/2026_FNS1234">
+                    </div>
+                    <div class="input-group">
+                        <label>Stato allegato</label>
+                        <input type="text" name="Stato" placeholder="es: allegato DDT 19-05-2026">
+                    </div>
+                    <div class="input-group">
+                        <label>Tipo</label>
+                        <select name="Tipo" style="padding:10px; border-radius:8px; border:1px solid #e2e8f0; font-size:14px; width:100%; font-family:inherit;">
+                            <option value="">— completo —</option>
+                            <option value="parziale">parziale</option>
+                        </select>
+                    </div>
+                    <div class="input-group" style="grid-column: span 12;">
+                        <label>Note / Dettagli</label>
+                        <textarea name="Note" rows="2" placeholder="Dettagli da consegnare / ritirare..." style="padding:10px; border-radius:8px; border:1px solid #e2e8f0; font-size:14px; width:100%; font-family:inherit;"></textarea>
+                    </div>
+                `;
+            }
+        };
+
+        window.closeModal = () => document.getElementById('crudModal').classList.remove('active');
+
+        document.getElementById('crudForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formEl = e.target;
+            const formData = new FormData(formEl);
+            const data = Object.fromEntries(formData.entries());
+            const formId = formEl.dataset.id; // L'ID del record in modifica (se esiste)
+
+            try {
+                let collPath = '';
+                let docId = formId || null;
+                
+                if(currentTab === 'clienti') {
+                    collPath = 'clienti/DNR/raccolta clienti';
+                    docId = docId || data.codice_frutta || data.codice_latte || null;
+                } else if(currentTab === 'articoli') {
+                    collPath = 'clienti/DNR/codici articoli';
+                    docId = docId || data.id;
+                    delete data.id;
+                } else if (currentTab === 'rientri') {
+                    collPath = 'clienti/DNR/rientri ddt';
+                    // Se è un inserimento manuale da zero, creiamo un ID univoco dal codice
+                    if (!docId && data['Codice consegna']) {
+                        const ddtStr = (data['Data e Num DDT'] || '').replace(/\s+/g, '_');
+                        docId = ddtStr ? `${data['Codice consegna']}_${ddtStr}` : data['Codice consegna'];
+                    }
+                }
+                
+                if(docId) {
+                    await setDoc(doc(db, collPath, docId), data, { merge: true });
+                } else {
+                    await addDoc(collection(db, collPath), data);
+                }
+                
+                alert("Salvataggio completato con successo!");
+                closeModal();
+            } catch (err) {
+                console.error("Errore salvataggio:", err);
+                alert("Errore durante il salvataggio: " + err.message);
+            }
+        });
+
+        window.deleteItem = async function(id) {
+            if(!confirm("⚠️ ATTENZIONE: Sei sicuro di voler eliminare questo record definitivamente dal database?")) return;
+            
+            let collPath = '';
+            if(currentTab === 'clienti') collPath = 'clienti/DNR/raccolta clienti';
+            if(currentTab === 'articoli') collPath = 'clienti/DNR/codici articoli';
+            if(currentTab === 'rientri') collPath = 'clienti/DNR/rientri ddt';
+            
+            try {
+                await deleteDoc(doc(db, collPath, id));
+                console.log("[Anagrafica] Record eliminato:", id);
+            } catch (err) {
+                console.error("Errore eliminazione:", err);
+                alert("Errore durante l'eliminazione: " + err.message);
+            }
+        };
+
+        window.filterTable = function() {
+            const q = document.getElementById('searchInput').value.toLowerCase().trim();
+            if(!window.fullData) return;
+            const filtered = window.fullData.filter(d => {
+                if(!q) return true;
+                return Object.values(d).some(val => String(val).toLowerCase().includes(q));
+            });
+            renderTable(filtered);
+        }
+
+        let map = null;
+        let marker = null;
+
+        function initMap(lat = 45.4064, lon = 11.8768) {
+            if(map) map.remove();
+            const mapContainer = document.getElementById('modalMap');
+            if(!mapContainer) return;
+            
+            map = L.map('modalMap').setView([lat, lon], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            
+            // Marker BLOCCATO di default
+            marker = L.marker([lat, lon], {draggable: false}).addTo(map);
+            
+            marker.on('dragend', function() {
+                const pos = marker.getLatLng();
+                const form = document.getElementById('crudForm');
+                form.querySelector('[name="lat"]').value = pos.lat.toFixed(6);
+                form.querySelector('[name="lon"]').value = pos.lng.toFixed(6);
+            });
+
+            map.on('click', function(e) {
+                if(!marker.dragging.enabled()) return; // Non fare nulla se bloccato
+                marker.setLatLng(e.latlng);
+                const form = document.getElementById('crudForm');
+                form.querySelector('[name="lat"]').value = e.latlng.lat.toFixed(6);
+                form.querySelector('[name="lon"]').value = e.latlng.lng.toFixed(6);
+            });
+        }
+
+        window.unlockMarker = function() {
+            if(!marker) return;
+            marker.dragging.enable();
+            const btn = document.getElementById('btnUnlockMarker');
+            btn.innerHTML = '<span class="material-icons-round">lock_open</span> MARKER SBLOCCATO - TRASCINA O CLICCA SULLA MAPPA';
+            btn.style.background = "#dcfce7";
+            btn.style.color = "#166534";
+            btn.style.border = "1px solid #166534";
+            
+            // Forza focus sulla mappa
+            document.getElementById('modalMap').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        window.editItem = function(id, focusMap = false) {
+            const item = (window.fullData || []).find(d => d.id === id);
+            if(!item) return;
+            openModal();
+            const form = document.getElementById('crudForm');
+            const title = document.getElementById('modalTitle');
+            
+            form.dataset.id = item.id;
+            title.innerText = focusMap ? "Geolocalizza Cliente" : "Modifica Record";
+            
+            Object.keys(item).forEach(key => {
+                const input = form.querySelector(`[name="${key}"]`);
+                if(input) input.value = item[key];
+            });
+
+            if(currentTab === 'clienti') {
+                const lat = parseFloat(item.lat) || 45.4064;
+                const lon = parseFloat(item.lon) || 11.8768;
+                setTimeout(() => {
+                    initMap(lat, lon);
+                    if(focusMap) {
+                        const mapEl = document.getElementById('modalMap');
+                        mapEl.scrollIntoView({ behavior: 'smooth' });
+                        mapEl.style.border = "2px solid #10b981";
+                    }
+                }, 350);
+            }
+            
+            if(currentTab === 'articoli') {
+                const idInput = form.querySelector('[name="id"]');
+                if(idInput) {
+                    idInput.value = item.id;
+                    idInput.readOnly = true;
+                }
+            }
+            if(currentTab === 'rientri') {
+                const chk = form.querySelector('[name="is_parziale"]');
+                if(chk) chk.checked = !!item.is_parziale;
+            }
+        };
+
+        window.navigateWithState = (url) => window.location.href = url;
+        
+        // Gestione Aggiornamento App
+        let registration = null;
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw_v207.js').then(reg => {
+                registration = reg;
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            document.getElementById('updateBtn').style.display = 'flex';
+                        }
+                    });
+                });
+            });
+
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                window.location.reload();
+            });
+        }
+
+        window.updateApp = function() {
+            if (registration && registration.waiting) {
+                registration.waiting.postMessage('SKIP_WAITING');
+            } else {
+                window.location.reload(true);
+            }
+        };
+        
+        loadData();
+    </script>
+</body>
+</html>

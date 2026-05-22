@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -51,6 +51,24 @@
             display: grid;
             grid-template-columns: 1fr;
             gap: 16px;
+            max-height: 65vh;
+            overflow-y: auto;
+            padding-right: 12px;
+        }
+
+        .client-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        .client-list::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        .client-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        .client-list::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
 
         .client-card {
@@ -264,7 +282,7 @@
         <div class="search-bar-container" style="display: flex; gap: 10px; align-items: center;">
             <div class="search-input-wrapper" style="flex: 1;">
                 <span class="material-icons-round">search</span>
-                <input type="text" id="custSearch" placeholder="Cerca per nome, codice, cittÃ  o indirizzo..." autocomplete="off">
+                <input type="text" id="custSearch" placeholder="Cerca per nome, codice, città o indirizzo..." autocomplete="off">
             </div>
             <button onclick="window.openAddModal()" class="btn-primary" style="width: auto; height: 50px; padding: 0 20px; border-radius: 15px; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
                 <span class="material-icons-round">person_add</span>
@@ -309,7 +327,7 @@
                     <input type="text" id="editIndirizzo" placeholder="Via, Piazza, Corso..." required>
                 </div>
                 <div class="input-group">
-                    <label>CittÃ  *</label>
+                    <label>Città *</label>
                     <input type="text" id="editCitta" placeholder="Comune" required>
                 </div>
                 <div class="input-group">
@@ -346,7 +364,7 @@
                         <div style="flex: 1;">
                             <label style="display: block; margin-bottom: 6px; font-weight: 700; color: var(--primary);">Cerca indirizzo (Google Search)</label>
                             <div style="display: flex; gap: 8px;">
-                                <input type="text" id="quickMapSearch" placeholder="Cerca via, cittÃ  o attivitÃ ..." style="flex: 1; border-radius: 12px;">
+                                <input type="text" id="quickMapSearch" placeholder="Cerca via, città o attività..." style="flex: 1; border-radius: 12px;">
                                 <button type="button" class="btn-primary" style="width: auto; padding: 0 16px; background: #4f46e5; height: 45px; pointer-events: none; opacity: 0.7;">
                                     <span class="material-icons-round">search</span>
                                 </button>
@@ -538,7 +556,7 @@
                 if (editMap) editMap.remove();
 
                 const googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-                    maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: 'Â© Google Maps'
+                    maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: '© Google Maps'
                 });
 
                 editMap = L.map('editMap', { center: [defaultLat, defaultLng], zoom: lat ? 18 : 10, layers: [googleHybrid] });
@@ -606,7 +624,7 @@
                 if (idx === -1) return;
                 if (confirm('Eliminare ' + clienti[idx].nome + '?')) {
                     try {
-                        if (window.deleteFromFirebase && clienti[idx].id) await window.deleteFromFirebase("customers", clienti[idx].id);
+                        if (window.deleteFromFirebase && clienti[idx].id) await window.deleteFromFirebase("customers/DNR/clienti", clienti[idx].id);
                         alert("Eliminato!"); renderClienti();
                     } catch (e) { alert("Errore: " + e.message); }
                 }
@@ -615,9 +633,9 @@
 
         window.initAutocomplete = async function() {
             try {
-                const { PlaceAutocompleteElement } = await google.maps.importLibrary("places");
+                const PlaceAutocompleteElement = google.maps.places.PlaceAutocompleteElement;
                 const field = new PlaceAutocompleteElement({ componentRestrictions: { country: "it" } });
-                field.id = 'quickMapSearch'; field.placeholder = "Cerca via, cittÃ  o attivitÃ ...";
+                field.id = 'quickMapSearch'; field.placeholder = "Cerca via, città o attività...";
                 field.style.width = "100%";
 
                 const attach = () => {

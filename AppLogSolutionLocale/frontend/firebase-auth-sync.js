@@ -192,11 +192,37 @@ onAuthStateChanged(auth, async (user) => {
                 }
 
             } else {
-                console.warn("Auth: Sessione attiva ma profilo Firestore mancante. Logout di sicurezza.");
+                console.warn("Auth: Sessione attiva ma profilo Firestore mancante.");
+                
+                // --- AUTO-FIX DI EMERGENZA ---
+                // Se l'utente si è appena loggato con Firebase Auth ma il suo documento in 'users' non esiste
+                // (ad es. database azzerato), chiediamo se vogliamo ricrearlo come amministratore.
+                const confirmCreate = confirm("ATTENZIONE: Il tuo utente Firebase esiste, ma il profilo nel database è stato cancellato.\n\nVuoi ricreare automaticamente il tuo profilo come AMMINISTRATORE per poter accedere?");
+                
+                if (confirmCreate) {
+                    try {
+                        const newUserData = {
+                            email: user.email,
+                            nome: user.email.split('@')[0],
+                            ruolo: "amministratore",
+                            needsPasswordChange: false
+                        };
+                        await setDoc(doc(db, "users", user.uid), newUserData);
+                        alert("Profilo ricreato con successo! Ora ricaricheremo la pagina per farti entrare.");
+                        window.location.reload();
+                        return;
+                    } catch(e) {
+                        alert("Impossibile ricreare il profilo. Controlla le regole Firestore. Dettaglio: " + e.message);
+                    }
+                }
+
+                alert("ACCESSO NEGATO: Utente autenticato, ma manca il profilo nel Database (Collection 'users'). L'account potrebbe essere stato disabilitato o cancellato.");
                 await window.logoutFirebase();
             }
         } catch (err) {
             console.error("Auth: Errore recupero profilo Firestore:", err);
+            alert("Errore di connessione al database durante il login: " + err.message);
+            await window.logoutFirebase();
         }
     } else {
         // Nessun utente rilevato
@@ -227,17 +253,39 @@ function startRealtimeSync(isAdmin) {
     activeListeners.forEach(unsub => unsub());
     activeListeners = [];
 
-    // Listener per Clienti (customers)
-    const unsubCustomers = onSnapshot(collection(db, "customers"), (snapshot) => {
+    // Listener per Clienti (Punti di Consegna DNR - Progetto Scuole)
+    const unsubCustomers = onSnapshot(collection(db, "customers", "DNR", "clienti"), (snapshot) => {
         const clienti = [];
         snapshot.forEach((d) => {
-            clienti.push({ id: d.id, ...d.data() });
+            const data = d.data();
+            clienti.push({ 
+                id: d.id, 
+                ...data,
+                nome: data.cliente || data.nome_consegna || data.nome || '',
+                codiceFrutta: data.codice_frutta || data.codiceFrutta || '',
+                codiceLatte: data.codice_latte || data.codiceLatte || '',
+                provincia: data.prov || data.provincia || '',
+                lng: data.lon || data.lng || '',
+                orarioMin: data.orariomin || data.orarioMin || '',
+                orarioMax: data.orariomax || data.orarioMax || ''
+            });
         });
-        window.appData.lista_clienti = clienti;
+        window.appData.lista_clienti = clienti; // Popola correttamente clienti.html
         if (typeof window.renderClienti === 'function') window.renderClienti();
         if (typeof window.renderClientiInserimento === 'function') window.renderClientiInserimento();
     });
     activeListeners.push(unsubCustomers);
+
+    // Listener per Articoli DNR - Progetto Scuole
+    const unsubArticoli = onSnapshot(collection(db, "customers", "DNR", "anagrafica_articoli"), (snapshot) => {
+        const articoli = [];
+        snapshot.forEach((d) => {
+            articoli.push({ id: d.id, ...d.data() });
+        });
+        window.appData.lista_articoli = articoli; // Popola eventuali griglie articoli
+        if (typeof window.renderArticoli === 'function') window.renderArticoli();
+    });
+    activeListeners.push(unsubArticoli);
 
     // Listener per Autisti/Utenti
     // Se Admin scarica tutti, altrimenti NON scarica nulla (o solo se stesso, già fatto in Auth)
@@ -304,15 +352,20 @@ window.deleteProgetto = async function(id) {
     }
 };
 
-// Funzione di salvataggio/creazione remoto per i clienti
+// Funzione di salvataggio/creazione remoto per i clienti (Progetto Scuole DNR)
 window.updateCustomer = async function(id, data) {
     try {
         const { id: _, ...updateData } = data;
-        if (id) {
-            const docRef = doc(db, "customers", id);
-            await updateDoc(docRef, updateData);
+        let docId = id;
+        
+        if (!docId) {
+            // Se non c'è id creiamo il documento col codice frutta o latte (oppure usiamo addDoc ma setDoc è meglio)
+            // Lavoriamo con doc() senza id per generarlo
+            const docRef = doc(collection(db, "customers", "DNR", "clienti"));
+            await setDoc(docRef, updateData);
         } else {
-            await addDoc(collection(db, "customers"), updateData);
+            const docRef = doc(db, "customers", "DNR", "clienti", id);
+            await setDoc(docRef, updateData, { merge: true }); // setDoc merge previene crash se vuoto
         }
         return true;
     } catch (e) {

@@ -1,14 +1,14 @@
 ﻿/**
- * script.js - v1.33
+ * script.js - v1.95
  * Modulo principale per la gestione della UI, validazioni e wizard.
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "1.33";
+const APP_VERSION = "2.14";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
-console.log(`[App] Log Solution PWA â€” versione ${APP_VERSION}`);
+console.log("%c[App] Log Solution PWA â€” versione " + APP_VERSION, "color: #4f46e5; font-weight: bold; font-size: 12px;");
 
 
 // --- STATO GLOBALE ---
@@ -79,7 +79,7 @@ function updateStepUI() {
     for (let i = 1; i <= totalSteps; i++) {
         const dot = document.getElementById(`dot-${i}`);
         if (!dot) continue;
-        if (i < currentStep) { dot.classList.add('completed'); dot.innerHTML = 'âœ“'; }
+        if (i < currentStep) { dot.classList.add('completed'); dot.innerHTML = 'âœ”'; }
         else if (i === currentStep) { dot.classList.add('active'); dot.classList.remove('completed'); dot.innerHTML = i; }
         else { dot.classList.remove('active', 'completed'); dot.innerHTML = i; }
     }
@@ -166,7 +166,7 @@ window.discardDraft = () => {
     window.location.reload();
 };
 
-// --- MENÃ™ DINAMICI ---
+// --- MENU DINAMICI ---
 window.renderMezziInserimento = function() {
     const select = document.getElementById('automezzo');
     if (!select) return;
@@ -247,6 +247,11 @@ window.updateViaggi = function() {
 
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
+    // 0. Aggiorna dinamicamente tutti i badge di versione nella UI
+    document.querySelectorAll('.app-version-badge').forEach(el => {
+        el.textContent = 'v' + APP_VERSION;
+    });
+
     // 1. Gestione Login
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
@@ -308,8 +313,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // PWA: Registrazione Service Worker + gestione aggiornamenti
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').then(reg => {
-            console.log('[SW] Registrato correttamente.');
+        navigator.serviceWorker.register('./sw_v207.js').then(reg => {
+            console.log('[SW] Registrato correttamente con la versione ' + APP_VERSION);
 
             // Se c'Ã¨ giÃ  un SW in attesa (tab rimasto aperto durante aggiornamento)
             // â†’ invia subito SKIP_WAITING per forzare l'attivazione
@@ -352,7 +357,7 @@ function showUpdateToast(reg) {
     toast.id = 'sw-update-toast';
     toast.className = 'sw-update-toast show';
     toast.innerHTML = `
-        <div style="flex:1;">ðŸ†• Nuova versione disponibile (v${APP_VERSION})</div>
+        <div style="flex:1;">ðŸ†• Nuova versione disponibile!</div>
         <button class="btn-update" id="btn-sw-update">Aggiorna ora</button>
     `;
     document.body.appendChild(toast);

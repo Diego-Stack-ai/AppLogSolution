@@ -513,6 +513,55 @@ def cleanup_webapp_folder():
                 except Exception:
                     pass
 
+def generate_links_manifest():
+    """Genera un file JSON con tutti i link attivi delle mappe autisti per la webapp."""
+    print("\n Generazione manifest dei link attivi...")
+    links = []
+    if WEBAPP_FOLDER.exists():
+        # Nome file atteso: V01_Zone_35030_35010_25_05_2026.html
+        pattern = re.compile(r'^(V\d+)_Zone_(.+)_(\d{2}_\d{2}_\d{4})\.html$')
+        for f in WEBAPP_FOLDER.glob("*.html"):
+            m = pattern.match(f.name)
+            if m:
+                v_id = m.group(1)
+                zones_str = m.group(2)
+                zones = zones_str.split('_')
+                date_str = m.group(3) # Formato: DD_MM_YYYY
+                
+                display_date = date_str.replace('_', '-') # Formato: DD-MM-YYYY
+                
+                # Calcola data ISO YYYY-MM-DD per l'ordinamento
+                try:
+                    parts = date_str.split('_')
+                    iso_date = f"{parts[2]}-{parts[1]}-{parts[0]}"
+                except Exception:
+                    iso_date = display_date
+                
+                links.append({
+                    "v_id": v_id,
+                    "zones": zones,
+                    "date": display_date,
+                    "iso_date": iso_date,
+                    "filename": f.name,
+                    "url": f"https://log-solution-60007.web.app/mappe_autisti/{f.name}"
+                })
+        
+        # Ordina per data decrescente (più recente prima) e per v_id crescente
+        links.sort(key=lambda x: (x['iso_date'], x['v_id']), reverse=True)
+        
+        manifest_data = {
+            "last_updated": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "links": links
+        }
+        
+        manifest_file = WEBAPP_FOLDER / "manifest_link_viaggi.json"
+        try:
+            with open(manifest_file, "w", encoding="utf-8") as json_f:
+                json.dump(manifest_data, json_f, indent=2)
+            print(f"✅ Manifest dei link generato con successo ({len(links)} link salvati in {manifest_file.name}).")
+        except Exception as e:
+            print(f"⚠️ Errore salvataggio manifest JSON: {e}")
+
 def main():
     target_dir = get_latest_consegne_dir()
     if not target_dir: return
@@ -620,6 +669,9 @@ def main():
         
     (out_folder / "LINK_WHATSAPP_AUTISTI.txt").write_text(txt_content, encoding="utf-8")
     (WEBAPP_FOLDER / "LINK_WHATSAPP_AUTISTI.txt").write_text(txt_content, encoding="utf-8")
+
+    # Genera anche il manifest JSON per la webapp
+    generate_links_manifest()
 
     print(f"\nOK Generation completa con OR-Tools.")
     deploy_online()

@@ -1813,8 +1813,14 @@ def core_genera_report_giornaliero(uid, data_consegna):
         nome = ddt.get('nome', cod)
         
         # Identificativo unico del punto di consegna (per evitare duplicati nello stesso giro)
-        # Sfrutta la tripla_chiave dell'anagrafica per forzare l'unificazione Frutta e Latte dello stesso cliente
-        chiave = (cliente_info.get('tripla_chiave') if cliente_info else None) or ddt.get('tripla_chiave') or cod
+        # Calcola dinamicamente la tripla_chiave usando l'anagrafica cliente unificata per garantire il consolidamento
+        if cliente_info:
+            cf_key = str(cliente_info.get('codice_frutta') or 'p00000').strip().lower()
+            cl_key = str(cliente_info.get('codice_latte') or 'p00000').strip().lower()
+            nome_key = cliente_info.get('cliente') or cliente_info.get('nome_consegna') or nome
+            chiave = _build_tripla_chiave(cf_key, cl_key, nome_key)
+        else:
+            chiave = ddt.get('tripla_chiave') or cod
         
         cf_val = (cliente_info.get('codice_frutta') or 'p00000') if cliente_info else (cod if tipo == 'FRUTTA' else 'p00000')
         cl_val = (cliente_info.get('codice_latte') or 'p00000') if cliente_info else (cod if tipo == 'LATTE' else 'p00000')

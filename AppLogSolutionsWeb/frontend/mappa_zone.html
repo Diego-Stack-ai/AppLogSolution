@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2.15">
+    <link rel="stylesheet" href="styles.css?v=2.16">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
@@ -738,6 +738,7 @@
                     disableDefaultUI: true,
                     zoomControl: true,
                     streetViewControl: true,
+                    mapTypeControl: true, // Abilita il selettore mappa Stradale / Satellitare
                     gestureHandling: "greedy" // Mantiene greedy per il mobile pan
                 });
 
@@ -948,7 +949,7 @@
         // Lock/Unlock Button UI Updates
         function _updateLockUI() {
             const btn = document.getElementById('btn-lock-map');
-            btn.innerHTML = isLockedGlobal ? '<span class="material-icons-round">lock</span> BLOCCATA ðŸ”’' : '<span class="material-icons-round">lock_open</span> SBLOCCATA ðŸ”“';
+            btn.innerHTML = isLockedGlobal ? '<span class="material-icons-round">lock</span> BLOCCATA Ã°Å¸â€â€™' : '<span class="material-icons-round">lock_open</span> SBLOCCATA Ã°Å¸â€â€œ';
             btn.className = 'btn-control btn-lock' + (isLockedGlobal ? ' locked' : '');
             
             // If locked, we disable dragging immediately
@@ -963,7 +964,7 @@
             _updateLockUI();
             
             // Notify user
-            showSaveBanner(isLockedGlobal ? "Mappa Bloccata ðŸ”’" : "Mappa Sbloccata per Modifiche ðŸ”“", isLockedGlobal ? "#ef4444" : "#10b981");
+            showSaveBanner(isLockedGlobal ? "Mappa Bloccata Ã°Å¸â€â€™" : "Mappa Sbloccata per Modifiche Ã°Å¸â€â€œ", isLockedGlobal ? "#ef4444" : "#10b981");
             
             // Re-render markers to update drag states
             await renderMarkers();
@@ -1078,7 +1079,7 @@
                     });
 
                     // Add click popup
-                    m.addEventListener("gmp-click", () => {
+                    m.addListener("gmp-click", () => {
                         const ddtListText = [...(p.codici_ddt_frutta || []), ...(p.codici_ddt_latte || [])].join(', ');
                         const contentHtml = `
                             <div style="padding:12px; font-family:'Outfit', sans-serif; max-width:280px;">
@@ -1092,7 +1093,7 @@
                                 </div>` : ''}
                                 <div style="display:grid; grid-template-columns:1fr; gap:6px;">
                                     <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}', '_blank')" style="background:var(--primary); color:white; border:none; padding:8px 12px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
-                                        <span class="material-icons-round" style="font-size:13px;">navigation</span> NAVIGA
+                                        <span class="material-icons-round" style="font-size:13px;">navigation</span> VEDI SU GOOGLE
                                     </button>
                                 </div>
                             </div>
@@ -1148,16 +1149,16 @@
                         masterClientiList[idx].lon = lon;
                     }
 
-                    showSaveBanner(`ðŸ“Œ Coordinata Salvata: ${nome}`, "var(--accent)");
+                    showSaveBanner(`Ã°Å¸â€œÅ’ Coordinata Salvata: ${nome}`, "var(--accent)");
                     console.log(`[Firestore] Sincronizzato con successo: ${nome} (doc: ${docId})`);
                 } else {
                     console.warn(`[Firestore] Nessun cliente corrispondente trovato nel Master DB per: ${nome}.`);
                     // We will save to Storage only on Save All
-                    showSaveBanner(`ðŸ’¾ Modificato in locale: ${nome}`, "var(--warning)");
+                    showSaveBanner(`Ã°Å¸â€™Â¾ Modificato in locale: ${nome}`, "var(--warning)");
                 }
             } catch (err) {
                 console.error("[Firestore] Errore salvataggio atomico coordinata:", err);
-                showSaveBanner("âŒ Errore sincronizzazione database!", "var(--danger)");
+                showSaveBanner("Ã¢ÂÅ’ Errore sincronizzazione database!", "var(--danger)");
             }
         }
 
@@ -1198,7 +1199,7 @@
                             </div>
                             <div class="zone-meta-right">
                                 <span class="badge-points">${z.lista_punti.length} fermate</span>
-                                ${stats.tot_ddt > 0 ? `<div class="zone-value-summary">${stats.tot_ddt} DDT Â· â‚¬ ${stats.valore}</div>` : ''}
+                                ${stats.tot_ddt > 0 ? `<div class="zone-value-summary">${stats.tot_ddt} DDT Ã‚Â· Ã¢â€šÂ¬ ${stats.valore}</div>` : ''}
                             </div>
                         </div>
 
@@ -1226,7 +1227,7 @@
                                     if (activeAction === 'dividi' && !isSpeciale) {
                                         controlHtml = `
                                             <input type="checkbox" id="chk-${pointHash}" class="chk-box dividi-chk" value="${pointHash}">
-                                            <label for="chk-${pointHash}" class="chk-lbl">âœ“</label>
+                                            <label for="chk-${pointHash}" class="chk-lbl">Ã¢Å“â€œ</label>
                                         `;
                                     } else if (activeAction === 'sposta') {
                                         // Generate list of available target voyages
@@ -1284,7 +1285,7 @@
                                         </button>
                                     ` : ''}
                                     <button class="btn-action-trigger" ${isLockedGlobal ? 'disabled' : ''} onclick="startAction('sposta', '${z.id_zona}')">
-                                        ${isSpeciale ? 'ðŸ“¦ ASSEGNA A AUTISTA' : 'SPOSTA FERMATE'}
+                                        ${isSpeciale ? 'Ã°Å¸â€œÂ¦ ASSEGNA A AUTISTA' : 'SPOSTA FERMATE'}
                                     </button>
                                 `}
                             </div>
@@ -1556,7 +1557,7 @@
                 Swal.close();
                 
                 // Show floating banner
-                showSaveBanner("ðŸ’¾ SALVATAGGIO COMPLETATO!", "var(--accent)");
+                showSaveBanner("Ã°Å¸â€™Â¾ SALVATAGGIO COMPLETATO!", "var(--accent)");
 
                 Swal.fire({
                     title: 'Successo!',

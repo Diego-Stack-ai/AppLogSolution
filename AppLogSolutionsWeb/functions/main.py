@@ -1813,21 +1813,32 @@ def core_genera_report_giornaliero(uid, data_consegna):
         nome = ddt.get('nome', cod)
         
         # Identificativo unico del punto di consegna (per evitare duplicati nello stesso giro)
-        chiave = ddt.get('tripla_chiave') or cod
+        # Sfrutta la tripla_chiave dell'anagrafica per forzare l'unificazione Frutta e Latte dello stesso cliente
+        chiave = (cliente_info.get('tripla_chiave') if cliente_info else None) or ddt.get('tripla_chiave') or cod
+        
+        cf_val = (cliente_info.get('codice_frutta') or 'p00000') if cliente_info else (cod if tipo == 'FRUTTA' else 'p00000')
+        cl_val = (cliente_info.get('codice_latte') or 'p00000') if cliente_info else (cod if tipo == 'LATTE' else 'p00000')
         
         if chiave not in punti_map:
             punti_map[chiave] = {
                 "nome": nome,
                 "indirizzo": cliente_info.get('indirizzo', '') if cliente_info else '',
-                "codice_frutta": ddt.get('codice_frutta', 'p00000'),
-                "codice_latte": ddt.get('codice_latte', 'p00000'),
+                "codice_frutta": cf_val,
+                "codice_latte": cl_val,
                 "codici_ddt_frutta": [],
                 "codici_ddt_latte": [],
                 "zona": ddt.get('zona') or ((cliente_info.get('codice_zona') or cliente_info.get('zona') or '0000') if cliente_info else '0000'),
                 "lat": float(cliente_info.get('lat', 0)) if cliente_info and cliente_info.get('lat') else 0,
                 "lon": float(cliente_info.get('lon', 0)) if cliente_info and cliente_info.get('lon') else 0,
-                "rientri_alert": [] # Qui andrebbero i rientri se implementati
+                "rientri_alert": []
             }
+        else:
+            # Se esiste già, aggiorna i codici reali se quello preesistente era fittizio/vuoto
+            esistente = punti_map[chiave]
+            if cf_val != 'p00000' and esistente["codice_frutta"] == 'p00000':
+                esistente["codice_frutta"] = cf_val
+            if cl_val != 'p00000' and esistente["codice_latte"] == 'p00000':
+                esistente["codice_latte"] = cl_val
         
         if tipo == 'FRUTTA':
             punti_map[chiave]["codici_ddt_frutta"].append(ddt.get('num_ddt', 'UNK'))

@@ -171,6 +171,7 @@
                     disableDefaultUI: true,
                     zoomControl: true,
                     streetViewControl: true,
+                    mapTypeControl: true,
                     gestureHandling: "greedy"
                 });
 
@@ -377,7 +378,7 @@
                     gmpDraggable: !IS_LOCKED
                 });
 
-                m.addEventListener('gmp-click', () => {
+                m.addListener('gmp-click', () => {
                     infoWindow.close();
                     infoWindow.setContent(`
                         <div class="popup-info">

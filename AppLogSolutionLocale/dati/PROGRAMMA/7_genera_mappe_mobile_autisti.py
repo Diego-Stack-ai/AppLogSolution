@@ -518,21 +518,21 @@ def generate_links_manifest():
     print("\n Generazione manifest dei link attivi...")
     links = []
     if WEBAPP_FOLDER.exists():
-        # Nome file atteso: V01_Zone_35030_35010_25_05_2026.html
-        pattern = re.compile(r'^(V\d+)_Zone_(.+)_(\d{2}_\d{2}_\d{4})\.html$')
+        # Nome file atteso: V01_Zone_3101_25-05-2026.html oppure V01_Zone_3101_25_05_2026.html
+        pattern = re.compile(r'^(V\d+)_Zone_(.+)_(\d{2}[_-]\d{2}[_-]\d{4})\.html$')
         for f in WEBAPP_FOLDER.glob("*.html"):
             m = pattern.match(f.name)
             if m:
                 v_id = m.group(1)
                 zones_str = m.group(2)
                 zones = zones_str.split('_')
-                date_str = m.group(3) # Formato: DD_MM_YYYY
+                date_str = m.group(3) # Formato: DD-MM-YYYY o DD_MM_YYYY
                 
                 display_date = date_str.replace('_', '-') # Formato: DD-MM-YYYY
                 
                 # Calcola data ISO YYYY-MM-DD per l'ordinamento
                 try:
-                    parts = date_str.split('_')
+                    parts = display_date.split('-')
                     iso_date = f"{parts[2]}-{parts[1]}-{parts[0]}"
                 except Exception:
                     iso_date = display_date
@@ -559,6 +559,14 @@ def generate_links_manifest():
             with open(manifest_file, "w", encoding="utf-8") as json_f:
                 json.dump(manifest_data, json_f, indent=2)
             print(f"✅ Manifest dei link generato con successo ({len(links)} link salvati in {manifest_file.name}).")
+            
+            # Copia manifest anche in AppLogSolutionsWeb per parità
+            webapp_web = ROOT_DIR.parent / "AppLogSolutionsWeb" / "frontend" / "mappe_autisti"
+            if webapp_web.exists():
+                webapp_web.mkdir(exist_ok=True, parents=True)
+                with open(webapp_web / "manifest_link_viaggi.json", "w", encoding="utf-8") as json_web:
+                    json.dump(manifest_data, json_web, indent=2)
+                print("✅ Manifest dei link sincronizzato con AppLogSolutionsWeb.")
         except Exception as e:
             print(f"⚠️ Errore salvataggio manifest JSON: {e}")
 
@@ -654,6 +662,12 @@ def main():
         html = HTML_TEMPLATE.replace("{{ v_id }}", v_id).replace("{{ zone_str }}", z_str).replace("{{ api_key }}", GOOGLE_MAPS_API_KEY).replace("{{ km }}", str(km)).replace("{{ t_guida }}", format_time(t_guida)).replace("{{ t_sosta }}", format_time(t_sosta)).replace("{{ t_tot }}", format_time(t_tot)).replace("{{ cards_html|safe }}", cards_html).replace("{{ deliveries_js|safe }}", json.dumps(deliveries))
         (out_folder / fname).write_text(html, encoding="utf-8")
         (WEBAPP_FOLDER / fname).write_text(html, encoding="utf-8")
+        
+        # Mantieni parità con AppLogSolutionsWeb
+        webapp_web = ROOT_DIR.parent / "AppLogSolutionsWeb" / "frontend" / "mappe_autisti"
+        if webapp_web.exists():
+            webapp_web.mkdir(exist_ok=True, parents=True)
+            (webapp_web / fname).write_text(html, encoding="utf-8")
 
     txt_content = f" LINK MAPPE PER AUTISTI ({data_str})\n------------------------------------------\n\n"
     for i, v in enumerate(viaggi):
@@ -669,6 +683,11 @@ def main():
         
     (out_folder / "LINK_WHATSAPP_AUTISTI.txt").write_text(txt_content, encoding="utf-8")
     (WEBAPP_FOLDER / "LINK_WHATSAPP_AUTISTI.txt").write_text(txt_content, encoding="utf-8")
+    
+    # Mantieni parità con AppLogSolutionsWeb per il file TXT
+    webapp_web = ROOT_DIR.parent / "AppLogSolutionsWeb" / "frontend" / "mappe_autisti"
+    if webapp_web.exists():
+        (webapp_web / "LINK_WHATSAPP_AUTISTI.txt").write_text(txt_content, encoding="utf-8")
 
     # Genera anche il manifest JSON per la webapp
     generate_links_manifest()

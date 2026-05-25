@@ -355,14 +355,17 @@
 <body>
     <nav class="glass-nav">
         <div class="nav-content">
-            <button onclick="window.navigateWithState('dashboard.html')" class="logout-btn" style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
-                <span class="material-icons-round">arrow_back</span>
+            <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
+            <button id="dashboardBtn" class="logout-btn" title="Dashboard"
+                onclick="window.navigateWithState('dashboard.html')"
+                style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
+                <span class="material-icons-round">dashboard</span>
             </button>
             <div class="nav-title" style="flex: 1;">Gestione Anagrafiche</div>
             <button id="updateBtn" class="btn-map" style="display:none; background:#f59e0b; padding:6px 10px; font-size:11px; margin-right:8px;" onclick="updateApp()">
                 <span class="material-icons-round">update</span> AGGIORNA
             </button>
-            <a href="#" onclick="window.logoutFirebase(); return false;" class="logout-btn"><span class="material-icons-round">logout</span></a>
+            <a href="#" onclick="window.logoutFirebase(); return false;" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
         </div>
     </nav>
 

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Link Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.19">
+    <link rel="stylesheet" href="styles.css?v=2.20">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -383,14 +383,14 @@
 <body>
     <nav class="glass-nav">
         <div class="nav-content">
-            <a href="javascript:void(0)" onclick="window.navigateWithState('dashboard.html')" class="btn-back-nav">
-                <span class="material-icons-round">arrow_back</span>
-                Dashboard
-            </a>
-            <div class="nav-title" style="flex: 1; text-align: center; margin-right: 40px;">Link Viaggi Autisti</div>
-            <a href="login.html" class="logout-link logout-btn" title="Esci">
-                <span class="material-icons-round">logout</span>
-            </a>
+            <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
+            <button id="dashboardBtn" class="logout-btn" title="Dashboard"
+                onclick="window.navigateWithState('dashboard.html')"
+                style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
+                <span class="material-icons-round">dashboard</span>
+            </button>
+            <div class="nav-title" style="flex: 1;">Link Viaggi Autisti</div>
+            <a href="login.html" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
         </div>
     </nav>
 
@@ -434,11 +434,11 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.19"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.19"></script>
+    <script src="script.js?v=2.20"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.20"></script>
     
     <script type="module">
-        import { auth } from "./firestore-service.js?v=2.19";
+        import { auth } from "./firestore-service.js?v=2.20";
 
         let allLinks = [];
         let datesGrouped = {};

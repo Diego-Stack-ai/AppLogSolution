@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "2.22";
+const APP_VERSION = "2.23";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -302,7 +302,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('username')?.value.trim().toLowerCase();
+            let email = document.getElementById('username')?.value.trim().toLowerCase();
+            if (email && !email.includes('@')) {
+                email += '@logsolution.app';
+            }
             const password = document.getElementById('password')?.value.trim();
             const btn = loginForm.querySelector('.btn-primary');
             const alertEl = document.getElementById('authAlert');

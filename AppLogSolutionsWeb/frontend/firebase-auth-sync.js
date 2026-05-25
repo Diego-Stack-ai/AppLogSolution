@@ -1,6 +1,6 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, doc, getDoc, updateDoc, setDoc, deleteDoc, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, browserLocalPersistence, setPersistence, updatePassword, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, browserLocalPersistence, setPersistence, updatePassword, sendEmailVerification, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 const app = initializeApp(firebaseConfig);
@@ -56,9 +56,13 @@ window.sendVerificationEmail = async () => {
 // --- GESTIONE AUTENTICAZIONE ---
 window.sendResetEmail = async (email) => {
     if (!email) return alert("Email non valida.");
+    let targetEmail = email.trim().toLowerCase();
+    if (!targetEmail.includes('@')) {
+        targetEmail += '@logsolution.app';
+    }
     try {
-        await sendPasswordResetEmail(auth, email);
-        alert("Email di ripristino password inviata con successo a: " + email);
+        await sendPasswordResetEmail(auth, targetEmail);
+        alert("Email di ripristino password inviata con successo a: " + targetEmail);
     } catch (error) {
         console.error("Errore invio email reset:", error);
         alert("Errore nell'invio dell'email: " + error.message);
@@ -395,6 +399,36 @@ window.updateUser = async function(id, data) {
         throw e;
     }
 }
+
+// Funzione per creare un nuovo utente tramite istanza Auth temporanea
+window.registerNewUserCloud = async function(email, password, nomeCompleto, ruolo, turno, canElevate) {
+    const tempApp = getApps().find(a => a.name === "UserCreationApp") || initializeApp(firebaseConfig, "UserCreationApp");
+    const tempAuth = getAuth(tempApp);
+
+    try {
+        // Crea l'utente nel database Auth in modo isolato
+        const userCredential = await createUserWithEmailAndPassword(tempAuth, email, password);
+        const uid = userCredential.user.uid;
+
+        // Salva il documento profilo in Firestore
+        await setDoc(doc(db, "users", uid), {
+            uid: uid,
+            nome: nomeCompleto,
+            email: email,
+            ruolo: ruolo,
+            tipoTurno: turno,
+            canElevate: canElevate,
+            needsPasswordChange: false, // Non forza il cambio
+            createdAt: new Date()
+        });
+
+        await signOut(tempAuth);
+        return uid;
+    } catch (e) {
+        console.error("Errore registrazione temporanea:", e);
+        throw e;
+    }
+};
 
 // Funzione di salvataggio/creazione per i mezzi
 window.updateMezzo = async function(id, data) {

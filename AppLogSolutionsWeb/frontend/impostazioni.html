@@ -113,14 +113,14 @@
         <!-- Sezione Gestione Credenziali (Solo per Amministrazione) -->
         <div id="toggleAutistiBtn"
             style="display: flex; justify-content: space-between; align-items: center; margin: 32px 0 0 0; cursor: pointer; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
-            <h3 class="section-title" style="margin: 0;">Gestione Personale (Consultativa)</h3>
+            <h3 class="section-title" style="margin: 0;">Gestione Personale e Credenziali</h3>
             <span class="material-icons-round" id="toggleAutistiIcon"
                 style="color: var(--primary); transition: transform 0.3s ease;">expand_more</span>
         </div>
 
         <div id="autistiContent" style="display: none; padding-top: 20px;">
             <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
-                💡 <b>Nota Sicurezza:</b> Le password non sono più gestite qui. Per creare nuovi utenti, usa la console Firebase Auth. I profili appariranno qui una volta registrati.
+                💡 <b>Gestione Semplificata:</b> Puoi creare nuovi utenti inserendo Nome Completo, Nome Utente (es. `mario.rossi`) e una Password. Il sistema configurerà l'account in modo sicuro senza inviare alcuna email all'autista.
             </p>
             <div class="form-grid">
                 <div class="input-group">
@@ -128,8 +128,12 @@
                     <input type="text" id="driverNomeInput" placeholder="Es: Mario Rossi">
                 </div>
                 <div class="input-group">
-                    <label for="driverEmailInput">Email di Accesso</label>
-                    <input type="email" id="driverEmailInput" placeholder="Es: mario.rossi@logsolution.app">
+                    <label for="driverEmailInput">Nome Utente o Email</label>
+                    <input type="text" id="driverEmailInput" placeholder="Es: mario.rossi o email completa">
+                </div>
+                <div class="input-group" id="driverPasswordGroup">
+                    <label for="driverPasswordInput">Password</label>
+                    <input type="password" id="driverPasswordInput" placeholder="Password temporanea (min. 6 caratteri)">
                 </div>
                 <div class="input-group">
                     <label for="driverRuoloInput">Ruolo Sistema</label>
@@ -471,6 +475,10 @@
             driverTurnoInput.value = targetUser.tipoTurno || 'giornata';
             driverElevazione.checked = targetUser.canElevate || false;
 
+            // Nascondi la password in modifica
+            const pwdGroup = document.getElementById('driverPasswordGroup');
+            if (pwdGroup) pwdGroup.style.display = 'none';
+
             // Trigger visualizzazione campi extra
             driverRuoloInput.dispatchEvent(new Event('change'));
 
@@ -498,6 +506,11 @@
             editIndexAutista = -1;
             driverNomeInput.value = '';
             driverEmailInput.value = '';
+            const pwdInput = document.getElementById('driverPasswordInput');
+            if (pwdInput) pwdInput.value = '';
+            const pwdGroup = document.getElementById('driverPasswordGroup');
+            if (pwdGroup) pwdGroup.style.display = 'block';
+            
             btnSalvaAutista.textContent = "Salva";
             btnAnnullaAutista.style.display = "none";
             adminExtraFields.style.display = 'none';
@@ -511,7 +524,7 @@
             const m = driverEmailInput.value.trim();
             
             if (!n || !m) {
-                alert("Nome ed Email sono obbligatori per il profilo Cloud.");
+                alert("Nome e Nome Utente / Email sono obbligatori.");
                 return;
             }
 
@@ -521,10 +534,36 @@
             const autisti = window.appData.lista_autisti || [];
             const id = editIndexAutista >= 0 ? autisti[editIndexAutista].id : null;
 
+            let email = m;
+            if (!email.includes('@')) {
+                email = `${email}@logsolution.app`;
+            }
+
             if (!id) {
-                alert("Non puoi creare nuovi utenti da qui. Usa la console Firebase Auth.");
-                btnSalvaAutista.disabled = false;
-                btnSalvaAutista.textContent = "Aggiorna Dati Cloud";
+                // Creazione di un nuovo utente
+                const pwdInput = document.getElementById('driverPasswordInput');
+                const pwd = pwdInput ? pwdInput.value.trim() : "";
+                if (!pwd || pwd.length < 6) {
+                    alert("Per creare un nuovo utente è necessaria una password di almeno 6 caratteri.");
+                    btnSalvaAutista.disabled = false;
+                    btnSalvaAutista.textContent = "Salva";
+                    return;
+                }
+
+                try {
+                    if (window.registerNewUserCloud) {
+                        await window.registerNewUserCloud(email, pwd, n, r, t, e);
+                        alert(`Utente ${n} creato con successo nel Cloud!`);
+                        btnAnnullaAutista.onclick();
+                    } else {
+                        throw new Error("Il servizio di registrazione Firebase non è disponibile.");
+                    }
+                } catch (err) {
+                    alert("Errore durante la creazione dell'utente: " + err.message);
+                } finally {
+                    btnSalvaAutista.disabled = false;
+                    btnSalvaAutista.textContent = "Salva";
+                }
                 return;
             }
 
@@ -535,7 +574,7 @@
                         ruolo: r, 
                         tipoTurno: t, 
                         canElevate: e, 
-                        email: m 
+                        email: email 
                     });
                     alert("Dati aggiornati correttamente!");
                     btnAnnullaAutista.onclick();

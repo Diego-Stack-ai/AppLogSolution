@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mappa Generale Percorsi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-glow: rgba(79, 70, 229, 0.15);
+            --bg-dark: #0f172a;
+        }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: var(--bg-dark); overflow: hidden; }
+        #map { height: 100%; width: 100%; background: #dfe5eb; position: relative; }
+        
+        .floating-header {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 10px 16px;
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(15, 23, 42, 0.15);
+            transition: all 0.3s;
+        }
+
+        .header-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .header-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .header-subtitle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .date-badge {
+            font-size: 0.72rem;
+            font-weight: 800;
+            background: var(--primary-glow);
+            color: var(--primary);
+            padding: 1px 6px;
+            border-radius: 20px;
+            border: 1px solid rgba(79, 70, 229, 0.15);
+        }
+
+        .stats-badge {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .selector-container select {
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 2px solid var(--primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary);
+            background: white;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* Custom Marker shapes in Map */
+        .custom-marker {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 11px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            border: 2px solid white;
+            transition: 0.2s;
+            transform: translate(-50%, -100%);
+        }
+        .m-tonda { border-radius: 50%; }
+        .m-goccia { border-radius: 50% 50% 50% 0; transform: rotate(-45deg); }
+        .m-goccia span { transform: rotate(45deg); }
+        .m-quadrato { border-radius: 4px; }
+        .m-triangolo {
+            background: transparent !important;
+            border-left: 17px solid transparent;
+            border-right: 17px solid transparent;
+            border-bottom: 34px solid #ccc;
+            width: 0 !important;
+            height: 0 !important;
+            border-radius: 0;
+            box-shadow: none;
+            border-top: none;
+        }
+        .m-triangolo span { position: absolute; top: 15px; left: -8px; width: 16px; }
+
+        @media (max-width: 768px) {
+            .floating-header {
+                top: 0;
+                left: 0;
+                right: 0;
+                border-radius: 0;
+                border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+                padding: 8px 12px;
+                gap: 8px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .selector-container {
+                width: 100%;
+            }
+            .selector-container select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-header">
+        <div class="header-info">
+            <h1 class="header-title">Mappa Generale Percorsi</h1>
+            <div class="header-subtitle">
+                <span class="date-badge">26-05-2026</span>
+                <span class="stats-badge" id="stats-summary">0 Fermate</span>
+            </div>
+        </div>
+        <div class="selector-container">
+            <select id="giro-select" onchange="filterGiro(this.value)">
+                <option value="ALL">🔍 Tutti i Viaggi</option>
+            </select>
+        </div>
+    </div>
+    <div id="map"></div>
+
+    <script>
+        const viaggi = [{"v_id": "V01", "id_zona": "3106", "color": "#4f46e5", "km": 196.3, "t_guida": "4h 0m", "t_sosta": "2h 48m", "t_tot": "6h 48m", "polylines": ["ytjtGi~nfAPwHxXjH|HtAz[bDda@nLdP~EbIyUdLeOhQc\\n@{Q`O_KnV`Ty@uf@|Tsp@f^e_A`S_y@`g@wmAvBeHlm@{l@`LiO|^cbBbCmu@}^ep@lCmoAxe@ywBzZkv@vxA{G~{@`]|Q~OxsA|_A|pDhdClqB|~B|yA~kArhBjs@dgAz@zJxMnHdOy@bM`ArZtAfd@iChGuFyAwBpR_AfEqFc@~D_O}FvNaH|DmJyCKc@W^IrGnEfBvNcAvHm@bCiX\\aHrHrCjH|BlZ~Cz@vGvEbd@jBpGtMWbCf@l@~@nJhItWl^xm@bOrVbL|Qp[~Vvg@xHxLhRpSdc@vBlPnWdHzEpGh@qGi@eH{ElJac@rT}o@~Wqn@jM_XKoTxXyn@hZul@duBqDjpACdOL~SsOjgAi_Adq@{o@zEuG}EyM|BkMvLeDdHhA\\mEaOee@{\\_i@_RmLuH_WwNgMeMu}@hJc`AeGkd@oKqQcNeHyEac@qIsbAsTijA~Ckj@eGeKyNyq@jMuIjSOxDg\\Wu}@oNw`CV}mCnO{nAr@ms@kPgcBdBa`AoJy_@y@gyCNch@|Tgc@rAehBkE}zB`HibAkCsS~@iM_E{@_CvAmD\\_EkJ{Dq@s@jKwIjQqKdFeKhd@s@v^cKbOif@bg@ydAncAm|@zk@uk@`a@oa@fEeVwCkZqLlC{A}Ly@IEGDq@t@eQlGee@a@ohAqHeE{f@k@ec@qHsDiOkNiQyQkXwSoZk@sV]gGyThBKd@fPdE|RkIvk@yGvTpEfOxGn{@fAxuAyn@|@y\\cN_SyDbAlPyD~_@}B|@gDoHfCzG|D[jFwh@mCwHip@{K_qAlDcy@{Fm^iBsM_SgYiQeDhSwFuAiHbJwNeHnCkLkEgC}IwE{AeAwOgFgF~UoCoAxIaReMqGsTyHiR`IsPfKiGkG{_@cV}FeH@ECGC@cGx@sZuSgGfPnGsQ_KcEyIaCMGaTiK_Tyk@nCqbArBqw@~CsRhBuDlJlExSvGlu@lPpl@tD`RoLpRpYhw@`vDxFlYjHE|IjJtIhDLBzIlJgDzSVf@~CrSlJd^lFf^gFxm@eG|]Yde@g@dNr`AzPxBbWp\\r\\rSft@`S|r@hR``@jMfPqNb~@{Jxb@{Yve@pIfJzA`GqAzEuIvNpSx@jOvAx`@le@fr@fhAtb@xf@lLhJ_D|XxRbx@xp@jr@|HlSt@rWvExU}DnJ{BpIzBqIhA}DpCi@zB~@rBwFbCsDt]el@nOgk@oFeb@bI}i@fL{n@yFgo@lYcz@vCgc@", "gg~rGmoygA_@`DcA`EyAUcABaC^uAq@uBeDeAyBcAaAqDmCeBaCcDuAmN_Fiy@eZgEoAc@E_FJaBWwBkAkGwEiCaA{Fe@{Mo@sBSgAwBm@iAiA_@aAF_B`AsApAiAn@mANaCg@kAFoEzA}B|@{@v@W`@}EdNwBtE{Ax@w@HyGkAmACsDV_Ed@_B^kBDeIK_Fe@iCoAuMwI{CaDGU[MMHmE[oCHiG~@cBJsD[yAQWpBOzAw@|GuA~Es@vD{@i@s@_@i@lAKBIIwAaCPu@Z]hDqDfAaCPi@m@_@SI_AXe@Da@dA`@eAd@E~@YRHl@^Qh@]|@i@bAiDpD[\\Qt@vA`CEZe@f@wBlG}@xBk@~@qBhBs@h@iDH{Ct@yRnG_LzDeeAp^u`Ax\\cX`JaOpFeMdEsGdC_Cf@KQ]?i@|@aChAeF|AyJjD_ThH}XbK}@GS`@?BuDxAcIvC}KzDoA\\i@]COGIUAMX?N[jAqBp@mJzCeEzA_MnE{BdAm@AUNkLdEuF|Ag@ZK@KHsOnFkLhEcMlEsG~BsE~Ak@DAAAAEAI@GHeDbBqDrAuAZAAA?CAE?GDCH}ElBa[|KsE|AmAj@mFlBSE?ECGEEMBCTMVgE|A{FtBeAf@EBAAACCAEAGDkUlIcAh@i@DSMe@ZcALIj@LLx@jHvDlXV|@b@bFz@nHrBxRvFti@tApPd@bJZ~KJ~I`@he@IbBWfAi@~@aB|@}DVk@XqIPaGNcHVuDx@yDnBmElEcCbEq@|AiDjL{BnI}Kvc@gL~i@{Ldj@uEfS}@|Gs@`Ki@|N@nE`@fMh@zKj@rEfAhErC~FpMxPpEfGxBhFhAzFZfEMzIo@tE}AjIcCjMeGv[iFvXkDxOqD|K}BxFs@XIPw@x@_@z@kB|EiAvByBrCe^|XuEjEgDrFsBrFw@pC[RSGMAW\\Fd@ChCaAjEcB`G{BnE_BtBwH~LiFnIqBxDyA`FoBlJQVILAd@wAvImFnXoGdSk@TSNQj@D|@{B`GcEzEyAtBeB|DuA|CeCpLeB`IyArEcCvEm@jAiAzAC?E?IHGZ@FiApCqBfEq@vBoB~IeAjHSdIJbFh@fHTlIIr@IDEH{FqAcAiA{@yBmAgEo@eAyDw@oAUaADyB|Ao@|@gApCmAh@y@CAKIQ_@COd@Nf@u@|BCrBz@|BPvBoB|EmF|JwHdNcCnCeDxCeCjG_I`UkGmEkBi@wKiBqMmBaB]gJmHcAu@oCgBsAUaBQmAAiFlAwCf@}A?wAU_EuBoGyCqNeBJ|H"], "lista_punti": [{"nome": "\"SACRO CUORE\"", "indirizzo": "LARGO CARDINAL PALTANIERI 2, 35043 MONSELICE (PADOVA)", "lat": 45.24014509128411, "lon": 11.7546714571083, "codice_frutta": "p2321", "codice_latte": "p1768"}, {"nome": "\"BIANCHI BUGGIANI\"", "indirizzo": "VIA BUGGIANI2, 35043 MONSELICE (PADOVA)", "lat": 45.23970503593555, "lon": 11.75174516707305, "codice_frutta": "p2320", "codice_latte": "p1767"}, {"nome": "Francesco Petrarca", "indirizzo": "Via Roma, 36, 35040 Sant'Elena (PADOVA)", "lat": 45.18678409065618, "lon": 11.71102125501709, "codice_frutta": "p2159", "codice_latte": "p00000"}, {"nome": "PRIMARIA \"MARCONI\" BOARA P.", "indirizzo": "VIA ENRICO FERMI 16, 35040 BOARA PISANI (PADOVA)", "lat": 45.10964422463152, "lon": 11.784375475988, "codice_frutta": "p10319", "codice_latte": "p00000"}, {"nome": "Maddalena Laura Lombardini", "indirizzo": "Via Dante Alighieri, 11, 30014 Cavarzere (VENEZIA)", "lat": 45.13451228470936, "lon": 12.08760813314928, "codice_frutta": "p6622", "codice_latte": "p00000"}, {"nome": "DANTE ALIGHIERI", "indirizzo": "VIA DANTE ALIGHIERI 11, 30014 CAVARZERE (VENEZIA)", "lat": 45.13452651917999, "lon": 12.08767802595779, "codice_frutta": "p6621", "codice_latte": "p00000"}, {"nome": "GABRIELE D'ANNUNZIO", "indirizzo": "VIA CIVRAN 3, 30010 CONA (VENEZIA)", "lat": 45.19039200688716, "lon": 12.04072566746522, "codice_frutta": "p6618", "codice_latte": "p1987"}, {"nome": "Primaria E.Toti Correzzola", "indirizzo": "Viale Melzi 11, 35020 Correzzola (PADOVA)", "lat": 45.23647918594373, "lon": 12.0661580076223, "codice_frutta": "p00000", "codice_latte": "p1900"}, {"nome": "Primaria Montessori Di Pontelongo C/O Scuola Secondaria Leopardi", "indirizzo": "Vicolo Serravalle 4, 35029 Pontelongo (PADOVA)", "lat": 45.25064065978268, "lon": 12.01874634907378, "codice_frutta": "p2394", "codice_latte": "p2636"}, {"nome": "Primaria Montessori Di Pontelongo", "indirizzo": "Largo Cavalieri V. Veneto 13, 35029 Pontelongo (PADOVA)", "lat": 45.25129714540071, "lon": 12.01979060486298, "codice_frutta": "p14109", "codice_latte": "p2671"}, {"nome": "Primaria Boschetti Alberti Piove Di Sacco", "indirizzo": "Via Quattro Novembre, 17, 35028 Piove Di Sacco (PADOVA)", "lat": 45.2881178530701, "lon": 12.03357042209014, "codice_frutta": "p2393", "codice_latte": "p2634"}, {"nome": "Fondazione Santa Capitanio", "indirizzo": "Via Castello,24, 35028 Piove Di Sacco (PADOVA)", "lat": 45.29681811154439, "lon": 12.03221041401674, "codice_frutta": "p2215", "codice_latte": "p00000"}, {"nome": "Primaria Dante Alighieri Di Piove Di Sacco", "indirizzo": "Via Petrarca 39, 35028 Piove Di Sacco (PADOVA)", "lat": 45.3055756813058, "lon": 12.03434031932678, "codice_frutta": "p2395", "codice_latte": "p2635"}, {"nome": "San Pio X", "indirizzo": "Via Casolo, 31, 30010 Campolongo Maggiore (VENEZIA)", "lat": 45.33075590121499, "lon": 12.04512333068847, "codice_frutta": "p2126", "codice_latte": "p00000"}, {"nome": "Guglielmo Marconi", "indirizzo": "Via Don Martino Durighello, 7, 30010 Campolongo Maggiore (VENEZIA)", "lat": 45.33803486084691, "lon": 12.07434008300988, "codice_frutta": "p2125", "codice_latte": "p00000"}, {"nome": "G. Zanella Loc. Corte", "indirizzo": "Piazza Monumento, 23, 35028 Piove Di Sacco (PADOVA)", "lat": 45.30961682015293, "lon": 12.07423983558196, "codice_frutta": "p2066", "codice_latte": "p00000"}, {"nome": "SCUOLA PRIMARIA \"I. NIEVO\"", "indirizzo": "VIA MADONNA 3, 35020 TERRASSA PADOVANA (PADOVA)", "lat": 45.24659503471678, "lon": 11.90702791104506, "codice_frutta": "p6916", "codice_latte": "p00000"}, {"nome": "SCUOLA PRIMARIA \"L. DA VINCI\"", "indirizzo": "VIA VITTORIO EMANUELE II 26, 35026 CONSELVE (PADOVA)", "lat": 45.23365026771595, "lon": 11.87026980244677, "codice_frutta": "p6914", "codice_latte": "p00000"}, {"nome": "Istituto Canossiano", "indirizzo": "Piazza Cesare Battisti, 27 -Entrare Dal Cancello Di Via Verdi, 35026 Conselve (PADOVA)", "lat": 45.23176169154012, "lon": 11.87293985571977, "codice_frutta": "p2256", "codice_latte": "p00000"}, {"nome": "SCUOLA PRIMARIA \"E. DE AMICIS\"", "indirizzo": "VIA ROMA 103, 35020 ARRE (PADOVA)", "lat": 45.2162494, "lon": 11.93233400674593, "codice_frutta": "p6917", "codice_latte": "p2641"}, {"nome": "BOVOLENTA-LOMBARDO RADICE", "indirizzo": "PIAZZA UMBERTO I\u00b0, 10, 35024 BOVOLENTA (PADOVA)", "lat": 45.26997526295155, "lon": 11.93857392883605, "codice_frutta": "p2392", "codice_latte": "p1933"}]}, {"v_id": "V02", "id_zona": "3107", "color": "#10b981", "km": 178.2, "t_guida": "3h 50m", "t_sosta": "2h 56m", "t_tot": "6h 46m", "polylines": ["ytjtGi~nfAgNuOpBeWwAi{@gJwWgl@rhAi_@rR}\\|_@ck@nb@iNbSoP}BgK_NqDxg@}eCbzKe|@vkE{l@dVes@`c@qR|LwHkBgn@l_@iUhDclAhc@gGtDxKli@lExp@cPnF_PpIsUaQyOjj@lE|~@uFtc@zTlhAjUfr@ag@hc@qb@|GaEbCoTrSqVpGuC_EsOdQvCnWiLjj@{Bhl@@\\RBlI`EuShADG?IiBuCcd@mz@ir@pQmYvMyb@|eCue@vf@a_@nh@_Qpl@gT~]URHb@oVz]we@b^oJrRyIzNxGdS~ETcBsCkGEcCaNbHqMpKsQhDoDbb@u\\dV}]_Ky\\mV_hBkYsiAkb@uqAmt@aMu}@~Qmn@hMsLjCKcOS}VaAqL_BsT_JsIiSr@wVrBmr@jWuNhLgHgJ_DvDij@|s@qVqUiNuOmNhCi@N}^b`@Pb@NArK{@aD~CiFoCMO{OeEgz@sl@cKs`@yDoz@CyALi`AoUaNqO_@{p@hM{P{KfAq[lUua@Rkg@dHma@tR_JRs[XeWxFkMd[cPh`@cCrOuCxLjFnTjG|_@vA|RI|I_Y|BhA}Gik@eByJ{C_MiIFiWl@eRyEib@eg@cIoGe@rGwCfFoO{MqQ`Ew`@bBiYrPkNf]_CnJeMcE}HzIyLsHaJrXZ`KuIk@}HmBkRxL_O}D{FfKHuHeC~CkFeByCzMcKyO{AlG{DxZLmTaGz\\RgSu@lKaOyBhDiI@cTwIgRZvR{R{WgNdE}[c^qGqJgGvHiOpGoRiMqLhLwD|KqEm[c\\sw@e`@gyA_Ak{@xGsDz@cFnLnHhOjVtDnDnGv@pDAeFgIo@sF{Ia\\sI{\\e@yFbGKnH{DyDzFqDpH~HrMrK~Q{Jk`@ri@~TjEnA_MxCfK~JbUxFhI~Q|TxB|GfSkQ|PtLiB|HcPmAgF~G~BfIkI`H{JdEvFjDyWi@jWlD}UlEkSvCoAfe@v]tY~Q|HjCg@uJ|A}ZtJwSvPmd@hKeDhJ{T`I_OdCFfMhBdCvEdB_It@|PrDyAbFfF`RkWdCgE`JhLuDw\\l@_FwAum@_B{^iSq_AgJyZ~D~@bK|HdRrF~JhBff@tMdY`FtM\\xvArKb_Az[nv@`Ig@uCR|Cde@jJ|g@lRd{AfPt@qU|DuU~KfAld@~Cff@da@daAvv@pZxFK}LLbAmG~H}D~DeC|XqCr\\uWx`@`CnJcMxGm_@|J_PtNqAxVyJxe@oXvDqEqJaOqK_Fn@pGa@`NbMl^v|@zOnVt@tHy^na@gWbg@{OnIgMdHn@vGkJ`AuJb@", "onvuGicqeAhV_AbApK`C^rCl@~Cz@zF|DlDTvC\\@HHLLFXQ@IVMfCHpEKnCAfHfApF|@vAr@Tb@xAtE`CbH~CnC|CnB~@N~@AdB{@tIyIrAeBr@m@pEaC~C{A~CoA~C_@nCBpBV@HHJZCjCQnOt@rK\\fCMzAYjDyAxBmBxJ}IlU}StLcL~BwDfA_Dl@cChAgE\\e@NCJMb@_@hAF|Dz@rNfDpPtDlAx@jC`EtLtDxCdAhDdBrBtBl@`B@TTl@^JRGXk@HaBfAuR`@iH`AaFPc@D?HEBExBZxMFbGj@jBT|BYrBYrAHbDh@jBEpCZ~A^F_DBmENqKAa@o@A]C_G}@{A_@c@KOlACPEJYlCG^AX@YsDOo@EoDYEG\\gBdBuGfDmMv@kBxAmB|@_At@_@hAWx@?@BB@F@DC@C@AdCm@`DYb@@hDN~Mv@dAqCzB}D`B}B^UB@B?FCBGAUdCsSLeB?gEGoCsAiJJGDOHEnAGp@UnA{@TS|PoOpFqD~BqATFPS@O?Gj@i@~UiMtKwFpDiBjDaBZ\\VtA|BvKfAhEKxCDd@PLn@T`@Hx@dCr@lCZx@vChL~@hBr@`@v@H|Es@nCa@HB@LBHNJNGFUYsAoCyMy@_Ex@~D`ArElAdGAn@IHEJqDh@{En@q@Os@g@aAiCkCiKwHuZsAoHUkEXkAl@a@zABv@EhAo@rBcBh@gDv@_GxAkD~BiDx@y@Vk@|CiD~MkOzI{IhKcIdMkHvGwCtHqC|FaB`H{AdJiAlLs@bIi@rEm@tCi@fF}AvG}CzF{DjS_RzDwCnDwB|FqCbFiBdG}AnRgErTyExGwA|Dw@lGy@nCQ`DIjJH~CTzFv@jIpBrLlEtWhKzSjIhIdDhGbCHVxAn@|ApAjCvD~AhCbFvHhA~AhAf@~ACfAm@h@cAZoB?_EBk@fBmKf@yDz@sExBgLxHoa@jKei@xQcu@nS}y@pLgf@tCiO`UaoAlDcRdDuMrNwh@zEsQbLkg@|Mam@PIPw@`@}Ah@u@VOf@Ol@@bCj@pALdD|A~@d@z@N`AD`BAlCm@jAiAVyASgBQiAAiAj@uA@C|AaBbBiAfAKXJ@LJR`@P^WFq@EWt@gA~@s@|IuFfGqEvBkBpFcGlCsBxAo@jBkAlLaKv@{@nB}CnDkHzAcBpAw@~M_FtGgC~B{BtAcDfCqGb@cA~AwCjKiNdIoL|CgI`CoFhBaD\\S^V|EhGb@`Ad@nCJnCErBAxHpAti@HpE_@xF{AlPQlAjAJbCVfH|@J|H"], "lista_punti": [{"nome": "IC VICENZA 6-7 - DE AMICIS", "indirizzo": "VIALE FIUME 97, 36100 VICENZA (VICENZA)", "lat": 45.56420246257925, "lon": 11.56019414568, "codice_frutta": "p00000", "codice_latte": "p1962"}, {"nome": "LAMPERTICO", "indirizzo": "VIA DANTE 7, 36030 COSTABISSARA (VICENZA)", "lat": 45.58397578170773, "lon": 11.487675445755, "codice_frutta": "p12858", "codice_latte": "p2028"}, {"nome": "DE AMICIS", "indirizzo": "STRADA ST.PASUBIO 50, 36030 COSTABISSARA (VICENZA)", "lat": 45.59977391840039, "lon": 11.49565215015464, "codice_frutta": "p00000", "codice_latte": "p1839"}, {"nome": "MALO - SAN TOMIO", "indirizzo": "VIA S. TOMMASO 15, 36034 MALO (VICENZA)", "lat": 45.63858247493378, "lon": 11.42665583136081, "codice_frutta": "p2258", "codice_latte": "p00000"}, {"nome": "SAN GIOVANNI BOSCO", "indirizzo": "VIA ROZZAMPIA 73, 36016 THIENE (VICENZA)", "lat": 45.67897593815084, "lon": 11.50215317661065, "codice_frutta": "p2352", "codice_latte": "p00000"}, {"nome": "ALFREDO TALIN", "indirizzo": "VIA MANTEGNA 2, 36016 THIENE (VICENZA)", "lat": 45.71219408961221, "lon": 11.4891863468006, "codice_frutta": "p2351", "codice_latte": "p00000"}, {"nome": "Lugo Di Vicenza - Capoluogo", "indirizzo": "Via Matteotti, 26, 36030 Lugo Di Vicenza (VICENZA)", "lat": 45.74679854516579, "lon": 11.52907339472045, "codice_frutta": "p2071", "codice_latte": "p00000"}, {"nome": "FARA VICENTINO - CAP.", "indirizzo": "VIA MARCONI 31, 36030 FARA VICENTINO (VICENZA)", "lat": 45.73900645946068, "lon": 11.54873052135696, "codice_frutta": "p2072", "codice_latte": "p00000"}, {"nome": "Ic Breganze - Maragnole", "indirizzo": "Piazza Mons. Faresin 15, 36042 Breganze (VICENZA)", "lat": 45.7084504144673, "lon": 11.56396264934593, "codice_frutta": "p00000", "codice_latte": "p2016"}, {"nome": "Dante Alighieri Fara Vic.No Fraz.S.Giorgio", "indirizzo": "Via Perlena 76, 36030 Fara Vicentino (VICENZA)", "lat": 45.73070860919205, "lon": 11.58354277515464, "codice_frutta": "p00000", "codice_latte": "p1940"}, {"nome": "Scuola Primaria Pio Xii", "indirizzo": "Via Sette Comuni, 16, 36046 Lusiana Conco (VICENZA)", "lat": 45.78608209586047, "lon": 11.57620192831117, "codice_frutta": "p2091", "codice_latte": "p00000"}, {"nome": "Scuola Primaria Monsignor Girardi", "indirizzo": "Via Marco Poli, 2, 36046 Lusiana Conco (VICENZA)", "lat": 45.79812037030975, "lon": 11.60466233978538, "codice_frutta": "p2090", "codice_latte": "p00000"}, {"nome": "O. GUGELMO", "indirizzo": "VIA PEROZZI 11, 36063 MAROSTICA (VICENZA)", "lat": 45.76192979090894, "lon": 11.60803063599852, "codice_frutta": "p2197", "codice_latte": "p2638"}, {"nome": "SAN GIOVANNI BOSCO", "indirizzo": "VIA ROMA 2, 36060 PIANEZZE (VICENZA)", "lat": 45.73887306803864, "lon": 11.62540254221682, "codice_frutta": "p2198", "codice_latte": "p00000"}, {"nome": "A.C. Pertile", "indirizzo": "Via N. Dalle Laste,2, 36063 Marostica (VICENZA)", "lat": 45.74260178425182, "lon": 11.65701509587861, "codice_frutta": "p2194", "codice_latte": "p00000"}, {"nome": "SCUOLA PRIMARIA SCHIAVON", "indirizzo": "VIA S. TERESA 5, 36060 SCHIAVON (VICENZA)", "lat": 45.69230482640572, "lon": 11.64458290793458, "codice_frutta": "p2196", "codice_latte": "p1873"}, {"nome": "Scuola Primaria Le Risorgive", "indirizzo": "Piazza Iv Novembre 4, 36050 Bressanvido (VICENZA)", "lat": 45.63392982195741, "lon": 11.62877286577278, "codice_frutta": "p00000", "codice_latte": "p1926"}, {"nome": "Scuola Primaia Tecchio", "indirizzo": "Via Chiesa Lupia, 36066 Sandrigo (VICENZA)", "lat": 45.64087804614776, "lon": 11.6092760263893, "codice_frutta": "p2313", "codice_latte": "p1925"}, {"nome": "CD SANDRIGO -CAPOLUOGO", "indirizzo": "VIA CHILESOTTI, 36066 SANDRIGO (VICENZA)", "lat": 45.66217877820745, "lon": 11.59546464942092, "codice_frutta": "p2312", "codice_latte": "p00000"}, {"nome": "MONTECCHIO PREC. - CAP.", "indirizzo": "VIA MAGANZA 19, 36030 MONTECCHIO PRECALCINO (VICENZA)", "lat": 45.66775002683057, "lon": 11.56142527961784, "codice_frutta": "p00000", "codice_latte": "p1909"}, {"nome": "SCUOLA PRIMARIA G. ZANELLA", "indirizzo": "VIA ROSSINI 2/4, 36010 MONTICELLO CONTE OTTO (VICENZA)", "lat": 45.60311106976638, "lon": 11.57163500073318, "codice_frutta": "p2124", "codice_latte": "p1769"}, {"nome": "Pasini", "indirizzo": "Via Ospedaletto-S.S.53 Postumia, 165, 36100 Vicenza (VICENZA)", "lat": 45.57602046989039, "lon": 11.59210170412117, "codice_frutta": "p00000", "codice_latte": "p1960"}]}, {"v_id": "V03", "id_zona": "3202", "color": "#f59e0b", "km": 294.0, "t_guida": "4h 22m", "t_sosta": "1h 12m", "t_tot": "5h 34m", "polylines": ["ytjtGi~nfAuJ{g@wAi{@gJwWgl@rhAg}@ps@ck@nb@y_@dOgK_NqDxg@}eCbzKs[|xA}]dJwjA{c@uu@sFmqAp[suBxu@weArv@sc@b]s}@lFw}AoI{nAjRcaBjlB_fApsBkk@tdCot@feCsXbWoPc@w|@yZsp@oq@ap@izBaGa_Cct@e~Eov@i~D_`AmdAq]wtB}y@ouBuA}lBrLejGq_Ai~NwOigFlE{Sag@_BynAkUgmAmQk`Avl@s~@hCqiAy]i_@}j@yPij@gTDsx@cJyQMyn@g[cc@zFgYemBo[gcD}t@a`Cke@qlA{]bMip@jyAkl@`b@ea@rAie@nEg\\_BasAcSwm@nY_RtGgSjbAa[f[}ToFwZaYe]wm@}bBp@m{@kpDkZ}jA}\\uRkxAsK}fAq@sSqa@_m@kh@_v@{NyYfo@aBnf@yVcT}|As{AwhB_`C}Ty~@kYsl@iKgGyJpu@of@be@mMj[w\\m\\oEsEsLzKwc@}sAq^om@mI_RpB}Mm]kh@t|@sZpSqc@vSjJqSgKUCsv@ke@mn@_AavA{aA_g@u~Aqw@wlBqC}l@pe@wTjW_RfDc~@aCi{AlJamAuAo_CeR_qAZlWImVdE_{@|EaDgFhDuAl@}FgJqHga@m@qXhRF{DbMnDba@`AS~AqFdb@wTdHrZzP?|ItGdZgJwLm}@bp@_u@nh@k`@|[bO_Nk@Bvf@bXtQt_@vg@kt@v|BqBxWlQxC`LpMvHrp@nz@|aBvfAn|CvXjxAtw@h~@|g@brDtp@|yBh\\hS`Zn_AvEyB`K|GlEgSaHpF@bMoN{EeDpq@gCdkEvOnp@dWbHtm@~qA|tAt[z~@`dAf~BkCbw@`w@th@`pBnRv}At`@bXzs@wLph@`WlIlS`V|VvUtSrSuGl]soA`YwVx[{f@nc@gFxxAsJfa@xAnAjr@td@pAxk@e\\xOiq@r^en@xc@kI`d@xhA~y@joCbXl{C|VtfBba@eMdk@la@jXm@hx@~IXXrJw@xS`d@j_@``@t[rV~r@zX~PzGlnAye@h`@_T~c@lBfmAzPxo@|Zld@eDwRpQ`Vd|CpNlgDre@flGrKhtAeNzsCAjjG|h@bjBd_@fsBvdBdqC~j@xjD~n@fuFbIhpB`nAhkCxq@|Mnc@~b@t^oc@dFnDfq@gmCjNkpAfl@geAzz@uhBhzAwcBdrBmOx|@~Ejz@uExf@k_@nmA_x@~uBex@xuAcXj}Bf|@dQnBdt@csDb}BkxJh[kC~KsKjsBomBj\\ek@pLdLvAb~@fHz_@nAlI"], "lista_punti": [{"nome": "Scuola Elementare Santa Giustina", "indirizzo": "Via Cal De Formiga 29, 32035 Santa Giustina (BELLUNO)", "lat": 46.08070574267619, "lon": 12.03891212844902, "codice_frutta": "p00000", "codice_latte": "p1985"}, {"nome": "SAN GREGORIO NELLE ALPI", "indirizzo": "VIA MONTE PIZZOCCO 2, bra SAN GREGORIO NELLE ALPI (BELLUNO)", "lat": 46.10446850259822, "lon": 12.02748591804557, "codice_frutta": "p00000", "codice_latte": "p1988"}, {"nome": "Fraz. Meano", "indirizzo": "Piazza Alvisi 17, 32035 Santa Giustina (BELLUNO)", "lat": 46.10223867972199, "lon": 12.06636185550743, "codice_frutta": "p00000", "codice_latte": "p1986"}, {"nome": "\"SEGATO\" CHIESURAZZA", "indirizzo": "VIA AGORDO 578, 32100 BELLUNO (BELLUNO)", "lat": 46.14119288848221, "lon": 12.17254017869874, "codice_frutta": "p2113", "codice_latte": "p00000"}, {"nome": "\"RINO SORIO\" MUSSOI", "indirizzo": "VIA FRATELLI ROSSELLI, 32100 BELLUNO (BELLUNO)", "lat": 46.14364034277298, "lon": 12.19934169416502, "codice_frutta": "p2112", "codice_latte": "p00000"}, {"nome": "A.Gabelli Belluno", "indirizzo": "Piazzale Cesare Battisti, 32100 Belluno (BELLUNO)", "lat": 46.14145171390994, "lon": 12.21280007071495, "codice_frutta": "p2169", "codice_latte": "p1914"}, {"nome": "Scuola Primaria Agosti", "indirizzo": "Piazza S.Giovanni Bosco,12, 32100 Belluno (BELLUNO)", "lat": 46.14334304461654, "lon": 12.22477933995056, "codice_frutta": "p2061", "codice_latte": "p00000"}, {"nome": "\"BRUSTOLON\" BADILET", "indirizzo": "VIA CIRVOI N. 11/A, 32100 BELLUNO (BELLUNO)", "lat": 46.11011797531502, "lon": 12.23923022651725, "codice_frutta": "p00000", "codice_latte": "p1719"}, {"nome": "Dante Alighieri - Mel", "indirizzo": "Via D. R. Zannoni, 37, 32026 Borgo Valbelluna (BELLUNO)", "lat": 46.04399146457267, "lon": 12.06463451290184, "codice_frutta": "p00000", "codice_latte": "p1922"}]}, {"v_id": "V04", "id_zona": "3207", "color": "#ef4444", "km": 206.6, "t_guida": "4h 6m", "t_sosta": "2h 48m", "t_tot": "6h 54m", "polylines": ["ytjtGi~nfAgAkI}Gy@aCoCpBeWwAi{@gJwWgl@rhAi_@rR}\\|_@ck@nb@iNbSoP}BgK_NlCa@_Izh@efAf{Ew~@z}Ds[|xA}]dJwjA{c@uu@sFmqAp[uy@ti@}z@bKkc@hTka@ha@aPbG_EbFhCzNmFhE}Gq[mNavA{g@wvAum@odCmf@ycBmSai@uQ{@SUQRm\\cCeWtFyOmpAojBhm@yYlImTqFiGpFyUyBwV{@aRm]cOzGsm@pBwn@hAgFck@ca@kjAqBmH_QaBqCmMqBhJwLiD]na@}c@~Nio@tNuNhGgKeDwKXgCaJSaU`Kc]hFiXfCsIPsBoPgRkNsFkHyGu_@qW_ZoLoPgBiO}AaHcIwAoQa@{EdCgQdAiJsHZwIN]AeRhD{DrFaHs@o^~Gqa@vYmXyGpGij@C}@dB}FjC`BkEjDg@OfBk[kDqo@t^y[je@k`@~\\mP~j@sJzL}B`NcHvMaaAt\\eeAzRwfAvT_LvMaNrEk_@jN}HlFyi@`Scv@jMoW|GqJzFaQuEc@q@oI~DcUbTyi@m@sSiH_|@cD}mAvEui@MiC_A{c@vJ}DeFcAsGqDyIqA{IiFki@xAg_@rK}`@bIqIbBaHvFtAtEb@hL|Mfb@`E`\\LTdEnA|A|LgA}L@c@uEmAglAvPeNOwG`e@kMtWmJlZKnw@lAvJaBqXn@cm@bLgZbA}Cs@{{@yIkl@|@wk@{Fi@i^vYud@_BsZ}Gm`@oDrE{`EBoBi@fAjDvAro@~@heA{HzHg@aCmZReLzT{DWw_@gBma@gBaPgES{C`A}YrGc^bHeh@hJwFyv@uOglBm@qF_Hw@~EyIiD{s@_Dkq@pr@{SrKyBaI~AgMuWqSs[gRePyg@cb@cFuEaXa|@gTqt@tIktAUsAkPsBkFUhAac@jA?BBFBFEAWvDat@eDuUcNyn@ISfV}\\vKfIbIpb@dj@ib@ld@gDj{@cZno@{YxbBwp@xLqf@bQgP`]}R|LgIdfAmn@vf@khAhh@yFd_@`v@|DzAfHkXwCaFEEE@AJ@BHzGlG}HsHqVi@C}Axl@}MjzDgOrl@cFlk@cL`gDxAr{@?jOsE|B{[zAaDS__@cD{SiAe[|Gm_AnM_OnAeQxGrDnoAv^xDhLfIhOd[pAn^TjIkHR_XtGoFnKeEv]Dfg@|@lLnCrOuJ|AsDrJt@pSFzc@dIha@jd@jlApU`t@`CgFbK{CtPtFpj@fIzq@vAn\\bBxWrBv_@aEjQwGlJmF`FkCaFjC{G|DaJxE}CdDpC|RZzICF?FwJ~FIzI", "}vwuGc}vgAaAcAOk@dAqDh@gBl@{@`By@rE{A?@@@@@@@D?BE@Gl@e@xCaBTFt@lELZd@A~@M?HHLp@`F`@rBh@t@fFbDdJhHpDtCnEtCtHnFbL~IhJ`HnC|B|DlC~EvDbDrBh@j@d@T?B@FBBF@FGrAoApDeBd@AFF`BpBHa@Cy@@`@?h@GNcAkAKm@?A?A@C@EAGAGp@aAdF_DvBwB\\UD@DADMCO@k@fAsDb@mC@oB?iFx@oFd@yAd@{AIeBmAeH{@sH?qBN_NRE?q@GE?_AQ_EaAyC@kBZkBTaArAu@~Bo@zHo@r_@gB|Fq@n@QnHoClDaC|MgM`JaI~EsC`HqBbASpMiCtKmC|LcGzPsJ~Z{PbDsBvEgE|CiEr@wAzBaGdCiLlEaXjCsKjCuFdE{EdCcBtB{@|Cq@fDMjBF|GnA~DhAhGnAnPhAxh@zCtHChGUtPk@ta@sAvKBlN|@lEl@rKzBvRtE`LlCl]hIbOrCtNrBrY`EfVjDjKzB~S`HbNdDvPfChNtBhJfBtUdHjbAx[hPfEhKdBl^lGzDhAfBt@nInE|OrIdd@`VdDjArFpAxVxEzi@jKtFxA|LfEvRdHvGbCnD~@zQnCrZhEnBBnDc@xS_GfGeAxDYvXeAhOk@rGm@`GqBzTmOb[sTbHoEtDkAvD_@bDDlBVvFhBpF~BdFzBjLpD|I`CtM|ApJxBrFvAh@V|@l@n@hAt@fCf@h@l@Dh@[`@uAr@iH`AwHP_@z@[l@b@VjAEnBKbBk@~Cg@vBaDjJ}IdTyEnNs\\niAcElNuAhHq@pOcApTu@hGgBtGiIbQyA|EoAxImFpf@uD`_@s@zQHpQTjFf@~KG|Bk@zBg@p@{AnA_IxDqFhCSIw@OUw@vByMf@cA|@[x@Z^~@DpBUnB?nAe@lEuA`MkBdQ_Hpn@qN`oByG|_AkTp|CkB`UeD~SuInb@aQrz@gFzV_DtO}AzHgC|PcBtQ{Cp\\iHjx@mGvr@mBdO{ClOkRrz@yR|{@sDfPwApF{@lAo@FcAM{@Dm@d@a@fAEz@LbBV|@l@z@jDpBfF~AhGpChAPbCD|Bc@zAkAZwAMcBYqCh@aBx@eA`CiB|@Sp@TFT`@T^SLm@CY`@}@x@u@vDwBbLaIdCuBjF{FpCaCtDgBpLaKbAeAlBqChDgHdByBhAy@rNiFjGcCbCsB~@mBfDuIlB{DhUi[fDiInCoG|AyCn@k@ZP`E`F|@|Ab@tBTpCCnBGxGrAjk@JbF[dFuA~OU~AET`AHl@Fl@F|Gx@z@LF|CB~C"], "lista_punti": [{"nome": "MONTEGRAPPA - TEZZE SUL BRENTA", "indirizzo": "VIA DON ANTONIO BELLUZZO 7, 36056 TEZZE SUL BRENTA (VICENZA)", "lat": 45.68733293779901, "lon": 11.70680672422317, "codice_frutta": "p2414", "codice_latte": "p2644"}, {"nome": "SC. ELEM. J.FERRAZZI", "indirizzo": "VIA B.MONTAGNA 7, 36050 CARTIGLIANO (VICENZA)", "lat": 45.71057364479363, "lon": 11.69506131346678, "codice_frutta": "p2226", "codice_latte": "p2658"}, {"nome": "ROSA' E. MARANGONI", "indirizzo": "VIA CONCORDIA 3, 36027 ROSA' (VICENZA)", "lat": 45.7305794226442, "lon": 11.72961051368766, "codice_frutta": "p00000", "codice_latte": "p1859"}, {"nome": "A. CANOVA", "indirizzo": "VIA S. CROCE, 36061 BASSANO DEL GRAPPA (VICENZA)", "lat": 45.75120242320178, "lon": 11.73628384971672, "codice_frutta": "p00000", "codice_latte": "p1830"}, {"nome": "GIACOMO ZANELLA - CASTIONE", "indirizzo": "VIA CASTIGLIONE, 7, 31037 LORIA (TREVISO)", "lat": 45.69549141121052, "lon": 11.83250005149894, "codice_frutta": "p00000", "codice_latte": "p1778"}, {"nome": "GIUSEPPINA BIANCO - CASTELLO G.", "indirizzo": "VIA PAOLO PIAZZA 3, 31030 CASTELLO DI GODEGO (TREVISO)", "lat": 45.69304257370708, "lon": 11.88368252824171, "codice_frutta": "p2331", "codice_latte": "p1776"}, {"nome": "MONSIGNOR BERNARDI - POGGIANA", "indirizzo": "VIA BRIGATA MARTIRI DEL GRAPPA 5, 31039 RIESE PIO X (TREVISO)", "lat": 45.71971732270629, "lon": 11.88152010345512, "codice_frutta": "p00000", "codice_latte": "p1919"}, {"nome": "ANGELO MARCHESAN - RAMON", "indirizzo": "VIA MARCHESAN 1, 31037 LORIA (TREVISO)", "lat": 45.7139815, "lon": 11.8652845, "codice_frutta": "p2330", "codice_latte": "p00000"}, {"nome": "GIOVANNI XXIII - BESSICA", "indirizzo": "VIA DANTE ALIGHIERI, 46, 31037 LORIA (TREVISO)", "lat": 45.7349098175247, "lon": 11.84034014844947, "codice_frutta": "p00000", "codice_latte": "p1779"}, {"nome": "MADONNINA DEL GRAPPA- SPINEDA", "indirizzo": "VIA CENDROLE 68, 31039 RIESE PIO X (TREVISO)", "lat": 45.75099720905947, "lon": 11.87962953985061, "codice_frutta": "p2174", "codice_latte": "p1918"}, {"nome": "S. PIO X - SAN VITO", "indirizzo": "PIAZZA SAN VITO 6, 31030 ALTIVOLE (TREVISO)", "lat": 45.75581887139985, "lon": 11.91166143802872, "codice_frutta": "p2413", "codice_latte": "p1936"}, {"nome": "MARGHERITA SARTO SANSON - CAP.", "indirizzo": "VIA MERRY DEL VAL 25, 31039 RIESE PIO X (TREVISO)", "lat": 45.73051552762551, "lon": 11.91913262817231, "codice_frutta": "p2173", "codice_latte": "p1917"}, {"nome": "VIA BARCO - ALTIVOLE CAP.", "indirizzo": "VIA BARCO 22, 31030 ALTIVOLE (TREVISO)", "lat": 45.75547994282029, "lon": 11.95609175767213, "codice_frutta": "p2411", "codice_latte": "p1934"}, {"nome": "GIOVANNI XXIII - CASELLE", "indirizzo": "VIA J. KENNEDY 1/1, 31030 ALTIVOLE (TREVISO)", "lat": 45.74502862339109, "lon": 11.97795265445329, "codice_frutta": "p2412", "codice_latte": "p1935"}, {"nome": "ISTITUTO SCOLASTICO \"MARIA AUSILIATRICE\"", "indirizzo": "VIA RISORGIMENTO 113, 31044 MONTEBELLUNA (TREVISO)", "lat": 45.77226379261893, "lon": 12.05887666067847, "codice_frutta": "p2246", "codice_latte": "p00000"}, {"nome": "R.Pezzani - Istrana Cap.", "indirizzo": "Via Bertilla Boscardin, 1, 31036 Istrana (TREVISO)", "lat": 45.67766442313381, "lon": 12.10579692603109, "codice_frutta": "p2056", "codice_latte": "p1748"}, {"nome": "Gianni Rodari - Barcon", "indirizzo": "Via Pola, 19, 31050 Vedelago (TREVISO)", "lat": 45.7214439621991, "lon": 12.01057099971389, "codice_frutta": "p2153", "codice_latte": "p00000"}, {"nome": "Don Bosco - Valla", "indirizzo": "Via Enrico Toti 8, 31039 Riese Pio X (TREVISO)", "lat": 45.70724841736792, "lon": 11.93008644662704, "codice_frutta": "p2175", "codice_latte": "p1920"}, {"nome": "\"S.MARIA DELLA PIEVE\"", "indirizzo": "BORGO PIEVE 80, 31033 CASTELFRANCO VENETO (TREVISO)", "lat": 45.66797812310531, "lon": 11.93048492023774, "codice_frutta": "p2058", "codice_latte": "p2003"}, {"nome": "Zona Ovest Masaccio", "indirizzo": "Via Monfenera 23, 31033 Castelfranco Veneto (TREVISO)", "lat": 45.67431925168815, "lon": 11.91887497116394, "codice_frutta": "p7732", "codice_latte": "p00000"}, {"nome": "SCUOLA PRIMARIA CORLETTO", "indirizzo": "VIA PRIULI 72, 31033 CASTELFRANCO VENETO (TREVISO)", "lat": 45.65301643920855, "lon": 11.90892050246888, "codice_frutta": "p7729", "codice_latte": "p00000"}]}, {"v_id": "V05", "id_zona": "4113", "color": "#8b5cf6", "km": 292.9, "t_guida": "3h 15m", "t_sosta": "24m", "t_tot": "3h 39m", "polylines": ["ytjtGi~nfAgNuOpBeWwAi{@gJwWgl@rhAg}@ps@ck@nb@iNbSgOuC`VecBxl@sfEnbAiqGri@qvHnaA_tH`dA{dD~c@{cAbGuy@g_@gzC_n@ccFakAspJgSeaBem@}mAkaAep@_d@cg@_Rc~@kNou@kj@gn@yv@_]c|@mAsyAgGqoAaEwhAkDsjBqo@k~@y^ql@}rA_mAcxEbKafE{c@suDjZ_sClLkI|[jF~O{KaHwGycBkZaxBcVwv@gTuw@ip@uq@k]aj@cBumA{C}p@fl@yu@jg@y~@vP}fCj|@o~@hKodAfb@oqA~Kwr@`Oqd@gCgkAua@g~@}RiyByhAidCg|AssBwUww@yp@sy@ugA_f@mSkv@{JsdAxNekBiZo^`Ruk@lv@an@n_BwRlZyZnAw\\xA{UnVwfBbeBe`A~f@q^mBo[|Vq^bQcZvW{xA`IiiAeUy}@imAix@_kA}c@yf@et@y^us@ga@cy@mfA_q@}n@ud@mG_Are@_ByMeExAoA~J_FePqc@mEiRwM{H{PkTrHkXs[yy@or@es@aOm^_BaOfGyN`O}L\\gRoL{WiPw]}ThGsXtBos@}D_YeVoWsl@iFygAlSm\\sMwXqDbH{FmOsKoFhNwD{Jl@tMrFsNpOrKoGItYpO~QhFfJb[lLwBqAdM}b@dpBkF{BcCzP{F~U_Jh@xOr]aC~HmGi@dB~g@qCzLlOyFsKrMmKlLgD`_@cDdZwPtS|BbIxBpLqInKxOzj@z_@ad@jCkObExI{FbIlKShj@{Szl@uPzd@Bl^|QlnAiKhcCcZ`jAwShkB_m@r`@sUrn@hIleAbuAddCjwAph@bgAnv@bz@tv@ft@|vAjGldAqLt^_c@f^cNb`AuLjbAut@hmAypA|]qXhr@}Bh_@{iAv~@wpAtYsa@~d@]faBvTzb@uIvu@bAvp@pMfc@xm@beAxgAzcArXh`AvIjn@fZnuDl|BhpBrl@~t@fVbl@`Cb[{GjwAmPdcAiZ`hCiq@n}@o_@dv@kE`x@s^xr@wu@px@qHvcA|Ab}@j_@|{@~r@`kCje@blApKfH|Wi\\fgDzc@fpD{NtnDxmAdkFpj@huAjs@|b@zw@dKrv@f`@bdA|G`iCrKheBdCdaAb`@|b@zb@zd@x{BpjAjeAn{@~z@nYx_BzcApmIvnAhaKdN`lBgzAbbEqk@|aC{\\p}Cuq@luIy^tzCkb@b|Byi@jsE_k@hrBlEtO|U~E|BeKbLoJjbA{}@lv@wu@tXcg@dJnSrAv{@}A|TnM~MB~C"], "lista_punti": [{"nome": "\"DON UMBERTO TRAME\" LAMOSANO", "indirizzo": "VIA TARCOGNA 116, 32010 CHIES D'ALPAGO (BELLUNO)", "lat": 46.17457349603256, "lon": 12.38635851559142, "codice_frutta": "p2384", "codice_latte": "p00000"}, {"nome": "\"LUDWIG VAN BEETHOVEN\"", "indirizzo": "VIA CATISANA 10, 32010 ALPAGO (BELLUNO)", "lat": 46.16671138955248, "lon": 12.35653422012938, "codice_frutta": "p2385", "codice_latte": "p00000"}, {"nome": "Fraz. Oltrerai", "indirizzo": "Via I Novembre,1 -Paiane, 32014 Ponte Nelle Alpi (BELLUNO)", "lat": 46.17610952830536, "lon": 12.31321091556602, "codice_frutta": "p00000", "codice_latte": "p1948"}]}, {"v_id": "V06", "id_zona": "4120", "color": "#ec4899", "km": 292.0, "t_guida": "4h 52m", "t_sosta": "2h 40m", "t_tot": "7h 32m", "polylines": ["ytjtGi~nfAgNuOpBeWwAi{@gJwWgl@rhAg}@ps@ck@nb@iNbSoP}BgK_NqDxg@}eCbzKs[|xA}]dJwjA{c@uu@sFmqAp[uy@ti@}z@bKweArv@sc@b]s}@lFw}AoI{nAjRcaBjlB_fApsBu_@`_AuJrdAot@feCsXbWoPc@w|@yZsp@oq@kk@mwAuC{a@aGa_Cct@e~Eov@i~D_`AmdAq]wtB}y@ouBuA}lBsAe~CfO_kBmPo{D}i@aReu@jEey@ld@uiAli@es@r`@o[fdAfA|`By_@|h@_aAh`@m}AtXukBpcCwo@fhBox@f`AgX~X_m@aI{y@wuAkn@g[udAoz@_`@qCaJ_k@i^oqBudAe}@cm@cEut@bEce@rJ}w@kDq]pUoMuDgcByuE_OwG{XkDgI{@wK}Zc@DcMrg@nFsVvFqOeCs_AhFe_@}BuYsd@qTyc@s]if@saAsEi]g|BljDwXzxA_^tVq\\jJ{i@kMak@dC_XiD_^|BqOj@LaJcBqMrOgD`\\NzGeOfNpDmRwW{T{TdCbM~UhLlF~Eb@bLkLuDwKpPiX_@_IpFy@~MzVhDt[uErY~Jdq@yIhj@xK|P_Fh]cUvX_xAv}BcpD}GcTo@mvBjIcq@t\\dH~Ui@dOmSjCuS{ChJyKpYsRrEwr@cYkTe~@qTg}@qNcl@iPe@yUbGoF}DmIsL}KxJGji@mSsa@sO_c@kPiNmYmAuLkCyHqVuLoaAxJwoA`J{IkEkT}X}H{v@keAcq@}iAcN|O`Ach@{q@_s@cN[lGyBdu@dg@cCti@jPhG`IgBd[bj@lx@doAj~@vlAte@lGh]wJNHhVGxI~g@vQy\\fFcHlRct@mGoPe@bAgKbLzKmKb@cAV__@rVkfAl]ul@p_@i[qBii@`aAka@b]ZhVtj@ldAloAvu@EtTi@nNhVn]vXtz@vb@`\\yFfQ{\\td@ua@rz@xKx_@yQhN}AtDkIZnLzAnr@kPjs@nNnSx@fH}CsRoEwYrJsy@`Q{dAra@cW[qt@jVgRtFsd@gDu{@qIinBoBg`@oN_JoEeASlFpLli@tYnsAqBbpAuM|t@wGrz@vi@o@xm@}h@nPkn@bd@cd@qAjTuD~^bTjd@dJnJhc@wb@ny@~lCrXx|C|VlgBgXtr@_ORqDbI`N|@zy@fcAHtj@`GkBxN|FvWjLfGfTzNaEfGd@`McHfMoNDu@XtHNjb@kO``@mRfNdN~[|GyOzMjN`b@reA~O|eBaAf`AtCbGyFgH\\aO`LbGlKnPK~R~Mrb@p_@h_AfBxg@", "}vqvGerzfAtGgC^tAhBzHlEdP`CzHnA|Cj@vEf@bDd@~@xB`E|AjA`FjBhE`BvA`BbK~P~BfEPn@lAf@zS|IzGpCtFfBbCF~JvBhC`BhBkExAgDb@eETwGZKZ?hBnB|BpDh@`B]nBa@Tq@Kk@}AB]p@qBjFyGpGiE|]eO~m@oXrTsJlEeCzQgNbHkFlJyFdQyGrM{DhDg@pG_@dLEfZA|Dd@dBf@|AjAjCjA^z@x@FTe@XGh@\\fAhBhAdAh@Al@\\r@pBdAlIpAvMvAlItAfNvDre@hB|Vt@vL^vMM`OaAlb@[~Ma@fE_BxKkBtMcDtWoAxS?`J`@xLbC`m@n@nPJbPmAfb@oBn}@Fr`@b@fXhA`KlAbGrFrSnIdZbBxEhE~GfEvGpDlFfJbQhBjG~DlOnCpT~Atf@`@|FvArKpEtLlBpDrEnGxPhQxN|OjGdGvE~ErH`I`FbHlGhMhFxPxAxHpC|TlDb_@hE~\\rDnTzCxN|Hb[~Ifa@pPjz@fJhe@~DpWjAbLt@xJn@zOp@zb@JtTzAro@tClm@|@pPfBbS|DpS`F~Mb[zk@lLjU~GrKhGpGfIfF~HrCl^xDpHjB~HfEbHpGt@dA`EbHzChIIrAcA`A}@Sa@kAF}ATa@`BgAfB{AjAsCjBqCzG}D~JiLlAkBrAa@jEjAdBhAZxBg@vAoA`@y@s@QqArBgNrAqHdDuLt\\eiA|C_MrBoLjAsKhCk`@dBaPpAkIzDqP~EwN~IuQxJ{MtPsSbGiL`E_NbFsRxGwNtEoHvO_WxPwXlSu[pP}RdQ{NhD}B|LkHtJgEjS_GrT{C|Ne@tNPbh@pCrDTzi@xC~BNzOr@tNUpKyA|Cy@hKwDpJqFpHeGfHgH`UyVhOiM~JgGbIwDzPcGxMmCzQ{AjOiAfIcBdFkBxGqD~EuDfKuJnNsK`FgCbMkEpQaEfX}FdS{DxKu@lIDrJz@dKvBlIvCfZrLnTtItFxB`JpDf@b@rAl@tAdAfFrHzElHxA|BbAl@tAHrAe@t@cA\\yAPwI~B{L`@eDtB_LpHm`@fIkb@rQiv@|Sc{@hNak@~DaSjS{hAxHs`@nPwm@tMgi@dPct@xDgO~@sAd@QpFz@hBd@xCxAzDXbC]lBmA^kAEcB_@oC`@oBh@w@bEqCbAJFV\\Zb@ONk@CYRo@zDqCvQsM|EiFbD{ClDaBxLcKbDwDvD_IlD_EbWoJfCmBjA{BrF_NpUu[|H}Q~CiFL@vDnEpBlE\\jGItGpAxk@DpI}AnRg@pDpCV`Hx@bANFjEBpB"], "lista_punti": [{"nome": "Arsie", "indirizzo": "Piazza Marconi 1, 32030 Arsie (BELLUNO)", "lat": 45.98435952842514, "lon": 11.757226537705, "codice_frutta": "p00000", "codice_latte": "p1798"}, {"nome": "SC. ELEM. STATALE DI SOVRAMONTE", "indirizzo": "PIANA DI SORRIVA 332, 32030 SOVRAMONTE (BELLUNO)", "lat": 46.0555658187478, "lon": 11.77629300203608, "codice_frutta": "p11826", "codice_latte": "p00000"}, {"nome": "\"MARGHERITA RUSCONI\" SEREN D.G.", "indirizzo": "VIA G. MARCONI 26, 32030 SEREN DEL GRAPPA (BELLUNO)", "lat": 45.98981071578704, "lon": 11.84086854362541, "codice_frutta": "p00000", "codice_latte": "p1907"}, {"nome": "MUGNAI", "indirizzo": "VIA SCUOLE 53, 32032 FELTRE (BELLUNO)", "lat": 46.01618159236259, "lon": 11.86814182499236, "codice_frutta": "p9960", "codice_latte": "p00000"}, {"nome": "SC. ELEM. \"A.RECH\" PEDAVENA", "indirizzo": "VIA U. FOSCOLO 1, 32034 PEDAVENA (BELLUNO)", "lat": 46.03903902220696, "lon": 11.87634880447441, "codice_frutta": "p00000", "codice_latte": "p1854"}, {"nome": "\"ROMANO OCRI\" CESIOM.-SORANZEN", "indirizzo": "VIA SCUOLE 14, 32030 CESIOMAGGIORE (BELLUNO)", "lat": 46.07358887371196, "lon": 11.94613988304191, "codice_frutta": "p00000", "codice_latte": "p2009"}, {"nome": "FOEN", "indirizzo": "VIA VALLINA 1, 32032 FELTRE (BELLUNO)", "lat": 46.04101915366381, "lon": 11.9063858402588, "codice_frutta": "p7473", "codice_latte": "p00000"}, {"nome": "FARRA", "indirizzo": "VIA BOSCARIZ 1, 32032 FELTRE (BELLUNO)", "lat": 46.02749659094529, "lon": 11.90151508570556, "codice_frutta": "p10238", "codice_latte": "p00000"}, {"nome": "Scuola Primaria Parificata Paritaria Istituto Canossiano", "indirizzo": "Viale Montegrappa, 1, 32032 Feltre (BELLUNO)", "lat": 46.01203314763302, "lon": 11.90884818898544, "codice_frutta": "p2154", "codice_latte": "p00000"}, {"nome": "\"VITTORINO DA FELTRE\" FELTRE", "indirizzo": "VIA C. CASTALDI 4, 32032 FELTRE (BELLUNO)", "lat": 46.01590127211293, "lon": 11.91045748465577, "codice_frutta": "p9804", "codice_latte": "p00000"}, {"nome": "E. De Amicis - Alano Di Piave", "indirizzo": "Piazza Martiri, 3, 32038 Alano Di Piave Del Comune Di Setteville (BELLUNO)", "lat": 45.9076756150071, "lon": 11.90877162694929, "codice_frutta": "p2130", "codice_latte": "p1760"}, {"nome": "SCUOLA PRIMARIA S. MARIA ASSUNTA", "indirizzo": "VIA PIVA 10, 31049 VALDOBBIADENE (TREVISO)", "lat": 45.9014986985537, "lon": 11.99650876718139, "codice_frutta": "p2286", "codice_latte": "p00000"}, {"nome": "F.Lli Stramare - Pederobba Cap.", "indirizzo": "Via Roma 102, 31040 Pederobba (TREVISO)", "lat": 45.87714458284614, "lon": 11.95191736125999, "codice_frutta": "p00000", "codice_latte": "p2025"}, {"nome": "Francesco Sartor - Cavaso Del Tomba", "indirizzo": "Via Stradone Del Tempio N\u00b021, 31034 Cavaso Del Tomba (TREVISO)", "lat": 45.85675089032596, "lon": 11.87898907011721, "codice_frutta": "p2271", "codice_latte": "p00000"}, {"nome": "ALDO FANTINA - POSSAGNO", "indirizzo": "VIA STRADONE DEL TEMPIO N. 21, 31054 POSSAGNO (TREVISO)", "lat": 45.85675163619513, "lon": 11.87892576732024, "codice_frutta": "p2269", "codice_latte": "p00000"}, {"nome": "Sc.Elementare Paritaria Collegio Canova", "indirizzo": "Via Degli Impianti Sportivi 8, 31054 Possagno (TREVISO)", "lat": 45.85571683648095, "lon": 11.87786671045496, "codice_frutta": "p2293", "codice_latte": "p00000"}, {"nome": "SCUOLA PRIMARIA PARITARIA \"FILIPPIN\"", "indirizzo": "VIA S.GIACOMO 4, 31017 PIEVE DEL GRAPPA (TREVISO)", "lat": 45.82840421647136, "lon": 11.85998620167883, "codice_frutta": "p11119", "codice_latte": "p00000"}, {"nome": "M.FILIPPIN FERRARESE - PADERNO", "indirizzo": "VIA ROMA N. 5, 31017 PIEVE DEL GRAPPA (TREVISO)", "lat": 45.82742126800507, "lon": 11.85594917050016, "codice_frutta": "p2270", "codice_latte": "p00000"}, {"nome": "MONTE GRAPPA - BORSO DEL GRAPPA", "indirizzo": "VIA MARTIRI DEL GRAPPAN. 24, 31030 BORSO DEL GRAPPA (TREVISO)", "lat": 45.81882653414659, "lon": 11.79909884106981, "codice_frutta": "p2273", "codice_latte": "p00000"}, {"nome": "General Giardino ( Semonzo)", "indirizzo": "Via Martiri Del Grappa N\u00b024, 31030 Borso Del Grappa (TREVISO)", "lat": 45.80732374982363, "lon": 11.77382263775223, "codice_frutta": "p2272", "codice_latte": "p00000"}]}];
+        let map, infoWindow;
+        let allMarkers = [];
+        let allPolylines = [];
+        let voyageMap = {};
+
+        async function initMap() {
+            const centerPoint = { lat: 45.4428, lng: 11.7145 }; // DEPOT VEGGIANO
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 10,
+                center: centerPoint,
+                mapId: "LOG_SOLUTION_MASTER_MAP",
+                disableDefaultUI: true,
+                zoomControl: true,
+                streetViewControl: true
+            });
+            infoWindow = new google.maps.InfoWindow();
+
+            renderAll();
+        }
+
+        function renderAll() {
+            const selectEl = document.getElementById('giro-select');
+            let totalFermate = 0;
+            const coordCounts = {};
+
+            viaggi.forEach((v, idx) => {
+                const v_id = v.v_id;
+                const color = v.color;
+                const list = v.lista_punti || [];
+                totalFermate += list.length;
+
+                // Add option
+                const opt = document.createElement('option');
+                opt.value = v_id;
+                opt.textContent = `🏎️ Giro ${v_id} (${list.length} fermate)`;
+                selectEl.appendChild(opt);
+
+                voyageMap[v_id] = { markers: [], polylines: [] };
+
+                // Disegna polylines reali se presenti
+                if (v.polylines && v.polylines.length > 0) {
+                    v.polylines.forEach(encodedPath => {
+                        const decoded = google.maps.geometry.encoding.decodePath(encodedPath);
+                        const poly = new google.maps.Polyline({
+                            path: decoded,
+                            strokeColor: color,
+                            strokeOpacity: 0.75,
+                            strokeWeight: 5,
+                            map: map
+                        });
+                        allPolylines.push(poly);
+                        voyageMap[v_id].polylines.push(poly);
+                    });
+                }
+
+                // Disegna marker
+                list.forEach((p, pIdx) => {
+                    if (!p.lat || !p.lon) return;
+                    const lat = parseFloat(p.lat);
+                    const lon = parseFloat(p.lon);
+                    const position = { lat, lng: lon };
+
+                    const key = `${lat.toFixed(6)}_${lon.toFixed(6)}`;
+                    coordCounts[key] = (coordCounts[key] || 0) + 1;
+                    const layer = coordCounts[key];
+
+                    let shape = 'm-goccia';
+                    if (layer === 2) shape = 'm-quadrato';
+                    else if (layer === 3) shape = 'm-triangolo';
+                    else if (layer > 3) shape = 'm-tonda';
+
+                    const el = document.createElement("div");
+                    el.className = `custom-marker ${shape}`;
+                    if (shape === 'm-triangolo') {
+                        el.style.borderBottomColor = color;
+                    } else {
+                        el.style.backgroundColor = color;
+                      }
+                      el.innerHTML = `<span style="pointer-events: none;">${pIdx + 1}</span>`;
+
+                      // Use new AdvancedMarkerElement if available
+                      let m;
+                      if (google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
+                          m = new google.maps.marker.AdvancedMarkerElement({
+                              position: position,
+                              map: map,
+                              title: p.nome,
+                              content: el
+                          });
+                      } else {
+                          m = new google.maps.Marker({
+                              position: position,
+                              map: map,
+                              title: p.nome,
+                              label: { text: (pIdx+1).toString(), color: "white", fontSize: "10px", fontWeight: "900" }
+                          });
+                      }
+
+                      m.addListener(m.content ? "gmp-click" : "click", () => {
+                          const ddtListText = [...(p.codici_ddt_frutta || []), ...(p.codici_ddt_latte || [])].join(', ');
+                          const contentHtml = `
+                              <div style="padding:10px; font-family:'Outfit', sans-serif; max-width:260px; line-height:1.4;">
+                                  <div style="font-size:9px; font-weight:800; color:${color}; text-transform:uppercase; margin-bottom:2px;">🏎️ Giro ${v_id} &bull; Fermata ${pIdx + 1}</div>
+                                  <div style="font-weight:800; font-size:13px; color:#0f172a; margin-bottom:4px;">${p.nome}</div>
+                                  <div style="font-size:11px; color:#64748b; margin-bottom:8px; display:flex; align-items:start; gap:4px;">
+                                      <span class="material-icons-round" style="font-size:14px; color:#94a3b8; margin-top:2px;">place</span>
+                                      <span>${p.indirizzo}</span>
+                                  </div>
+                                  <button onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=driving', '_blank')" style="width:100%; background:${color}; color:white; border:none; padding:8px 12px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
+                                      <span class="material-icons-round" style="font-size:13px;">navigation</span> NAVIGA SU GOOGLE MAPS
+                                  </button>
+                              </div>
+                          `;
+                          infoWindow.setContent(contentHtml);
+                          infoWindow.open(map, m);
+                      });
+
+                      allMarkers.push(m);
+                      voyageMap[v_id].markers.push(m);
+                  });
+              });
+
+              document.getElementById('stats-summary').textContent = `${totalFermate} Fermate | ${viaggi.length} Viaggi`;
+
+              if (allMarkers.length > 0) {
+                  fitAll();
+              }
+          }
+
+          function fitAll() {
+              let bounds = new google.maps.LatLngBounds();
+              allMarkers.forEach(m => bounds.extend(m.position || m.getPosition()));
+              map.fitBounds(bounds);
+          }
+
+          window.filterGiro = function(selectedVid) {
+              infoWindow.close();
+              if (selectedVid === "ALL") {
+                  allMarkers.forEach(m => m.setMap(map));
+                  allPolylines.forEach(p => p.setMap(map));
+                  fitAll();
+                  return;
+              }
+
+              Object.keys(voyageMap).forEach(vid => {
+                  const show = (vid === selectedVid);
+                  voyageMap[vid].markers.forEach(m => m.setMap(show ? map : null));
+                  voyageMap[vid].polylines.forEach(p => p.setMap(show ? map : null));
+              });
+
+              const active = voyageMap[selectedVid]?.markers || [];
+              if (active.length > 0) {
+                  let bounds = new google.maps.LatLngBounds();
+                  active.forEach(m => bounds.extend(m.position || m.getPosition()));
+                  map.fitBounds(bounds);
+              }
+          };
+      </script>
+  </body>
+  </html>

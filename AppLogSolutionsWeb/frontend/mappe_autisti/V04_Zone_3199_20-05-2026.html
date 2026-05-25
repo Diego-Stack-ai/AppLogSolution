@@ -15,6 +15,7 @@
         #sidebar { flex: 1; display: flex; flex-direction: column; background: white; border-top: 2px solid #cbd5e1; overflow: hidden; }
         .header { padding: 6px 12px; background: #1e293b; color: white; border-bottom: 2px solid var(--accent); position: relative; }
         .trip-title { margin: 0; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
+        .back-to-links { position: absolute; right: 95px; top: 8px; font-size: 0.6rem; color: var(--accent); text-decoration: none; font-weight: 800; display: flex; align-items: center; gap: 2px; letter-spacing: 0.5px; }
         .reset-btn { position: absolute; right: 12px; top: 8px; font-size: 0.6rem; color: #94a3b8; text-decoration: underline; border: none; background: none; font-weight: 600; }
         .stats-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 2px; }
         .stat-item { flex: 1; display: flex; flex-direction: column; align-items: start; }
@@ -70,6 +71,7 @@
         <div id="sidebar">
             <div class="header">
                 <div class="trip-title">🏎️ V04 | Zone: 3199</div>
+                <a href="../link_viaggi.html" class="back-to-links"><span class="material-icons-round" style="font-size: 10px !important;">arrow_back</span> TORNA AI LINK</a>
                 <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
                 <div class="stats-row">
                     <div class="stat-item"><span class="stat-val">138.9km</span><span class="stat-lbl">Strada</span></div>

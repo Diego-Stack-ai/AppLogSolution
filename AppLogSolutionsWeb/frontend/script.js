@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "2.18";
+const APP_VERSION = "2.19";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -151,6 +151,7 @@ window.resumeDraft = () => {
         if (id.includes('Inizio') || id.includes('Fine')) window.setTimeValue(id, draft.data[id]);
         else { const el = document.getElementById(id); if (el) el.value = draft.data[id]; }
     });
+    if (typeof window.updateNomeGiorno === 'function') window.updateNomeGiorno();
     if (document.getElementById('clienteSelect')?.value) window.updateViaggi();
     
     // Ripristina Tracking se necessario
@@ -210,6 +211,27 @@ window.renderClientiInserimento = function() {
 // Alias usato dal listener realtime
 window.renderProgettiInserimento = window.renderClientiInserimento;
 
+window.updateNomeGiorno = function() {
+    const dataInput = document.getElementById('data');
+    const nomeGiornoEl = document.getElementById('nomeGiorno');
+    if (!dataInput || !nomeGiornoEl) return;
+    
+    const dateVal = dataInput.value;
+    if (!dateVal) {
+        nomeGiornoEl.textContent = "";
+        return;
+    }
+    
+    const date = new Date(dateVal);
+    if (isNaN(date.getTime())) {
+        nomeGiornoEl.textContent = "";
+        return;
+    }
+    const options = { weekday: 'long' };
+    const dayName = date.toLocaleDateString('it-IT', options);
+    nomeGiornoEl.textContent = dayName;
+};
+
 window.updateViaggi = function() {
     const clienteNome = document.getElementById("clienteSelect")?.value || "";
     const viaggioSelect = document.getElementById("viaggioSelect");
@@ -230,9 +252,32 @@ window.updateViaggi = function() {
             "PROGETTO SCUOLE": ["VIAGGIO 01", "VIAGGIO 02", "VIAGGIO 03", "VIAGGIO 04", "VIAGGIO 05", "VIAGGIO 06", "VIAGGIO 07", "VIAGGIO 08", "VIAGGIO 09", "VIAGGIO 10"],
             "CATTEL": ["BS * BRESCIA", "FBS * FUORI BRESCIA"],
             "GRAN CHEF": ["BL 1 * BELLUNO", "BS * BRESCIA"],
-            "BAUER": ["VI * VICENZA", "TV * TREVISO"]
+            "BAUER": [
+                "1 - LUNEDI - VI * VICENZA", 
+                "2 - MARTEDI - TV * TREVISO", 
+                "3 - MERCOLEDI - VI * VICENZA", 
+                "4 - GIOVEDI - TV * TREVISO", 
+                "5 - VENERDI - VI * VICENZA"
+            ]
         };
         options = viaggiMap[clienteNome.toUpperCase()] || [];
+    }
+
+    // --- NUOVO FILTRO BAUER BASATO SULLA DATA ---
+    if (clienteNome.toUpperCase() === 'BAUER') {
+        const dataInput = document.getElementById('data');
+        if (dataInput && dataInput.value) {
+            const date = new Date(dataInput.value);
+            if (!isNaN(date.getTime())) {
+                const dayOfWeek = date.getDay(); // 0 = Dom, 1 = Lun, 2 = Mar, 3 = Mer, 4 = Gio, 5 = Ven, 6 = Sab
+                
+                // Mappa il giorno della settimana (1 = Lun, 2 = Mar, ..., 7 = Dom)
+                const dayDigit = dayOfWeek === 0 ? "7" : String(dayOfWeek);
+                
+                // Filtra solo i viaggi che iniziano con la cifra del giorno lavorativo
+                options = options.filter(v => v.trim().startsWith(dayDigit));
+            }
+        }
     }
 
     if (options.length > 0) {
@@ -309,6 +354,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const dataInput = document.getElementById('data');
     if (dataInput && !dataInput.value) {
         dataInput.value = new Date().toISOString().split('T')[0];
+    }
+
+    // Inizializza e ascolta i cambiamenti della data per aggiornare il nome del giorno
+    if (dataInput) {
+        if (typeof window.updateNomeGiorno === 'function') {
+            window.updateNomeGiorno();
+        }
+        dataInput.addEventListener('change', () => {
+            if (typeof window.updateNomeGiorno === 'function') window.updateNomeGiorno();
+            if (document.getElementById('clienteSelect')?.value?.toUpperCase() === 'BAUER') {
+                if (typeof window.updateViaggi === 'function') window.updateViaggi();
+            }
+        });
+        dataInput.addEventListener('input', () => {
+            if (typeof window.updateNomeGiorno === 'function') window.updateNomeGiorno();
+            if (document.getElementById('clienteSelect')?.value?.toUpperCase() === 'BAUER') {
+                if (typeof window.updateViaggi === 'function') window.updateViaggi();
+            }
+        });
     }
 
     // PWA: Registrazione Service Worker + gestione aggiornamenti

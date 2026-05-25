@@ -434,16 +434,18 @@
                 const elevationBadge = a.canElevate ? '<span style="font-size:10px; color:#10b981; margin-left:5px;">(Elevabile)</span>' : '';
                 const turnoBadge = `<span style="font-size:11px; font-weight:400; background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:10px; margin-left:8px;">${a.tipoTurno === 'notturno' ? 'NOTTURNO' : 'GIORNATA'}</span>`;
                 
+                const details = a.username ? `Username: <b style="color:var(--primary);">${a.username}</b>${a.password ? ` | Password: <b style="color:var(--primary);">${a.password}</b>` : ''}` : `Email: <b>${a.email || 'N.D.'}</b>`;
+                
                 r.innerHTML = `
                     <div style="flex: 1;">
                         <div style="font-weight:600; color:#334155;">${a.nome} ${elevationBadge} ${turnoBadge} <span style="font-size:11px; font-weight:400; background:#e2e8f0; padding:2px 8px; border-radius:10px; margin-left:8px; text-transform:uppercase;">${a.ruolo}</span></div>
-                        <div style="font-size:12px; color:#64748b;">UID: ${a.id} | Email: ${a.email || 'N.D.'}</div>
+                        <div style="font-size:12px; color:#64748b; margin-top: 4px;">${details}</div>
                     </div>
                     <div style="display:flex; gap:8px;">
                         <button onclick="editAutista(${idx})" class="action-btn edit-btn" title="Modifica">
                             <span class="material-icons-round" style="font-size:20px;">edit</span>
                         </button>
-                        <button onclick="sendResetEmail('${a.email}')" class="action-btn" title="Invia Reset Password" style="color: var(--primary);">
+                        <button onclick="sendResetEmail('${a.email || a.username}')" class="action-btn" title="Invia Reset Password" style="color: var(--primary);">
                             <span class="material-icons-round" style="font-size:20px;">lock_reset</span>
                         </button>
                         <button onclick="deleteAutista(${idx})" class="action-btn delete-btn" title="Elimina">
@@ -493,7 +495,7 @@
             if (confirm('Eliminare ' + a.nome + '? Questa operazione rimuove il profilo Firestore ma NON l\'utente da Firebase Auth.')) {
                 try {
                     if (window.deleteFromFirebase && a.id) {
-                        await window.deleteFromFirebase("users", a.id);
+                        await window.deleteFromFirebase("dipendenti", a.id);
                         alert("Profilo eliminato!");
                     }
                 } catch (e) {

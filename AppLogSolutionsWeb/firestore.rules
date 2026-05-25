@@ -12,8 +12,8 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Regole per gli utenti (lettura profilo per Auth)
-    match /users/{userId} {
+    // Regole per i dipendenti (lettura profilo per Auth)
+    match /dipendenti/{userId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated();
     }

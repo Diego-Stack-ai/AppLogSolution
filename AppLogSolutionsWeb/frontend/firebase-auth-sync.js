@@ -121,7 +121,7 @@ onAuthStateChanged(auth, async (user) => {
         }
 
         try {
-            const userDoc = await getDoc(doc(db, "users", user.uid));
+            const userDoc = await getDoc(doc(db, "dipendenti", user.uid));
             
             if (userDoc.exists()) {
                 const userData = userDoc.data();
@@ -133,7 +133,7 @@ onAuthStateChanged(auth, async (user) => {
                     if (newPassword && newPassword.length >= 6) {
                         try {
                             await updatePassword(user, newPassword);
-                            await updateDoc(doc(db, "users", user.uid), { needsPasswordChange: false });
+                            await updateDoc(doc(db, "dipendenti", user.uid), { needsPasswordChange: false });
                             alert("Password aggiornata con successo! Benvenuto nel sistema.");
                         } catch (e) {
                             alert("Errore durante l'aggiornamento della password: " + e.message + "\nEffettua nuovamente il login.");
@@ -199,7 +199,7 @@ onAuthStateChanged(auth, async (user) => {
                 console.warn("Auth: Sessione attiva ma profilo Firestore mancante.");
                 
                 // --- AUTO-FIX DI EMERGENZA ---
-                // Se l'utente si è appena loggato con Firebase Auth ma il suo documento in 'users' non esiste
+                // Se l'utente si è appena loggato con Firebase Auth ma il suo documento in 'dipendenti' non esiste
                 // (ad es. database azzerato), chiediamo se vogliamo ricrearlo come amministratore.
                 const confirmCreate = confirm("ATTENZIONE: Il tuo utente Firebase esiste, ma il profilo nel database è stato cancellato.\n\nVuoi ricreare automaticamente il tuo profilo come AMMINISTRATORE per poter accedere?");
                 
@@ -211,7 +211,7 @@ onAuthStateChanged(auth, async (user) => {
                             ruolo: "amministratore",
                             needsPasswordChange: false
                         };
-                        await setDoc(doc(db, "users", user.uid), newUserData);
+                        await setDoc(doc(db, "dipendenti", user.uid), newUserData);
                         alert("Profilo ricreato con successo! Ora ricaricheremo la pagina per farti entrare.");
                         window.location.reload();
                         return;
@@ -220,7 +220,7 @@ onAuthStateChanged(auth, async (user) => {
                     }
                 }
 
-                alert("ACCESSO NEGATO: Utente autenticato, ma manca il profilo nel Database (Collection 'users'). L'account potrebbe essere stato disabilitato o cancellato.");
+                alert("ACCESSO NEGATO: Utente autenticato, ma manca il profilo nel Database (Collection 'dipendenti'). L'account potrebbe essere stato disabilitato o cancellato.");
                 await window.logoutFirebase();
             }
         } catch (err) {
@@ -294,7 +294,7 @@ function startRealtimeSync(isAdmin) {
     // Listener per Autisti/Utenti
     // Se Admin scarica tutti, altrimenti NON scarica nulla (o solo se stesso, già fatto in Auth)
     if (isAdmin) {
-        const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+        const unsubUsers = onSnapshot(collection(db, "dipendenti"), (snapshot) => {
             const autisti = [];
             snapshot.forEach((d) => {
                 autisti.push({ id: d.id, ...d.data() });
@@ -374,8 +374,6 @@ window.updateCustomer = async function(id, data) {
         return true;
     } catch (e) {
         console.error("Errore salvataggio Cliente:", e);
-        throw e;
-    }
 }
 
 // Alias per chiarezza
@@ -386,11 +384,19 @@ window.updateUser = async function(id, data) {
     try {
         const { id: _, ...updateData } = data;
         if (id) {
-            const docRef = doc(db, "users", id);
+            const docRef = doc(db, "dipendenti", id);
+            
+            // Se l'email passata è virtuale, non la salviamo nel profilo Firestore
+            if (updateData.email && updateData.email.includes('@logsolution.app')) {
+                // Impostiamo l'username estratto se non esiste già
+                if (!updateData.username) {
+                    updateData.username = updateData.email.split('@')[0];
+                }
+                updateData.email = "";
+            }
+            
             await updateDoc(docRef, updateData);
         } else {
-            // Nota: La creazione di un nuovo utente Auth richiede Firebase Admin SDK o logic lato server (Cloud Functions)
-            // Qui aggiorniamo solo il profilo Firestore se l'UID esiste già
             console.warn("La creazione di nuovi account richiede l'uso della console Firebase Auth o Cloud Functions.");
         }
         return true;
@@ -410,11 +416,16 @@ window.registerNewUserCloud = async function(email, password, nomeCompleto, ruol
         const userCredential = await createUserWithEmailAndPassword(tempAuth, email, password);
         const uid = userCredential.user.uid;
 
-        // Salva il documento profilo in Firestore
-        await setDoc(doc(db, "users", uid), {
+        // Estrae lo username pulito (es. "ayoub.berradia")
+        const username = email.split('@')[0];
+
+        // Salva il documento profilo in Firestore nella collezione "dipendenti"
+        await setDoc(doc(db, "dipendenti", uid), {
             uid: uid,
             nome: nomeCompleto,
-            email: email,
+            username: username,
+            password: password, // Salvata in chiaro ad uso consultativo admin
+            email: "",          // Email vuota come richiesto dall'utente
             ruolo: ruolo,
             tipoTurno: turno,
             canElevate: canElevate,

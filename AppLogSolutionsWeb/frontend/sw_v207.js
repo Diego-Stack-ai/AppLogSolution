@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'log-solution-v2.17';
+﻿const CACHE_NAME = 'log-solution-v2.18';
 const ASSETS = [
     './',
     './index.html',
@@ -17,7 +17,7 @@ const ASSETS = [
     './img/logo.png',
     'https://fonts.googleapis.com/icon?family=Material+Icons+Round'
 ];
-// Nota: JS/CSS con ?v= non sono in ASSETS perchÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© usano strategia Network-First
+// Nota: JS/CSS con ?v= non sono in ASSETS perché usano strategia Network-First
 // e vengono cachati dinamicamente al primo accesso.
 
 // 1. Installazione: cache solo asset statici puri

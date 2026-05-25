@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rientri DDT - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.17">
+    <link rel="stylesheet" href="styles.css?v=2.18">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <style>
@@ -113,7 +113,7 @@
         .btn-edit  { background: #4f46e5; color: white; }
         .btn-del   { background: #ef4444; color: white; }
 
-        /* Modal campo Note piÃ¹ alto */
+        /* Modal campo Note più alto */
         #f_Note { min-height: 80px; resize: vertical; }
     </style>
 </head>
@@ -162,7 +162,7 @@
                 <div style="display:flex; flex-direction:column; gap:5px;">
                     <label style="font-size:12px; font-weight:bold; color:var(--primary); text-transform:uppercase;">Tipo</label>
                     <select id="f_Tipo" style="padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:14px; background:white;">
-                        <option value="">â€” completo â€”</option>
+                        <option value="">— completo —</option>
                         <option value="parziale">parziale</option>
                     </select>
                 </div>
@@ -188,7 +188,7 @@
         const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
         const db  = getFirestore(app);
 
-        // âœ… PATH CORRETTO
+        // ✅ PATH CORRETTO
         const COLL_PATH = ['clienti', 'DNR', 'rientri ddt'];
         let items = [];
 
@@ -211,7 +211,7 @@
             }
 
             const html = filtered.map(item => {
-                const codice = item['Codice consegna'] || 'â€”';
+                const codice = item['Codice consegna'] || '—';
                 const ddt    = item['Data e Num DDT']  || '';
                 const stato  = item['Stato']            || '';
                 const tipo   = (item['Tipo'] || '').toLowerCase();
@@ -219,7 +219,7 @@
                 const isParziale = tipo === 'parziale';
 
                 const statoBadge  = stato ? `<span class="badge badge-stato">${stato}</span>` : '';
-                const tipoBadge   = isParziale ? `<span class="badge badge-parziale">âš  parziale</span>` : '';
+                const tipoBadge   = isParziale ? `<span class="badge badge-parziale">⚠️ parziale</span>` : '';
                 const noteBlock   = note ? `
                     <div class="card-note">
                         <div class="note-label">Note</div>

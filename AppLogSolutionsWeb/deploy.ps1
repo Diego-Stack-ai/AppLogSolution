@@ -19,7 +19,7 @@ $frontendPath = Join-Path $PSScriptRoot "frontend"
 $swFile       = Join-Path $frontendPath "sw_v207.js"
 
 # === 1. LEGGI VERSIONE ATTUALE ================================================
-$swContent = Get-Content $swFile -Raw
+$swContent = Get-Content $swFile -Raw -Encoding UTF8
 if ($swContent -notmatch "CACHE_NAME = 'log-solution-v(\d+)\.(\d+)'") {
     Write-Error "❌ Impossibile trovare CACHE_NAME in sw.js"
     exit 1
@@ -67,7 +67,7 @@ $allFiles  = @($htmlFiles) + @($jsFiles)
 
 $count = 0
 foreach ($f in $allFiles) {
-    $content = Get-Content $f.FullName -Raw
+    $content = Get-Content $f.FullName -Raw -Encoding UTF8
     $updated = $content -replace "v=$oldVersion", "v=$newVersion"
     if ($updated -ne $content) {
         Set-Content $f.FullName -Value $updated -NoNewline -Encoding UTF8
@@ -78,7 +78,7 @@ foreach ($f in $allFiles) {
 
 # === 4. AGGIORNA APP_VERSION IN script.js ====================================
 $scriptJs = Join-Path $frontendPath "script.js"
-$jsContent = Get-Content $scriptJs -Raw
+$jsContent = Get-Content $scriptJs -Raw -Encoding UTF8
 $jsUpdated = $jsContent `
     -replace "APP_VERSION = `"$oldVersion`"", "APP_VERSION = `"$newVersion`"" `
     -replace "// script\.js - v$oldVersion", "// script.js - v$newVersion"

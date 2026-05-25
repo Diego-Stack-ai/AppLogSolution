@@ -632,14 +632,19 @@
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     html += `
-                        <div style="background: #f1f5f9; border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="background: #f1f5f9; border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
                             <div>
                                 <div style="font-weight: 700; color: #1e293b;">Mappa Zone del ${data.data_consegna}</div>
                                 <div style="font-size: 12px; color: #64748b;">${data.punti_totali} punti in ${data.zone_totali} zone</div>
                             </div>
-                            <button onclick="window.navigateWithState('mappa_zone.html?data=${data.data_consegna}&cb=' + Date.now())" style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
-                                <span class="material-icons-round">open_in_new</span> VEDI MAPPA
-                            </button>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button onclick="window.navigateWithState('mappa_complessiva.html?data=${data.data_consegna}&cb=' + Date.now())" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                                    <span class="material-icons-round">visibility</span> VISTA COMPLESSIVA
+                                </button>
+                                <button onclick="window.navigateWithState('mappa_zone.html?data=${data.data_consegna}&cb=' + Date.now())" style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                                    <span class="material-icons-round">edit</span> MODIFICA PERCORSI
+                                </button>
+                            </div>
                         </div>
                     `;
                 });

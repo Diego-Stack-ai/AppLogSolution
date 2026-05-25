@@ -1,0 +1,625 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mappa Complessiva Viaggi - AppLogSolutionsWeb</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=2.25">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-glow: rgba(79, 70, 229, 0.15);
+            --bg-dark: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --border: rgba(15, 23, 42, 0.08);
+            --accent: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            background-color: var(--bg-dark);
+            overflow: hidden;
+            color: #1e293b;
+        }
+
+        #map {
+            flex: 1;
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Floating Dashboard Header */
+        .floating-header {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 16px;
+            padding: 10px 20px;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-back {
+            background: var(--primary);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+
+        .btn-back:hover {
+            background: var(--primary-hover);
+            transform: translateX(-2px);
+        }
+
+        .header-divider {
+            width: 1px;
+            height: 32px;
+            background: rgba(15, 23, 42, 0.1);
+        }
+
+        .header-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .header-title {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.3px;
+        }
+
+        .header-subtitle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .date-badge {
+            font-size: 0.78rem;
+            font-weight: 800;
+            background: var(--primary-glow);
+            color: var(--primary);
+            padding: 2px 8px;
+            border-radius: 20px;
+            border: 1px solid rgba(79, 70, 229, 0.2);
+        }
+
+        .stats-badge {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .selector-container select {
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 2px solid var(--primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary);
+            background: white;
+            outline: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.05);
+            transition: all 0.2s;
+        }
+
+        .selector-container select:hover {
+            border-color: var(--primary-hover);
+            background: #fafafa;
+        }
+
+        /* Custom Marker shapes in Map */
+        .custom-marker {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 11px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            border: 2px solid white;
+            transition: 0.2s;
+            transform: translate(-50%, -100%);
+        }
+
+        .m-tonda { border-radius: 50%; }
+        .m-goccia { border-radius: 50% 50% 50% 0; transform: rotate(-45deg); }
+        .m-goccia span { transform: rotate(45deg); }
+        .m-quadrato { border-radius: 4px; }
+        .m-triangolo {
+            background: transparent !important;
+            border-left: 18px solid transparent;
+            border-right: 18px solid transparent;
+            border-bottom: 36px solid #ccc;
+            width: 0 !important;
+            height: 0 !important;
+            border-radius: 0;
+            box-shadow: none;
+            border-top: none;
+        }
+        .m-triangolo span { position: absolute; top: 16px; left: -8px; width: 16px; }
+
+        /* Loading Overlay */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #0f172a;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.4s ease;
+        }
+
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s infinite linear;
+            margin-bottom: 20px;
+        }
+
+        #loading-msg {
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .floating-header {
+                top: 0;
+                left: 0;
+                right: 0;
+                border-radius: 0;
+                border: none;
+                border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+                padding: 10px 14px;
+                gap: 12px;
+                flex-wrap: wrap;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .header-info {
+                flex: 1;
+            }
+
+            .selector-container {
+                width: 100%;
+                margin-top: 4px;
+            }
+
+            .selector-container select {
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .header-divider {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="loader-spinner"></div>
+        <div id="loading-msg">Caricamento in corso...</div>
+    </div>
+
+    <!-- Top floating menu bar -->
+    <div class="floating-header">
+        <button class="btn-back" onclick="window.navigateWithState('elaborazione.html')" title="Torna all'elaborazione">
+            <span class="material-icons-round">arrow_back</span>
+        </button>
+        <div class="header-divider"></div>
+        <div class="header-info">
+            <h1 class="header-title">Vista Complessiva Percorsi</h1>
+            <div class="header-subtitle">
+                <span class="date-badge" id="data-giorno-badge">--/--/----</span>
+                <span class="stats-badge" id="stats-summary">0 Fermate | 0 Zone</span>
+            </div>
+        </div>
+        <div class="header-divider"></div>
+        <div class="selector-container">
+            <select id="viaggio-selector" onchange="window.filterMapByTrip(this.value)">
+                <option value="ALL">🔍 Tutti i Viaggi</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Google Map Container -->
+    <div id="map"></div>
+
+    <script>
+        window.navigateWithState = (url) => window.location.href = url;
+        const GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4";
+        
+        window.googleMapsPromise = new Promise((resolve) => {
+            window.initMap = function() {
+                const mapEl = document.getElementById("map");
+                if (!mapEl) {
+                    setTimeout(window.initMap, 50);
+                    return;
+                }
+                window.mapInstance = new google.maps.Map(mapEl, {
+                    center: { lat: 45.4642, lng: 9.1900 },
+                    zoom: 10,
+                    mapId: "LOG_SOLUTION_MAP",
+                    disableDefaultUI: true,
+                    zoomControl: true,
+                    streetViewControl: true,
+                    mapTypeControl: true,
+                    gestureHandling: "greedy"
+                });
+                resolve();
+            };
+        });
+
+        const script = document.createElement("script");
+        script.async = true;
+        script.defer = true;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=marker,geometry&callback=initMap&v=weekly&loading=async`;
+        document.head.appendChild(script);
+    </script>
+
+    <script type="module">
+        import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+        import { firebaseConfig } from "./firebase-config.js";
+
+        // Initialize Firebase
+        const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+        const auth = getAuth(app);
+
+        // Predefined beautiful high-contrast colors palette for voyages
+        const LOCAL_PALETTE = ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#14b8a6", "#6366f1", "#a855f7", "#3b82f6", "#22c55e", "#d946ef", "#84cc16"];
+        
+        let DATA_ZONE = [];
+        let map;
+        let infoWindow;
+        let targetFileDate = "";
+        
+        // Element arrays for quick show/hide actions
+        let allMarkers = [];      // Array of all Google Advanced Markers
+        let allPolylines = [];    // Array of all Google Polylines
+        let voyageElementsMap = {}; // Maps 'id_zona' to { markers: [], polylines: [] }
+
+        const setLoaderMsg = (msg) => {
+            const el = document.getElementById('loading-msg');
+            if (el) el.textContent = msg;
+        };
+
+        const hideLoader = () => {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                overlay.style.opacity = '0';
+                setTimeout(() => { overlay.style.display = 'none'; }, 400);
+            }
+        };
+
+        const safetyTimeout = setTimeout(hideLoader, 10000);
+
+        function getQueryParam(name) {
+            const results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+            return results ? decodeURIComponent(results[1]) : null;
+        }
+
+        async function initApp() {
+            setLoaderMsg("Verifica autenticazione utente...");
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) {
+                    clearTimeout(safetyTimeout);
+                    Swal.fire({
+                        title: 'Accesso Negato',
+                        text: 'Devi effettuare il login per accedere alla mappa.',
+                        icon: 'error',
+                        confirmButtonText: 'Vai al Login'
+                    }).then(() => { window.location.href = 'login.html'; });
+                    return;
+                }
+
+                try {
+                    targetFileDate = getQueryParam('data');
+                    if (!targetFileDate) {
+                        targetFileDate = localStorage.getItem('master_date');
+                    }
+                    if (targetFileDate && targetFileDate.includes('-')) {
+                        // Se in formato YYYY-MM-DD converti in DD-MM-YYYY
+                        const pts = targetFileDate.split('-');
+                        if (pts[0].length === 4) {
+                            targetFileDate = `${pts[2]}-${pts[1]}-${pts[0]}`;
+                        }
+                    }
+
+                    if (!targetFileDate) {
+                        clearTimeout(safetyTimeout);
+                        Swal.fire('Data mancante', 'Seleziona una data di consegna.', 'warning')
+                        .then(() => { window.location.href = 'elaborazione.html'; });
+                        return;
+                    }
+
+                    document.getElementById('data-giorno-badge').textContent = targetFileDate;
+
+                    // Fetch JSON from Storage
+                    setLoaderMsg("Scaricamento viaggi_giornalieri_Johnson.json...");
+                    const path = `REPORTS/${targetFileDate}/viaggi_giornalieri_Johnson.json`;
+                    const fileRef = ref(storage, path);
+                    
+                    let downloadUrl;
+                    try {
+                        downloadUrl = await getDownloadURL(fileRef);
+                    } catch (err_url) {
+                        console.error("[Storage] Errore url:", err_url);
+                        throw new Error(`Nessun viaggio calcolato trovato per il ${targetFileDate}. Genera prima i percorsi.`);
+                    }
+
+                    const response = await fetch(downloadUrl);
+                    if (!response.ok) throw new Error("Errore nel download del file viaggi.");
+
+                    DATA_ZONE = await response.json();
+                    
+                    // Rimuovi eventuali zone senza punti o speciali tipo DDT_DA_INSERIRE
+                    DATA_ZONE = DATA_ZONE.filter(z => z.id_zona !== 'DDT_DA_INSERIRE' && z.lista_punti && z.lista_punti.length > 0);
+
+                    console.log("[Mappa Complessiva] Viaggi caricati:", DATA_ZONE);
+
+                    setLoaderMsg("Inizializzazione Google Maps...");
+                    await window.googleMapsPromise;
+                    map = window.mapInstance;
+                    infoWindow = new google.maps.InfoWindow();
+
+                    // Render elements
+                    renderMappe();
+
+                    clearTimeout(safetyTimeout);
+                    hideLoader();
+
+                } catch (e) {
+                    clearTimeout(safetyTimeout);
+                    hideLoader();
+                    Swal.fire({
+                        title: 'Errore',
+                        text: e.message || 'Errore imprevisto durante il caricamento.',
+                        icon: 'error',
+                        confirmButtonText: 'Torna all\'Elaborazione'
+                    }).then(() => { window.location.href = 'elaborazione.html'; });
+                }
+            });
+        }
+
+        function renderMappe() {
+            const AdvancedMarkerElement = google.maps.marker.AdvancedMarkerElement;
+            const selectEl = document.getElementById('viaggio-selector');
+            
+            let totalStopsCount = 0;
+            const coordCounts = {}; // Per sovrapposizione coordinate
+
+            // 1. Popola la select e disegna ciascun viaggio
+            DATA_ZONE.forEach((z, zIdx) => {
+                const v_id = z.nome_giro || z.id_zona || `V${(zIdx + 1).toString().padStart(2, '0')}`;
+                const color = z.color || LOCAL_PALETTE[zIdx % LOCAL_PALETTE.length];
+                const list = z.lista_punti || [];
+                
+                if (list.length === 0) return;
+
+                totalStopsCount += list.length;
+
+                // Aggiungi opzione nel dropdown
+                const opt = document.createElement('option');
+                opt.value = z.id_zona;
+                opt.textContent = `🏎️ Giro ${v_id} (${list.length} fermate)`;
+                selectEl.appendChild(opt);
+
+                // Inizializza mappa per i filtri di questo viaggio
+                voyageElementsMap[z.id_zona] = {
+                    markers: [],
+                    polylines: []
+                };
+
+                // Costruisci le coordinate della linea (Polyline)
+                const routeCoordinates = [];
+
+                list.forEach((p, pIdx) => {
+                    if (!p.lat || !p.lon) return;
+                    const lat = parseFloat(p.lat);
+                    const lon = parseFloat(p.lon);
+                    const position = { lat, lng: lon };
+                    routeCoordinates.push(position);
+
+                    // Gestione sovrapposizioni shapes
+                    const key = `${lat.toFixed(6)}_${lon.toFixed(6)}`;
+                    coordCounts[key] = (coordCounts[key] || 0) + 1;
+                    const layer = coordCounts[key];
+                    
+                    let shape = 'm-goccia';
+                    if (layer === 2) shape = 'm-quadrato';
+                    else if (layer === 3) shape = 'm-triangolo';
+                    else if (layer > 3) shape = 'm-tonda';
+
+                    // Elemento marker HTML
+                    const el = document.createElement("div");
+                    el.className = `custom-marker ${shape}`;
+                    
+                    if (shape === 'm-triangolo') {
+                        el.style.borderBottomColor = color;
+                    } else {
+                        el.style.backgroundColor = color;
+                    }
+                    el.innerHTML = `<span style="pointer-events: none;">${pIdx + 1}</span>`;
+
+                    // Crea Advanced Marker
+                    const m = new AdvancedMarkerElement({
+                        position: position,
+                        map: map,
+                        title: p.nome,
+                        content: el,
+                        gmpDraggable: false
+                    });
+
+                    // Click popup
+                    m.addListener("gmp-click", () => {
+                        const ddtListText = [...(p.codici_ddt_frutta || []), ...(p.codici_ddt_latte || [])].join(', ');
+                        const contentHtml = `
+                            <div style="padding:12px; font-family:'Outfit', sans-serif; max-width:280px; line-height:1.4;">
+                                <div style="font-size:10px; font-weight:800; color:${color}; text-transform:uppercase; margin-bottom:2px;">🏎️ Giro ${v_id} &bull; Fermata ${pIdx + 1}</div>
+                                <div style="font-weight:800; font-size:14px; color:#0f172a; margin-bottom:4px;">${p.nome}</div>
+                                <div style="font-size:11px; color:#64748b; margin-bottom:8px; display:flex; align-items:start; gap:4px;">
+                                    <span class="material-icons-round" style="font-size:14px; color:#94a3b8; margin-top:2px;">place</span>
+                                    <span>${p.indirizzo}</span>
+                                </div>
+                                ${ddtListText ? `
+                                <div style="font-size:10px; background:#f1f5f9; color:#475569; padding:4px 8px; border-radius:6px; font-weight:700; margin-bottom:10px; border: 1px solid rgba(0,0,0,0.05);">
+                                    DDT: ${ddtListText}
+                                </div>` : ''}
+                                <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${lat},${lon}', '_blank')" style="width:100%; background:var(--primary); color:white; border:none; padding:8px 12px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow: 0 4px 10px var(--primary-glow);">
+                                    <span class="material-icons-round" style="font-size:13px;">navigation</span> VEDI SU GOOGLE MAPS
+                                </button>
+                            </div>
+                        `;
+                        infoWindow.setContent(contentHtml);
+                        infoWindow.open(map, m);
+                    });
+
+                    // Salva riferimenti
+                    allMarkers.push(m);
+                    voyageElementsMap[z.id_zona].markers.push(m);
+                });
+
+                // Disegna Polyline (linea retta che unisce i punti sequenziali)
+                if (routeCoordinates.length > 1) {
+                    const arrowSymbol = {
+                        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                        scale: 2.2,
+                        strokeColor: color,
+                        fillColor: color,
+                        fillOpacity: 1
+                    };
+
+                    const poly = new google.maps.Polyline({
+                        path: routeCoordinates,
+                        geodesic: true,
+                        strokeColor: color,
+                        strokeOpacity: 0.75,
+                        strokeWeight: 4.5,
+                        icons: [{
+                            icon: arrowSymbol,
+                            offset: '50px',
+                            repeat: '120px'
+                        }],
+                        map: map
+                    });
+
+                    allPolylines.push(poly);
+                    voyageElementsMap[z.id_zona].polylines.push(poly);
+                }
+            });
+
+            // Aggiorna le statistiche della barra superiore
+            document.getElementById('stats-summary').textContent = `${totalStopsCount} Fermate | ${DATA_ZONE.length} Zone`;
+
+            // Adatta lo zoom per mostrare tutti i marker
+            if (allMarkers.length > 0) {
+                autoFitBoundsAll();
+            }
+        }
+
+        // Fit map bounds to show all markers
+        function autoFitBoundsAll() {
+            let bounds = new google.maps.LatLngBounds();
+            allMarkers.forEach(m => bounds.extend(m.position));
+            map.fitBounds(bounds);
+        }
+
+        // Filter map contents by chosen voyage ID
+        window.filterMapByTrip = function(selectedZid) {
+            infoWindow.close();
+
+            if (selectedZid === "ALL") {
+                // Show everything
+                allMarkers.forEach(m => m.setMap(map));
+                allPolylines.forEach(p => p.setMap(map));
+                autoFitBoundsAll();
+                return;
+            }
+
+            // Show selected, hide others
+            Object.keys(voyageElementsMap).forEach(zid => {
+                const show = (zid === selectedZid);
+                const elements = voyageElementsMap[zid];
+                
+                elements.markers.forEach(m => m.setMap(show ? map : null));
+                elements.polylines.forEach(p => p.setMap(show ? map : null));
+            });
+
+            // Fit bounds to selected trip's points
+            const activeMarkers = voyageElementsMap[selectedZid]?.markers || [];
+            if (activeMarkers.length > 0) {
+                let bounds = new google.maps.LatLngBounds();
+                activeMarkers.forEach(m => bounds.extend(m.position));
+                map.fitBounds(bounds);
+                
+                // Adjust zoom slightly if there are very few points
+                if (activeMarkers.length === 1) {
+                    map.setZoom(14);
+                }
+            }
+        };
+
+        // Start initialization
+        initApp();
+    </script>
+</body>
+</html>

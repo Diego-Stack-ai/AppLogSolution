@@ -538,29 +538,52 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     let shape = 'm-goccia';
                     if (layer === 2) shape = 'm-quadrato'; else if (layer === 3) shape = 'm-triangolo'; else if (layer > 3) shape = 'm-tonda';
                     
+                    const isGrandChef = p.codice_frutta && (p.codice_frutta.startsWith('100') || p.codice_frutta.length > 6);
                     const el = document.createElement("div");
-                    el.className = `custom-marker ${shape}`;
                     
-                    let isParziale = false;
-                    if (isSpeciale && p.rientri_alert) {
-                        isParziale = p.rientri_alert.some(r => r.is_parziale === true);
-                    }
-                    
-                    if (isParziale) {
-                        if (shape === 'm-triangolo') {
-                            el.style.borderBottomColor = "#f59e0b";
-                            el.style.backgroundImage = "repeating-linear-gradient(45deg, black, black 4px, transparent 4px, transparent 8px)";
-                        } else {
-                            el.style.backgroundImage = "repeating-linear-gradient(45deg, #000, #000 4px, #f59e0b 4px, #f59e0b 8px)";
-                            el.style.color = "white";
-                            el.style.textShadow = "1px 1px 2px black, -1px -1px 2px black, 0px 0px 3px black";
-                            el.style.border = "2px solid black";
-                        }
+                    if (isGrandChef) {
+                        el.className = `custom-marker m-chef`;
+                        el.style.backgroundColor = z.color;
+                        el.style.borderRadius = "50%";
+                        el.style.width = "34px";
+                        el.style.height = "34px";
+                        el.style.border = "2.5px solid white";
+                        el.style.boxShadow = "0 4px 10px rgba(0,0,0,0.35)";
+                        el.style.display = "flex";
+                        el.style.flexDirection = "column";
+                        el.style.alignItems = "center";
+                        el.style.justifyContent = "center";
+                        el.style.color = "white";
+                        el.style.transform = "translate(-50%, -100%)";
+                        
+                        el.innerHTML = `
+                            <span style="font-size: 13px; line-height: 1.1; margin-top: -1px; pointer-events: none; display: block;">👨‍🍳</span>
+                            <span style="font-size: 8px; font-weight: 900; pointer-events: none; margin-top: -2px; display: block;">${idx+1}</span>
+                        `;
                     } else {
-                        if (shape === 'm-triangolo') el.style.borderBottomColor = z.color; else el.style.backgroundColor = z.color;
+                        el.className = `custom-marker ${shape}`;
+                        
+                        let isParziale = false;
+                        if (isSpeciale && p.rientri_alert) {
+                            isParziale = p.rientri_alert.some(r => r.is_parziale === true);
+                        }
+                        
+                        if (isParziale) {
+                            if (shape === 'm-triangolo') {
+                                el.style.borderBottomColor = "#f59e0b";
+                                el.style.backgroundImage = "repeating-linear-gradient(45deg, black, black 4px, transparent 4px, transparent 8px)";
+                            } else {
+                                el.style.backgroundImage = "repeating-linear-gradient(45deg, #000, #000 4px, #f59e0b 4px, #f59e0b 8px)";
+                                el.style.color = "white";
+                                el.style.textShadow = "1px 1px 2px black, -1px -1px 2px black, 0px 0px 3px black";
+                                el.style.border = "2px solid black";
+                            }
+                        } else {
+                            if (shape === 'm-triangolo') el.style.borderBottomColor = z.color; else el.style.backgroundColor = z.color;
+                        }
+                        
+                        el.innerHTML = `<span>${idx+1}</span>`;
                     }
-                    
-                    el.innerHTML = `<span>${idx+1}</span>`;
                     
                     const m = new AdvancedMarkerElement({ position: {lat: p.lat, lng: p.lon}, map: map, title: p.nome, content: el, gmpDraggable: DRAGGING_ENABLED && !isLockedGlobal });
                     m.addListener("dragend", () => {

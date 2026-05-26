@@ -463,6 +463,177 @@ def _verifica_nuovi_articoli(base):
     return True
 
 
+def clean_client_code(code_val):
+    if code_val is None or (hasattr(code_val, "isna") and code_val.isna()):
+        return ""
+    code_str = str(code_val).strip()
+    if code_str.endswith(".0"):
+        code_str = code_str[:-2]
+    return code_str
+
+def parse_fascia_oraria(val):
+    if val is None or (hasattr(val, "isna") and val.isna()) or val == "":
+        return "", ""
+    val_str = str(val).strip()
+    match_range = re.findall(r'(\d{2}:\d{2})', val_str)
+    if len(match_range) == 2:
+        return match_range[0], match_range[1]
+    match_dopo = re.search(r'(?:Dopo le|dopo le)\s*(\d{2}:\d{2})', val_str)
+    if match_dopo:
+        return match_dopo.group(1), ""
+    match_entro = re.search(r'(?:Entro le|entro le)\s*(\d{2}:\d{2})', val_str)
+    if match_entro:
+        return "", match_entro.group(1)
+    return "", ""
+
+def _genera_pdf_placeholder_grand_chef(path_out: Path, codice: str, nome: str, ind: str, cit: str, prov: str, note: str, om: str, oM: str, data: str):
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    
+    doc = SimpleDocTemplate(str(path_out), pagesize=A4, leftMargin=30, rightMargin=30, topMargin=30, bottomMargin=30)
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle('gc_title', parent=styles['Heading1'], fontSize=16, leading=20, textColor=colors.HexColor('#0f172a'), spaceAfter=15)
+    body_style = ParagraphStyle('gc_body', parent=styles['Normal'], fontSize=10, leading=14, textColor=colors.HexColor('#334155'))
+    label_style = ParagraphStyle('gc_label', parent=styles['Normal'], fontSize=10, leading=14, fontName='Helvetica-Bold', textColor=colors.HexColor('#0f172a'))
+    
+    elements = []
+    elements.append(Paragraph(f"SCHEDA DI CONSEGNA - CANALE GRAND CHEF", title_style))
+    elements.append(Spacer(1, 10))
+    
+    data_table = [
+        [Paragraph("Codice Cliente:", label_style), Paragraph(codice, body_style)],
+        [Paragraph("Destinatario:", label_style), Paragraph(nome, body_style)],
+        [Paragraph("Indirizzo:", label_style), Paragraph(ind, body_style)],
+        [Paragraph("Città:", label_style), Paragraph(f"{cit} ({prov})", body_style)],
+        [Paragraph("Data Consegna:", label_style), Paragraph(data, body_style)],
+        [Paragraph("Fascia Oraria:", label_style), Paragraph(f"Da {om or '—'} A {oM or '14:00'}", body_style)],
+        [Paragraph("Note Consegna:", label_style), Paragraph(note or "Nessuna nota", body_style)]
+    ]
+    
+    t = Table(data_table, colWidths=[120, 380])
+    t.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cbd5e1')),
+        ('BACKGROUND', (0,0), (0,-1), colors.HexColor('#f8fafc')),
+        ('PADDING', (0,0), (-1,-1), 8),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+    ]))
+    elements.append(t)
+    elements.append(Spacer(1, 40))
+    
+    elements.append(Paragraph("<b>FIRMA PER RICEVUTA</b>", label_style))
+    elements.append(Spacer(1, 15))
+    sig_table = [
+        [Paragraph("Data: ____________________", body_style), Paragraph("Firma Leggibile: ___________________________", body_style)]
+    ]
+    t_sig = Table(sig_table, colWidths=[200, 300])
+    t_sig.setStyle(TableStyle([
+        ('PADDING', (0,0), (-1,-1), 10),
+    ]))
+    elements.append(t_sig)
+    
+    doc.build(elements)
+
+def _estrai_grand_chef(base_dir: Path, date_valide: set[str], mappati: dict) -> dict:
+    import pandas as pd
+    belluno_dir = base_dir.parent.parent / "BELLUNO"
+    out_gc_dir = base_dir / "DDT-ORIGINALI-DIVISI" / "FRUTTA"
+    out_gc_dir.mkdir(parents=True, exist_ok=True)
+    
+    nuovi_dati = {}
+    if not belluno_dir.exists():
+        print(f"  ⚠️  Cartella BELLUNO non trovata in: {belluno_dir}")
+        return nuovi_dati
+        
+    files = list(belluno_dir.glob("*.xlsx"))
+    if not files:
+        print("  ⚠️  Nessun file Excel trovato in BELLUNO.")
+        return nuovi_dati
+        
+    print(f"  📊 Elaborazione {len(files)} file Excel Grand Chef in BELLUNO...")
+    
+    data_label = base_dir.name.replace("CONSEGNE_", "")
+    parti_data = re.findall(r"\d{2}-\d{2}-\d{4}", data_label)
+    data_consegna = parti_data[0] if parti_data else data_label
+    
+    for f in files:
+        try:
+            df = pd.read_excel(f, sheet_name=0)
+            df_clean = df.dropna(how='all')
+            
+            header_row_idx = None
+            for idx, row in df_clean.iterrows():
+                row_vals = [str(val).strip().lower() for val in row.values if pd.notna(val)]
+                if any('ragione sociale' in rv for rv in row_vals) or any('codice' in rv for rv in row_vals):
+                    header_row_idx = idx
+                    break
+                    
+            if header_row_idx is None:
+                continue
+                
+            df_data = df_clean.loc[header_row_idx + 1:]
+            for _, row in df_data.iterrows():
+                if str(row.iloc[0]).lower().strip() == 'totale':
+                    continue
+                    
+                codice = clean_client_code(row.iloc[0])
+                if not codice:
+                    continue
+                    
+                ragione_sociale = str(row.iloc[3]).strip() if pd.notna(row.iloc[3]) else ""
+                indirizzo = str(row.iloc[4]).strip() if pd.notna(row.iloc[4]) else ""
+                localita = str(row.iloc[7]).strip() if pd.notna(row.iloc[7]) else ""
+                provincia = str(row.iloc[8]).strip() if pd.notna(row.iloc[8]) else ""
+                note = str(row.iloc[14]).strip() if len(row) > 14 and pd.notna(row.iloc[14]) else ""
+                fascia = str(row.iloc[15]).strip() if len(row) > 15 and pd.notna(row.iloc[15]) else ""
+                
+                orario_min, orario_max = parse_fascia_oraria(fascia)
+                if not orario_min and not orario_max and note:
+                    orario_min, orario_max = parse_fascia_oraria(note)
+                    
+                if not orario_max:
+                    orario_max = "14:00"
+                
+                if codice not in mappati:
+                    nuovi_dati[codice] = {
+                        "dest": ragione_sociale,
+                        "ind": indirizzo,
+                        "cap": "",
+                        "cit": localita,
+                        "prov": provincia,
+                        "om": orario_min,
+                        "oM": orario_max,
+                        "tipo": "GRAND CHEF"
+                    }
+                else:
+                    fname = f"{codice}_{data_consegna}.pdf"
+                    pdf_path = out_gc_dir / fname
+                    if not pdf_path.exists():
+                        print(f"    📄 Generazione PDF Grand Chef per {codice}: {ragione_sociale[:35]}")
+                        _genera_pdf_placeholder_grand_chef(
+                            pdf_path, codice, ragione_sociale, indirizzo, 
+                            localita, provincia, note, orario_min, orario_max, data_consegna
+                        )
+                        
+        except Exception as e:
+            print(f"  ⚠️  Errore lettura file Belluno {f.name}: {e}")
+            
+    return nuovi_dati
+
+
+def _ricava_date_da_belluno() -> list[str]:
+    belluno_dir = BASE_DIR / "BELLUNO"
+    date_found = set()
+    if belluno_dir.exists():
+        for f in belluno_dir.glob("*.xlsx"):
+            m = re.search(r"(\d{4})-(\d{2})-(\d{2})", f.name)
+            if m:
+                date_found.add(f"{m.group(3)}-{m.group(2)}-{m.group(1)}")
+    return sorted(list(date_found))
+
+
 def main():
     # ── Determina le date valide ────────────────────────────────────────────
     arg = sys.argv[1].strip() if len(sys.argv) > 1 else None
@@ -474,7 +645,10 @@ def main():
             date_valide.add(parte)
     else:
         date_list = _ricava_date_da_pdf()
-        if not date_list: return print("❌ Nessun PDF trovato.")
+        if not date_list:
+            date_list = _ricava_date_da_belluno()
+        if not date_list:
+            return print("❌ Nessun PDF o file Belluno trovato.")
         date_valide = set(date_list)
 
     # ── Nome cartella: singola o doppia data ────────────────────────────────
@@ -495,7 +669,10 @@ def main():
     res_f = _estrai_da_cartella(INPUT_FRUTTA, out_f, "FRUTTA", date_valide, mappati, duplicata=True)
     res_l = _estrai_da_cartella(INPUT_LATTE,  out_l, "LATTE",  date_valide, mappati)
 
-    if not _verifica_nuovi_clienti({**res_f[2], **res_l[2]}): sys.exit(1)
+    # Elabora Grand Chef
+    res_gc = _estrai_grand_chef(base, date_valide, mappati)
+
+    if not _verifica_nuovi_clienti({**res_f[2], **res_l[2], **res_gc}): sys.exit(1)
     if not _verifica_nuovi_articoli(base): sys.exit(1)
 
     print("Pulizia sorgenti e avvio pipeline...")
@@ -517,3 +694,4 @@ def main():
     print(f"\n✅ COMPLETATO ({data_label})!")
 
 if __name__ == "__main__": main()
+

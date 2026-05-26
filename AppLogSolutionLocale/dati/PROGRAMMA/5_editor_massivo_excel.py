@@ -44,8 +44,10 @@ HTML_TEMPLATE = """
         #point-list { flex: 1; overflow-y: auto; padding: 10px; background: #f8fafc; }
         .point-item { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: 0.2s; position: relative; }
         .point-item:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .point-item.modified { border-left: 5px solid var(--primary); }
+        .point-item.modified { border-left: 5px solid var(--warning); }
         .point-item.missing { border-left: 5px solid var(--danger); }
+        .point-item.verified { border-left: 5px solid var(--primary); }
+        .point-item.unverified { border-left: 5px solid var(--accent); }
         .point-item b { display: block; font-size: 0.85rem; color: var(--text-main); }
         .point-item span { font-size: 0.7rem; color: var(--text-muted); display: block; margin-top: 2px; }
         #map { flex: 1; position: relative; }
@@ -74,6 +76,12 @@ HTML_TEMPLATE = """
         <div style="font-size:0.7rem; opacity:0.8; margin-top:4px; font-weight:500;">Geolocalizzazione Master Native Maps</div>
     </div>
     <div class="filter-group">
+        <label>Società / Canale</label>
+        <select id="sel-societa" onchange="updateProvinceOptions()">
+            <option value="">Tutti i clienti (DNR + Grand Chef)</option>
+            <option value="DNR">DNR (Scuole)</option>
+            <option value="GRAND_CHEF">Grand Chef (Ristoranti/Hotel)</option>
+        </select>
         <label>Cerca (es: "rossi" o "mancanti")</label>
         <input type="text" id="search-box" placeholder="Scrivi qui..." onkeyup="updateListAndMap()">
         <div style="display:flex; gap:10px;">
@@ -123,10 +131,7 @@ HTML_TEMPLATE = """
 
         fetch('/get_points').then(r => r.json()).then(data => {
             ALL_POINTS = data;
-            const provs = [...new Set(data.map(p => p.prov))].filter(Boolean).sort();
-            const sel = document.getElementById('sel-prov');
-            provs.forEach(p => { let opt = document.createElement('option'); opt.value = p; opt.innerText = p; sel.appendChild(opt); });
-            updateListAndMap();
+            updateProvinceOptions();
             
             // Auto fit
             const bounds = new google.maps.LatLngBounds();
@@ -136,21 +141,85 @@ HTML_TEMPLATE = """
         });
     }
 
+    function updateProvinceOptions() {
+        const soc = document.getElementById('sel-societa').value;
+        const selProv = document.getElementById('sel-prov');
+        const prevVal = selProv.value;
+        
+        // Filtra i punti in base alla società per estrarre le province disponibili
+        const filteredPointsForProv = ALL_POINTS.filter(p => {
+            if (soc === 'DNR') return p.tipologia !== 'GRAND CHEF';
+            if (soc === 'GRAND_CHEF') return p.tipologia === 'GRAND CHEF';
+            return true;
+        });
+        
+        const provs = [...new Set(filteredPointsForProv.map(p => p.prov))].filter(Boolean).sort();
+        
+        selProv.innerHTML = '<option value="">Tutte</option>';
+        provs.forEach(p => {
+            let opt = document.createElement('option');
+            opt.value = p;
+            opt.innerText = p;
+            if (p === prevVal) opt.selected = true;
+            selProv.appendChild(opt);
+        });
+        
+        if (!provs.includes(prevVal)) {
+            selProv.value = "";
+        }
+        
+        onProvChange();
+    }
+
     function onProvChange() {
+        const soc = document.getElementById('sel-societa').value;
         const prov = document.getElementById('sel-prov').value;
         const selCom = document.getElementById('sel-comune');
+        const prevVal = selCom.value;
+
+        const filteredPointsForComuni = ALL_POINTS.filter(p => {
+            let mSoc = true;
+            if (soc === 'DNR') mSoc = (p.tipologia !== 'GRAND CHEF');
+            else if (soc === 'GRAND_CHEF') mSoc = (p.tipologia === 'GRAND CHEF');
+            
+            const mProv = (!prov || p.prov === prov);
+            return mSoc && mProv;
+        });
+
+        const comuni = [...new Set(filteredPointsForComuni.map(p => p.comune))].filter(Boolean).sort();
+        
         selCom.innerHTML = '<option value="">Tutti</option>';
-        const comuni = [...new Set(ALL_POINTS.filter(p => !prov || p.prov === prov).map(p => p.comune))].filter(Boolean).sort();
-        comuni.forEach(c => { let opt = document.createElement('option'); opt.value = c; opt.innerText = c; selCom.appendChild(opt); });
+        comuni.forEach(c => {
+            let opt = document.createElement('option');
+            opt.value = c;
+            opt.innerText = c;
+            if (c === prevVal) opt.selected = true;
+            selCom.appendChild(opt);
+        });
+
+        if (!comuni.includes(prevVal)) {
+            selCom.value = "";
+        }
+
         updateListAndMap();
     }
 
     async function updateListAndMap() {
+        const soc = document.getElementById('sel-societa').value;
         const prov = document.getElementById('sel-prov').value;
         const com = document.getElementById('sel-comune').value;
         const searchInput = document.getElementById('search-box').value.toLowerCase();
         
         const filtered = ALL_POINTS.filter(p => {
+            // Filtro Società
+            let mSoc = true;
+            if (soc === 'DNR') {
+                mSoc = (p.tipologia !== 'GRAND CHEF');
+            } else if (soc === 'GRAND_CHEF') {
+                mSoc = (p.tipologia === 'GRAND CHEF');
+            }
+            if (!mSoc) return false;
+
             const mProv = (!prov || p.prov === prov);
             const mCom = (!com || p.comune === com);
             const isRossiSearch = searchInput === 'rossi' || searchInput === 'mancanti';
@@ -168,13 +237,25 @@ HTML_TEMPLATE = """
         
         filtered.forEach(p => {
             const isMissing = p.is_missing;
-            const isModified = !!MODIFIED[p.cod_f];
+            const isVerified = (p.stato === 'ok');
+            const isModified = !!MODIFIED[p.cod_f + '_' + p.cod_l + '_' + p.destinatario];
             const mLat = (p.lat === 0) ? 45.42 : p.lat;
             const mLng = (p.lng === 0) ? 11.43 : p.lng;
             
-            // Icone ufficiali Google
-            let color = isMissing ? 'red' : (isModified ? 'blue' : 'green');
-            let iconUrl = `https://maps.google.com/mapfiles/ms/icons/${color}-dot.png`;
+            let iconUrl;
+            if (p.tipologia === 'GRAND CHEF') {
+                let pinColor = isMissing ? '#ef4444' : ((isVerified || isModified) ? '#4f46e5' : '#0284c7');
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="38" viewBox="0 0 38 42">
+                  <path d="M19 0C8.5 0 0 8.5 0 19c0 13 19 23 19 23s19-10 19-23c0-10.5-8.5-19-19-19z" fill="${pinColor}" stroke="white" stroke-width="2"/>
+                  <g transform="translate(9, 7) scale(0.85)" fill="white">
+                    <path d="M16 6v8h3v8h2V6h-5z M11 9H9V6H7v3H5V6H3v3c0 2.44 1.72 4.47 4 4.9v7.1h2v-7.1c2.28-.43 4-2.46 4-4.9V6h-2v3z"/>
+                  </g>
+                </svg>`;
+                iconUrl = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+            } else {
+                let color = isMissing ? 'red' : ((isVerified || isModified) ? 'blue' : 'green');
+                iconUrl = `https://maps.google.com/mapfiles/ms/icons/${color}-dot.png`;
+            }
 
             const m = new google.maps.Marker({
                 position: { lat: mLat, lng: mLng },
@@ -185,7 +266,7 @@ HTML_TEMPLATE = """
             });
 
             m.addListener('click', () => {
-                infoWindow.setContent(getPopupHtml(p, isMissing, isModified));
+                infoWindow.setContent(getPopupHtml(p, isMissing, isVerified, isModified));
                 infoWindow.open(map, m);
             });
 
@@ -198,8 +279,15 @@ HTML_TEMPLATE = """
             gMarkers.push(m);
 
             const item = document.createElement('div');
-            item.className = 'point-item' + (isMissing ? ' missing':'') + (isModified ? ' modified':'');
-            item.innerHTML = `<b>${p.destinatario}</b><span>${p.indirizzo} - ${p.comune} (${p.prov})</span><span style="color:var(--primary); font-weight:700; font-size:0.65rem; margin-top:4px">F: ${p.cod_f} | L: ${p.cod_l}</span>`;
+            let statusClass = ' unverified';
+            if (isMissing) statusClass = ' missing';
+            else if (isModified) statusClass = ' modified';
+            else if (isVerified) statusClass = ' verified';
+            
+            item.className = 'point-item' + statusClass;
+            
+            let socBadge = p.tipologia === 'GRAND CHEF' ? '<span style="background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-size:0.55rem; font-weight:800; float:right">GRAND CHEF</span>' : '';
+            item.innerHTML = `${socBadge}<b>${p.destinatario}</b><span>${p.indirizzo} - ${p.comune} (${p.prov})</span><span style="color:var(--primary); font-weight:700; font-size:0.65rem; margin-top:4px">F: ${p.cod_f} | L: ${p.cod_l}</span>`;
             item.onclick = () => { map.setCenter(m.getPosition()); map.setZoom(18); google.maps.event.trigger(m, 'click'); };
             listDiv.appendChild(item);
         });
@@ -207,11 +295,26 @@ HTML_TEMPLATE = """
         document.getElementById('stat-count').innerText = filtered.length;
     }
 
-    function getPopupHtml(p, missing, modified) {
-        let bClass = missing ? 'background:var(--danger)' : (modified ? 'background:var(--primary)' : 'background:var(--accent)');
-        let bText = missing ? `MANCANTE (${p.stato || 'not_found'})` : (modified ? 'MODIFICATO' : 'OK');
+    function getPopupHtml(p, missing, verified, modified) {
+        let bClass = 'background:var(--accent)';
+        let bText = 'NON VERIFICATO';
+        
+        if (missing) {
+            bClass = 'background:var(--danger)';
+            bText = `MANCANTE (${p.stato || 'not_found'})`;
+        } else if (modified) {
+            bClass = 'background:var(--warning)';
+            bText = 'MODIFICATO';
+        } else if (verified) {
+            bClass = 'background:var(--primary)';
+            bText = 'VERIFICATO (OK)';
+        }
+        
+        let tipologiaHtml = p.tipologia ? `<div style="font-size:0.65rem; color:#0369a1; font-weight:800; margin-bottom:4px;">CANALE: ${p.tipologia}</div>` : '';
+        
         return `
             <div class="popup-info">
+                ${tipologiaHtml}
                 <div style="font-weight:800; font-size:0.95rem; margin-bottom:4px;">${p.destinatario}</div>
                 <div style="color:var(--text-muted); margin-bottom:5px;">${p.indirizzo}</div>
                 <div style="font-weight:700;">${p.comune} (${p.prov})</div>
@@ -232,7 +335,19 @@ HTML_TEMPLATE = """
     function marcaModificato(p, m) {
         let unique_id = p.cod_f + '_' + p.cod_l + '_' + p.destinatario;
         MODIFIED[unique_id] = { cod_f: p.cod_f, cod_l: p.cod_l, dest: p.destinatario, lat: p.lat, lng: p.lng };
-        m.setIcon(`https://maps.google.com/mapfiles/ms/icons/blue-dot.png`);
+        
+        if (p.tipologia === 'GRAND CHEF') {
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="38" viewBox="0 0 38 42">
+              <path d="M19 0C8.5 0 0 8.5 0 19c0 13 19 23 19 23s19-10 19-23c0-10.5-8.5-19-19-19z" fill="#4f46e5" stroke="white" stroke-width="2"/>
+              <g transform="translate(9, 7) scale(0.85)" fill="white">
+                <path d="M16 6v8h3v8h2V6h-5z M11 9H9V6H7v3H5V6H3v3c0 2.44 1.72 4.47 4 4.9v7.1h2v-7.1c2.28-.43 4-2.46 4-4.9V6h-2v3z"/>
+              </g>
+            </svg>`;
+            m.setIcon('data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg));
+        } else {
+            m.setIcon(`https://maps.google.com/mapfiles/ms/icons/blue-dot.png`);
+        }
+        
         document.getElementById('btn-save').disabled = false;
         document.getElementById('save-counter').innerText = `(${Object.keys(MODIFIED).length})`;
     }
@@ -269,7 +384,8 @@ def get_points():
             'prov': find_col(df.columns, ['Prov']),
             'lat': find_col(df.columns, ['Latitudine', 'Lat']),
             'lng': find_col(df.columns, ['Longitudine', 'Lng']),
-            'stato': find_col(df.columns, ['Stato geocoding', 'Geocoding', 'Stato'])
+            'stato': find_col(df.columns, ['Stato geocoding', 'Geocoding', 'Stato']),
+            'tipologia': find_col(df.columns, ['Tipologia grado', 'Grado', 'Tipologia'])
         }
         
         points = []
@@ -292,7 +408,8 @@ def get_points():
                 'lat': lt,
                 'lng': lg,
                 'stato': st,
-                'is_missing': is_missing
+                'is_missing': is_missing,
+                'tipologia': str(row[cols['tipologia']]).strip() if pd.notnull(row[cols['tipologia']]) else ''
             })
         print(f"DEBUG: Inviati {len(points)} punti (di cui {missing_count} rossi/mancanti)")
         return jsonify(points)

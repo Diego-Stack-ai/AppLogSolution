@@ -197,6 +197,94 @@ def _elabora_cartella(cartella_input: Path, map_codice: dict,
     return list(punti_per_riga.values())
 
 
+
+def _elabora_grand_chef(base_dir: Path, map_codice: dict) -> list[dict]:
+    """
+    Scansiona i file in BELLUNO/ e crea i punti consegna Grand Chef.
+    """
+    import pandas as pd
+    belluno_dir = base_dir.parent.parent / "BELLUNO"
+    punti = []
+    if not belluno_dir.exists():
+        return punti
+        
+    files = list(belluno_dir.glob("*.xlsx"))
+    if not files:
+        return punti
+        
+    visti_gc = set()
+    
+    def clean_code(val):
+        if val is None or (hasattr(val, "isna") and val.isna()): return ""
+        s = str(val).strip()
+        if s.endswith(".0"): s = s[:-2]
+        return s.lower()
+        
+    def parse_orari(val):
+        if val is None or (hasattr(val, "isna") and val.isna()) or val == "": return "", ""
+        val_str = str(val).strip()
+        match_range = re.findall(r'(\d{2}:\d{2})', val_str)
+        if len(match_range) == 2: return match_range[0], match_range[1]
+        match_dopo = re.search(r'(?:Dopo le|dopo le)\s*(\d{2}:\d{2})', val_str)
+        if match_dopo: return match_dopo.group(1), ""
+        match_entro = re.search(r'(?:Entro le|entro le)\s*(\d{2}:\d{2})', val_str)
+        if match_entro: return "", match_entro.group(1)
+        return "", ""
+
+    for f in files:
+        try:
+            df = pd.read_excel(f, sheet_name=0)
+            df_clean = df.dropna(how='all')
+            
+            header_row_idx = None
+            for idx, row in df_clean.iterrows():
+                row_vals = [str(val).strip().lower() for val in row.values if pd.notna(val)]
+                if any('ragione sociale' in rv for rv in row_vals) or any('codice' in rv for rv in row_vals):
+                    header_row_idx = idx
+                    break
+                    
+            if header_row_idx is None: continue
+            
+            df_data = df_clean.loc[header_row_idx + 1:]
+            for _, row in df_data.iterrows():
+                if str(row.iloc[0]).lower().strip() == 'totale': continue
+                
+                codice = clean_code(row.iloc[0])
+                if not codice or codice in visti_gc: continue
+                visti_gc.add(codice)
+                
+                if codice in map_codice:
+                    _, dato = map_codice[codice]
+                    
+                    note = str(row.iloc[14]).strip() if len(row) > 14 and pd.notna(row.iloc[14]) else ""
+                    fascia = str(row.iloc[15]).strip() if len(row) > 15 and pd.notna(row.iloc[15]) else ""
+                    om, oM = parse_orari(fascia)
+                    if not om and not oM and note:
+                        om, oM = parse_orari(note)
+                    if not oM: oM = "14:00"
+                    
+                    punti.append({
+                        "codice_frutta": codice,
+                        "codice_latte": "p00000",
+                        "nome": dato.get("nome", ""),
+                        "indirizzo": dato.get("indirizzo", ""),
+                        "codici_ddt_trovati": codice,
+                        "zona": "3200",
+                        "orario_min_frutta": om or dato.get("orario_min_frutta", ""),
+                        "orario_max_frutta": oM or dato.get("orario_max_frutta", ""),
+                        "orario_min_latte": om or dato.get("orario_min_latte", ""),
+                        "orario_max_latte": oM or dato.get("orario_max_latte", ""),
+                        "orario_min": om or dato.get("orario_min", ""),
+                        "orario_max": oM or dato.get("orario_max", ""),
+                        "lat": dato.get("lat"),
+                        "lon": dato.get("lon"),
+                    })
+        except Exception as e:
+            print(f"  Errore lettura Grand Chef {f.name}: {e}")
+            
+    return punti
+
+
 def _salva_excel(punti: list[dict], out_path: Path):
     from openpyxl import Workbook
     wb = Workbook()
@@ -291,6 +379,12 @@ def main():
         else:
             print(f"  Cartella non trovata: {cartella}")
 
+    # Integra consegne Grand Chef
+    punti_gc = _elabora_grand_chef(output_base, map_codice)
+    if punti_gc:
+        print(f"  Integro {len(punti_gc)} consegne Grand Chef...")
+        punti_totali.extend(punti_gc)
+
     # elimina duplicati basati su nome + indirizzo
     punti_unici: dict[tuple[str, str], dict] = {}
     for pt in punti_totali:
@@ -317,4 +411,4 @@ def main():
 
 
 if __name__ == "__main__":
-    exit(main())
+    exit(main())

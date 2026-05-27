@@ -938,11 +938,16 @@ def main():
                             pdf_non_trovati_giro.append(msg_err)
 
                 if not pdfs_da_processare:
-                    if d_p == data_v and codice.lower() not in rientri:
-                        msg_err = f"Consegna odierna mancante: {codice} ({tipo}) al cliente {nome}"
-                        pdf_non_trovati.append(msg_err)
-                        pdf_non_trovati_giro.append(msg_err)
-                    print(f"       !! {nome:<40} {codice} ({tipo}) -> PDF non trovato")
+                    t_g = str(punto.get("tipologia_grado") or "").upper()
+                    is_grand_chef = "GRAND CHEF" in t_g or "GRAN CHEF" in t_g or (cf and (cf.startswith("100") or len(cf) > 6))
+                    if is_grand_chef:
+                        print(f"       INFO {nome:<40} {codice} ({tipo}) -> Cliente GranChef (bolla cartacea, nessun PDF previsto)")
+                    else:
+                        if d_p == data_v and codice.lower() not in rientri:
+                            msg_err = f"Consegna odierna mancante: {codice} ({tipo}) al cliente {nome}"
+                            pdf_non_trovati.append(msg_err)
+                            pdf_non_trovati_giro.append(msg_err)
+                        print(f"       !! {nome:<40} {codice} ({tipo}) -> PDF non trovato")
                 else:
                     for pdf_obj, tp, d_r in pdfs_da_processare:
                         pdf_usati.add(pdf_obj)

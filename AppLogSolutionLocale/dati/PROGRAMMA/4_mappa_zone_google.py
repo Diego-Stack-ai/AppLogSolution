@@ -539,9 +539,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     if (layer === 2) shape = 'm-quadrato'; else if (layer === 3) shape = 'm-triangolo'; else if (layer > 3) shape = 'm-tonda';
                     
                     const t_g = (p.tipologia_grado || '').toUpperCase();
-                    const isGrandChef = t_g.includes('GRAND CHEF') || t_g.includes('GRAN CHEF');
-                    const isCattell = t_g.includes('CATTELL') || t_g.includes('CATTEL');
-                    const isBauer = t_g.includes('BAUER');
+                    const isGrandChef = (p.codice_frutta && (p.codice_frutta.startsWith('100') || p.codice_frutta.length > 6)) || t_g.includes('GRAND CHEF') || t_g.includes('GRAN CHEF');
+                    const isCattell = t_g.includes('CATTELL') || t_g.includes('CATTEL') || (p.codice_frutta && p.codice_frutta.toUpperCase().includes('CATTELL'));
+                    const isBauer = t_g.includes('BAUER') || (p.codice_frutta && p.codice_frutta.toUpperCase().includes('BAUER'));
                     
                     const el = document.createElement("div");
                     el.className = `custom-marker`;
@@ -551,16 +551,23 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     el.style.justifyContent = "center";
                     
                     if (isGrandChef) {
-                        const svgChef = `
-                        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
-                            <path d="M6 18c0-1.657 1.343-3 3-3h6c1.657 0 3 1.343 3 3v2H6v-2z" fill="${z.color}" stroke="white"/>
-                            <path d="M12 2C9.5 2 7.8 3.5 7.2 5.5C5.2 6 4 7.8 4 10c0 2 1.2 3.5 2.8 4.2C7 15.5 8.2 16.5 9.5 16.5h5c1.3 0 2.5-1 2.7-2.3C18.8 13.5 20 12 20 10c0-2.2-1.2-4-3.2-4.5C16.2 3.5 14.5 2 12 2z" fill="${z.color}" stroke="white"/>
-                        </svg>`;
+                        el.className = `custom-marker m-chef`;
+                        el.style.backgroundColor = z.color;
+                        el.style.borderRadius = "50%";
+                        el.style.width = "34px";
+                        el.style.height = "34px";
+                        el.style.border = "2.5px solid white";
+                        el.style.boxShadow = "0 4px 10px rgba(0,0,0,0.35)";
+                        el.style.display = "flex";
+                        el.style.flexDirection = "column";
+                        el.style.alignItems = "center";
+                        el.style.justifyContent = "center";
+                        el.style.color = "white";
+                        el.style.transform = "translate(-50%, -100%)";
                         el.innerHTML = `
-                            <div style="position: relative; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;">
-                                ${svgChef}
-                                <span style="position: absolute; top: 22px; width: 100%; text-align: center; font-size: 8px; font-weight: 900; color: white; text-shadow: 1px 1px 2px black; pointer-events: none;">${idx+1}</span>
-                            </div>`;
+                            <span style="font-size: 13px; line-height: 1.1; margin-top: -1px; pointer-events: none; display: block;">👨‍🍳</span>
+                            <span style="font-size: 8px; font-weight: 900; pointer-events: none; margin-top: -2px; display: block;">${idx+1}</span>
+                        `;
                     } else if (isCattell) {
                         const svgCattell = `
                         <svg width="38" height="38" viewBox="0 0 24 24" fill="white" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
@@ -588,31 +595,33 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                                 <span style="position: absolute; top: 12px; width: 100%; text-align: center; font-size: 8.5px; font-weight: 900; color: white; text-shadow: 1px 1px 2px black; pointer-events: none;">${idx+1}</span>
                             </div>`;
                     } else {
+                        el.className = `custom-marker ${shape}`;
+                        if (shape === 'm-goccia') {
+                            el.style.transform = "translate(-50%, -100%) rotate(-45deg)";
+                        } else {
+                            el.style.transform = "translate(-50%, -100%)";
+                        }
+                        
                         let isParziale = false;
                         if (isSpeciale && p.rientri_alert) {
                             isParziale = p.rientri_alert.some(r => r.is_parziale === true);
                         }
-                        const strokeWidth = layer >= 2 ? (layer === 2 ? "3.5" : "5") : "1.5";
-                        const fillPattern = isParziale ? `url(#stripes-${p.lat.toFixed(4)}_${p.lon.toFixed(4)})` : z.color;
-                        const svgBook = `
-                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="${strokeWidth}" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.35));">
-                            <defs>
-                                <pattern id="stripes-${p.lat.toFixed(4)}_${p.lon.toFixed(4)}" width="10" height="10" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
-                                    <line x1="0" y1="0" x2="0" y2="10" stroke="#f59e0b" stroke-width="6" />
-                                    <line x1="0" y1="0" x2="0" y2="10" stroke="black" stroke-width="2" />
-                                </pattern>
-                            </defs>
-                            <path d="M2 19.5A2.5 2.5 0 0 1 4.5 17H12v3.5H4.5A2.5 2.5 0 0 1 2 19.5z" fill="${fillPattern}" stroke="white"/>
-                            <path d="M22 19.5a2.5 2.5 0 0 0-2.5-2.5H12v3.5h7.5a2.5 2.5 0 0 0 2.5-2.5z" fill="${fillPattern}" stroke="white"/>
-                            <path d="M12 2v15" stroke="white"/>
-                            <path d="M4.5 3.5A2.5 2.5 0 0 1 7 6v11a2.5 2.5 0 0 0-2.5-2.5H2V6h2.5z" fill="${fillPattern}" stroke="white"/>
-                            <path d="M19.5 3.5A2.5 2.5 0 0 0 17 6v11a2.5 2.5 0 0 1 2.5-2.5H22V6h-2.5z" fill="${fillPattern}" stroke="white"/>
-                        </svg>`;
-                        el.innerHTML = `
-                            <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
-                                ${svgBook}
-                                <span style="position: absolute; top: 11px; width: 100%; text-align: center; font-size: 8.5px; font-weight: 900; color: white; text-shadow: 1px 1px 2px black; pointer-events: none;">${idx+1}</span>
-                            </div>`;
+                        
+                        if (isParziale) {
+                            if (shape === 'm-triangolo') {
+                                el.style.borderBottomColor = "#f59e0b";
+                                el.style.backgroundImage = "repeating-linear-gradient(45deg, black, black 4px, transparent 4px, transparent 8px)";
+                            } else {
+                                el.style.backgroundImage = "repeating-linear-gradient(45deg, #000, #000 4px, #f59e0b 4px, #f59e0b 8px)";
+                                el.style.color = "white";
+                                el.style.textShadow = "1px 1px 2px black, -1px -1px 2px black, 0px 0px 3px black";
+                                el.style.border = "2px solid black";
+                            }
+                        } else {
+                            if (shape === 'm-triangolo') el.style.borderBottomColor = z.color; else el.style.backgroundColor = z.color;
+                        }
+                        
+                        el.innerHTML = `<span>${idx+1}</span>`;
                     }
                     
                     const m = new AdvancedMarkerElement({ position: {lat: p.lat, lng: p.lon}, map: map, title: p.nome, content: el, gmpDraggable: DRAGGING_ENABLED && !isLockedGlobal });
@@ -817,8 +826,8 @@ def _carica_e_genera(data_giorno):
                 temp_dict[zid] = []
             temp_dict[zid].append(p)
 
-        # Ordina le chiavi numericamente/alfabeticamente (escludendo le speciali)
-        chiavi_ordinate = sorted([k for k in temp_dict.keys() if k not in ("DDT_DA_INSERIRE", "SENZA_ZONA")])
+        # Ordina le chiavi numericamente/alfabeticamente (escludendo le speciali e GranChef)
+        chiavi_ordinate = sorted([k for k in temp_dict.keys() if k not in ("DDT_DA_INSERIRE", "SENZA_ZONA", "GranChef")])
 
         zone_dict = {}
         # Assegna i nomi V01, V02... in base all'ordine di zona
@@ -828,6 +837,15 @@ def _carica_e_genera(data_giorno):
                 "lista_punti": temp_dict[zid],
                 "color": _get_color(i - 1),
                 "nome_giro": f"V{i:02d}"
+            }
+
+        # Aggiungi GranChef se presente
+        if "GranChef" in temp_dict:
+            zone_dict["GranChef"] = {
+                "id_zona": "GranChef",
+                "lista_punti": temp_dict["GranChef"],
+                "color": "#ec4899",  # Fucsia vivace per GranChef
+                "nome_giro": "GranChef"
             }
 
         # Aggiungi SENZA_ZONA alla fine se presente
@@ -849,7 +867,7 @@ def _carica_e_genera(data_giorno):
             }
 
         # Ricostruisci la lista cache in ordine
-        zone_normali = [zone_dict[k] for k in chiavi_ordinate] + ([zone_dict["SENZA_ZONA"]] if "SENZA_ZONA" in zone_dict else [])
+        zone_normali = [zone_dict[k] for k in chiavi_ordinate] + ([zone_dict["GranChef"]] if "GranChef" in zone_dict else []) + ([zone_dict["SENZA_ZONA"]] if "SENZA_ZONA" in zone_dict else [])
         zone_speciali = [zone_dict["DDT_DA_INSERIRE"]] if "DDT_DA_INSERIRE" in zone_dict else []
         ZONE_LIST_CACHE = zone_normali + zone_speciali
         

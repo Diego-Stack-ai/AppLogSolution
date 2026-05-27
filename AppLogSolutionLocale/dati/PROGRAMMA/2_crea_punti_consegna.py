@@ -233,7 +233,7 @@ def _elabora_grand_chef(base_dir: Path, map_codice: dict) -> list[dict]:
         if match_entro: return "", match_entro.group(1)
         return "", ""
 
-    for f in files:
+    for idx_file, f in enumerate(sorted(files), start=1):
         try:
             df = pd.read_excel(f, sheet_name=0)
             df_clean = df.dropna(how='all')
@@ -272,7 +272,7 @@ def _elabora_grand_chef(base_dir: Path, map_codice: dict) -> list[dict]:
                         "tipologia_grado": dato.get("tipologia_grado", "GRAND CHEF"),
                         "indirizzo": dato.get("indirizzo", ""),
                         "codici_ddt_trovati": codice,
-                        "zona": "GranChef",
+                        "zona": f"GranChef_V{idx_file:02d}",
                         "orario_min_frutta": om or dato.get("orario_min_frutta", ""),
                         "orario_max_frutta": oM or dato.get("orario_max_frutta", ""),
                         "orario_min_latte": om or dato.get("orario_min_latte", ""),

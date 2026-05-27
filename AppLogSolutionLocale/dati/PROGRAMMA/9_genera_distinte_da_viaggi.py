@@ -635,10 +635,15 @@ def _genera_distinta_pdf(viaggio: dict, articoli_viaggio: dict, out_path: Path, 
         for i in range(n_per_copia, n_tot):
             writer.add_page(reader_tmp.pages[i])
 
-        # 2. Ogni DDT viene aggiunto in doppia copia consecutiva
+        # 2. Ogni DDT viene aggiunto in doppia copia consecutiva (tranne i commerciali/GranChef che necessitano solo di copia singola/riepilogo)
         for pdf in pdf_ddt_ordinati:
-            writer.append(str(pdf)) # Prima copia (autista)
-            writer.append(str(pdf)) # Seconda copia (ufficio)
+            name = pdf.name.lower()
+            is_gc_pdf = name.startswith("100") or any(x in name for x in ("chef", "grand", "gran"))
+            if is_gc_pdf:
+                writer.append(str(pdf)) # Solo una copia (autista / promemoria)
+            else:
+                writer.append(str(pdf)) # Prima copia (autista)
+                writer.append(str(pdf)) # Seconda copia (ufficio)
 
         with open(out_path, "wb") as f:
             writer.write(f)

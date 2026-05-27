@@ -827,7 +827,7 @@ def _carica_e_genera(data_giorno):
             temp_dict[zid].append(p)
 
         # Ordina le chiavi numericamente/alfabeticamente (escludendo le speciali e GranChef)
-        chiavi_ordinate = sorted([k for k in temp_dict.keys() if k not in ("DDT_DA_INSERIRE", "SENZA_ZONA", "GranChef")])
+        chiavi_ordinate = sorted([k for k in temp_dict.keys() if k not in ("DDT_DA_INSERIRE", "SENZA_ZONA") and not k.startswith("GranChef")])
 
         zone_dict = {}
         # Assegna i nomi V01, V02... in base all'ordine di zona
@@ -839,13 +839,16 @@ def _carica_e_genera(data_giorno):
                 "nome_giro": f"V{i:02d}"
             }
 
-        # Aggiungi GranChef se presente
-        if "GranChef" in temp_dict:
-            zone_dict["GranChef"] = {
-                "id_zona": "GranChef",
-                "lista_punti": temp_dict["GranChef"],
-                "color": "#ec4899",  # Fucsia vivace per GranChef
-                "nome_giro": "GranChef"
+        # Aggiungi zone GranChef se presenti
+        zone_gc = sorted([k for k in temp_dict.keys() if k.startswith("GranChef")])
+        for idx_gc, zid in enumerate(zone_gc, start=1):
+            colori_gc = ["#ec4899", "#d946ef", "#f43f5e", "#f472b6"]
+            colore_gc = colori_gc[(idx_gc - 1) % len(colori_gc)]
+            zone_dict[zid] = {
+                "id_zona": zid,
+                "lista_punti": temp_dict[zid],
+                "color": colore_gc,
+                "nome_giro": zid.replace("_", " ")  # es: "GranChef V01"
             }
 
         # Aggiungi SENZA_ZONA alla fine se presente
@@ -867,7 +870,7 @@ def _carica_e_genera(data_giorno):
             }
 
         # Ricostruisci la lista cache in ordine
-        zone_normali = [zone_dict[k] for k in chiavi_ordinate] + ([zone_dict["GranChef"]] if "GranChef" in zone_dict else []) + ([zone_dict["SENZA_ZONA"]] if "SENZA_ZONA" in zone_dict else [])
+        zone_normali = [zone_dict[k] for k in chiavi_ordinate] + [zone_dict[k] for k in zone_gc] + ([zone_dict["SENZA_ZONA"]] if "SENZA_ZONA" in zone_dict else [])
         zone_speciali = [zone_dict["DDT_DA_INSERIRE"]] if "DDT_DA_INSERIRE" in zone_dict else []
         ZONE_LIST_CACHE = zone_normali + zone_speciali
         

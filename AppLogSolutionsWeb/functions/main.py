@@ -1614,10 +1614,165 @@ def core_riepilogo_fatturazione(mese: str, anno: str = "2026"):
     }
 
 
-def core_processa_job_pdf(job_id):
+def clean_client_code(code_val):
+    if code_val is None or (hasattr(code_val, "isna") and code_val.isna()):
+        return ""
+    code_str = str(code_val).strip()
+    if code_str.endswith(".0"):
+        code_str = code_str[:-2]
+    return code_str
+
+def parse_fascia_oraria(val):
+    if val is None or (hasattr(val, "isna") and val.isna()) or val == "":
+        return "", ""
+    val_str = str(val).strip()
+    match_range = re.findall(r'(\d{2}:\d{2})', val_str)
+    if len(match_range) == 2:
+        return match_range[0], match_range[1]
+    match_dopo = re.search(r'(?:Dopo le|dopo le)\s*(\d{2}:\d{2})', val_str)
+    if match_dopo:
+        return match_dopo.group(1), ""
+    match_entro = re.search(r'(?:Entro le|entro le)\s*(\d{2}:\d{2})', val_str)
+    if match_entro:
+        return "", match_entro.group(1)
+    return "", ""
+
+def _genera_pdf_placeholder_grand_chef_io(codice: str, nome: str, ind: str, cit: str, prov: str, note: str, om: str, oM: str, data: str) -> io.BytesIO:
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    
+    out_stream = io.BytesIO()
+    doc = SimpleDocTemplate(out_stream, pagesize=A4, leftMargin=30, rightMargin=30, topMargin=30, bottomMargin=30)
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle('gc_title', parent=styles['Heading1'], fontSize=16, leading=20, textColor=colors.HexColor('#0f172a'), spaceAfter=15)
+    body_style = ParagraphStyle('gc_body', parent=styles['Normal'], fontSize=10, leading=14, textColor=colors.HexColor('#334155'))
+    label_style = ParagraphStyle('gc_label', parent=styles['Normal'], fontSize=10, leading=14, fontName='Helvetica-Bold', textColor=colors.HexColor('#0f172a'))
+    
+    elements = []
+    elements.append(Paragraph(f"SCHEDA DI CONSEGNA - CANALE GRAND CHEF", title_style))
+    elements.append(Spacer(1, 10))
+    
+    data_table = [
+        [Paragraph("Codice Cliente:", label_style), Paragraph(codice, body_style)],
+        [Paragraph("Destinatario:", label_style), Paragraph(nome, body_style)],
+        [Paragraph("Indirizzo:", label_style), Paragraph(ind, body_style)],
+        [Paragraph("Città:", label_style), Paragraph(f"{cit} ({prov})", body_style)],
+        [Paragraph("Data Consegna:", label_style), Paragraph(data, body_style)],
+        [Paragraph("Fascia Oraria:", label_style), Paragraph(f"Da {om or '—'} A {oM or '14:00'}", body_style)],
+        [Paragraph("Note Consegna:", label_style), Paragraph(note or "Nessuna nota", body_style)]
+    ]
+    
+    t = Table(data_table, colWidths=[120, 380])
+    t.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cbd5e1')),
+        ('BACKGROUND', (0,0), (0,-1), colors.HexColor('#f8fafc')),
+        ('PADDING', (0,0), (-1,-1), 8),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+    ]))
+    elements.append(t)
+    elements.append(Spacer(1, 40))
+    
+    elements.append(Paragraph("<b>FIRMA PER RICEVUTA</b>", label_style))
+    elements.append(Spacer(1, 15))
+    sig_table = [
+        [Paragraph("Data: ____________________", body_style), Paragraph("Firma Leggibile: ___________________________", body_style)]
+    ]
+    t_sig = Table(sig_table, colWidths=[200, 300])
+    t_sig.setStyle(TableStyle([
+        ('PADDING', (0,0), (-1,-1), 10),
+    ]))
+    elements.append(t_sig)
+    
+    doc.build(elements)
+    out_stream.seek(0)
+    return out_stream
+
+def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_consegna: str) -> dict:
+    import pandas as pd
+    
+    nuovi_dati = {}
+    split_files = {}
+    deliveries_list = []
+    
+    f_io = io.BytesIO(excel_bytes)
+    df = pd.read_excel(f_io, sheet_name=0)
+    df_clean = df.dropna(how='all')
+    
+    header_row_idx = None
+    for idx, row in df_clean.iterrows():
+        row_vals = [str(val).strip().lower() for val in row.values if pd.notna(val)]
+        if any('ragione sociale' in rv for rv in row_vals) or any('codice' in rv for rv in row_vals):
+            header_row_idx = idx
+            break
+            
+    if header_row_idx is not None:
+        df_data = df_clean.loc[header_row_idx + 1:]
+        for _, row in df_data.iterrows():
+            if str(row.iloc[0]).lower().strip() == 'totale':
+                continue
+                
+            codice = clean_client_code(row.iloc[0])
+            if not codice:
+                continue
+                
+            ragione_sociale = str(row.iloc[3]).strip() if pd.notna(row.iloc[3]) else ""
+            indirizzo = str(row.iloc[4]).strip() if pd.notna(row.iloc[4]) else ""
+            localita = str(row.iloc[7]).strip() if pd.notna(row.iloc[7]) else ""
+            provincia = str(row.iloc[8]).strip() if pd.notna(row.iloc[8]) else ""
+            note = str(row.iloc[14]).strip() if len(row) > 14 and pd.notna(row.iloc[14]) else ""
+            fascia = str(row.iloc[15]).strip() if len(row) > 15 and pd.notna(row.iloc[15]) else ""
+            
+            orario_min, orario_max = parse_fascia_oraria(fascia)
+            if not orario_min and not orario_max and note:
+                orario_min, orario_max = parse_fascia_oraria(note)
+                
+            if not orario_max:
+                orario_max = "14:00"
+                
+            codice_l = codice.lower()
+            if codice_l not in db_mappati:
+                nuovi_dati[codice] = {
+                    "dest": ragione_sociale,
+                    "ind": indirizzo,
+                    "cap": "",
+                    "cit": localita,
+                    "prov": provincia,
+                    "om": orario_min,
+                    "oM": orario_max,
+                    "tipo": "GRAND CHEF"
+                }
+            else:
+                fname = f"{codice}_{data_consegna}.pdf"
+                pdf_io = _genera_pdf_placeholder_grand_chef_io(
+                    codice, ragione_sociale, indirizzo,
+                    localita, provincia, note, orario_min, orario_max, data_consegna
+                )
+                split_files[fname] = pdf_io
+                
+                deliveries_list.append({
+                    "codice_consegna": codice,
+                    "data": data_consegna,
+                    "num_ddt": f"GC_{codice}",
+                    "pdf_name": fname,
+                    "tipo": "GRAND_CHEF",
+                    "zona": "0000"
+                })
+                
+    return {
+        "split_files": split_files,
+        "nuovi_dati": nuovi_dati,
+        "nuovi_orari": {},
+        "nuovi_articoli": {},
+        "deliveries": deliveries_list
+    }
+
+def core_processa_job_pdf(job_id, tenant="DNR"):
     start_time = time.time()
     db = get_db()
-    job_ref = db.collection('clienti').document('DNR').collection('processing_jobs').document(job_id)
+    job_ref = db.collection('clienti').document(tenant).collection('processing_jobs').document(job_id)
     job_doc = job_ref.get()
     
     if not job_doc.exists: return {"status": "errore", "message": "Job non trovato"}
@@ -1631,26 +1786,32 @@ def core_processa_job_pdf(job_id):
         bucket = storage.bucket()
         path = data.get("storage_path")
         etichetta = data.get("type", "FRUTTA").upper()
+        is_excel = data.get("is_excel", False) or etichetta == "GRAND_CHEF"
         
-        # 1. Carica Mappatura e Articoli
-        clienti_ref = db.collection('clienti').document('DNR').collection('raccolta clienti')
+        # 1. Carica Mappatura da DNR e GRAN CHEF per supportare viaggi misti
         db_mappati = {}
-        for doc in clienti_ref.stream():
-            d = doc.to_dict()
-            cf = str(d.get('codice_frutta') or '').strip().lower()
-            cl = str(d.get('codice_latte') or '').strip().lower()
-            if cf and cf != 'p00000' and cf != 'nan': db_mappati[cf] = d
-            if cl and cl != 'p00000' and cl != 'nan': db_mappati[cl] = d
+        for current_tenant in ['DNR', 'GRAN CHEF']:
+            clienti_ref = db.collection('clienti').document(current_tenant).collection('raccolta clienti')
+            for doc in clienti_ref.stream():
+                d = doc.to_dict()
+                cf = str(d.get('codice_frutta') or '').strip().lower()
+                cl = str(d.get('codice_latte') or '').strip().lower()
+                if cf and cf != 'p00000' and cf != 'nan': db_mappati[cf] = d
+                if cl and cl != 'p00000' and cl != 'nan': db_mappati[cl] = d
         
         articoli_ref = db.collection('clienti').document('DNR').collection('codici articoli')
         db_articoli = {doc.id: doc.to_dict() for doc in articoli_ref.stream()}
         
         # 2. Download
         blob = bucket.blob(path)
-        pdf_bytes = blob.download_as_bytes()
+        file_bytes = blob.download_as_bytes()
         
         # 3. Processing
-        risultato = _processa_pdf_core_logic(pdf_bytes, etichetta, db_mappati, db_articoli)
+        if is_excel:
+            data_elab = data_lavoro_forzata or datetime.now().strftime("%d-%m-%Y")
+            risultato = _processa_excel_chef_core_logic(file_bytes, db_mappati, data_elab)
+        else:
+            risultato = _processa_pdf_core_logic(file_bytes, etichetta, db_mappati, db_articoli)
         
         split_files = risultato["split_files"]
         deliveries = risultato["deliveries"]
@@ -1659,7 +1820,7 @@ def core_processa_job_pdf(job_id):
         nuovi_articoli = risultato.get("nuovi_articoli", {})
         
         if not deliveries:
-            job_ref.update({"status": "completed", "message": "Nessun DDT trovato nel PDF"})
+            job_ref.update({"status": "completed", "message": "Nessun DDT trovato"})
             return {"status": "ok", "pdf_generati": 0}
 
         # Se l'utente ha scelto una data nel calendario, ha la precedenza
@@ -1668,17 +1829,12 @@ def core_processa_job_pdf(job_id):
             print(f"[INFO] Uso data forzata dal calendario: {data_elab}")
         else:
             data_elab = deliveries[0]["data"]
-            print(f"[INFO] Uso data estratta dal PDF: {data_elab}")
+            print(f"[INFO] Uso data estratta dal file: {data_elab}")
         
         # --- PULIZIA PREVENTIVA (Sovrascrittura pulita) ---
         print(f"[INFO] Pulizia preventiva per {data_elab} - {etichetta}")
         
-        # 1. Rimuovi vecchi file da Storage
-        cart_out_base = f"split_ddt/{data_elab}/{etichetta}/"
-        blobs_del = bucket.list_blobs(prefix=cart_out_base)
-        for b in blobs_del: b.delete()
-        
-        # 2. Rimuovi vecchi dati (Solo Storage)
+        # Rimuovi vecchi file da Storage
         cart_out_base = f"split_ddt/{data_elab}/{etichetta}/"
         blobs_del = bucket.list_blobs(prefix=cart_out_base)
         for b in blobs_del: b.delete()
@@ -1688,18 +1844,20 @@ def core_processa_job_pdf(job_id):
         for fname, out_stream in split_files.items():
             out_path = f"split_ddt/{data_elab}/{etichetta}/{fname}"
             split_blob = bucket.blob(out_path)
+            if hasattr(out_stream, "seek"):
+                out_stream.seek(0)
             split_blob.upload_from_file(out_stream, content_type='application/pdf')
             
-        # 5. Salvataggio nuovi dati dinamici
+        # 5. Salvataggio nuovi dati dinamici nel tenant corretto
         for l, info in nuovi_dati.items():
-            db.collection('clienti').document('DNR').collection('nuovi codici consegna').document(l).set(info, merge=True)
+            db.collection('clienti').document(tenant).collection('nuovi codici consegna').document(l).set(info, merge=True)
             
         for l, info in nuovi_orari.items():
-            db.collection('clienti').document('DNR').collection('nuovi orari mancanti').document(l).set(info, merge=True)
+            db.collection('clienti').document(tenant).collection('nuovi orari mancanti').document(l).set(info, merge=True)
             
         for c, info in nuovi_articoli.items():
             doc_id = str(c).replace('/', '-').replace(' ', '_')
-            db.collection('clienti').document('DNR').collection('nuovi articoli rilevati').document(doc_id).set(info, merge=True)
+            db.collection('clienti').document(tenant).collection('nuovi articoli rilevati').document(doc_id).set(info, merge=True)
             
         # 6. Salvataggio Metadati Temporanei (per Step 2)
         metadata_ddt = {
@@ -1756,15 +1914,16 @@ def core_genera_report_giornaliero(uid, data_consegna):
     print(f"[INFO] Scansione Storage per data {data_consegna}...")
     
     try:
-        # Caricamento bulk clienti per evitare timeout (Deadline Exceeded)
-        clienti_ref = db.collection('clienti').document('DNR').collection('raccolta clienti')
+        # Caricamento bulk clienti da DNR e GRAN CHEF per evitare timeout (Deadline Exceeded)
         db_mappati = {}
-        for doc in clienti_ref.stream():
-            d = doc.to_dict()
-            cf = str(d.get('codice_frutta') or '').strip().lower()
-            cl = str(d.get('codice_latte') or '').strip().lower()
-            if cf and cf != 'p00000' and cf != 'nan': db_mappati[cf] = d
-            if cl and cl != 'p00000' and cl != 'nan': db_mappati[cl] = d
+        for current_tenant in ['DNR', 'GRAN CHEF']:
+            clienti_ref = db.collection('clienti').document(current_tenant).collection('raccolta clienti')
+            for doc in clienti_ref.stream():
+                d = doc.to_dict()
+                cf = str(d.get('codice_frutta') or '').strip().lower()
+                cl = str(d.get('codice_latte') or '').strip().lower()
+                if cf and cf != 'p00000' and cf != 'nan': db_mappati[cf] = d
+                if cl and cl != 'p00000' and cl != 'nan': db_mappati[cl] = d
 
         blobs = bucket.list_blobs(prefix=prefix_search)
         for blob in blobs:
@@ -2116,7 +2275,7 @@ def _genera_html_mappa_generale(data, zone_list):
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=540,
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
 def processa_job_pdf(req: https_fn.CallableRequest):
-    return core_processa_job_pdf(req.data.get("job_id"))
+    return core_processa_job_pdf(req.data.get("job_id"), req.data.get("tenant", "DNR"))
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))

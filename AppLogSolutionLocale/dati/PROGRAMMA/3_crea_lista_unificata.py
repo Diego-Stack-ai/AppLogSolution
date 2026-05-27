@@ -279,6 +279,7 @@ def main():
             "codice_latte": c_l,
             "codice_univoco": cod_univoco,  # chiave univoca stabile per il /save
             "zona": _val(p.get("zona")) or "0000",
+            "tipologia_grado": _val(p.get("tipologia_grado")),
             "data_consegna": _val(p.get("data_consegna")),
             "orario_min_frutta": _val(p.get("orario_min_frutta")),
             "orario_max_frutta": _val(p.get("orario_max_frutta")),
@@ -396,6 +397,7 @@ def main():
                 "codice_frutta": _val(row[0].value),
                 "codice_latte":  _val(row[1].value),
                 "data_consegna": primo_data_orig or data,
+                "tipologia_grado": _val(row[3].value) if len(row) > 3 else "",
                 "orario_min_frutta": om_f,
                 "orario_max_frutta": oM_f,
                 "orario_min_latte": om_l,

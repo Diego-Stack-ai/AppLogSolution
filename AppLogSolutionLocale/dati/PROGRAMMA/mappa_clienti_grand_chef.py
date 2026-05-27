@@ -8,7 +8,7 @@ from pathlib import Path
 
 # Configurazione Percorsi
 BASE_DIR = Path(__file__).resolve().parent.parent
-BELLUNO_DIR = BASE_DIR / "Belluno"
+GRAND_CHEF_DIR = BASE_DIR / "Grand Chef"
 MASTER_DB_PATH = BASE_DIR / "PROGRAMMA" / "mappatura_destinazioni.xlsx"
 WEB_DB_PATH = Path("g:/Il mio Drive/App/AppLogSolutionsWeb/Progetto Scuole/PROGRAMMA/mappatura_destinazioni.xlsx")
 
@@ -82,9 +82,9 @@ def main():
     print(">>> SCRIPT IMPORTAZIONE AVANZATA CLIENTI GRAND CHEF (CON ORARI & NOTE) <<<")
     print("="*60)
     
-    # 1. Verifica esistenza file e cartelle
-    if not BELLUNO_DIR.exists():
-        print(f"Errore: Cartella dei file Belluno non trovata in: {BELLUNO_DIR}")
+    # 1. Verification of folders and files existence
+    if not GRAND_CHEF_DIR.exists():
+        print(f"Errore: Cartella dei file Grand Chef non trovata in: {GRAND_CHEF_DIR}")
         sys.exit(1)
         
     if not MASTER_DB_PATH.exists():
@@ -108,13 +108,13 @@ def main():
         print("Creazione della colonna 'Note' nel master Excel...")
         df_master['Note'] = ""
     
-    # 2. Scansione dei file Excel in dati/Belluno/ ordinati per data di modifica disk
-    files = list(BELLUNO_DIR.glob("*.xlsx"))
+    # 2. Scansione dei file Excel in dati/Grand Chef/ ordinati per data di modifica disk
+    files = list(GRAND_CHEF_DIR.glob("*.xlsx"))
     if not files:
-        print(f"Nessun file Excel trovato in {BELLUNO_DIR}")
+        print(f"Nessun file Excel trovato in {GRAND_CHEF_DIR}")
         sys.exit(0)
         
-    print(f"Trovati {len(files)} file Excel nella cartella Belluno.")
+    print(f"Trovati {len(files)} file Excel nella cartella Grand Chef.")
     
     # Dizionario per memorizzare i dati dei clienti unici.
     # Struttura: { codice_cliente: { dati_del_cliente, mtime_del_file_origine } }

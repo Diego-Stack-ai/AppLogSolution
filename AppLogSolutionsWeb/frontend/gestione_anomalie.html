@@ -109,9 +109,14 @@
         let masterClientiList = [];
         async function caricaMasterClienti() {
             try {
-                const snap = await getDocs(collection(db, 'clienti', 'DNR', 'raccolta clienti'));
-                masterClientiList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                console.log("Database Master Clienti caricato:", masterClientiList.length);
+                const [snapDNR, snapGC] = await Promise.all([
+                    getDocs(collection(db, 'clienti', 'DNR', 'raccolta clienti')),
+                    getDocs(collection(db, 'clienti', 'GRAN CHEF', 'raccolta clienti'))
+                ]);
+                const listDNR = snapDNR.docs.map(doc => ({ id: doc.id, tenant: 'DNR', ...doc.data() }));
+                const listGC = snapGC.docs.map(doc => ({ id: doc.id, tenant: 'GRAN CHEF', ...doc.data() }));
+                masterClientiList = [...listDNR, ...listGC];
+                console.log("Database Master Clienti caricato (DNR + GRAN CHEF):", masterClientiList.length);
             } catch (error) {
                 console.error("Errore durante il caricamento dei clienti master:", error);
             }
@@ -126,22 +131,32 @@
         };
 
         // --- GESTIONE CLIENTI ---
-        onSnapshot(collection(db, 'clienti', 'DNR', 'nuovi codici consegna'), (snapshot) => {
+        let nuoviCodiciDNR = [];
+        let nuoviCodiciGC = [];
+
+        function renderMergedNuoviCodici() {
             const list = document.getElementById('list-clienti');
             const badge = document.getElementById('badge-clienti');
-            if (snapshot.empty) {
+            
+            const merged = [];
+            nuoviCodiciDNR.forEach(item => merged.push({ ...item, tenant: 'DNR' }));
+            nuoviCodiciGC.forEach(item => merged.push({ ...item, tenant: 'GRAN CHEF' }));
+            
+            if (merged.length === 0) {
                 list.innerHTML = `<div style="text-align:center; padding:40px; color:#10b981;"><span class="material-icons-round" style="font-size:48px;">check_circle</span><br>Nessun nuovo cliente in attesa!</div>`;
                 badge.style.display = 'none';
                 return;
             }
             
-            badge.textContent = snapshot.size;
+            badge.textContent = merged.length;
             badge.style.display = 'inline-block';
             let html = '';
             window.defaultAnomalyData = window.defaultAnomalyData || {};
-            snapshot.forEach(docSnap => {
-                const id = docSnap.id;
-                const d = docSnap.data();
+            
+            merged.forEach(item => {
+                const id = item.id;
+                const d = item;
+                const tenant = item.tenant;
                 
                 window.defaultAnomalyData[id] = {
                     dest: d.dest || '',
@@ -151,8 +166,11 @@
                     prov: d.prov || '',
                     tipo: d.tipo || '',
                     om: d.om || '',
-                    oM: d.oM || ''
+                    oM: d.oM || '',
+                    tenant: tenant
                 };
+
+                const badgeColor = tenant === 'GRAN CHEF' ? '#f59e0b' : '#4f46e5';
 
                 html += `
                     <div class="anomaly-card" id="card-cli-${id}">
@@ -160,9 +178,9 @@
                             <span style="display:flex; align-items:center; gap:8px;">
                                 <span class="material-icons-round" style="color:#ef4444;">storefront</span> 
                                 Codice Rilevato: <span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-family:monospace; color:#475569;">${id}</span>
-                                <span style="font-size:12px; background:#e0e7ff; color:#4f46e5; padding:4px 8px; border-radius:6px; margin-left:8px;">Fonte PDF: ${d.tipo || 'Sconosciuto'}</span>
+                                <span style="font-size:12px; background:${badgeColor}; color:white; padding:4px 8px; border-radius:6px; margin-left:8px;">Fonte: ${d.tipo || 'Sconosciuto'} (${tenant})</span>
                             </span>
-                            <button class="delete-btn" onclick="eliminaAnomalia('nuovi codici consegna', '${id}')" title="Scarta Segnalazione">
+                            <button class="delete-btn" onclick="eliminaAnomalia('nuovi codici consegna', '${id}', '${tenant}')" title="Scarta Segnalazione">
                                 <span class="material-icons-round">delete</span>
                             </button>
                         </h3>
@@ -183,8 +201,8 @@
                             <div class="input-group"><label>Codice Latte</label><input type="text" id="cli-${id}-codL" value="${d.tipo === 'LATTE' ? id : 'p00000'}"></div>
                             
                             <div class="section-title">Orari di Consegna (Frutta)</div>
-                            <div class="input-group"><label>Minimo Frutta</label><input type="time" id="cli-${id}-omF" value="${d.tipo === 'FRUTTA' ? (d.om || '') : ''}"></div>
-                            <div class="input-group"><label>Massimo Frutta</label><input type="time" id="cli-${id}-oMF" value="${d.tipo === 'FRUTTA' ? (d.oM || '') : ''}"></div>
+                            <div class="input-group"><label>Minimo Frutta</label><input type="time" id="cli-${id}-omF" value="${d.tipo === 'FRUTTA' || tenant === 'GRAN CHEF' ? (d.om || '') : ''}"></div>
+                            <div class="input-group"><label>Massimo Frutta</label><input type="time" id="cli-${id}-oMF" value="${d.tipo === 'FRUTTA' || tenant === 'GRAN CHEF' ? (d.oM || '') : ''}"></div>
                             
                             <div class="section-title">Orari di Consegna (Latte)</div>
                             <div class="input-group"><label>Minimo Latte</label><input type="time" id="cli-${id}-omL" value="${d.tipo === 'LATTE' ? (d.om || '') : ''}"></div>
@@ -208,13 +226,29 @@
                             <div id="cli-${id}-selected-merge-info" style="grid-column: 1 / -1; display: none; padding: 12px; background: #ecfdf5; border: 1px solid #10b981; border-radius: 8px; color: #065f46; font-size: 13px; font-weight: bold; margin-bottom: 8px;">
                             </div>
                         </div>
-                        <button class="action-btn" onclick="salvaNuovoCliente('${id}')">
+                        <button class="action-btn" onclick="salvaNuovoCliente('${id}', '${tenant}')">
                             <span class="material-icons-round">add_circle</span> Salva Anagrafica Master
                         </button>
                     </div>
                 `;
             });
             list.innerHTML = html;
+        }
+
+        onSnapshot(collection(db, 'clienti', 'DNR', 'nuovi codici consegna'), (snapshot) => {
+            nuoviCodiciDNR = [];
+            snapshot.forEach(docSnap => {
+                nuoviCodiciDNR.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            renderMergedNuoviCodici();
+        });
+
+        onSnapshot(collection(db, 'clienti', 'GRAN CHEF', 'nuovi codici consegna'), (snapshot) => {
+            nuoviCodiciGC = [];
+            snapshot.forEach(docSnap => {
+                nuoviCodiciGC.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            renderMergedNuoviCodici();
         });
 
         window.selectedMergeTarget = {}; // Tiene traccia degli ID di merge per ciascuna card
@@ -355,7 +389,7 @@
             }
         };
 
-        window.salvaNuovoCliente = async (id) => {
+        window.salvaNuovoCliente = async (id, tenant = 'DNR') => {
             let dataToSave = {
                 cliente: document.getElementById(`cli-${id}-cliente`).value,
                 indirizzo: document.getElementById(`cli-${id}-ind`).value,
@@ -379,15 +413,15 @@
             }
 
             try {
-                await setDoc(doc(db, 'clienti', 'DNR', 'raccolta clienti', docId), dataToSave, { merge: true });
-                await deleteDoc(doc(db, 'clienti', 'DNR', 'nuovi codici consegna', id));
+                await setDoc(doc(db, 'clienti', tenant, 'raccolta clienti', docId), dataToSave, { merge: true });
+                await deleteDoc(doc(db, 'clienti', tenant, 'nuovi codici consegna', id));
                 
                 // Aggiornamento cache master locale
-                const idx = masterClientiList.findIndex(c => c.id === docId);
+                const idx = masterClientiList.findIndex(c => c.id === docId && c.tenant === tenant);
                 if (idx !== -1) {
-                    masterClientiList[idx] = { id: docId, ...dataToSave };
+                    masterClientiList[idx] = { id: docId, tenant: tenant, ...dataToSave };
                 } else {
-                    masterClientiList.push({ id: docId, ...dataToSave });
+                    masterClientiList.push({ id: docId, tenant: tenant, ...dataToSave });
                 }
 
                 delete window.selectedMergeTarget[id];
@@ -628,10 +662,10 @@
             }
         };
 
-        window.eliminaAnomalia = async (collectionName, id) => {
+        window.eliminaAnomalia = async (collectionName, id, tenant = 'DNR') => {
             if (confirm("Sei sicuro di voler scartare questa segnalazione?")) {
                 try {
-                    await deleteDoc(doc(db, 'clienti', 'DNR', collectionName, id));
+                    await deleteDoc(doc(db, 'clienti', tenant, collectionName, id));
                 } catch(e) {
                     Swal.fire('Errore', e.message, 'error');
                 }

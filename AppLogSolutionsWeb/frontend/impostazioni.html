@@ -152,6 +152,59 @@
                 </div>
             </div>
 
+            <h4 style="margin: 24px 0 12px 0; color: var(--primary); font-size: 14px; font-weight: 600; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">Dati Anagrafici & Assunzione</h4>
+            <div class="form-grid" style="margin-bottom: 20px;">
+                <div class="input-group">
+                    <label for="driverCodiceFiscale">Codice Fiscale</label>
+                    <input type="text" id="driverCodiceFiscale" placeholder="Es: RSSMRA80A01F205X" style="text-transform: uppercase;">
+                </div>
+                <div class="input-group">
+                    <label for="driverDataAssunzione">Data Assunzione</label>
+                    <input type="date" id="driverDataAssunzione">
+                </div>
+                <div class="input-group">
+                    <label for="driverTipoAssunzione">Tipo Assunzione</label>
+                    <input type="text" id="driverTipoAssunzione" placeholder="Es: Tempo Indeterminato">
+                </div>
+                <div class="input-group">
+                    <label for="driverTrasformazione">Trasformazione</label>
+                    <input type="text" id="driverTrasformazione" placeholder="Es: Full-time / Part-time">
+                </div>
+                <div class="input-group">
+                    <label for="driverDataTrasformazione">Data Trasformazione</label>
+                    <input type="date" id="driverDataTrasformazione">
+                </div>
+                <div class="input-group">
+                    <label for="driverTipoTrasformazione">Tipo Trasformazione</label>
+                    <input type="text" id="driverTipoTrasformazione" placeholder="Es: Part-time -> Full-time">
+                </div>
+            </div>
+
+            <h4 style="margin: 24px 0 12px 0; color: var(--primary); font-size: 14px; font-weight: 600; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">Dati Patente</h4>
+            <div class="form-grid" style="margin-bottom: 20px;">
+                <div class="input-group">
+                    <label for="driverNumeroPatente">Numero Patente</label>
+                    <input type="text" id="driverNumeroPatente" placeholder="Es: U12345678X" style="text-transform: uppercase;">
+                </div>
+                <div class="input-group">
+                    <label for="driverTipoPatente">Tipo Patente</label>
+                    <select id="driverTipoPatente">
+                        <option value="">Nessuna / Non specificata</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="driverPatenteRilasciataDa">Rilasciata da</label>
+                    <input type="text" id="driverPatenteRilasciataDa" placeholder="Es: Prefettura Milano">
+                </div>
+                <div class="input-group">
+                    <label for="driverPatenteScadenza">Scadenza Patente</label>
+                    <input type="date" id="driverPatenteScadenza">
+                </div>
+            </div>
+
             <div id="adminExtraFields" style="display:none; grid-template-columns: 1fr; gap: 20px; margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">
                  <div id="elevazioneGroup" style="display:flex; align-items:center; gap:12px;">
                     <input type="checkbox" id="driverElevazione" style="width:20px; height:20px;">
@@ -392,6 +445,18 @@
         const toggleAutistiIcon = document.getElementById('toggleAutistiIcon');
         const elevazioneGroup = document.getElementById('elevazioneGroup');
 
+        // Nuovi elementi anagrafici e patente
+        const driverCodiceFiscale = document.getElementById('driverCodiceFiscale');
+        const driverNumeroPatente = document.getElementById('driverNumeroPatente');
+        const driverTipoPatente = document.getElementById('driverTipoPatente');
+        const driverPatenteRilasciataDa = document.getElementById('driverPatenteRilasciataDa');
+        const driverPatenteScadenza = document.getElementById('driverPatenteScadenza');
+        const driverDataAssunzione = document.getElementById('driverDataAssunzione');
+        const driverTipoAssunzione = document.getElementById('driverTipoAssunzione');
+        const driverTrasformazione = document.getElementById('driverTrasformazione');
+        const driverDataTrasformazione = document.getElementById('driverDataTrasformazione');
+        const driverTipoTrasformazione = document.getElementById('driverTipoTrasformazione');
+
         let editIndexAutista = -1;
 
         toggleAutistiBtn.addEventListener('click', () => {
@@ -436,10 +501,24 @@
                 
                 const details = a.username ? `Username: <b style="color:var(--primary);">${a.username}</b>${a.password ? ` | Password: <b style="color:var(--primary);">${a.password}</b>` : ''}` : `Email: <b>${a.email || 'N.D.'}</b>`;
                 
+                // Visualizzazione anagrafica e patente extra a colpo d'occhio
+                let extraDetails = '';
+                if (a.codice_fiscale || a.tipo_patente || a.data_assunzione) {
+                    const cfStr = a.codice_fiscale ? `CF: <b>${a.codice_fiscale}</b>` : '';
+                    const patStr = a.tipo_patente ? `Patente: <b>${a.tipo_patente}</b>${a.patente_scadenza ? ` (Scad. ${a.patente_scadenza})` : ''}` : '';
+                    const assStr = a.data_assunzione ? `Assunzione: <b>${a.data_assunzione}</b>` : '';
+                    
+                    const listDetails = [cfStr, patStr, assStr].filter(x => x !== '');
+                    if (listDetails.length > 0) {
+                        extraDetails = `<div style="font-size:11px; color:#475569; margin-top: 5px; border-top: 1px dashed #e2e8f0; padding-top: 4px;">${listDetails.join(' | ')}</div>`;
+                    }
+                }
+
                 r.innerHTML = `
                     <div style="flex: 1;">
                         <div style="font-weight:600; color:#334155;">${a.nome} ${elevationBadge} ${turnoBadge} <span style="font-size:11px; font-weight:400; background:#e2e8f0; padding:2px 8px; border-radius:10px; margin-left:8px; text-transform:uppercase;">${a.ruolo}</span></div>
                         <div style="font-size:12px; color:#64748b; margin-top: 4px;">${details}</div>
+                        ${extraDetails}
                     </div>
                     <div style="display:flex; gap:8px;">
                         <button onclick="editAutista(${idx})" class="action-btn edit-btn" title="Modifica">
@@ -472,10 +551,22 @@
             const targetUser = autisti[idx];
             
             driverNomeInput.value = targetUser.nome || '';
-            driverEmailInput.value = targetUser.email || '';
+            driverEmailInput.value = targetUser.email || targetUser.username || '';
             driverRuoloInput.value = (targetUser.ruolo || 'autista').toLowerCase();
             driverTurnoInput.value = targetUser.tipoTurno || 'giornata';
             driverElevazione.checked = targetUser.canElevate || false;
+
+            // Nuovi campi anagrafici e patente
+            driverCodiceFiscale.value = targetUser.codice_fiscale || '';
+            driverNumeroPatente.value = targetUser.numero_patente || '';
+            driverTipoPatente.value = targetUser.tipo_patente || '';
+            driverPatenteRilasciataDa.value = targetUser.patente_rilasciata_da || '';
+            driverPatenteScadenza.value = targetUser.patente_scadenza || '';
+            driverDataAssunzione.value = targetUser.data_assunzione || '';
+            driverTipoAssunzione.value = targetUser.tipo_assunzione || '';
+            driverTrasformazione.value = targetUser.trasformazione || '';
+            driverDataTrasformazione.value = targetUser.data_trasformazione || '';
+            driverTipoTrasformazione.value = targetUser.tipo_trasformazione || '';
 
             // Nascondi la password in modifica
             const pwdGroup = document.getElementById('driverPasswordGroup');
@@ -508,10 +599,23 @@
             editIndexAutista = -1;
             driverNomeInput.value = '';
             driverEmailInput.value = '';
+            
             const pwdInput = document.getElementById('driverPasswordInput');
             if (pwdInput) pwdInput.value = '';
             const pwdGroup = document.getElementById('driverPasswordGroup');
             if (pwdGroup) pwdGroup.style.display = 'block';
+
+            // Resetta i nuovi campi
+            driverCodiceFiscale.value = '';
+            driverNumeroPatente.value = '';
+            driverTipoPatente.value = '';
+            driverPatenteRilasciataDa.value = '';
+            driverPatenteScadenza.value = '';
+            driverDataAssunzione.value = '';
+            driverTipoAssunzione.value = '';
+            driverTrasformazione.value = '';
+            driverDataTrasformazione.value = '';
+            driverTipoTrasformazione.value = '';
             
             btnSalvaAutista.textContent = "Salva";
             btnAnnullaAutista.style.display = "none";
@@ -525,6 +629,18 @@
             const e = driverElevazione.checked;
             const m = driverEmailInput.value.trim();
             
+            // Dati nuovi
+            const cf = driverCodiceFiscale.value.trim().toUpperCase();
+            const np = driverNumeroPatente.value.trim().toUpperCase();
+            const tp = driverTipoPatente.value;
+            const pr = driverPatenteRilasciataDa.value.trim();
+            const ps = driverPatenteScadenza.value;
+            const da = driverDataAssunzione.value;
+            const ta = driverTipoAssunzione.value.trim();
+            const tr = driverTrasformazione.value.trim();
+            const dt = driverDataTrasformazione.value;
+            const tt = driverTipoTrasformazione.value.trim();
+
             if (!n || !m) {
                 alert("Nome e Nome Utente / Email sono obbligatori.");
                 return;
@@ -554,7 +670,24 @@
 
                 try {
                     if (window.registerNewUserCloud) {
-                        await window.registerNewUserCloud(email, pwd, n, r, t, e);
+                        const uid = await window.registerNewUserCloud(email, pwd, n, r, t, e);
+                        
+                        // Per i nuovi utenti registrati dal pannello, salviamo subito anche i campi extra
+                        if (uid && window.updateUser) {
+                            await window.updateUser(uid, {
+                                codice_fiscale: cf,
+                                numero_patente: np,
+                                tipo_patente: tp,
+                                patente_rilasciata_da: pr,
+                                patente_scadenza: ps,
+                                data_assunzione: da,
+                                tipo_assunzione: ta,
+                                trasformazione: tr,
+                                data_trasformazione: dt,
+                                tipo_trasformazione: tt
+                            });
+                        }
+                        
                         alert(`Utente ${n} creato con successo nel Cloud!`);
                         btnAnnullaAutista.onclick();
                     } else {
@@ -576,7 +709,17 @@
                         ruolo: r, 
                         tipoTurno: t, 
                         canElevate: e, 
-                        email: email 
+                        email: email,
+                        codice_fiscale: cf,
+                        numero_patente: np,
+                        tipo_patente: tp,
+                        patente_rilasciata_da: pr,
+                        patente_scadenza: ps,
+                        data_assunzione: da,
+                        tipo_assunzione: ta,
+                        trasformazione: tr,
+                        data_trasformazione: dt,
+                        tipo_trasformazione: tt
                     });
                     alert("Dati aggiornati correttamente!");
                     btnAnnullaAutista.onclick();

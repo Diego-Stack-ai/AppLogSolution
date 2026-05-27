@@ -209,9 +209,12 @@ def _verifica_nuovi_clienti(dati_nuovi: dict):
         ws.append(headers)
         for cod, info in sorted(dati_nuovi.items()):
             row = [""] * 14
-            if info["tipo"] == "FRUTTA": row[0] = cod
-            else:                        row[1] = cod
-            row[2], row[4], row[5], row[6], row[7], row[12], row[13] = info["dest"], info["ind"], info["cap"], info["cit"], info["prov"], info["om"], info["oM"]
+            t = info.get("tipo", "")
+            if t == "FRUTTA" or t == "GRAND CHEF":
+                row[0] = cod
+            else:
+                row[1] = cod
+            row[2], row[3], row[4], row[5], row[6], row[7], row[12], row[13] = info["dest"], t, info["ind"], info["cap"], info["cit"], info["prov"], info["om"], info["oM"]
             ws.append(row)
         hp = BASE_DIR / "nuovi_codici_consegna.xlsx"
         wb.save(hp)
@@ -538,21 +541,21 @@ def _genera_pdf_placeholder_grand_chef(path_out: Path, codice: str, nome: str, i
 
 def _estrai_grand_chef(base_dir: Path, date_valide: set[str], mappati: dict) -> dict:
     import pandas as pd
-    belluno_dir = base_dir.parent.parent / "BELLUNO"
+    grand_chef_dir = base_dir.parent.parent / "Grand Chef"
     out_gc_dir = base_dir / "DDT-ORIGINALI-DIVISI" / "FRUTTA"
     out_gc_dir.mkdir(parents=True, exist_ok=True)
     
     nuovi_dati = {}
-    if not belluno_dir.exists():
-        print(f"  ⚠️  Cartella BELLUNO non trovata in: {belluno_dir}")
+    if not grand_chef_dir.exists():
+        print(f"  ⚠️  Cartella Grand Chef non trovata in: {grand_chef_dir}")
         return nuovi_dati
         
-    files = list(belluno_dir.glob("*.xlsx"))
+    files = list(grand_chef_dir.glob("*.xlsx"))
     if not files:
-        print("  ⚠️  Nessun file Excel trovato in BELLUNO.")
+        print("  ⚠️  Nessun file Excel trovato in Grand Chef.")
         return nuovi_dati
         
-    print(f"  📊 Elaborazione {len(files)} file Excel Grand Chef in BELLUNO...")
+    print(f"  📊 Elaborazione {len(files)} file Excel Grand Chef in Grand Chef...")
     
     data_label = base_dir.name.replace("CONSEGNE_", "")
     parti_data = re.findall(r"\d{2}-\d{2}-\d{4}", data_label)
@@ -618,16 +621,16 @@ def _estrai_grand_chef(base_dir: Path, date_valide: set[str], mappati: dict) -> 
                         )
                         
         except Exception as e:
-            print(f"  ⚠️  Errore lettura file Belluno {f.name}: {e}")
+            print(f"  ⚠️  Errore lettura file Grand Chef {f.name}: {e}")
             
     return nuovi_dati
 
 
-def _ricava_date_da_belluno() -> list[str]:
-    belluno_dir = BASE_DIR / "BELLUNO"
+def _ricava_date_da_grand_chef() -> list[str]:
+    grand_chef_dir = BASE_DIR / "Grand Chef"
     date_found = set()
-    if belluno_dir.exists():
-        for f in belluno_dir.glob("*.xlsx"):
+    if grand_chef_dir.exists():
+        for f in grand_chef_dir.glob("*.xlsx"):
             m = re.search(r"(\d{4})-(\d{2})-(\d{2})", f.name)
             if m:
                 date_found.add(f"{m.group(3)}-{m.group(2)}-{m.group(1)}")
@@ -646,9 +649,9 @@ def main():
     else:
         date_list = _ricava_date_da_pdf()
         if not date_list:
-            date_list = _ricava_date_da_belluno()
+            date_list = _ricava_date_da_grand_chef()
         if not date_list:
-            return print("❌ Nessun PDF o file Belluno trovato.")
+            return print("❌ Nessun PDF o file Grand Chef trovato.")
         date_valide = set(date_list)
 
     # ── Nome cartella: singola o doppia data ────────────────────────────────

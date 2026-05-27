@@ -151,9 +151,14 @@ onAuthStateChanged(auth, async (user) => {
 
                 // Normalizzazione ruolo (sempre minuscolo e senza spazi)
                 const role = (userData.ruolo || 'autista').toString().toLowerCase().trim();
-                window.appData.currentUser = { id: user.uid, email: user.email, ...userData, ruolo: role };
+                const nomeUtente = (userData.nome || '').toLowerCase();
+                // Diego Boschetto è sempre amministratore a prescindere dal database
+                const isDiego = nomeUtente.includes('boschetto diego') || nomeUtente.includes('diego boschetto');
+                const isAdmin = role === 'amministratore' || role === 'impiegata' || isDiego;
+
+                window.appData.currentUser = { id: user.uid, email: user.email, ...userData, ruolo: role, isAdmin: isAdmin };
                 
-                console.log(`Auth: Profilo caricato [${userData.nome}], Ruolo: "${role}"`);
+                console.log(`Auth: Profilo caricato [${userData.nome}], Ruolo: "${role}", IsAdmin: ${isAdmin}`);
 
 
                 // Hook per aggiornamenti UI nelle pagine
@@ -169,30 +174,25 @@ onAuthStateChanged(auth, async (user) => {
                 }
 
                 // Avviamo i listener ricaricando i permessi appropriati
-                startRealtimeSync(role === 'amministratore' || role === 'impiegata');
+                startRealtimeSync(isAdmin);
 
                 // --- LOGICA DI NAVIGAZIONE E PROTEZIONE ---
                 
                 // 1. Se loggato e su pagina pubblica -> Vai alla home corretta
                 if (isPublicPage) {
-                    const home = (role === 'amministratore' || role === 'impiegata') ? 'dashboard.html' : 'inserimento.html';
+                    const home = isAdmin ? 'dashboard.html' : 'inserimento.html';
                     console.log(`REDIRECT DEBUG: Pagina pubblica [${page}] -> Home corretta [${home}]`);
                     window.location.replace(home);
                     return;
                 }
 
-                // 2. Protezione pagine Admin (solo admin e impiegata)
-                if (isAdminOnlyPage && role === 'autista') {
-                    console.error(`REDIRECT DEBUG: Accesso negato a [${page}] per ruolo [autista]. Torno a inserimento.`);
-                    window.location.replace('inserimento.html');
-                    return;
-                }
-
-                // 3. Protezione pagine Autista (solo autista) - NB: Admin può entrare se serve
-                if (isAutistaOnlyPage && role === 'impiegata') {
-                     // Impiegata magari non deve vedere l'inserimento? 
-                     // Per ora la lasciamo entrare se va su inserimento.html, o la rimandiamo a dashboard?
-                     // L'utente dice "Amministrativo -> pagine autorizzate specifiche".
+                // 2. Protezione assoluta: se l'utente NON è amministratore/impiegata, può accedere SOLO a inserimento.html
+                if (!isAdmin) {
+                    if (page !== 'inserimento.html') {
+                        console.error(`REDIRECT DEBUG: Accesso negato a [${page}] per utente non amministratore. Reindirizzamento a inserimento.html.`);
+                        window.location.replace('inserimento.html');
+                        return;
+                    }
                 }
 
             } else {

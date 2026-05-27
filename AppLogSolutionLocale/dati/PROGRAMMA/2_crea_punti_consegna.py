@@ -77,6 +77,7 @@ def _carica_mappatura():
     col_cod_f = next((i for i, h in enumerate(headers) if str(h or "").strip() == "Codice Frutta"), 0)
     col_cod_l = next((i for i, h in enumerate(headers) if str(h or "").strip() == "Codice Latte"), 1)
     col_nome = next((i for i, h in enumerate(headers) if "chi va" in str(h or "").lower()), 2)
+    col_tipo = next((i for i, h in enumerate(headers) if "tipologia" in str(h or "").lower() or "grado" in str(h or "").lower()), 3)
     col_ind = next((i for i, h in enumerate(headers) if h == "Indirizzo"), 4)
     col_cap = next((i for i, h in enumerate(headers) if h == "CAP"), 5)
     col_citta = next((i for i, h in enumerate(headers) if h == "Città"), 6)
@@ -122,6 +123,7 @@ def _carica_mappatura():
             "codice_frutta": cod_f.lower() if cod_f else "",
             "codice_latte": cod_l.lower() if cod_l else "",
             "nome": _val(vals[col_nome]) if col_nome < len(vals) else "",
+            "tipologia_grado": _val(vals[col_tipo]) if col_tipo < len(vals) else "",
             "indirizzo": _build_indirizzo(vals, col_ind, col_cap, col_citta, col_prov),
             "orario_min_frutta": om_f,
             "orario_max_frutta": oM_f,
@@ -200,15 +202,15 @@ def _elabora_cartella(cartella_input: Path, map_codice: dict,
 
 def _elabora_grand_chef(base_dir: Path, map_codice: dict) -> list[dict]:
     """
-    Scansiona i file in BELLUNO/ e crea i punti consegna Grand Chef.
+    Scansiona i file in Grand Chef/ e crea i punti consegna Grand Chef.
     """
     import pandas as pd
-    belluno_dir = base_dir.parent.parent / "BELLUNO"
+    grand_chef_dir = base_dir.parent.parent / "Grand Chef"
     punti = []
-    if not belluno_dir.exists():
+    if not grand_chef_dir.exists():
         return punti
         
-    files = list(belluno_dir.glob("*.xlsx"))
+    files = list(grand_chef_dir.glob("*.xlsx"))
     if not files:
         return punti
         
@@ -267,6 +269,7 @@ def _elabora_grand_chef(base_dir: Path, map_codice: dict) -> list[dict]:
                         "codice_frutta": codice,
                         "codice_latte": "p00000",
                         "nome": dato.get("nome", ""),
+                        "tipologia_grado": dato.get("tipologia_grado", "GRAND CHEF"),
                         "indirizzo": dato.get("indirizzo", ""),
                         "codici_ddt_trovati": codice,
                         "zona": "3200",
@@ -296,7 +299,7 @@ def _salva_excel(punti: list[dict], out_path: Path):
         "Orario min Frutta", "Orario max Frutta",
         "Orario min Latte",  "Orario max Latte",
         "Orario min", "Orario max",
-        "Latitudine", "Longitudine"
+        "Latitudine", "Longitudine", "Tipologia Grado"
     ]
     ws.append(headers)
     for pt in punti:
@@ -315,6 +318,7 @@ def _salva_excel(punti: list[dict], out_path: Path):
             pt.get("orario_max", ""),
             pt.get("lat") if pt.get("lat") is not None else "",
             pt.get("lon") if pt.get("lon") is not None else "",
+            pt.get("tipologia_grado", "")
         ])
     out_path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(out_path)

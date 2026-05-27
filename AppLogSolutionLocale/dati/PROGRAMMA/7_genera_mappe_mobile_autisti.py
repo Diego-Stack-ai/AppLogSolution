@@ -485,14 +485,20 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 markerConfig.title = i === 0 ? "Partenza" : "Arrivo";
             } else {
                 // Consegna (l'indice 1 corrisponde alla consegna 1)
-                const isGrandChef = p.codice_frutta && (p.codice_frutta.startsWith('100') || p.codice_frutta.length > 6);
-                if (isGrandChef) {
+                const t_g = (p.tipologia_grado || '').toUpperCase();
+                const isGrandChef = (p.codice_frutta && (p.codice_frutta.startsWith('100') || p.codice_frutta.length > 6)) || t_g.includes('GRAND CHEF') || t_g.includes('GRAN CHEF');
+                const isCattell = t_g.includes('CATTELL') || t_g.includes('CATTEL') || (p.codice_frutta && p.codice_frutta.toUpperCase().includes('CATTELL'));
+                const isBauer = t_g.includes('BAUER') || (p.codice_frutta && p.codice_frutta.toUpperCase().includes('BAUER'));
+
+                if (isGrandChef || isCattell || isBauer) {
+                    let emoji = '👨‍🍳';
+                    if (isCattell) emoji = '🍴';
+                    else if (isBauer) emoji = '🍳';
+
                     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="38" viewBox="0 0 38 42">
-                      <path d="M19 0C8.5 0 0 8.5 0 19c0 13 19 23 19 23s19-10 19-23c0-10.5-8.5-19-19-19z" fill="#0284c7" stroke="white" stroke-width="2"/>
-                      <g transform="translate(9, 6) scale(0.85)" fill="white">
-                        <path d="M16 6v8h3v8h2V6h-5z M11 9H9V6H7v3H5V6H3v3c0 2.44 1.72 4.47 4 4.9v7.1h2v-7.1c2.28-.43 4-2.46 4-4.9V6h-2v3z"/>
-                      </g>
-                      <text x="19" y="33" font-family="'Inter', sans-serif" font-size="9" font-weight="900" fill="white" text-anchor="middle">${i}</text>
+                      <path d="M19 0C8.5 0 0 8.5 0 19c0 13 19 23 19 23s19-10 19-23c0-10.5-8.5-19-19-19z" fill="#4f46e5" stroke="white" stroke-width="2"/>
+                      <text x="19" y="19" font-size="14" text-anchor="middle">${emoji}</text>
+                      <text x="19" y="32" font-family="'Inter', sans-serif" font-size="9" font-weight="900" fill="white" text-anchor="middle">${i}</text>
                     </svg>`;
                     markerConfig.icon = {
                         url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
@@ -745,19 +751,31 @@ MASTER_HTML_TEMPLATE = """<!DOCTYPE html>
                     else if (layer === 3) shape = 'm-triangolo';
                     else if (layer > 3) shape = 'm-tonda';
 
-                    const isGrandChef = p.codice_frutta && (p.codice_frutta.startsWith('100') || p.codice_frutta.length > 6);
+                    const t_g = (p.tipologia_grado || '').toUpperCase();
+                    const isGrandChef = (p.codice_frutta && (p.codice_frutta.startsWith('100') || p.codice_frutta.length > 6)) || t_g.includes('GRAND CHEF') || t_g.includes('GRAN CHEF');
+                    const isCattell = t_g.includes('CATTELL') || t_g.includes('CATTEL') || (p.codice_frutta && p.codice_frutta.toUpperCase().includes('CATTELL'));
+                    const isBauer = t_g.includes('BAUER') || (p.codice_frutta && p.codice_frutta.toUpperCase().includes('BAUER'));
 
                     const el = document.createElement("div");
-                    if (isGrandChef) {
-                        el.className = `custom-marker m-goccia`;
-                        el.style.backgroundColor = "#0284c7";
+                    if (isGrandChef || isCattell || isBauer) {
+                        let emoji = '👨‍🍳';
+                        if (isCattell) emoji = '🍴';
+                        else if (isBauer) emoji = '🍳';
+
+                        el.className = `custom-marker m-chef`;
+                        el.style.backgroundColor = color;
+                        el.style.borderRadius = "50%";
                         el.style.width = "34px";
                         el.style.height = "34px";
+                        el.style.border = "2px solid white";
+                        el.style.display = "flex";
+                        el.style.flexDirection = "column";
+                        el.style.alignItems = "center";
+                        el.style.justifyContent = "center";
+                        el.style.transform = "translate(-50%, -100%)";
                         el.innerHTML = `
-                          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; transform: rotate(45deg); padding-bottom: 2px;">
-                            <span style="font-size: 11px; font-weight: 900; color: white; margin-bottom: -2px;">🍴</span>
-                            <span style="font-size: 9px; font-weight: 900; color: white;">${pIdx + 1}</span>
-                          </div>
+                            <span style="font-size: 13px; line-height: 1.1; margin-top: -1px; pointer-events: none; display: block;">${emoji}</span>
+                            <span style="font-size: 8px; font-weight: 900; pointer-events: none; margin-top: -2px; display: block;">${pIdx + 1}</span>
                         `;
                     } else {
                         el.className = `custom-marker ${shape}`;
@@ -995,7 +1013,7 @@ def main():
             "t_sosta": format_time(t_sosta),
             "t_tot": format_time(t_tot),
             "polylines": polylines,
-            "lista_punti": [{"nome": p.get("nome", "Cliente"), "indirizzo": p.get("indirizzo", "-"), "lat": p.get("lat"), "lon": p.get("lon"), "codice_frutta": p.get("codice_frutta", ""), "codice_latte": p.get("codice_latte", "")} for p in perc]
+            "lista_punti": [{"nome": p.get("nome", "Cliente"), "indirizzo": p.get("indirizzo", "-"), "lat": p.get("lat"), "lon": p.get("lon"), "codice_frutta": p.get("codice_frutta", ""), "codice_latte": p.get("codice_latte", ""), "tipologia_grado": p.get("tipologia_grado", "")} for p in perc]
         })
 
         zone_list = sorted(list(set([str(p.get('zona', '0000')) for p in perc])))
@@ -1011,7 +1029,7 @@ def main():
             return f"https://www.google.com/maps/dir/?api=1&destination={query}&travelmode=driving"
 
         # 2. Creazione lista consegne per JS (include il deposito per la mappa)
-        deliveries = [{"cliente": p.get("nome", "Cliente"), "indirizzo": p.get("indirizzo", "-"), "lat": p.get("lat"), "lon": p.get("lon"), "codice_frutta": p.get("codice_frutta", ""), "codice_latte": p.get("codice_latte", "")} for p in perc_completo]
+        deliveries = [{"cliente": p.get("nome", "Cliente"), "indirizzo": p.get("indirizzo", "-"), "lat": p.get("lat"), "lon": p.get("lon"), "codice_frutta": p.get("codice_frutta", ""), "codice_latte": p.get("codice_latte", ""), "tipologia_grado": p.get("tipologia_grado", "")} for p in perc_completo]
         # 3. Costruzione delle card HTML
         cards_list = []
         

@@ -40,8 +40,8 @@ DEPOT_NOME = "DEPOSITO VEGGIANO"
 
 # Regex per estrarre il blocco "const data = [...]" dall'HTML
 DATA_RE = re.compile(r'const\s+data\s*=\s*(\[.*?\]);\s*const\s+polys', re.DOTALL)
-# Regex per estrarre nome e zone dal nomefile  (es. V01_Zone_3110_4110.html)
-FILE_RE = re.compile(r'^(V\d+)_Zone_([\w_]+)\.html$', re.IGNORECASE)
+# Regex per estrarre nome e zone dal nomefile  (es. V01_Zone_3110_4110.html o GranChef V01_Zone_GranChef_V01.html)
+FILE_RE = re.compile(r'^([a-zA-Z0-9 ⚠️]+)_Zone_([\w_]+)\.html$', re.IGNORECASE)
 
 PALETTE = [
     "#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
@@ -98,7 +98,10 @@ def _parse_filename(filename: str) -> tuple[str, list[str]]:
     m = FILE_RE.match(filename)
     if not m:
         return filename.replace(".html", ""), []
-    nome_giro = m.group(1).upper()          # 'V01'
+    nome_giro = m.group(1)
+    # Normalizza in maiuscolo solo i giri standard tipo V01, V02...
+    if nome_giro.upper().startswith("V") and nome_giro[1:].isdigit():
+        nome_giro = nome_giro.upper()
     zone_str  = m.group(2)                  # '3110_4110' o '0000_3111_4111'
     zone      = [z for z in zone_str.split("_") if z]
     return nome_giro, zone
@@ -137,11 +140,11 @@ def main():
 
     # Trova tutti gli HTML dei viaggi in ordine
     html_files = sorted(
-        [f for f in percorsi_dir.glob("V*.html") if FILE_RE.match(f.name)]
+        [f for f in percorsi_dir.glob("*.html") if FILE_RE.match(f.name)]
     )
 
     if not html_files:
-        print(f"ERR Nessun file V*.html trovato in {percorsi_dir}")
+        print(f"ERR Nessun file HTML valido trovato in {percorsi_dir}")
         sys.exit(1)
 
     print(f"\n{'='*60}")

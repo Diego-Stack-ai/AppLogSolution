@@ -220,7 +220,7 @@ def ottimizza_percorso(punti_consegna, depot_point):
     routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
 
     # Aggiungi vincoli di orario (Time Windows) solo per Grand Chef
-    is_grand_chef = any("GRAND CHEF" in str(p.get("tipologia_grado") or "").upper() for p in punti_consegna)
+    is_grand_chef = any("GRAND" in str(p.get("tipologia_grado") or "").upper() or "CHEF" in str(p.get("tipologia_grado") or "").upper() or "GRANCHEF" in str(p.get("zona") or "").upper() for p in punti_consegna)
     
     if is_grand_chef:
         def time_callback(from_index, to_index):
@@ -336,16 +336,67 @@ def get_google_trip_data(percorso, depot_point):
     except Exception as e:
         print(f"Errore recupero Directions API: {e}")
             
+    # ── Crono-simulazione della tratta per il calcolo di ETA e Ritardi ──
+    is_grand_chef = any("GRAND" in str(p.get("tipologia_grado") or "").upper() or "CHEF" in str(p.get("tipologia_grado") or "").upper() or "GRANCHEF" in str(p.get("zona") or "").upper() for p in percorso)
+    sosta = 12 if is_grand_chef else 8
+    
+    def parse_time_to_minutes(time_str, default_val):
+        if not time_str: return default_val
+        m = re.match(r"(\d{2}):(\d{2})", str(time_str).strip())
+        if m:
+            return int(m.group(1)) * 60 + int(m.group(2))
+        return default_val
+
+    def format_minutes_to_time(minutes):
+        minutes = int(minutes) % 1440
+        return f"{minutes // 60:02d}:{minutes % 60:02d}"
+
+    # Inizializziamo il tempo cronologico. Partenza ore 07:00 (420 minuti)
+    current_time = 420
+
+    for idx, p in enumerate(percorso):
+        p_precedente = percorso[idx-1] if idx > 0 else depot_point
+        
+        # 1. Se è Grand Chef e siamo al primo cliente, l'orario di arrivo fisso è alle 07:00 (420 min)
+        if is_grand_chef and idx == 0:
+            arr_time_min = 420
+        else:
+            cached = dist_cache.get(p_precedente, p)
+            if cached:
+                durata_guida_sec = cached['dur']
+            else:
+                dist_m = haversine(p_precedente, p) * 1000.0 * 1.3
+                durata_guida_sec = (dist_m / 1000.0 / AVG_SPEED_KMH) * 3600
+                
+            durata_guida_min = durata_guida_sec / 60.0
+            arr_time_min = current_time + durata_guida_min
+            
+        dep_time_min = arr_time_min + sosta
+        
+        p["ora_arrivo"] = format_minutes_to_time(arr_time_min)
+        p["ora_ripartenza"] = format_minutes_to_time(dep_time_min)
+        
+        max_time_min = parse_time_to_minutes(p.get("orario_max"), 840)
+        # Aggiungiamo tolleranza di 1 minuto per arrotondamenti
+        if arr_time_min > max_time_min + 1:
+            p["ritardo"] = True
+        else:
+            p["ritardo"] = False
+            
+        current_time = dep_time_min
+
     final_km = round(km_tot if km_tot > 0 else km_stima, 1)
     final_guida_sec = sec_tot if sec_tot > 0 else sec_stima
     t_guida_min = int(final_guida_sec / 60)
-    t_sosta_min = len(percorso) * TIME_OFFSET_PER_STOP
+    offset = 12 if is_grand_chef else TIME_OFFSET_PER_STOP
+    t_sosta_min = len(percorso) * offset
     return final_km, t_guida_min, t_sosta_min, (t_guida_min + t_sosta_min), polylines
 
 def fmt_min(m):
     return f"{m//60}h {m%60}m" if m >= 60 else f"{m}min"
 
 def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path, depot):
+    is_grand_chef = "GRANCHEF" in str(v_id).upper() or any("GRAND" in str(p.get("tipologia_grado") or "").upper() or "CHEF" in str(p.get("tipologia_grado") or "").upper() or "GRANCHEF" in str(p.get("zona") or "").upper() for p in percorso)
     km, t_guida, t_sosta, t_tot = stats
     tutti_punti = [depot] + percorso + [depot]
     punti_js = json.dumps(tutti_punti, indent=2, ensure_ascii=False)
@@ -402,14 +453,22 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path, de
                     <div class="stop-info"><span class="depot-tag">PARTENZA</span><br><b style="font-size:0.9rem;">{depot['nome'].title()}</b></div>
                 </div>
                 { "".join([f'''
-<div class="stop-card" onclick="panTo({i+1})" style="{'background:#fff1f2; border-color:#fecaca;' if '10:00' in str(p.get('orario_max','')) else ''}">
-  <div class="stop-num" style="background:{'#ef4444' if '10:00' in str(p.get('orario_max','')) else 'var(--p)'}">{i+1}</div>
+<div class="stop-card" onclick="panTo({i+1})" style="{'background:#fff1f2; border-color:#fecaca;' if p.get('ritardo') else ''}">
+  <div class="stop-num" style="background:{'#ef4444' if p.get('ritardo') else 'var(--p)'}">{i+1}</div>
   <div style="flex:1;">
-    <div style="display:flex; align-items:center; gap:6px;">
+    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
       <b style="font-size:0.85rem; color:#1e293b;">{p['nome']}</b>
-      {"<span style='background:#ef4444;color:white;font-size:0.6rem;font-weight:900;padding:2px 6px;border-radius:4px;'>H10</span>" if '10:00' in str(p.get('orario_max','')) else ""}
+      {"<span style='background:#4f46e5;color:white;font-size:0.6rem;font-weight:900;padding:2px 6px;border-radius:4px;'>H10</span>" if not is_grand_chef and '10:' in str(p.get('orario_max','')) else ""}
+      {"<span style='background:#ef4444;color:white;font-size:0.6rem;font-weight:900;padding:2px 6px;border-radius:4px;'>⚠️ IN RITARDO</span>" if p.get('ritardo') else ""}
     </div>
     <small style="color:#64748b; font-size:0.75rem;">{p['indirizzo']}</small>
+    <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">
+      🕒 Fascia: <b>{p.get('orario_min', '07:00')} - {p.get('orario_max', '14:00')}</b>
+    </div>
+    <div style="font-size:0.72rem; color:#4f46e5; font-weight:700; margin-top:1px;">
+      ⏱️ Arrivo: <b>{p.get('ora_arrivo', '--:--')}</b> | Ripartenza: <b>{p.get('ora_ripartenza', '--:--')}</b>
+    </div>
+    {f"<div style='font-size:0.7rem; color:#d97706; font-weight:600; margin-top:2px; background:#fffbeb; border-radius:4px; padding:2px 4px; border:1px solid #fde68a;'>📝 Note: {p.get('note')}</div>" if p.get('note') else ""}
   </div>
   <a href="https://www.google.com/maps/dir/?api=1&destination={p['lat']},{p['lon']}&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a>
 </div>''' for i, p in enumerate(percorso)]) }
@@ -421,7 +480,7 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path, de
         <div id="map"></div>
     </div>
     <script>
-        const data = {punti_js}; const polys = {poly_js}; let map, markers = [];
+        const data = {punti_js}; const polys = {poly_js}; const isGC = {str(is_grand_chef).lower()}; let map, markers = [];
         async function initMap() {{
             const {{ Map }} = await google.maps.importLibrary("maps");
             const {{ AdvancedMarkerElement }} = await google.maps.importLibrary("marker");
@@ -472,11 +531,13 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path, de
         }}
 
         function addAdvMarker(p, i, isD, bounds, AdvancedMarkerElement) {{
-            const isH10 = !isD && p.orario_max === '10:00';
+            const isLate = p.ritardo === true || p.ritardo === 'true';
+            const isH10 = !isGC && p.orario_max === '10:00';
+            const isRedPin = isLate || isH10;
             const m = new AdvancedMarkerElement({{
                 map,
                 position: {{ lat: p.lat, lng: p.lon }},
-                content: createPin(i, isD, isH10),
+                content: createPin(i, isD, isRedPin),
                 title: p.nome
             }});
             markers[i] = m;
@@ -484,13 +545,13 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path, de
             map.fitBounds(bounds);
         }}
 
-        function createPin(idx, isD, isH10) {{
-            const color = isD ? '#475569' : (isH10 ? '#ef4444' : '#4f46e5');
+        function createPin(idx, isD, isRedPin) {{
+            const color = isD ? '#475569' : (isRedPin ? '#ef4444' : '#4f46e5');
             const d = document.createElement('div'); d.style.background = color;
             d.style.color = 'white'; d.style.width = '26px'; d.style.height = '26px'; d.style.borderRadius = '50%'; 
             d.style.display = 'flex'; d.style.alignItems = 'center'; d.style.justifyContent = 'center';
             d.style.fontSize = '11px'; d.style.fontWeight = '900'; d.style.border = '3px solid white';
-            d.style.boxShadow = isH10 ? '0 0 0 2px #ef4444' : 'none';
+            d.style.boxShadow = isRedPin ? '0 0 0 2px #ef4444' : 'none';
             d.innerText = isD ? '' : idx;
             if (isD) d.innerHTML = '<span class="material-icons-round" style="font-size:14px">home</span>';
             return d;
@@ -587,7 +648,11 @@ def main():
     for i, z in enumerate(data_zone_sorted, 1):
         punti = z.get("lista_punti", [])
         if not punti: continue
-        v_id = f"V{i:02d}"
+        # Rileva se è Grand Chef
+        is_grand_chef = any("GRAND" in str(p.get("tipologia_grado") or "").upper() or "CHEF" in str(p.get("tipologia_grado") or "").upper() or "GRANCHEF" in str(p.get("zona") or "").upper() for p in punti)
+        
+        # Assegna il nome_giro nativo in modo che Grand Chef mantenga "GranChef V01" etc.
+        v_id = z.get("nome_giro") or f"V{i:02d}"
         zone_coinvolte = sorted(list(set([str(p.get('zona','0000')) for p in punti])))
         z_str = ", ".join(zone_coinvolte).replace('None', '0000')
         

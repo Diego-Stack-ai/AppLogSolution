@@ -289,6 +289,7 @@ def main():
             "orario_max": _val(p.get("orario_max")),
             "lat": p.get("latitudine"),
             "lon": p.get("longitudine"),
+            "note": _val(p.get("note")),
             "codici_ddt_frutta": [],
             "codici_ddt_latte": [],
             "rientri_alert": [],

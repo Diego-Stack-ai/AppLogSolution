@@ -89,6 +89,7 @@ def _carica_mappatura():
     col_lat  = next((i for i, h in enumerate(headers) if h == "Latitudine"),         14)
     col_lon  = next((i for i, h in enumerate(headers) if h == "Longitudine"),        15)
     col_reali= next((i for i, h in enumerate(headers) if h == "COORDINATE_REALI_GPS"), 21)
+    col_note = next((i for i, h in enumerate(headers) if h == "Note"), 17)
 
     map_codice = {}
     for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
@@ -133,6 +134,7 @@ def _carica_mappatura():
             "orario_max": _orario_min_str(oM_f, oM_l),
             "lat": lat,
             "lon": lon,
+            "note": _val(vals[col_note]) if col_note < len(vals) else "",
         }
         for cod in (cod_f, cod_l):
             if cod:
@@ -281,6 +283,7 @@ def _elabora_grand_chef(base_dir: Path, map_codice: dict) -> list[dict]:
                         "orario_max": oM or dato.get("orario_max", ""),
                         "lat": dato.get("lat"),
                         "lon": dato.get("lon"),
+                        "note": note or dato.get("note", ""),
                     })
         except Exception as e:
             print(f"  Errore lettura Grand Chef {f.name}: {e}")
@@ -299,7 +302,7 @@ def _salva_excel(punti: list[dict], out_path: Path):
         "Orario min Frutta", "Orario max Frutta",
         "Orario min Latte",  "Orario max Latte",
         "Orario min", "Orario max",
-        "Latitudine", "Longitudine", "Tipologia Grado"
+        "Latitudine", "Longitudine", "Tipologia Grado", "Note"
     ]
     ws.append(headers)
     for pt in punti:
@@ -318,7 +321,8 @@ def _salva_excel(punti: list[dict], out_path: Path):
             pt.get("orario_max", ""),
             pt.get("lat") if pt.get("lat") is not None else "",
             pt.get("lon") if pt.get("lon") is not None else "",
-            pt.get("tipologia_grado", "")
+            pt.get("tipologia_grado", ""),
+            pt.get("note", "")
         ])
     out_path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(out_path)

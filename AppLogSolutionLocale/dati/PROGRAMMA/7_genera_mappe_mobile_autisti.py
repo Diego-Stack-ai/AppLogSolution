@@ -233,7 +233,9 @@ def get_google_trip_data(percorso, depot_point):
     final_km = round(km_tot if km_tot > 0 else km_stima, 1)
     final_guida_sec = sec_tot if sec_tot > 0 else sec_stima
     t_guida_min = int(final_guida_sec / 60)
-    t_sosta_min = len(percorso) * TIME_OFFSET_PER_STOP
+    is_grand_chef = any("GRAND CHEF" in str(p.get("tipologia_grado") or "").upper() for p in percorso)
+    offset = 12 if is_grand_chef else TIME_OFFSET_PER_STOP
+    t_sosta_min = len(percorso) * offset
     return final_km, t_guida_min, t_sosta_min, (t_guida_min + t_sosta_min), polylines
 
 def deploy_online():

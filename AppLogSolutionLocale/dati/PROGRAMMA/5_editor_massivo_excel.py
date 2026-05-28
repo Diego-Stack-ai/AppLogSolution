@@ -395,7 +395,7 @@ def get_points():
             lt = float(row[cols['lat']]) if pd.notnull(row[cols['lat']]) else 0
             lg = float(row[cols['lng']]) if pd.notnull(row[cols['lng']]) else 0
             
-            is_missing = (lt == 0 or 'not_found' in st)
+            is_missing = (lt == 0 or lg == 0 or st != 'ok')
             if is_missing: missing_count += 1
             
             points.append({
@@ -411,7 +411,7 @@ def get_points():
                 'is_missing': is_missing,
                 'tipologia': str(row[cols['tipologia']]).strip() if pd.notnull(row[cols['tipologia']]) else ''
             })
-        print(f"DEBUG: Inviati {len(points)} punti (di cui {missing_count} rossi/mancanti)")
+        print(f"DEBUG: Inviati {len(points)} punti (di cui {missing_count} rossi/non verificati)")
         return jsonify(points)
 
 @app.route('/save_all', methods=['POST'])

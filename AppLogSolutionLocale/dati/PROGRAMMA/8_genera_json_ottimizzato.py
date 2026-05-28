@@ -85,8 +85,8 @@ def _estrai_data_da_html(html_path: Path) -> list[dict]:
         print(f"  WARN  Errore parsing JSON in {html_path.name}: {e}")
         return []
 
-    # Rimuove le entry del deposito (prima e ultima)
-    punti = [p for p in raw if p.get("nome", "").upper() != DEPOT_NOME.upper()]
+    # Rimuove le entry di qualsiasi deposito (Veggiano, Castenedolo, Sommacampagna)
+    punti = [p for p in raw if "DEPOSITO" not in p.get("nome", "").upper() and "DEPOT" not in p.get("nome", "").upper()]
     return punti
 
 

@@ -8,6 +8,14 @@ from pathlib import Path
 
 # --- CONFIGURAZIONE ---
 PROG_DIR = Path(__file__).resolve().parent
+import sys
+import importlib
+sys.path.append(str(PROG_DIR))
+try:
+    gen_percorsi = importlib.import_module("6_genera_percorsi_veggiano")
+except Exception as e:
+    gen_percorsi = None
+
 ROOT_DIR = PROG_DIR.parent.parent
 CONSEGNE_DIR = PROG_DIR.parent / "CONSEGNE"
 WEBAPP_FOLDER = ROOT_DIR / "frontend" / "mappe_autisti"
@@ -184,9 +192,9 @@ def ottimizza_percorso_legacy(punti):
 AVG_SPEED_KMH = 45
 TIME_OFFSET_PER_STOP = 8
 
-def get_google_trip_data(percorso):
+def get_google_trip_data(percorso, depot_point):
     """Calcola KM e scarica le strade reali via Google Directions API."""
-    punti_pieni = [DEPOT] + percorso + [DEPOT]
+    punti_pieni = [depot_point] + percorso + [depot_point]
     km_tot, sec_tot = 0, 0
     polylines = []
     
@@ -997,9 +1005,12 @@ def main():
         perc = v.get("lista_punti", [])
         if not perc: continue
         
+        # Dynamic depot calculation
+        depot = gen_percorsi.get_depot_for_points(perc) if gen_percorsi else DEPOT
+        
         # 1. Calcolo KM e tempi REALI via Google Directions API
-        perc_completo = [DEPOT] + perc + [DEPOT]
-        km, t_guida, t_sosta, t_tot, polylines = get_google_trip_data(perc)
+        perc_completo = [depot] + perc + [depot]
+        km, t_guida, t_sosta, t_tot, polylines = get_google_trip_data(perc, depot)
 
         color_assegnato = LOCAL_PALETTE[i % len(LOCAL_PALETTE)]
 
@@ -1037,7 +1048,7 @@ def main():
         cards_list.append(f'''
             <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
                 <div class="stop-num" style="background:#475569;"><span class="material-icons-round">home</span></div>
-                <div class="stop-info"><b class="name">PARTENZA</b><span class="addr">Deposito Veggiano</span></div>
+                <div class="stop-info"><b class="name">PARTENZA</b><span class="addr">{depot['nome'].title()}</span></div>
             </div>''')
 
         for idx, p in enumerate(perc):
@@ -1066,7 +1077,7 @@ def main():
         cards_list.append(f'''
             <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
                 <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
-                <div class="stop-info"><b class="name">ARRIVO</b><span class="addr">Deposito Veggiano</span></div>
+                <div class="stop-info"><b class="name">ARRIVO</b><span class="addr">{depot['nome'].title()}</span></div>
             </div>''')
         
         cards_html = "".join(cards_list)

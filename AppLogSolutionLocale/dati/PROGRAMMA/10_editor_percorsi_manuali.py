@@ -52,6 +52,10 @@ def index():
         return "File viaggi_giornalieri_OTTIMIZZATO.json non trovato."
     
     dati = json.loads(FILE_JSON_OTTIMIZZATO.read_text(encoding="utf-8"))
+    if HAS_GEN_PERCORSI:
+        for v in dati:
+            v["depot"] = gen_percorsi.get_depot_for_points(v.get("lista_punti", []))
+            
     return render_template_string(HTML_TEMPLATE, 
                                   DATA_GIORNO=DATA_GIORNO, 
                                   JSON_VIAGGI=json.dumps(dati, ensure_ascii=False),
@@ -87,9 +91,9 @@ def save():
             
             if remaining_points:
                 from ortools.constraint_solver import pywrapcp, routing_enums_pb2
-                DEPOT = gen_percorsi.DEPOT
-                start_point = locked_points[-1] if locked_points else DEPOT
-                all_locations = [start_point] + remaining_points + [DEPOT]
+                depot = gen_percorsi.get_depot_for_points(lista_punti)
+                start_point = locked_points[-1] if locked_points else depot
+                all_locations = [start_point] + remaining_points + [depot]
                 num_nodes = len(all_locations)
                 
                 manager = pywrapcp.RoutingIndexManager(num_nodes, 1, [0], [num_nodes - 1])
@@ -101,12 +105,60 @@ def save():
                     
                 transit_callback_index = routing.RegisterTransitCallback(distance_callback)
                 routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
+
+                # Aggiungi vincoli di orario (Time Windows) solo per Grand Chef
+                is_grand_chef = any("GRAND CHEF" in str(p.get("tipologia_grado") or "").upper() for p in remaining_points)
+                
+                if is_grand_chef:
+                    def time_callback(from_index, to_index):
+                        from_node = manager.IndexToNode(from_index)
+                        to_node = manager.IndexToNode(to_index)
+                        dist = dist_matrix[from_node][to_node]
+                        travel_time = (dist / 1000.0 / gen_percorsi.AVG_SPEED_KMH) * 60
+                        # Sosta solo se il nodo di partenza non è lo start_point (nodo 0) e non è l'arrivo (depot)
+                        service_time = gen_percorsi.TIME_OFFSET_PER_STOP if from_node not in (0, num_nodes - 1) else 0
+                        return int(travel_time + service_time)
+
+                    time_callback_index = routing.RegisterTransitCallback(time_callback)
+                    routing.AddDimension(
+                        time_callback_index,
+                        30,  # slack consentito
+                        1440,
+                        False,
+                        "Time"
+                    )
+                    time_dimension = routing.GetDimensionOrDie("Time")
+
+                    def parse_time_to_minutes(time_str, default_val):
+                        if not time_str: return default_val
+                        import re
+                        m = re.match(r"(\d{2}):(\d{2})", time_str.strip())
+                        if m:
+                            return int(m.group(1)) * 60 + int(m.group(2))
+                        return default_val
+
+                    # Applica vincoli sui remaining_points (nodi da 1 a num_nodes - 2)
+                    for i, p in enumerate(remaining_points, start=1):
+                        min_min = parse_time_to_minutes(p.get("orario_min"), 420)
+                        max_min = parse_time_to_minutes(p.get("orario_max"), 840)
+                        node_index = manager.NodeToIndex(i)
+                        time_dimension.CumulVar(node_index).SetRange(min_min, max_min)
                 
                 search_parameters = pywrapcp.DefaultRoutingSearchParameters()
                 search_parameters.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
                 search_parameters.time_limit.seconds = 3
                 
                 solution = routing.SolveWithParameters(search_parameters)
+
+                # Fallback se non trova soluzioni con orari rigidi
+                if not solution and is_grand_chef:
+                    manager = pywrapcp.RoutingIndexManager(num_nodes, 1, [0], [num_nodes - 1])
+                    routing = pywrapcp.RoutingModel(manager)
+                    def distance_callback_fallback(from_index, to_index):
+                        return dist_matrix[manager.IndexToNode(from_index)][manager.IndexToNode(to_index)]
+                    transit_callback_index_fallback = routing.RegisterTransitCallback(distance_callback_fallback)
+                    routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index_fallback)
+                    solution = routing.SolveWithParameters(search_parameters)
                 
                 opt_rem = []
                 if solution:
@@ -139,11 +191,12 @@ def save():
             zone_str_titolo = ", ".join(target_viaggio.get("zone", ["0000"]))
             
             # Calcola KM veri via API Google Directions (stessa logica del file 6)
-            full_stats = gen_percorsi.get_google_trip_data(lista_punti)
+            depot = gen_percorsi.get_depot_for_points(lista_punti)
+            full_stats = gen_percorsi.get_google_trip_data(lista_punti, depot)
             final_km, t_guida_min, t_sosta_min, t_tot, polylines = full_stats
             stats_4 = (final_km, t_guida_min, t_sosta_min, t_tot)
             
-            gen_percorsi.genera_html_giro(viaggio_id, zone_str_titolo, lista_punti, stats_4, polylines, output_html_path)
+            gen_percorsi.genera_html_giro(viaggio_id, zone_str_titolo, lista_punti, stats_4, polylines, output_html_path, depot)
 
         return jsonify({"status": "ok", "msg": "Salvataggio e Ottimizzazione completati!"})
 
@@ -259,6 +312,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     <div style="flex:1; user-select: none;">
                         <div style="font-weight:700; font-size:0.85rem;">${p.nome}</div>
                         <div style="font-size:0.7rem; color:#64748b;">${p.indirizzo}</div>
+                        <div style="font-size:0.72rem; color:#4f46e5; font-weight:700; margin-top:2px;">
+                            🕒 Fascia: ${p.orario_min || '07:00'} - ${p.orario_max || '14:00'}
+                        </div>
                         ${isH10 ? `<div style="font-size:0.7rem; color:#ef4444; font-weight:bold; margin-top:2px;">🕒 H10</div>` : ''}
                     </div>
                     <div class="drag-handle" style="color:#94a3b8; cursor:grab; padding: 10px; font-size: 1.2rem; user-select: none;">☰</div>
@@ -286,8 +342,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             let path = [];
             let bounds = new google.maps.LatLngBounds();
             
-            // Aggiungi deposito
-            const depotLat = 45.442805, depotLon = 11.714498;
+            // Aggiungi deposito dinamico in base al viaggio
+            const depotLat = activeViaggio.depot ? activeViaggio.depot.lat : 45.442805;
+            const depotLon = activeViaggio.depot ? activeViaggio.depot.lon : 11.714498;
+            
             path.push({lat: depotLat, lng: depotLon});
             bounds.extend({lat: depotLat, lng: depotLon});
 

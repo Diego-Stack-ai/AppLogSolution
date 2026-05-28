@@ -17,7 +17,36 @@ GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
 MODO_DISTANZA = "GOOGLE_MATRIX" 
 CACHE_FILE = PROG_DIR / "distanze_reali_cache.json"
 
-DEPOT = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"}
+DEPOT_VEGGIANO = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"}
+DEPOT_CASTENEDOLO = {"lat": 45.471591, "lon": 10.298200, "nome": "DEPOSITO CASTENEDOLO", "indirizzo": "Castenedolo (BS)"}
+DEPOT_SOMMACAMPAGNA = {"lat": 45.405200, "lon": 10.846000, "nome": "DEPOSITO SOMMACAMPAGNA", "indirizzo": "Sommacampagna (VR)"}
+DEPOT = DEPOT_VEGGIANO  # Mantenuto per retrocompatibilità all'importazione
+
+def get_depot_for_points(punti):
+    """Determina il deposito di partenza tramite voto di maggioranza sulle province."""
+    conteggio = {"BS": 0, "VR": 0, "MN": 0, "ALTRO": 0}
+    for p in punti:
+        ind = str(p.get("indirizzo") or "").upper()
+        # Cerca la provincia in parentesi (es. "(BS)" o "(VR)")
+        m = re.search(r"\(([A-Z]{2})\)", ind)
+        if m:
+            prov = m.group(1)
+            if prov in conteggio:
+                conteggio[prov] += 1
+            else:
+                conteggio["ALTRO"] += 1
+        else:
+            conteggio["ALTRO"] += 1
+            
+    # Assegna a Verona e Mantova lo stesso magazzino (Sommacampagna)
+    v_m_tot = conteggio["VR"] + conteggio["MN"]
+    if conteggio["BS"] > v_m_tot and conteggio["BS"] > conteggio["ALTRO"]:
+        return DEPOT_CASTENEDOLO
+    elif v_m_tot > conteggio["BS"] and v_m_tot > conteggio["ALTRO"]:
+        return DEPOT_SOMMACAMPAGNA
+        
+    return DEPOT_VEGGIANO
+
 TIME_OFFSET_PER_STOP = 8
 AVG_SPEED_KMH = 35
 
@@ -169,14 +198,14 @@ def crea_matrice_distanze_haversine_internal(punti_con_deposito):
     n = len(punti_con_deposito)
     return [[int(haversine(punti_con_deposito[i], punti_con_deposito[j]) * 1000) for j in range(n)] for i in range(n)]
 
-def ottimizza_percorso(punti_consegna):
+def ottimizza_percorso(punti_consegna, depot_point):
     """Sceglie automaticamente tra OR-Tools (TSP) o Nearest Neighbor."""
     if not punti_consegna: return []
     
     if not HAS_OR_TOOLS:
-        return ottimizza_percorso_legacy(punti_consegna)
+        return ottimizza_percorso_legacy(punti_consegna, depot_point)
 
-    all_locations = [DEPOT] + punti_consegna
+    all_locations = [depot_point] + punti_consegna
     distance_matrix = crea_matrice_distanze(all_locations)
     
     manager = pywrapcp.RoutingIndexManager(len(all_locations), 1, 0)
@@ -190,12 +219,60 @@ def ottimizza_percorso(punti_consegna):
     transit_callback_index = routing.RegisterTransitCallback(distance_callback)
     routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
 
+    # Aggiungi vincoli di orario (Time Windows) solo per Grand Chef
+    is_grand_chef = any("GRAND CHEF" in str(p.get("tipologia_grado") or "").upper() for p in punti_consegna)
+    
+    if is_grand_chef:
+        def time_callback(from_index, to_index):
+            from_node = manager.IndexToNode(from_index)
+            to_node = manager.IndexToNode(to_index)
+            dist = distance_matrix[from_node][to_node]
+            # Tempo di viaggio in minuti
+            travel_time = (dist / 1000.0 / AVG_SPEED_KMH) * 60
+            # Tempo di sosta al nodo di partenza (se non è il deposito)
+            service_time = TIME_OFFSET_PER_STOP if from_node != 0 else 0
+            return int(travel_time + service_time)
+
+        time_callback_index = routing.RegisterTransitCallback(time_callback)
+        routing.AddDimension(
+            time_callback_index,
+            30,  # tempo massimo di attesa (slack) consentito in ogni fermata
+            1440,  # tempo massimo di percorrenza giornaliero (24 ore in minuti)
+            False,
+            "Time"
+        )
+        time_dimension = routing.GetDimensionOrDie("Time")
+
+        def parse_time_to_minutes(time_str, default_val):
+            if not time_str: return default_val
+            m = re.match(r"(\d{2}):(\d{2})", time_str.strip())
+            if m:
+                return int(m.group(1)) * 60 + int(m.group(2))
+            return default_val
+
+        for i, p in enumerate(punti_consegna):
+            min_min = parse_time_to_minutes(p.get("orario_min"), 420)  # 07:00
+            max_min = parse_time_to_minutes(p.get("orario_max"), 840)  # 14:00
+            node_index = manager.NodeToIndex(i + 1)
+            time_dimension.CumulVar(node_index).SetRange(min_min, max_min)
+
     search_parameters = pywrapcp.DefaultRoutingSearchParameters()
     search_parameters.first_solution_strategy = (
         routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
     search_parameters.time_limit.seconds = 3
 
     solution = routing.SolveWithParameters(search_parameters)
+
+    # Se fallisce con i vincoli orari rigidi di Grand Chef, riprova senza vincoli (TSP puro per distanza)
+    if not solution and is_grand_chef:
+        print("  ⚠️  [OR-Tools] Impossibile rispettare tutti i vincoli orari per Grand Chef. Ottimizzo solo per distanza...")
+        manager = pywrapcp.RoutingIndexManager(len(all_locations), 1, 0)
+        routing = pywrapcp.RoutingModel(manager)
+        def distance_callback_fallback(from_index, to_index):
+            return distance_matrix[manager.IndexToNode(from_index)][manager.IndexToNode(to_index)]
+        transit_callback_index_fallback = routing.RegisterTransitCallback(distance_callback_fallback)
+        routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index_fallback)
+        solution = routing.SolveWithParameters(search_parameters)
 
     if solution:
         percorso_ottimizzato = []
@@ -207,11 +284,11 @@ def ottimizza_percorso(punti_consegna):
             index = solution.Value(routing.NextVar(index))
         return percorso_ottimizzato
     
-    return ottimizza_percorso_legacy(punti_consegna)
+    return ottimizza_percorso_legacy(punti_consegna, depot_point)
 
-def ottimizza_percorso_legacy(punti):
+def ottimizza_percorso_legacy(punti, depot_point):
     """Algoritmo Nearest Neighbor originale."""
-    non_visitati, percorso, corrente = punti[:], [], DEPOT
+    non_visitati, percorso, corrente = punti[:], [], depot_point
     while non_visitati:
         idx, pross = min(enumerate(non_visitati), key=lambda x: (haversine(corrente, x[1]), x[0]))
         percorso.append(pross)
@@ -221,9 +298,9 @@ def ottimizza_percorso_legacy(punti):
 
 # --- FINE LOGICA DI OTTIMIZZAZIONE ---
 
-def get_google_trip_data(percorso):
+def get_google_trip_data(percorso, depot_point):
     """Calcola KM e scarica le strade reali via Google Directions API."""
-    punti_pieni = [DEPOT] + percorso + [DEPOT]
+    punti_pieni = [depot_point] + percorso + [depot_point]
     km_tot, sec_tot = 0, 0
     polylines = []
     
@@ -268,9 +345,9 @@ def get_google_trip_data(percorso):
 def fmt_min(m):
     return f"{m//60}h {m%60}m" if m >= 60 else f"{m}min"
 
-def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path):
+def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path, depot):
     km, t_guida, t_sosta, t_tot = stats
-    tutti_punti = [DEPOT] + percorso + [DEPOT]
+    tutti_punti = [depot] + percorso + [depot]
     punti_js = json.dumps(tutti_punti, indent=2, ensure_ascii=False)
     poly_js = json.dumps(polylines)
     titolo_v = f"{v_id} - Zone: {zone_str}"
@@ -322,7 +399,7 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path):
             </div>
             <div id="stop-list">
                 <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">home</span></div>
-                    <div class="stop-info"><span class="depot-tag">PARTENZA</span><br><b style="font-size:0.9rem;">Deposito Veggiano</b></div>
+                    <div class="stop-info"><span class="depot-tag">PARTENZA</span><br><b style="font-size:0.9rem;">{depot['nome'].title()}</b></div>
                 </div>
                 { "".join([f'''
 <div class="stop-card" onclick="panTo({i+1})" style="{'background:#fff1f2; border-color:#fecaca;' if '10:00' in str(p.get('orario_max','')) else ''}">
@@ -337,7 +414,7 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path):
   <a href="https://www.google.com/maps/dir/?api=1&destination={p['lat']},{p['lon']}&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a>
 </div>''' for i, p in enumerate(percorso)]) }
                 <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">flag</span></div>
-                    <div class="stop-info"><span class="depot-tag">ARRIVO</span><br><b style="font-size:0.9rem;">Deposito Veggiano</b></div>
+                    <div class="stop-info"><span class="depot-tag">ARRIVO</span><br><b style="font-size:0.9rem;">{depot['nome'].title()}</b></div>
                 </div>
             </div>
         </div>
@@ -350,7 +427,7 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path):
             const {{ AdvancedMarkerElement }} = await google.maps.importLibrary("marker");
             
             // Trova primo punto per centrare
-            const centerP = data.find(p => p.lat && p.lon) || {{lat: 45.4428, lon: 11.7145}};
+            const centerP = data.find(p => p.lat && p.lon) || {{lat: {depot['lat']}, lon: {depot['lon']}}};
             map = new Map(document.getElementById("map"), {{ zoom: 12, center: {{ lat: centerP.lat, lng: centerP.lon }}, mapId: 'DEMO_MAP_ID' }});
             
             const geocoder = new google.maps.Geocoder();
@@ -514,8 +591,9 @@ def main():
         zone_coinvolte = sorted(list(set([str(p.get('zona','0000')) for p in punti])))
         z_str = ", ".join(zone_coinvolte).replace('None', '0000')
         
-        perc = ottimizza_percorso(punti)
-        km, t_guida, t_sosta, t_tot, polylines = get_google_trip_data(perc)
+        depot = get_depot_for_points(punti)
+        perc = ottimizza_percorso(punti, depot)
+        km, t_guida, t_sosta, t_tot, polylines = get_google_trip_data(perc, depot)
         
         
         # Calcolo Fatturato DDT (16.50 Euro ciascuno)
@@ -534,8 +612,8 @@ def main():
         info = {'v_id': v_id, 'zone_str': z_str, 'fname': fname, 'km': km, 't_guida': t_guida, 't_sosta': t_sosta, 't_tot': t_tot, 'punti': len(punti), 'tot_ddt': tot_ddt, 'fatturato': fatturato}
         summary.append(info)
         
-        genera_html_giro(v_id, z_str, perc, (km, t_guida, t_sosta, t_tot), polylines, out_dir / fname)
-        print(f"  OK {v_id} (Zone: {z_str:<12}) -> {km:>5} km | {fmt_min(t_tot)}")
+        genera_html_giro(v_id, z_str, perc, (km, t_guida, t_sosta, t_tot), polylines, out_dir / fname, depot)
+        print(f"  OK {v_id} (Zone: {z_str:<12} | Magazzino: {depot['nome'].split()[-1]}) -> {km:>5} km | {fmt_min(t_tot)}")
 
     riepilogo_fname = sanitize_filename("RIEPILOGO_GIRI.html")
     gera_riepilogo(summary, out_dir / riepilogo_fname)

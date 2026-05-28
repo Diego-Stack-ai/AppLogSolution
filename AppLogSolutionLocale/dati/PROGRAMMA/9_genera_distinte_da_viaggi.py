@@ -85,6 +85,7 @@ CONSOLIDAMENTO = {
     "PF-T-LI-L3-NA": ("Cartoni",   "Porzioni",   8),
     "SU-M-BI-L3-NI": ("Cartoni",   "Porzioni",  18),
     "YO-CN-MN-04-":  ("Cartoni",   "Cluster",   10),
+    "YO-CN-MN-04-LB":("Cartoni",   "Cluster",   10),
     "AL-T-LI-NA":    ("Cartoni",   "Porzioni",  12),
     "NE-M-BI-L3-NI": ("Colli",     "Porzioni",  10),
 }

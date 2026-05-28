@@ -842,8 +842,7 @@ def _carica_e_genera(data_giorno):
         # Aggiungi zone GranChef se presenti
         zone_gc = sorted([k for k in temp_dict.keys() if k.startswith("GranChef")])
         for idx_gc, zid in enumerate(zone_gc, start=1):
-            colori_gc = ["#ec4899", "#d946ef", "#f43f5e", "#f472b6"]
-            colore_gc = colori_gc[(idx_gc - 1) % len(colori_gc)]
+            colore_gc = _get_color(idx_gc - 1)
             zone_dict[zid] = {
                 "id_zona": zid,
                 "lista_punti": temp_dict[zid],

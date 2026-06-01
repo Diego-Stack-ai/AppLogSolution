@@ -203,6 +203,11 @@
         let gMarkers = [];
         let infoWindow;
 
+        function setLoaderMsg(msg) {
+            const el = document.querySelector("#loading-overlay p");
+            if (el) el.textContent = msg;
+        }
+
         async function initApp() {
             console.log("[Map] Inizializzazione...");
             
@@ -247,7 +252,7 @@
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         console.log("[Map] Utente autenticato, avvio listener Firestore...");
-                        onSnapshot(collection(db, "customers/DNR/clienti"), (snapshot) => {
+                        onSnapshot(collection(db, "clienti/DNR/raccolta clienti"), (snapshot) => {
                             console.log(`[Map] Ricevuti ${snapshot.size} punti da Firestore`);
                             ALL_POINTS = snapshot.docs.map(doc => ({
                                 id: doc.id,
@@ -422,42 +427,37 @@
                 });
 
                 if (channel === 'DNR') {
-                    // --- IL VECCHIO SISTEMA GEOMETRICO GIALLO E NERO PER SCUOLE ---
-                    let shape = 'm-tonda';
-                    if (layer === 1) {
-                        el.style.borderRadius = '50% 50% 50% 0';
-                        el.style.transform = 'translate(-50%, -100%) rotate(-45deg)';
-                        // Sovrascrive hover per goccia ruotata
-                        el.addEventListener('mouseenter', () => {
-                            el.style.transform = 'translate(-50%, -100%) rotate(-45deg) scale(1.2)';
-                        });
-                        el.addEventListener('mouseleave', () => {
-                            el.style.transform = 'translate(-50%, -100%) rotate(-45deg) scale(1)';
-                        });
-                        shape = 'm-goccia';
-                    } else if (layer === 2) {
-                        el.style.borderRadius = '4px';
-                        shape = 'm-quadrato';
-                    } else if (layer === 3) {
-                        el.style.width = '0';
-                        el.style.height = '0';
-                        el.style.borderLeft = '18px solid transparent';
-                        el.style.borderRight = '18px solid transparent';
-                        el.style.borderBottom = '36px solid #fbbf24';
+                    // --- SISTEMA ICONA STANDARD LEAFLET PER DNR ---
+                    el.style.width = '25px';
+                    el.style.height = '41px';
+                    el.style.borderRadius = '0';
+                    el.style.background = 'none';
+                    el.style.border = 'none';
+                    el.style.boxShadow = 'none';
+                    el.style.display = 'block';
+
+                    // Sovrascrive hover per gestire solo lo scale senza ombre
+                    el.addEventListener('mouseenter', () => {
+                        el.style.transform = 'translate(-50%, -100%) scale(1.2)';
                         el.style.boxShadow = 'none';
-                        shape = 'm-triangolo';
-                    } else {
-                        el.style.borderRadius = '50%';
+                    });
+                    el.addEventListener('mouseleave', () => {
+                        el.style.transform = 'translate(-50%, -100%) scale(1)';
+                        el.style.boxShadow = 'none';
+                    });
+
+                    // Supporto per la visualizzazione delle sovrapposizioni (layer)
+                    if (layer === 2) {
+                        el.style.filter = 'drop-shadow(0 0 4px #4f46e5)';
+                    } else if (layer === 3) {
+                        el.style.filter = 'drop-shadow(0 0 8px #4f46e5)';
+                    } else if (layer > 3) {
                         el.style.animation = 'markerPulse 2s infinite';
+                        el.style.filter = 'drop-shadow(0 0 10px #ef4444)';
                     }
 
-                    if (shape !== 'm-triangolo') {
-                        el.style.width = '36px';
-                        el.style.height = '36px';
-                        el.style.backgroundColor = '#fbbf24';
-                        el.style.border = '2.5px solid #000000';
-                    }
-                    el.innerHTML = ''; // Nessuna icona o testo all'interno dei marker geografici vuoti
+                    // Carica l'immagine originale del marker di default Leaflet
+                    el.innerHTML = `<img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png" style="width: 25px; height: 41px; display: block;">`;
                     
                 } else {
                     // --- SISTEMA ICONE SPECIFICHE PER I CANALI COMMERCIALI ---
@@ -573,7 +573,7 @@
             try {
                 const batch = writeBatch(db);
                 for (const id in MODIFIED) {
-                    const ref = doc(db, "customers/DNR/clienti", id);
+                    const ref = doc(db, "clienti/DNR/raccolta clienti", id);
                     batch.update(ref, MODIFIED[id]);
                 }
                 await batch.commit();

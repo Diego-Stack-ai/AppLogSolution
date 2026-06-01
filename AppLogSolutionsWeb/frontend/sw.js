@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'log-solution-v2.25';
+﻿const CACHE_NAME = 'log-solution-v2.28';
 const ASSETS = [
     './',
     './index.html',
@@ -17,8 +17,6 @@ const ASSETS = [
     './img/logo.png',
     'https://fonts.googleapis.com/icon?family=Material+Icons+Round'
 ];
-// Nota: JS/CSS con ?v= non sono in ASSETS perché usano strategia Network-First
-// e vengono cachati dinamicamente al primo accesso.
 
 // 1. Installazione: cache solo asset statici puri
 self.addEventListener('install', (event) => {
@@ -49,7 +47,7 @@ self.addEventListener('activate', (event) => {
 // 3. SKIP_WAITING via messaggio (forza aggiornamento immediato)
 self.addEventListener('message', (event) => {
     if (event.data === 'SKIP_WAITING' || event.data?.type === 'SKIP_WAITING') {
-        console.log(`[SW ${CACHE_NAME}] SKIP_WAITING ricevuto â€” attivazione forzata.`);
+        console.log(`[SW ${CACHE_NAME}] SKIP_WAITING ricevuto — attivazione forzata.`);
         self.skipWaiting();
     }
 });
@@ -62,7 +60,7 @@ self.addEventListener('fetch', (event) => {
     // Ignora richieste non http (es: chrome-extension://) per evitare errori
     if (!url.startsWith('http')) return;
 
-    // âš¡ Bypass totale: Firebase, Firestore, autenticazione âš¡
+    // ⚡ Bypass totale: Firebase, Firestore, autenticazione ⚡
     if (
         url.includes('firebaseio.com') ||
         url.includes('firestore.googleapis.com') ||
@@ -87,8 +85,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // âš¡ Network-First: JS e CSS (sempre freschi, fallback offline) âš¡
-    // Questa strategia elimina il bisogno di bumping manuale del ?v=
+    // ⚡ Network-First: JS e CSS (sempre freschi, fallback offline) ⚡
     if (url.match(/\.(js|css)(\?|$)/)) {
         event.respondWith(
             fetch(event.request.url, { cache: 'no-store' })
@@ -106,7 +103,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // âš¡ Cache-First: immagini e altri asset statici (cambiano raramente) âš¡
+    // ⚡ Cache-First: immagini e altri asset statici (cambiano raramente) ⚡
     event.respondWith(
         caches.match(event.request).then((cached) => {
             if (cached) return cached;

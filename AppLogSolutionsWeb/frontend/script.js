@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "2.25";
+const APP_VERSION = "2.28";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -378,43 +378,63 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (typeof window.updateViaggi === 'function') window.updateViaggi();
             }
         });
-    }
 
-    // PWA: Registrazione Service Worker + gestione aggiornamenti
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw_v207.js').then(reg => {
-            console.log('[SW] Registrato correttamente con la versione ' + APP_VERSION);
-
-            // Se c'è già un SW in attesa (tab rimasto aperto durante aggiornamento)
-            // - invia subito SKIP_WAITING per forzare l'attivazione
-            if (reg.waiting) {
-                console.log('[SW] SW in attesa trovato — invio SKIP_WAITING.');
-                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-                showUpdateToast(reg);
-            }
-
-            reg.addEventListener('updatefound', () => {
-                const newWorker = reg.installing;
-                newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        console.log('[SW] Nuova versione installata, mostro banner aggiornamento.');
-                        showUpdateToast(reg);
+        // PWA: Bonifica automatica vecchi Service Worker obsoleti e registrazione sw.js costante
+        if ('serviceWorker' in navigator) {
+            // 1. Rileva e disinstalla vecchi Service Worker con nomi specifici di versione (es. sw_v207.js)
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                let clearedOldSw = false;
+                for (let reg of registrations) {
+                    const scriptUrl = reg.active?.scriptURL || reg.installing?.scriptURL || reg.waiting?.scriptURL || '';
+                    if (scriptUrl && !scriptUrl.endsWith('/sw.js')) {
+                        console.warn('[SW Cleanup] Rilevato Service Worker obsoleto, rimozione in corso:', scriptUrl);
+                        reg.unregister();
+                        clearedOldSw = true;
                     }
-                });
+                }
+                if (clearedOldSw) {
+                    console.log('[SW Cleanup] Bonifica completata. Svuoto la cache e ricarico...');
+                    caches.keys().then(names => Promise.all(names.map(name => caches.delete(name)))).then(() => {
+                        window.location.reload();
+                    });
+                }
             });
-        }).catch(err => {
-            console.error('[SW] Errore registrazione:', err);
-        });
 
-        // âš¡ CRITICO: Quando il nuovo SW prende il controllo, ricarica la pagina automaticamente
-        // Questo garantisce che il telefono non rimanga su una versione vecchia.
-        let swRefreshing = false;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (swRefreshing) return;
-            swRefreshing = true;
-            console.log('[SW] Nuova versione attiva — ricarico la pagina...');
-            window.location.reload();
-        });
+            // 2. Registrazione del Service Worker standard sw.js
+            navigator.serviceWorker.register('./sw.js').then(reg => {
+                console.log('[SW] Registrato correttamente sw.js con versione ' + APP_VERSION);
+
+                // Se c'è già un SW in attesa (tab rimasto aperto durante aggiornamento)
+                // - invia subito SKIP_WAITING per forzare l'attivazione
+                if (reg.waiting) {
+                    console.log('[SW] SW in attesa trovato — invio SKIP_WAITING.');
+                    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    showUpdateToast(reg);
+                }
+
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log('[SW] Nuova versione installata, mostro banner aggiornamento.');
+                            showUpdateToast(reg);
+                        }
+                    });
+                });
+            }).catch(err => {
+                console.error('[SW] Errore registrazione:', err);
+            });
+
+            // ⚡ CRITICO: Quando il nuovo SW prende il controllo, ricarica la pagina automaticamente
+            // Questo garantisce che il telefono non rimanga su una versione vecchia.
+            let swRefreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (swRefreshing) return;
+                swRefreshing = true;
+                console.log('[SW] Nuova versione attiva — ricarico la pagina...');
+                window.location.reload();
+            });
+        }
     }
 });
 

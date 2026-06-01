@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 
 <head>
@@ -429,8 +429,8 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.95"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.95"></script>
+    <script src="script.js?v=2.28"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.28"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -926,7 +926,7 @@
         // Gestione Aggiornamento App
         let registration = null;
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw_v207.js').then(reg => {
+            navigator.serviceWorker.register('sw.js').then(reg => {
                 registration = reg;
                 reg.addEventListener('updatefound', () => {
                     const newWorker = reg.installing;

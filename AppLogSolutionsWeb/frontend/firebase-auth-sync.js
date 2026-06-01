@@ -258,7 +258,7 @@ function startRealtimeSync(isAdmin) {
     activeListeners = [];
 
     // Listener per Clienti (Punti di Consegna DNR - Progetto Scuole)
-    const unsubCustomers = onSnapshot(collection(db, "customers", "DNR", "clienti"), (snapshot) => {
+    const unsubCustomers = onSnapshot(collection(db, "clienti", "DNR", "raccolta clienti"), (snapshot) => {
         const clienti = [];
         snapshot.forEach((d) => {
             const data = d.data();
@@ -365,16 +365,17 @@ window.updateCustomer = async function(id, data) {
         if (!docId) {
             // Se non c'è id creiamo il documento col codice frutta o latte (oppure usiamo addDoc ma setDoc è meglio)
             // Lavoriamo con doc() senza id per generarlo
-            const docRef = doc(collection(db, "customers", "DNR", "clienti"));
+            const docRef = doc(collection(db, "clienti", "DNR", "raccolta clienti"));
             await setDoc(docRef, updateData);
         } else {
-            const docRef = doc(db, "customers", "DNR", "clienti", id);
+            const docRef = doc(db, "clienti", "DNR", "raccolta clienti", id);
             await setDoc(docRef, updateData, { merge: true }); // setDoc merge previene crash se vuoto
         }
         return true;
     } catch (e) {
         console.error("Errore salvataggio Cliente:", e);
-}
+    }
+};
 
 // Alias per chiarezza
 window.addCustomer = (data) => window.updateCustomer(null, data);

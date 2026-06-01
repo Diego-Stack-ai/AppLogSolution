@@ -107,7 +107,7 @@ def save():
                 routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
 
                 # Aggiungi vincoli di orario (Time Windows) solo per Grand Chef
-                is_grand_chef = any("GRAND CHEF" in str(p.get("tipologia_grado") or "").upper() for p in remaining_points)
+                is_grand_chef = viaggio_id.upper().startswith("GRANCHEF") or any("GRAND" in str(p.get("tipologia_grado") or "").upper() or "CHEF" in str(p.get("tipologia_grado") or "").upper() or "GRANCHEF" in str(p.get("zona") or "").upper() for p in remaining_points)
                 
                 if is_grand_chef:
                     def time_callback(from_index, to_index):
@@ -116,7 +116,8 @@ def save():
                         dist = dist_matrix[from_node][to_node]
                         travel_time = (dist / 1000.0 / gen_percorsi.AVG_SPEED_KMH) * 60
                         # Sosta solo se il nodo di partenza non è lo start_point (nodo 0) e non è l'arrivo (depot)
-                        service_time = gen_percorsi.TIME_OFFSET_PER_STOP if from_node not in (0, num_nodes - 1) else 0
+                        offset = 12 if is_grand_chef else gen_percorsi.TIME_OFFSET_PER_STOP
+                        service_time = offset if from_node not in (0, num_nodes - 1) else 0
                         return int(travel_time + service_time)
 
                     time_callback_index = routing.RegisterTransitCallback(time_callback)
@@ -132,7 +133,7 @@ def save():
                     def parse_time_to_minutes(time_str, default_val):
                         if not time_str: return default_val
                         import re
-                        m = re.match(r"(\d{2}):(\d{2})", time_str.strip())
+                        m = re.match(r"(\d{2}):(\d{2})", str(time_str).strip())
                         if m:
                             return int(m.group(1)) * 60 + int(m.group(2))
                         return default_val
@@ -232,20 +233,20 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .btn-save { background: #10b981; }
         .btn-opt { background: #f59e0b; }
         #list-container { flex: 1; overflow-y: auto; padding: 10px; }
-        .point-card { background: white; border: 1px solid #e2e8f0; margin-bottom: 8px; padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; cursor: grab; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .point-card { background: white; border: 1px solid #e2e8f0; margin-bottom: 8px; padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; cursor: grab; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s ease; }
         .point-card:active { cursor: grabbing; }
-        .point-card.h10 { border-left: 5px solid #ef4444; background: #fef2f2; }
+        .point-card.late { border-left: 5px solid #ef4444; background: #fef2f2; }
         .num-badge { width: 24px; height: 24px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; flex-shrink: 0; }
         #map { flex: 1; }
         .custom-marker { background: var(--primary); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 11px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-        .custom-marker.h10 { background: #ef4444; }
+        .custom-marker.late { background: #ef4444; }
         #status { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #10b981; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 9999; }
     </style>
 </head>
 <body>
     <div id="sidebar">
         <div class="header">
-            <h2 style="margin:0; font-size:1.2rem;">Editor Percorsi</h2>
+            <h2 style="margin:0; font-size:1.2rem;">Editor Percorsi [v1.1]</h2>
             <select id="viaggio-select" onchange="loadViaggio()"></select>
         </div>
         <div class="controls">
@@ -256,6 +257,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             </label>
             <button class="btn btn-save" onclick="salva(false)">💾 SALVA ORDINE ESATTO</button>
             <button class="btn btn-opt" onclick="salva(true)">⚡ SALVA E OTTIMIZZA IL RESTO (OR-TOOLS)</button>
+            <div id="gc-info-box" style="margin-top:12px; padding:10px; border-radius:6px; font-size:0.82rem; border: 1px solid #cbd5e1; background: #f8fafc; display:none; line-height:1.4;"></div>
         </div>
         <div id="list-container"></div>
     </div>
@@ -267,109 +269,240 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         let map, markers = [], polyline;
         let activeViaggio = null;
 
-        async function initMap() {
-            const { Map } = await google.maps.importLibrary("maps");
-            map = new Map(document.getElementById("map"), { center: {lat: 45.44, lng: 11.71}, zoom: 10, mapId: "EDITOR_MAP" });
-            
-            const sel = document.getElementById("viaggio-select");
-            DATA.forEach(v => {
-                let opt = document.createElement("option");
-                opt.value = v.nome_giro;
-                opt.textContent = `${v.nome_giro} (${v.lista_punti.length} fermate)`;
-                sel.appendChild(opt);
-            });
-            loadViaggio();
-
-            Sortable.create(document.getElementById('list-container'), {
-                animation: 150,
-                handle: '.drag-handle',
-                forceFallback: true,
-                onEnd: () => {
-                    aggiornaNumeri();
-                    drawMappa();
+        function calcolaETA(viaggio) {
+            try {
+                const isGC = viaggio.nome_giro.toUpperCase().includes('GRANCHEF') || viaggio.lista_punti.some(p => (p.tipologia_grado || '').toUpperCase().includes('GRAND') || (p.tipologia_grado || '').toUpperCase().includes('CHEF') || (p.zona || '').toUpperCase().includes('GRANCHEF'));
+                const sosta = isGC ? 12 : 8;
+                const speed = 35; // km/h
+                
+                const depotLat = viaggio.depot ? viaggio.depot.lat : 45.442805;
+                const depotLon = viaggio.depot ? viaggio.depot.lon : 11.714498;
+                const depot = { lat: depotLat, lon: depotLon };
+                
+                let currentTime = 420; // 07:00
+                
+                function getDistKm(lat1, lon1, lat2, lon2) {
+                    const R = 6371; // km
+                    const dLat = (lat2 - lat1) * Math.PI / 180;
+                    const dLon = (lon2 - lon1) * Math.PI / 180;
+                    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                              Math.sin(dLon/2) * Math.sin(dLon/2);
+                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                    return R * c;
                 }
-            });
+                
+                function parseTimeToMinutes(timeStr, defaultVal) {
+                    if (!timeStr) return defaultVal;
+                    const parts = String(timeStr).trim().split(':');
+                    if (parts.length >= 2) {
+                        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+                    }
+                    return defaultVal;
+                }
+                
+                function formatMinutesToTime(minutes) {
+                    const m = Math.floor(minutes) % 1440;
+                    const hh = String(Math.floor(m / 60)).padStart(2, '0');
+                    const mm = String(m % 60).padStart(2, '0');
+                    return `${hh}:${mm}`;
+                }
+                
+                let oraPartenzaMagazzino = "07:00";
+                
+                for (let i = 0; i < viaggio.lista_punti.length; i++) {
+                    const p = viaggio.lista_punti[i];
+                    const prev = i === 0 ? depot : { lat: viaggio.lista_punti[i-1].lat, lon: viaggio.lista_punti[i-1].lon };
+                    
+                    const distKm = getDistKm(prev.lat, prev.lon, p.lat, p.lon) * 1.3;
+                    const durataGuidaMin = (distKm / speed) * 60;
+                    
+                    let arrivalTime;
+                    if (isGC && i === 0) {
+                        arrivalTime = 420; // 07:00
+                        const partenzaMin = 420 - durataGuidaMin;
+                        oraPartenzaMagazzino = formatMinutesToTime(partenzaMin);
+                    } else {
+                        arrivalTime = currentTime + durataGuidaMin;
+                    }
+                    
+                    const departureTime = arrivalTime + sosta;
+                    p.eta_arrivo = arrivalTime;
+                    p.ora_arrivo = formatMinutesToTime(arrivalTime);
+                    p.ora_ripartenza = formatMinutesToTime(departureTime);
+                    
+                    const maxTimeMin = parseTimeToMinutes(p.orario_max, 840);
+                    p.isLate = arrivalTime > (maxTimeMin + 1);
+                    
+                    currentTime = departureTime;
+                }
+                
+                viaggio.isGC = isGC;
+                viaggio.sosta = sosta;
+                viaggio.oraPartenzaMagazzino = oraPartenzaMagazzino;
+            } catch (err) {
+                console.error("Errore calcolo ETA: ", err);
+            }
+        }
+
+        async function initMap() {
+            try {
+                const { Map } = await google.maps.importLibrary("maps");
+                map = new Map(document.getElementById("map"), { center: {lat: 45.44, lng: 11.71}, zoom: 10, mapId: "EDITOR_MAP" });
+                
+                const sel = document.getElementById("viaggio-select");
+                DATA.forEach(v => {
+                    let opt = document.createElement("option");
+                    opt.value = v.nome_giro;
+                    opt.textContent = `${v.nome_giro} (${v.lista_punti.length} fermate)`;
+                    sel.appendChild(opt);
+                });
+                loadViaggio();
+
+                Sortable.create(document.getElementById('list-container'), {
+                    animation: 150,
+                    handle: '.drag-handle',
+                    forceFallback: true,
+                    onEnd: () => {
+                        aggiornaNumeri();
+                        drawMappa();
+                    }
+                });
+            } catch (err) {
+                alert("Errore caricamento Google Maps: " + err.message);
+                console.error(err);
+            }
         }
 
         function loadViaggio() {
-            const vid = document.getElementById("viaggio-select").value;
-            activeViaggio = DATA.find(v => v.nome_giro === vid);
-            
-            // Suggerisci in automatico il numero di H10 trovati come "bloccati"
-            const numH10 = activeViaggio.lista_punti.filter(p => (p.orario_max||'').includes('10:')).length;
-            document.getElementById("num-locked").value = numH10;
-            
-            renderList();
-            drawMappa();
+            try {
+                const vid = document.getElementById("viaggio-select").value;
+                activeViaggio = DATA.find(v => v.nome_giro === vid);
+                
+                calcolaETA(activeViaggio);
+                
+                const infoBox = document.getElementById("gc-info-box");
+                if (activeViaggio.isGC) {
+                    infoBox.style.display = "block";
+                    infoBox.innerHTML = `
+                        <div style="font-weight:bold; color:#1e293b; margin-bottom:4px;">🚚 Regole Tratta: GRAND CHEF</div>
+                        <div style="color:#475569;">📍 Magazzino: <span style="font-weight:600; color:#4f46e5;">Veggiano (PD)</span></div>
+                        <div style="color:#475569;">⏰ Ora Partenza: <span style="font-weight:600; color:#10b981;">${activeViaggio.oraPartenzaMagazzino}</span></div>
+                        <div style="color:#475569;">⏳ Sosta per fermata: <b>12 min</b></div>
+                        <div style="color:#475569;">🎯 Vincolo: Primo Stop fisso alle <b>07:00</b></div>
+                    `;
+                    document.getElementById("num-locked").value = 0;
+                } else {
+                    infoBox.style.display = "block";
+                    infoBox.innerHTML = `
+                        <div style="font-weight:bold; color:#1e293b; margin-bottom:4px;">🏫 Regole Tratta: SCUOLE</div>
+                        <div style="color:#475569;">📍 Magazzino: <span style="font-weight:600; color:#4f46e5;">Veggiano (PD)</span></div>
+                        <div style="color:#475569;">⏰ Ora Partenza: <span style="font-weight:600; color:#10b981;">07:00 (Fissa)</span></div>
+                        <div style="color:#475569;">⏳ Sosta per fermata: <b>8 min</b></div>
+                        <div style="color:#475569;">⚠️ Tolleranza max: consegna entro le <b>10:00</b></div>
+                    `;
+                    const numH10 = activeViaggio.lista_punti.filter(p => (p.orario_max||'').includes('10:')).length;
+                    document.getElementById("num-locked").value = numH10;
+                }
+                
+                renderList();
+                drawMappa();
+            } catch (err) {
+                alert("Errore nel caricamento del viaggio: " + err.message);
+                console.error(err);
+            }
         }
 
         function renderList() {
-            const cont = document.getElementById("list-container");
-            cont.innerHTML = activeViaggio.lista_punti.map((p, i) => {
-                const isH10 = (p.orario_max || '').includes('10:');
-                return `<div class="point-card ${isH10?'h10':''}" data-idx="${i}">
-                    <div class="num-badge">${i+1}</div>
-                    <div style="flex:1; user-select: none;">
-                        <div style="font-weight:700; font-size:0.85rem;">${p.nome}</div>
-                        <div style="font-size:0.7rem; color:#64748b;">${p.indirizzo}</div>
-                        <div style="font-size:0.72rem; color:#4f46e5; font-weight:700; margin-top:2px;">
-                            🕒 Fascia: ${p.orario_min || '07:00'} - ${p.orario_max || '14:00'}
+            try {
+                const cont = document.getElementById("list-container");
+                cont.innerHTML = activeViaggio.lista_punti.map((p, i) => {
+                    const isH10 = !activeViaggio.isGC && (p.orario_max || '').includes('10:');
+                    const badgeH10 = isH10 ? `<span style="background:#fef3c7; color:#d97706; padding:2px 6px; border-radius:4px; font-size:0.65rem; font-weight:bold;">🏫 SCUOLA H10</span>` : '';
+                    const badgeLate = p.isLate ? `<span style="background:#fecaca; color:#dc2626; padding:2px 6px; border-radius:4px; font-size:0.65rem; font-weight:bold; margin-left:4px;">⚠️ RITARDO ETA</span>` : '';
+                    
+                    return `<div class="point-card ${p.isLate ? 'late' : ''}" data-idx="${i}">
+                        <div class="num-badge">${i+1}</div>
+                        <div style="flex:1; user-select: none;">
+                            <div style="font-weight:700; font-size:0.85rem;">${p.nome}</div>
+                            <div style="font-size:0.7rem; color:#64748b;">${p.indirizzo}</div>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; align-items:center;">
+                                <span style="font-size:0.72rem; color:#4f46e5; font-weight:700;">
+                                    Fascia: ${p.orario_min || '07:00'} - ${p.orario_max || '14:00'}
+                                </span>
+                                ${badgeH10}
+                                ${badgeLate}
+                            </div>
+                            <div style="font-size:0.72rem; color:#10b981; font-weight:700; margin-top:3px; background:#f0fdf4; padding:2px 6px; border-radius:4px; display:inline-block;">
+                                ⏱️ Arrivo stimato: <span style="color:#047857; font-weight:800;">${p.ora_arrivo}</span> | Ripartenza: ${p.ora_ripartenza}
+                            </div>
                         </div>
-                        ${isH10 ? `<div style="font-size:0.7rem; color:#ef4444; font-weight:bold; margin-top:2px;">🕒 H10</div>` : ''}
-                    </div>
-                    <div class="drag-handle" style="color:#94a3b8; cursor:grab; padding: 10px; font-size: 1.2rem; user-select: none;">☰</div>
-                </div>`;
-            }).join('');
+                        <div class="drag-handle" style="color:#94a3b8; cursor:grab; padding: 10px; font-size: 1.2rem; user-select: none;">☰</div>
+                    </div>`;
+                }).join('');
+            } catch (err) {
+                console.error("Errore renderList: ", err);
+            }
         }
 
         function aggiornaNumeri() {
-            const cards = document.querySelectorAll('.point-card');
-            let newList = [];
-            cards.forEach((c, i) => {
-                c.querySelector('.num-badge').textContent = i+1;
-                const oldIdx = parseInt(c.dataset.idx);
-                newList.push(activeViaggio.lista_punti[oldIdx]);
-                c.dataset.idx = i;
-            });
-            activeViaggio.lista_punti = newList;
+            try {
+                const cards = document.querySelectorAll('.point-card');
+                let newList = [];
+                cards.forEach((c, i) => {
+                    c.querySelector('.num-badge').textContent = i+1;
+                    const oldIdx = parseInt(c.dataset.idx);
+                    newList.push(activeViaggio.lista_punti[oldIdx]);
+                    c.dataset.idx = i;
+                });
+                activeViaggio.lista_punti = newList;
+                
+                calcolaETA(activeViaggio);
+                renderList();
+            } catch (err) {
+                console.error("Errore aggiornaNumeri: ", err);
+            }
         }
 
         async function drawMappa() {
-            markers.forEach(m => m.setMap(null)); markers = [];
-            if(polyline) polyline.setMap(null);
+            try {
+                markers.forEach(m => m.setMap(null)); markers = [];
+                if(polyline) polyline.setMap(null);
 
-            const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
-            let path = [];
-            let bounds = new google.maps.LatLngBounds();
-            
-            // Aggiungi deposito dinamico in base al viaggio
-            const depotLat = activeViaggio.depot ? activeViaggio.depot.lat : 45.442805;
-            const depotLon = activeViaggio.depot ? activeViaggio.depot.lon : 11.714498;
-            
-            path.push({lat: depotLat, lng: depotLon});
-            bounds.extend({lat: depotLat, lng: depotLon});
-
-            activeViaggio.lista_punti.forEach((p, i) => {
-                if(!p.lat) return;
-                path.push({lat: p.lat, lng: p.lon});
-                bounds.extend({lat: p.lat, lng: p.lon});
+                const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+                let path = [];
+                let bounds = new google.maps.LatLngBounds();
                 
-                const isH10 = (p.orario_max || '').includes('10:');
-                const el = document.createElement("div");
-                el.className = `custom-marker ${isH10?'h10':''}`;
-                el.innerHTML = i+1;
+                const depotLat = activeViaggio.depot ? activeViaggio.depot.lat : 45.442805;
+                const depotLon = activeViaggio.depot ? activeViaggio.depot.lon : 11.714498;
                 
-                const m = new AdvancedMarkerElement({ position: {lat: p.lat, lng: p.lon}, map: map, content: el });
-                markers.push(m);
-            });
-            
-            path.push({lat: depotLat, lng: depotLon});
+                path.push({lat: depotLat, lng: depotLon});
+                bounds.extend({lat: depotLat, lng: depotLon});
 
-            polyline = new google.maps.Polyline({
-                path: path, strokeColor: "#4f46e5", strokeOpacity: 0.6, strokeWeight: 4, map: map
-            });
-            
-            map.fitBounds(bounds);
+                activeViaggio.lista_punti.forEach((p, i) => {
+                    if(!p.lat) return;
+                    path.push({lat: p.lat, lng: p.lon});
+                    bounds.extend({lat: p.lat, lng: p.lon});
+                    
+                    const el = document.createElement("div");
+                    el.className = `custom-marker ${p.isLate ? 'late' : ''}`;
+                    el.innerHTML = i+1;
+                    
+                    const m = new AdvancedMarkerElement({ position: {lat: p.lat, lng: p.lon}, map: map, content: el });
+                    markers.push(m);
+                });
+                
+                path.push({lat: depotLat, lng: depotLon});
+
+                polyline = new google.maps.Polyline({
+                    path: path, strokeColor: "#4f46e5", strokeOpacity: 0.6, strokeWeight: 4, map: map
+                });
+                
+                map.fitBounds(bounds);
+            } catch (err) {
+                alert("Errore disegno mappa: " + err.message);
+                console.error(err);
+            }
         }
 
         function salva(usa_ortools) {
@@ -392,14 +525,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     const st = document.getElementById('status');
                     st.style.display = 'block';
                     setTimeout(()=>st.style.display='none', 3000);
-                    // Ricarica per visualizzare il risultato aggiornato se OR-Tools ha fatto modifiche
                     if(usa_ortools) setTimeout(() => location.reload(), 1000);
                 } else {
                     alert("Errore: " + d.msg);
                 }
             }).finally(() => {
                 btn.disabled = false;
-                btn.textContent = usa_ortools ? "⚡ SALVA E OTTIMIZZA IL RESTO" : "💾 SALVA ORDINE ESATTO";
+                btn.textContent = usa_ortools ? "⚡ SALVA E OTTIMIZZA IL RESTO (OR-TOOLS)" : "💾 SALVA ORDINE ESATTO";
             });
         }
 

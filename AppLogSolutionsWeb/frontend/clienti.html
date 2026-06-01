@@ -624,7 +624,7 @@
                 if (idx === -1) return;
                 if (confirm('Eliminare ' + clienti[idx].nome + '?')) {
                     try {
-                        if (window.deleteFromFirebase && clienti[idx].id) await window.deleteFromFirebase("customers/DNR/clienti", clienti[idx].id);
+                        if (window.deleteFromFirebase && clienti[idx].id) await window.deleteFromFirebase("clienti/DNR/raccolta clienti", clienti[idx].id);
                         alert("Eliminato!"); renderClienti();
                     } catch (e) { alert("Errore: " + e.message); }
                 }

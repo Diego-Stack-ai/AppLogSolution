@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V06</title>
+    <title>GranChef V05</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
@@ -69,183 +69,73 @@
         </div>
         <div id="sidebar">
             <div class="header">
-                <div class="trip-title">🏎️ V06 | Zone: 3204</div>
+                <div class="trip-title">🏎️ GranChef V05 | Zone: GranChef_V05</div>
                 <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
                 <div class="stats-row">
-                    <div class="stat-item"><span class="stat-val">294.7km</span><span class="stat-lbl">Strada</span></div>
-                    <div class="stat-item"><span class="stat-val">4h 37m</span><span class="stat-lbl">Guida</span></div>
-                    <div class="stat-item"><span class="stat-val">2h 8m</span><span class="stat-lbl">Soste</span></div>
-                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">6h 45m</span><span class="stat-lbl">Totale</span></div>
+                    <div class="stat-item"><span class="stat-val">125.7km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">2h 14m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">1h 0m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">3h 14m</span><span class="stat-lbl">Totale</span></div>
                 </div>
             </div>
             <div id="delivery-list">
             <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
                 <div class="stop-num" style="background:#475569;"><span class="material-icons-round">home</span></div>
-                <div class="stop-info"><b class="name">PARTENZA</b><span class="addr">Deposito Veggiano</span></div>
+                <div class="stop-info"><b class="name">PARTENZA</b><span class="addr">Deposito Sommacampagna</span></div>
             </div><div class="card next" onclick="focusOn(1)">
                 <div class="stop-num">1</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(0, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">G.Ricci Curbastro - Pd</b>
-                    <span class="addr"><b>Via Orna 21/A</b><br>35124 Padova (PADOVA)</span>
+                    <b class="name">TRATTORIA VECCHIO BORGO</b>
+                    <span class="addr"><b>VIA ROMA 21</b><br>46032 CASTELBELFORTE (MN)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.38074403226921,11.87260980510765&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.2145093,10.8917179&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(2)">
                 <div class="stop-num">2</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(1, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">SCUOLA PRIMARIA "F. PASCON"</b>
-                    <span class="addr"><b>PIAZZA A. M. COLOMBO 4</b><br>31040 SALGAREDA (TREVISO)</span>
+                    <b class="name">VILLA CAVRIANI</b>
+                    <span class="addr"><b>STRADA PROVINCIALE OSTIGLIESE 160</b><br>46037 RONCOFERRARO (MN)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.70286640124198,12.53545816256563&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.0860878,10.9631416&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(3)">
                 <div class="stop-num">3</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(2, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">A. Volta - Chiarano</b>
-                    <span class="addr"><b>Via Roma</b><br>69/A, 31040 Chiarano (TREVISO)</span>
+                    <b class="name">LOCANDA DELLE GRAZIE</b>
+                    <span class="addr"><b>VIA SAN PIO X 2</b><br>46010 GRAZIE DI CURTATONE (MN)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.73059150088044,12.57365444907381&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.1556553,10.693983&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(4)">
                 <div class="stop-num">4</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(3, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">ALEANDRO - MOTTA DI L. CAP.</b>
-                    <span class="addr"><b>VIA MANZONI 2</b><br>31045 MOTTA DI LIVENZA (TREVISO)</span>
+                    <b class="name">LA CHIUSINA</b>
+                    <span class="addr"><b>VIA RAFFAELLO SANZIO 22</b><br>37067 BORGHETTO DI VALEGGIO SUL MINCIO (VR)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7738601058099,12.60464348095092&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.3537038,10.7247508&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(5)">
                 <div class="stop-num">5</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(4, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">A. MANZONI - SAN GIOVANNI</b>
-                    <span class="addr"><b>VIA CORRADO GINI 20</b><br>31045 MOTTA DI LIVENZA (TREVISO)</span>
+                    <b class="name">LA DISPENSA DI CASTELLARO DI SIMONE ZARATTINI</b>
+                    <span class="addr"><b>VIA ANTONIO MURARI 40</b><br>37067 VALEGGIO SUL MINCIO (VR)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.78896274498715,12.61350784075319&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(6)">
-                <div class="stop-num">6</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(5, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">S. PIO X - MEDUNA DI L.</b>
-                    <span class="addr"><b>VIA S. BELLINO 18</b><br>31040 MEDUNA DI LIVENZA (TREVISO)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.80638665108498,12.61767428916323&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(7)">
-                <div class="stop-num">7</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(6, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">G.Marconi</b>
-                    <span class="addr"><b>Via Seminario</b><br>34, 30026 Portogruaro (VENEZIA)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.77488513879977,12.83550982393958&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(8)">
-                <div class="stop-num">8</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(7, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">ALBINO LUCIANI - GORGO CAP.</b>
-                    <span class="addr"><b>VIA ROMA60/1</b><br>31040 GORGO AL MONTICANO (TREVISO)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.7905638893818,12.55378913320464&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(9)">
-                <div class="stop-num">9</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(8, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">FRANCESCO DALL'ONGARO - MANSUE'</b>
-                    <span class="addr"><b>V.LE PAOLO MOLIN 9</b><br>31040 MANSUE' (TREVISO)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.82068846069541,12.53952842394257&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(10)">
-                <div class="stop-num">10</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(9, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">SCUOLA PRIMARIA PARITARIA "BRANDOLINI ROTA"</b>
-                    <span class="addr"><b>VIA BRANDOLINI N. 6</b><br>31046 ODERZO (TREVISO)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.77275773111405,12.48734594206694&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(11)">
-                <div class="stop-num">11</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(10, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">SCUOLA PRIMARIA "A. FOGAZZARO"</b>
-                    <span class="addr"><b>VIA DELLA VITTORIA 56</b><br>31047 PONTE DI PIAVE (TREVISO)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.74030458634478,12.48315555038757&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(12)">
-                <div class="stop-num">12</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(11, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">SCUOLA PRIMARIA "A. MORO"</b>
-                    <span class="addr"><b>VIA NICOLO' TOMMASEO 1</b><br>31047 PONTE DI PIAVE (TREVISO)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.71827529223029,12.46329784817124&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(13)">
-                <div class="stop-num">13</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(12, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">SCUOLA PRIMARIA "DON L. MILANI"</b>
-                    <span class="addr"><b>VIA AMPELIO DE FAVERI 1</b><br>31040 PONTE DI PIAVE (TREVISO)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.73210984634413,12.44039878731077&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(14)">
-                <div class="stop-num">14</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(13, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">DANTE ALIGHIERI - ORMELLE</b>
-                    <span class="addr"><b>VIA ROMANA 4</b><br>31024 ORMELLE (TREVISO)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.77739638628952,12.4199610418335&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(15)">
-                <div class="stop-num">15</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(14, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">CESARE AMBROSETTO-S.POLO CAP.</b>
-                    <span class="addr"><b>VIA ROMA 36</b><br>31020 SAN POLO DI PIAVE (TREVISO)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.79424634553765,12.39286714973754&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(16)">
-                <div class="stop-num">16</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(15, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">G. B. LOVADINA - CIMADOLMO</b>
-                    <span class="addr"><b>VIA LOVADINA 1</b><br>31010 CIMADOLMO (TREVISO)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.78829280623165,12.36279344498293&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.3559373,10.7347997&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div>
             <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
                 <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
-                <div class="stop-info"><b class="name">ARRIVO</b><span class="addr">Deposito Veggiano</span></div>
+                <div class="stop-info"><b class="name">ARRIVO</b><span class="addr">Deposito Sommacampagna</span></div>
             </div></div>
         </div>
     </div>
@@ -304,8 +194,8 @@
     </script>
 
     <script>
-        const v_id = "V06";
-        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}, {"cliente": "G.Ricci Curbastro - Pd", "indirizzo": "Via Orna 21/A, 35124 Padova (PADOVA)", "lat": 45.38074403226921, "lon": 11.87260980510765, "codice_frutta": "p00000", "codice_latte": "p1939"}, {"cliente": "SCUOLA PRIMARIA \"F. PASCON\"", "indirizzo": "PIAZZA A. M. COLOMBO 4, 31040 SALGAREDA (TREVISO)", "lat": 45.70286640124198, "lon": 12.53545816256563, "codice_frutta": "p2390", "codice_latte": "p00000"}, {"cliente": "A. Volta - Chiarano", "indirizzo": "Via Roma, 69/A, 31040 Chiarano (TREVISO)", "lat": 45.73059150088044, "lon": 12.57365444907381, "codice_frutta": "p10070", "codice_latte": "p00000"}, {"cliente": "ALEANDRO - MOTTA DI L. CAP.", "indirizzo": "VIA MANZONI 2, 31045 MOTTA DI LIVENZA (TREVISO)", "lat": 45.7738601058099, "lon": 12.60464348095092, "codice_frutta": "p7093", "codice_latte": "p00000"}, {"cliente": "A. MANZONI - SAN GIOVANNI", "indirizzo": "VIA CORRADO GINI 20, 31045 MOTTA DI LIVENZA (TREVISO)", "lat": 45.78896274498715, "lon": 12.61350784075319, "codice_frutta": "p7092", "codice_latte": "p00000"}, {"cliente": "S. PIO X - MEDUNA DI L.", "indirizzo": "VIA S. BELLINO 18, 31040 MEDUNA DI LIVENZA (TREVISO)", "lat": 45.80638665108498, "lon": 12.61767428916323, "codice_frutta": "p7094", "codice_latte": "p00000"}, {"cliente": "G.Marconi", "indirizzo": "Via Seminario,34, 30026 Portogruaro (VENEZIA)", "lat": 45.77488513879977, "lon": 12.83550982393958, "codice_frutta": "p2100", "codice_latte": "p00000"}, {"cliente": "ALBINO LUCIANI - GORGO CAP.", "indirizzo": "VIA ROMA60/1, 31040 GORGO AL MONTICANO (TREVISO)", "lat": 45.7905638893818, "lon": 12.55378913320464, "codice_frutta": "p6280", "codice_latte": "p00000"}, {"cliente": "FRANCESCO DALL'ONGARO - MANSUE'", "indirizzo": "V.LE PAOLO MOLIN 9, 31040 MANSUE' (TREVISO)", "lat": 45.82068846069541, "lon": 12.53952842394257, "codice_frutta": "p6281", "codice_latte": "p00000"}, {"cliente": "SCUOLA PRIMARIA PARITARIA \"BRANDOLINI ROTA\"", "indirizzo": "VIA BRANDOLINI N. 6, 31046 ODERZO (TREVISO)", "lat": 45.77275773111405, "lon": 12.48734594206694, "codice_frutta": "p2232", "codice_latte": "p1799"}, {"cliente": "SCUOLA PRIMARIA \"A. FOGAZZARO\"", "indirizzo": "VIA DELLA VITTORIA 56, 31047 PONTE DI PIAVE (TREVISO)", "lat": 45.74030458634478, "lon": 12.48315555038757, "codice_frutta": "p2388", "codice_latte": "p00000"}, {"cliente": "SCUOLA PRIMARIA \"A. MORO\"", "indirizzo": "VIA NICOLO' TOMMASEO 1, 31047 PONTE DI PIAVE (TREVISO)", "lat": 45.71827529223029, "lon": 12.46329784817124, "codice_frutta": "p2387", "codice_latte": "p00000"}, {"cliente": "SCUOLA PRIMARIA \"DON L. MILANI\"", "indirizzo": "VIA AMPELIO DE FAVERI 1, 31040 PONTE DI PIAVE (TREVISO)", "lat": 45.73210984634413, "lon": 12.44039878731077, "codice_frutta": "p2389", "codice_latte": "p00000"}, {"cliente": "DANTE ALIGHIERI - ORMELLE", "indirizzo": "VIA ROMANA 4, 31024 ORMELLE (TREVISO)", "lat": 45.77739638628952, "lon": 12.4199610418335, "codice_frutta": "p2419", "codice_latte": "p00000"}, {"cliente": "CESARE AMBROSETTO-S.POLO CAP.", "indirizzo": "VIA ROMA 36, 31020 SAN POLO DI PIAVE (TREVISO)", "lat": 45.79424634553765, "lon": 12.39286714973754, "codice_frutta": "p2418", "codice_latte": "p00000"}, {"cliente": "G. B. LOVADINA - CIMADOLMO", "indirizzo": "VIA LOVADINA 1, 31010 CIMADOLMO (TREVISO)", "lat": 45.78829280623165, "lon": 12.36279344498293, "codice_frutta": "p2420", "codice_latte": "p00000"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}];
+        const v_id = "GranChef V05";
+        const data = [{"cliente": "DEPOSITO SOMMACAMPAGNA", "indirizzo": "Sommacampagna (VR)", "lat": 45.4052, "lon": 10.846, "codice_frutta": "", "codice_latte": "", "tipologia_grado": ""}, {"cliente": "TRATTORIA VECCHIO BORGO", "indirizzo": "VIA ROMA 21, 46032 CASTELBELFORTE (MN)", "lat": 45.2145093, "lon": 10.8917179, "codice_frutta": "100343787", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"cliente": "VILLA CAVRIANI", "indirizzo": "STRADA PROVINCIALE OSTIGLIESE 160, 46037 RONCOFERRARO (MN)", "lat": 45.0860878, "lon": 10.9631416, "codice_frutta": "100303931", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"cliente": "LOCANDA DELLE GRAZIE", "indirizzo": "VIA SAN PIO X 2, 46010 GRAZIE DI CURTATONE (MN)", "lat": 45.1556553, "lon": 10.693983, "codice_frutta": "100349334", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"cliente": "LA CHIUSINA", "indirizzo": "VIA RAFFAELLO SANZIO 22, 37067 BORGHETTO DI VALEGGIO SUL MINCIO (VR)", "lat": 45.3537038, "lon": 10.7247508, "codice_frutta": "100343039", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"cliente": "LA DISPENSA DI CASTELLARO DI SIMONE ZARATTINI", "indirizzo": "VIA ANTONIO MURARI 40, 37067 VALEGGIO SUL MINCIO (VR)", "lat": 45.3559373, "lon": 10.7347997, "codice_frutta": "100336185", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"cliente": "DEPOSITO SOMMACAMPAGNA", "indirizzo": "Sommacampagna (VR)", "lat": 45.4052, "lon": 10.846, "codice_frutta": "", "codice_latte": "", "tipologia_grado": ""}];
         window.data = data; window.v_id = v_id;
         let map, markers = [], userMarker;
         window.currentPos = null;
@@ -403,7 +293,29 @@
                 markerConfig.title = i === 0 ? "Partenza" : "Arrivo";
             } else {
                 // Consegna (l'indice 1 corrisponde alla consegna 1)
-                markerConfig.label = { text: i.toString(), color: "white", fontSize: "10px", fontWeight: "900" };
+                const t_g = (p.tipologia_grado || '').toUpperCase();
+                const isGrandChef = (p.codice_frutta && (p.codice_frutta.startsWith('100') || p.codice_frutta.length > 6)) || t_g.includes('GRAND CHEF') || t_g.includes('GRAN CHEF');
+                const isCattell = t_g.includes('CATTELL') || t_g.includes('CATTEL') || (p.codice_frutta && p.codice_frutta.toUpperCase().includes('CATTELL'));
+                const isBauer = t_g.includes('BAUER') || (p.codice_frutta && p.codice_frutta.toUpperCase().includes('BAUER'));
+
+                if (isGrandChef || isCattell || isBauer) {
+                    let emoji = '👨‍🍳';
+                    if (isCattell) emoji = '🍴';
+                    else if (isBauer) emoji = '🍳';
+
+                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="38" viewBox="0 0 38 42">
+                      <path d="M19 0C8.5 0 0 8.5 0 19c0 13 19 23 19 23s19-10 19-23c0-10.5-8.5-19-19-19z" fill="#4f46e5" stroke="white" stroke-width="2"/>
+                      <text x="19" y="19" font-size="14" text-anchor="middle">${emoji}</text>
+                      <text x="19" y="32" font-family="'Inter', sans-serif" font-size="9" font-weight="900" fill="white" text-anchor="middle">${i}</text>
+                    </svg>`;
+                    markerConfig.icon = {
+                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+                        scaledSize: new google.maps.Size(34, 38),
+                        anchor: new google.maps.Point(17, 38)
+                    };
+                } else {
+                    markerConfig.label = { text: i.toString(), color: "white", fontSize: "10px", fontWeight: "900" };
+                }
             }
 
             const m = new google.maps.Marker(markerConfig);

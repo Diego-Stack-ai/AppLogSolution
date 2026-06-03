@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V08</title>
+    <title>GranChef V01</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
@@ -69,73 +69,93 @@
         </div>
         <div id="sidebar">
             <div class="header">
-                <div class="trip-title">🏎️ V08 | Zone: 4113</div>
+                <div class="trip-title">🏎️ GranChef V01 | Zone: GranChef_V01</div>
                 <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
                 <div class="stats-row">
-                    <div class="stat-item"><span class="stat-val">309.6km</span><span class="stat-lbl">Strada</span></div>
-                    <div class="stat-item"><span class="stat-val">4h 33m</span><span class="stat-lbl">Guida</span></div>
-                    <div class="stat-item"><span class="stat-val">40m</span><span class="stat-lbl">Soste</span></div>
-                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">5h 13m</span><span class="stat-lbl">Totale</span></div>
+                    <div class="stat-item"><span class="stat-val">71.1km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">1h 22m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">1h 24m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">2h 46m</span><span class="stat-lbl">Totale</span></div>
                 </div>
             </div>
             <div id="delivery-list">
             <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
                 <div class="stop-num" style="background:#475569;"><span class="material-icons-round">home</span></div>
-                <div class="stop-info"><b class="name">PARTENZA</b><span class="addr">Deposito Veggiano</span></div>
+                <div class="stop-info"><b class="name">PARTENZA</b><span class="addr">Deposito Castenedolo</span></div>
             </div><div class="card next" onclick="focusOn(1)">
                 <div class="stop-num">1</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(0, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">"ROMANO OCRI" CESIOM.-SORANZEN</b>
-                    <span class="addr"><b>VIA SCUOLE 14</b><br>32030 CESIOMAGGIORE (BELLUNO)</span>
+                    <b class="name">ALLE TROTE-OTTOLINI F.LI&C.SNC TRATTORIA</b>
+                    <span class="addr"><b>VIA BARIAGA 24</b><br>25085 GAVARDO FRAZ.SOPRAZOCCO (BS)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=46.07358887371196,11.94613988304191&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.5817136964835,10.47910862445829&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(2)">
                 <div class="stop-num">2</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(1, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">SAN GREGORIO NELLE ALPI</b>
-                    <span class="addr"><b>VIA MONTE PIZZOCCO 2</b><br>32030 SAN GREGORIO NELLE ALPI (BELLUNO)</span>
+                    <b class="name">HOTEL SPIAGGIA D'ORO</b>
+                    <span class="addr"><b>VIA SPIAGGIA D ORO 15</b><br>25087 BARBARANO DI SALO (BS)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=46.10446850259822,12.02748591804557&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.61329178279674,10.55265479564665&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(3)">
                 <div class="stop-num">3</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(2, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Fraz. Oltrerai</b>
-                    <span class="addr"><b>Via I Novembre</b><br>1 -Paiane, 32014 Ponte Nelle Alpi (BELLUNO)</span>
+                    <b class="name">GRAND HOTEL FASANO SRL</b>
+                    <span class="addr"><b>CORSO ZANARDELLI 190</b><br>25083 GARDONE RIVIERA (BS)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=46.17610952830536,12.31321091556602&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.62385569323995,10.5731859&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(4)">
                 <div class="stop-num">4</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(3, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">"BRUSTOLON" BADILET</b>
-                    <span class="addr"><b>VIA CIRVOI N. 11/A</b><br>32100 BELLUNO (BELLUNO)</span>
+                    <b class="name">IL PESCATORE RISTORANTE GRAND HOTEL FASANO SRL</b>
+                    <span class="addr"><b>CORSO ZANARDELLI</b><br>190, 25083 GARDONE RIVIERA (BS)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=46.11011797531502,12.23923022651725&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.62392134778555,10.57322076871719&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(5)">
                 <div class="stop-num">5</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(4, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Dante Alighieri - Mel</b>
-                    <span class="addr"><b>Via D. R. Zannoni</b><br>37, 32026 Borgo Valbelluna (BELLUNO)</span>
+                    <b class="name">LOCANDA AGLI ANGELI SRL</b>
+                    <span class="addr"><b>VIA CADUTI 1</b><br>25083 GARDONE RIVIERA (BS)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=46.04399146457267,12.06463451290184&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.62272571108928,10.56315096074792&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(6)">
+                <div class="stop-num">6</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(5, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">VILLA FIORDALISO</b>
+                    <span class="addr"><b>CORSO ZANARDELLI  NR. 73</b><br>25083 GARDONE RIVIERA (BS)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.62132239999998,10.5681593726303&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(7)">
+                <div class="stop-num">7</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(6, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">LA VIGNA DEI BAGAJ</b>
+                    <span class="addr"><b>VIA ODORICI 29</b><br>25077 ROE  VOLCIANO (BS)</span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.61474266154818,10.50424896955488&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div>
             <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
                 <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
-                <div class="stop-info"><b class="name">ARRIVO</b><span class="addr">Deposito Veggiano</span></div>
+                <div class="stop-info"><b class="name">ARRIVO</b><span class="addr">Deposito Castenedolo</span></div>
             </div></div>
         </div>
     </div>
@@ -194,8 +214,8 @@
     </script>
 
     <script>
-        const v_id = "V08";
-        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}, {"cliente": "\"ROMANO OCRI\" CESIOM.-SORANZEN", "indirizzo": "VIA SCUOLE 14, 32030 CESIOMAGGIORE (BELLUNO)", "lat": 46.07358887371196, "lon": 11.94613988304191, "codice_frutta": "p00000", "codice_latte": "p2009"}, {"cliente": "SAN GREGORIO NELLE ALPI", "indirizzo": "VIA MONTE PIZZOCCO 2, 32030 SAN GREGORIO NELLE ALPI (BELLUNO)", "lat": 46.10446850259822, "lon": 12.02748591804557, "codice_frutta": "p00000", "codice_latte": "p1988"}, {"cliente": "Fraz. Oltrerai", "indirizzo": "Via I Novembre,1 -Paiane, 32014 Ponte Nelle Alpi (BELLUNO)", "lat": 46.17610952830536, "lon": 12.31321091556602, "codice_frutta": "p00000", "codice_latte": "p1948"}, {"cliente": "\"BRUSTOLON\" BADILET", "indirizzo": "VIA CIRVOI N. 11/A, 32100 BELLUNO (BELLUNO)", "lat": 46.11011797531502, "lon": 12.23923022651725, "codice_frutta": "p00000", "codice_latte": "p1719"}, {"cliente": "Dante Alighieri - Mel", "indirizzo": "Via D. R. Zannoni, 37, 32026 Borgo Valbelluna (BELLUNO)", "lat": 46.04399146457267, "lon": 12.06463451290184, "codice_frutta": "p00000", "codice_latte": "p1922"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": ""}];
+        const v_id = "GranChef V01";
+        const data = [{"cliente": "DEPOSITO CASTENEDOLO", "indirizzo": "Castenedolo (BS)", "lat": 45.471591, "lon": 10.2982, "codice_frutta": "", "codice_latte": "", "tipologia_grado": ""}, {"cliente": "ALLE TROTE-OTTOLINI F.LI&C.SNC TRATTORIA", "indirizzo": "VIA BARIAGA 24, 25085 GAVARDO FRAZ.SOPRAZOCCO (BS)", "lat": 45.5817136964835, "lon": 10.47910862445829, "codice_frutta": "100321701", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"cliente": "HOTEL SPIAGGIA D'ORO", "indirizzo": "VIA SPIAGGIA D ORO 15, 25087 BARBARANO DI SALO (BS)", "lat": 45.61329178279674, "lon": 10.55265479564665, "codice_frutta": "100337494", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"cliente": "GRAND HOTEL FASANO SRL", "indirizzo": "CORSO ZANARDELLI 190, 25083 GARDONE RIVIERA (BS)", "lat": 45.62385569323995, "lon": 10.5731859, "codice_frutta": "100334429", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"cliente": "IL PESCATORE RISTORANTE GRAND HOTEL FASANO SRL", "indirizzo": "CORSO ZANARDELLI ,190, 25083 GARDONE RIVIERA (BS)", "lat": 45.62392134778555, "lon": 10.57322076871719, "codice_frutta": "100345749", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"cliente": "LOCANDA AGLI ANGELI SRL", "indirizzo": "VIA CADUTI 1, 25083 GARDONE RIVIERA (BS)", "lat": 45.62272571108928, "lon": 10.56315096074792, "codice_frutta": "100331679", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"cliente": "VILLA FIORDALISO", "indirizzo": "CORSO ZANARDELLI  NR. 73, 25083 GARDONE RIVIERA (BS)", "lat": 45.62132239999998, "lon": 10.5681593726303, "codice_frutta": "100306091", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"cliente": "LA VIGNA DEI BAGAJ", "indirizzo": "VIA ODORICI 29, 25077 ROE  VOLCIANO (BS)", "lat": 45.61474266154818, "lon": 10.50424896955488, "codice_frutta": "100350994", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"cliente": "DEPOSITO CASTENEDOLO", "indirizzo": "Castenedolo (BS)", "lat": 45.471591, "lon": 10.2982, "codice_frutta": "", "codice_latte": "", "tipologia_grado": ""}];
         window.data = data; window.v_id = v_id;
         let map, markers = [], userMarker;
         window.currentPos = null;
@@ -293,7 +313,29 @@
                 markerConfig.title = i === 0 ? "Partenza" : "Arrivo";
             } else {
                 // Consegna (l'indice 1 corrisponde alla consegna 1)
-                markerConfig.label = { text: i.toString(), color: "white", fontSize: "10px", fontWeight: "900" };
+                const t_g = (p.tipologia_grado || '').toUpperCase();
+                const isGrandChef = (p.codice_frutta && (p.codice_frutta.startsWith('100') || p.codice_frutta.length > 6)) || t_g.includes('GRAND CHEF') || t_g.includes('GRAN CHEF');
+                const isCattell = t_g.includes('CATTELL') || t_g.includes('CATTEL') || (p.codice_frutta && p.codice_frutta.toUpperCase().includes('CATTELL'));
+                const isBauer = t_g.includes('BAUER') || (p.codice_frutta && p.codice_frutta.toUpperCase().includes('BAUER'));
+
+                if (isGrandChef || isCattell || isBauer) {
+                    let emoji = '👨‍🍳';
+                    if (isCattell) emoji = '🍴';
+                    else if (isBauer) emoji = '🍳';
+
+                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="38" viewBox="0 0 38 42">
+                      <path d="M19 0C8.5 0 0 8.5 0 19c0 13 19 23 19 23s19-10 19-23c0-10.5-8.5-19-19-19z" fill="#4f46e5" stroke="white" stroke-width="2"/>
+                      <text x="19" y="19" font-size="14" text-anchor="middle">${emoji}</text>
+                      <text x="19" y="32" font-family="'Inter', sans-serif" font-size="9" font-weight="900" fill="white" text-anchor="middle">${i}</text>
+                    </svg>`;
+                    markerConfig.icon = {
+                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+                        scaledSize: new google.maps.Size(34, 38),
+                        anchor: new google.maps.Point(17, 38)
+                    };
+                } else {
+                    markerConfig.label = { text: i.toString(), color: "white", fontSize: "10px", fontWeight: "900" };
+                }
             }
 
             const m = new google.maps.Marker(markerConfig);

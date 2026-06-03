@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>V02</title>
+    <title>V01</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
@@ -69,13 +69,13 @@
         </div>
         <div id="sidebar">
             <div class="header">
-                <div class="trip-title">🏎️ V02 | Zone: 4109</div>
+                <div class="trip-title">🏎️ V01 | Zone: 4108</div>
                 <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
                 <div class="stats-row">
-                    <div class="stat-item"><span class="stat-val">139.9km</span><span class="stat-lbl">Strada</span></div>
-                    <div class="stat-item"><span class="stat-val">2h 21m</span><span class="stat-lbl">Guida</span></div>
-                    <div class="stat-item"><span class="stat-val">48m</span><span class="stat-lbl">Soste</span></div>
-                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">3h 9m</span><span class="stat-lbl">Totale</span></div>
+                    <div class="stat-item"><span class="stat-val">44.6km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">1h 5m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">40m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">1h 45m</span><span class="stat-lbl">Totale</span></div>
                 </div>
             </div>
             <div id="delivery-list">
@@ -88,60 +88,50 @@
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(0, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">PRIMARIA NOVALE</b>
-                    <span class="addr"><b>VIA MONTELLO 4</b><br>36078 VALDAGNO (VICENZA)</span>
+                    <b class="name">G.Ricci Curbastro - Pd</b>
+                    <span class="addr"><b>Via Orna 21/A</b><br>35124 Padova (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.66297203855179,11.29697556400352&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.38074403226921,11.87260980510765&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(2)">
                 <div class="stop-num">2</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(1, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">PRIMARIA BORNE</b>
-                    <span class="addr"><b>VIA BOLIVIA 1</b><br>36078 VALDAGNO (VICENZA)</span>
+                    <b class="name">Daniele Manin</b>
+                    <span class="addr"><b>Via Tre Garofani</b><br>50, 35124 Padova (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.64230521538682,11.29625673198753&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.38846611375161,11.87676814357725&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(3)">
                 <div class="stop-num">3</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(2, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Don Albanello</b>
-                    <span class="addr"><b>Via Degli Alpini 4</b><br>36070 Nogarole Vicentino (VICENZA)</span>
+                    <b class="name">SCUOLA PRIMARIA VANZO</b>
+                    <span class="addr"><b>VIA MARCONI13/D</b><br>35122 PADOVA (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.56019265983231,11.28975505733543&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.39628244984343,11.86797370825539&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(4)">
                 <div class="stop-num">4</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(3, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">Vittorino Da Feltre</b>
-                    <span class="addr"><b>Via San Zeno 38</b><br>36071 Arzignano (VICENZA)</span>
+                    <b class="name">Santa Croce(Ist. Suore S.Francesco Di Sales)</b>
+                    <span class="addr"><b>Via Santa Maria In Vanzo</b><br>53, 35123 Padova (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.51873158077647,11.31411219739967&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.39322065882329,11.87114571045074&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(5)">
                 <div class="stop-num">5</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(4, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">ZERMEGHEDO</b>
-                    <span class="addr"><b>VIA COSTEGGIOLA 56</b><br>36050 ZERMEGHEDO (VICENZA)</span>
+                    <b class="name">DON BOSCO - PADOVA (EX XII IC)</b>
+                    <span class="addr"><b>VIA BRESSANONE 23</b><br>35142 PADOVA (PADOVA)</span>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.47367779558515,11.37057269716316&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(6)">
-                <div class="stop-num">6</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(5, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">CEDERLE</b>
-                    <span class="addr"><b>VIA 8 APRILE 19</b><br>36054 MONTEBELLO VICENTINO (VICENZA)</span>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.45453632296319,11.37991483116203&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.38086799952996,11.85147662883606&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div>
             <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
                 <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
@@ -204,8 +194,8 @@
     </script>
 
     <script>
-        const v_id = "V02";
-        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": "", "tipologia_grado": ""}, {"cliente": "PRIMARIA NOVALE", "indirizzo": "VIA MONTELLO 4, 36078 VALDAGNO (VICENZA)", "lat": 45.66297203855179, "lon": 11.29697556400352, "codice_frutta": "p00000", "codice_latte": "p2026", "tipologia_grado": "SCUOLA PRIMARIA"}, {"cliente": "PRIMARIA BORNE", "indirizzo": "VIA BOLIVIA 1, 36078 VALDAGNO (VICENZA)", "lat": 45.64230521538682, "lon": 11.29625673198753, "codice_frutta": "p00000", "codice_latte": "p1850", "tipologia_grado": "SCUOLA PRIMARIA"}, {"cliente": "Don Albanello", "indirizzo": "Via Degli Alpini 4, 36070 Nogarole Vicentino (VICENZA)", "lat": 45.56019265983231, "lon": 11.28975505733543, "codice_frutta": "p00000", "codice_latte": "p1747", "tipologia_grado": ""}, {"cliente": "Vittorino Da Feltre", "indirizzo": "Via San Zeno 38, 36071 Arzignano (VICENZA)", "lat": 45.51873158077647, "lon": 11.31411219739967, "codice_frutta": "p00000", "codice_latte": "p1746", "tipologia_grado": ""}, {"cliente": "ZERMEGHEDO", "indirizzo": "VIA COSTEGGIOLA 56, 36050 ZERMEGHEDO (VICENZA)", "lat": 45.47367779558515, "lon": 11.37057269716316, "codice_frutta": "p00000", "codice_latte": "p2002", "tipologia_grado": "SCUOLA PRIMARIA"}, {"cliente": "CEDERLE", "indirizzo": "VIA 8 APRILE 19, 36054 MONTEBELLO VICENTINO (VICENZA)", "lat": 45.45453632296319, "lon": 11.37991483116203, "codice_frutta": "p00000", "codice_latte": "p2639", "tipologia_grado": "SCUOLA PRIMARIA"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": "", "tipologia_grado": ""}];
+        const v_id = "V01";
+        const data = [{"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": "", "tipologia_grado": ""}, {"cliente": "G.Ricci Curbastro - Pd", "indirizzo": "Via Orna 21/A, 35124 Padova (PADOVA)", "lat": 45.38074403226921, "lon": 11.87260980510765, "codice_frutta": "p00000", "codice_latte": "p1939", "tipologia_grado": ""}, {"cliente": "Daniele Manin", "indirizzo": "Via Tre Garofani, 50, 35124 Padova (PADOVA)", "lat": 45.38846611375161, "lon": 11.87676814357725, "codice_frutta": "p00000", "codice_latte": "p1983", "tipologia_grado": ""}, {"cliente": "SCUOLA PRIMARIA VANZO", "indirizzo": "VIA MARCONI13/D, 35122 PADOVA (PADOVA)", "lat": 45.39628244984343, "lon": 11.86797370825539, "codice_frutta": "p00000", "codice_latte": "p1817", "tipologia_grado": "SCUOLA PRIMARIA NON STATALE"}, {"cliente": "Santa Croce(Ist. Suore S.Francesco Di Sales)", "indirizzo": "Via Santa Maria In Vanzo,53, 35123 Padova (PADOVA)", "lat": 45.39322065882329, "lon": 11.87114571045074, "codice_frutta": "p00000", "codice_latte": "p1938", "tipologia_grado": ""}, {"cliente": "DON BOSCO - PADOVA (EX XII IC)", "indirizzo": "VIA BRESSANONE 23, 35142 PADOVA (PADOVA)", "lat": 45.38086799952996, "lon": 11.85147662883606, "codice_frutta": "p00000", "codice_latte": "p1954", "tipologia_grado": "SCUOLA PRIMARIA"}, {"cliente": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)", "lat": 45.442805, "lon": 11.714498, "codice_frutta": "", "codice_latte": "", "tipologia_grado": ""}];
         window.data = data; window.v_id = v_id;
         let map, markers = [], userMarker;
         window.currentPos = null;

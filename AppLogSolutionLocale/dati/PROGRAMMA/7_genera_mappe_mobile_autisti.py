@@ -1031,7 +1031,7 @@ def main():
 
         zone_list = sorted(list(set([str(p.get('zona', '0000')) for p in perc])))
         z_str = "Zone: " + ", ".join(zone_list[:4])
-        fname = f"{v_id}_Zone_{'_'.join(zone_list[:4])}_{data_str}.html"
+        fname = f"{v_id}_Zone_{'_'.join(zone_list[:4])}_{data_str}.html".replace(' ', '_')
 
         # Fallback per navigazione: se mancano lat/lon usa Nome + Indirizzo
         def get_nav_url(d):
@@ -1116,7 +1116,7 @@ def main():
         v_id = v.get("nome_giro", f"V{i+1:02d}")
         # IMPORTANTE: Usiamo il nome del file già generato sopra
         zone_list = sorted(list(set([str(p.get('zona', '0000')) for p in v.get("lista_punti", [])])))
-        fname = f"{v_id}_Zone_{'_'.join(zone_list[:4])}_{data_str}.html"
+        fname = f"{v_id}_Zone_{'_'.join(zone_list[:4])}_{data_str}.html".replace(' ', '_')
         
         # Generiamo link Firebase (più stabili per la web app)
         firebase_link = f"https://log-solution-60007.web.app/mappe_autisti/{fname}"

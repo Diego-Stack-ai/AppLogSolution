@@ -41,7 +41,7 @@ DEPOT_NOME = "DEPOSITO VEGGIANO"
 # Regex per estrarre il blocco "const data = [...]" dall'HTML
 DATA_RE = re.compile(r'const\s+data\s*=\s*(\[.*?\]);\s*const\s+polys', re.DOTALL)
 # Regex per estrarre nome e zone dal nomefile  (es. V01_Zone_3110_4110.html o GranChef V01_Zone_GranChef_V01.html)
-FILE_RE = re.compile(r'^([a-zA-Z0-9 ⚠️]+)_Zone_([\w_]+)\.html$', re.IGNORECASE)
+FILE_RE = re.compile(r'^(.+?)_Zone_([\w_]+)\.html$', re.IGNORECASE)
 
 PALETTE = [
     "#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",

@@ -681,7 +681,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                         </div>
                         <div style="text-align:right; flex-shrink:0;">
                             <div style="font-size:0.72rem; font-weight:800; background:${isSpeciale?'#fde68a':'#e2e8f0'}; padding:2px 7px; border-radius:20px; color:${isSpeciale?'#92400e':'#475569'}; white-space:nowrap;">${z.lista_punti.length} pt</div>
-                            ${(() => { const s = calcolaValoreZona(z); return s.tot_ddt > 0 ? `<div style="font-size:0.65rem; font-weight:700; color:#10b981; margin-top:2px; white-space:nowrap;">${s.tot_ddt} DDT · € ${s.valore}</div>` : ''; })()}
+                            ${(() => { const isDNR = !z.id_zona.startsWith('GranChef') && z.id_zona !== 'DDT_DA_INSERIRE' && z.id_zona !== 'SENZA_ZONA'; if (!isDNR) return ''; const s = calcolaValoreZona(z); return s.tot_ddt > 0 ? `<div style="font-size:0.65rem; font-weight:700; color:#10b981; margin-top:2px; white-space:nowrap;">${s.tot_ddt} DDT · € ${s.valore}</div>` : ''; })()}
                         </div>
                     </div>
                     ${isSelected ? `
@@ -710,6 +710,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                                          <span style="display:block;">${via}</span>
                                          ${comune ? `<span style="font-weight:700; color:#334155;">${comune}</span>` : ''}
                                      </div>
+                                     ${(p.orario_min || p.orario_max) ? `<div style="font-size:0.62rem; color:#4f46e5; font-weight:700; padding-left:26px; margin-top:2px;">🕒 ${p.orario_min || '--:--'} - ${p.orario_max || '--:--'}</div>` : ''}
+                                     ${p.note ? `<div style="font-size:0.62rem; color:#d97706; font-weight:600; padding-left:26px; margin-top:3px; background:#fffbeb; border-radius:4px; padding:2px 6px 2px 26px; border:1px solid #fde68a;">📝 ${p.note}</div>` : ''}
                                      ${activeAction === 'sposta' ? ctrl : ''}
                                  </div>`;
                             }).join('')}
@@ -780,10 +782,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             z.lista_punti.forEach(p => {
                 totDdt += (p.codici_ddt_frutta || []).filter(c => c && c !== 'p00000').length;
                 totDdt += (p.codici_ddt_latte  || []).filter(c => c && c !== 'p00000').length;
-                // fallback: se le liste non ci sono, conta 1 DDT se ha almeno un codice
+                // fallback: se le liste non ci sono, conta 1 DDT solo per codici DNR (iniziano con 'p')
                 if (!(p.codici_ddt_frutta) && !(p.codici_ddt_latte)) {
-                    if (p.codice_frutta && p.codice_frutta !== 'p00000') totDdt++;
-                    if (p.codice_latte  && p.codice_latte  !== 'p00000') totDdt++;
+                    if (p.codice_frutta && p.codice_frutta.startsWith('p') && p.codice_frutta !== 'p00000') totDdt++;
+                    if (p.codice_latte  && p.codice_latte.startsWith('p')  && p.codice_latte  !== 'p00000') totDdt++;
                 }
             });
             return { tot_ddt: totDdt, valore: (totDdt * VALORE_DDT).toFixed(2) };

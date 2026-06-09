@@ -462,6 +462,7 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path, de
       {"<span style='background:#ef4444;color:white;font-size:0.6rem;font-weight:900;padding:2px 6px;border-radius:4px;'>⚠️ IN RITARDO</span>" if p.get('ritardo') else ""}
     </div>
     <small style="color:#64748b; font-size:0.75rem;">{p['indirizzo']}</small>
+    { (lambda cf, cl: f'<div style="font-size:0.68rem; color:#94a3b8; font-weight:600; margin-top:1px;">📋 {" · ".join(c for c in [cf if cf and cf != "p00000" else "", cl if cl and cl != "p00000" else ""] if c)}</div>' if any(c for c in [cf if cf and cf != "p00000" else "", cl if cl and cl != "p00000" else ""] if c) else "")(p.get('codice_frutta',''), p.get('codice_latte','')) }
     <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">
       🕒 Fascia: <b>{p.get('orario_min', '07:00')} - {p.get('orario_max', '14:00')}</b>
     </div>
@@ -673,7 +674,12 @@ def main():
         
         fatturato = f"{tot_ddt * 16.50:.2f}"
         
-        fname = sanitize_filename(f"{v_id}_Zone_{'_'.join(zone_coinvolte[:3])}.html")
+        # Usa id_zona della zona come parte univoca del nome file.
+        # Questo garantisce che giri splittati (es. GranChef_V01_B) abbiano
+        # un nome file distinto dal giro originale (GranChef_V01), anche quando
+        # i punti interni riportano ancora la zona di partenza.
+        zone_id_for_fname = z.get('id_zona') or '_'.join(zone_coinvolte[:3])
+        fname = sanitize_filename(f"{v_id}_Zone_{zone_id_for_fname}.html")
         info = {'v_id': v_id, 'zone_str': z_str, 'fname': fname, 'km': km, 't_guida': t_guida, 't_sosta': t_sosta, 't_tot': t_tot, 'punti': len(punti), 'tot_ddt': tot_ddt, 'fatturato': fatturato}
         summary.append(info)
         

@@ -676,7 +676,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     <div class="zone-header">
                         <div class="color-pill" style="background: ${z.color}"></div>
                         <div class="zone-title">
-                            <span style="display:block; font-size:0.95rem; font-weight:800;">${z.nome_giro || z.id_zona}${isSpeciale ? '<span class="badge-speciale">RIENTRI</span>' : ''}</span>
+                            <span style="display:block; font-size:0.95rem; font-weight:800;">${z.nome_giro || z.id_zona}${isSpeciale ? '<span class="badge-speciale">RIENTRI</span>' : ''}${!isSpeciale && !isLockedGlobal ? `<button title="Rinomina viaggio" onclick="event.stopPropagation(); renameZona('${z.id_zona}')" style="margin-left:6px; background:none; border:none; cursor:pointer; font-size:0.75rem; opacity:0.5; padding:0; vertical-align:middle;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5">✏️</button>` : ''}</span>
                             <span style="display:block; font-size:0.65rem; font-weight:600; color:#94a3b8;">${isSpeciale ? 'Assegna a un viaggio' : 'Zona ' + z.id_zona}</span>
                         </div>
                         <div style="text-align:right; flex-shrink:0;">
@@ -733,6 +733,16 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         function focusZone(zid) { if(activeAction) return; activeExpandedZid = (activeExpandedZid === zid) ? null : zid; renderSidebar(); }
         function startAction(type, zid) { activeAction = type; activeSourceZid = zid; renderSidebar(); }
         function cancelAction() { activeAction = null; activeSourceZid = null; renderSidebar(); }
+
+        function renameZona(zid) {
+            const z = DATA_ZONE.find(x => x.id_zona === zid);
+            if (!z) return;
+            const nuovoNome = prompt('✏️ Rinomina viaggio:', z.nome_giro || z.id_zona);
+            if (nuovoNome !== null && nuovoNome.trim() !== '') {
+                z.nome_giro = nuovoNome.trim();
+                renderSidebar();
+            }
+        }
         function _selChip(el, color) {
             el.closest('.zone-chips').querySelectorAll('.zone-chip').forEach(c => { c.classList.remove('sel'); c.style.background='white'; c.style.color='#475569'; });
             el.classList.add('sel'); el.style.background = color; el.style.color = 'white';

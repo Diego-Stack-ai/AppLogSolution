@@ -268,7 +268,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&libraries=geometry,marker&callback=initMap" async defer></script>
     <style>
-        :root { --p: #4f46e5; --accent: #10b981; --done: #94a3b8; --geo: #3b82f6; }
+        :root { --p: #4f46e5; --accent: #10b981; --done: #94a3b8; --geo: #3b82f6; --warning: #f59e0b; --call: #16a34a; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: #f8fafc; overflow: hidden; }
         .main-container { display: flex; flex-direction: column; height: 100vh; }
         #map { height: 42vh; width: 100%; background: #dfe5eb; position: relative; }
@@ -296,6 +296,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .stop-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
         .name { display: block; font-size: 0.85rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .addr { font-size: 0.78rem; color: #64748b; font-weight: 600; line-height: 1.1; display: block; }
+        .orario-badge { display: inline-flex; align-items: center; gap: 3px; background: #eff6ff; color: #2563eb; font-size: 0.62rem; font-weight: 800; padding: 2px 7px; border-radius: 20px; border: 1px solid #bfdbfe; margin-top: 1px; width: fit-content; }
+        .orario-badge .material-icons-round { font-size: 12px !important; }
+        .note-chip { display: flex; align-items: flex-start; gap: 4px; background: #fffbeb; color: #92400e; font-size: 0.62rem; font-weight: 700; padding: 4px 7px; border-radius: 8px; border: 1px solid #fde68a; margin-top: 3px; line-height: 1.3; }
+        .note-chip .material-icons-round { font-size: 12px !important; flex-shrink: 0; margin-top: 1px; }
         
         .actions { display: flex; gap: 6px; width: 100%; margin-bottom: 2px; }
         .btn-done, .btn-geo { 
@@ -307,15 +311,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             background: var(--accent); color: white; width: 44px; height: 44px; border-radius: 10px;
             display: flex; align-items: center; justify-content: center; text-decoration: none;
         }
+        .btn-call {
+            background: var(--call); color: white; width: 44px; height: 44px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; text-decoration: none;
+        }
+        .nav-col { display: flex; flex-direction: column; gap: 5px; align-items: center; }
         .btn-done { background: white; color: #64748b; border: 1px solid #cbd5e1; }
         .btn-geo { background: var(--geo); color: white; }
         .btn-geo.saved { background: #1e293b; }
         .material-icons-round { font-size: 16px !important; }
-        .btn-nav { background: var(--accent); color: white; }
         .btn-done { background: white; color: #64748b; border: 1px solid #cbd5e1; }
         .btn-geo { background: var(--geo); color: white; }
         .btn-geo.saved { background: #1e293b; }
-        .material-icons-round { font-size: 16px !important; }
 
         #gps-btn { position: absolute; bottom: 20px; right: 20px; background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; color: var(--p); border: none; }
         #geo-feedback { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 30px; font-size: 0.8rem; font-weight: 700; z-index: 2000; display: none; }
@@ -1042,7 +1049,35 @@ def main():
             return f"https://www.google.com/maps/dir/?api=1&destination={query}&travelmode=driving"
 
         # 2. Creazione lista consegne per JS (include il deposito per la mappa)
-        deliveries = [{"cliente": p.get("nome", "Cliente"), "indirizzo": p.get("indirizzo", "-"), "lat": p.get("lat"), "lon": p.get("lon"), "codice_frutta": p.get("codice_frutta", ""), "codice_latte": p.get("codice_latte", ""), "tipologia_grado": p.get("tipologia_grado", "")} for p in perc_completo]
+        deliveries = [{
+            "cliente": p.get("nome", "Cliente"),
+            "indirizzo": p.get("indirizzo", "-"),
+            "lat": p.get("lat"),
+            "lon": p.get("lon"),
+            "codice_frutta": p.get("codice_frutta", ""),
+            "codice_latte": p.get("codice_latte", ""),
+            "tipologia_grado": p.get("tipologia_grado", ""),
+            "orario_min": p.get("orario_min", p.get("orario_min_frutta", p.get("orario_min_latte", ""))),
+            "orario_max": p.get("orario_max", p.get("orario_max_frutta", p.get("orario_max_latte", ""))),
+            "note": p.get("note", p.get("nota_integrativa", p.get("Note", ""))),
+            "telefono": p.get("telefono", p.get("tel", p.get("phone", "")))
+        } for p in perc_completo]
+
+        # Helper: estrae un numero di telefono da un testo
+        import re as _re
+        _phone_re = _re.compile(r'(?:\+39)?[\s\-]?(?:0\d{1,4}[\s\-]?\d{4,8}|3\d{2}[\s\-]?\d{6,7})')
+
+        def _extract_phone(p):
+            tel = str(p.get("telefono", p.get("tel", p.get("phone", ""))) or "").strip()
+            if not tel:
+                # Cerca anche nelle note
+                note_text = str(p.get("note", p.get("nota_integrativa", p.get("Note", ""))) or "")
+                found = _phone_re.search(note_text)
+                if found:
+                    tel = found.group(0).strip()
+            # Normalizza per href tel:
+            return _re.sub(r'[\s\-]', '', tel) if tel else ""
+
         # 3. Costruzione delle card HTML
         cards_list = []
         
@@ -1061,8 +1096,36 @@ def main():
             addr_html = f'<span class="addr"><b>{via_parte}</b><br>{resto_parte}</span>'
             
             nav_url = get_nav_url(p)
+
+            # --- Orario consegna ---
+            orario_min = str(p.get("orario_min", p.get("orario_min_frutta", p.get("orario_min_latte", ""))) or "").strip()
+            orario_max = str(p.get("orario_max", p.get("orario_max_frutta", p.get("orario_max_latte", ""))) or "").strip()
+            orario_html = ""
+            if orario_min or orario_max:
+                orario_txt = f"{orario_min} – {orario_max}" if orario_min and orario_max else (orario_min or orario_max)
+                orario_html = f'<span class="orario-badge"><span class="material-icons-round">schedule</span>{orario_txt}</span>'
+
+            # --- Note ---
+            note_txt = str(p.get("note", p.get("nota_integrativa", p.get("Note", ""))) or "").strip()
+            note_html = ""
+            if note_txt:
+                # Escape HTML special chars
+                note_safe = note_txt.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
+                note_html = f'<div class="note-chip"><span class="material-icons-round">sticky_note_2</span>{note_safe}</div>'
+
+            # --- Pulsante chiamata ---
+            phone_num = _extract_phone(p)
+            if phone_num:
+                nav_col_html = f'''<div class="nav-col">
+                    <a href="{nav_url}" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                    <a href="tel:{phone_num}" class="btn-call"><span class="material-icons-round">call</span></a>
+                </div>'''
+                card_cols = '42px 1fr auto'
+            else:
+                nav_col_html = f'<a href="{nav_url}" class="btn-nav"><span class="material-icons-round">navigation</span></a>'
+                card_cols = '42px 1fr 52px'
             
-            c = f'''<div class="card {'next' if idx == 0 else ''}" onclick="focusOn({idx+1})">
+            c = f'''<div class="card {'next' if idx == 0 else ''}" onclick="focusOn({idx+1})" style="grid-template-columns:{card_cols};">
                 <div class="stop-num">{idx+1}</div>
                 <div class="stop-info">
                     <div class="actions">
@@ -1070,8 +1133,10 @@ def main():
                     </div>
                     <b class="name">{d["cliente"]}</b>
                     {addr_html}
+                    {orario_html}
+                    {note_html}
                 </div>
-                <a href="{nav_url}" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                {nav_col_html}
             </div>'''
             cards_list.append(c)
         

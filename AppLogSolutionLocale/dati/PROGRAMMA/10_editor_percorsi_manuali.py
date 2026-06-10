@@ -140,8 +140,14 @@ def save():
 
                     # Applica vincoli sui remaining_points (nodi da 1 a num_nodes - 2)
                     for i, p in enumerate(remaining_points, start=1):
-                        min_min = parse_time_to_minutes(p.get("orario_min"), 420)
-                        max_min = parse_time_to_minutes(p.get("orario_max"), 840)
+                        _om = p.get("orario_min") or ""
+                        _oM = p.get("orario_max") or ""
+                        if not _om and not _oM:
+                            continue  # nessun vincolo per questo punto
+                        min_min = parse_time_to_minutes(_om, 420)   # solo max → min = 07:00
+                        max_min = parse_time_to_minutes(_oM, 1140)  # solo min → max = 19:00
+                        if min_min > max_min:
+                            continue  # incoerente: salta senza bloccare
                         node_index = manager.NodeToIndex(i)
                         time_dimension.CumulVar(node_index).SetRange(min_min, max_min)
                 
@@ -331,8 +337,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     p.ora_arrivo = formatMinutesToTime(arrivalTime);
                     p.ora_ripartenza = formatMinutesToTime(departureTime);
                     
-                    const maxTimeMin = parseTimeToMinutes(p.orario_max, 840);
-                    p.isLate = arrivalTime > (maxTimeMin + 1);
+                    const oM = p.orario_max || '';
+                    p.isLate = oM ? arrivalTime > (parseTimeToMinutes(oM, 840) + 1) : false;
                     
                     currentTime = departureTime;
                 }
@@ -427,9 +433,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                             <div style="font-weight:700; font-size:0.85rem;">${p.nome}</div>
                             <div style="font-size:0.7rem; color:#64748b;">${p.indirizzo}</div>
                             <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; align-items:center;">
-                                <span style="font-size:0.72rem; color:#4f46e5; font-weight:700;">
-                                    Fascia: ${p.orario_min || '07:00'} - ${p.orario_max || '14:00'}
-                                </span>
+                                ${(p.orario_min || p.orario_max) ? `<span style="font-size:0.72rem; color:#4f46e5; font-weight:700;">🕒 ${p.orario_min && p.orario_max ? p.orario_min + ' - ' + p.orario_max : p.orario_min ? 'Dalle ' + p.orario_min : 'Entro le ' + p.orario_max}</span>` : ''}
                                 ${badgeH10}
                                 ${badgeLate}
                             </div>

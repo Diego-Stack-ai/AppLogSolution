@@ -36,7 +36,7 @@ except ImportError:
 def get_latest_consegne_dir():
     dirs = [d for d in CONSEGNE_DIR.iterdir() if d.is_dir() and d.name.startswith("CONSEGNE_")]
     if not dirs: return None
-    return max(dirs, key=lambda d: d.stat().st_ctime)
+    return max(dirs, key=lambda d: d.stat().st_mtime)
 
 def haversine(p1, p2):
     try:

@@ -616,8 +616,7 @@ def _estrai_grand_chef(base_dir: Path, date_valide: set[str], mappati: dict) -> 
                 if not orario_min and not orario_max and note:
                     orario_min, orario_max = parse_fascia_oraria(note)
                     
-                if not orario_max:
-                    orario_max = "14:00"
+
                 
                 if codice not in mappati:
                     nuovi_dati[codice] = {

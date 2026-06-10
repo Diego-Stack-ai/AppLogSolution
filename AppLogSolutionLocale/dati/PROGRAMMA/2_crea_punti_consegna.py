@@ -265,7 +265,7 @@ def _elabora_grand_chef(base_dir: Path, map_codice: dict) -> list[dict]:
                     om, oM = parse_orari(fascia)
                     if not om and not oM and note:
                         om, oM = parse_orari(note)
-                    if not oM: oM = "14:00"
+
                     
                     punti.append({
                         "codice_frutta": codice,

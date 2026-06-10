@@ -710,7 +710,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                                          <span style="display:block;">${via}</span>
                                          ${comune ? `<span style="font-weight:700; color:#334155;">${comune}</span>` : ''}
                                      </div>
-                                     ${(p.orario_min || p.orario_max) ? `<div style="font-size:0.62rem; color:#4f46e5; font-weight:700; padding-left:26px; margin-top:2px;">🕒 ${p.orario_min || '--:--'} - ${p.orario_max || '--:--'}</div>` : ''}
+                                     ${(p.orario_min || p.orario_max) ? `<div style="font-size:0.62rem; color:#4f46e5; font-weight:700; padding-left:26px; margin-top:2px;">🕒 ${p.orario_min && p.orario_max ? p.orario_min + ' - ' + p.orario_max : p.orario_min ? 'Dalle ' + p.orario_min : 'Entro le ' + p.orario_max}</div>` : ''}
                                      ${p.note ? `<div style="font-size:0.62rem; color:#d97706; font-weight:600; padding-left:26px; margin-top:3px; background:#fffbeb; border-radius:4px; padding:2px 6px 2px 26px; border:1px solid #fde68a;">📝 ${p.note}</div>` : ''}
                                      ${activeAction === 'sposta' ? ctrl : ''}
                                  </div>`;
@@ -754,11 +754,30 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             if(!chks.length) return alert("Seleziona punti!");
             const ids = Array.from(chks).map(c => c.value);
             const toMove = z.lista_punti.filter(p => ids.includes((p.codice_frutta + "_" + p.nome).replace(/[^a-zA-Z0-9]/g, '_')));
-            const newZ = { id_zona: sourceZid+"_B", nome_giro: (z.nome_giro||"Viaggio")+"/B", color: "#"+Math.floor(Math.random()*16777215).toString(16), lista_punti: toMove };
+
+            // Rimuovi suffisso _X esistente per trovare il vero id base
+            // così splitttare "V03_B" genera "V03_C", non "V03_B_B"
+            const baseId = sourceZid.replace(/_[A-Z]$/, '');
+
+            // Trova la prossima lettera libera (B, C, D, ...)
+            const LETTERS = 'BCDEFGHIJKLMNOPQRSTUVWXYZ';
+            let nextLetter = 'B';
+            for (const letter of LETTERS) {
+                if (!DATA_ZONE.some(x => x.id_zona === `${baseId}_${letter}`)) {
+                    nextLetter = letter;
+                    break;
+                }
+            }
+
+            const subId = `${baseId}_${nextLetter}`;
+            // Rimuovi suffisso /X dal nome visualizzato (es. "V01/B" → base "V01")
+            const baseNome = (z.nome_giro || z.id_zona || 'Viaggio').replace(/\\/[A-Z]$/, '');
+            const newZ = { id_zona: subId, nome_giro: `${baseNome}/${nextLetter}`, color: "#"+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0'), lista_punti: toMove };
             z.lista_punti = z.lista_punti.filter(p => !toMove.includes(p));
             DATA_ZONE.push(newZ);
             cancelAction(); updateTotals(); renderMarkers(); renderSidebar();
         }
+
 
         function executeSposta(sourceZid) {
             const z = DATA_ZONE.find(x => x.id_zona === sourceZid);

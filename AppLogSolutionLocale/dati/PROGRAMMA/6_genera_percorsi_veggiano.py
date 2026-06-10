@@ -79,7 +79,7 @@ except ImportError:
 def get_latest_consegne_dir():
     dirs = [d for d in CONSEGNE_DIR.iterdir() if d.is_dir() and d.name.startswith("CONSEGNE_")]
     if not dirs: return None
-    return max(dirs, key=lambda d: d.stat().st_ctime)
+    return max(dirs, key=lambda d: d.stat().st_mtime)
 
 def sanitize_filename(filename):
     return re.sub(r'[\\/*?:"<>|]', '_', filename)
@@ -239,58 +239,76 @@ def ottimizza_percorso(punti_consegna, depot_point):
 
     # Aggiungi vincoli di orario (Time Windows) solo per Grand Chef
     is_grand_chef = any("GRAND" in str(p.get("tipologia_grado") or "").upper() or "CHEF" in str(p.get("tipologia_grado") or "").upper() or "GRANCHEF" in str(p.get("zona") or "").upper() for p in punti_consegna)
-    
+
+    solution = None
+
     if is_grand_chef:
-        def time_callback(from_index, to_index):
-            from_node = manager.IndexToNode(from_index)
-            to_node = manager.IndexToNode(to_index)
-            dist = distance_matrix[from_node][to_node]
-            # Tempo di viaggio in minuti
-            travel_time = (dist / 1000.0 / AVG_SPEED_KMH) * 60
-            # Tempo di sosta al nodo di partenza (se non è il deposito)
-            service_time = TIME_OFFSET_PER_STOP if from_node != 0 else 0
-            return int(travel_time + service_time)
+        try:
+            def time_callback(from_index, to_index):
+                from_node = manager.IndexToNode(from_index)
+                to_node = manager.IndexToNode(to_index)
+                dist = distance_matrix[from_node][to_node]
+                travel_time = (dist / 1000.0 / AVG_SPEED_KMH) * 60
+                service_time = TIME_OFFSET_PER_STOP if from_node != 0 else 0
+                return int(travel_time + service_time)
 
-        time_callback_index = routing.RegisterTransitCallback(time_callback)
-        routing.AddDimension(
-            time_callback_index,
-            30,  # tempo massimo di attesa (slack) consentito in ogni fermata
-            1440,  # tempo massimo di percorrenza giornaliero (24 ore in minuti)
-            False,
-            "Time"
-        )
-        time_dimension = routing.GetDimensionOrDie("Time")
+            time_callback_index = routing.RegisterTransitCallback(time_callback)
+            routing.AddDimension(
+                time_callback_index,
+                30,   # slack massimo per fermata (minuti)
+                1440, # finestra giornaliera massima (24h in minuti)
+                False,
+                "Time"
+            )
+            time_dimension = routing.GetDimensionOrDie("Time")
 
-        def parse_time_to_minutes(time_str, default_val):
-            if not time_str: return default_val
-            m = re.match(r"(\d{2}):(\d{2})", time_str.strip())
-            if m:
-                return int(m.group(1)) * 60 + int(m.group(2))
-            return default_val
+            def parse_time_to_minutes(time_str, default_val):
+                if not time_str: return default_val
+                m = re.match(r"(\d{2}):(\d{2})", time_str.strip())
+                if m:
+                    return int(m.group(1)) * 60 + int(m.group(2))
+                return default_val
 
-        for i, p in enumerate(punti_consegna):
-            min_min = parse_time_to_minutes(p.get("orario_min"), 420)  # 07:00
-            max_min = parse_time_to_minutes(p.get("orario_max"), 840)  # 14:00
-            node_index = manager.NodeToIndex(i + 1)
-            time_dimension.CumulVar(node_index).SetRange(min_min, max_min)
+            for i, p in enumerate(punti_consegna):
+                _om = p.get("orario_min") or ""
+                _oM = p.get("orario_max") or ""
+                if not _om and not _oM:
+                    continue  # nessun vincolo orario per questo punto
+                min_min = parse_time_to_minutes(_om, 420)   # solo max → min = 07:00
+                max_min = parse_time_to_minutes(_oM, 1140)  # solo min → max = 19:00
+                if min_min > max_min:
+                    print(f"  ⚠️  Finestra oraria invalida per '{p.get('nome','?')}' ({_om}>{_oM}), vincolo saltato")
+                    continue  # salta il vincolo, non blocca OR-Tools
+                node_index = manager.NodeToIndex(i + 1)
+                time_dimension.CumulVar(node_index).SetRange(min_min, max_min)
 
-    search_parameters = pywrapcp.DefaultRoutingSearchParameters()
-    search_parameters.first_solution_strategy = (
-        routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
-    search_parameters.time_limit.seconds = 3
+            search_parameters = pywrapcp.DefaultRoutingSearchParameters()
+            search_parameters.first_solution_strategy = (
+                routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
+            search_parameters.time_limit.seconds = 3
+            solution = routing.SolveWithParameters(search_parameters)
 
-    solution = routing.SolveWithParameters(search_parameters)
+            if not solution:
+                print("  ⚠️  [OR-Tools] Vincoli orari non soddisfacibili. Riprovo solo per distanza...")
 
-    # Se fallisce con i vincoli orari rigidi di Grand Chef, riprova senza vincoli (TSP puro per distanza)
-    if not solution and is_grand_chef:
-        print("  ⚠️  [OR-Tools] Impossibile rispettare tutti i vincoli orari per Grand Chef. Ottimizzo solo per distanza...")
-        manager = pywrapcp.RoutingIndexManager(len(all_locations), 1, 0)
-        routing = pywrapcp.RoutingModel(manager)
+        except Exception as e:
+            print(f"  ⚠️  [OR-Tools] Errore vincoli orari ({e}). Riprovo solo per distanza...")
+            solution = None
+
+    # TSP puro per distanza: usato se non è Grand Chef, o se i vincoli orari sono falliti
+    if not is_grand_chef or solution is None:
+        search_parameters = pywrapcp.DefaultRoutingSearchParameters()
+        search_parameters.first_solution_strategy = (
+            routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
+        search_parameters.time_limit.seconds = 3
+        manager2 = pywrapcp.RoutingIndexManager(len(all_locations), 1, 0)
+        routing2 = pywrapcp.RoutingModel(manager2)
         def distance_callback_fallback(from_index, to_index):
-            return distance_matrix[manager.IndexToNode(from_index)][manager.IndexToNode(to_index)]
-        transit_callback_index_fallback = routing.RegisterTransitCallback(distance_callback_fallback)
-        routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index_fallback)
-        solution = routing.SolveWithParameters(search_parameters)
+            return distance_matrix[manager2.IndexToNode(from_index)][manager2.IndexToNode(to_index)]
+        cb2 = routing2.RegisterTransitCallback(distance_callback_fallback)
+        routing2.SetArcCostEvaluatorOfAllVehicles(cb2)
+        solution = routing2.SolveWithParameters(search_parameters)
+        manager, routing = manager2, routing2
 
     if solution:
         percorso_ottimizzato = []
@@ -301,7 +319,7 @@ def ottimizza_percorso(punti_consegna, depot_point):
                 percorso_ottimizzato.append(all_locations[node_index])
             index = solution.Value(routing.NextVar(index))
         return percorso_ottimizzato
-    
+
     return ottimizza_percorso_legacy(punti_consegna, depot_point)
 
 def ottimizza_percorso_legacy(punti, depot_point):
@@ -394,12 +412,12 @@ def get_google_trip_data(percorso, depot_point):
         p["ora_arrivo"] = format_minutes_to_time(arr_time_min)
         p["ora_ripartenza"] = format_minutes_to_time(dep_time_min)
         
-        max_time_min = parse_time_to_minutes(p.get("orario_max"), 840)
-        # Aggiungiamo tolleranza di 1 minuto per arrotondamenti
-        if arr_time_min > max_time_min + 1:
-            p["ritardo"] = True
+        _oM = p.get("orario_max") or ""
+        if _oM:
+            max_time_min = parse_time_to_minutes(_oM, 840)
+            p["ritardo"] = arr_time_min > max_time_min + 1
         else:
-            p["ritardo"] = False
+            p["ritardo"] = False  # nessun orario_max → nessun ritardo possibile
             
         current_time = dep_time_min
 
@@ -424,6 +442,18 @@ def _extract_phone(p):
         if m:
             tel = m.group(0).strip()
     return re.sub(r'[\s\-]', '', tel) if tel else ''
+
+def _fascia_str(p) -> str:
+    """Restituisce la stringa HTML della fascia oraria solo se i dati sono presenti."""
+    _om = p.get("orario_min") or ""
+    _oM = p.get("orario_max") or ""
+    if _om and _oM:
+        return f"&#128338; Fascia: <b>{_om} - {_oM}</b>"
+    if _om:
+        return f"&#128338; Dalle <b>{_om}</b>"
+    if _oM:
+        return f"&#128338; Entro le <b>{_oM}</b>"
+    return ""  # nessun orario → non mostrare nulla
 
 def _build_stop_card(i, p, is_grand_chef):
     """Genera l'HTML di una singola card fermata per le mappe BAT 3."""
@@ -474,7 +504,7 @@ def _build_stop_card(i, p, is_grand_chef):
     <small style="color:#64748b; font-size:0.75rem;">{p["indirizzo"]}</small>
     {ddt_html}
     <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">
-      &#128338; Fascia: <b>{p.get("orario_min", "07:00")} - {p.get("orario_max", "14:00")}</b>
+      {_fascia_str(p)}
     </div>
     <div style="font-size:0.72rem; color:#4f46e5; font-weight:700; margin-top:1px;">
       &#9201; Arrivo: <b>{p.get("ora_arrivo", "--:--")}</b> | Ripartenza: <b>{p.get("ora_ripartenza", "--:--")}</b>

@@ -455,7 +455,7 @@ def _trova_cartella(data_arg: str | None) -> Path:
         return p
     folders = sorted(
         [d for d in CONSEGNE_DIR.iterdir() if d.is_dir() and d.name.startswith("CONSEGNE_")],
-        key=lambda d: d.stat().st_ctime
+        key=lambda d: d.stat().st_mtime
     )
     if not folders:
         raise FileNotFoundError("Nessuna cartella CONSEGNE_* trovata.")

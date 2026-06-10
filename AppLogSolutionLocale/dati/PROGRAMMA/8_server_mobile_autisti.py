@@ -38,7 +38,7 @@ def ottimizza_percorso(punti):
 def get_latest_data():
     dirs = [d for d in CONSEGNE_DIR.iterdir() if d.is_dir() and d.name.startswith("CONSEGNE_")]
     if not dirs: return None
-    latest = max(dirs, key=lambda d: d.stat().st_ctime)
+    latest = max(dirs, key=lambda d: d.stat().st_mtime)
     json_path = latest / "viaggi_giornalieri.json"
     if not json_path.exists(): return None
     with open(json_path, "r", encoding="utf-8") as f:

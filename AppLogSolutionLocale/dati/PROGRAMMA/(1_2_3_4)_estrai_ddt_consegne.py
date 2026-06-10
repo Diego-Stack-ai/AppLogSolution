@@ -360,6 +360,26 @@ def _pulisci_sorgenti(cart_in: Path, date_valide: set[str]):
     return rimossi
 
 
+def _pulisci_grand_chef():
+    """Elimina tutti i file Excel dalla cartella Grand Chef dopo la lavorazione.
+    Viene chiamata solo a fine processo riuscito, come _pulisci_sorgenti per FRUTTA/LATTE.
+    Se il BAT si blocca per nuovi clienti, i file restano per un secondo tentativo.
+    """
+    grand_chef_dir = BASE_DIR / "Grand Chef"
+    if not grand_chef_dir.exists():
+        return 0
+    rimossi = 0
+    for f in grand_chef_dir.glob("*.xlsx"):
+        try:
+            f.unlink()
+            rimossi += 1
+        except Exception as e:
+            print(f"  ⚠️  Impossibile eliminare {f.name}: {e}")
+    if rimossi:
+        print(f"  🗑️  Grand Chef: {rimossi} file Excel eliminati dalla cartella.")
+    return rimossi
+
+
 def _pulisci_output(base: Path, data_v: str):
     for f in [base/"punti_consegna.xlsx", base/"punti_consegna_unificati.json", base/"4_mappa_zone_google.html", base/f"zone_google_{data_v.replace('-', '_')}.kml"]:
         if f.exists():
@@ -627,14 +647,73 @@ def _estrai_grand_chef(base_dir: Path, date_valide: set[str], mappati: dict) -> 
 
 
 def _ricava_date_da_grand_chef() -> list[str]:
+    """Restituisce le date di lavorazione dai file nella cartella Grand Chef.
+    La data è il nome del file stesso: formato DDMMYY (es. 010626) o YYYY-MM-DD.
+    Se nel nome non c'è una data riconoscibile, si usa la data odierna.
+    In ogni caso, se ci sono file Excel nella cartella, viene sempre restituita una data.
+    """
     grand_chef_dir = BASE_DIR / "Grand Chef"
+    if not grand_chef_dir.exists():
+        return []
+    files = list(grand_chef_dir.glob("*.xlsx"))
+    if not files:
+        return []
+
     date_found = set()
-    if grand_chef_dir.exists():
-        for f in grand_chef_dir.glob("*.xlsx"):
-            m = re.search(r"(\d{4})-(\d{2})-(\d{2})", f.name)
-            if m:
-                date_found.add(f"{m.group(3)}-{m.group(2)}-{m.group(1)}")
+    for f in files:
+        # Formato ISO: YYYY-MM-DD  (es. "GC_2026-06-01.xlsx")
+        m = re.search(r"(\d{4})-(\d{2})-(\d{2})", f.name)
+        if m:
+            date_found.add(f"{m.group(3)}-{m.group(2)}-{m.group(1)}")
+            continue
+        # Formato compatto senza separatori: DDMMYY  (es. "LS BRESCIA 010626.xlsx")
+        m2 = re.search(r"\b(\d{2})(\d{2})(\d{2})\b", f.name)
+        if m2:
+            dd, mm, yy = m2.group(1), m2.group(2), m2.group(3)
+            date_found.add(f"{dd}-{mm}-20{yy}")
+
+    # Se nessun file ha una data nel nome → usa la data odierna
+    if not date_found:
+        date_found.add(datetime.today().strftime("%d-%m-%Y"))
+
     return sorted(list(date_found))
+
+
+def _chiedi_data_grand_chef() -> str | None:
+    """Mostra i file Gran Chef trovati e chiede la data reale di consegna all'utente.
+    Restituisce la data in formato DD-MM-YYYY, o None se non ci sono file."""
+    grand_chef_dir = BASE_DIR / "Grand Chef"
+    if not grand_chef_dir.exists():
+        return None
+    files = list(grand_chef_dir.glob("*.xlsx"))
+    if not files:
+        return None
+
+    print("\n" + "="*55)
+    print("📦  FILE GRAN CHEF RILEVATI:")
+    for f in sorted(files):
+        print(f"    - {f.name}")
+    print()
+    print("  La data nei file Gran Chef è la data di LAVORAZIONE,")
+    print("  non la data reale di consegna.")
+    print()
+
+    anno_default = datetime.today().strftime("%Y")
+    domani = (datetime.today() + __import__('datetime').timedelta(days=1)).strftime("%d-%m-%Y")
+
+    while True:
+        raw = input(f"  📅 Data di CONSEGNA reale Gran Chef (GG-MM o GG-MM-AAAA) [{domani}]: ").strip()
+        if not raw:
+            raw = domani
+        # Normalizza: GG-MM → GG-MM-YYYY
+        if re.match(r"^\d{2}-\d{2}$", raw):
+            raw = f"{raw}-{anno_default}"
+        # Valida formato
+        if re.match(r"^\d{2}-\d{2}-\d{4}$", raw):
+            print(f"  ✅ Data Gran Chef impostata: {raw}")
+            print("="*55 + "\n")
+            return raw
+        print(f"  ⚠️  Formato non valido '{raw}'. Usa GG-MM o GG-MM-AAAA (es. 11-06 oppure 11-06-2026)")
 
 
 def main():
@@ -647,12 +726,19 @@ def main():
             if re.match(r"^\d{2}-\d{2}$", parte): parte = f"{parte}-2026"
             date_valide.add(parte)
     else:
+        # 1. Date dai PDF FRUTTA/LATTE (fonte primaria e affidabile)
         date_list = _ricava_date_da_pdf()
-        if not date_list:
-            date_list = _ricava_date_da_grand_chef()
-        if not date_list:
-            return print("❌ Nessun PDF o file Grand Chef trovato.")
         date_valide = set(date_list)
+
+        # 2. Se ci sono file Gran Chef, chiedi sempre la data reale di consegna
+        data_gc = _chiedi_data_grand_chef()
+        if data_gc:
+            date_valide.add(data_gc)
+
+        # 3. Nessuna fonte trovata
+        if not date_valide:
+            return print("❌ Nessun PDF o file Grand Chef trovato.")
+
 
     # ── Nome cartella: singola o doppia data ────────────────────────────────
     data_label = "_".join(sorted(date_valide))   # es. "30-03-2026" o "30-03-2026_31-03-2026"
@@ -694,7 +780,11 @@ def main():
         print(f"⚙️ 4_mappa_zone_google.py (generazione file, server disabilitato)...")
         subprocess.run([sys.executable, str(p_mappa), data_label, "--no-serve"], cwd=BASE_DIR)
 
-    print(f"\n✅ COMPLETATO ({data_label})!")
+    # Pulizia Grand Chef DOPO script 2/3/4 — script 2 legge gli Excel direttamente
+    # dalla cartella Grand Chef, quindi vanno cancellati solo a pipeline conclusa
+    _pulisci_grand_chef()
+
+    print(f"\n✅ COMPLETATO ({data_label})")
 
 if __name__ == "__main__": main()
 

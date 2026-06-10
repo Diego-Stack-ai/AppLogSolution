@@ -24,6 +24,7 @@ GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
 DEPOT = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"}
 CACHE_FILE = PROG_DIR / "distanze_reali_cache.json"
 MODO_DISTANZA = "GOOGLE_MATRIX"
+PARKING_OVERHEAD_MIN = gen_percorsi.PARKING_OVERHEAD_MIN if gen_percorsi else 4  # coerente con BAT 3
 
 # Tentativo di import OR-Tools
 try:
@@ -232,7 +233,8 @@ def get_google_trip_data(percorso, depot_point):
             
     final_km = round(km_tot if km_tot > 0 else km_stima, 1)
     final_guida_sec = sec_tot if sec_tot > 0 else sec_stima
-    t_guida_min = int(final_guida_sec / 60)
+    # Aggiunge overhead parcheggio (coerente con BAT 3: 4 min per segmento)
+    t_guida_min = int(final_guida_sec / 60) + len(percorso) * PARKING_OVERHEAD_MIN
     is_grand_chef = any("GRAND CHEF" in str(p.get("tipologia_grado") or "").upper() for p in percorso)
     offset = 12 if is_grand_chef else TIME_OFFSET_PER_STOP
     t_sosta_min = len(percorso) * offset

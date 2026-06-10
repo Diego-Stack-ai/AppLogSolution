@@ -880,6 +880,22 @@ def _carica_e_genera(data_giorno):
                 "nome_giro": "⚠️ DDT DA INSERIRE"
             }
 
+        # ── Ripristino nomi personalizzati ──────────────────────────────────────
+        # Se viaggi_giornalieri.json esiste già (salvato da una sessione precedente),
+        # recupera i nome_giro custom e riscrivili su zone_dict prima di servire l'HTML.
+        # In questo modo le rinominazioni sopravvivono a ogni riavvio del BAT 2.
+        if TARGET_FILE_VIAGGI.exists():
+            try:
+                viaggi_salvati = json.loads(TARGET_FILE_VIAGGI.read_text(encoding="utf-8"))
+                for v in viaggi_salvati:
+                    zid_v = v.get("id_zona")
+                    nome_v = v.get("nome_giro")
+                    if zid_v and nome_v and zid_v in zone_dict:
+                        zone_dict[zid_v]["nome_giro"] = nome_v
+            except Exception:
+                pass  # file corrotto o vuoto: si usano i nomi generati
+        # ────────────────────────────────────────────────────────────────────────
+
         # Ricostruisci la lista cache in ordine
         zone_normali = [zone_dict[k] for k in chiavi_ordinate] + [zone_dict[k] for k in zone_gc] + ([zone_dict["SENZA_ZONA"]] if "SENZA_ZONA" in zone_dict else [])
         zone_speciali = [zone_dict["DDT_DA_INSERIRE"]] if "DDT_DA_INSERIRE" in zone_dict else []

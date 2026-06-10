@@ -402,6 +402,10 @@ def get_google_trip_data(percorso, depot_point):
             if cached:
                 durata_guida_sec = cached['dur']
             else:
+                nome_prec = p_precedente.get('nome', p_precedente.get('indirizzo', 'DEPOSITO'))
+                nome_dest = p.get('nome', p.get('indirizzo', '?'))
+                print(f"  ⚠️  WARN haversine fallback: cache mancante per [{nome_prec}] → [{nome_dest}]")
+                print(f"       Distanza stimata (non reale). Rilancia BAT 3 per aggiornare il cache.")
                 dist_m = haversine(p_precedente, p) * 1000.0 * 1.3
                 durata_guida_sec = (dist_m / 1000.0 / AVG_SPEED_KMH) * 3600
                 

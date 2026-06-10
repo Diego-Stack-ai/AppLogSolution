@@ -402,12 +402,33 @@ def get_google_trip_data(percorso, depot_point):
             if cached:
                 durata_guida_sec = cached['dur']
             else:
+                # Coppia mancante dal cache: chiama Matrix API direttamente per questa coppia
                 nome_prec = p_precedente.get('nome', p_precedente.get('indirizzo', 'DEPOSITO'))
                 nome_dest = p.get('nome', p.get('indirizzo', '?'))
-                print(f"  ⚠️  WARN haversine fallback: cache mancante per [{nome_prec}] → [{nome_dest}]")
-                print(f"       Distanza stimata (non reale). Rilancia BAT 3 per aggiornare il cache.")
-                dist_m = haversine(p_precedente, p) * 1000.0 * 1.3
-                durata_guida_sec = (dist_m / 1000.0 / AVG_SPEED_KMH) * 3600
+                print(f"  ℹ️  Cache mancante [{nome_prec}] → [{nome_dest}]: chiamo Matrix API...")
+                _api_ok = False
+                try:
+                    _orig = f"{p_precedente['lat']},{p_precedente['lon']}"
+                    _dest = f"{p['lat']},{p['lon']}"
+                    _url  = (f"https://maps.googleapis.com/maps/api/distancematrix/json"
+                             f"?origins={_orig}&destinations={_dest}&key={GOOGLE_MAPS_API_KEY}")
+                    _resp = requests.get(_url, timeout=10).json()
+                    if _resp.get('status') == 'OK':
+                        _el = _resp['rows'][0]['elements'][0]
+                        if _el.get('status') == 'OK':
+                            _dist = _el['distance']['value']
+                            _dur  = _el['duration']['value']
+                            dist_cache.set(p_precedente, p, _dist, _dur)
+                            dist_cache.save()
+                            durata_guida_sec = _dur
+                            _api_ok = True
+                            print(f"       OK — {round(_dist/1000,1)} km, {round(_dur/60,1)} min (salvato in cache)")
+                except Exception as _e:
+                    print(f"       Errore API: {_e}")
+                if not _api_ok:
+                    print(f"  ⚠️  FALLBACK haversine per [{nome_prec}] → [{nome_dest}] (dato non reale)")
+                    dist_m = haversine(p_precedente, p) * 1000.0 * 1.3
+                    durata_guida_sec = (dist_m / 1000.0 / AVG_SPEED_KMH) * 3600
                 
             durata_guida_min = durata_guida_sec / 60.0 + PARKING_OVERHEAD_MIN
             arr_time_min = current_time + durata_guida_min

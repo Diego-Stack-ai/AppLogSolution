@@ -1016,6 +1016,33 @@ def main():
         
         # Dynamic depot calculation
         depot = gen_percorsi.get_depot_for_points(perc) if gen_percorsi else DEPOT
+
+        # --- Rilevamento Grand Chef ---
+        is_gc = any(
+            "GRAND CHEF" in str(p.get("tipologia_grado") or "").upper() or
+            "GRANCHEF" in str(p.get("zona") or "").upper()
+            for p in perc
+        )
+
+        # --- Ora partenza deposito e rientro stimato (dal cache distanze) ---
+        ora_partenza_dep = "07:00"
+        ora_rientro_dep  = ""
+        try:
+            if perc and gen_percorsi:
+                _c1 = gen_percorsi.dist_cache.get(depot, perc[0])
+                if _c1:
+                    _arr1 = perc[0].get("ora_arrivo", "07:00") or "07:00"
+                    _h, _m = map(int, _arr1.split(":"))
+                    _part = _h * 60 + _m - _c1["dur"] / 60.0
+                    ora_partenza_dep = f"{int(_part)//60:02d}:{int(_part)%60:02d}"
+                _cn = gen_percorsi.dist_cache.get(perc[-1], depot)
+                _rip_last = perc[-1].get("ora_ripartenza", "") or ""
+                if _cn and _rip_last:
+                    _hr, _mr = map(int, _rip_last.split(":"))
+                    _rient = _hr * 60 + _mr + _cn["dur"] / 60.0
+                    ora_rientro_dep = f"{int(_rient)//60:02d}:{int(_rient)%60:02d}"
+        except Exception:
+            pass
         
         # 1. Calcolo KM e tempi REALI via Google Directions API
         perc_completo = [depot] + perc + [depot]
@@ -1085,7 +1112,11 @@ def main():
         cards_list.append(f'''
             <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
                 <div class="stop-num" style="background:#475569;"><span class="material-icons-round">home</span></div>
-                <div class="stop-info"><b class="name">PARTENZA</b><span class="addr">{depot['nome'].title()}</span></div>
+                <div class="stop-info">
+                    <b class="name">PARTENZA</b>
+                    <span class="addr">{depot['nome'].title()}</span>
+                    <span class="orario-badge" style="background:#1e293b; color:white; margin-top:4px;"><span class="material-icons-round">schedule</span>Partenza: {ora_partenza_dep}</span>
+                </div>
             </div>''')
 
         for idx, p in enumerate(perc):
@@ -1104,6 +1135,21 @@ def main():
             if orario_min or orario_max:
                 orario_txt = f"{orario_min} – {orario_max}" if orario_min and orario_max else (orario_min or orario_max)
                 orario_html = f'<span class="orario-badge"><span class="material-icons-round">schedule</span>{orario_txt}</span>'
+
+            # --- Orario stimato arrivo / ripartenza (da BAT 3) ---
+            _ora_arr = str(p.get("ora_arrivo") or "").strip()
+            _ora_rip = str(p.get("ora_ripartenza") or "").strip()
+            if _ora_arr and _ora_rip:
+                eta_html = (f'<span class="orario-badge" style="background:#e0f2fe; color:#0369a1;'
+                            f' border:1px solid #bae6fd; margin-top:2px;">'
+                            f'<span class="material-icons-round">timer</span>'
+                            f'Arrivo <b>{_ora_arr}</b> &mdash; Ripart. <b>{_ora_rip}</b></span>')
+            elif _ora_arr:
+                eta_html = (f'<span class="orario-badge" style="background:#e0f2fe; color:#0369a1;'
+                            f' border:1px solid #bae6fd; margin-top:2px;">'
+                            f'<span class="material-icons-round">timer</span>Arrivo stimato <b>{_ora_arr}</b></span>')
+            else:
+                eta_html = ""
 
             # --- Note ---
             note_txt = str(p.get("note", p.get("nota_integrativa", p.get("Note", ""))) or "").strip()
@@ -1134,6 +1180,7 @@ def main():
                     <b class="name">{d["cliente"]}</b>
                     {addr_html}
                     {orario_html}
+                    {eta_html}
                     {note_html}
                 </div>
                 {nav_col_html}
@@ -1141,10 +1188,17 @@ def main():
             cards_list.append(c)
         
         # Card di Arrivo
+        _rientro_badge = (f'<span class="orario-badge" style="background:#1e293b; color:white; margin-top:4px;">'
+                          f'<span class="material-icons-round">schedule</span>Rientro stimato: {ora_rientro_dep}</span>'
+                          if ora_rientro_dep else '')
         cards_list.append(f'''
             <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
                 <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
-                <div class="stop-info"><b class="name">ARRIVO</b><span class="addr">{depot['nome'].title()}</span></div>
+                <div class="stop-info">
+                    <b class="name">ARRIVO</b>
+                    <span class="addr">{depot['nome'].title()}</span>
+                    {_rientro_badge}
+                </div>
             </div>''')
         
         cards_html = "".join(cards_list)

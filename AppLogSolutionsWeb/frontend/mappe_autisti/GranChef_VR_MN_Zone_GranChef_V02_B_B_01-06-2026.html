@@ -76,13 +76,13 @@
         </div>
         <div id="sidebar">
             <div class="header">
-                <div class="trip-title">🏎️ GranChef VR MN | Zone: GranChef_V03_B_B</div>
+                <div class="trip-title">🏎️ GranChef VR MN | Zone: GranChef_V02_B_B</div>
                 <button class="reset-btn" onclick="resetDone()">RESET GIRO</button>
                 <div class="stats-row">
-                    <div class="stat-item"><span class="stat-val">269.8km</span><span class="stat-lbl">Strada</span></div>
-                    <div class="stat-item"><span class="stat-val">4h 49m</span><span class="stat-lbl">Guida</span></div>
-                    <div class="stat-item"><span class="stat-val">2h 36m</span><span class="stat-lbl">Soste</span></div>
-                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">7h 25m</span><span class="stat-lbl">Totale</span></div>
+                    <div class="stat-item"><span class="stat-val">185.5km</span><span class="stat-lbl">Strada</span></div>
+                    <div class="stat-item"><span class="stat-val">3h 29m</span><span class="stat-lbl">Guida</span></div>
+                    <div class="stat-item"><span class="stat-val">1h 48m</span><span class="stat-lbl">Soste</span></div>
+                    <div class="stat-item" style="border-left: 1px solid #334155; padding-left: 10px;"><span class="stat-val" style="color:var(--accent);">5h 17m</span><span class="stat-lbl">Totale</span></div>
                 </div>
             </div>
             <div id="delivery-list">
@@ -95,29 +95,17 @@
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(0, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">TRATTORIA PIZZERIA LA BUSSOLA</b>
-                    <span class="addr"><b>VIA VITTORIO EMANUELE 50</b><br>37060 ERBE (VR)</span>
-                    <span class="orario-badge"><span class="material-icons-round">schedule</span>07:00 – 10:00</span>
+                    <b class="name">VILLA BEVILACQUA</b>
+                    <span class="addr"><b>VIA ROMA 50</b><br>37040 BEVILACQUA (VR)</span>
+                    <span class="orario-badge"><span class="material-icons-round">schedule</span>08:00 – 12:00</span>
                     
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.24084504707167,10.96812936627045&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.23203267866523,11.39996462345121&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div><div class="card " onclick="focusOn(2)" style="grid-template-columns:42px 1fr 52px;">
                 <div class="stop-num">2</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(1, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">GORNI STEFANO</b>
-                    <span class="addr"><b>VIA PALMIRO TOGLIATTI 13/A</b><br>46051 SAN GIORGIO BIGARELLO (MN)</span>
-                    <span class="orario-badge"><span class="material-icons-round">schedule</span>14:00</span>
-                    
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.16317039458161,10.84308438777922&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(3)" style="grid-template-columns:42px 1fr 52px;">
-                <div class="stop-num">3</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(2, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
                     <b class="name">BAR MIRO'</b>
                     <span class="addr"><b>PIAZZA ANDREA MANTEGNA 13</b><br>46100 MANTOVA (MN)</span>
@@ -125,74 +113,38 @@
                     
                 </div>
                 <a href="https://www.google.com/maps/dir/?api=1&destination=45.15841549999998,10.79377710552254&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(3)" style="grid-template-columns:42px 1fr auto;">
+                <div class="stop-num">3</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(2, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">MATERIA PRIMA - OSTERIA DELLA FRAGOLETTA</b>
+                    <span class="addr"><b>VIA GOITO 7</b><br>46100 MANTOVA (MN)</span>
+                    <span class="orario-badge"><span class="material-icons-round">schedule</span>09:30 – 12:00</span>
+                    <div class="note-chip"><span class="material-icons-round">sticky_note_2</span>chiamare prima 3278810986</div>
+                </div>
+                <div class="nav-col">
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=45.15783710862379,10.79407631165676&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+                    <a href="tel:3278810986" class="btn-call"><span class="material-icons-round">call</span></a>
+                </div>
             </div><div class="card " onclick="focusOn(4)" style="grid-template-columns:42px 1fr 52px;">
                 <div class="stop-num">4</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(3, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
-                    <b class="name">ORTIKA COFFEE & FOOD</b>
-                    <span class="addr"><b>VIA GIOVANNI BATTISTA SAGNOLI 20</b><br>46100 MANTOVA (MN)</span>
-                    <span class="orario-badge"><span class="material-icons-round">schedule</span>07:30 – 11:00</span>
-                    
+                    <b class="name">RISTORANTE MIRAMONTI</b>
+                    <span class="addr"><b>PIAZZA GARIBALDI 1</b><br>46049 VOLTA MANTOVANA (MN)</span>
+                    <span class="orario-badge"><span class="material-icons-round">schedule</span>09:00 – 13:00</span>
+                    <div class="note-chip"><span class="material-icons-round">sticky_note_2</span>PREAVVISO TELEF. 389/ 1894716</div>
                 </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.15766092504718,10.79422782086678&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(5)" style="grid-template-columns:42px 1fr auto;">
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.32258286652895,10.65937452793119&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(5)" style="grid-template-columns:42px 1fr 52px;">
                 <div class="stop-num">5</div>
                 <div class="stop-info">
                     <div class="actions">
                         <button class="btn-done" onclick="toggleDone(4, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">RELAIS DEI MULINI SRL</b>
-                    <span class="addr"><b>VIA VOLTA 9</b><br>46045 POZZOLO (MN)</span>
-                    <span class="orario-badge"><span class="material-icons-round">schedule</span>06:30 – 10:00</span>
-                    <div class="note-chip"><span class="material-icons-round">sticky_note_2</span>non dopo le 10 chiamare 3246846506</div>
-                </div>
-                <div class="nav-col">
-                    <a href="https://www.google.com/maps/dir/?api=1&destination=45.30921999754739,10.69968772158203&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-                    <a href="tel:3246846506" class="btn-call"><span class="material-icons-round">call</span></a>
-                </div>
-            </div><div class="card " onclick="focusOn(6)" style="grid-template-columns:42px 1fr 52px;">
-                <div class="stop-num">6</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(5, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">DISPENSA UFFICIALI BISTROT & COCKTAIL BAR</b>
-                    <span class="addr"><b>VIA PARCO CATULLO 5</b><br>37019 PESCHIERA DEL GARDA (VR)</span>
-                    <span class="orario-badge"><span class="material-icons-round">schedule</span>07:30 – 10:00</span>
-                    <div class="note-chip"><span class="material-icons-round">sticky_note_2</span>consegnare nei padiglioni uffici</div>
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.43919538298165,10.69509896693421&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(7)" style="grid-template-columns:42px 1fr 52px;">
-                <div class="stop-num">7</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(6, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">IONA SEAFOOD</b>
-                    <span class="addr"><b>VIA BELL ITALIA 29/A</b><br>37019 PESCHIERA DEL GARDA (VR)</span>
-                    <span class="orario-badge"><span class="material-icons-round">schedule</span>07:00 – 10:30</span>
-                    
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.44217439149093,10.67468695889551&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(8)" style="grid-template-columns:42px 1fr 52px;">
-                <div class="stop-num">8</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(7, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">RISTORANTE PORTOFINO</b>
-                    <span class="addr"><b>VIA POZZOLENGO 11</b><br>46040 PONTI SUL MINCIO (MN)</span>
-                    <span class="orario-badge"><span class="material-icons-round">schedule</span>09:00 – 11:30</span>
-                    
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.41256711192921,10.67669156011885&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(9)" style="grid-template-columns:42px 1fr 52px;">
-                <div class="stop-num">9</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(8, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
                     <b class="name">AZIENDA AGRICOLA MOSCATELLO</b>
                     <span class="addr"><b>LOCALITA  MOSCATELLO DI SOTTO 3/5</b><br>25010 POZZOLENGO (BS)</span>
@@ -200,11 +152,23 @@
                     
                 </div>
                 <a href="https://www.google.com/maps/dir/?api=1&destination=45.39114981198524,10.64011525375902&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(10)" style="grid-template-columns:42px 1fr 52px;">
-                <div class="stop-num">10</div>
+            </div><div class="card " onclick="focusOn(6)" style="grid-template-columns:42px 1fr 52px;">
+                <div class="stop-num">6</div>
                 <div class="stop-info">
                     <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(9, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                        <button class="btn-done" onclick="toggleDone(5, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                    </div>
+                    <b class="name">BORGO LA CACCIA</b>
+                    <span class="addr"><b>LOCALITA  CACCIA 1</b><br>25010 POZZOLENGO (BS)</span>
+                    <span class="orario-badge"><span class="material-icons-round">schedule</span>14:00</span>
+                    
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=45.38641542369403,10.63741299570082&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
+            </div><div class="card " onclick="focusOn(7)" style="grid-template-columns:42px 1fr 52px;">
+                <div class="stop-num">7</div>
+                <div class="stop-info">
+                    <div class="actions">
+                        <button class="btn-done" onclick="toggleDone(6, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
                     <b class="name">AGRITURISMO CASINA RICCHI SOC.AGR.RICCHI F.LLI STEFANONI S.S.</b>
                     <span class="addr"><b>VIA S. ROCCO 93</b><br>46040 CAVRIANA (MN)</span>
@@ -212,11 +176,11 @@
                     <div class="note-chip"><span class="material-icons-round">sticky_note_2</span>fino ore 17:00</div>
                 </div>
                 <a href="https://www.google.com/maps/dir/?api=1&destination=45.35796791994606,10.60368109878081&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(11)" style="grid-template-columns:42px 1fr 52px;">
-                <div class="stop-num">11</div>
+            </div><div class="card " onclick="focusOn(8)" style="grid-template-columns:42px 1fr 52px;">
+                <div class="stop-num">8</div>
                 <div class="stop-info">
                     <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(10, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                        <button class="btn-done" onclick="toggleDone(7, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
                     <b class="name">LA CHIUSINA</b>
                     <span class="addr"><b>VIA RAFFAELLO SANZIO 22</b><br>37067 BORGHETTO DI VALEGGIO SUL MINCIO (VR)</span>
@@ -224,11 +188,11 @@
                     
                 </div>
                 <a href="https://www.google.com/maps/dir/?api=1&destination=45.35371133945467,10.72475147055226&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(12)" style="grid-template-columns:42px 1fr 52px;">
-                <div class="stop-num">12</div>
+            </div><div class="card " onclick="focusOn(9)" style="grid-template-columns:42px 1fr 52px;">
+                <div class="stop-num">9</div>
                 <div class="stop-info">
                     <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(11, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
+                        <button class="btn-done" onclick="toggleDone(8, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
                     </div>
                     <b class="name">CASA MOLON AL GOLF VERONA</b>
                     <span class="addr"><b>LOC. VIA DA DEL SALE 15</b><br>37066 SOMMACAMPAGNA (VR)</span>
@@ -236,18 +200,6 @@
                     
                 </div>
                 <a href="https://www.google.com/maps/dir/?api=1&destination=45.39639987816902,10.82139371348228&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
-            </div><div class="card " onclick="focusOn(13)" style="grid-template-columns:42px 1fr 52px;">
-                <div class="stop-num">13</div>
-                <div class="stop-info">
-                    <div class="actions">
-                        <button class="btn-done" onclick="toggleDone(12, event)" style="flex:1;"><span class="material-icons-round">radio_button_unchecked</span> CONSEGNATO</button>
-                    </div>
-                    <b class="name">VILLA BEVILACQUA</b>
-                    <span class="addr"><b>VIA ROMA 50</b><br>37040 BEVILACQUA (VR)</span>
-                    <span class="orario-badge"><span class="material-icons-round">schedule</span>08:00 – 12:00</span>
-                    
-                </div>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=45.23203267866523,11.39996462345121&travelmode=driving" class="btn-nav"><span class="material-icons-round">navigation</span></a>
             </div>
             <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
                 <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
@@ -311,7 +263,7 @@
 
     <script>
         const v_id = "GranChef VR MN";
-        const data = [{"cliente": "DEPOSITO SOMMACAMPAGNA", "indirizzo": "Sommacampagna (VR)", "lat": 45.4052, "lon": 10.846, "codice_frutta": "", "codice_latte": "", "tipologia_grado": "", "orario_min": "", "orario_max": "", "note": "", "telefono": ""}, {"cliente": "TRATTORIA PIZZERIA LA BUSSOLA", "indirizzo": "VIA VITTORIO EMANUELE 50, 37060 ERBE (VR)", "lat": 45.24084504707167, "lon": 10.96812936627045, "codice_frutta": "100341867", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "07:00", "orario_max": "10:00", "note": "", "telefono": ""}, {"cliente": "GORNI STEFANO", "indirizzo": "VIA PALMIRO TOGLIATTI 13/A, 46051 SAN GIORGIO BIGARELLO (MN)", "lat": 45.16317039458161, "lon": 10.84308438777922, "codice_frutta": "100353794", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "", "orario_max": "14:00", "note": "", "telefono": ""}, {"cliente": "BAR MIRO'", "indirizzo": "PIAZZA ANDREA MANTEGNA 13, 46100 MANTOVA (MN)", "lat": 45.15841549999998, "lon": 10.79377710552254, "codice_frutta": "100353828", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "", "orario_max": "14:00", "note": "", "telefono": ""}, {"cliente": "ORTIKA COFFEE & FOOD", "indirizzo": "VIA GIOVANNI BATTISTA SAGNOLI 20, 46100 MANTOVA (MN)", "lat": 45.15766092504718, "lon": 10.79422782086678, "codice_frutta": "100351359", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "07:30", "orario_max": "11:00", "note": "", "telefono": ""}, {"cliente": "RELAIS DEI MULINI SRL", "indirizzo": "VIA VOLTA 9, 46045 POZZOLO (MN)", "lat": 45.30921999754739, "lon": 10.69968772158203, "codice_frutta": "100350880", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "06:30", "orario_max": "10:00", "note": "non dopo le 10 chiamare 3246846506", "telefono": ""}, {"cliente": "DISPENSA UFFICIALI BISTROT & COCKTAIL BAR", "indirizzo": "VIA PARCO CATULLO 5, 37019 PESCHIERA DEL GARDA (VR)", "lat": 45.43919538298165, "lon": 10.69509896693421, "codice_frutta": "100351316", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "07:30", "orario_max": "10:00", "note": "consegnare nei padiglioni uffici", "telefono": ""}, {"cliente": "IONA SEAFOOD", "indirizzo": "VIA BELL ITALIA 29/A, 37019 PESCHIERA DEL GARDA (VR)", "lat": 45.44217439149093, "lon": 10.67468695889551, "codice_frutta": "100351817", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "07:00", "orario_max": "10:30", "note": "", "telefono": ""}, {"cliente": "RISTORANTE PORTOFINO", "indirizzo": "VIA POZZOLENGO 11, 46040 PONTI SUL MINCIO (MN)", "lat": 45.41256711192921, "lon": 10.67669156011885, "codice_frutta": "100354856", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "09:00", "orario_max": "11:30", "note": "", "telefono": ""}, {"cliente": "AZIENDA AGRICOLA MOSCATELLO", "indirizzo": "LOCALITA  MOSCATELLO DI SOTTO 3/5, 25010 POZZOLENGO (BS)", "lat": 45.39114981198524, "lon": 10.64011525375902, "codice_frutta": "100334279", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "", "orario_max": "14:00", "note": "", "telefono": ""}, {"cliente": "AGRITURISMO CASINA RICCHI SOC.AGR.RICCHI F.LLI STEFANONI S.S.", "indirizzo": "VIA S. ROCCO 93, 46040 CAVRIANA (MN)", "lat": 45.35796791994606, "lon": 10.60368109878081, "codice_frutta": "100347819", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "08:00", "orario_max": "13:00", "note": "fino ore 17:00", "telefono": ""}, {"cliente": "LA CHIUSINA", "indirizzo": "VIA RAFFAELLO SANZIO 22, 37067 BORGHETTO DI VALEGGIO SUL MINCIO (VR)", "lat": 45.35371133945467, "lon": 10.72475147055226, "codice_frutta": "100343039", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "09:00", "orario_max": "12:00", "note": "", "telefono": ""}, {"cliente": "CASA MOLON AL GOLF VERONA", "indirizzo": "LOC. VIA DA DEL SALE 15, 37066 SOMMACAMPAGNA (VR)", "lat": 45.39639987816902, "lon": 10.82139371348228, "codice_frutta": "100351916", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "10:00", "orario_max": "14:00", "note": "", "telefono": ""}, {"cliente": "VILLA BEVILACQUA", "indirizzo": "VIA ROMA 50, 37040 BEVILACQUA (VR)", "lat": 45.23203267866523, "lon": 11.39996462345121, "codice_frutta": "100353958", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "08:00", "orario_max": "12:00", "note": "", "telefono": ""}, {"cliente": "DEPOSITO SOMMACAMPAGNA", "indirizzo": "Sommacampagna (VR)", "lat": 45.4052, "lon": 10.846, "codice_frutta": "", "codice_latte": "", "tipologia_grado": "", "orario_min": "", "orario_max": "", "note": "", "telefono": ""}];
+        const data = [{"cliente": "DEPOSITO SOMMACAMPAGNA", "indirizzo": "Sommacampagna (VR)", "lat": 45.4052, "lon": 10.846, "codice_frutta": "", "codice_latte": "", "tipologia_grado": "", "orario_min": "", "orario_max": "", "note": "", "telefono": ""}, {"cliente": "VILLA BEVILACQUA", "indirizzo": "VIA ROMA 50, 37040 BEVILACQUA (VR)", "lat": 45.23203267866523, "lon": 11.39996462345121, "codice_frutta": "100353958", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "08:00", "orario_max": "12:00", "note": "", "telefono": ""}, {"cliente": "BAR MIRO'", "indirizzo": "PIAZZA ANDREA MANTEGNA 13, 46100 MANTOVA (MN)", "lat": 45.15841549999998, "lon": 10.79377710552254, "codice_frutta": "100353828", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "", "orario_max": "14:00", "note": "", "telefono": ""}, {"cliente": "MATERIA PRIMA - OSTERIA DELLA FRAGOLETTA", "indirizzo": "VIA GOITO 7, 46100 MANTOVA (MN)", "lat": 45.15783710862379, "lon": 10.79407631165676, "codice_frutta": "100344874", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "09:30", "orario_max": "12:00", "note": "chiamare prima 3278810986", "telefono": ""}, {"cliente": "RISTORANTE MIRAMONTI", "indirizzo": "PIAZZA GARIBALDI 1, 46049 VOLTA MANTOVANA (MN)", "lat": 45.32258286652895, "lon": 10.65937452793119, "codice_frutta": "100347681", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "09:00", "orario_max": "13:00", "note": "PREAVVISO TELEF. 389/ 1894716", "telefono": ""}, {"cliente": "AZIENDA AGRICOLA MOSCATELLO", "indirizzo": "LOCALITA  MOSCATELLO DI SOTTO 3/5, 25010 POZZOLENGO (BS)", "lat": 45.39114981198524, "lon": 10.64011525375902, "codice_frutta": "100334279", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "", "orario_max": "14:00", "note": "", "telefono": ""}, {"cliente": "BORGO LA CACCIA", "indirizzo": "LOCALITA  CACCIA 1, 25010 POZZOLENGO (BS)", "lat": 45.38641542369403, "lon": 10.63741299570082, "codice_frutta": "100351994", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "", "orario_max": "14:00", "note": "", "telefono": ""}, {"cliente": "AGRITURISMO CASINA RICCHI SOC.AGR.RICCHI F.LLI STEFANONI S.S.", "indirizzo": "VIA S. ROCCO 93, 46040 CAVRIANA (MN)", "lat": 45.35796791994606, "lon": 10.60368109878081, "codice_frutta": "100347819", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "08:00", "orario_max": "13:00", "note": "fino ore 17:00", "telefono": ""}, {"cliente": "LA CHIUSINA", "indirizzo": "VIA RAFFAELLO SANZIO 22, 37067 BORGHETTO DI VALEGGIO SUL MINCIO (VR)", "lat": 45.35371133945467, "lon": 10.72475147055226, "codice_frutta": "100343039", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "09:00", "orario_max": "12:00", "note": "", "telefono": ""}, {"cliente": "CASA MOLON AL GOLF VERONA", "indirizzo": "LOC. VIA DA DEL SALE 15, 37066 SOMMACAMPAGNA (VR)", "lat": 45.39639987816902, "lon": 10.82139371348228, "codice_frutta": "100351916", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF", "orario_min": "10:00", "orario_max": "14:00", "note": "", "telefono": ""}, {"cliente": "DEPOSITO SOMMACAMPAGNA", "indirizzo": "Sommacampagna (VR)", "lat": 45.4052, "lon": 10.846, "codice_frutta": "", "codice_latte": "", "tipologia_grado": "", "orario_min": "", "orario_max": "", "note": "", "telefono": ""}];
         window.data = data; window.v_id = v_id;
         let map, markers = [], userMarker;
         window.currentPos = null;

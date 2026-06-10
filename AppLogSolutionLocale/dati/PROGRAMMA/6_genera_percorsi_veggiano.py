@@ -67,6 +67,7 @@ def get_depot_for_points(punti):
 
 TIME_OFFSET_PER_STOP = 8
 AVG_SPEED_KMH = 35
+PARKING_OVERHEAD_MIN = 4  # minuti extra per segmento: 2 min uscita parcheggio + 2 min ingresso parcheggio
 
 # Tentativo di import OR-Tools
 try:
@@ -404,7 +405,7 @@ def get_google_trip_data(percorso, depot_point):
                 dist_m = haversine(p_precedente, p) * 1000.0 * 1.3
                 durata_guida_sec = (dist_m / 1000.0 / AVG_SPEED_KMH) * 3600
                 
-            durata_guida_min = durata_guida_sec / 60.0
+            durata_guida_min = durata_guida_sec / 60.0 + PARKING_OVERHEAD_MIN
             arr_time_min = current_time + durata_guida_min
             
         dep_time_min = arr_time_min + sosta

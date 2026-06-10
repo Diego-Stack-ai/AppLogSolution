@@ -395,6 +395,77 @@ def get_google_trip_data(percorso, depot_point):
 def fmt_min(m):
     return f"{m//60}h {m%60}m" if m >= 60 else f"{m}min"
 
+_PHONE_RE = re.compile(r'(?:\+39)?[\s\-]?(?:0\d{1,4}[\s\-]?\d{4,8}|3\d{2}[\s\-]?\d{6,7})')
+
+def _extract_phone(p):
+    """Estrae e normalizza un numero di telefono dal punto di consegna."""
+    tel = str(p.get('telefono', p.get('tel', p.get('phone', ''))) or '').strip()
+    if not tel:
+        note_text = str(p.get('note', p.get('nota_integrativa', p.get('Note', ''))) or '')
+        m = _PHONE_RE.search(note_text)
+        if m:
+            tel = m.group(0).strip()
+    return re.sub(r'[\s\-]', '', tel) if tel else ''
+
+def _build_stop_card(i, p, is_grand_chef):
+    """Genera l'HTML di una singola card fermata per le mappe BAT 3."""
+    is_late = p.get('ritardo', False)
+    is_h10 = not is_grand_chef and '10:' in str(p.get('orario_max', ''))
+    nav_url = 'https://www.google.com/maps/dir/?api=1&destination={},{}&travelmode=driving'.format(
+        p.get('lat', ''), p.get('lon', ''))
+
+    # Badge H10 e ritardo
+    badges = ''
+    if is_h10:
+        badges += "<span style='background:#4f46e5;color:white;font-size:0.6rem;font-weight:900;padding:2px 6px;border-radius:4px;'>H10</span>"
+    if is_late:
+        badges += "<span style='background:#ef4444;color:white;font-size:0.6rem;font-weight:900;padding:2px 6px;border-radius:4px;'>&otimes; IN RITARDO</span>"
+
+    # Codici DDT
+    cf = p.get('codice_frutta', '')
+    cl = p.get('codice_latte', '')
+    codici = ' &middot; '.join(c for c in [cf if cf and cf != 'p00000' else '', cl if cl and cl != 'p00000' else ''] if c)
+    ddt_html = f"<div style='font-size:0.68rem; color:#94a3b8; font-weight:600; margin-top:1px;'>&#128203; {codici}</div>" if codici else ''
+
+    # Note
+    note_txt = str(p.get('note', p.get('nota_integrativa', p.get('Note', ''))) or '').strip()
+    note_safe = note_txt.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
+    note_html = f"<div style='font-size:0.7rem; color:#d97706; font-weight:600; margin-top:2px; background:#fffbeb; border-radius:4px; padding:2px 4px; border:1px solid #fde68a;'>&#128221; Note: {note_safe}</div>" if note_txt else ''
+
+    # Pulsante chiamata
+    phone = _extract_phone(p)
+    if phone:
+        action_col = (
+            f"<div class='action-col'>"
+            f"<a href='{nav_url}' class='nav-btn' onclick='event.stopPropagation()'><span class='material-icons-round'>navigation</span></a>"
+            f"<a href='tel:{phone}' class='call-btn' onclick='event.stopPropagation()'><span class='material-icons-round'>call</span></a>"
+            f"</div>"
+        )
+    else:
+        action_col = f"<a href='{nav_url}' class='nav-btn' onclick='event.stopPropagation()'><span class='material-icons-round'>navigation</span></a>"
+
+    card_bg = "background:#fff1f2; border-color:#fecaca;" if is_late else ''
+    num_bg = '#ef4444' if is_late else 'var(--p)'
+    return f'''
+<div class="stop-card" onclick="panTo({i+1})" style="{card_bg}">
+  <div class="stop-num" style="background:{num_bg}">{i+1}</div>
+  <div style="flex:1;">
+    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+      <b style="font-size:0.85rem; color:#1e293b;">{p["nome"]}</b>{badges}
+    </div>
+    <small style="color:#64748b; font-size:0.75rem;">{p["indirizzo"]}</small>
+    {ddt_html}
+    <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">
+      &#128338; Fascia: <b>{p.get("orario_min", "07:00")} - {p.get("orario_max", "14:00")}</b>
+    </div>
+    <div style="font-size:0.72rem; color:#4f46e5; font-weight:700; margin-top:1px;">
+      &#9201; Arrivo: <b>{p.get("ora_arrivo", "--:--")}</b> | Ripartenza: <b>{p.get("ora_ripartenza", "--:--")}</b>
+    </div>
+    {note_html}
+  </div>
+  {action_col}
+</div>'''
+
 def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path, depot):
     is_grand_chef = "GRANCHEF" in str(v_id).upper() or any("GRAND" in str(p.get("tipologia_grado") or "").upper() or "CHEF" in str(p.get("tipologia_grado") or "").upper() or "GRANCHEF" in str(p.get("zona") or "").upper() for p in percorso)
     km, t_guida, t_sosta, t_tot = stats
@@ -428,6 +499,8 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path, de
         .stop-card:hover {{ border-color: var(--p); transform: translateX(5px); }}
         .stop-num {{ width: 30px; height: 30px; background: var(--p); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0; }}
         .nav-btn {{ background: #22c55e; color: white; width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-decoration: none; }}
+        .call-btn {{ background: #16a34a; color: white; width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-decoration: none; }}
+        .action-col {{ display: flex; flex-direction: column; gap: 6px; align-items: center; }}
         #map {{ flex: 1; height: 100%; }}
         .depot-tag {{ background: #475569; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; }}
         @media (max-width: 800px) {{ .main-container {{ flex-direction: column; }} #sidebar {{ width: 100%; height: 50%; }} #map {{ height: 50%; }} }}
@@ -452,27 +525,7 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path, de
                 <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">home</span></div>
                     <div class="stop-info"><span class="depot-tag">PARTENZA</span><br><b style="font-size:0.9rem;">{depot['nome'].title()}</b></div>
                 </div>
-                { "".join([f'''
-<div class="stop-card" onclick="panTo({i+1})" style="{'background:#fff1f2; border-color:#fecaca;' if p.get('ritardo') else ''}">
-  <div class="stop-num" style="background:{'#ef4444' if p.get('ritardo') else 'var(--p)'}">{i+1}</div>
-  <div style="flex:1;">
-    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-      <b style="font-size:0.85rem; color:#1e293b;">{p['nome']}</b>
-      {"<span style='background:#4f46e5;color:white;font-size:0.6rem;font-weight:900;padding:2px 6px;border-radius:4px;'>H10</span>" if not is_grand_chef and '10:' in str(p.get('orario_max','')) else ""}
-      {"<span style='background:#ef4444;color:white;font-size:0.6rem;font-weight:900;padding:2px 6px;border-radius:4px;'>⚠️ IN RITARDO</span>" if p.get('ritardo') else ""}
-    </div>
-    <small style="color:#64748b; font-size:0.75rem;">{p['indirizzo']}</small>
-    { (lambda cf, cl: f'<div style="font-size:0.68rem; color:#94a3b8; font-weight:600; margin-top:1px;">📋 {" · ".join(c for c in [cf if cf and cf != "p00000" else "", cl if cl and cl != "p00000" else ""] if c)}</div>' if any(c for c in [cf if cf and cf != "p00000" else "", cl if cl and cl != "p00000" else ""] if c) else "")(p.get('codice_frutta',''), p.get('codice_latte','')) }
-    <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">
-      🕒 Fascia: <b>{p.get('orario_min', '07:00')} - {p.get('orario_max', '14:00')}</b>
-    </div>
-    <div style="font-size:0.72rem; color:#4f46e5; font-weight:700; margin-top:1px;">
-      ⏱️ Arrivo: <b>{p.get('ora_arrivo', '--:--')}</b> | Ripartenza: <b>{p.get('ora_ripartenza', '--:--')}</b>
-    </div>
-    {f"<div style='font-size:0.7rem; color:#d97706; font-weight:600; margin-top:2px; background:#fffbeb; border-radius:4px; padding:2px 4px; border:1px solid #fde68a;'>📝 Note: {p.get('note')}</div>" if p.get('note') else ""}
-  </div>
-  <a href="https://www.google.com/maps/dir/?api=1&destination={p['lat']},{p['lon']}&travelmode=driving" class="nav-btn" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a>
-</div>''' for i, p in enumerate(percorso)]) }
+                { "".join([_build_stop_card(i, p, is_grand_chef) for i, p in enumerate(percorso)]) }
                 <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">flag</span></div>
                     <div class="stop-info"><span class="depot-tag">ARRIVO</span><br><b style="font-size:0.9rem;">{depot['nome'].title()}</b></div>
                 </div>

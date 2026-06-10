@@ -1474,8 +1474,24 @@
                 return pHashes.includes(hash);
             });
 
-            // Reorganize: Create Voyage/B subroute
-            const subId = `${sourceZid}_B`;
+            // Reorganize: Create Voyage/X subroute with the next available letter suffix.
+            // Strip any existing _X suffix from the source to find the true base ID
+            // so that splitting V01_B still generates V01_C, not V01_B_B.
+            const baseId = sourceZid.replace(/_[A-Z]$/, '');
+
+            // Find the next free letter (B, C, D, ...) by checking existing zone IDs
+            const LETTERS = 'BCDEFGHIJKLMNOPQRSTUVWXYZ';
+            let nextLetter = 'B';
+            for (const letter of LETTERS) {
+                const candidate = `${baseId}_${letter}`;
+                const exactExists = DATA_ZONE.some(x => x.id_zona === candidate);
+                if (!exactExists) {
+                    nextLetter = letter;
+                    break;
+                }
+            }
+
+            const subId = `${baseId}_${nextLetter}`;
             const subColor = "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
             
             // Remove points from source
@@ -1484,9 +1500,12 @@
             // Set new zone values on points
             pointsToMove.forEach(p => { p.zona = subId; });
 
+            // Build the display name: strip any existing /X suffix from the base name
+            // so splitting "V01/B" generates "V01/C", not "V01/B/C"
+            const baseNome = (z.nome_giro || z.id_zona || 'Viaggio').replace(/\/[A-Z]$/, '');
             const newVoyage = {
                 id_zona: subId,
-                nome_giro: `${z.nome_giro || 'Viaggio'}/B`,
+                nome_giro: `${baseNome}/${nextLetter}`,
                 color: subColor,
                 lista_punti: pointsToMove
             };

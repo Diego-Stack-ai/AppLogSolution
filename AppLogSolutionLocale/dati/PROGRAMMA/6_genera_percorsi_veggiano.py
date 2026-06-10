@@ -23,11 +23,25 @@ DEPOT_SOMMACAMPAGNA = {"lat": 45.405200, "lon": 10.846000, "nome": "DEPOSITO SOM
 DEPOT = DEPOT_VEGGIANO  # Mantenuto per retrocompatibilità all'importazione
 
 def get_depot_for_points(punti):
-    """Determina il deposito di partenza tramite voto di maggioranza sulle province."""
-    conteggio = {"BS": 0, "VR": 0, "MN": 0, "ALTRO": 0}
+    """Determina il deposito di partenza tramite voto di maggioranza sulle province.
+
+    Mappatura province → deposito:
+      CASTENEDOLO  : BS (Brescia)
+      SOMMACAMPAGNA: VR (Verona), MN (Mantova), PD (Padova)
+      VEGGIANO     : UD (Udine), BL (Belluno), TV (Treviso), VI (Vicenza) + tutto il resto
+    """
+    conteggio = {
+        # → Castenedolo
+        "BS": 0,
+        # → Sommacampagna
+        "VR": 0, "MN": 0, "PD": 0,
+        # → Veggiano (esplicito)
+        "UD": 0, "BL": 0, "TV": 0, "VI": 0,
+        # → Veggiano (tutto ciò che non è sopra)
+        "ALTRO": 0,
+    }
     for p in punti:
         ind = str(p.get("indirizzo") or "").upper()
-        # Cerca la provincia in parentesi (es. "(BS)" o "(VR)")
         m = re.search(r"\(([A-Z]{2})\)", ind)
         if m:
             prov = m.group(1)
@@ -37,15 +51,19 @@ def get_depot_for_points(punti):
                 conteggio["ALTRO"] += 1
         else:
             conteggio["ALTRO"] += 1
-            
-    # Assegna a Verona e Mantova lo stesso magazzino (Sommacampagna)
-    v_m_tot = conteggio["VR"] + conteggio["MN"]
-    if conteggio["BS"] > v_m_tot and conteggio["BS"] > conteggio["ALTRO"]:
+
+    # Raggruppa per deposito
+    castenedolo_tot   = conteggio["BS"]
+    sommacampagna_tot = conteggio["VR"] + conteggio["MN"] + conteggio["PD"]
+    veggiano_tot      = (conteggio["UD"] + conteggio["BL"] +
+                         conteggio["TV"] + conteggio["VI"] + conteggio["ALTRO"])
+
+    if castenedolo_tot > sommacampagna_tot and castenedolo_tot > veggiano_tot:
         return DEPOT_CASTENEDOLO
-    elif v_m_tot > conteggio["BS"] and v_m_tot > conteggio["ALTRO"]:
+    elif sommacampagna_tot > castenedolo_tot and sommacampagna_tot > veggiano_tot:
         return DEPOT_SOMMACAMPAGNA
-        
-    return DEPOT_VEGGIANO
+
+    return DEPOT_VEGGIANO  # default: Udine, Belluno, Treviso, Vicenza e altri Nord-Est
 
 TIME_OFFSET_PER_STOP = 8
 AVG_SPEED_KMH = 35

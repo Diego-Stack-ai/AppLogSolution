@@ -286,13 +286,88 @@ if HAS_FLASK:
 
     @app.route('/preview_percorsi', methods=['GET'])
     def preview_percorsi():
-        """Calcola timing REALE per tutti i giri usando la stessa logica di BAT 3:
-        cache distanze reali → Google Matrix API fallback → 4 min overhead → 8/12 min sosta.
-        Non scrive niente su disco (tranne aggiornamenti cache distanze)."""
-        import math, requests as _req
+        """Lancia BAT 3 completo (OR-Tools + Google Directions), poi legge il risultato
+        dall'OTTIMIZZATO.json per mostrarlo nel drawer. Nessun side-effect sulla UI."""
+        import subprocess as _sp
         try:
             if not TARGET_FILE_VIAGGI or not TARGET_FILE_VIAGGI.exists():
                 return jsonify({"status": "error", "msg": "Salva prima i giri con SALVA TUTTO"}), 400
+
+            script_bat3 = PROG_DIR / "6_genera_percorsi_veggiano.py"
+            if not script_bat3.exists():
+                return jsonify({"status": "error", "msg": "Script 6_genera_percorsi_veggiano.py non trovato"}), 500
+
+            # Lancia BAT 3 completo (con OR-Tools)
+            result = _sp.run(
+                [sys.executable, str(script_bat3)],
+                cwd=str(BASE_DIR),
+                capture_output=True, text=True, timeout=360
+            )
+            if result.returncode != 0:
+                logger.error(f"BAT3 stderr: {result.stderr[:800]}")
+                return jsonify({"status": "error", "msg": result.stderr[-400:]}), 500
+
+            # Legge OTTIMIZZATO.json per restituire la sequenza ottimizzata con timing
+            output_base = CONSEGNE_DIR / f"CONSEGNE_{DATA_GIORNO}"
+            ottimizzato_path = output_base / "viaggi_giornalieri_OTTIMIZZATO.json"
+            riepilogo_path   = output_base / "PERCORSI_VEGGIANO" / "RIEPILOGO_GIRI.html"
+
+            giri = []
+            if ottimizzato_path.exists():
+                try:
+                    ottimizzato = json.loads(ottimizzato_path.read_text(encoding="utf-8"))
+                    for z in ottimizzato:
+                        punti = z.get("lista_punti", [])
+                        if not punti: continue
+                        is_gc = any(
+                            "GRAND" in str(p.get("tipologia_grado") or "").upper() or
+                            "CHEF"  in str(p.get("tipologia_grado") or "").upper() or
+                            "GRANCHEF" in str(p.get("zona") or "").upper()
+                            for p in punti
+                        )
+                        fermate = [{
+                            "codice_univoco": p.get("codice_univoco", ""),
+                            "nome":          p.get("nome", ""),
+                            "indirizzo":     p.get("indirizzo", ""),
+                            "orario_min":    p.get("orario_min", ""),
+                            "orario_max":    p.get("orario_max", ""),
+                            "ora_arrivo":    p.get("ora_arrivo", ""),
+                            "ora_ripartenza": p.get("ora_ripartenza", ""),
+                            "is_late":       p.get("ritardo", False),
+                            "lat": p.get("lat"), "lon": p.get("lon"),
+                        } for p in punti]
+                        n_late = sum(1 for f in fermate if f["is_late"])
+                        giri.append({
+                            "id_zona":   z.get("id_zona"),
+                            "nome_giro": z.get("nome_giro") or z.get("id_zona"),
+                            "is_gc":     is_gc,
+                            "n_fermate": len(fermate),
+                            "n_late":    n_late,
+                            "fermate":   fermate,
+                        })
+                except Exception as e:
+                    logger.warning(f"Errore lettura OTTIMIZZATO.json: {e}")
+
+            return jsonify({
+                "status": "ok",
+                "giri": giri,
+                "riepilogo_disponibile": riepilogo_path.exists(),
+                "log": result.stdout[-300:]
+            })
+        except Exception as e:
+            logger.exception("Errore preview_percorsi")
+            return jsonify({"status": "error", "msg": str(e)}), 500
+
+    @app.route('/serve_riepilogo', methods=['GET'])
+    def serve_riepilogo():
+        """Serve il file RIEPILOGO_GIRI.html generato da BAT 3."""
+        from flask import Response
+        output_base  = CONSEGNE_DIR / f"CONSEGNE_{DATA_GIORNO}"
+        riepilogo_path = output_base / "PERCORSI_VEGGIANO" / "RIEPILOGO_GIRI.html"
+        if not riepilogo_path.exists():
+            return Response("<h2>Riepilogo non ancora generato. Premi prima Anteprima Percorsi.</h2>", mimetype="text/html")
+        return Response(riepilogo_path.read_text(encoding="utf-8"), mimetype="text/html")
+
 
             viaggi = json.loads(TARGET_FILE_VIAGGI.read_text(encoding="utf-8"))
 
@@ -462,40 +537,45 @@ if HAS_FLASK:
 
     @app.route('/conferma_percorsi', methods=['POST'])
     def conferma_percorsi():
-        """Salva l'ordine fermate (post drag&drop) e lancia 6_genera_percorsi_veggiano.py."""
+        """Gestisce due casi:
+        - manuale=False: BAT 3 è già girato (anteprima), non serve rilancarlo.
+        - manuale=True:  l'utente ha spostato fermate nel drawer → salva il nuovo
+          ordine e rilancia BAT 3 con --usa-ordine-attuale.
+        """
         import subprocess as _sp
         try:
             req = request.json
-            ordini = req.get("ordini", {})  # {id_zona: [codice_univoco, ...]}
+            ordini  = req.get("ordini", {})   # {id_zona: [codice_univoco, ...]}
+            manuale = req.get("manuale", False)
 
-            # 1. Applica l'ordine drag&drop al viaggi_giornalieri.json
-            if TARGET_FILE_VIAGGI and TARGET_FILE_VIAGGI.exists() and ordini:
-                viaggi = json.loads(TARGET_FILE_VIAGGI.read_text(encoding="utf-8"))
-                for z in viaggi:
-                    zid = z.get("id_zona")
-                    if zid not in ordini: continue
-                    nuovo_ordine = ordini[zid]
-                    mappa = {p.get("codice_univoco", ""): p for p in z["lista_punti"]}
-                    z["lista_punti"] = [mappa[cu] for cu in nuovo_ordine if cu in mappa]
-                TARGET_FILE_VIAGGI.write_text(json.dumps(viaggi, indent=2, ensure_ascii=False), encoding="utf-8")
-                ZONE_LIST_CACHE.clear()
-                ZONE_LIST_CACHE.extend(viaggi)
+            if manuale and ordini:
+                # 1. Salva il nuovo ordine manuale nel JSON
+                if TARGET_FILE_VIAGGI and TARGET_FILE_VIAGGI.exists():
+                    viaggi = json.loads(TARGET_FILE_VIAGGI.read_text(encoding="utf-8"))
+                    for z in viaggi:
+                        zid = z.get("id_zona")
+                        if zid not in ordini: continue
+                        nuovo_ordine = ordini[zid]
+                        mappa = {p.get("codice_univoco", ""): p for p in z["lista_punti"]}
+                        z["lista_punti"] = [mappa[cu] for cu in nuovo_ordine if cu in mappa]
+                    TARGET_FILE_VIAGGI.write_text(json.dumps(viaggi, indent=2, ensure_ascii=False), encoding="utf-8")
+                    ZONE_LIST_CACHE.clear()
+                    ZONE_LIST_CACHE.extend(viaggi)
 
-            # 2. Lancia BAT 3 completo come subprocess
-            script_bat3 = PROG_DIR / "6_genera_percorsi_veggiano.py"
-            if not script_bat3.exists():
-                return jsonify({"status": "error", "msg": "Script BAT 3 non trovato"}), 500
+                # 2. Rilancia BAT 3 con --usa-ordine-attuale
+                script_bat3 = PROG_DIR / "6_genera_percorsi_veggiano.py"
+                result = _sp.run(
+                    [sys.executable, str(script_bat3), "--usa-ordine-attuale"],
+                    cwd=str(BASE_DIR),
+                    capture_output=True, text=True, timeout=300
+                )
+                if result.returncode != 0:
+                    return jsonify({"status": "error", "msg": result.stderr[-300:]}), 500
+                return jsonify({"status": "ok", "msg": "Ordine manuale salvato e mappe rigenerate!"})
+            else:
+                # BAT 3 è già girato con l'anteprima — nessuna azione necessaria
+                return jsonify({"status": "ok", "msg": "Percorsi confermati (nessuna modifica manuale)"})
 
-            result = _sp.run(
-                [sys.executable, str(script_bat3)],
-                cwd=str(BASE_DIR),
-                capture_output=True, text=True, timeout=300
-            )
-            if result.returncode != 0:
-                logger.error(f"BAT3 stderr: {result.stderr[:500]}")
-                return jsonify({"status": "error", "msg": result.stderr[-300:]}), 500
-
-            return jsonify({"status": "ok", "msg": "Percorsi generati con successo!", "log": result.stdout[-500:]})
         except Exception as e:
             logger.exception("Errore conferma_percorsi")
             return jsonify({"status": "error", "msg": str(e)}), 500
@@ -1084,22 +1164,32 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         let _anteprimaGiri = [];  // Dati giri caricati dall'API
         let _sortableInstances = [];  // Istanze SortableJS per cleanup
+        let _hasManualChanges = false;  // true se l'utente ha fatto drag&drop nel drawer
 
         async function apriAnteprima() {
-            const drawer = document.getElementById('drawer-anteprima');
+            const drawer  = document.getElementById('drawer-anteprima');
             const overlay = document.getElementById('drawer-overlay');
-            const body = document.getElementById('drawer-body');
-            const btn = document.getElementById('btn-anteprima');
+            const body    = document.getElementById('drawer-body');
+            const btn     = document.getElementById('btn-anteprima');
+            const btnConf = document.getElementById('btn-conferma');
 
-            // Mostra subito il drawer con spinner
+            // Reset stato manuale
+            _hasManualChanges = false;
+            btnConf.textContent = '✅ Conferma (percorsi già ottimizzati)';
+            btnConf.style.background = '#10b981';
+            btnConf.disabled = false;
+
+            // Mostra drawer con spinner
             drawer.style.display = 'flex';
             overlay.style.display = 'block';
             btn.textContent = '⏳';
+            document.getElementById('drawer-subtitle').textContent = 'BAT 3 in esecuzione…';
             body.innerHTML = `<div style="text-align:center; padding:60px 20px; color:#64748b;">
-                <div style="font-size:2rem; margin-bottom:16px;">⏳</div>
-                <div style="font-weight:700;">Calcolo timing in corso...</div>
-                <div style="font-size:0.8rem; margin-top:8px;">Elaborazione distanze Haversine</div>
-            </div>`;
+                <div style="font-size:2.5rem; margin-bottom:16px; animation:spin 1.5s linear infinite; display:inline-block;">&#9696;</div>
+                <div style="font-weight:700; font-size:1rem;">OR-Tools + Google Directions in corso…</div>
+                <div style="font-size:0.8rem; margin-top:8px; opacity:0.7;">Potrebbe richiedere 30-60 secondi</div>
+            </div>
+            <style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
 
             try {
                 const resp = await fetch('/preview_percorsi');
@@ -1116,7 +1206,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
                 const nTot = data.giri.reduce((s, g) => s + g.n_late, 0);
                 document.getElementById('drawer-subtitle').textContent =
-                    nTot === 0 ? `✅ ${data.giri.length} giri — nessun ritardo` : `⚠️ ${data.giri.length} giri — ${nTot} ritardi rilevati`;
+                    nTot === 0
+                    ? `✅ ${data.giri.length} giri ottimizzati — nessun ritardo`
+                    : `⚠️ ${data.giri.length} giri — ${nTot} ritardi rilevati`;
+
+                // Apri riepilogo BAT 3 in nuova tab
+                if (data.riepilogo_disponibile) {
+                    window.open('/serve_riepilogo', '_blank');
+                }
 
             } catch (err) {
                 btn.textContent = '👁';
@@ -1137,7 +1234,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 const statusTxt  = hasLate ? `⚠️ ${g.n_late} ritard${g.n_late===1?'o':'i'}` : '✅ In orario';
                 const chevronId  = `chv-${gi}`;
                 const bodyId     = `sortable-${gi}`;
-                // Card con ritardi: aperta automaticamente
                 const isOpen     = hasLate;
                 const gcBadge    = g.is_gc ? `<span style="background:#f59e0b;color:white;font-size:0.5rem;font-weight:800;padding:2px 5px;border-radius:6px;margin-left:6px;vertical-align:middle;">GC</span>` : '';
 
@@ -1147,18 +1243,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     const orario     = f.orario_min && f.orario_max ? `🕒 ${f.orario_min}–${f.orario_max}` :
                                        f.orario_max ? `🕒 Entro ${f.orario_max}` :
                                        f.orario_min ? `🕒 Dalle ${f.orario_min}` : '';
+                    const arrivo     = f.ora_arrivo ? `<div style="font-weight:800; color:#10b981;">▶ ${f.ora_arrivo}</div>` : '';
+                    const ripartenza = f.ora_ripartenza ? `<div style="color:#94a3b8;">◀ ${f.ora_ripartenza}</div>` : '';
                     return `
                     <div class="prv-fermata" data-uid="${f.codice_univoco}" style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:9px 10px; margin-bottom:5px; display:flex; align-items:center; gap:8px; ${lateStyle}">
-                        <div style="width:22px; height:22px; background:#6366f1; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.65rem; font-weight:800; flex-shrink:0; cursor:grab;">${fi+1}</div>
+                        <div style="width:22px; height:22px; background:#6366f1; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.65rem; font-weight:800; flex-shrink:0;">${fi+1}</div>
                         <div style="flex:1; min-width:0;">
                             <div style="font-size:0.78rem; font-weight:700; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.nome}${lateBadge}</div>
                             <div style="font-size:0.6rem; color:#94a3b8; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.indirizzo}</div>
                             ${orario ? `<div style="font-size:0.6rem; color:#4f46e5; font-weight:700; margin-top:2px;">${orario}</div>` : ''}
                         </div>
-                        <div style="text-align:right; flex-shrink:0; font-size:0.65rem;">
-                            <div style="font-weight:800; color:#10b981;">▶ ${f.ora_arrivo}</div>
-                            <div style="color:#94a3b8;">◀ ${f.ora_ripartenza}</div>
-                        </div>
+                        <div style="text-align:right; flex-shrink:0; font-size:0.65rem;">${arrivo}${ripartenza}</div>
                         <div style="color:#cbd5e1; font-size:1rem; cursor:grab; flex-shrink:0;">☰</div>
                     </div>`;
                 }).join('');
@@ -1168,11 +1263,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     <div onclick="_toggleCard(${gi})" style="padding:11px 14px; display:flex; align-items:center; justify-content:space-between; background:${headerBg}; cursor:pointer; user-select:none;">
                         <div style="flex:1; min-width:0;">
                             <div style="font-size:0.78rem; font-weight:800; color:#1e293b;">${g.nome_giro}${gcBadge}</div>
-                            <div style="font-size:0.6rem; color:#64748b; margin-top:2px;">🛣️ ${g.km} km · ${g.n_fermate} tappe · 🏠 ${g.depot}</div>
+                            <div style="font-size:0.6rem; color:#64748b; margin-top:2px;">${g.n_fermate} tappe</div>
                         </div>
                         <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
                             <div style="font-size:0.68rem; font-weight:800; color:${statusClr}; background:white; padding:3px 9px; border-radius:20px; border:1px solid ${borderClr};">${statusTxt}</div>
-                            <span id="${chevronId}" style="font-size:0.8rem; color:#94a3b8; transition:transform 0.2s; display:inline-block; transform:${isOpen?'rotate(90deg)':'rotate(0deg)'};">▶</span>
+                            <span id="${chevronId}" style="font-size:0.8rem; color:#94a3b8; transition:transform 0.2s; display:inline-block; transform:${isOpen?'rotate(90deg)':'rotate(0deg)'}">▶</span>
                         </div>
                     </div>
                     <div id="${bodyId}" style="padding:${isOpen?'8px':'0'}; max-height:${isOpen?'2000px':'0'}; overflow:hidden; transition:max-height 0.3s ease, padding 0.2s;">${ferrateHtml}</div>
@@ -1206,7 +1301,16 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     const s = Sortable.create(el, {
                         animation: 150,
                         handle: '[style*="cursor:grab"]',
-                        onEnd: () => _aggiornaNumeriFermate(gi)
+                        onEnd: () => {
+                            _aggiornaNumeriFermate(gi);
+                            // Segna che l'utente ha fatto modifiche manuali
+                            _hasManualChanges = true;
+                            const btnConf = document.getElementById('btn-conferma');
+                            if (btnConf) {
+                                btnConf.textContent = '💾 Salva ordine manuale → Rigenera mappe';
+                                btnConf.style.background = '#f59e0b';
+                            }
+                        }
                     });
                     _sortableInstances.push(s);
                 });
@@ -1241,9 +1345,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         async function confermaPercorsi() {
             const btn = document.getElementById('btn-conferma');
             btn.disabled = true;
-            btn.textContent = '⏳ Elaborazione BAT 3 in corso...';
 
-            // Raccoglie l'ordine corrente dal DOM per ogni giro
+            if (!_hasManualChanges) {
+                // Caso A: BAT 3 è già girato con l'anteprima — solo conferma
+                btn.textContent = '✅ Confermato!';
+                setTimeout(() => chiudiAnteprima(), 1500);
+                return;
+            }
+
+            // Caso B: l'utente ha fatto drag&drop → salva ordine manuale + rigenera
+            btn.textContent = '⏳ Salvataggio ordine manuale…';
+
             const ordini = {};
             _anteprimaGiri.forEach((g, gi) => {
                 const el = document.getElementById(`sortable-${gi}`);
@@ -1256,7 +1368,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 const resp = await fetch('/conferma_percorsi', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ordini})
+                    body: JSON.stringify({ordini, manuale: true})
                 });
                 const data = await resp.json();
 
@@ -1265,20 +1377,20 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     body.innerHTML = `
                         <div style="text-align:center; padding:60px 20px;">
                             <div style="font-size:3rem; margin-bottom:16px;">✅</div>
-                            <div style="font-size:1.1rem; font-weight:800; color:#10b981;">Percorsi generati!</div>
-                            <div style="font-size:0.8rem; color:#64748b; margin-top:10px;">BAT 3 completato con successo.<br>Puoi ora avviare BAT 5 per le mappe autisti.</div>
+                            <div style="font-size:1.1rem; font-weight:800; color:#10b981;">Ordine manuale salvato!</div>
+                            <div style="font-size:0.8rem; color:#64748b; margin-top:10px;">Mappe rigenerate con il tuo ordine.<br>Puoi ora avviare BAT 5 per le mappe autisti.</div>
                         </div>`;
                     document.getElementById('btn-conferma').style.display = 'none';
-                    document.getElementById('drawer-subtitle').textContent = '✅ Percorsi confermati e salvati';
+                    // Apri riepilogo aggiornato in nuova tab
+                    window.open('/serve_riepilogo', '_blank');
                 } else {
-                    alert('Errore BAT 3: ' + data.msg);
+                    alert('Errore: ' + data.msg);
                     btn.disabled = false;
-                    btn.textContent = '💾 Salva e Conferma → Lancia BAT 3';
+                    btn.textContent = '💾 Salva ordine manuale → Rigenera mappe';
                 }
             } catch (err) {
                 alert('Errore di connessione: ' + err.message);
                 btn.disabled = false;
-                btn.textContent = '💾 Salva e Conferma → Lancia BAT 3';
             }
         }
 

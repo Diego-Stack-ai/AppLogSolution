@@ -744,6 +744,7 @@ def gera_riepilogo(summary_data, output_path):
     output_path.write_text(html, encoding="utf-8")
 
 def main():
+    usa_ordine_attuale = "--usa-ordine-attuale" in sys.argv
     target_dir = get_latest_consegne_dir()
     if not target_dir: return print("ERR Nessuna cartella.")
     json_f = target_dir / "viaggi_giornalieri.json"
@@ -776,8 +777,13 @@ def main():
     summary = []
     
     data_zone_sorted = sorted(data_zone_valida, key=lambda x: x.get('id_zona', ''))
-    
-    print(f"\n--- GENERAZIONE PERCORSI CON OR-TOOLS ({MODO_DISTANZA}) ---")
+
+    if usa_ordine_attuale:
+        print(f"\n--- GENERAZIONE PERCORSI (ORDINE MANUALE — senza OR-Tools) ---")
+    else:
+        print(f"\n--- GENERAZIONE PERCORSI CON OR-TOOLS ({MODO_DISTANZA}) ---")
+
+    ottimizzato_data = []
 
     for i, z in enumerate(data_zone_sorted, 1):
         punti = z.get("lista_punti", [])
@@ -791,7 +797,13 @@ def main():
         z_str = ", ".join(zone_coinvolte).replace('None', '0000')
         
         depot = get_depot_for_points(punti)
-        perc = ottimizza_percorso(punti, depot)
+
+        if usa_ordine_attuale:
+            # Usa l'ordine già presente nel JSON senza ottimizzare
+            perc = list(punti)
+        else:
+            perc = ottimizza_percorso(punti, depot)
+
         km, t_guida, t_sosta, t_tot, polylines = get_google_trip_data(perc, depot)
         
         
@@ -810,22 +822,28 @@ def main():
             fatturato = f"{tot_ddt * 16.50:.2f}"
         
         # Usa id_zona della zona come parte univoca del nome file.
-        # Questo garantisce che giri splittati (es. GranChef_V01_B) abbiano
-        # un nome file distinto dal giro originale (GranChef_V01), anche quando
-        # i punti interni riportano ancora la zona di partenza.
         zone_id_for_fname = z.get('id_zona') or '_'.join(zone_coinvolte[:3])
         fname = sanitize_filename(f"{v_id}_Zone_{zone_id_for_fname}.html")
         info = {'v_id': v_id, 'zone_str': z_str, 'fname': fname, 'km': km, 't_guida': t_guida, 't_sosta': t_sosta, 't_tot': t_tot, 'punti': len(punti), 'tot_ddt': tot_ddt, 'fatturato': fatturato, 'is_grand_chef': is_grand_chef}
         summary.append(info)
+        ottimizzato_data.append({**z, "lista_punti": perc})
         
         genera_html_giro(v_id, z_str, perc, (km, t_guida, t_sosta, t_tot), polylines, out_dir / fname, depot)
-        print(f"  OK {v_id} (Zone: {z_str:<12} | Magazzino: {depot['nome'].split()[-1]}) -> {km:>5} km | {fmt_min(t_tot)}")
+        modo_str = "ORDINE MANUALE" if usa_ordine_attuale else "OR-Tools"
+        print(f"  OK {v_id} (Zone: {z_str:<12} | Magazzino: {depot['nome'].split()[-1]}) -> {km:>5} km | {fmt_min(t_tot)} [{modo_str}]")
+
+    # Salva viaggi_giornalieri_OTTIMIZZATO.json
+    ottimizzato_path = target_dir / "viaggi_giornalieri_OTTIMIZZATO.json"
+    with open(ottimizzato_path, "w", encoding="utf-8") as f:
+        json.dump(ottimizzato_data, f, indent=2, ensure_ascii=False)
 
     riepilogo_fname = sanitize_filename("RIEPILOGO_GIRI.html")
     gera_riepilogo(summary, out_dir / riepilogo_fname)
-    print(f"\n COMPLETATO! Linee visibili con OR-Tools.")
+    modo_finale = "ORDINE MANUALE" if usa_ordine_attuale else "OR-Tools"
+    print(f"\n COMPLETATO! [{modo_finale}] → {ottimizzato_path.name}")
 
 if __name__ == "__main__": 
-    if not HAS_OR_TOOLS:
+    if not HAS_OR_TOOLS and "--usa-ordine-attuale" not in sys.argv:
         print("\nℹ️  Per risultati migliori, installa OR-Tools: pip install ortools\n")
     main()
+

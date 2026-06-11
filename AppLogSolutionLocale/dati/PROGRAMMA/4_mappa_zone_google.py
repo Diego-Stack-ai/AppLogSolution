@@ -360,180 +360,34 @@ if HAS_FLASK:
 
     @app.route('/serve_riepilogo', methods=['GET'])
     def serve_riepilogo():
-        """Serve il file RIEPILOGO_GIRI.html generato da BAT 3."""
+        """Serve RIEPILOGO_GIRI.html con i link alle mappe singole riscritti per Flask."""
         from flask import Response
-        output_base  = CONSEGNE_DIR / f"CONSEGNE_{DATA_GIORNO}"
+        output_base    = CONSEGNE_DIR / f"CONSEGNE_{DATA_GIORNO}"
         riepilogo_path = output_base / "PERCORSI_VEGGIANO" / "RIEPILOGO_GIRI.html"
         if not riepilogo_path.exists():
             return Response("<h2>Riepilogo non ancora generato. Premi prima Anteprima Percorsi.</h2>", mimetype="text/html")
-        return Response(riepilogo_path.read_text(encoding="utf-8"), mimetype="text/html")
+        html = riepilogo_path.read_text(encoding="utf-8")
+        # Riscrivi i link relativi alle mappe singole → /percorsi/<filename>
+        # I link nel riepilogo sono tipo: href="GranChef_V01_Zone_123.html"
+        html = re.sub(r'href="([^"]+\.html)"', r'href="/percorsi/\1" target="_blank"', html)
+        return Response(html, mimetype="text/html")
 
+    @app.route('/percorsi/<path:filename>', methods=['GET'])
+    def serve_percorso(filename):
+        """Serve i file HTML delle singole mappe giro generate da BAT 3."""
+        from flask import Response, abort
+        output_base   = CONSEGNE_DIR / f"CONSEGNE_{DATA_GIORNO}"
+        percorsi_dir  = output_base / "PERCORSI_VEGGIANO"
+        target        = percorsi_dir / filename
+        # Sicurezza: rimane dentro la cartella PERCORSI_VEGGIANO
+        try:
+            target.resolve().relative_to(percorsi_dir.resolve())
+        except ValueError:
+            abort(403)
+        if not target.exists() or not target.suffix == ".html":
+            abort(404)
+        return Response(target.read_text(encoding="utf-8"), mimetype="text/html")
 
-            viaggi = json.loads(TARGET_FILE_VIAGGI.read_text(encoding="utf-8"))
-
-            # --- Costanti identiche a 6_genera_percorsi_veggiano.py ---
-            AVG_SPEED_KMH    = 35
-            PARKING_OVERHEAD = 4   # minuti overhead parcheggio per segmento
-            SOSTA_DNR        = 8   # minuti sosta clienti normali
-            SOSTA_GC         = 12  # minuti sosta Grand Chef
-
-            DEPOT_MAP = {
-                "CASTENEDOLO":   {"lat": 45.471591, "lon": 10.298200, "nome": "Castenedolo (BS)"},
-                "SOMMACAMPAGNA": {"lat": 45.405200, "lon": 10.846000, "nome": "Sommacampagna (VR)"},
-                "VEGGIANO":      {"lat": 45.442805, "lon": 11.714498, "nome": "Veggiano (PD)"},
-            }
-
-            # --- Carica cache distanze reali ---
-            cache_path = PROG_DIR / "distanze_reali_cache.json"
-            try:
-                dist_data = json.loads(cache_path.read_text(encoding="utf-8")) if cache_path.exists() else {}
-            except Exception:
-                dist_data = {}
-            cache_modified = False
-
-            def _cache_key(p1, p2):
-                lat1 = round(float(p1.get('lat', 0)), 5)
-                lon1 = round(float(p1.get('lon', p1.get('lng', 0))), 5)
-                lat2 = round(float(p2.get('lat', 0)), 5)
-                lon2 = round(float(p2.get('lon', p2.get('lng', 0))), 5)
-                return f"{lat1},{lon1}_{lat2},{lon2}"
-
-            def _haversine_km(p1, p2):
-                R = 6371
-                lat1 = math.radians(float(p1.get('lat', 0)))
-                lon1 = math.radians(float(p1.get('lon', p1.get('lng', 0))))
-                lat2 = math.radians(float(p2.get('lat', 0)))
-                lon2 = math.radians(float(p2.get('lon', p2.get('lng', 0))))
-                dlat, dlon = lat2 - lat1, lon2 - lon1
-                a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-                return R * 2 * math.asin(math.sqrt(a))
-
-            def _dur_min(p_prev, p_next):
-                """Restituisce durata guida in minuti: cache → Google API → Haversine fallback."""
-                nonlocal cache_modified
-                k = _cache_key(p_prev, p_next)
-                if k in dist_data:
-                    return dist_data[k]['dur'] / 60.0
-                # Chiama Google Matrix API per la coppia mancante
-                try:
-                    url = (f"https://maps.googleapis.com/maps/api/distancematrix/json"
-                           f"?origins={p_prev['lat']},{p_prev['lon']}"
-                           f"&destinations={p_next['lat']},{p_next['lon']}"
-                           f"&key={GOOGLE_MAPS_API_KEY}")
-                    resp = _req.get(url, timeout=8).json()
-                    if resp.get('status') == 'OK':
-                        el = resp['rows'][0]['elements'][0]
-                        if el.get('status') == 'OK':
-                            dist_data[k] = {'dist': el['distance']['value'], 'dur': el['duration']['value']}
-                            cache_modified = True
-                            return el['duration']['value'] / 60.0
-                except Exception:
-                    pass
-                # Fallback Haversine
-                return (_haversine_km(p_prev, p_next) * 1.3 / AVG_SPEED_KMH) * 60.0
-
-            def _get_depot(punti):
-                counts = {"BS": 0, "VR": 0, "MN": 0, "PD": 0, "ALTRO": 0}
-                for p in punti:
-                    ind = str(p.get("indirizzo") or "").upper()
-                    m = re.search(r"\(([A-Z]{2})\)", ind)
-                    prov = m.group(1) if m else "ALTRO"
-                    if prov == "BS": counts["BS"] += 1
-                    elif prov in ("VR", "MN", "PD"): counts[prov] += 1
-                    else: counts["ALTRO"] += 1
-                castenedolo = counts["BS"]
-                sommacampagna = counts["VR"] + counts["MN"] + counts["PD"]
-                if castenedolo > sommacampagna and castenedolo > counts["ALTRO"]:
-                    return DEPOT_MAP["CASTENEDOLO"]
-                if sommacampagna > castenedolo and sommacampagna > counts["ALTRO"]:
-                    return DEPOT_MAP["SOMMACAMPAGNA"]
-                return DEPOT_MAP["VEGGIANO"]
-
-            def _fmt(minutes):
-                m = int(minutes) % 1440
-                return f"{m//60:02d}:{m%60:02d}"
-
-            def _parse_min(time_str):
-                if not time_str: return None
-                parts = str(time_str).strip().split(':')
-                if len(parts) >= 2:
-                    return int(parts[0]) * 60 + int(parts[1])
-                return None
-
-            risultati = []
-            for z in viaggi:
-                if z.get("id_zona") == "DDT_DA_INSERIRE": continue
-                punti = z.get("lista_punti", [])
-                if not punti: continue
-
-                is_gc = any(
-                    "GRAND" in str(p.get("tipologia_grado") or "").upper() or
-                    "CHEF"  in str(p.get("tipologia_grado") or "").upper() or
-                    "GRANCHEF" in str(p.get("zona") or "").upper()
-                    for p in punti
-                )
-                sosta    = SOSTA_GC if is_gc else SOSTA_DNR
-                depot    = _get_depot(punti)
-                cur_time = 420  # 07:00
-                km_tot   = 0.0
-                fermate  = []
-
-                for i, p in enumerate(punti):
-                    prev = depot if i == 0 else punti[i-1]
-
-                    # Calcolo arrivo
-                    if is_gc and i == 0:
-                        arr = 420  # GrandChef: primo cliente sempre alle 07:00
-                    else:
-                        dur_guida = _dur_min(prev, p)
-                        arr = cur_time + dur_guida + PARKING_OVERHEAD
-                        km_tot += _haversine_km(prev, p) * 1.3  # stima km anche se dur è da cache
-
-                    dep = arr + sosta
-                    oM = p.get("orario_max") or ""
-                    is_late = False
-                    if oM:
-                        max_min = _parse_min(oM)
-                        if max_min is not None:
-                            is_late = arr > max_min + 1
-
-                    fermate.append({
-                        "codice_univoco": p.get("codice_univoco", ""),
-                        "nome":          p.get("nome", ""),
-                        "indirizzo":     p.get("indirizzo", ""),
-                        "orario_min":    p.get("orario_min", ""),
-                        "orario_max":    oM,
-                        "ora_arrivo":    _fmt(arr),
-                        "ora_ripartenza": _fmt(dep),
-                        "is_late":       is_late,
-                        "lat": p.get("lat"),
-                        "lon": p.get("lon"),
-                    })
-                    cur_time = dep
-
-                n_late = sum(1 for f in fermate if f["is_late"])
-                risultati.append({
-                    "id_zona":   z.get("id_zona"),
-                    "nome_giro": z.get("nome_giro") or z.get("id_zona"),
-                    "is_gc":     is_gc,
-                    "depot":     depot["nome"],
-                    "km":        round(km_tot, 1),
-                    "n_fermate": len(fermate),
-                    "n_late":    n_late,
-                    "fermate":   fermate,
-                })
-
-            # Salva eventuali nuove voci aggiunte alla cache
-            if cache_modified:
-                try:
-                    cache_path.write_text(json.dumps(dist_data, indent=2, ensure_ascii=False), encoding="utf-8")
-                except Exception:
-                    pass
-
-            return jsonify({"status": "ok", "giri": risultati})
-        except Exception as e:
-            logger.exception("Errore preview_percorsi")
-            return jsonify({"status": "error", "msg": str(e)}), 500
 
     @app.route('/conferma_percorsi', methods=['POST'])
     def conferma_percorsi():

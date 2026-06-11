@@ -284,6 +284,167 @@ if HAS_FLASK:
         except Exception as e:
             return jsonify({"status": "error", "message": str(e)}), 500
 
+    @app.route('/preview_percorsi', methods=['GET'])
+    def preview_percorsi():
+        """Calcola timing stimato (Haversine) per tutti i giri correnti. Nessuna scrittura su disco."""
+        import math
+        try:
+            if not TARGET_FILE_VIAGGI or not TARGET_FILE_VIAGGI.exists():
+                return jsonify({"status": "error", "msg": "Salva prima i giri con SALVA TUTTO"}), 400
+
+            viaggi = json.loads(TARGET_FILE_VIAGGI.read_text(encoding="utf-8"))
+
+            AVG_SPEED_KMH = 35
+            PARKING_OVERHEAD_MIN = 4
+
+            DEPOTS = {
+                "VEGGIANO":      {"lat": 45.442805, "lon": 11.714498, "nome": "Veggiano (PD)"},
+                "SOMMACAMPAGNA": {"lat": 45.382610, "lon": 10.851060, "nome": "Sommacampagna (VR)"},
+                "CASTENEDOLO":   {"lat": 45.466700, "lon": 10.294400, "nome": "Castenedolo (BS)"},
+            }
+
+            def _haversine(p1, p2):
+                R = 6371
+                lat1, lon1 = math.radians(float(p1.get('lat', 0))), math.radians(float(p1.get('lon', 0)))
+                lat2, lon2 = math.radians(float(p2.get('lat', 0))), math.radians(float(p2.get('lon', 0)))
+                dlat, dlon = lat2 - lat1, lon2 - lon1
+                a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+                return R * 2 * math.asin(math.sqrt(a))
+
+            def _get_depot(punti):
+                counts = {"BS": 0, "VR": 0, "MN": 0, "PD": 0, "ALTRO": 0}
+                for p in punti:
+                    ind = str(p.get("indirizzo") or "").upper()
+                    m = re.search(r"\(([A-Z]{2})\)", ind)
+                    prov = m.group(1) if m else "ALTRO"
+                    if prov == "BS": counts["BS"] += 1
+                    elif prov in ("VR", "MN", "PD"): counts[prov] += 1
+                    else: counts["ALTRO"] += 1
+                if counts["BS"] > counts["VR"] + counts["MN"] + counts["PD"] + counts["ALTRO"]:
+                    return DEPOTS["CASTENEDOLO"]
+                if counts["VR"] + counts["MN"] + counts["PD"] > counts["BS"] + counts["ALTRO"]:
+                    return DEPOTS["SOMMACAMPAGNA"]
+                return DEPOTS["VEGGIANO"]
+
+            def _fmt(minutes):
+                m = int(minutes) % 1440
+                return f"{m//60:02d}:{m%60:02d}"
+
+            def _parse(time_str):
+                if not time_str: return None
+                parts = str(time_str).strip().split(':')
+                if len(parts) >= 2:
+                    return int(parts[0]) * 60 + int(parts[1])
+                return None
+
+            risultati = []
+            for z in viaggi:
+                if z.get("id_zona") == "DDT_DA_INSERIRE": continue
+                punti = z.get("lista_punti", [])
+                if not punti: continue
+
+                is_gc = any(
+                    "GRAND" in str(p.get("tipologia_grado") or "").upper() or
+                    "CHEF"  in str(p.get("tipologia_grado") or "").upper() or
+                    "GRANCHEF" in str(p.get("zona") or "").upper()
+                    for p in punti
+                )
+                sosta = 12 if is_gc else 8
+                depot = _get_depot(punti)
+                current_time = 420  # 07:00
+                km_tot = 0
+                fermate = []
+
+                for i, p in enumerate(punti):
+                    prev = depot if i == 0 else punti[i-1]
+                    dist_km = _haversine(prev, p) * 1.3
+                    km_tot += dist_km
+                    guida_min = (dist_km / AVG_SPEED_KMH) * 60 + PARKING_OVERHEAD_MIN
+
+                    if is_gc and i == 0:
+                        arr = 420
+                    else:
+                        arr = current_time + guida_min
+
+                    dep = arr + sosta
+                    oM = p.get("orario_max") or ""
+                    is_late = False
+                    if oM:
+                        max_min = _parse(oM)
+                        if max_min is not None:
+                            is_late = arr > max_min + 1
+
+                    fermate.append({
+                        "codice_univoco": p.get("codice_univoco", ""),
+                        "nome": p.get("nome", ""),
+                        "indirizzo": p.get("indirizzo", ""),
+                        "orario_min": p.get("orario_min", ""),
+                        "orario_max": oM,
+                        "ora_arrivo": _fmt(arr),
+                        "ora_ripartenza": _fmt(dep),
+                        "is_late": is_late,
+                        "lat": p.get("lat"),
+                        "lon": p.get("lon"),
+                    })
+                    current_time = dep
+
+                n_late = sum(1 for f in fermate if f["is_late"])
+                risultati.append({
+                    "id_zona": z.get("id_zona"),
+                    "nome_giro": z.get("nome_giro") or z.get("id_zona"),
+                    "is_gc": is_gc,
+                    "depot": depot["nome"],
+                    "km": round(km_tot, 1),
+                    "n_fermate": len(fermate),
+                    "n_late": n_late,
+                    "fermate": fermate,
+                })
+
+            return jsonify({"status": "ok", "giri": risultati})
+        except Exception as e:
+            logger.exception("Errore preview_percorsi")
+            return jsonify({"status": "error", "msg": str(e)}), 500
+
+    @app.route('/conferma_percorsi', methods=['POST'])
+    def conferma_percorsi():
+        """Salva l'ordine fermate (post drag&drop) e lancia 6_genera_percorsi_veggiano.py."""
+        import subprocess as _sp
+        try:
+            req = request.json
+            ordini = req.get("ordini", {})  # {id_zona: [codice_univoco, ...]}
+
+            # 1. Applica l'ordine drag&drop al viaggi_giornalieri.json
+            if TARGET_FILE_VIAGGI and TARGET_FILE_VIAGGI.exists() and ordini:
+                viaggi = json.loads(TARGET_FILE_VIAGGI.read_text(encoding="utf-8"))
+                for z in viaggi:
+                    zid = z.get("id_zona")
+                    if zid not in ordini: continue
+                    nuovo_ordine = ordini[zid]
+                    mappa = {p.get("codice_univoco", ""): p for p in z["lista_punti"]}
+                    z["lista_punti"] = [mappa[cu] for cu in nuovo_ordine if cu in mappa]
+                TARGET_FILE_VIAGGI.write_text(json.dumps(viaggi, indent=2, ensure_ascii=False), encoding="utf-8")
+                ZONE_LIST_CACHE.clear()
+                ZONE_LIST_CACHE.extend(viaggi)
+
+            # 2. Lancia BAT 3 completo come subprocess
+            script_bat3 = PROG_DIR / "6_genera_percorsi_veggiano.py"
+            if not script_bat3.exists():
+                return jsonify({"status": "error", "msg": "Script BAT 3 non trovato"}), 500
+
+            result = _sp.run(
+                [sys.executable, str(script_bat3)],
+                cwd=str(BASE_DIR),
+                capture_output=True, text=True, timeout=300
+            )
+            if result.returncode != 0:
+                logger.error(f"BAT3 stderr: {result.stderr[:500]}")
+                return jsonify({"status": "error", "msg": result.stderr[-300:]}), 500
+
+            return jsonify({"status": "ok", "msg": "Percorsi generati con successo!", "log": result.stdout[-500:]})
+        except Exception as e:
+            logger.exception("Errore conferma_percorsi")
+            return jsonify({"status": "error", "msg": str(e)}), 500
+
 def _aggiorna_rientri_dopo_salvataggio(zone_data: list, data_giorno: str):
     """Aggiorna colonna C di rientri_ddt.xlsx in base alla zona finale di OGNI punto."""
     rientri_path = BASE_DIR / "rientri_ddt.xlsx"
@@ -446,6 +607,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <div style="margin-top:10px; display:flex; justify-content: space-between; align-items:center; gap:8px;">
                 <button onclick="saveAllToServer()" style="background:var(--accent); color:white; border:none; padding:8px 15px; border-radius:8px; font-weight:800; cursor:pointer; flex: 1;">SALVA TUTTO</button>
                 <button onclick="toggleVerificaViaggi()" id="btn-verifica" class="btn btn-verifica" style="padding:8px 10px; height: 35px;">VERIFICA VIAGGI</button>
+                <button onclick="apriAnteprima()" id="btn-anteprima" title="Anteprima timing percorsi" style="background:#6366f1; color:white; border:none; padding:8px 10px; border-radius:8px; font-weight:800; cursor:pointer; font-size:1rem; height:35px;">👁</button>
             </div>
             <div style="display:flex; gap:5px; margin-top:10px;">
                 <button onclick="toggleLockMap()" id="btn-lock-map" class="btn btn-lock">CARICAMENTO...</button>
@@ -457,6 +619,32 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     </div>
     <div id="map"></div>
     <div id="save-status">💾 AGGIORNAMENTO COMPLETATO!</div>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- DRAWER ANTEPRIMA PERCORSI                              -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div id="drawer-overlay" onclick="chiudiAnteprima()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:2000;"></div>
+    <div id="drawer-anteprima" style="display:none; position:fixed; top:0; right:0; width:500px; max-width:95vw; height:100vh; background:white; z-index:2001; box-shadow:-10px 0 40px rgba(0,0,0,0.2); display:flex; flex-direction:column; font-family:'Inter',sans-serif;">
+        <!-- Header drawer -->
+        <div style="padding:20px 24px; background:linear-gradient(135deg,#1e293b,#0f172a); color:white; flex-shrink:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                    <div style="font-size:0.7rem; font-weight:800; opacity:0.7; text-transform:uppercase; letter-spacing:0.05em;">Anteprima</div>
+                    <div style="font-size:1.2rem; font-weight:900; margin-top:2px;">👁 Percorsi Stimati</div>
+                    <div id="drawer-subtitle" style="font-size:0.72rem; opacity:0.6; margin-top:3px;">Calcolo con distanze Haversine</div>
+                </div>
+                <button onclick="chiudiAnteprima()" style="background:rgba(255,255,255,0.15); border:none; color:white; width:36px; height:36px; border-radius:8px; font-size:1.2rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
+            </div>
+        </div>
+        <!-- Corpo drawer (scrollabile) -->
+        <div id="drawer-body" style="flex:1; overflow-y:auto; padding:16px; background:#f8fafc;"></div>
+        <!-- Footer drawer -->
+        <div style="padding:16px; border-top:1px solid #e2e8f0; background:white; flex-shrink:0; display:flex; gap:10px;">
+            <button onclick="chiudiAnteprima()" style="flex:1; padding:12px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:10px; font-weight:700; cursor:pointer; color:#475569;">✕ Chiudi</button>
+            <button onclick="confermaPercorsi()" id="btn-conferma" style="flex:2; padding:12px; background:#10b981; border:none; border-radius:10px; font-weight:800; cursor:pointer; color:white; font-size:0.9rem;">💾 Salva e Conferma → Lancia BAT 3</button>
+        </div>
+    </div>
+    <!-- Fine drawer -->
 
     <script>
         let DATA_ZONE = {{JSON_ZONE | safe}};
@@ -831,6 +1019,188 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 st.style.display = 'block'; 
                 setTimeout(()=>{ st.style.display='none'; }, 3000); 
             }).finally(() => { btn.disabled = false; btn.textContent = "SALVA TUTTO"; });
+        }
+
+        window.onload = initMap;
+
+        // ═══════════════════════════════════════════════════
+        // ANTEPRIMA PERCORSI
+        // ═══════════════════════════════════════════════════
+
+        let _anteprimaGiri = [];  // Dati giri caricati dall'API
+        let _sortableInstances = [];  // Istanze SortableJS per cleanup
+
+        async function apriAnteprima() {
+            const drawer = document.getElementById('drawer-anteprima');
+            const overlay = document.getElementById('drawer-overlay');
+            const body = document.getElementById('drawer-body');
+            const btn = document.getElementById('btn-anteprima');
+
+            // Mostra subito il drawer con spinner
+            drawer.style.display = 'flex';
+            overlay.style.display = 'block';
+            btn.textContent = '⏳';
+            body.innerHTML = `<div style="text-align:center; padding:60px 20px; color:#64748b;">
+                <div style="font-size:2rem; margin-bottom:16px;">⏳</div>
+                <div style="font-weight:700;">Calcolo timing in corso...</div>
+                <div style="font-size:0.8rem; margin-top:8px;">Elaborazione distanze Haversine</div>
+            </div>`;
+
+            try {
+                const resp = await fetch('/preview_percorsi');
+                const data = await resp.json();
+                btn.textContent = '👁';
+
+                if (data.status !== 'ok') {
+                    body.innerHTML = `<div style="padding:30px; color:#ef4444; font-weight:700;">⚠️ ${data.msg}</div>`;
+                    return;
+                }
+
+                _anteprimaGiri = data.giri;
+                _renderDrawerBody(data.giri);
+
+                const nTot = data.giri.reduce((s, g) => s + g.n_late, 0);
+                document.getElementById('drawer-subtitle').textContent =
+                    nTot === 0 ? `✅ ${data.giri.length} giri — nessun ritardo` : `⚠️ ${data.giri.length} giri — ${nTot} ritardi rilevati`;
+
+            } catch (err) {
+                btn.textContent = '👁';
+                body.innerHTML = `<div style="padding:30px; color:#ef4444;">Errore connessione: ${err.message}</div>`;
+            }
+        }
+
+        function _renderDrawerBody(giri) {
+            const body = document.getElementById('drawer-body');
+            // Distruggi SortableJS precedenti
+            _sortableInstances.forEach(s => s.destroy());
+            _sortableInstances = [];
+
+            body.innerHTML = giri.map((g, gi) => {
+                const statusColor = g.n_late === 0 ? '#10b981' : '#ef4444';
+                const statusText  = g.n_late === 0 ? '✅ In orario' : `⚠️ ${g.n_late} ritard${g.n_late===1?'o':'i'}`;
+                const gcBadge = g.is_gc ? `<span style="background:#f59e0b;color:white;font-size:0.55rem;font-weight:800;padding:2px 6px;border-radius:8px;margin-left:6px;">GRAND CHEF</span>` : '';
+
+                const ferrateHtml = g.fermate.map((f, fi) => {
+                    const lateStyle = f.is_late ? 'background:#fef2f2; border-color:#fecaca;' : '';
+                    const lateBadge = f.is_late ? `<span style="background:#ef4444;color:white;font-size:0.55rem;font-weight:800;padding:1px 5px;border-radius:4px;margin-left:4px;">RITARDO</span>` : '';
+                    const orario = f.orario_min && f.orario_max ? `🕒 ${f.orario_min}–${f.orario_max}` :
+                                   f.orario_max ? `🕒 Entro ${f.orario_max}` :
+                                   f.orario_min ? `🕒 Dalle ${f.orario_min}` : '';
+                    return `
+                    <div class="prv-fermata" data-uid="${f.codice_univoco}" style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:6px; display:flex; align-items:center; gap:10px; cursor:grab; ${lateStyle}">
+                        <div style="width:24px; height:24px; background:#6366f1; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:800; flex-shrink:0;">${fi+1}</div>
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-size:0.82rem; font-weight:700; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.nome}${lateBadge}</div>
+                            <div style="font-size:0.65rem; color:#64748b; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.indirizzo}</div>
+                            ${orario ? `<div style="font-size:0.65rem; color:#4f46e5; font-weight:700; margin-top:2px;">${orario}</div>` : ''}
+                        </div>
+                        <div style="text-align:right; flex-shrink:0; font-size:0.68rem; color:#475569;">
+                            <div style="font-weight:800; color:#10b981;">▶ ${f.ora_arrivo}</div>
+                            <div>◀ ${f.ora_ripartenza}</div>
+                        </div>
+                        <div style="color:#cbd5e1; font-size:1.1rem; cursor:grab;">☰</div>
+                    </div>`;
+                }).join('');
+
+                return `
+                <div style="background:white; border-radius:14px; border:1.5px solid #e2e8f0; margin-bottom:14px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+                    <div style="padding:12px 16px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; background:#f8fafc;">
+                        <div>
+                            <div style="font-size:0.75rem; font-weight:800; color:#1e293b;">${g.nome_giro}${gcBadge}</div>
+                            <div style="font-size:0.62rem; color:#64748b; margin-top:2px;">🛣️ ${g.km} km est. · ${g.n_fermate} tappe · 🏠 ${g.depot}</div>
+                        </div>
+                        <div style="font-size:0.72rem; font-weight:800; color:${statusColor}; background:${g.n_late===0?'#f0fdf4':'#fef2f2'}; padding:4px 10px; border-radius:20px;">${statusText}</div>
+                    </div>
+                    <div id="sortable-${gi}" style="padding:10px;">${ferrateHtml}</div>
+                </div>`;
+            }).join('');
+
+            // Carica SortableJS se non presente, poi inizializza
+            _initSortable(giri);
+        }
+
+        function _initSortable(giri) {
+            function _activateSortables() {
+                giri.forEach((g, gi) => {
+                    const el = document.getElementById(`sortable-${gi}`);
+                    if (!el) return;
+                    const s = Sortable.create(el, {
+                        animation: 150,
+                        handle: '[style*="cursor:grab"]',
+                        onEnd: () => _aggiornaNumeriFermate(gi)
+                    });
+                    _sortableInstances.push(s);
+                });
+            }
+
+            if (typeof Sortable !== 'undefined') {
+                _activateSortables();
+            } else {
+                const sc = document.createElement('script');
+                sc.src = 'https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js';
+                sc.onload = _activateSortables;
+                document.head.appendChild(sc);
+            }
+        }
+
+        function _aggiornaNumeriFermate(gi) {
+            const el = document.getElementById(`sortable-${gi}`);
+            if (!el) return;
+            el.querySelectorAll('.prv-fermata').forEach((card, idx) => {
+                card.querySelectorAll('div')[0].textContent = idx + 1;
+            });
+        }
+
+        function chiudiAnteprima() {
+            document.getElementById('drawer-anteprima').style.display = 'none';
+            document.getElementById('drawer-overlay').style.display = 'none';
+            _anteprimaGiri = [];
+            _sortableInstances.forEach(s => s.destroy());
+            _sortableInstances = [];
+        }
+
+        async function confermaPercorsi() {
+            const btn = document.getElementById('btn-conferma');
+            btn.disabled = true;
+            btn.textContent = '⏳ Elaborazione BAT 3 in corso...';
+
+            // Raccoglie l'ordine corrente dal DOM per ogni giro
+            const ordini = {};
+            _anteprimaGiri.forEach((g, gi) => {
+                const el = document.getElementById(`sortable-${gi}`);
+                if (!el) return;
+                const uids = [...el.querySelectorAll('.prv-fermata')].map(c => c.dataset.uid);
+                ordini[g.id_zona] = uids;
+            });
+
+            try {
+                const resp = await fetch('/conferma_percorsi', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ordini})
+                });
+                const data = await resp.json();
+
+                if (data.status === 'ok') {
+                    const body = document.getElementById('drawer-body');
+                    body.innerHTML = `
+                        <div style="text-align:center; padding:60px 20px;">
+                            <div style="font-size:3rem; margin-bottom:16px;">✅</div>
+                            <div style="font-size:1.1rem; font-weight:800; color:#10b981;">Percorsi generati!</div>
+                            <div style="font-size:0.8rem; color:#64748b; margin-top:10px;">BAT 3 completato con successo.<br>Puoi ora avviare BAT 5 per le mappe autisti.</div>
+                        </div>`;
+                    document.getElementById('btn-conferma').style.display = 'none';
+                    document.getElementById('drawer-subtitle').textContent = '✅ Percorsi confermati e salvati';
+                } else {
+                    alert('Errore BAT 3: ' + data.msg);
+                    btn.disabled = false;
+                    btn.textContent = '💾 Salva e Conferma → Lancia BAT 3';
+                }
+            } catch (err) {
+                alert('Errore di connessione: ' + err.message);
+                btn.disabled = false;
+                btn.textContent = '💾 Salva e Conferma → Lancia BAT 3';
+            }
         }
 
         window.onload = initMap;

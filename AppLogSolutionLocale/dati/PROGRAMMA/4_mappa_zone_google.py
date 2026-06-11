@@ -286,30 +286,76 @@ if HAS_FLASK:
 
     @app.route('/preview_percorsi', methods=['GET'])
     def preview_percorsi():
-        """Calcola timing stimato (Haversine) per tutti i giri correnti. Nessuna scrittura su disco."""
-        import math
+        """Calcola timing REALE per tutti i giri usando la stessa logica di BAT 3:
+        cache distanze reali → Google Matrix API fallback → 4 min overhead → 8/12 min sosta.
+        Non scrive niente su disco (tranne aggiornamenti cache distanze)."""
+        import math, requests as _req
         try:
             if not TARGET_FILE_VIAGGI or not TARGET_FILE_VIAGGI.exists():
                 return jsonify({"status": "error", "msg": "Salva prima i giri con SALVA TUTTO"}), 400
 
             viaggi = json.loads(TARGET_FILE_VIAGGI.read_text(encoding="utf-8"))
 
-            AVG_SPEED_KMH = 35
-            PARKING_OVERHEAD_MIN = 4
+            # --- Costanti identiche a 6_genera_percorsi_veggiano.py ---
+            AVG_SPEED_KMH    = 35
+            PARKING_OVERHEAD = 4   # minuti overhead parcheggio per segmento
+            SOSTA_DNR        = 8   # minuti sosta clienti normali
+            SOSTA_GC         = 12  # minuti sosta Grand Chef
 
-            DEPOTS = {
+            DEPOT_MAP = {
+                "CASTENEDOLO":   {"lat": 45.471591, "lon": 10.298200, "nome": "Castenedolo (BS)"},
+                "SOMMACAMPAGNA": {"lat": 45.405200, "lon": 10.846000, "nome": "Sommacampagna (VR)"},
                 "VEGGIANO":      {"lat": 45.442805, "lon": 11.714498, "nome": "Veggiano (PD)"},
-                "SOMMACAMPAGNA": {"lat": 45.382610, "lon": 10.851060, "nome": "Sommacampagna (VR)"},
-                "CASTENEDOLO":   {"lat": 45.466700, "lon": 10.294400, "nome": "Castenedolo (BS)"},
             }
 
-            def _haversine(p1, p2):
+            # --- Carica cache distanze reali ---
+            cache_path = PROG_DIR / "distanze_reali_cache.json"
+            try:
+                dist_data = json.loads(cache_path.read_text(encoding="utf-8")) if cache_path.exists() else {}
+            except Exception:
+                dist_data = {}
+            cache_modified = False
+
+            def _cache_key(p1, p2):
+                lat1 = round(float(p1.get('lat', 0)), 5)
+                lon1 = round(float(p1.get('lon', p1.get('lng', 0))), 5)
+                lat2 = round(float(p2.get('lat', 0)), 5)
+                lon2 = round(float(p2.get('lon', p2.get('lng', 0))), 5)
+                return f"{lat1},{lon1}_{lat2},{lon2}"
+
+            def _haversine_km(p1, p2):
                 R = 6371
-                lat1, lon1 = math.radians(float(p1.get('lat', 0))), math.radians(float(p1.get('lon', 0)))
-                lat2, lon2 = math.radians(float(p2.get('lat', 0))), math.radians(float(p2.get('lon', 0)))
+                lat1 = math.radians(float(p1.get('lat', 0)))
+                lon1 = math.radians(float(p1.get('lon', p1.get('lng', 0))))
+                lat2 = math.radians(float(p2.get('lat', 0)))
+                lon2 = math.radians(float(p2.get('lon', p2.get('lng', 0))))
                 dlat, dlon = lat2 - lat1, lon2 - lon1
                 a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
                 return R * 2 * math.asin(math.sqrt(a))
+
+            def _dur_min(p_prev, p_next):
+                """Restituisce durata guida in minuti: cache → Google API → Haversine fallback."""
+                nonlocal cache_modified
+                k = _cache_key(p_prev, p_next)
+                if k in dist_data:
+                    return dist_data[k]['dur'] / 60.0
+                # Chiama Google Matrix API per la coppia mancante
+                try:
+                    url = (f"https://maps.googleapis.com/maps/api/distancematrix/json"
+                           f"?origins={p_prev['lat']},{p_prev['lon']}"
+                           f"&destinations={p_next['lat']},{p_next['lon']}"
+                           f"&key={GOOGLE_MAPS_API_KEY}")
+                    resp = _req.get(url, timeout=8).json()
+                    if resp.get('status') == 'OK':
+                        el = resp['rows'][0]['elements'][0]
+                        if el.get('status') == 'OK':
+                            dist_data[k] = {'dist': el['distance']['value'], 'dur': el['duration']['value']}
+                            cache_modified = True
+                            return el['duration']['value'] / 60.0
+                except Exception:
+                    pass
+                # Fallback Haversine
+                return (_haversine_km(p_prev, p_next) * 1.3 / AVG_SPEED_KMH) * 60.0
 
             def _get_depot(punti):
                 counts = {"BS": 0, "VR": 0, "MN": 0, "PD": 0, "ALTRO": 0}
@@ -320,17 +366,19 @@ if HAS_FLASK:
                     if prov == "BS": counts["BS"] += 1
                     elif prov in ("VR", "MN", "PD"): counts[prov] += 1
                     else: counts["ALTRO"] += 1
-                if counts["BS"] > counts["VR"] + counts["MN"] + counts["PD"] + counts["ALTRO"]:
-                    return DEPOTS["CASTENEDOLO"]
-                if counts["VR"] + counts["MN"] + counts["PD"] > counts["BS"] + counts["ALTRO"]:
-                    return DEPOTS["SOMMACAMPAGNA"]
-                return DEPOTS["VEGGIANO"]
+                castenedolo = counts["BS"]
+                sommacampagna = counts["VR"] + counts["MN"] + counts["PD"]
+                if castenedolo > sommacampagna and castenedolo > counts["ALTRO"]:
+                    return DEPOT_MAP["CASTENEDOLO"]
+                if sommacampagna > castenedolo and sommacampagna > counts["ALTRO"]:
+                    return DEPOT_MAP["SOMMACAMPAGNA"]
+                return DEPOT_MAP["VEGGIANO"]
 
             def _fmt(minutes):
                 m = int(minutes) % 1440
                 return f"{m//60:02d}:{m%60:02d}"
 
-            def _parse(time_str):
+            def _parse_min(time_str):
                 if not time_str: return None
                 parts = str(time_str).strip().split(':')
                 if len(parts) >= 2:
@@ -349,56 +397,63 @@ if HAS_FLASK:
                     "GRANCHEF" in str(p.get("zona") or "").upper()
                     for p in punti
                 )
-                sosta = 12 if is_gc else 8
-                depot = _get_depot(punti)
-                current_time = 420  # 07:00
-                km_tot = 0
-                fermate = []
+                sosta    = SOSTA_GC if is_gc else SOSTA_DNR
+                depot    = _get_depot(punti)
+                cur_time = 420  # 07:00
+                km_tot   = 0.0
+                fermate  = []
 
                 for i, p in enumerate(punti):
                     prev = depot if i == 0 else punti[i-1]
-                    dist_km = _haversine(prev, p) * 1.3
-                    km_tot += dist_km
-                    guida_min = (dist_km / AVG_SPEED_KMH) * 60 + PARKING_OVERHEAD_MIN
 
+                    # Calcolo arrivo
                     if is_gc and i == 0:
-                        arr = 420
+                        arr = 420  # GrandChef: primo cliente sempre alle 07:00
                     else:
-                        arr = current_time + guida_min
+                        dur_guida = _dur_min(prev, p)
+                        arr = cur_time + dur_guida + PARKING_OVERHEAD
+                        km_tot += _haversine_km(prev, p) * 1.3  # stima km anche se dur è da cache
 
                     dep = arr + sosta
                     oM = p.get("orario_max") or ""
                     is_late = False
                     if oM:
-                        max_min = _parse(oM)
+                        max_min = _parse_min(oM)
                         if max_min is not None:
                             is_late = arr > max_min + 1
 
                     fermate.append({
                         "codice_univoco": p.get("codice_univoco", ""),
-                        "nome": p.get("nome", ""),
-                        "indirizzo": p.get("indirizzo", ""),
-                        "orario_min": p.get("orario_min", ""),
-                        "orario_max": oM,
-                        "ora_arrivo": _fmt(arr),
+                        "nome":          p.get("nome", ""),
+                        "indirizzo":     p.get("indirizzo", ""),
+                        "orario_min":    p.get("orario_min", ""),
+                        "orario_max":    oM,
+                        "ora_arrivo":    _fmt(arr),
                         "ora_ripartenza": _fmt(dep),
-                        "is_late": is_late,
+                        "is_late":       is_late,
                         "lat": p.get("lat"),
                         "lon": p.get("lon"),
                     })
-                    current_time = dep
+                    cur_time = dep
 
                 n_late = sum(1 for f in fermate if f["is_late"])
                 risultati.append({
-                    "id_zona": z.get("id_zona"),
+                    "id_zona":   z.get("id_zona"),
                     "nome_giro": z.get("nome_giro") or z.get("id_zona"),
-                    "is_gc": is_gc,
-                    "depot": depot["nome"],
-                    "km": round(km_tot, 1),
+                    "is_gc":     is_gc,
+                    "depot":     depot["nome"],
+                    "km":        round(km_tot, 1),
                     "n_fermate": len(fermate),
-                    "n_late": n_late,
-                    "fermate": fermate,
+                    "n_late":    n_late,
+                    "fermate":   fermate,
                 })
+
+            # Salva eventuali nuove voci aggiunte alla cache
+            if cache_modified:
+                try:
+                    cache_path.write_text(json.dumps(dist_data, indent=2, ensure_ascii=False), encoding="utf-8")
+                except Exception:
+                    pass
 
             return jsonify({"status": "ok", "giri": risultati})
         except Exception as e:
@@ -1071,52 +1126,76 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         function _renderDrawerBody(giri) {
             const body = document.getElementById('drawer-body');
-            // Distruggi SortableJS precedenti
             _sortableInstances.forEach(s => s.destroy());
             _sortableInstances = [];
 
             body.innerHTML = giri.map((g, gi) => {
-                const statusColor = g.n_late === 0 ? '#10b981' : '#ef4444';
-                const statusText  = g.n_late === 0 ? '✅ In orario' : `⚠️ ${g.n_late} ritard${g.n_late===1?'o':'i'}`;
-                const gcBadge = g.is_gc ? `<span style="background:#f59e0b;color:white;font-size:0.55rem;font-weight:800;padding:2px 6px;border-radius:8px;margin-left:6px;">GRAND CHEF</span>` : '';
+                const hasLate    = g.n_late > 0;
+                const borderClr  = hasLate ? '#fecaca' : '#bbf7d0';
+                const headerBg   = hasLate ? '#fef2f2' : '#f0fdf4';
+                const statusClr  = hasLate ? '#ef4444' : '#10b981';
+                const statusTxt  = hasLate ? `⚠️ ${g.n_late} ritard${g.n_late===1?'o':'i'}` : '✅ In orario';
+                const chevronId  = `chv-${gi}`;
+                const bodyId     = `sortable-${gi}`;
+                // Card con ritardi: aperta automaticamente
+                const isOpen     = hasLate;
+                const gcBadge    = g.is_gc ? `<span style="background:#f59e0b;color:white;font-size:0.5rem;font-weight:800;padding:2px 5px;border-radius:6px;margin-left:6px;vertical-align:middle;">GC</span>` : '';
 
                 const ferrateHtml = g.fermate.map((f, fi) => {
-                    const lateStyle = f.is_late ? 'background:#fef2f2; border-color:#fecaca;' : '';
-                    const lateBadge = f.is_late ? `<span style="background:#ef4444;color:white;font-size:0.55rem;font-weight:800;padding:1px 5px;border-radius:4px;margin-left:4px;">RITARDO</span>` : '';
-                    const orario = f.orario_min && f.orario_max ? `🕒 ${f.orario_min}–${f.orario_max}` :
-                                   f.orario_max ? `🕒 Entro ${f.orario_max}` :
-                                   f.orario_min ? `🕒 Dalle ${f.orario_min}` : '';
+                    const lateStyle  = f.is_late ? 'background:#fef2f2; border-color:#fecaca;' : '';
+                    const lateBadge  = f.is_late ? `<span style="background:#ef4444;color:white;font-size:0.5rem;font-weight:800;padding:1px 4px;border-radius:4px;margin-left:4px;">RITARDO</span>` : '';
+                    const orario     = f.orario_min && f.orario_max ? `🕒 ${f.orario_min}–${f.orario_max}` :
+                                       f.orario_max ? `🕒 Entro ${f.orario_max}` :
+                                       f.orario_min ? `🕒 Dalle ${f.orario_min}` : '';
                     return `
-                    <div class="prv-fermata" data-uid="${f.codice_univoco}" style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:6px; display:flex; align-items:center; gap:10px; cursor:grab; ${lateStyle}">
-                        <div style="width:24px; height:24px; background:#6366f1; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:800; flex-shrink:0;">${fi+1}</div>
+                    <div class="prv-fermata" data-uid="${f.codice_univoco}" style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:9px 10px; margin-bottom:5px; display:flex; align-items:center; gap:8px; ${lateStyle}">
+                        <div style="width:22px; height:22px; background:#6366f1; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.65rem; font-weight:800; flex-shrink:0; cursor:grab;">${fi+1}</div>
                         <div style="flex:1; min-width:0;">
-                            <div style="font-size:0.82rem; font-weight:700; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.nome}${lateBadge}</div>
-                            <div style="font-size:0.65rem; color:#64748b; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.indirizzo}</div>
-                            ${orario ? `<div style="font-size:0.65rem; color:#4f46e5; font-weight:700; margin-top:2px;">${orario}</div>` : ''}
+                            <div style="font-size:0.78rem; font-weight:700; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.nome}${lateBadge}</div>
+                            <div style="font-size:0.6rem; color:#94a3b8; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.indirizzo}</div>
+                            ${orario ? `<div style="font-size:0.6rem; color:#4f46e5; font-weight:700; margin-top:2px;">${orario}</div>` : ''}
                         </div>
-                        <div style="text-align:right; flex-shrink:0; font-size:0.68rem; color:#475569;">
+                        <div style="text-align:right; flex-shrink:0; font-size:0.65rem;">
                             <div style="font-weight:800; color:#10b981;">▶ ${f.ora_arrivo}</div>
-                            <div>◀ ${f.ora_ripartenza}</div>
+                            <div style="color:#94a3b8;">◀ ${f.ora_ripartenza}</div>
                         </div>
-                        <div style="color:#cbd5e1; font-size:1.1rem; cursor:grab;">☰</div>
+                        <div style="color:#cbd5e1; font-size:1rem; cursor:grab; flex-shrink:0;">☰</div>
                     </div>`;
                 }).join('');
 
                 return `
-                <div style="background:white; border-radius:14px; border:1.5px solid #e2e8f0; margin-bottom:14px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
-                    <div style="padding:12px 16px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; background:#f8fafc;">
-                        <div>
-                            <div style="font-size:0.75rem; font-weight:800; color:#1e293b;">${g.nome_giro}${gcBadge}</div>
-                            <div style="font-size:0.62rem; color:#64748b; margin-top:2px;">🛣️ ${g.km} km est. · ${g.n_fermate} tappe · 🏠 ${g.depot}</div>
+                <div style="border-radius:12px; border:1.5px solid ${borderClr}; margin-bottom:10px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+                    <div onclick="_toggleCard(${gi})" style="padding:11px 14px; display:flex; align-items:center; justify-content:space-between; background:${headerBg}; cursor:pointer; user-select:none;">
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-size:0.78rem; font-weight:800; color:#1e293b;">${g.nome_giro}${gcBadge}</div>
+                            <div style="font-size:0.6rem; color:#64748b; margin-top:2px;">🛣️ ${g.km} km · ${g.n_fermate} tappe · 🏠 ${g.depot}</div>
                         </div>
-                        <div style="font-size:0.72rem; font-weight:800; color:${statusColor}; background:${g.n_late===0?'#f0fdf4':'#fef2f2'}; padding:4px 10px; border-radius:20px;">${statusText}</div>
+                        <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                            <div style="font-size:0.68rem; font-weight:800; color:${statusClr}; background:white; padding:3px 9px; border-radius:20px; border:1px solid ${borderClr};">${statusTxt}</div>
+                            <span id="${chevronId}" style="font-size:0.8rem; color:#94a3b8; transition:transform 0.2s; display:inline-block; transform:${isOpen?'rotate(90deg)':'rotate(0deg)'};">▶</span>
+                        </div>
                     </div>
-                    <div id="sortable-${gi}" style="padding:10px;">${ferrateHtml}</div>
+                    <div id="${bodyId}" style="padding:${isOpen?'8px':'0'}; max-height:${isOpen?'2000px':'0'}; overflow:hidden; transition:max-height 0.3s ease, padding 0.2s;">${ferrateHtml}</div>
                 </div>`;
             }).join('');
 
-            // Carica SortableJS se non presente, poi inizializza
             _initSortable(giri);
+        }
+
+        function _toggleCard(gi) {
+            const bodyEl = document.getElementById(`sortable-${gi}`);
+            const chvEl  = document.getElementById(`chv-${gi}`);
+            if (!bodyEl) return;
+            const isOpen = bodyEl.style.maxHeight !== '0px' && bodyEl.style.maxHeight !== '';
+            if (isOpen) {
+                bodyEl.style.maxHeight = '0';
+                bodyEl.style.padding   = '0';
+                if (chvEl) chvEl.style.transform = 'rotate(0deg)';
+            } else {
+                bodyEl.style.maxHeight = '2000px';
+                bodyEl.style.padding   = '8px';
+                if (chvEl) chvEl.style.transform = 'rotate(90deg)';
+            }
         }
 
         function _initSortable(giri) {

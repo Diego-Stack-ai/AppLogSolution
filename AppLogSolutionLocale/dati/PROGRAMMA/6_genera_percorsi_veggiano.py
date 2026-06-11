@@ -694,12 +694,18 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path, de
 def gera_riepilogo(summary_data, output_path):
     km_tot = round(sum(z['km'] for z in summary_data), 1)
     min_tot = sum(z['t_tot'] for z in summary_data)
+    def _fatturato_html(z):
+        """Restituisce la riga fatturato solo per giri DNR (non GranChef)."""
+        if z.get('is_grand_chef'):
+            return '<div style="font-size:0.85rem; font-weight:700; color:#94a3b8; margin-top:5px;">🍽️ Grand Chef — fatturazione separata</div>'
+        return f'<div style="font-size:0.85rem; font-weight:700; color:#10b981; margin-top:5px;">💰 Fatturato: € {z["fatturato"]} ({z["tot_ddt"]} DDT)</div>'
+
     cards_html = "".join([f'''
         <div style="background:white; border-radius:24px; padding:30px; border:1.5px solid #e2e8f0; position:relative; overflow:hidden; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
             <div style="position:absolute; top:0; left:0; width:12px; height:100%; background:#4f46e5;"></div>
             <div style="font-size:0.8rem; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:8px;">{z['v_id']}</div>
             <b style="font-size:1.15rem; color:#0f172a; display:block;">Zone: {z['zone_str']}</b>
-            <div style="font-size:0.85rem; font-weight:700; color:#10b981; margin-top:5px;">💰 Fatturato: € {z['fatturato']} ({z['tot_ddt']} DDT)</div>
+            {_fatturato_html(z)}
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin:20px 0; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:15px;">
                 <span>🛣️ <b>{z['km']} km</b></span><span>🕒 Guida: {fmt_min(z['t_guida'])}</span>
                 <span> {z['punti']} tappe</span><span style="font-weight:900; color:#4f46e5;">🏁 TOT: {fmt_min(z['t_tot'])}</span>
@@ -708,9 +714,9 @@ def gera_riepilogo(summary_data, output_path):
         </div>
     ''' for z in summary_data])
 
-    VALORE_DDT = 18.50
-    tot_ddt_generale = sum(z['tot_ddt'] for z in summary_data)
-    fatturato_generale = f"{sum(float(z['fatturato']) for z in summary_data):.2f}"
+    # Fatturato generale: solo giri DNR (esclusi GranChef)
+    tot_ddt_generale = sum(z['tot_ddt'] for z in summary_data if not z.get('is_grand_chef'))
+    fatturato_generale = f"{sum(float(z['fatturato']) for z in summary_data if not z.get('is_grand_chef')):.2f}"
 
     html = f"""<!DOCTYPE html>
 <html lang="it"><head><meta charset="utf-8"><title>Dashboard Logistica</title>
@@ -789,17 +795,19 @@ def main():
         km, t_guida, t_sosta, t_tot, polylines = get_google_trip_data(perc, depot)
         
         
-        # Calcolo Fatturato DDT (16.50 Euro ciascuno)
+        # Calcolo Fatturato DDT (16.50 Euro ciascuno) — solo per giri DNR (Frutta/Latte)
+        # I giri GranChef hanno una logica di fatturazione diversa (da implementare in futuro)
         tot_ddt = 0
-        for p in punti:
-            tot_ddt += len([c for c in p.get("codici_ddt_frutta", []) if c and c != "p00000"])
-            tot_ddt += len([c for c in p.get("codici_ddt_latte", []) if c and c != "p00000"])
-            # Fallback per punti caricati senza liste esplicite
-            if not p.get("codici_ddt_frutta") and not p.get("codici_ddt_latte"):
-                if p.get("codice_frutta") and p.get("codice_frutta") != "p00000": tot_ddt += 1
-                if p.get("codice_latte") and p.get("codice_latte") != "p00000": tot_ddt += 1
-        
-        fatturato = f"{tot_ddt * 16.50:.2f}"
+        fatturato = "0.00"
+        if not is_grand_chef:
+            for p in punti:
+                tot_ddt += len([c for c in p.get("codici_ddt_frutta", []) if c and c != "p00000"])
+                tot_ddt += len([c for c in p.get("codici_ddt_latte", []) if c and c != "p00000"])
+                # Fallback per punti caricati senza liste esplicite
+                if not p.get("codici_ddt_frutta") and not p.get("codici_ddt_latte"):
+                    if p.get("codice_frutta") and p.get("codice_frutta") != "p00000": tot_ddt += 1
+                    if p.get("codice_latte") and p.get("codice_latte") != "p00000": tot_ddt += 1
+            fatturato = f"{tot_ddt * 16.50:.2f}"
         
         # Usa id_zona della zona come parte univoca del nome file.
         # Questo garantisce che giri splittati (es. GranChef_V01_B) abbiano
@@ -807,7 +815,7 @@ def main():
         # i punti interni riportano ancora la zona di partenza.
         zone_id_for_fname = z.get('id_zona') or '_'.join(zone_coinvolte[:3])
         fname = sanitize_filename(f"{v_id}_Zone_{zone_id_for_fname}.html")
-        info = {'v_id': v_id, 'zone_str': z_str, 'fname': fname, 'km': km, 't_guida': t_guida, 't_sosta': t_sosta, 't_tot': t_tot, 'punti': len(punti), 'tot_ddt': tot_ddt, 'fatturato': fatturato}
+        info = {'v_id': v_id, 'zone_str': z_str, 'fname': fname, 'km': km, 't_guida': t_guida, 't_sosta': t_sosta, 't_tot': t_tot, 'punti': len(punti), 'tot_ddt': tot_ddt, 'fatturato': fatturato, 'is_grand_chef': is_grand_chef}
         summary.append(info)
         
         genera_html_giro(v_id, z_str, perc, (km, t_guida, t_sosta, t_tot), polylines, out_dir / fname, depot)

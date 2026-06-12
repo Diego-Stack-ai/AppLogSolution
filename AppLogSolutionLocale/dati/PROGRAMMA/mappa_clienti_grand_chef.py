@@ -13,8 +13,17 @@ MASTER_DB_PATH = BASE_DIR / "PROGRAMMA" / "mappatura_destinazioni.xlsx"
 WEB_DB_PATH = Path("g:/Il mio Drive/App/AppLogSolutionsWeb/Progetto Scuole/PROGRAMMA/mappatura_destinazioni.xlsx")
 
 # API Key Google Maps
-GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
-
+import os as _os
+def _carica_env():
+    _p = Path(__file__).resolve().parent / '.env'
+    if _p.exists():
+        for _l in _p.read_text(encoding='utf-8').splitlines():
+            _l = _l.strip()
+            if _l and not _l.startswith('#') and '=' in _l:
+                _k, _v = _l.split('=', 1)
+                _os.environ.setdefault(_k.strip(), _v.strip())
+_carica_env()
+GOOGLE_MAPS_API_KEY = _os.environ.get('GOOGLE_MAPS_API_KEY', '')
 def geocode_address(address, city, prov):
     """
     Effettua la geocodifica dell'indirizzo tramite l'API di Google Maps.

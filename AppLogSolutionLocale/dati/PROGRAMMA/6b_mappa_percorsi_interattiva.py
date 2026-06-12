@@ -884,12 +884,12 @@ async function generaFile(){
   // Prima salva lo stato corrente, poi genera gli HTML
   const rs = await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(ZONE)});
   const ds = await rs.json();
-  if(!ds.ok){ toast('\u274C Errore salvataggio: '+ds.err, 5000); return; }
-  toast('\uD83D\uDCBE Salvato. Generazione file in corso\u2026', 8000);
+  if(!ds.ok){ toast('❌ Errore salvataggio: '+ds.err, 5000); return; }
+  toast('💾 Salvato. Generazione file in corso…', 8000);
   const r = await fetch('/api/genera',{method:'POST'});
   const d = await r.json();
-  if(d.ok) toast(`\u2705 File generati! ${d.giri} giri \u2192 pronti per BAT 5`, 5000);
-  else     toast('\u274C Errore generazione: '+d.err, 5000);
+  if(d.ok) toast(`✅ File generati! ${d.giri} giri → pronti per BAT 5`, 5000);
+  else     toast('❌ Errore generazione: '+d.err, 5000);
 }
 
 // ── Riordino frecce ───────────────────────────────────────────────────────────

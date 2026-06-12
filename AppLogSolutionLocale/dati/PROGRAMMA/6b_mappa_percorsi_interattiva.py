@@ -257,6 +257,57 @@ def api_riordina():
     except Exception as e:
         return jsonify({"ok": False, "err": str(e)}), 500
 
+@app.route("/api/dividi", methods=["POST"])
+def api_dividi():
+    """Divide un giro: sposta le fermate agli indici indicati in un nuovo sub-giro."""
+    try:
+        body   = request.json
+        zid    = body["id_zona"]
+        indici = set(body["indici"])  # indici delle fermate da spostare
+
+        with _lock:
+            zona_orig = next((z for z in ZONE_CACHE if z["id_zona"] == zid), None)
+            if not zona_orig:
+                return jsonify({"ok": False, "err": f"Zona {zid} non trovata"}), 400
+
+            punti_orig = zona_orig["lista_punti"]
+            if len(indici) >= len(punti_orig):
+                return jsonify({"ok": False, "err": "Devi lasciare almeno una fermata"}), 400
+
+            # Separa le fermate
+            rimanenti  = [p for i, p in enumerate(punti_orig) if i not in indici]
+            spostate   = [p for i, p in enumerate(punti_orig) if i in indici]
+
+            # Genera nuovo id_zona univoco
+            base = zid
+            idx  = 2
+            while any(z["id_zona"] == f"{base}_{idx}" for z in ZONE_CACHE):
+                idx += 1
+            nuovo_zid = f"{base}_{idx}"
+
+            # Aggiorna zona originale
+            zona_orig["lista_punti"] = rimanenti
+
+            # Crea nuova zona
+            colori = ["#4f46e5","#059669","#d97706","#dc2626","#7c3aed",
+                      "#0891b2","#65a30d","#db2777","#ea580c","#0284c7"]
+            nuovo_color = colori[len(ZONE_CACHE) % len(colori)]
+            nuova_zona = {
+                "id_zona":    nuovo_zid,
+                "nome_giro":  nuovo_zid.replace("_", " "),
+                "color":      nuovo_color,
+                "lista_punti": spostate
+            }
+            ZONE_CACHE.append(nuova_zona)
+
+        # Salva JSON aggiornato
+        (TARGET_DIR / "viaggi_giornalieri.json").write_text(
+            json.dumps(ZONE_CACHE, indent=2, ensure_ascii=False), encoding="utf-8")
+
+        return jsonify({"ok": True, "nuovo_id": nuovo_zid, "zone": ZONE_CACHE})
+    except Exception as e:
+        return jsonify({"ok": False, "err": str(e)}), 500
+
 @app.route("/api/genera", methods=["POST"])
 def api_genera():
     """Genera file HTML finali per tutti i giri (PERCORSI_VEGGIANO + RIEPILOGO)."""
@@ -437,6 +488,18 @@ body{font-family:'Inter',sans-serif;display:flex;height:100vh;overflow:hidden;ba
 .btn-zona{flex:1;border:none;border-radius:7px;padding:7px 4px;font-size:0.7rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;}
 .btn-dividi{background:#eef2ff;color:var(--p);}
 .btn-dividi:hover{background:var(--p);color:#fff;}
+/* Occhio visibilita zona sulla mappa */
+.btn-eye{background:none;border:1.5px solid #e2e8f0;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;margin-left:2px;}
+.btn-eye:hover{background:#f1f5f9;}
+.btn-eye.hidden-zone{background:#fef3c7;border-color:#f59e0b;}
+/* Modalita DIVIDI */
+.dividi-mode .point-row{cursor:pointer;border-radius:6px;}
+.dividi-mode .point-row:hover{background:#eff6ff!important;}
+.point-row.dividi-sel{background:#dbeafe!important;border-color:#3b82f6!important;}
+.dividi-bar{background:#3b82f6;color:#fff;padding:7px 10px;border-radius:8px;font-size:0.72rem;font-weight:700;display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;}
+.dividi-bar button{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:6px;padding:3px 9px;cursor:pointer;font-size:0.7rem;font-weight:700;}
+.dividi-bar button:hover{background:rgba(255,255,255,0.35);}
+.dividi-bar .btn-annulla{background:rgba(239,68,68,0.3);border-color:rgba(239,68,68,0.5);}
 .btn-sposta{background:#f0fdf4;color:#059669;}
 .btn-sposta:hover{background:#10b981;color:#fff;}
 .btn-rinomina{background:#fefce8;color:#92400e;}
@@ -554,8 +617,9 @@ let isLocked  = true;        // default: bloccato (come BAT 2)
 
 // Stato operazioni editing
 let spostaPunto   = null;    // {punto, fromZid}
-let dividiZid     = null;
-let dividiSel     = new Set();
+let dividiZid     = null;    // zid in modalita DIVIDI
+let dividiSel     = new Set(); // indici fermate selezionate
+let ZONE_HIDDEN   = new Set(); // zid nascosti dalla mappa
 let modalZid      = null;
 
 // ── Funzioni di supporto ─────────────────────────────────────────────────────
@@ -675,6 +739,7 @@ function renderCard(z){
   const isOpen = activeZid===zid;
   const col    = z.color||'#4f46e5';
   const txt    = colorContrast(col);
+  const isHidden = ZONE_HIDDEN.has(zid);
 
   // Stat bar (solo se calcolato)
   const statsBar = isCalc ? `
@@ -683,6 +748,9 @@ function renderCard(z){
       <div class="stat-item"><div class="stat-val">${fmtMin(stats.t_guida)}</div><div class="stat-lbl">Guida</div></div>
       <div class="stat-item"><div class="stat-val">${fmtMin(stats.t_tot)}</div><div class="stat-lbl">Totale</div></div>
     </div>` : '';
+
+  // Modalita DIVIDI attiva su questo giro?
+  const isDividiActive = dividiZid === zid;
 
   // Lista punti espansa
   const listaPunti = isOpen ? `
@@ -719,13 +787,27 @@ function renderCard(z){
   </div>`;
 }
 
-function renderPuntoRow(p,i,zid,punti,isCalc,isSpec){
+function renderPuntoRow(p,i,zid,punti,isCalc,isSpec,isDividiActive=false){
   const eta = p.ora_arrivo ? `&#9201; ${p.ora_arrivo}` : '';
   const isLate = p.ritardo ? 'border-color:#fca5a5;background:#fff1f2;' : '';
+  const isSel  = isDividiActive && dividiSel.has(i);
   return `
-  <div class="point-row" style="${isLate}" id="pr-${zid}-${i}">
-    <div class="pt-num" style="${p.ritardo?'background:#ef4444':''}">` + (i+1) + `</div>
-    <div class="pt-info" onclick="panToPoint(${p.lat||0},${p.lon||0})">
+  <div class="point-row${isSel?' dividi-sel':''}" style="${isLate}" id="pr-${zid}-${i}" ${isDividiActive?`onclick="toggleDividiSel(${i})"`:''}>
+    <div class="pt-num" style="${p.ritardo?'background:#ef4444':isSel?'background:#3b82f6':''}">`+(isSel?'&#10003;':(i+1))+`</div>
+    <div class="pt-info" onclick="${isDividiActive?'event.stopPropagation();toggleDividiSel('+i+')':'panToPoint('+(p.lat||0)+','+(p.lon||0)+')'}">
+      <div class="pt-nome">${p.nome||'&mdash;'}</div>
+      <div class="pt-addr">${(p.indirizzo||'').substring(0,45)}</div>
+      ${eta?`<div class="pt-eta">${eta}</div>`:''}
+    </div>
+    ${!isSpec && !isLocked && !isDividiActive ? `
+    <div class="pt-arrow-btns">
+      <button class="pt-arrow" title="Su" onclick="muoviPunto('${zid}',`+i+`,-1)" ${i===0?'disabled':''}>&##9650;</button>
+      <button class="pt-arrow" title="Giu" onclick="muoviPunto('${zid}',`+i+`,+1)" ${i===punti.length-1?'disabled':''}>&##9660;</button>
+    </div>
+    <button class="pt-arrow" title="Sposta in altro giro" style="margin-left:2px;width:24px;height:42px;" onclick="avviaSposta('${zid}',`+i+`)">&#8596;</button>
+    ` : ''}
+  </div>`;
+}
       <div class="pt-nome">${p.nome||'\u2014'}</div>
       <div class="pt-addr">${(p.indirizzo||'').substring(0,45)}</div>
       ${eta?`<div class="pt-eta">${eta}</div>`:''}
@@ -778,6 +860,7 @@ function renderMarkers(){
   ZONE.forEach(z=>{
     const col = z.color||'#4f46e5';
     const zid = z.id_zona;
+    if(ZONE_HIDDEN.has(zid)) return; // zona nascosta - salta
     (z.lista_punti||[]).forEach((p,i)=>{
       if(!p.lat||!p.lon) return;
       hasPoints=true;
@@ -823,6 +906,7 @@ function renderPolylinesZona(zid, polylines, color){
   if(gPolylines[zid]){ gPolylines[zid].forEach(pl=>pl.setMap(null)); }
   gPolylines[zid]=[];
   if(!polylines||!polylines.length) return;
+  if(ZONE_HIDDEN.has(zid)) return; // zona nascosta - non disegnare
   polylines.forEach(enc=>{
     if(!enc) return;
     const path = google.maps.geometry.encoding.decodePath(enc);
@@ -860,12 +944,62 @@ function toggleLock(){
   toast(isLocked ? '🔒 Mappa bloccata' : '🔓 Mappa sbloccata - ora puoi modificare');
 }
 
+// ── Visibilita zona sulla mappa ───────────────────────────────────────────────
+function toggleHidden(zid){
+  if(ZONE_HIDDEN.has(zid)) ZONE_HIDDEN.delete(zid);
+  else ZONE_HIDDEN.add(zid);
+  renderMarkers();
+  renderPolylines();
+  renderCardById(zid);
+}
+
+// ── DIVIDI giro ───────────────────────────────────────────────────────────────
+function avviaDividi(zid){
+  dividiZid = zid;
+  dividiSel = new Set();
+  if(activeZid !== zid) toggleCard(zid);
+  else renderCardById(zid);
+  toast('Seleziona le fermate da spostare nel nuovo giro, poi clicca Crea giro');
+}
+
+function toggleDividiSel(idx){
+  if(dividiSel.has(idx)) dividiSel.delete(idx);
+  else dividiSel.add(idx);
+  renderCardById(dividiZid);
+}
+
+async function confermaDividi(zid){
+  if(dividiSel.size === 0){ toast('Seleziona almeno una fermata'); return; }
+  const z = ZONE.find(x=>x.id_zona===zid);
+  if(!z){ annullaDividi(); return; }
+  if(dividiSel.size >= z.lista_punti.length){ toast('Devi lasciare almeno una fermata nel giro originale'); return; }
+  const r = await fetch('/api/dividi',{method:'POST',headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({id_zona: zid, indici: Array.from(dividiSel)})});
+  const d = await r.json();
+  if(!d.ok){ toast('❌ ' + (d.err||'Errore'), 4000); return; }
+  ZONE = d.zone;
+  STATI = {};
+  ZONE.forEach(z=>{ STATI[z.id_zona]={stato:'da_calcolare',polylines:[],stats:{}}; });
+  annullaDividi();
+  renderSidebar();
+  renderMarkers();
+  aggiornaFase();
+  toast('&#9986; Giro diviso: ' + d.nuovo_id + ' creato con ' + dividiSel.size + ' fermate');
+}
+
+function annullaDividi(){
+  dividiZid = null;
+  dividiSel = new Set();
+  renderSidebar();
+}
+
 // ── Azioni principali ─────────────────────────────────────────────────────────
 async function salvaTutto(){
   const r = await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(ZONE)});
   const d = await r.json();
   toast(d.ok ? '💾 Salvato!' : '❌ Errore salvataggio: '+d.err);
 }
+
 
 async function calcolaTutto(){
   document.getElementById('btn-calcola').disabled=true;

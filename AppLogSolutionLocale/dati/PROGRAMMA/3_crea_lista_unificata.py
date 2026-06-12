@@ -294,7 +294,11 @@ def main():
             "codici_ddt_latte": [],
             "rientri_alert": [],
             "rientri_da_allegare": [],
-            "row_idx_mappatura": row_idx
+            "row_idx_mappatura": row_idx,
+            # ── Dati spedizione GranChef (vuoti per DNR, per report futuri) ──
+            "gc_colli":       _val(p.get("gc_colli", "")),
+            "gc_peso_kg":     _val(p.get("gc_peso_kg", "")),
+            "gc_num_cartone": _val(p.get("gc_num_cartone", "")),
         }
 
         # Popola le liste DDT dai componenti del codice univoco

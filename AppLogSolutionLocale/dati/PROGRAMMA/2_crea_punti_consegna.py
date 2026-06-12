@@ -266,7 +266,11 @@ def _elabora_grand_chef(base_dir: Path, map_codice: dict) -> list[dict]:
                     if not om and not oM and note:
                         om, oM = parse_orari(note)
 
-                    
+                    # Colonne extra GranChef: J=colli, K=peso_kg, N=num_cartone
+                    # (possono essere vuote, non è un errore)
+                    def _cell(idx):
+                        return str(row.iloc[idx]).strip() if len(row) > idx and pd.notna(row.iloc[idx]) and str(row.iloc[idx]).strip() not in ("", "nan") else ""
+
                     punti.append({
                         "codice_frutta": codice,
                         "codice_latte": "p00000",
@@ -284,6 +288,10 @@ def _elabora_grand_chef(base_dir: Path, map_codice: dict) -> list[dict]:
                         "lat": dato.get("lat"),
                         "lon": dato.get("lon"),
                         "note": note or dato.get("note", ""),
+                        # ── Dati spedizione GranChef (per report futuri) ──────
+                        "gc_colli":       _cell(9),   # col J
+                        "gc_peso_kg":     _cell(10),  # col K
+                        "gc_num_cartone": _cell(13),  # col N
                     })
         except Exception as e:
             print(f"  Errore lettura Grand Chef {f.name}: {e}")

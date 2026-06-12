@@ -755,8 +755,9 @@ function renderCard(z){
   // Lista punti espansa
   const listaPunti = isOpen ? `
     <div class="zc-body open">
-      ${punti.map((p,i)=>renderPuntoRow(p,i,zid,punti,isCalc,isSpec)).join('')}
-      ${!isSpec && !isLocked ? `
+      ${isDividiActive ? `<div class="dividi-bar">&#9986; Seleziona fermate da spostare <b>${dividiSel.size}</b> sel.<button onclick="confermaDividi('${zid}')">Crea giro</button><button class="btn-annulla" onclick="annullaDividi()">Annulla</button></div>` : ''}
+      ${punti.map((p,i)=>renderPuntoRow(p,i,zid,punti,isCalc,isSpec,isDividiActive)).join('')}
+      ${!isSpec && !isLocked && !isDividiActive ? `
       <div class="zc-actions">
         <button class="btn-zona btn-dividi" onclick="avviaDividi('${zid}')">&#9986; Dividi</button>
         <button class="btn-zona btn-rinomina" onclick="apriModal('${zid}')">&#9998; Rinomina</button>
@@ -780,7 +781,8 @@ function renderCard(z){
         </div>
         <div class="zc-sub">${punti.length} fermate${nDDT?' &middot; '+nDDT+' DDT':''}${stats.fatturato&&stats.fatturato!=='GranChef'?' &middot; &euro;'+stats.fatturato:''}</div>
       </div>
-      ${!isLocked && !isSpec ? `<button class="btn-matita" title="Rinomina giro" onclick="event.stopPropagation();apriModal('${zid}')">✏️</button>` : ''}
+      <button class="btn-eye${ZONE_HIDDEN.has(zid)?' hidden-zone':''}" title="${ZONE_HIDDEN.has(zid)?'Mostra':'Nascondi'} sulla mappa" onclick="event.stopPropagation();toggleHidden('${zid}')">&#128065;</button>
+      ${!isLocked && !isSpec ? `<button class="btn-matita" title="Rinomina giro" onclick="event.stopPropagation();apriModal('${zid}')">&#9998;</button>` : ''}
     </div>
     ${statsBar}
     ${listaPunti}
@@ -801,8 +803,8 @@ function renderPuntoRow(p,i,zid,punti,isCalc,isSpec,isDividiActive=false){
     </div>
     ${!isSpec && !isLocked && !isDividiActive ? `
     <div class="pt-arrow-btns">
-      <button class="pt-arrow" title="Su" onclick="muoviPunto('${zid}',`+i+`,-1)" ${i===0?'disabled':''}>&##9650;</button>
-      <button class="pt-arrow" title="Giu" onclick="muoviPunto('${zid}',`+i+`,+1)" ${i===punti.length-1?'disabled':''}>&##9660;</button>
+      <button class="pt-arrow" title="Su" onclick="muoviPunto('${zid}',`+i+`,-1)" ${i===0?'disabled':''}>&#9650;</button>
+      <button class="pt-arrow" title="Giu" onclick="muoviPunto('${zid}',`+i+`,+1)" ${i===punti.length-1?'disabled':''}>&#9660;</button>
     </div>
     <button class="pt-arrow" title="Sposta in altro giro" style="margin-left:2px;width:24px;height:42px;" onclick="avviaSposta('${zid}',`+i+`)">&#8596;</button>
     ` : ''}

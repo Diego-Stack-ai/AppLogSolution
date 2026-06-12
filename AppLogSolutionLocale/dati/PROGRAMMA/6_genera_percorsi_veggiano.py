@@ -2,6 +2,7 @@ import json
 import math
 import sys
 import re
+import hashlib
 import requests
 import time
 from pathlib import Path
@@ -15,7 +16,8 @@ GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4"
 # --- CONFIGURAZIONE OTTIMIZZAZIONE ---
 # Opzioni: "HAVERSINE" (Locale/Veloce) o "GOOGLE_MATRIX" (API/Preciso)
 MODO_DISTANZA = "GOOGLE_MATRIX" 
-CACHE_FILE = PROG_DIR / "distanze_reali_cache.json"
+CACHE_FILE            = PROG_DIR / "distanze_reali_cache.json"
+DIRECTIONS_CACHE_FILE = PROG_DIR / "directions_cache.json"   # cache polylines/km Directions
 
 DEPOT_VEGGIANO = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"}
 DEPOT_CASTENEDOLO = {"lat": 45.471591, "lon": 10.298200, "nome": "DEPOSITO CASTENEDOLO", "indirizzo": "Castenedolo (BS)"}
@@ -105,17 +107,17 @@ class DistanceCache:
     def _load(self):
         if self.file_path.exists():
             try:
-                with open(self.file_path, "r", encoding="utf-8") as f:
+                with open(self.file_path, 'r', encoding='utf-8') as f:
                     return json.load(f)
             except: return {}
         return {}
 
     def save(self):
-        with open(self.file_path, "w", encoding="utf-8") as f:
+        with open(self.file_path, 'w', encoding='utf-8') as f:
             json.dump(self.data, f, indent=2)
 
     def _get_key(self, p1, p2):
-        # Arrotondiamo a 5 decimali per stabilità (~1 metro)
+        # Arrotondiamo a 5 decimali per stabilita (~1 metro)
         lat1, lon1 = round(float(p1.get('lat', 0)), 5), round(float(p1.get('lon', p1.get('lng', 0))), 5)
         lat2, lon2 = round(float(p2.get('lat', 0)), 5), round(float(p2.get('lon', p2.get('lng', 0))), 5)
         return f"{lat1},{lon1}_{lat2},{lon2}"
@@ -127,6 +129,42 @@ class DistanceCache:
         self.data[self._get_key(p1, p2)] = {"dist": dist_meters, "dur": duration_seconds}
 
 dist_cache = DistanceCache(CACHE_FILE)
+
+# --- CACHE DIRECTIONS API ---
+
+class DirectionsCache:
+    # Cache permanente per i risultati Directions API.
+    # Chiave = MD5 della sequenza ordinata di coordinate (lat,lon) delle fermate.
+    # Valore = { km, sec, polylines }
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.data = self._load()
+
+    def _load(self):
+        if self.file_path.exists():
+            try:
+                with open(self.file_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except: return {}
+        return {}
+
+    def save(self):
+        with open(self.file_path, 'w', encoding='utf-8') as f:
+            json.dump(self.data, f, ensure_ascii=False)
+
+    @staticmethod
+    def route_key(punti_pieni):
+        # Hash MD5 dell ordine esatto delle fermate (depot+percorso+depot)
+        seq = "|".join(f"{round(p.get('lat',0),5)},{round(p.get('lon',0),5)}" for p in punti_pieni)
+        return hashlib.md5(seq.encode()).hexdigest()
+
+    def get(self, key):
+        return self.data.get(key)
+
+    def set(self, key, km, sec, polylines):
+        self.data[key] = {"km": km, "sec": sec, "polylines": polylines}
+
+directions_cache = DirectionsCache(DIRECTIONS_CACHE_FILE)
 
 # --- LOGICA DI OTTIMIZZAZIONE AVANZATA (OR-TOOLS) ---
 
@@ -340,38 +378,48 @@ def get_google_trip_data(percorso, depot_point):
     punti_pieni = [depot_point] + percorso + [depot_point]
     km_tot, sec_tot = 0, 0
     polylines = []
-    
+
     km_stima, sec_stima = 0, 0
     for k in range(len(punti_pieni)-1):
         d = haversine(punti_pieni[k], punti_pieni[k+1]) * 1.3
         km_stima += d
         sec_stima += (d / AVG_SPEED_KMH) * 3600
 
-    try:
-        chunk_size = 20 
-        for i in range(0, len(punti_pieni)-1, chunk_size):
-            sub = punti_pieni[i:i+chunk_size+1]
-            origin, dest = f"{sub[0]['lat']},{sub[0]['lon']}", f"{sub[-1]['lat']},{sub[-1]['lon']}"
-            waypts = "|".join([f"{p['lat']},{p['lon']}" for p in sub[1:-1]])
-            url = f"https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={dest}&waypoints={waypts}&key={GOOGLE_MAPS_API_KEY}"
-            r = requests.get(url, timeout=5).json()
-            if r.get('status') == 'OK':
-                legs = r['routes'][0]['legs']
-                km_tot += sum(l['distance']['value'] for l in legs) / 1000.0
-                sec_tot += sum(l['duration']['value'] for l in legs)
-                polylines.append(r['routes'][0]['overview_polyline']['points'])
-                
-                # Novità: Salvataggio segmenti in cache per ottimizzare chiamate future Matrix
-                if len(legs) == len(sub) - 1:
-                    modificato = False
-                    for idx_leg, leg in enumerate(legs):
-                        d_val, t_val = leg['distance']['value'], leg['duration']['value']
-                        dist_cache.set(sub[idx_leg], sub[idx_leg+1], d_val, t_val)
-                        modificato = True
-                    if modificato:
+    # ── DIRECTIONS CACHE: se il percorso (ordine fermate) non e' cambiato, riusa polylines ──
+    _dir_key    = DirectionsCache.route_key(punti_pieni)
+    _dir_cached = directions_cache.get(_dir_key)
+    if _dir_cached:
+        km_tot   = _dir_cached["km"]
+        sec_tot  = _dir_cached["sec"]
+        polylines = _dir_cached["polylines"]
+        print(f"  ✅ Directions cache HIT ({round(km_tot,1)} km, {len(polylines)} chunk/s) — 0 chiamate API")
+    else:
+        try:
+            chunk_size = 20
+            for i in range(0, len(punti_pieni)-1, chunk_size):
+                sub = punti_pieni[i:i+chunk_size+1]
+                origin, dest = f"{sub[0]['lat']},{sub[0]['lon']}", f"{sub[-1]['lat']},{sub[-1]['lon']}"
+                waypts = "|".join([f"{p['lat']},{p['lon']}" for p in sub[1:-1]])
+                url = f"https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={dest}&waypoints={waypts}&key={GOOGLE_MAPS_API_KEY}"
+                r = requests.get(url, timeout=5).json()
+                if r.get('status') == 'OK':
+                    legs = r['routes'][0]['legs']
+                    km_tot  += sum(l['distance']['value'] for l in legs) / 1000.0
+                    sec_tot += sum(l['duration']['value'] for l in legs)
+                    polylines.append(r['routes'][0]['overview_polyline']['points'])
+                    # Salvataggio segmenti in dist_cache per Matrix future
+                    if len(legs) == len(sub) - 1:
+                        for idx_leg, leg in enumerate(legs):
+                            d_val, t_val = leg['distance']['value'], leg['duration']['value']
+                            dist_cache.set(sub[idx_leg], sub[idx_leg+1], d_val, t_val)
                         dist_cache.save()
-    except Exception as e:
-        print(f"Errore recupero Directions API: {e}")
+            # Salva in Directions cache se la chiamata ha avuto successo
+            if km_tot > 0:
+                directions_cache.set(_dir_key, km_tot, sec_tot, polylines)
+                directions_cache.save()
+                print(f"  💾 Directions salvate in cache ({round(km_tot,1)} km)")
+        except Exception as e:
+            print(f"Errore recupero Directions API: {e}")
             
     # ── Crono-simulazione della tratta per il calcolo di ETA e Ritardi ──
     is_grand_chef = any("GRAND" in str(p.get("tipologia_grado") or "").upper() or "CHEF" in str(p.get("tipologia_grado") or "").upper() or "GRANCHEF" in str(p.get("zona") or "").upper() for p in percorso)

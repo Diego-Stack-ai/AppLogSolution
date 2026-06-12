@@ -931,26 +931,14 @@ async function salvaRinomina(){
 function chiudiModal(){ document.getElementById('modal-overlay').classList.remove('open'); }
 document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ chiudiModal(); chiudiSposta(); }});
 
-// ── Google Maps API loader ────────────────────────────────────────────────────
-(g=>{
-  var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;
-  b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{
-    await (a=m.createElement("script")); e.set("libraries","maps,marker,geometry"); 
-    e.set("key",API_KEY); e.set("v","weekly"); e.set("callback","Function.prototype");
-    a.src=`https://maps.${c}apis.com/maps/api/js?`+e; a.onerror=()=>h=n(Error(p+" could not load."));
-    a.nonce=m.querySelector("script[nonce]")?.nonce||""; m.head.append(a); 
-  }));
-  d[l]?console.warn(p+" only loads once."):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n));
-})(window);
-
-window.onload = () => init();
-</script>
-<script>
-async function initMapLib(){
-  await google.maps.importLibrary("maps");
-  await google.maps.importLibrary("marker");
-  await google.maps.importLibrary("geometry");
+// ── Google Maps callback (chiamato quando le API sono pronte) ─────────────────
+async function onGoogleMapsReady(){
+  await init();
 }
+</script>
+<script
+  src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_MAPS_API_KEY}}&libraries=maps,marker,geometry&v=weekly&callback=onGoogleMapsReady"
+  async defer>
 </script>
 </body>
 </html>"""

@@ -872,9 +872,14 @@ function renderMarkers(){
       el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;';
 
       const circle = document.createElement('div');
-      circle.style.cssText = `width:28px;height:28px;border-radius:50%;background:${col};border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:${isGC?'14px':'9px'};font-weight:800;transition:transform 0.15s;flex-shrink:0;`;
-      circle.innerHTML = isGC ? '&#x1F468;&#x200D;&#x1F373;' : `${i+1}`;
+      // Il numero è SEMPRE visibile su tutti i marker (DNR e GranChef) per corrispondere alle card
+      const borderStyle = isGC
+        ? `3px dashed gold`           // GranChef → bordo tratteggiato oro
+        : `2px solid white`;          // DNR → bordo bianco standard
+      circle.style.cssText = `width:28px;height:28px;border-radius:50%;background:${col};border:${borderStyle};box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:800;transition:transform 0.15s;flex-shrink:0;`;
+      circle.innerHTML = `${i+1}`;
       el.appendChild(circle);
+
 
       if(!isGC){
         // Triangolino puntato giù — fa "toccare" la coordinata con la punta

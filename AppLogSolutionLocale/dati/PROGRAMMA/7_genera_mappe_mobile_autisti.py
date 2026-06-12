@@ -1056,8 +1056,11 @@ def main():
             pass
         
         # 1. Calcolo KM e tempi REALI via Google Directions API
-        perc_completo = [depot] + perc + [depot]
-        km, t_guida, t_sosta, t_tot, polylines = get_google_trip_data(perc, depot)
+        # Usa gen_percorsi.get_google_trip_data se disponibile (ha il cache Directions → 0 chiamate API se percorso invariato)
+        if gen_percorsi:
+            km, t_guida, t_sosta, t_tot, polylines = gen_percorsi.get_google_trip_data(perc, depot)
+        else:
+            km, t_guida, t_sosta, t_tot, polylines = get_google_trip_data(perc, depot)
 
         color_assegnato = LOCAL_PALETTE[i % len(LOCAL_PALETTE)]
 

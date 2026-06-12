@@ -353,10 +353,21 @@ def api_genera():
             })
 
         bat3.gera_riepilogo(summary, out_dir / "RIEPILOGO_GIRI.html")
+        # viaggi_giornalieri.json = tutto (incluso GranChef, DDT ecc.)
         (TARGET_DIR / "viaggi_giornalieri.json").write_text(
             json.dumps(ZONE_CACHE, indent=2, ensure_ascii=False), encoding="utf-8")
+
+        # viaggi_giornalieri_OTTIMIZZATO.json = solo giri di consegna reali
+        # (usato da BAT 4 mappe mobili e BAT 5 distinte PDF)
+        ZONE_SPECIALI = {"DDT_DA_INSERIRE", "SENZA_ZONA"}
+        zone_ottimizzato = [
+            z for z in ZONE_CACHE
+            if z.get("id_zona") not in ZONE_SPECIALI
+            and not str(z.get("id_zona","")).startswith("GranChef")
+            and z.get("lista_punti")
+        ]
         (TARGET_DIR / "viaggi_giornalieri_OTTIMIZZATO.json").write_text(
-            json.dumps(ZONE_CACHE, indent=2, ensure_ascii=False), encoding="utf-8")
+            json.dumps(zone_ottimizzato, indent=2, ensure_ascii=False), encoding="utf-8")
 
         return jsonify({"ok": True, "giri": len(summary), "out": str(out_dir)})
     except Exception as e:

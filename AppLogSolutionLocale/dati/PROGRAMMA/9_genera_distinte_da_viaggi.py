@@ -580,9 +580,9 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
             kg_raw  = f.get("gc_peso_kg",     "")
             col_raw = f.get("gc_colli",        "")
             car_raw = f.get("gc_num_cartone",  "")
-            kg_str  = str(kg_raw)  if kg_raw  not in (None, "", "None") else ""
+            kg_str  = str(kg_raw).strip()  if kg_raw  not in (None, "", "None") else ""
             col_str = str(int(float(col_raw))) if col_raw not in (None, "", "None") else ""
-            car_str = str(int(float(car_raw))) if car_raw not in (None, "", "None") else ""
+            car_str = str(car_raw).strip()  if car_raw not in (None, "", "None") else ""  # scritto esattamente come arriva
             try: tot_kg    += float(kg_raw)   if kg_raw  not in (None, "", "None") else 0
             except: pass
             try: tot_colli += int(float(col_raw)) if col_raw not in (None, "", "None") else 0

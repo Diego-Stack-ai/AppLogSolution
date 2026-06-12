@@ -27,6 +27,8 @@ GOOGLE_MAPS_API_KEY = _os.environ.get('GOOGLE_MAPS_API_KEY', '')
 MODO_DISTANZA = "GOOGLE_MATRIX" 
 CACHE_FILE            = PROG_DIR / "distanze_reali_cache.json"
 DIRECTIONS_CACHE_FILE = PROG_DIR / "directions_cache.json"   # cache polylines/km Directions
+TRAFFIC_CACHE_FILE    = PROG_DIR / "distanze_traffico_cache.json"  # cache tempi reali 10:00-13:00
+TRAFFIC_SLOTS_MIN = [600, 630, 660, 690, 720, 750, 780]  # 10:00-13:00 ogni 30 min
 
 DEPOT_VEGGIANO = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"}
 DEPOT_CASTENEDOLO = {"lat": 45.471591, "lon": 10.298200, "nome": "DEPOSITO CASTENEDOLO", "indirizzo": "Castenedolo (BS)"}
@@ -174,6 +176,56 @@ class DirectionsCache:
         self.data[key] = {"km": km, "sec": sec, "polylines": polylines}
 
 directions_cache = DirectionsCache(DIRECTIONS_CACHE_FILE)
+
+# --- CACHE TRAFFICO MULTI-FASCIA (10:00-13:00 ogni 30 min) ---
+
+class TrafficCache:
+    # Cache permanente per i tempi reali nelle fasce orarie critiche.
+    # Struttura: { "lat1,lon1_lat2,lon2": {"1000": sec, "1030": sec, ..., "1300": sec} }
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.data = self._load()
+
+    def _load(self):
+        if self.file_path.exists():
+            try:
+                with open(self.file_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except: return {}
+        return {}
+
+    def save(self):
+        with open(self.file_path, "w", encoding="utf-8") as f:
+            json.dump(self.data, f, ensure_ascii=False)
+
+    def _key(self, p1, p2):
+        lat1, lon1 = round(float(p1.get("lat",0)),5), round(float(p1.get("lon",p1.get("lng",0))),5)
+        lat2, lon2 = round(float(p2.get("lat",0)),5), round(float(p2.get("lon",p2.get("lng",0))),5)
+        return f"{lat1},{lon1}_{lat2},{lon2}"
+
+    def get(self, p1, p2, slot_str):
+        # slot_str es. "1030" = 10:30
+        return self.data.get(self._key(p1, p2), {}).get(slot_str)
+
+    def set(self, p1, p2, slot_str, dur_sec):
+        k = self._key(p1, p2)
+        if k not in self.data:
+            self.data[k] = {}
+        self.data[k][slot_str] = int(dur_sec)
+
+    def has(self, p1, p2, slot_str):
+        return slot_str in self.data.get(self._key(p1, p2), {})
+
+    @staticmethod
+    def nearest_slot(current_minutes):
+        # Restituisce il codice slot piu vicino (es "1030") o None se fuori fascia
+        slots = TRAFFIC_SLOTS_MIN
+        if current_minutes < slots[0] - 15 or current_minutes > slots[-1] + 15:
+            return None
+        nearest = min(slots, key=lambda s: abs(s - current_minutes))
+        return f"{nearest // 60:02d}{nearest % 60:02d}"
+
+traffic_cache = TrafficCache(TRAFFIC_CACHE_FILE)
 
 # --- LOGICA DI OTTIMIZZAZIONE AVANZATA (OR-TOOLS) ---
 
@@ -458,6 +510,12 @@ def get_google_trip_data(percorso, depot_point):
             cached = dist_cache.get(p_precedente, p)
             if cached:
                 durata_guida_sec = cached['dur']
+                # Sovrascrivi con dato traffico reale se disponibile nella fascia 10-13
+                _slot = TrafficCache.nearest_slot(current_time)
+                if _slot:
+                    _traf = traffic_cache.get(p_precedente, p, _slot)
+                    if _traf:
+                        durata_guida_sec = _traf
             else:
                 # Coppia mancante dal cache: chiama Matrix API direttamente per questa coppia
                 nome_prec = p_precedente.get('nome', p_precedente.get('indirizzo', 'DEPOSITO'))

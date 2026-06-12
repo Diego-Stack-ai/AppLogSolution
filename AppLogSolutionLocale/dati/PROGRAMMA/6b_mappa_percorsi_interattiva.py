@@ -782,13 +782,29 @@ function renderMarkers(){
       if(!p.lat||!p.lon) return;
       hasPoints=true;
       bounds.extend({lat:p.lat,lng:p.lon});
-      const el=document.createElement('div');
       const isGC = (p.tipologia_grado||'').toUpperCase().includes('GRAND') || (p.tipologia_grado||'').toUpperCase().includes('CHEF');
-      el.style.cssText=`width:28px;height:28px;border-radius:${isGC?'50%':'50% 50% 50% 0'};background:${col};border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:${isGC?'14px':'9px'};font-weight:800;transform:translate(-50%,-100%);cursor:pointer;transition:transform 0.15s;`;
-      el.innerHTML=isGC?'👨‍🍳':`${i+1}`;
-      el.addEventListener('mouseenter',()=>el.style.transform='translate(-50%,-110%) scale(1.15)');
-      el.addEventListener('mouseleave',()=>el.style.transform='translate(-50%,-100%)');
-      el.addEventListener('click',()=>{ toggleCard(zid); setTimeout(()=>panToPoint(p.lat,p.lon),200); });
+
+      // Wrapper: AdvancedMarkerElement ancora il bottom-center del content alla coordinata.
+      // Il wrapper include il cerchio + il triangolino puntato sotto (solo per DNR).
+      const el = document.createElement('div');
+      el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;';
+
+      const circle = document.createElement('div');
+      circle.style.cssText = `width:28px;height:28px;border-radius:50%;background:${col};border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:${isGC?'14px':'9px'};font-weight:800;transition:transform 0.15s;flex-shrink:0;`;
+      circle.innerHTML = isGC ? '&#x1F468;&#x200D;&#x1F373;' : `${i+1}`;
+      el.appendChild(circle);
+
+      if(!isGC){
+        // Triangolino puntato giù — fa "toccare" la coordinata con la punta
+        const tip = document.createElement('div');
+        tip.style.cssText = `width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid ${col};margin-top:-1px;flex-shrink:0;`;
+        el.appendChild(tip);
+      }
+
+      el.addEventListener('mouseenter', ()=>{ circle.style.transform='scale(1.15)'; });
+      el.addEventListener('mouseleave', ()=>{ circle.style.transform='scale(1)'; });
+      el.addEventListener('click', ()=>{ toggleCard(zid); setTimeout(()=>panToPoint(p.lat,p.lon),200); });
+
       const {AdvancedMarkerElement} = google.maps.marker||{};
       if(AdvancedMarkerElement){
         const m = new AdvancedMarkerElement({position:{lat:p.lat,lng:p.lon},map:gMap,title:p.nome,content:el});

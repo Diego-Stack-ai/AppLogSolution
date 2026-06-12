@@ -375,6 +375,10 @@ body{font-family:'Inter',sans-serif;display:flex;height:100vh;overflow:hidden;ba
 .btn-lock.unlocked{background:#10b981;color:#fff;}
 .btn-lock.unlocked:hover{background:#059669;}
 
+/* Matita nell'header card */
+.btn-matita{background:none;border:1.5px solid #e2e8f0;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;margin-left:4px;}
+.btn-matita:hover{background:#eef2ff;border-color:#4f46e5;transform:scale(1.1);}
+
 /* ── FASE INDICATOR ── */
 #fase-bar{display:flex;gap:0;margin-top:10px;}
 .fase-pill{flex:1;text-align:center;padding:4px 6px;font-size:0.65rem;font-weight:700;border-radius:0;cursor:default;color:#475569;background:rgba(255,255,255,0.05);}
@@ -698,8 +702,9 @@ function renderCard(z){
           ${z.nome_giro||zid}
           ${badgeStato(st.stato)}
         </div>
-        <div class="zc-sub">${punti.length} fermate${nDDT?' · '+nDDT+' DDT':''}${stats.fatturato&&stats.fatturato!=='GranChef'?' · €'+stats.fatturato:''}</div>
+        <div class="zc-sub">${punti.length} fermate${nDDT?' &middot; '+nDDT+' DDT':''}${stats.fatturato&&stats.fatturato!=='GranChef'?' &middot; &euro;'+stats.fatturato:''}</div>
       </div>
+      ${!isLocked && !isSpec ? `<button class="btn-matita" title="Rinomina giro" onclick="event.stopPropagation();apriModal('${zid}')">✏️</button>` : ''}
     </div>
     ${statsBar}
     ${listaPunti}

@@ -433,13 +433,67 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .zone-card.speciale .zone-title span:last-child { color: #b45309; }
         .badge-speciale { display:inline-block; background:#f59e0b; color:white; font-size:0.55rem; font-weight:800; padding:1px 6px; border-radius:10px; margin-left:6px; vertical-align:middle; letter-spacing:0.03em; }
         
-        /* Utility */
-        .hidden { display: none !important; }
-        .btn-verifica { background: #6366f1; color: white; border: none; flex: 1; }
-        .btn-verifica.active { background: #1e293b; border: 2px solid #10b981; }
+        /* Modal rinomina giro */
+        #rename-modal-overlay {
+            display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6);
+            z-index:9999; align-items:center; justify-content:center;
+            backdrop-filter: blur(4px);
+        }
+        #rename-modal-overlay.open { display:flex; }
+        #rename-modal {
+            background:white; border-radius:20px; padding:28px 24px; width:340px;
+            box-shadow:0 25px 60px rgba(0,0,0,0.3); animation: modalIn 0.2s ease;
+        }
+        @keyframes modalIn { from{opacity:0; transform:scale(0.92)} to{opacity:1; transform:scale(1)} }
+        #rename-modal h3 { margin:0 0 6px; font-size:1rem; font-weight:800; color:#1e293b; }
+        #rename-modal p  { margin:0 0 16px; font-size:0.72rem; color:#64748b; }
+        #rename-select {
+            width:100%; padding:10px 12px; border-radius:10px; border:2px solid #e2e8f0;
+            font-size:0.82rem; font-family:'Inter',sans-serif; font-weight:600;
+            color:#1e293b; background:#f8fafc; cursor:pointer; margin-bottom:12px;
+            appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236366f1' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat:no-repeat; background-position:right 12px center;
+            padding-right:32px; transition:border-color 0.2s;
+        }
+        #rename-select:focus { outline:none; border-color:#6366f1; }
+        #rename-custom-row { margin-bottom:16px; }
+        #rename-custom-row label { font-size:0.7rem; font-weight:700; color:#64748b; display:block; margin-bottom:4px; }
+        #rename-custom {
+            width:100%; padding:9px 12px; border-radius:10px; border:2px solid #e2e8f0;
+            font-size:0.82rem; font-family:'Inter',sans-serif; color:#1e293b;
+            background:#f8fafc; transition:border-color 0.2s;
+        }
+        #rename-custom:focus { outline:none; border-color:#6366f1; }
+        #rename-modal-btns { display:flex; gap:8px; margin-top:4px; }
+        #rename-modal-btns button { flex:1; padding:10px; border-radius:10px; border:none;
+            font-size:0.8rem; font-weight:800; cursor:pointer; font-family:'Inter',sans-serif; transition:0.15s; }
+        #rename-btn-ok { background:#6366f1; color:white; }
+        #rename-btn-ok:hover { background:#4f46e5; }
+        #rename-btn-cancel { background:#f1f5f9; color:#475569; }
+        #rename-btn-cancel:hover { background:#e2e8f0; }
     </style>
 </head>
 <body>
+
+<!-- Modal rinomina giro -->
+<div id="rename-modal-overlay">
+    <div id="rename-modal">
+        <h3 id="rename-modal-title">✏️ Rinomina viaggio</h3>
+        <p id="rename-modal-subtitle">Seleziona un nome dalla lista o scrivi uno personalizzato</p>
+        <select id="rename-select">
+            <option value="">— Seleziona nome —</option>
+        </select>
+        <div id="rename-custom-row">
+            <label for="rename-custom">Oppure scrivi nome personalizzato:</label>
+            <input id="rename-custom" type="text" placeholder="Es. LAGO BS 1 speciale...">
+        </div>
+        <div id="rename-modal-btns">
+            <button id="rename-btn-cancel" onclick="chiudiRenameModal()">Annulla</button>
+            <button id="rename-btn-ok" onclick="confermaRenameModal()">✓ Conferma</button>
+        </div>
+    </div>
+</div>
+
     <div id="sidebar">
         <div id="header">
             <h1 style="margin:0; font-size:1.2rem;">Gestione Zone <span id="tot-points" style="font-size:0.7rem; opacity:0.7;">0 Punti</span></h1>
@@ -734,15 +788,76 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         function startAction(type, zid) { activeAction = type; activeSourceZid = zid; renderSidebar(); }
         function cancelAction() { activeAction = null; activeSourceZid = null; renderSidebar(); }
 
+        // ── Nomi predefiniti per il menù a tendina ──────────────────────────────
+        const NOMI_DNR = [
+            'BS', 'FUORI BS',
+            'LAGO BS 1', 'LAGO BS 2', 'LAGO BS 3',
+            'VR', 'FUORI VR',
+            'MN', 'VR MN',
+            'LAGO VR 1', 'LAGO VR 2', 'LAGO VR 3',
+        ];
+        const NOMI_GRANCHEF = NOMI_DNR.map(n => 'GranChef ' + n);
+        // ────────────────────────────────────────────────────────────────────────
+
+        let _renameTargetZid = null;
+
         function renameZona(zid) {
             const z = DATA_ZONE.find(x => x.id_zona === zid);
             if (!z) return;
-            const nuovoNome = prompt('✏️ Rinomina viaggio:', z.nome_giro || z.id_zona);
-            if (nuovoNome !== null && nuovoNome.trim() !== '') {
-                z.nome_giro = nuovoNome.trim();
-                renderSidebar();
-            }
+            _renameTargetZid = zid;
+
+            const isGC = zid.startsWith('GranChef');
+            const nomi = isGC ? NOMI_GRANCHEF : NOMI_DNR;
+
+            // Popola il select
+            const sel = document.getElementById('rename-select');
+            sel.innerHTML = '<option value="">— Seleziona nome —</option>';
+            nomi.forEach(n => {
+                const opt = document.createElement('option');
+                opt.value = n;
+                opt.textContent = n;
+                if (n === z.nome_giro) opt.selected = true;
+                sel.appendChild(opt);
+            });
+
+            // Campo testo: precompila se il nome attuale NON è in lista
+            const custom = document.getElementById('rename-custom');
+            custom.value = nomi.includes(z.nome_giro) ? '' : (z.nome_giro || '');
+
+            // Titolo modale
+            document.getElementById('rename-modal-title').textContent =
+                (isGC ? '🍽️ Rinomina giro GranChef' : '🚚 Rinomina giro DNR');
+            document.getElementById('rename-modal-subtitle').textContent =
+                `Giro attuale: "${z.nome_giro || z.id_zona}"`;
+
+            // Sincronizza select ↔ custom: quando scegli dal menu, svuota il testo libero
+            sel.onchange = () => { if (sel.value) custom.value = ''; };
+            custom.oninput = () => { if (custom.value.trim()) sel.value = ''; };
+
+            document.getElementById('rename-modal-overlay').classList.add('open');
+            setTimeout(() => custom.value ? custom.focus() : sel.focus(), 100);
         }
+
+        function chiudiRenameModal() {
+            document.getElementById('rename-modal-overlay').classList.remove('open');
+            _renameTargetZid = null;
+        }
+
+        function confermaRenameModal() {
+            const sel    = document.getElementById('rename-select').value.trim();
+            const custom = document.getElementById('rename-custom').value.trim();
+            const nuovoNome = custom || sel;
+            if (!nuovoNome) { alert('Seleziona un nome o scrivi un nome personalizzato.'); return; }
+            const z = DATA_ZONE.find(x => x.id_zona === _renameTargetZid);
+            if (z) { z.nome_giro = nuovoNome; renderSidebar(); }
+            chiudiRenameModal();
+        }
+
+        // Chiudi modal premendo Escape
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') chiudiRenameModal();
+        });
+
         function _selChip(el, color) {
             el.closest('.zone-chips').querySelectorAll('.zone-chip').forEach(c => { c.classList.remove('sel'); c.style.background='white'; c.style.color='#475569'; });
             el.classList.add('sel'); el.style.background = color; el.style.color = 'white';

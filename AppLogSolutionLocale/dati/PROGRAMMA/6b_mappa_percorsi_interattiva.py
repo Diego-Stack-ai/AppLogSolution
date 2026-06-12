@@ -808,19 +808,6 @@ function renderPuntoRow(p,i,zid,punti,isCalc,isSpec,isDividiActive=false){
     ` : ''}
   </div>`;
 }
-      <div class="pt-nome">${p.nome||'\u2014'}</div>
-      <div class="pt-addr">${(p.indirizzo||'').substring(0,45)}</div>
-      ${eta?`<div class="pt-eta">${eta}</div>`:''}
-    </div>
-    ${!isSpec && !isLocked ? `
-    <div class="pt-arrow-btns">
-      <button class="pt-arrow" title="Su" onclick="muoviPunto('${zid}',` + i + `,-1)" ${i===0?'disabled':''}>&#9650;</button>
-      <button class="pt-arrow" title="Giu" onclick="muoviPunto('${zid}',` + i + `,+1)" ${i===punti.length-1?'disabled':''}>&#9660;</button>
-    </div>
-    <button class="pt-arrow" title="Sposta in altro giro" style="margin-left:2px;width:24px;height:42px;" onclick="avviaSposta('${zid}',` + i + `)">&#8596;</button>
-    ` : ''}
-  </div>`;
-}
 
 function renderCardById(zid){
   const z = ZONE.find(x=>x.id_zona===zid);

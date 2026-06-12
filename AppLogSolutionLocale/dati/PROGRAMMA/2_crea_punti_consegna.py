@@ -310,7 +310,8 @@ def _salva_excel(punti: list[dict], out_path: Path):
         "Orario min Frutta", "Orario max Frutta",
         "Orario min Latte",  "Orario max Latte",
         "Orario min", "Orario max",
-        "Latitudine", "Longitudine", "Tipologia Grado", "Note"
+        "Latitudine", "Longitudine", "Tipologia Grado", "Note",
+        "GC Colli", "GC Peso Kg", "GC Num Cartone"   # campi GranChef
     ]
     ws.append(headers)
     for pt in punti:
@@ -330,11 +331,15 @@ def _salva_excel(punti: list[dict], out_path: Path):
             pt.get("lat") if pt.get("lat") is not None else "",
             pt.get("lon") if pt.get("lon") is not None else "",
             pt.get("tipologia_grado", ""),
-            pt.get("note", "")
+            pt.get("note", ""),
+            pt.get("gc_colli", ""),        # numero colli GranChef
+            pt.get("gc_peso_kg", ""),      # peso kg GranChef
+            pt.get("gc_num_cartone", "")   # numero cartone da prelevare GranChef
         ])
     out_path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(out_path)
     print(f"  Salvato: {out_path}")
+
 
 
 def main():

@@ -553,18 +553,72 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
     elementi.append(Paragraph("ORDINE DI CONSEGNA (Fermata 1 = Prima consegna):", st_body))
     fermate     = viaggio.get("lista_punti", [])
 
-    # colonne: #, Cod.F, Cod.L, Nome, Indirizzo
-    dati_fermate = [["#", "Cod. F", "Cod. L", "Nome", "Indirizzo"]]
+    # Stile centrato per colonne numeriche GranChef
+    st_body_c = ParagraphStyle("body_c", parent=styles["Normal"], fontSize=8, leading=9, alignment=1)
+    st_body_r = ParagraphStyle("body_r", parent=styles["Normal"], fontSize=8, leading=9, alignment=2)
+    st_bold   = ParagraphStyle("bold",   parent=styles["Normal"], fontSize=8, leading=9, fontName="Helvetica-Bold")
+
+    # colonne: #, Cod.F, Cod.L, Nome, Indirizzo, Kg, Colli, N°Cart.
+    dati_fermate = [["#", "Cod. F", "Cod. L", "Nome", "Indirizzo", "Kg", "Colli", "N°Cart."]]
+    ts_gc_rows   = []   # righe GranChef da colorare
+    tot_kg       = 0.0
+    tot_colli    = 0
+
     for idx, f in enumerate(fermate, 1):
         cf = f.get("codice_frutta", "") or ""
         cl = f.get("codice_latte",  "") or ""
+
+        # Rilevamento GranChef per singolo punto
+        is_gc = (
+            "GRAND CHEF" in str(f.get("tipologia_grado", "")).upper()
+            or "GRAN CHEF"  in str(f.get("tipologia_grado", "")).upper()
+            or str(f.get("zona", "")).startswith("GranChef")
+        )
+
+        if is_gc:
+            # Leggi valori gc_* — convertiti in stringa pulita
+            kg_raw  = f.get("gc_peso_kg",     "")
+            col_raw = f.get("gc_colli",        "")
+            car_raw = f.get("gc_num_cartone",  "")
+            kg_str  = str(kg_raw)  if kg_raw  not in (None, "", "None") else ""
+            col_str = str(int(float(col_raw))) if col_raw not in (None, "", "None") else ""
+            car_str = str(int(float(car_raw))) if car_raw not in (None, "", "None") else ""
+            try: tot_kg    += float(kg_raw)   if kg_raw  not in (None, "", "None") else 0
+            except: pass
+            try: tot_colli += int(float(col_raw)) if col_raw not in (None, "", "None") else 0
+            except: pass
+            ts_gc_rows.append(("BACKGROUND", (5, idx), (7, idx), colors.HexColor("#fffbeb")))
+        else:
+            kg_str = col_str = car_str = ""
+
         dati_fermate.append([
             Paragraph(str(idx), st_body),
             Paragraph(cf if cf != CODICE_VUOTO else "—", st_body),
             Paragraph(cl if cl != CODICE_VUOTO else "—", st_body),
             Paragraph(f.get("nome", ""), st_body),
             Paragraph(f.get("indirizzo", ""), st_body),
+            Paragraph(kg_str,  st_body_r),
+            Paragraph(col_str, st_body_c),
+            Paragraph(car_str, st_body_c),
         ])
+
+    # Riga totali (solo se ci sono dati GranChef)
+    if tot_kg > 0 or tot_colli > 0:
+        kg_tot_str  = f"{tot_kg:.2f}" if tot_kg  > 0 else ""
+        col_tot_str = str(tot_colli)  if tot_colli > 0 else ""
+        dati_fermate.append([
+            Paragraph("", st_body),
+            Paragraph("", st_body),
+            Paragraph("", st_body),
+            Paragraph("", st_body),
+            Paragraph("TOTALE GIRO", st_bold),
+            Paragraph(kg_tot_str,  st_bold),
+            Paragraph(col_tot_str, st_bold),
+            Paragraph("", st_body),
+        ])
+        ts_gc_rows.append(("BACKGROUND", (0, len(dati_fermate)-1), (-1, len(dati_fermate)-1), colors.HexColor("#fef3c7")))
+        ts_gc_rows.append(("FONTNAME",   (0, len(dati_fermate)-1), (-1, len(dati_fermate)-1), "Helvetica-Bold"))
+
     ts_fermate = TableStyle([
         ("BACKGROUND",     (0, 0), (-1, 0),  colors.HexColor("#1e293b")),
         ("TEXTCOLOR",      (0, 0), (-1, 0),  colors.white),
@@ -572,14 +626,17 @@ def _blocco_distinta(viaggio: dict, articoli_viaggio: dict, data_ddt: str, copia
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
         ("GRID",           (0, 0), (-1, -1), 0.3, colors.HexColor("#e2e8f0")),
         ("LEFTPADDING",    (0, 0), (-1, -1), 2*mm),
-        ("RIGHTPADDING",   (0, 0), (-1, -1), 5*mm),
+        ("RIGHTPADDING",   (0, 0), (-1, -1), 2*mm),
         ("VALIGN",         (0, 0), (-1, -1), "TOP"),
-    ])
-    t_fermate = Table(dati_fermate, colWidths=[12*mm, 22*mm, 22*mm, 50*mm, 65*mm])
+        ("ALIGN",          (5, 0), (7, -1),  "CENTER"),  # Kg/Colli/Cart centrati
+    ] + ts_gc_rows)
+    # Larghezze: # | Cod.F | Cod.L | Nome | Indirizzo | Kg | Colli | N°Cart.
+    t_fermate = Table(dati_fermate, colWidths=[10*mm, 18*mm, 18*mm, 45*mm, 56*mm, 16*mm, 14*mm, 14*mm])
     t_fermate.setStyle(ts_fermate)
     elementi.append(t_fermate)
-    
+
     return elementi
+
 
 
 def _genera_distinta_pdf(viaggio: dict, articoli_viaggio: dict, out_path: Path, data_ddt: str, pdf_ddt: list[Path], rientri_giro: list = None, pdf_non_trovati_giro: list = None):

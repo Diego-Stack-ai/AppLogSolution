@@ -369,6 +369,11 @@ body{font-family:'Inter',sans-serif;display:flex;height:100vh;overflow:hidden;ba
 .btn-aggiorna{background:#8b5cf6;color:#fff;}
 .btn-aggiorna:hover{background:#7c3aed;}
 .btn-aggiorna:disabled{background:#475569;cursor:not-allowed;display:none;}
+.btn-lock{font-weight:800;letter-spacing:0.3px;}
+.btn-lock.locked{background:#ef4444;color:#fff;}
+.btn-lock.locked:hover{background:#dc2626;}
+.btn-lock.unlocked{background:#10b981;color:#fff;}
+.btn-lock.unlocked:hover{background:#059669;}
 
 /* ── FASE INDICATOR ── */
 #fase-bar{display:flex;gap:0;margin-top:10px;}
@@ -510,7 +515,8 @@ body{font-family:'Inter',sans-serif;display:flex;height:100vh;overflow:hidden;ba
     <div class="logo"><span>🗺️</span> Mappa Percorsi Interattiva</div>
     <div class="data-badge">{{DATA_GIORNO}}</div>
     <div class="hdr-btns">
-      <button class="btn-hdr btn-salva" onclick="salvaTutto()">💾 Salva</button>
+      <button class="btn-hdr btn-lock locked" id="btn-lock" onclick="toggleLock()">BLOCCATA 🔒</button>
+      <button class="btn-hdr btn-salva" id="btn-salva" onclick="salvaTutto()" style="display:none;">💾 Salva</button>
       <button class="btn-hdr btn-calcola" id="btn-calcola" onclick="calcolaTutto()">▶ Calcola percorsi</button>
       <button class="btn-hdr btn-aggiorna" id="btn-aggiorna" onclick="aggiornaModificati()" style="display:none;">🔄 Aggiorna modificati</button>
       <button class="btn-hdr btn-genera" id="btn-genera" onclick="generaFile()" disabled>📁 Genera file finali</button>
@@ -541,6 +547,7 @@ let gMarkers  = [];          // tutti i AdvancedMarker
 let gPolylines= {};          // {id_zona: [google.maps.Polyline]}
 let activeZid = null;        // id zona espansa
 let faseCorrente = 1;
+let isLocked  = true;        // default: bloccato (come BAT 2)
 
 // Stato operazioni editing
 let spostaPunto   = null;    // {punto, fromZid}
@@ -669,13 +676,13 @@ function renderCard(z){
   const listaPunti = isOpen ? `
     <div class="zc-body open">
       ${punti.map((p,i)=>renderPuntoRow(p,i,zid,punti,isCalc,isSpec)).join('')}
-      ${!isSpec ? `
+      ${!isSpec && !isLocked ? `
       <div class="zc-actions">
-        ${!isSpec?`<button class="btn-zona btn-dividi" onclick="avviaDividi('${zid}')">✂ Dividi</button>`:''}
-        <button class="btn-zona btn-rinomina" onclick="apriModal('${zid}')">✏️ Rinomina</button>
-        ${isCalc?`<button class="btn-zona btn-ricalcola-giro" onclick="ricalcolaGiro('${zid}')">↻ Ricalcola</button>`:''}
+        <button class="btn-zona btn-dividi" onclick="avviaDividi('${zid}')">&#9986; Dividi</button>
+        <button class="btn-zona btn-rinomina" onclick="apriModal('${zid}')">&#9998; Rinomina</button>
+        ${isCalc?`<button class="btn-zona btn-ricalcola-giro" onclick="ricalcolaGiro('${zid}')">&#8635; Ricalcola</button>`:''}
       </div>` : ''}
-    </div>` : '';
+    </div>` : '';;
 
   const nDDT = punti.reduce((a,p)=>{
     const cf=p.codici_ddt_frutta||[]; const cl=p.codici_ddt_latte||[];
@@ -700,22 +707,22 @@ function renderCard(z){
 }
 
 function renderPuntoRow(p,i,zid,punti,isCalc,isSpec){
-  const eta = p.ora_arrivo ? `⏱ ${p.ora_arrivo}` : '';
+  const eta = p.ora_arrivo ? `&#9201; ${p.ora_arrivo}` : '';
   const isLate = p.ritardo ? 'border-color:#fca5a5;background:#fff1f2;' : '';
   return `
   <div class="point-row" style="${isLate}" id="pr-${zid}-${i}">
-    <div class="pt-num" style="${p.ritardo?'background:#ef4444':''}">${i+1}</div>
+    <div class="pt-num" style="${p.ritardo?'background:#ef4444':''}">` + (i+1) + `</div>
     <div class="pt-info" onclick="panToPoint(${p.lat||0},${p.lon||0})">
-      <div class="pt-nome">${p.nome||'—'}</div>
+      <div class="pt-nome">${p.nome||'\u2014'}</div>
       <div class="pt-addr">${(p.indirizzo||'').substring(0,45)}</div>
       ${eta?`<div class="pt-eta">${eta}</div>`:''}
     </div>
-    ${!isSpec?`
+    ${!isSpec && !isLocked ? `
     <div class="pt-arrow-btns">
-      <button class="pt-arrow" title="Su" onclick="muoviPunto('${zid}',${i},-1)" ${i===0?'disabled':''}>▲</button>
-      <button class="pt-arrow" title="Giù" onclick="muoviPunto('${zid}',${i},+1)" ${i===punti.length-1?'disabled':''}>▼</button>
+      <button class="pt-arrow" title="Su" onclick="muoviPunto('${zid}',` + i + `,-1)" ${i===0?'disabled':''}>&#9650;</button>
+      <button class="pt-arrow" title="Giu" onclick="muoviPunto('${zid}',` + i + `,+1)" ${i===punti.length-1?'disabled':''}>&#9660;</button>
     </div>
-    <button class="pt-arrow" title="Sposta in altro giro" style="margin-left:2px;width:24px;height:42px;" onclick="avviaSposta('${zid}',${i})">↔</button>
+    <button class="pt-arrow" title="Sposta in altro giro" style="margin-left:2px;width:24px;height:42px;" onclick="avviaSposta('${zid}',` + i + `)">&#8596;</button>
     ` : ''}
   </div>`;
 }
@@ -804,6 +811,24 @@ function panToPoint(lat,lng){
   if(!gMap||!lat||!lng) return;
   gMap.panTo({lat,lng});
   gMap.setZoom(Math.max(gMap.getZoom(),13));
+}
+
+// ── Lock / Unlock ─────────────────────────────────────────────────────────────
+function toggleLock(){
+  isLocked = !isLocked;
+  const btn = document.getElementById('btn-lock');
+  const btnSalva = document.getElementById('btn-salva');
+  if(isLocked){
+    btn.textContent = 'BLOCCATA 🔒';
+    btn.className = 'btn-hdr btn-lock locked';
+    btnSalva.style.display = 'none';
+  } else {
+    btn.textContent = 'SBLOCCATA 🔓';
+    btn.className = 'btn-hdr btn-lock unlocked';
+    btnSalva.style.display = 'flex';
+  }
+  renderSidebar();
+  toast(isLocked ? '🔒 Mappa bloccata' : '🔓 Mappa sbloccata - ora puoi modificare');
 }
 
 // ── Azioni principali ─────────────────────────────────────────────────────────

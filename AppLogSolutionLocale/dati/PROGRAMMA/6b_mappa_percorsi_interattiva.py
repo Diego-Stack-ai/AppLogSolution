@@ -642,8 +642,17 @@ function aggiornaFase(){
   document.getElementById('fase2-pill').className = 'fase-pill ' + (inCalc?'active':(alcuniCal?'done':''));
   document.getElementById('fase3-pill').className = 'fase-pill ' + (tuttiCal?'active':'');
 
-  document.getElementById('btn-calcola').disabled  = inCalc;
-  document.getElementById('btn-genera').disabled   = !alcuniCal;
+  document.getElementById('btn-calcola').disabled = inCalc;
+
+  // Genera abilitato SOLO se tutti i giri sono calcolati e nessuno in modifica
+  const prontoPerGenerare = tuttiCal && modificati === 0 && !inCalc;
+  const btnGenera = document.getElementById('btn-genera');
+  btnGenera.disabled = !prontoPerGenerare;
+  btnGenera.title = !prontoPerGenerare
+    ? (inCalc ? 'Attendi il completamento del calcolo…' :
+       modificati > 0 ? 'Clicca prima su Aggiorna modificati' :
+       'Calcola tutti i percorsi prima di generare')
+    : 'Salva e genera i file per BAT 5';
 
   const btnAgg = document.getElementById('btn-aggiorna');
   if(modificati > 0){ btnAgg.style.display='flex'; btnAgg.textContent=`🔄 Aggiorna (${modificati})`; }
@@ -866,6 +875,12 @@ async function ricalcolaGiro(zid){
 }
 
 async function generaFile(){
+  // Sicurezza: verifica che tutti i giri siano calcolati
+  const nonPronti = Object.entries(STATI).filter(([,v])=>v.stato!=='calcolato').map(([k])=>k);
+  if(nonPronti.length > 0){
+    toast(`⚠️ ${nonPronti.length} giri non ancora calcolati. Calcola tutto prima di generare.`, 5000);
+    return;
+  }
   // Prima salva lo stato corrente, poi genera gli HTML
   const rs = await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(ZONE)});
   const ds = await rs.json();

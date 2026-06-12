@@ -520,10 +520,9 @@ body{font-family:'Inter',sans-serif;display:flex;height:100vh;overflow:hidden;ba
     <div class="data-badge">{{DATA_GIORNO}}</div>
     <div class="hdr-btns">
       <button class="btn-hdr btn-lock locked" id="btn-lock" onclick="toggleLock()">BLOCCATA 🔒</button>
-      <button class="btn-hdr btn-salva" id="btn-salva" onclick="salvaTutto()" style="display:none;">💾 Salva</button>
       <button class="btn-hdr btn-calcola" id="btn-calcola" onclick="calcolaTutto()">▶ Calcola percorsi</button>
       <button class="btn-hdr btn-aggiorna" id="btn-aggiorna" onclick="aggiornaModificati()" style="display:none;">🔄 Aggiorna modificati</button>
-      <button class="btn-hdr btn-genera" id="btn-genera" onclick="generaFile()" disabled>📁 Genera file finali</button>
+      <button class="btn-hdr btn-genera" id="btn-genera" onclick="generaFile()" disabled>💾 Salva e Genera file</button>
     </div>
     <div id="fase-bar">
       <div class="fase-pill active" id="fase1-pill">1 · Editing</div>
@@ -867,11 +866,15 @@ async function ricalcolaGiro(zid){
 }
 
 async function generaFile(){
-  toast('📁 Generazione file in corso…', 8000);
+  // Prima salva lo stato corrente, poi genera gli HTML
+  const rs = await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(ZONE)});
+  const ds = await rs.json();
+  if(!ds.ok){ toast('\u274C Errore salvataggio: '+ds.err, 5000); return; }
+  toast('\uD83D\uDCBE Salvato. Generazione file in corso\u2026', 8000);
   const r = await fetch('/api/genera',{method:'POST'});
   const d = await r.json();
-  if(d.ok) toast(`✅ File generati! ${d.giri} giri → ${d.out}`, 5000);
-  else     toast('❌ Errore generazione: '+d.err, 5000);
+  if(d.ok) toast(`\u2705 File generati! ${d.giri} giri \u2192 pronti per BAT 5`, 5000);
+  else     toast('\u274C Errore generazione: '+d.err, 5000);
 }
 
 // ── Riordino frecce ───────────────────────────────────────────────────────────

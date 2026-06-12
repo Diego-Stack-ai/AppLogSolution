@@ -678,6 +678,8 @@ async function init(){
   await initMap();
   renderMarkers();
   renderPolylines();
+  // Rimuovi silenziosamente i giri vuoti appena caricati (es. da BAT 2 con zone extra)
+  await pulisciZoneVuote(true);
   connectSSE();
   aggiornaFase();
 }
@@ -836,21 +838,24 @@ function renderCardById(zid){
   el.outerHTML = renderCard(z);
 }
 
-// Rimuove automaticamente le zone rimaste senza fermate
-function pulisciZoneVuote(){
+// Rimuove automaticamente le zone rimaste senza fermate (anche al caricamento)
+async function pulisciZoneVuote(silenzioso=false){
   const vuote = ZONE.filter(z => (z.lista_punti||[]).length === 0
     && z.id_zona !== 'DDT_DA_INSERIRE' && z.id_zona !== 'SENZA_ZONA');
   if(!vuote.length) return;
   vuote.forEach(z => {
     const idx = ZONE.indexOf(z);
     if(idx > -1) ZONE.splice(idx, 1);
-    // Rimuovi anche da ZONE_CACHE lato JS (se presente)
     delete STATI[z.id_zona];
   });
-  const nomi = vuote.map(z=>z.nome_giro||z.id_zona).join(', ');
-  toast(`&#128465; Giro/i vuoti rimossi: ${nomi}`);
+  // Salva su disco: la zona vuota non riappare al prossimo riavvio
+  await salvaTutto();
+  if(!silenzioso){
+    const nomi = vuote.map(z=>z.nome_giro||z.id_zona).join(', ');
+    toast(`&#128465; Giro/i vuoti rimossi: ${nomi}`);
+  }
   renderSidebar();
-  renderMarkers();
+  if(gMap) renderMarkers();
 }
 
 function toggleCard(zid){
@@ -1124,9 +1129,9 @@ async function eseguiSposta(toZid){
   if(STATI[toZid])          STATI[toZid].stato='modificato';
   renderSidebar();
   renderMarkers();
-  pulisciZoneVuote();  // rimuove il giro se rimasto vuoto dopo lo spostamento
+  await pulisciZoneVuote();  // se la zona sorgente è rimasta vuota, la rimuove e salva
   aggiornaFase();
-  await salvaTutto();
+  await salvaTutto();         // salva comunque (aggiorna gli stati modificato)
   toast(`↔ Spostato: ${_spostaPunto.nome} → ${toZ.nome_giro}`);
 }
 

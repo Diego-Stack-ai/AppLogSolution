@@ -357,14 +357,13 @@ def api_genera():
         (TARGET_DIR / "viaggi_giornalieri.json").write_text(
             json.dumps(ZONE_CACHE, indent=2, ensure_ascii=False), encoding="utf-8")
 
-        # viaggi_giornalieri_OTTIMIZZATO.json = solo giri di consegna reali
-        # (usato da BAT 4 mappe mobili e BAT 5 distinte PDF)
-        ZONE_SPECIALI = {"DDT_DA_INSERIRE", "SENZA_ZONA"}
+        # viaggi_giornalieri_OTTIMIZZATO.json = tutti i giri con autista assegnato
+        # Escluse solo le zone tecniche senza consegna reale
+        ZONE_ESCLUSE = {"DDT_DA_INSERIRE", "SENZA_ZONA"}
         zone_ottimizzato = [
             z for z in ZONE_CACHE
-            if z.get("id_zona") not in ZONE_SPECIALI
-            and not str(z.get("id_zona","")).startswith("GranChef")
-            and z.get("lista_punti")
+            if z.get("id_zona") not in ZONE_ESCLUSE
+            and z.get("lista_punti")   # solo zone con almeno un punto
         ]
         (TARGET_DIR / "viaggi_giornalieri_OTTIMIZZATO.json").write_text(
             json.dumps(zone_ottimizzato, indent=2, ensure_ascii=False), encoding="utf-8")

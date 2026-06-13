@@ -636,7 +636,14 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
 <script>
 // ── Costanti ────────────────────────────────────────────────────────────────
 const IS_POPUP      = {{POPUP_MODE}};  // true quando aperto come popup secondo schermo
-if(IS_POPUP){ document.body.classList.add('popup-mode'); }
+if(IS_POPUP){
+  document.body.classList.add('popup-mode');
+  // Se la finestra principale viene chiusa → chiudi anche questo popup
+  setInterval(()=>{
+    try{ if(!window.opener || window.opener.closed) window.close(); }
+    catch(e){ window.close(); } // errore cross-origin = opener sparito
+  }, 1000);
+}
 const NOMI_DNR      = {{NOMI_DNR_JS}};
 const NOMI_GC       = {{NOMI_GC_JS}};
 const API_KEY       = "{{GOOGLE_MAPS_API_KEY}}";
@@ -1263,6 +1270,11 @@ function apriPopup(e){
     return;
   }
   _popupRef = w;
+
+  // Chiudi popup quando la finestra principale viene chiusa
+  window.addEventListener('beforeunload', function(){
+    if(_popupRef && !_popupRef.closed) _popupRef.close();
+  });
 
   // Nasconde sidebar nella finestra principale (mappa a tutto schermo)
   const sb = document.getElementById('sidebar');

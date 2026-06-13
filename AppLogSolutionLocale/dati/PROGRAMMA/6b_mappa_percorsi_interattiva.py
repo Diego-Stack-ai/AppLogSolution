@@ -653,6 +653,7 @@ let ZONE      = [];          // lista giri (fonte verità locale)
 let STATI     = {};          // {id_zona: {stato, polylines, stats}}
 let gMap      = null;        // istanza Google Map
 let gMarkers  = [];          // tutti i AdvancedMarker
+let gInfoWindow = null;      // InfoWindow attivo sul marker
 let gPolylines= {};          // {id_zona: [google.maps.Polyline]}
 let activeZid = null;        // id zona espansa
 let faseCorrente = 1;
@@ -912,6 +913,8 @@ async function initMap(){
     mapTypeId:"hybrid",
     mapTypeControl:false, streetViewControl:false
   });
+  // Chiudi InfoWindow cliccando su punto vuoto della mappa
+  gMap.addListener('click', ()=>{ if(gInfoWindow){ gInfoWindow.close(); gInfoWindow=null; } });
 }
 
 function renderMarkers(){
@@ -944,12 +947,12 @@ function renderMarkers(){
         el.appendChild(circle);
         // Numero sotto l'emoji (piccola pill)
         const numBadge = document.createElement('div');
-        numBadge.style.cssText = `background:${col};color:white;font-size:8px;font-weight:800;line-height:13px;padding:0 4px;border-radius:6px;margin-top:1px;border:1px solid white;`;
+        numBadge.style.cssText = `background:${col};color:white;font-size:10px;font-weight:800;line-height:15px;padding:0 4px;border-radius:6px;margin-top:1px;border:1px solid white;`;
         numBadge.textContent = `${i+1}`;
         el.appendChild(numBadge);
       } else {
         // DNR: cerchio numerato + triangolino (goccia)
-        circle.style.cssText = `width:28px;height:28px;border-radius:50%;background:${col};border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:800;transition:transform 0.15s;flex-shrink:0;`;
+        circle.style.cssText = `width:28px;height:28px;border-radius:50%;background:${col};border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:800;transition:transform 0.15s;flex-shrink:0;`;
         circle.innerHTML = `${i+1}`;
         el.appendChild(circle);
         // Triangolino puntato giù — fa "toccare" la coordinata con la punta
@@ -961,7 +964,11 @@ function renderMarkers(){
 
       el.addEventListener('mouseenter', ()=>{ circle.style.transform='scale(1.15)'; });
       el.addEventListener('mouseleave', ()=>{ circle.style.transform='scale(1)'; });
-      el.addEventListener('click', ()=>{ toggleCard(zid); setTimeout(()=>panToPoint(p.lat,p.lon),200); });
+      el.addEventListener('click', ()=>{
+        toggleCard(zid);
+        setTimeout(()=>panToPoint(p.lat,p.lon),200);
+        mostraInfoMarker(p);
+      });
 
       const {AdvancedMarkerElement} = google.maps.marker||{};
       if(AdvancedMarkerElement){
@@ -971,6 +978,28 @@ function renderMarkers(){
     });
   });
   if(hasPoints) gMap.fitBounds(bounds,{padding:60});
+}
+
+// InfoWindow al click sul marker
+function mostraInfoMarker(p){
+  if(gInfoWindow){ gInfoWindow.close(); gInfoWindow=null; }
+  const orario = (p.orario_min||p.ora_arrivo) ?
+    `<div style="font-size:0.72rem;color:#4f46e5;font-weight:700;margin-bottom:4px;">&#9201; ${
+      (p.orario_min&&p.orario_max) ? p.orario_min+' &ndash; '+p.orario_max :
+      p.orario_min||p.ora_arrivo||''
+    }</div>` : '';
+  const nota = p.note||p.note_consegna||p.note_cliente||'';
+  const noteHtml = nota ? `<div style="font-size:0.7rem;color:#92400e;background:#fef3c7;border-radius:5px;padding:4px 7px;margin-top:3px;">&#128221; ${nota}</div>` : '';
+  gInfoWindow = new google.maps.InfoWindow({
+    content: `<div style="font-family:'Inter',sans-serif;max-width:230px;padding:2px 4px;">`+
+      `<div style="font-weight:800;font-size:0.88rem;color:#1e293b;margin-bottom:2px;">${p.nome||''}</div>`+
+      `<div style="font-size:0.72rem;color:#64748b;margin-bottom:4px;">${p.indirizzo||p.via||''}</div>`+
+      orario + noteHtml +
+    `</div>`,
+    position: {lat: p.lat, lng: p.lon},
+    pixelOffset: new google.maps.Size(0,-32)
+  });
+  gInfoWindow.open(gMap);
 }
 
 function renderPolylines(){

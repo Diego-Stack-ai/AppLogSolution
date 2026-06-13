@@ -1238,14 +1238,48 @@ function toggleSgancia(e){
 }
 
 // Apri pannello su secondo schermo (popup window)
+let _popupRef     = null;
+let _popupChecker = null;
+
 function apriPopup(e){
   e && e.stopPropagation();
+
+  // Se popup già aperto → portalo in primo piano
+  if(_popupRef && !_popupRef.closed){
+    _popupRef.focus();
+    return;
+  }
+
+  // Se il pannello era flottante, riaggancia prima
+  if(_sganciato) toggleSgancia();
+
   const w = window.open(
     '/sidebar',
     'pannello_controllo',
     'width=460,height=920,toolbar=0,location=0,menubar=0,status=0,scrollbars=1,resizable=1'
   );
-  if(!w) toast('⚠️ Popup bloccato — consenti i popup per localhost:5001 nelle impostazioni del browser');
+  if(!w){
+    toast('\u26a0\ufe0f Popup bloccato \u2014 consenti i popup per localhost:5001 nelle impostazioni del browser');
+    return;
+  }
+  _popupRef = w;
+
+  // Nasconde sidebar nella finestra principale (mappa a tutto schermo)
+  const sb = document.getElementById('sidebar');
+  sb.style.display = 'none';
+  document.getElementById('btn-popup').classList.add('active');
+  if(gMap) setTimeout(()=>google.maps.event.trigger(gMap,'resize'), 80);
+
+  // Polling ogni 500ms: rileva chiusura popup e ripristina sidebar
+  _popupChecker = setInterval(()=>{
+    if(_popupRef && _popupRef.closed){
+      clearInterval(_popupChecker);
+      _popupRef = null; _popupChecker = null;
+      sb.style.display = '';
+      document.getElementById('btn-popup').classList.remove('active');
+      if(gMap) setTimeout(()=>google.maps.event.trigger(gMap,'resize'), 80);
+    }
+  }, 500);
 }
 
 // Drag: trascina il pannello tenendo premuto sull'header

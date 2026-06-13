@@ -577,6 +577,12 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
   body{flex-direction:column;}
   #map{height:50vh;}
 }
+/* Google Maps InfoWindow - X piccola */
+.gm-style-iw-chr{height:18px!important;}
+.gm-style-iw-chr button.gm-ui-hover-effect{width:18px!important;height:18px!important;margin:2px 2px 0 0!important;}
+.gm-style-iw-chr button.gm-ui-hover-effect span{width:12px!important;height:12px!important;margin:3px!important;}
+.gm-style-iw-c{padding:10px 10px 8px 10px!important;}
+.gm-style-iw-d{overflow:auto!important;}
 </style>
 </head>
 <body>

@@ -410,7 +410,7 @@ body{font-family:'Inter',sans-serif;display:flex;height:100vh;overflow:hidden;ba
 /* ── SIDEBAR ── */
 #sidebar{width:420px;min-width:300px;background:var(--bg);display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;position:relative;z-index:10;}
 /* ── FLOATING SIDEBAR ── */
-#sidebar.floating{position:fixed!important;z-index:500;border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,0.45);border:1.5px solid rgba(255,255,255,0.08);overflow:hidden;width:400px!important;}
+#sidebar.floating{position:fixed!important;z-index:9999;border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,0.45);border:1.5px solid rgba(255,255,255,0.08);overflow:hidden;width:400px!important;}
 #sidebar.floating #hdr{cursor:grab;border-radius:14px 14px 0 0;}
 #sidebar.floating #hdr.dragging{cursor:grabbing;}
 #sidebar.floating #zone-list{max-height:calc(100vh - 180px);}

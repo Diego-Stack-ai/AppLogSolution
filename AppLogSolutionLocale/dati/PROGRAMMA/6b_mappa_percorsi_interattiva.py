@@ -654,6 +654,8 @@ let STATI     = {};          // {id_zona: {stato, polylines, stats}}
 let gMap      = null;        // istanza Google Map
 let gMarkers  = [];          // tutti i AdvancedMarker
 let gInfoWindow = null;      // InfoWindow attivo sul marker
+let _InfoWindow = null;      // costruttore InfoWindow (da importLibrary)
+let _Size       = null;      // google.maps.Size
 let gPolylines= {};          // {id_zona: [google.maps.Polyline]}
 let activeZid = null;        // id zona espansa
 let faseCorrente = 1;
@@ -906,7 +908,9 @@ function toggleCard(zid){
 
 // ── Google Maps ───────────────────────────────────────────────────────────────
 async function initMap(){
-  const {Map} = await google.maps.importLibrary("maps");
+  const {Map, InfoWindow, Size} = await google.maps.importLibrary("maps");
+  _InfoWindow = InfoWindow;
+  _Size       = Size;
   gMap = new Map(document.getElementById('map'),{
     center:{lat:45.5,lng:11.0}, zoom:8,
     mapId:"interactive_percorsi",
@@ -983,6 +987,7 @@ function renderMarkers(){
 // InfoWindow al click sul marker
 function mostraInfoMarker(p){
   if(gInfoWindow){ gInfoWindow.close(); gInfoWindow=null; }
+  if(!_InfoWindow || !gMap) return;
   const orario = (p.orario_min||p.ora_arrivo) ?
     `<div style="font-size:0.72rem;color:#4f46e5;font-weight:700;margin-bottom:4px;">&#9201; ${
       (p.orario_min&&p.orario_max) ? p.orario_min+' &ndash; '+p.orario_max :
@@ -990,16 +995,17 @@ function mostraInfoMarker(p){
     }</div>` : '';
   const nota = p.note||p.note_consegna||p.note_cliente||'';
   const noteHtml = nota ? `<div style="font-size:0.7rem;color:#92400e;background:#fef3c7;border-radius:5px;padding:4px 7px;margin-top:3px;">&#128221; ${nota}</div>` : '';
-  gInfoWindow = new google.maps.InfoWindow({
+  const opts = {
     content: `<div style="font-family:'Inter',sans-serif;max-width:230px;padding:2px 4px;">`+
       `<div style="font-weight:800;font-size:0.88rem;color:#1e293b;margin-bottom:2px;">${p.nome||''}</div>`+
       `<div style="font-size:0.72rem;color:#64748b;margin-bottom:4px;">${p.indirizzo||p.via||''}</div>`+
       orario + noteHtml +
     `</div>`,
-    position: {lat: p.lat, lng: p.lon},
-    pixelOffset: new google.maps.Size(0,-32)
-  });
-  gInfoWindow.open(gMap);
+    position: {lat: p.lat, lng: p.lon}
+  };
+  if(_Size) opts.pixelOffset = new _Size(0, -34);
+  gInfoWindow = new _InfoWindow(opts);
+  gInfoWindow.open({map: gMap});
 }
 
 function renderPolylines(){

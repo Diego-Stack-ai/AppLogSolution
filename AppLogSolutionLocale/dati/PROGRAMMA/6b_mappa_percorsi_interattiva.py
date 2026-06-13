@@ -1201,6 +1201,7 @@ function toggleSgancia(e){
     sb.style.width  = rect.width  + 'px';
     sb.style.height = rect.height + 'px';
     sb.classList.add('floating');
+    document.body.style.overflow = 'visible';  // ← rimuove clipping del body
     btn.innerHTML = '&#8617;'; btn.title='Aggancia pannello'; btn.classList.add('active');
     _sganciato = true;
     if(gMap) setTimeout(()=>google.maps.event.trigger(gMap,'resize'),60);
@@ -1209,6 +1210,7 @@ function toggleSgancia(e){
     sb.classList.add('snap-back');
     sb.classList.remove('floating');
     sb.style.left = sb.style.top = sb.style.width = sb.style.height = '';
+    document.body.style.overflow = 'hidden';   // ← ripristina clipping
     btn.innerHTML = '&#10697;'; btn.title='Sgancia pannello'; btn.classList.remove('active');
     _sganciato = false;
     setTimeout(()=>sb.classList.remove('snap-back'), 380);

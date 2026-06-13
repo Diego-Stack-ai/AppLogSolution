@@ -1229,8 +1229,8 @@ function toggleSgancia(e){
     hdr.classList.add('dragging');
     e.preventDefault();
     function onMove(ev){
-      sb.style.left = Math.max(-10, Math.min(window.innerWidth -60, ev.clientX-_dragOX))+'px';
-      sb.style.top  = Math.max(-10, Math.min(window.innerHeight-40, ev.clientY-_dragOY))+'px';
+      sb.style.left = (ev.clientX - _dragOX) + 'px';
+      sb.style.top  = (ev.clientY - _dragOY) + 'px';
     }
     function onUp(){ hdr.classList.remove('dragging'); document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); }
     document.addEventListener('mousemove',onMove);

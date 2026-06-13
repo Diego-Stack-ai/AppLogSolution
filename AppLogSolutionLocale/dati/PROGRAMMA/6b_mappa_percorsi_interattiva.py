@@ -187,7 +187,17 @@ def index():
     return HTML_TEMPLATE.replace("{{DATA_GIORNO}}", DATA_GIORNO) \
                         .replace("{{GOOGLE_MAPS_API_KEY}}", GOOGLE_MAPS_API_KEY) \
                         .replace("{{NOMI_DNR_JS}}", json.dumps(NOMI_DNR)) \
-                        .replace("{{NOMI_GC_JS}}",  json.dumps(NOMI_GRANCHEF))
+                        .replace("{{NOMI_GC_JS}}",  json.dumps(NOMI_GRANCHEF)) \
+                        .replace("{{POPUP_MODE}}", "false")
+
+@app.route("/sidebar")
+def sidebar():
+    """Pannello di controllo standalone per secondo schermo (aperto via window.open)."""
+    return HTML_TEMPLATE.replace("{{DATA_GIORNO}}", DATA_GIORNO) \
+                        .replace("{{GOOGLE_MAPS_API_KEY}}", GOOGLE_MAPS_API_KEY) \
+                        .replace("{{NOMI_DNR_JS}}", json.dumps(NOMI_DNR)) \
+                        .replace("{{NOMI_GC_JS}}",  json.dumps(NOMI_GRANCHEF)) \
+                        .replace("{{POPUP_MODE}}", "true")
 
 @app.route("/api/zone")
 def api_zone():
@@ -415,9 +425,14 @@ body{font-family:'Inter',sans-serif;display:flex;height:100vh;overflow:hidden;ba
 #sidebar.floating #hdr.dragging{cursor:grabbing;}
 #sidebar.floating #zone-list{max-height:calc(100vh - 180px);}
 #sidebar.snap-back{transition:box-shadow 0.35s ease,border-radius 0.35s ease;}
-.btn-sgancia{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:#94a3b8;border-radius:7px;padding:3px 8px;font-size:0.8rem;cursor:pointer;transition:all 0.2s;line-height:1;margin-left:auto;flex-shrink:0;}
+.btn-sgancia{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:#94a3b8;border-radius:7px;padding:3px 8px;font-size:0.8rem;cursor:pointer;transition:all 0.2s;line-height:1;flex-shrink:0;}
 .btn-sgancia:hover{background:rgba(255,255,255,0.18);color:#fff;}
 .btn-sgancia.active{background:rgba(79,70,229,0.4);border-color:#4f46e5;color:#a5b4fc;}
+/* Popup mode (secondo schermo) */
+body.popup-mode{display:block!important;overflow:auto;}
+body.popup-mode #sidebar{width:100vw!important;height:100vh!important;border-right:none;}
+body.popup-mode #map{display:none!important;}
+body.popup-mode .btns-sgancia-wrap{display:none!important;}
 
 /* ── HEADER ── */
 #hdr{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:14px 16px;flex-shrink:0;}
@@ -598,7 +613,7 @@ body{font-family:'Inter',sans-serif;display:flex;height:100vh;overflow:hidden;ba
 <!-- SIDEBAR -->
 <div id="sidebar">
   <div id="hdr">
-    <div class="logo" style="justify-content:space-between;"><span style="display:flex;align-items:center;gap:8px;"><span>🗺️</span> Mappa Percorsi Interattiva</span><button class="btn-sgancia" id="btn-sgancia" onclick="toggleSgancia(event)" title="Sgancia pannello (rendi flottante)">⧉</button></div>
+    <div class="logo" style="justify-content:space-between;"><span style="display:flex;align-items:center;gap:8px;"><span>🗺️</span> Mappa Percorsi Interattiva</span><span class="btns-sgancia-wrap" style="display:flex;gap:4px;"><button class="btn-sgancia" id="btn-sgancia" onclick="toggleSgancia(event)" title="Sgancia pannello (galleggiante)">&#10697;</button><button class="btn-sgancia" id="btn-popup" onclick="apriPopup(event)" title="Apri su secondo schermo">&#8599;</button></span></div>
     <div class="data-badge">{{DATA_GIORNO}}</div>
     <div class="hdr-btns">
       <button class="btn-hdr btn-lock locked" id="btn-lock" onclick="toggleLock()">BLOCCATA 🔒</button>
@@ -620,6 +635,8 @@ body{font-family:'Inter',sans-serif;display:flex;height:100vh;overflow:hidden;ba
 
 <script>
 // ── Costanti ────────────────────────────────────────────────────────────────
+const IS_POPUP      = {{POPUP_MODE}};  // true quando aperto come popup secondo schermo
+if(IS_POPUP){ document.body.classList.add('popup-mode'); }
 const NOMI_DNR      = {{NOMI_DNR_JS}};
 const NOMI_GC       = {{NOMI_GC_JS}};
 const API_KEY       = "{{GOOGLE_MAPS_API_KEY}}";
@@ -684,9 +701,11 @@ async function init(){
   ZONE  = zoneRes;
   STATI = statiRes;
   renderSidebar();
-  await initMap();
-  renderMarkers();
-  renderPolylines();
+  if(!IS_POPUP){
+    await initMap();
+    renderMarkers();
+    renderPolylines();
+  }
   // Rimuovi silenziosamente i giri vuoti appena caricati (es. da BAT 2 con zone extra)
   await pulisciZoneVuote(true);
   connectSSE();
@@ -1216,6 +1235,17 @@ function toggleSgancia(e){
     setTimeout(()=>sb.classList.remove('snap-back'), 380);
     if(gMap) setTimeout(()=>google.maps.event.trigger(gMap,'resize'),60);
   }
+}
+
+// Apri pannello su secondo schermo (popup window)
+function apriPopup(e){
+  e && e.stopPropagation();
+  const w = window.open(
+    '/sidebar',
+    'pannello_controllo',
+    'width=460,height=920,toolbar=0,location=0,menubar=0,status=0,scrollbars=1,resizable=1'
+  );
+  if(!w) toast('⚠️ Popup bloccato — consenti i popup per localhost:5001 nelle impostazioni del browser');
 }
 
 // Drag: trascina il pannello tenendo premuto sull'header

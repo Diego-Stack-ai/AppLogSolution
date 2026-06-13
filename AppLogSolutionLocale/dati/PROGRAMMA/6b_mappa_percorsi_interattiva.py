@@ -968,7 +968,8 @@ function renderMarkers(){
 
       el.addEventListener('mouseenter', ()=>{ circle.style.transform='scale(1.15)'; });
       el.addEventListener('mouseleave', ()=>{ circle.style.transform='scale(1)'; });
-      el.addEventListener('click', ()=>{
+      el.addEventListener('click', (e)=>{
+        e.stopPropagation();  // evita che il click raggiunga gMap e chiuda subito l'InfoWindow
         toggleCard(zid);
         setTimeout(()=>panToPoint(p.lat,p.lon),200);
         mostraInfoMarker(p);

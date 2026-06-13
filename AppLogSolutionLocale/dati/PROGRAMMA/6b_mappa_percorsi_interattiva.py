@@ -409,6 +409,15 @@ body{font-family:'Inter',sans-serif;display:flex;height:100vh;overflow:hidden;ba
 
 /* ── SIDEBAR ── */
 #sidebar{width:420px;min-width:300px;background:var(--bg);display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;position:relative;z-index:10;}
+/* ── FLOATING SIDEBAR ── */
+#sidebar.floating{position:fixed!important;z-index:500;border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,0.45);border:1.5px solid rgba(255,255,255,0.08);overflow:hidden;width:400px!important;}
+#sidebar.floating #hdr{cursor:grab;border-radius:14px 14px 0 0;}
+#sidebar.floating #hdr.dragging{cursor:grabbing;}
+#sidebar.floating #zone-list{max-height:calc(100vh - 180px);}
+#sidebar.snap-back{transition:box-shadow 0.35s ease,border-radius 0.35s ease;}
+.btn-sgancia{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:#94a3b8;border-radius:7px;padding:3px 8px;font-size:0.8rem;cursor:pointer;transition:all 0.2s;line-height:1;margin-left:auto;flex-shrink:0;}
+.btn-sgancia:hover{background:rgba(255,255,255,0.18);color:#fff;}
+.btn-sgancia.active{background:rgba(79,70,229,0.4);border-color:#4f46e5;color:#a5b4fc;}
 
 /* ── HEADER ── */
 #hdr{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:14px 16px;flex-shrink:0;}
@@ -589,7 +598,7 @@ body{font-family:'Inter',sans-serif;display:flex;height:100vh;overflow:hidden;ba
 <!-- SIDEBAR -->
 <div id="sidebar">
   <div id="hdr">
-    <div class="logo"><span>🗺️</span> Mappa Percorsi Interattiva</div>
+    <div class="logo" style="justify-content:space-between;"><span style="display:flex;align-items:center;gap:8px;"><span>🗺️</span> Mappa Percorsi Interattiva</span><button class="btn-sgancia" id="btn-sgancia" onclick="toggleSgancia(event)" title="Sgancia pannello (rendi flottante)">⧉</button></div>
     <div class="data-badge">{{DATA_GIORNO}}</div>
     <div class="hdr-btns">
       <button class="btn-hdr btn-lock locked" id="btn-lock" onclick="toggleLock()">BLOCCATA 🔒</button>
@@ -1174,6 +1183,60 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ chiudiModal(); c
 async function onGoogleMapsReady(){
   await init();
 }
+</script>
+<script>
+// ── PANNELLO FLOTTANTE ────────────────────────────────────────────────────────
+let _sganciato = false;
+let _dragOX=0, _dragOY=0;
+
+function toggleSgancia(e){
+  e && e.stopPropagation();
+  const sb  = document.getElementById('sidebar');
+  const btn = document.getElementById('btn-sgancia');
+  if(!_sganciato){
+    // Sgancia: diventa fixed nella posizione attuale
+    const rect = sb.getBoundingClientRect();
+    sb.style.left   = rect.left   + 'px';
+    sb.style.top    = rect.top    + 'px';
+    sb.style.width  = rect.width  + 'px';
+    sb.style.height = rect.height + 'px';
+    sb.classList.add('floating');
+    btn.innerHTML = '&#8617;'; btn.title='Aggancia pannello'; btn.classList.add('active');
+    _sganciato = true;
+    if(gMap) setTimeout(()=>google.maps.event.trigger(gMap,'resize'),60);
+  } else {
+    // Aggancia: torna nel flusso normale con animazione
+    sb.classList.add('snap-back');
+    sb.classList.remove('floating');
+    sb.style.left = sb.style.top = sb.style.width = sb.style.height = '';
+    btn.innerHTML = '&#10697;'; btn.title='Sgancia pannello'; btn.classList.remove('active');
+    _sganciato = false;
+    setTimeout(()=>sb.classList.remove('snap-back'), 380);
+    if(gMap) setTimeout(()=>google.maps.event.trigger(gMap,'resize'),60);
+  }
+}
+
+// Drag: trascina il pannello tenendo premuto sull'header
+(function initFloatDrag(){
+  const hdr = document.getElementById('hdr');
+  hdr.addEventListener('mousedown', function(e){
+    if(!_sganciato) return;
+    if(e.target.tagName==='BUTTON'||e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+    const sb   = document.getElementById('sidebar');
+    const rect = sb.getBoundingClientRect();
+    _dragOX = e.clientX - rect.left;
+    _dragOY = e.clientY - rect.top;
+    hdr.classList.add('dragging');
+    e.preventDefault();
+    function onMove(ev){
+      sb.style.left = Math.max(-10, Math.min(window.innerWidth -60, ev.clientX-_dragOX))+'px';
+      sb.style.top  = Math.max(-10, Math.min(window.innerHeight-40, ev.clientY-_dragOY))+'px';
+    }
+    function onUp(){ hdr.classList.remove('dragging'); document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); }
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  });
+})();
 </script>
 <script
   src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_MAPS_API_KEY}}&libraries=maps,marker,geometry&v=weekly&callback=onGoogleMapsReady"

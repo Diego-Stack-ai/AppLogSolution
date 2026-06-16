@@ -899,21 +899,26 @@ function badgeStato(stato){
 
 // ── Caricamento iniziale ──────────────────────────────────────────────────────
 async function init(){
+  console.log('[DEBUG] init() avviato');
   const [zoneRes, statiRes] = await Promise.all([
     fetch('/api/zone').then(r=>r.json()),
     fetch('/api/stati').then(r=>r.json())
   ]);
+  console.log('[DEBUG] zone:', zoneRes.length, 'stati:', Object.keys(statiRes).length);
   ZONE  = zoneRes;
   STATI = statiRes;
   renderSidebar();
   if(!IS_POPUP){
+    console.log('[DEBUG] chiamo initMap...');
     await initMap();
+    console.log('[DEBUG] initMap completato');
     renderMarkers();
     renderPolylines();
   }
   await pulisciZoneVuote(true);
   connectSSE();
   aggiornaFase();
+  console.log('[DEBUG] init() completato');
 }
 
 // ── SSE ───────────────────────────────────────────────────────────────────────
@@ -1141,15 +1146,20 @@ function toggleCard(zid){
 }
 
 async function initMap(){
+  console.log('[DEBUG] initMap() avviato, google=', typeof google);
   const {Map, InfoWindow, Size} = await google.maps.importLibrary("maps");
+  console.log('[DEBUG] importLibrary ok, Map=', typeof Map);
   _InfoWindow = InfoWindow;
   _Size       = Size;
-  gMap = new Map(document.getElementById('map'),{
+  const mapEl = document.getElementById('map');
+  console.log('[DEBUG] #map element=', mapEl);
+  gMap = new Map(mapEl,{
     center:{lat:45.5,lng:11.0}, zoom:8,
     mapId:"interactive_percorsi",
     mapTypeId:"hybrid",
     mapTypeControl:false, streetViewControl:false
   });
+  console.log('[DEBUG] gMap creato:', gMap);
   gMap.addListener('click', ()=>{ if(gInfoWindow){ gInfoWindow.close(); gInfoWindow=null; } });
 }
 
@@ -1536,11 +1546,12 @@ async function generaFile(){ apriPopupGenera(); }
 // ── Google Maps callback (chiamato quando le API sono pronte) ─────────────────
 // Sovrascrive il placeholder definito nel <head>
 window.onGoogleMapsReady = async function onGoogleMapsReady(){
+  console.log('[DEBUG] onGoogleMapsReady() chiamato, __mapsApiReady=', window.__mapsApiReady);
   await init();
 };
 // Se Google Maps aveva già chiamato il placeholder prima di questo blocco:
+console.log('[DEBUG] fine blocco main, __mapsApiReady=', window.__mapsApiReady);
 if(window.__mapsApiReady){ window.onGoogleMapsReady(); }
-
 </script>
 <script>
 // ── PANNELLO FLOTTANTE ────────────────────────────────────────────────────────

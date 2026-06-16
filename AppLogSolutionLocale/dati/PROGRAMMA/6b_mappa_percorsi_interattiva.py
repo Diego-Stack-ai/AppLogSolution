@@ -983,17 +983,22 @@ function renderCard(z){
       <div class="stat-item"><div class="stat-val">${fmtMin(stats.t_tot)}</div><div class="stat-lbl">Totale</div></div>
     </div>` : '';
 
+  // cardBtns: variabili intermedie evitano ternari con virgolette annidati
+  const _calcDisabled = (isBloccato || isInCalc) ? 'disabled' : '';
+  const _lockCls      = isBloccato ? 'btn-card-locked' : 'btn-card-lock';
+  const _lockLabel    = isBloccato ? '🔒 Sblocca' : '🔓 Blocca';
+  const _lockDisabled = (isInCalc || (!isCalc && !isBloccato)) ? 'disabled' : '';
   const cardBtns = !isSpec ? `
     <div class="zc-card-btns">
       <button class="btn-card btn-card-calcola"
         onclick="event.stopPropagation(); calcolaGiro('${zid}')"
-        ${isBloccato || isInCalc ? 'disabled' : ''}>
+        ${_calcDisabled}>
         📍 Calcola percorso
       </button>
-      <button class="btn-card ${isBloccato ? 'btn-card-locked' : 'btn-card-lock'}"
+      <button class="btn-card ${_lockCls}"
         onclick="event.stopPropagation(); toggleLockZona('${zid}')"
-        ${isInCalc ? 'disabled title="Attendi la fine del calcolo"' : !isCalc && !isBloccato ? 'disabled title="Calcola il percorso prima di bloccare"' : ''}>
-        ${isBloccato ? '🔒 Sblocca' : '🔓 Blocca'}
+        ${_lockDisabled}>
+        ${_lockLabel}
       </button>
     </div>` : '';
 

@@ -509,22 +509,23 @@ def api_genera_completo():
         log = [f"✅ Generati {len(summary)} giri HTML"]
         errori = []
         prog_dir = Path(__file__).resolve().parent
-        # Lancia script facoltativi
+        # Lancia script facoltativi (mappe include sempre BAT5 + BAT6 insieme)
         script_map = {
-            "mappe":    prog_dir.parent / "5_AVVIA_MOBILE_AUTISTI.bat",
-            "distinte": prog_dir.parent / "6_GENERA_DISTINTE_PDF.bat",
-            "traffico": prog_dir.parent / "7B_AGGIORNA_TRAFFICO_SERALE.bat",
+            "mappe":    [prog_dir.parent / "5_AVVIA_MOBILE_AUTISTI.bat",
+                         prog_dir.parent / "6_GENERA_DISTINTE_PDF.bat"],
+            "traffico": [prog_dir.parent / "7B_AGGIORNA_TRAFFICO_SERALE.bat"],
         }
-        for flag_key, bat_path in script_map.items():
+        for flag_key, bat_paths in script_map.items():
             if flags.get(flag_key):
-                if bat_path.exists():
-                    try:
-                        subprocess.Popen([str(bat_path)], shell=True, cwd=str(bat_path.parent))
-                        log.append(f"▶ Avviato: {bat_path.name}")
-                    except Exception as ex:
-                        errori.append(f"Errore {bat_path.name}: {ex}")
-                else:
-                    errori.append(f"File non trovato: {bat_path.name}")
+                for bat_path in bat_paths:
+                    if bat_path.exists():
+                        try:
+                            subprocess.Popen([str(bat_path)], shell=True, cwd=str(bat_path.parent))
+                            log.append(f"▶ Avviato: {bat_path.name}")
+                        except Exception as ex:
+                            errori.append(f"Errore {bat_path.name}: {ex}")
+                    else:
+                        errori.append(f"File non trovato: {bat_path.name}")
         status = "partial" if errori else "ok"
         return jsonify({"ok": True, "status": status, "log": log, "errori": errori, "giri": len(summary)})
     except Exception as e:
@@ -1294,7 +1295,6 @@ async function eseguiGeneraCompleto(){
   btn.disabled = true; btn.textContent = '\\u23F3 Elaborazione\\u2026';
   const flags = {
     mappe:    document.getElementById('flag-mappe').checked,
-    distinte: document.getElementById('flag-distinte').checked,
     traffico: document.getElementById('flag-traffico').checked
   };
   try{
@@ -1737,11 +1737,7 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
     <div class="popup-genera-flags">
       <label class="popup-genera-flag">
         <input type="checkbox" id="flag-mappe" checked>
-        🗺️ Genera Mappe + Link WhatsApp (BAT 5)
-      </label>
-      <label class="popup-genera-flag">
-        <input type="checkbox" id="flag-distinte" checked>
-        📄 Genera Distinte (BAT 6)
+        🗺️📋 Genera Mappe + Distinte (BAT 5+6)
       </label>
       <label class="popup-genera-flag">
         <input type="checkbox" id="flag-traffico">

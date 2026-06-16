@@ -220,19 +220,11 @@ def index():
                         .replace("{{NOMI_GC_JS}}",  json.dumps(NOMI_GRANCHEF)) \
                         .replace("{{POPUP_MODE}}", "false")
 
-@app.route("/api/debug_js")
-def debug_js():
-    """Serve il JS principale come file esterno: Chrome riporta riga esatta del SyntaxError."""
-    import re as _re
-    html = HTML_TEMPLATE.replace("{{DATA_GIORNO}}", DATA_GIORNO) \
-                        .replace("{{GOOGLE_MAPS_API_KEY}}", GOOGLE_MAPS_API_KEY) \
-                        .replace("{{NOMI_DNR_JS}}", json.dumps(NOMI_DNR)) \
-                        .replace("{{NOMI_GC_JS}}",  json.dumps(NOMI_GRANCHEF)) \
-                        .replace("{{POPUP_MODE}}", "false")
-    blocks = _re.findall(r'<script(?![^>]*src)[^>]*>([\s\S]*?)</script>', html)
-    main_js = max(blocks, key=len) if blocks else "// no JS found"
+@app.route("/api/app.js")
+def serve_app_js():
+    """Serve il blocco JS principale come file esterno (Chrome riporta riga esatta)."""
     from flask import Response
-    return Response(main_js, mimetype='application/javascript')
+    return Response(_JS_MAIN_BLOCK, mimetype='application/javascript; charset=utf-8')
 
 @app.route("/sidebar")
 def sidebar():
@@ -544,318 +536,7 @@ def api_sse():
                     headers={"X-Accel-Buffering": "no", "Cache-Control": "no-cache"})
 
 # ── HTML Template ─────────────────────────────────────────────────────────────
-HTML_TEMPLATE = """<!DOCTYPE html>
-<html lang="it">
-<head>
-<meta charset="UTF-8">
-<!-- Placeholder precoce: garantisce che onGoogleMapsReady esista
-     quando Google Maps (async) cerca il callback, anche prima che
-     il blocco <script> principale abbia finito di eseguire. -->
-<script>
-window.onGoogleMapsReady = function(){
-  // Segna che Maps è pronta; il blocco principale chiamerà init() quando eseguito
-  window.__mapsApiReady = true;
-};
-</script>
-
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Mappa Percorsi Interattiva — {{DATA_GIORNO}}</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Inter',sans-serif;display:flex;height:100vh;overflow:hidden;background:#0f172a;}
-:root{--p:#4f46e5;--s:#10b981;--w:#f59e0b;--d:#ef4444;--bg:#f8fafc;--card:#fff;--border:#e2e8f0;--txt:#1e293b;--sub:#64748b;}
-
-/* ── SIDEBAR ── */
-#sidebar{width:420px;min-width:300px;background:var(--bg);display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;position:relative;z-index:10;}
-/* ── FLOATING SIDEBAR ── */
-#sidebar.floating{position:fixed!important;z-index:9999;border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,0.45);border:1.5px solid rgba(255,255,255,0.08);overflow:hidden;width:400px!important;}
-#sidebar.floating #hdr{cursor:grab;border-radius:14px 14px 0 0;}
-#sidebar.floating #hdr.dragging{cursor:grabbing;}
-#sidebar.floating #zone-list{max-height:calc(100vh - 180px);}
-#sidebar.snap-back{transition:box-shadow 0.35s ease,border-radius 0.35s ease;}
-.btn-sgancia{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:#94a3b8;border-radius:7px;padding:3px 8px;font-size:0.8rem;cursor:pointer;transition:all 0.2s;line-height:1;flex-shrink:0;}
-.btn-sgancia:hover{background:rgba(255,255,255,0.18);color:#fff;}
-.btn-sgancia.active{background:rgba(79,70,229,0.4);border-color:#4f46e5;color:#a5b4fc;}
-/* Popup mode (secondo schermo) */
-body.popup-mode{display:block!important;overflow:auto;}
-body.popup-mode #sidebar{width:100vw!important;height:100vh!important;border-right:none;}
-body.popup-mode #map{display:none!important;}
-body.popup-mode .btns-sgancia-wrap{display:none!important;}
-
-/* ── HEADER ── */
-#hdr{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:14px 16px;flex-shrink:0;}
-#hdr .logo{color:#fff;font-size:1rem;font-weight:800;letter-spacing:-0.3px;display:flex;align-items:center;gap:8px;}
-#hdr .logo span{font-size:1.2rem;}
-#hdr .data-badge{background:rgba(255,255,255,0.1);color:#94a3b8;font-size:0.7rem;font-weight:600;padding:2px 8px;border-radius:20px;margin-top:6px;display:inline-block;}
-.hdr-btns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
-
-/* ── PULSANTI HEADER ── */
-.btn-hdr{border:none;border-radius:8px;font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:700;cursor:pointer;padding:7px 12px;transition:all 0.2s;display:flex;align-items:center;gap:4px;}
-.btn-salva{background:#10b981;color:#fff;}
-.btn-salva:hover{background:#059669;}
-.btn-calcola{background:var(--p);color:#fff;}
-.btn-calcola:hover{background:#4338ca;}
-.btn-calcola:disabled{background:#475569;cursor:not-allowed;}
-.btn-genera{background:#f59e0b;color:#fff;}
-.btn-genera:hover{background:#d97706;}
-.btn-genera:disabled{background:#475569;cursor:not-allowed;}
-.btn-aggiorna{background:#8b5cf6;color:#fff;}
-.btn-aggiorna:hover{background:#7c3aed;}
-.btn-aggiorna:disabled{background:#475569;cursor:not-allowed;display:none;}
-.btn-lock{font-weight:800;letter-spacing:0.3px;}
-.btn-lock.locked{background:#ef4444;color:#fff;}
-.btn-lock.locked:hover{background:#dc2626;}
-.btn-lock.unlocked{background:#10b981;color:#fff;}
-.btn-lock.unlocked:hover{background:#059669;}
-
-/* Matita nell'header card */
-.btn-matita{background:none;border:1.5px solid #e2e8f0;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;margin-left:4px;}
-.btn-matita:hover{background:#eef2ff;border-color:#4f46e5;transform:scale(1.1);}
-
-/* ── FASE INDICATOR ── */
-#fase-bar{display:flex;gap:0;margin-top:10px;}
-.fase-pill{flex:1;text-align:center;padding:4px 6px;font-size:0.65rem;font-weight:700;border-radius:0;cursor:default;color:#475569;background:rgba(255,255,255,0.05);}
-.fase-pill:first-child{border-radius:6px 0 0 6px;}
-.fase-pill:last-child{border-radius:0 6px 6px 0;}
-.fase-pill.active{background:var(--p);color:#fff;}
-.fase-pill.done{background:#10b981;color:#fff;}
-
-/* ── ZONA LISTA ── */
-#zone-list{flex:1;overflow-y:auto;padding:12px 10px;}
-#zone-list::-webkit-scrollbar{width:5px;}
-#zone-list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}
-
-/* ── ZONE CARD ── */
-.zone-card{background:var(--card);border:1.5px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:box-shadow 0.2s;}
-.zone-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.08);}
-.zone-card.active{border-color:var(--p);box-shadow:0 0 0 3px rgba(79,70,229,0.12);}
-.zc-head{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;}
-.zc-pill{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:0.78rem;flex-shrink:0;}
-.zc-info{flex:1;min-width:0;}
-.zc-name{font-size:0.9rem;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px;}
-.zc-sub{font-size:0.7rem;color:var(--sub);margin-top:1px;}
-.zc-badge{font-size:0.6rem;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;}
-.badge-calcolato{background:#d1fae5;color:#065f46;}
-.badge-elaborazione{background:#dbeafe;color:#1e40af;animation:pulse 1.5s infinite;}
-.badge-modificato{background:#fef3c7;color:#92400e;}
-.badge-errore{background:#fee2e2;color:#991b1b;}
-.badge-da-calcolare{background:#f1f5f9;color:#64748b;}
-.badge-bloccato{background:#1e293b;color:#94a3b8;}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
-
-/* Pulsanti per-card (calcola / lock) */
-.zc-card-btns{display:flex;gap:5px;padding:0 14px 10px;}
-.btn-card{flex:1;border:none;border-radius:7px;padding:6px 4px;font-size:0.68rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:3px;}
-.btn-card-calcola{background:#eef2ff;color:#4f46e5;}
-.btn-card-calcola:hover:not(:disabled){background:#4f46e5;color:#fff;}
-.btn-card-calcola:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed;}
-.btn-card-lock{background:#f0fdf4;color:#059669;}
-.btn-card-lock:hover:not(:disabled){background:#10b981;color:#fff;}
-.btn-card-lock:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed;}
-.btn-card-locked{background:#1e293b;color:#94a3b8;}
-.btn-card-locked:hover{background:#334155;color:#fff;}
-
-/* POPUP SALVA E GENERA */
-#popup-genera-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
-#popup-genera-overlay.open{display:flex;}
-.popup-genera-box{background:#fff;border-radius:20px;padding:28px;width:360px;box-shadow:0 24px 64px rgba(0,0,0,0.3);}
-.popup-genera-title{font-size:1.1rem;font-weight:900;color:#1e293b;margin-bottom:4px;}
-.popup-genera-sub{font-size:0.8rem;color:#64748b;margin-bottom:20px;}
-.popup-genera-flags{display:flex;flex-direction:column;gap:12px;margin-bottom:22px;}
-.popup-genera-flag{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.88rem;font-weight:600;color:#1e293b;}
-.popup-genera-flag input[type=checkbox]{width:18px;height:18px;accent-color:#4f46e5;cursor:pointer;}
-.popup-genera-btns{display:flex;gap:10px;}
-.popup-genera-cancel{flex:1;background:#f1f5f9;color:#64748b;border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;font-size:0.85rem;}
-.popup-genera-ok{flex:2;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:10px;font-weight:800;cursor:pointer;font-size:0.85rem;}
-.popup-genera-ok:disabled{background:#94a3b8;cursor:not-allowed;}
-
-/* Stats barra */
-.zc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:0 14px 10px;border-top:1px solid var(--border);margin-top:-2px;}
-.stat-item{text-align:center;padding:6px 4px;background:#f8fafc;border-radius:6px;}
-.stat-val{font-size:0.85rem;font-weight:800;color:var(--txt);}
-.stat-lbl{font-size:0.58rem;color:var(--sub);font-weight:600;text-transform:uppercase;margin-top:1px;}
-
-/* Corpo card espanso */
-.zc-body{padding:10px 14px;border-top:1px solid var(--border);display:none;}
-.zc-body.open{display:block;}
-
-/* Punti lista */
-.point-row{display:flex;align-items:center;gap:8px;padding:6px 8px;background:#f8fafc;border-radius:8px;margin-bottom:5px;border:1px solid var(--border);transition:background 0.15s;}
-.point-row:hover{background:#eef2ff;}
-.pt-num{width:22px;height:22px;border-radius:50%;background:var(--p);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;flex-shrink:0;}
-.pt-info{flex:1;min-width:0;}
-.pt-nome{font-size:0.78rem;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.pt-addr{font-size:0.65rem;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.pt-eta{font-size:0.65rem;color:var(--p);font-weight:700;white-space:nowrap;}
-.pt-arrow-btns{display:flex;flex-direction:column;gap:2px;}
-.pt-arrow{background:none;border:1px solid var(--border);border-radius:4px;width:20px;height:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:var(--sub);transition:all 0.15s;}
-.pt-arrow:hover{background:var(--p);border-color:var(--p);color:#fff;}
-.pt-arrow:disabled{opacity:0.3;cursor:not-allowed;}
-
-/* Pulsanti azione zona */
-.zc-actions{display:flex;gap:6px;padding:8px 14px 12px;}
-.btn-zona{flex:1;border:none;border-radius:7px;padding:7px 4px;font-size:0.7rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;}
-.btn-dividi{background:#eef2ff;color:var(--p);}
-.btn-dividi:hover{background:var(--p);color:#fff;}
-/* Occhio visibilita zona sulla mappa */
-.btn-eye{background:none;border:1.5px solid #e2e8f0;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;margin-left:2px;}
-.btn-eye:hover{background:#f1f5f9;}
-.btn-eye.hidden-zone{background:#fef3c7;border-color:#f59e0b;}
-/* Modalita DIVIDI */
-.dividi-mode .point-row{cursor:pointer;border-radius:6px;}
-.dividi-mode .point-row:hover{background:#eff6ff!important;}
-.point-row.dividi-sel{background:#dbeafe!important;border-color:#3b82f6!important;}
-.dividi-bar{background:#3b82f6;color:#fff;padding:7px 10px;border-radius:8px;font-size:0.72rem;font-weight:700;display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;}
-.dividi-bar button{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:6px;padding:3px 9px;cursor:pointer;font-size:0.7rem;font-weight:700;}
-.dividi-bar button:hover{background:rgba(255,255,255,0.35);}
-.dividi-bar .btn-annulla{background:rgba(239,68,68,0.3);border-color:rgba(239,68,68,0.5);}
-.btn-sposta{background:#f0fdf4;color:#059669;}
-.btn-sposta:hover{background:#10b981;color:#fff;}
-.btn-rinomina{background:#fefce8;color:#92400e;}
-.btn-rinomina:hover{background:#f59e0b;color:#fff;}
-.btn-ricalcola-giro{background:#ede9fe;color:#7c3aed;}
-.btn-ricalcola-giro:hover{background:#8b5cf6;color:#fff;}
-
-/* sposta overlay */
-#sposta-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:none;align-items:center;justify-content:center;}
-#sposta-overlay.open{display:flex;}
-.sposta-box{background:#fff;border-radius:16px;padding:24px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
-.sposta-title{font-size:1rem;font-weight:800;color:var(--txt);margin-bottom:4px;}
-.sposta-sub{font-size:0.78rem;color:var(--sub);margin-bottom:16px;}
-.sposta-chips{display:flex;flex-wrap:wrap;gap:8px;}
-.sposta-chip{padding:6px 14px;border-radius:20px;border:2px solid var(--border);font-size:0.75rem;font-weight:700;cursor:pointer;transition:all 0.2s;}
-.sposta-chip:hover{border-color:var(--p);color:var(--p);}
-.sposta-cancel{width:100%;margin-top:14px;border:none;background:#f1f5f9;border-radius:8px;padding:8px;font-size:0.75rem;font-weight:700;cursor:pointer;color:var(--sub);}
-
-/* MODAL RINOMINA */
-#modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,0.6);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
-#modal-overlay.open{display:flex;}
-.modal-box{background:#fff;border-radius:20px;padding:28px;width:360px;box-shadow:0 24px 64px rgba(0,0,0,0.25);}
-.modal-title{font-size:1.05rem;font-weight:800;color:var(--txt);margin-bottom:4px;}
-.modal-sub{font-size:0.78rem;color:var(--sub);margin-bottom:18px;}
-.modal-box select,.modal-box input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:0.85rem;font-family:'Inter',sans-serif;outline:none;margin-bottom:10px;}
-.modal-box select:focus,.modal-box input:focus{border-color:var(--p);}
-.modal-btns{display:flex;gap:10px;margin-top:6px;}
-.modal-ok{flex:1;background:var(--p);color:#fff;border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;font-size:0.85rem;}
-.modal-cancel{flex:1;background:#f1f5f9;color:var(--sub);border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;font-size:0.85rem;}
-
-/* TOAST */
-#toast{position:fixed;bottom:24px;right:24px;background:#1e293b;color:#fff;padding:12px 20px;border-radius:12px;font-size:0.8rem;font-weight:600;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;max-width:320px;}
-#toast.show{opacity:1;}
-
-/* MAPPA */
-#map{flex:1;height:100vh;}
-
-/* Responsive */
-@media(max-width:768px){
-  #sidebar{width:100%;height:50vh;}
-  body{flex-direction:column;}
-  #map{height:50vh;}
-}
-/* Google Maps InfoWindow - X piccola */
-.gm-style-iw-chr{height:18px!important;}
-.gm-style-iw-chr button.gm-ui-hover-effect{width:18px!important;height:18px!important;margin:2px 2px 0 0!important;}
-.gm-style-iw-chr button.gm-ui-hover-effect span{width:12px!important;height:12px!important;margin:3px!important;}
-.gm-style-iw-c{padding:10px 10px 8px 10px!important;}
-.gm-style-iw-d{overflow:auto!important;}
-</style>
-</head>
-<body>
-
-<!-- SPOSTA OVERLAY -->
-<div id="sposta-overlay">
-  <div class="sposta-box">
-    <div class="sposta-title">↔ Sposta consegna</div>
-    <div class="sposta-sub" id="sposta-sub-txt"></div>
-    <div class="sposta-chips" id="sposta-chips"></div>
-    <button class="sposta-cancel" onclick="chiudiSposta()">Annulla</button>
-  </div>
-</div>
-
-<!-- MODAL RINOMINA -->
-<div id="modal-overlay">
-  <div class="modal-box">
-    <div class="modal-title" id="modal-title">✏️ Rinomina giro</div>
-    <div class="modal-sub" id="modal-sub"></div>
-    <select id="modal-select" onchange="onSelectChange()">
-      <option value="">— Seleziona nome —</option>
-    </select>
-    <input id="modal-input" type="text" placeholder="Oppure scrivi nome personalizzato…">
-    <div class="modal-btns">
-      <button class="modal-ok" onclick="salvaRinomina()">Salva</button>
-      <button class="modal-cancel" onclick="chiudiModal()">Annulla</button>
-    </div>
-  </div>
-</div>
-
-<!-- TOAST -->
-<div id="toast"></div>
-
-<!-- POPUP SALVA E GENERA FILE -->
-<div id="popup-genera-overlay">
-  <div class="popup-genera-box">
-    <div class="popup-genera-title">💾 Salva e genera file</div>
-    <div class="popup-genera-sub">Il JSON viene aggiornato. Vuoi lanciare anche:</div>
-    <div class="popup-genera-flags">
-      <label class="popup-genera-flag">
-        <input type="checkbox" id="flag-mappe" checked>
-        🗺️ Genera Mappe + Link WhatsApp (BAT 5)
-      </label>
-      <label class="popup-genera-flag">
-        <input type="checkbox" id="flag-distinte" checked>
-        📄 Genera Distinte (BAT 6)
-      </label>
-      <label class="popup-genera-flag">
-        <input type="checkbox" id="flag-traffico">
-        🚦 Aggiorna Traffico Serale (BAT 7B)
-      </label>
-    </div>
-    <div class="popup-genera-btns">
-      <button class="popup-genera-cancel" onclick="chiudiPopupGenera()">Annulla</button>
-      <button class="popup-genera-ok" id="btn-avvia-genera" onclick="eseguiGeneraCompleto()">▶ Avvia selezionati</button>
-    </div>
-  </div>
-</div>
-
-<!-- SIDEBAR -->
-<div id="sidebar">
-  <div id="hdr">
-    <div class="logo" style="justify-content:space-between;"><span style="display:flex;align-items:center;gap:8px;"><span>🗺️</span> Mappa Percorsi Interattiva</span><span class="btns-sgancia-wrap" style="display:flex;gap:4px;"><button class="btn-sgancia" id="btn-sgancia" onclick="toggleSgancia(event)" title="Sgancia pannello (galleggiante)">&#10697;</button><button class="btn-sgancia" id="btn-popup" onclick="apriPopup(event)" title="Apri su secondo schermo">&#8599;</button></span></div>
-    <div class="data-badge">{{DATA_GIORNO}}</div>
-    <div class="hdr-btns">
-      <button class="btn-hdr btn-calcola" id="btn-calcola" onclick="calcolaTutto()">▶ Calcola percorsi</button>
-      <button class="btn-hdr btn-aggiorna" id="btn-aggiorna" onclick="aggiornaModificati()" style="display:none;">🔄 Aggiorna modificati</button>
-      <button class="btn-hdr btn-genera" id="btn-genera" onclick="apriPopupGenera()" disabled>💾 Salva e Genera file</button>
-    </div>
-    <div id="fase-bar">
-      <div class="fase-pill active" id="fase1-pill">1 · Editing</div>
-      <div class="fase-pill" id="fase2-pill">2 · Calcolo</div>
-      <div class="fase-pill" id="fase3-pill">3 · Revisione</div>
-    </div>
-  </div>
-  <div id="zone-list"></div>
-</div>
-
-<!-- MAPPA -->
-<div id="map"></div>
-
-<script>
-// ── Costanti ────────────────────────────────────────────────────────────────
-const IS_POPUP      = {{POPUP_MODE}};  // true quando aperto come popup secondo schermo
-if(IS_POPUP){
-  document.body.classList.add('popup-mode');
-  // Se la finestra principale viene chiusa \\u2192 chiudi anche questo popup
-  setInterval(()=>{
-    try{ if(!window.opener || window.opener.closed) window.close(); }
-    catch(e){ window.close(); } // errore cross-origin = opener sparito
-  }, 1000);
-}
-const NOMI_DNR      = {{NOMI_DNR_JS}};
-const NOMI_GC       = {{NOMI_GC_JS}};
-const API_KEY       = "{{GOOGLE_MAPS_API_KEY}}";
-
+_JS_MAIN_BLOCK = """
 // ── Stato applicazione ───────────────────────────────────────────────────────
 let ZONE      = [];          // lista giri (fonte verità locale)
 let STATI     = {};          // {id_zona: {stato, polylines, stats}}
@@ -1566,7 +1247,322 @@ window.onGoogleMapsReady = async function onGoogleMapsReady(){
 // Se Google Maps aveva già chiamato il placeholder prima di questo blocco:
 console.log('[DEBUG] fine blocco main, __mapsApiReady=', window.__mapsApiReady);
 if(window.__mapsApiReady){ window.onGoogleMapsReady(); }
+"""
+
+HTML_TEMPLATE = """<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<!-- Placeholder precoce: garantisce che onGoogleMapsReady esista
+     quando Google Maps (async) cerca il callback, anche prima che
+     il blocco <script> principale abbia finito di eseguire. -->
+<script>
+window.onGoogleMapsReady = function(){
+  // Segna che Maps è pronta; il blocco principale chiamerà init() quando eseguito
+  window.__mapsApiReady = true;
+};
 </script>
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mappa Percorsi Interattiva — {{DATA_GIORNO}}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;display:flex;height:100vh;overflow:hidden;background:#0f172a;}
+:root{--p:#4f46e5;--s:#10b981;--w:#f59e0b;--d:#ef4444;--bg:#f8fafc;--card:#fff;--border:#e2e8f0;--txt:#1e293b;--sub:#64748b;}
+
+/* ── SIDEBAR ── */
+#sidebar{width:420px;min-width:300px;background:var(--bg);display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;position:relative;z-index:10;}
+/* ── FLOATING SIDEBAR ── */
+#sidebar.floating{position:fixed!important;z-index:9999;border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,0.45);border:1.5px solid rgba(255,255,255,0.08);overflow:hidden;width:400px!important;}
+#sidebar.floating #hdr{cursor:grab;border-radius:14px 14px 0 0;}
+#sidebar.floating #hdr.dragging{cursor:grabbing;}
+#sidebar.floating #zone-list{max-height:calc(100vh - 180px);}
+#sidebar.snap-back{transition:box-shadow 0.35s ease,border-radius 0.35s ease;}
+.btn-sgancia{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:#94a3b8;border-radius:7px;padding:3px 8px;font-size:0.8rem;cursor:pointer;transition:all 0.2s;line-height:1;flex-shrink:0;}
+.btn-sgancia:hover{background:rgba(255,255,255,0.18);color:#fff;}
+.btn-sgancia.active{background:rgba(79,70,229,0.4);border-color:#4f46e5;color:#a5b4fc;}
+/* Popup mode (secondo schermo) */
+body.popup-mode{display:block!important;overflow:auto;}
+body.popup-mode #sidebar{width:100vw!important;height:100vh!important;border-right:none;}
+body.popup-mode #map{display:none!important;}
+body.popup-mode .btns-sgancia-wrap{display:none!important;}
+
+/* ── HEADER ── */
+#hdr{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:14px 16px;flex-shrink:0;}
+#hdr .logo{color:#fff;font-size:1rem;font-weight:800;letter-spacing:-0.3px;display:flex;align-items:center;gap:8px;}
+#hdr .logo span{font-size:1.2rem;}
+#hdr .data-badge{background:rgba(255,255,255,0.1);color:#94a3b8;font-size:0.7rem;font-weight:600;padding:2px 8px;border-radius:20px;margin-top:6px;display:inline-block;}
+.hdr-btns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
+
+/* ── PULSANTI HEADER ── */
+.btn-hdr{border:none;border-radius:8px;font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:700;cursor:pointer;padding:7px 12px;transition:all 0.2s;display:flex;align-items:center;gap:4px;}
+.btn-salva{background:#10b981;color:#fff;}
+.btn-salva:hover{background:#059669;}
+.btn-calcola{background:var(--p);color:#fff;}
+.btn-calcola:hover{background:#4338ca;}
+.btn-calcola:disabled{background:#475569;cursor:not-allowed;}
+.btn-genera{background:#f59e0b;color:#fff;}
+.btn-genera:hover{background:#d97706;}
+.btn-genera:disabled{background:#475569;cursor:not-allowed;}
+.btn-aggiorna{background:#8b5cf6;color:#fff;}
+.btn-aggiorna:hover{background:#7c3aed;}
+.btn-aggiorna:disabled{background:#475569;cursor:not-allowed;display:none;}
+.btn-lock{font-weight:800;letter-spacing:0.3px;}
+.btn-lock.locked{background:#ef4444;color:#fff;}
+.btn-lock.locked:hover{background:#dc2626;}
+.btn-lock.unlocked{background:#10b981;color:#fff;}
+.btn-lock.unlocked:hover{background:#059669;}
+
+/* Matita nell'header card */
+.btn-matita{background:none;border:1.5px solid #e2e8f0;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;margin-left:4px;}
+.btn-matita:hover{background:#eef2ff;border-color:#4f46e5;transform:scale(1.1);}
+
+/* ── FASE INDICATOR ── */
+#fase-bar{display:flex;gap:0;margin-top:10px;}
+.fase-pill{flex:1;text-align:center;padding:4px 6px;font-size:0.65rem;font-weight:700;border-radius:0;cursor:default;color:#475569;background:rgba(255,255,255,0.05);}
+.fase-pill:first-child{border-radius:6px 0 0 6px;}
+.fase-pill:last-child{border-radius:0 6px 6px 0;}
+.fase-pill.active{background:var(--p);color:#fff;}
+.fase-pill.done{background:#10b981;color:#fff;}
+
+/* ── ZONA LISTA ── */
+#zone-list{flex:1;overflow-y:auto;padding:12px 10px;}
+#zone-list::-webkit-scrollbar{width:5px;}
+#zone-list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}
+
+/* ── ZONE CARD ── */
+.zone-card{background:var(--card);border:1.5px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:box-shadow 0.2s;}
+.zone-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.08);}
+.zone-card.active{border-color:var(--p);box-shadow:0 0 0 3px rgba(79,70,229,0.12);}
+.zc-head{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;}
+.zc-pill{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:0.78rem;flex-shrink:0;}
+.zc-info{flex:1;min-width:0;}
+.zc-name{font-size:0.9rem;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px;}
+.zc-sub{font-size:0.7rem;color:var(--sub);margin-top:1px;}
+.zc-badge{font-size:0.6rem;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;}
+.badge-calcolato{background:#d1fae5;color:#065f46;}
+.badge-elaborazione{background:#dbeafe;color:#1e40af;animation:pulse 1.5s infinite;}
+.badge-modificato{background:#fef3c7;color:#92400e;}
+.badge-errore{background:#fee2e2;color:#991b1b;}
+.badge-da-calcolare{background:#f1f5f9;color:#64748b;}
+.badge-bloccato{background:#1e293b;color:#94a3b8;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
+
+/* Pulsanti per-card (calcola / lock) */
+.zc-card-btns{display:flex;gap:5px;padding:0 14px 10px;}
+.btn-card{flex:1;border:none;border-radius:7px;padding:6px 4px;font-size:0.68rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:3px;}
+.btn-card-calcola{background:#eef2ff;color:#4f46e5;}
+.btn-card-calcola:hover:not(:disabled){background:#4f46e5;color:#fff;}
+.btn-card-calcola:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed;}
+.btn-card-lock{background:#f0fdf4;color:#059669;}
+.btn-card-lock:hover:not(:disabled){background:#10b981;color:#fff;}
+.btn-card-lock:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed;}
+.btn-card-locked{background:#1e293b;color:#94a3b8;}
+.btn-card-locked:hover{background:#334155;color:#fff;}
+
+/* POPUP SALVA E GENERA */
+#popup-genera-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#popup-genera-overlay.open{display:flex;}
+.popup-genera-box{background:#fff;border-radius:20px;padding:28px;width:360px;box-shadow:0 24px 64px rgba(0,0,0,0.3);}
+.popup-genera-title{font-size:1.1rem;font-weight:900;color:#1e293b;margin-bottom:4px;}
+.popup-genera-sub{font-size:0.8rem;color:#64748b;margin-bottom:20px;}
+.popup-genera-flags{display:flex;flex-direction:column;gap:12px;margin-bottom:22px;}
+.popup-genera-flag{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.88rem;font-weight:600;color:#1e293b;}
+.popup-genera-flag input[type=checkbox]{width:18px;height:18px;accent-color:#4f46e5;cursor:pointer;}
+.popup-genera-btns{display:flex;gap:10px;}
+.popup-genera-cancel{flex:1;background:#f1f5f9;color:#64748b;border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;font-size:0.85rem;}
+.popup-genera-ok{flex:2;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:10px;font-weight:800;cursor:pointer;font-size:0.85rem;}
+.popup-genera-ok:disabled{background:#94a3b8;cursor:not-allowed;}
+
+/* Stats barra */
+.zc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:0 14px 10px;border-top:1px solid var(--border);margin-top:-2px;}
+.stat-item{text-align:center;padding:6px 4px;background:#f8fafc;border-radius:6px;}
+.stat-val{font-size:0.85rem;font-weight:800;color:var(--txt);}
+.stat-lbl{font-size:0.58rem;color:var(--sub);font-weight:600;text-transform:uppercase;margin-top:1px;}
+
+/* Corpo card espanso */
+.zc-body{padding:10px 14px;border-top:1px solid var(--border);display:none;}
+.zc-body.open{display:block;}
+
+/* Punti lista */
+.point-row{display:flex;align-items:center;gap:8px;padding:6px 8px;background:#f8fafc;border-radius:8px;margin-bottom:5px;border:1px solid var(--border);transition:background 0.15s;}
+.point-row:hover{background:#eef2ff;}
+.pt-num{width:22px;height:22px;border-radius:50%;background:var(--p);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;flex-shrink:0;}
+.pt-info{flex:1;min-width:0;}
+.pt-nome{font-size:0.78rem;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pt-addr{font-size:0.65rem;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pt-eta{font-size:0.65rem;color:var(--p);font-weight:700;white-space:nowrap;}
+.pt-arrow-btns{display:flex;flex-direction:column;gap:2px;}
+.pt-arrow{background:none;border:1px solid var(--border);border-radius:4px;width:20px;height:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:var(--sub);transition:all 0.15s;}
+.pt-arrow:hover{background:var(--p);border-color:var(--p);color:#fff;}
+.pt-arrow:disabled{opacity:0.3;cursor:not-allowed;}
+
+/* Pulsanti azione zona */
+.zc-actions{display:flex;gap:6px;padding:8px 14px 12px;}
+.btn-zona{flex:1;border:none;border-radius:7px;padding:7px 4px;font-size:0.7rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;}
+.btn-dividi{background:#eef2ff;color:var(--p);}
+.btn-dividi:hover{background:var(--p);color:#fff;}
+/* Occhio visibilita zona sulla mappa */
+.btn-eye{background:none;border:1.5px solid #e2e8f0;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;margin-left:2px;}
+.btn-eye:hover{background:#f1f5f9;}
+.btn-eye.hidden-zone{background:#fef3c7;border-color:#f59e0b;}
+/* Modalita DIVIDI */
+.dividi-mode .point-row{cursor:pointer;border-radius:6px;}
+.dividi-mode .point-row:hover{background:#eff6ff!important;}
+.point-row.dividi-sel{background:#dbeafe!important;border-color:#3b82f6!important;}
+.dividi-bar{background:#3b82f6;color:#fff;padding:7px 10px;border-radius:8px;font-size:0.72rem;font-weight:700;display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;}
+.dividi-bar button{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:6px;padding:3px 9px;cursor:pointer;font-size:0.7rem;font-weight:700;}
+.dividi-bar button:hover{background:rgba(255,255,255,0.35);}
+.dividi-bar .btn-annulla{background:rgba(239,68,68,0.3);border-color:rgba(239,68,68,0.5);}
+.btn-sposta{background:#f0fdf4;color:#059669;}
+.btn-sposta:hover{background:#10b981;color:#fff;}
+.btn-rinomina{background:#fefce8;color:#92400e;}
+.btn-rinomina:hover{background:#f59e0b;color:#fff;}
+.btn-ricalcola-giro{background:#ede9fe;color:#7c3aed;}
+.btn-ricalcola-giro:hover{background:#8b5cf6;color:#fff;}
+
+/* sposta overlay */
+#sposta-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:none;align-items:center;justify-content:center;}
+#sposta-overlay.open{display:flex;}
+.sposta-box{background:#fff;border-radius:16px;padding:24px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+.sposta-title{font-size:1rem;font-weight:800;color:var(--txt);margin-bottom:4px;}
+.sposta-sub{font-size:0.78rem;color:var(--sub);margin-bottom:16px;}
+.sposta-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.sposta-chip{padding:6px 14px;border-radius:20px;border:2px solid var(--border);font-size:0.75rem;font-weight:700;cursor:pointer;transition:all 0.2s;}
+.sposta-chip:hover{border-color:var(--p);color:var(--p);}
+.sposta-cancel{width:100%;margin-top:14px;border:none;background:#f1f5f9;border-radius:8px;padding:8px;font-size:0.75rem;font-weight:700;cursor:pointer;color:var(--sub);}
+
+/* MODAL RINOMINA */
+#modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,0.6);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#modal-overlay.open{display:flex;}
+.modal-box{background:#fff;border-radius:20px;padding:28px;width:360px;box-shadow:0 24px 64px rgba(0,0,0,0.25);}
+.modal-title{font-size:1.05rem;font-weight:800;color:var(--txt);margin-bottom:4px;}
+.modal-sub{font-size:0.78rem;color:var(--sub);margin-bottom:18px;}
+.modal-box select,.modal-box input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:0.85rem;font-family:'Inter',sans-serif;outline:none;margin-bottom:10px;}
+.modal-box select:focus,.modal-box input:focus{border-color:var(--p);}
+.modal-btns{display:flex;gap:10px;margin-top:6px;}
+.modal-ok{flex:1;background:var(--p);color:#fff;border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;font-size:0.85rem;}
+.modal-cancel{flex:1;background:#f1f5f9;color:var(--sub);border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;font-size:0.85rem;}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;background:#1e293b;color:#fff;padding:12px 20px;border-radius:12px;font-size:0.8rem;font-weight:600;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;max-width:320px;}
+#toast.show{opacity:1;}
+
+/* MAPPA */
+#map{flex:1;height:100vh;}
+
+/* Responsive */
+@media(max-width:768px){
+  #sidebar{width:100%;height:50vh;}
+  body{flex-direction:column;}
+  #map{height:50vh;}
+}
+/* Google Maps InfoWindow - X piccola */
+.gm-style-iw-chr{height:18px!important;}
+.gm-style-iw-chr button.gm-ui-hover-effect{width:18px!important;height:18px!important;margin:2px 2px 0 0!important;}
+.gm-style-iw-chr button.gm-ui-hover-effect span{width:12px!important;height:12px!important;margin:3px!important;}
+.gm-style-iw-c{padding:10px 10px 8px 10px!important;}
+.gm-style-iw-d{overflow:auto!important;}
+</style>
+</head>
+<body>
+
+<!-- SPOSTA OVERLAY -->
+<div id="sposta-overlay">
+  <div class="sposta-box">
+    <div class="sposta-title">↔ Sposta consegna</div>
+    <div class="sposta-sub" id="sposta-sub-txt"></div>
+    <div class="sposta-chips" id="sposta-chips"></div>
+    <button class="sposta-cancel" onclick="chiudiSposta()">Annulla</button>
+  </div>
+</div>
+
+<!-- MODAL RINOMINA -->
+<div id="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">✏️ Rinomina giro</div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <select id="modal-select" onchange="onSelectChange()">
+      <option value="">— Seleziona nome —</option>
+    </select>
+    <input id="modal-input" type="text" placeholder="Oppure scrivi nome personalizzato…">
+    <div class="modal-btns">
+      <button class="modal-ok" onclick="salvaRinomina()">Salva</button>
+      <button class="modal-cancel" onclick="chiudiModal()">Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- POPUP SALVA E GENERA FILE -->
+<div id="popup-genera-overlay">
+  <div class="popup-genera-box">
+    <div class="popup-genera-title">💾 Salva e genera file</div>
+    <div class="popup-genera-sub">Il JSON viene aggiornato. Vuoi lanciare anche:</div>
+    <div class="popup-genera-flags">
+      <label class="popup-genera-flag">
+        <input type="checkbox" id="flag-mappe" checked>
+        🗺️ Genera Mappe + Link WhatsApp (BAT 5)
+      </label>
+      <label class="popup-genera-flag">
+        <input type="checkbox" id="flag-distinte" checked>
+        📄 Genera Distinte (BAT 6)
+      </label>
+      <label class="popup-genera-flag">
+        <input type="checkbox" id="flag-traffico">
+        🚦 Aggiorna Traffico Serale (BAT 7B)
+      </label>
+    </div>
+    <div class="popup-genera-btns">
+      <button class="popup-genera-cancel" onclick="chiudiPopupGenera()">Annulla</button>
+      <button class="popup-genera-ok" id="btn-avvia-genera" onclick="eseguiGeneraCompleto()">▶ Avvia selezionati</button>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div id="hdr">
+    <div class="logo" style="justify-content:space-between;"><span style="display:flex;align-items:center;gap:8px;"><span>🗺️</span> Mappa Percorsi Interattiva</span><span class="btns-sgancia-wrap" style="display:flex;gap:4px;"><button class="btn-sgancia" id="btn-sgancia" onclick="toggleSgancia(event)" title="Sgancia pannello (galleggiante)">&#10697;</button><button class="btn-sgancia" id="btn-popup" onclick="apriPopup(event)" title="Apri su secondo schermo">&#8599;</button></span></div>
+    <div class="data-badge">{{DATA_GIORNO}}</div>
+    <div class="hdr-btns">
+      <button class="btn-hdr btn-calcola" id="btn-calcola" onclick="calcolaTutto()">▶ Calcola percorsi</button>
+      <button class="btn-hdr btn-aggiorna" id="btn-aggiorna" onclick="aggiornaModificati()" style="display:none;">🔄 Aggiorna modificati</button>
+      <button class="btn-hdr btn-genera" id="btn-genera" onclick="apriPopupGenera()" disabled>💾 Salva e Genera file</button>
+    </div>
+    <div id="fase-bar">
+      <div class="fase-pill active" id="fase1-pill">1 · Editing</div>
+      <div class="fase-pill" id="fase2-pill">2 · Calcolo</div>
+      <div class="fase-pill" id="fase3-pill">3 · Revisione</div>
+    </div>
+  </div>
+  <div id="zone-list"></div>
+</div>
+
+<!-- MAPPA -->
+<div id="map"></div>
+
+<script>
+// ── Costanti ────────────────────────────────────────────────────────────────
+const IS_POPUP      = {{POPUP_MODE}};  // true quando aperto come popup secondo schermo
+if(IS_POPUP){
+  document.body.classList.add('popup-mode');
+  // Se la finestra principale viene chiusa \\u2192 chiudi anche questo popup
+  setInterval(()=>{
+    try{ if(!window.opener || window.opener.closed) window.close(); }
+    catch(e){ window.close(); } // errore cross-origin = opener sparito
+  }, 1000);
+}
+const NOMI_DNR      = {{NOMI_DNR_JS}};
+const NOMI_GC       = {{NOMI_GC_JS}};
+const API_KEY       = "{{GOOGLE_MAPS_API_KEY}}";
+
+</script>
+<script src="/api/app.js" charset="utf-8"></script>
 <script>
 // ── PANNELLO FLOTTANTE ────────────────────────────────────────────────────────
 let _sganciato = false;

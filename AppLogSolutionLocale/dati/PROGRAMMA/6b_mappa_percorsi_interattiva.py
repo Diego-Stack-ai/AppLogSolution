@@ -547,7 +547,13 @@ def api_genera_completo():
                 for bat_path in bat_paths:
                     if bat_path.exists():
                         try:
-                            subprocess.Popen([str(bat_path)], shell=True, cwd=str(bat_path.parent))
+                            # CREATE_NEW_CONSOLE: apre una NUOVA finestra CMD separata
+                            # senza dirottare la finestra del server Flask
+                            subprocess.Popen(
+                                ['cmd.exe', '/c', str(bat_path)],
+                                cwd=str(bat_path.parent),
+                                creationflags=subprocess.CREATE_NEW_CONSOLE
+                            )
                             log.append(f"\u25b6 Avviato: {bat_path.name}")
                         except Exception as _ex:
                             errori.append(f"Errore {bat_path.name}: {_ex}")

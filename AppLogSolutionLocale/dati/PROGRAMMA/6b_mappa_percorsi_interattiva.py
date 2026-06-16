@@ -450,19 +450,54 @@ def api_blocca_zona():
 
 @app.route("/api/genera_completo", methods=["POST"])
 def api_genera_completo():
-    """Salva + genera HTML + lancia opzionalmente BAT 5, 6, 7B."""
-    import subprocess, sys
+    """Salva JSON → genera distinte PDF (sincrono) → genera mappe HTML → lancia BAT 6."""
+    import subprocess, sys, re as _re
+    from urllib.parse import quote as _quote
     try:
-        body      = request.json or {}
-        flags     = body.get("flags", {})
-        # Prima esegui api_genera (salva JSON + HTML percorsi)
-        with app.test_request_context():
-            pass  # usato solo per chiamata interna
-        # Chiama la logica di genera direttamente
+        body     = request.json or {}
+        flags    = body.get("flags", {})
+        prog_dir = Path(__file__).resolve().parent
+        log      = []
+        errori   = []
+
+        # ── Step 1: Salva i JSON (necessario PRIMA delle distinte) ────────────
+        ZONE_ESCLUSE = {"DDT_DA_INSERIRE", "SENZA_ZONA"}
+        zone_ottimizzato = [z for z in ZONE_CACHE
+                            if z.get("id_zona") not in ZONE_ESCLUSE and z.get("lista_punti")]
+        (TARGET_DIR / "viaggi_giornalieri.json").write_text(
+            json.dumps(ZONE_CACHE, indent=2, ensure_ascii=False), encoding="utf-8")
+        (TARGET_DIR / "viaggi_giornalieri_OTTIMIZZATO.json").write_text(
+            json.dumps(zone_ottimizzato, indent=2, ensure_ascii=False), encoding="utf-8")
+        log.append("\u2705 JSON salvati")
+
+        # ── Step 2: Genera distinte PDF in modo SINCRONO (mappe le trovano) ───
+        if flags.get("mappe"):
+            _script_distinte = prog_dir / "9_genera_distinte_da_viaggi.py"
+            log.append("\u23f3 Generazione distinte PDF...")
+            try:
+                _r = subprocess.run(
+                    [sys.executable, str(_script_distinte)],
+                    cwd=str(prog_dir.parent),
+                    capture_output=True, text=True, encoding="utf-8", errors="replace",
+                    timeout=180
+                )
+                _dist_dir = TARGET_DIR / "DISTINTE_VIAGGIO"
+                _n_pdf = len(list(_dist_dir.glob("DISTINTA_*.pdf"))) if _dist_dir.exists() else 0
+                if _r.returncode == 0:
+                    log.append(f"\u2705 Distinte PDF generate ({_n_pdf} file)")
+                else:
+                    _err_msg = (_r.stderr or _r.stdout or "errore sconosciuto")[:300]
+                    errori.append(f"\u26a0\ufe0f Distinte: {_err_msg}")
+            except subprocess.TimeoutExpired:
+                errori.append("\u26a0\ufe0f Timeout generazione distinte (>3 min)")
+            except Exception as _ex:
+                errori.append(f"\u26a0\ufe0f Errore distinte: {_ex}")
+
+        # ── Step 3: Genera HTML mappe (i PDF esistono gia') ──────────────────
         out_dir = TARGET_DIR / "PERCORSI_VEGGIANO"
         if out_dir.exists():
-            for f in out_dir.glob("*.html"):
-                try: f.unlink()
+            for _f in out_dir.glob("*.html"):
+                try: _f.unlink()
                 except: pass
         out_dir.mkdir(exist_ok=True)
         summary = []
@@ -479,55 +514,46 @@ def api_genera_completo():
             t_s   = stats.get("t_sosta", 0)
             t_tot = stats.get("t_tot", 0)
             v_id  = z.get("nome_giro") or zid
-            z_str = ", ".join(sorted(set(str(p.get("zona","")) for p in punti)))
+            z_str = ", ".join(sorted(set(str(p.get("zona", "")) for p in punti)))
             depot = bat3.get_depot_for_points(punti)
-            is_gc = stats.get("is_gc", False)
+            is_gc     = stats.get("is_gc", False)
             tot_ddt   = stats.get("tot_ddt", 0)
             fatturato = stats.get("fatturato", "0.00")
             fname = bat3.sanitize_filename(f"{v_id}_Zone_{zid}.html")
-            # Calcola percorso relativo alla distinta PDF (BAT 6)
-            import re as _re
-            _v_sanitized = _re.sub(r'[\\/*?:"<>|]', '_', v_id)
-            _zone_pdf = "_".join(sorted(set(
-                str(p.get("zona","")).strip() for p in punti if p.get("zona")
+            # Percorso relativo alla distinta PDF (URL-encoded per spazi)
+            _v_san     = _re.sub(r'[\\/*?:"<>|]', '_', v_id)
+            _zone_pdf  = "_".join(sorted(set(
+                str(p.get("zona", "")).strip() for p in punti if p.get("zona")
             )))
-            _distinta_name = f"DISTINTA_{_v_sanitized}_Zone_{_zone_pdf}.pdf"
-            # URL-encoda spazi e caratteri speciali per compatibilita' browser
-            from urllib.parse import quote as _quote
-            _distinta_rel  = f"../DISTINTE_VIAGGIO/{_quote(_distinta_name)}"
-            bat3.genera_html_giro(v_id, z_str, punti, (km, t_g, t_s, t_tot), poly, out_dir / fname, depot,
-                                  distinta_rel_path=_distinta_rel)
+            _dist_name = f"DISTINTA_{_v_san}_Zone_{_zone_pdf}.pdf"
+            _dist_rel  = f"../DISTINTE_VIAGGIO/{_quote(_dist_name)}"
+            bat3.genera_html_giro(v_id, z_str, punti, (km, t_g, t_s, t_tot), poly,
+                                  out_dir / fname, depot, distinta_rel_path=_dist_rel)
             summary.append({"v_id": v_id, "zone_str": z_str, "fname": fname,
                             "km": km, "t_guida": t_g, "t_sosta": t_s, "t_tot": t_tot,
                             "punti": len(punti), "tot_ddt": tot_ddt,
                             "fatturato": fatturato, "is_grand_chef": is_gc})
         bat3.gera_riepilogo(summary, out_dir / "RIEPILOGO_GIRI.html")
-        (TARGET_DIR / "viaggi_giornalieri.json").write_text(
-            json.dumps(ZONE_CACHE, indent=2, ensure_ascii=False), encoding="utf-8")
-        ZONE_ESCLUSE = {"DDT_DA_INSERIRE", "SENZA_ZONA"}
-        zone_ottimizzato = [z for z in ZONE_CACHE if z.get("id_zona") not in ZONE_ESCLUSE and z.get("lista_punti")]
-        (TARGET_DIR / "viaggi_giornalieri_OTTIMIZZATO.json").write_text(
-            json.dumps(zone_ottimizzato, indent=2, ensure_ascii=False), encoding="utf-8")
-        log = [f"✅ Generati {len(summary)} giri HTML"]
-        errori = []
-        prog_dir = Path(__file__).resolve().parent
-        # Lancia script facoltativi (mappe include sempre BAT5 + BAT6 insieme)
-        script_map = {
-            "mappe":    [prog_dir.parent / "5_AVVIA_MOBILE_AUTISTI.bat",
-                         prog_dir.parent / "6_GENERA_DISTINTE_PDF.bat"],
+        log.append(f"\u2705 Generati {len(summary)} giri HTML")
+
+        # ── Step 4: Lancia BAT async (notifica autisti e traffico) ────────────
+        # BAT 6 = Avvia Mobile Autisti | BAT 7B = Traffico serale
+        bat_map = {
+            "mappe":    [prog_dir.parent / "6_AVVIA_MOBILE_AUTISTI.bat"],
             "traffico": [prog_dir.parent / "7B_AGGIORNA_TRAFFICO_SERALE.bat"],
         }
-        for flag_key, bat_paths in script_map.items():
+        for flag_key, bat_paths in bat_map.items():
             if flags.get(flag_key):
                 for bat_path in bat_paths:
                     if bat_path.exists():
                         try:
                             subprocess.Popen([str(bat_path)], shell=True, cwd=str(bat_path.parent))
-                            log.append(f"▶ Avviato: {bat_path.name}")
-                        except Exception as ex:
-                            errori.append(f"Errore {bat_path.name}: {ex}")
+                            log.append(f"\u25b6 Avviato: {bat_path.name}")
+                        except Exception as _ex:
+                            errori.append(f"Errore {bat_path.name}: {_ex}")
                     else:
                         errori.append(f"File non trovato: {bat_path.name}")
+
         status = "partial" if errori else "ok"
         return jsonify({"ok": True, "status": status, "log": log, "errori": errori, "giri": len(summary)})
     except Exception as e:
@@ -675,7 +701,7 @@ function aggiornaFase(){
     ? (inCalc ? 'Attendi il completamento del calcolo\\u2026' :
        modificati > 0 ? 'Clicca prima su Aggiorna modificati' :
        'Calcola tutti i percorsi prima di generare')
-    : 'Salva e genera i file per BAT 5';
+    : 'Salva e genera i file (BAT 5 Distinte → BAT 6 Mappe)';
 
   const btnAgg = document.getElementById('btn-aggiorna');
   if(modificati > 0){ btnAgg.style.display='flex'; btnAgg.textContent=`\\u{1F504} Aggiorna (${modificati})`; }
@@ -1181,7 +1207,7 @@ async function generaFile(){
   toast('\\u{1F4BE} Salvato. Generazione file in corso\\u2026', 8000);
   const r = await fetch('/api/genera',{method:'POST'});
   const d = await r.json();
-  if(d.ok) toast(`\\u2705 File generati! ${d.giri} giri \\u2192 pronti per BAT 5`, 5000);
+  if(d.ok) toast(`\\u2705 File generati! ${d.giri} giri \\u2192 pronti per BAT 6 (Mappe Autisti)`, 5000);
   else     toast('\\u274C Errore generazione: '+d.err, 5000);
 }
 
@@ -1754,7 +1780,7 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
     <div class="popup-genera-flags">
       <label class="popup-genera-flag">
         <input type="checkbox" id="flag-mappe" checked>
-        🗺️📋 Genera Mappe + Distinte (BAT 5+6)
+        📋🗺️ Genera Distinte (BAT 5) + Mappe Autisti (BAT 6)
       </label>
       <label class="popup-genera-flag">
         <input type="checkbox" id="flag-traffico">

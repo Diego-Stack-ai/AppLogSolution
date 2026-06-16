@@ -534,6 +534,23 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
+<!-- DEBUG ERROR REPORTER — rimuovere dopo il fix -->
+<script>
+window.addEventListener('error', function(ev){
+  var msg = ev.message || 'Errore sconosciuto';
+  var src = ev.filename || '(inline)';
+  var ln  = ev.lineno  || '?';
+  var col = ev.colno   || '?';
+  // Mostra solo errori JS (non risorse mancanti)
+  if(ev.message){
+    var div = document.createElement('div');
+    div.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#dc2626;color:#fff;padding:12px 16px;font:13px monospace;z-index:9999;white-space:pre;';
+    div.textContent = 'JS ERROR: ' + msg + '\nFile: ' + src + '\nRiga: ' + ln + ', Col: ' + col;
+    document.body ? document.body.prepend(div) : document.addEventListener('DOMContentLoaded', function(){ document.body.prepend(div); });
+  }
+}, true);
+</script>
+
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Mappa Percorsi Interattiva — {{DATA_GIORNO}}</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">

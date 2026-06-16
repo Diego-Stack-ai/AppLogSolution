@@ -1005,19 +1005,21 @@ function renderCard(z){
   const isDividiActive = dividiZid === zid;
 
   // listaPunti: pre-calcola le parti che avrebbero ternari annidati problematici
+  // Usa q per costruire apici singoli in onclick senza escape invalidi
+  const q = "'";
   const _dividiBar = isDividiActive
     ? '<div class="dividi-bar">&#9986; Seleziona fermate da spostare <b>' + dividiSel.size + '</b> sel.'
-      + '<button onclick="confermaDividi(\'' + zid + '\')">Crea giro</button>'
+      + '<button onclick="confermaDividi(' + q + zid + q + ')">Crea giro</button>'
       + '<button class="btn-annulla" onclick="annullaDividi()">Annulla</button></div>'
     : '';
   const _puntiRows = punti.map((p,i)=>renderPuntoRow(p,i,zid,punti,isCalc,isSpec,isDividiActive,isBloccato)).join('');
   const _ricalcolaBtn = isCalc
-    ? '<button class="btn-zona btn-ricalcola-giro" onclick="calcolaGiro(\'' + zid + '\')">&#8635; Ricalcola</button>'
+    ? '<button class="btn-zona btn-ricalcola-giro" onclick="calcolaGiro(' + q + zid + q + ')">&#8635; Ricalcola</button>'
     : '';
   const _azioniDiv = (!isSpec && !isBloccato && !isDividiActive)
     ? '<div class="zc-actions">'
-      + '<button class="btn-zona btn-dividi" onclick="avviaDividi(\'' + zid + '\')">&#9986; Dividi</button>'
-      + '<button class="btn-zona btn-rinomina" onclick="apriModal(\'' + zid + '\')">&#9998; Rinomina</button>'
+      + '<button class="btn-zona btn-dividi" onclick="avviaDividi(' + q + zid + q + ')">&#9986; Dividi</button>'
+      + '<button class="btn-zona btn-rinomina" onclick="apriModal(' + q + zid + q + ')">&#9998; Rinomina</button>'
       + _ricalcolaBtn
       + '</div>'
     : '';
@@ -1042,7 +1044,7 @@ function renderCard(z){
         <div class="zc-sub">${punti.length} fermate${nDDT?' &middot; '+nDDT+' DDT':''}${stats.fatturato&&stats.fatturato!=='GranChef'?' &middot; &euro;'+stats.fatturato:''}</div>
       </div>
       <button class="btn-eye${ZONE_HIDDEN.has(zid)?' hidden-zone':''}" title="${ZONE_HIDDEN.has(zid)?'Mostra':'Nascondi'} sulla mappa" onclick="event.stopPropagation();toggleHidden('${zid}')">&#128065;</button>
-      ${!isBloccato && !isSpec ? '<button class="btn-matita" title="Rinomina giro" onclick="event.stopPropagation();apriModal(\'' + zid + '\')">&#9998;</button>' : ''}
+      ${!isBloccato && !isSpec ? '<button class="btn-matita" title="Rinomina giro" onclick="event.stopPropagation();apriModal(' + q + zid + q + ')">&#9998;</button>' : ''}
     </div>
     ${cardBtns}
     ${statsBar}
@@ -1071,12 +1073,13 @@ function renderPuntoRow(p,i,zid,punti,isCalc,isSpec,isDividiActive=false,isBlocc
 
   let _arrowHtml = '';
   if(!isSpec && !isBloccato && !isDividiActive){
+    const q = "'";
     _arrowHtml =
       '<div class="pt-arrow-btns">'
-      + '<button class="pt-arrow" title="Su" onclick="muoviPunto(\'' + zid + '\',' + i + ',-1)"'+(i===0?' disabled':'')+'>&#9650;</button>'
-      + '<button class="pt-arrow" title="Giu" onclick="muoviPunto(\'' + zid + '\',' + i + ',+1)"'+(i===punti.length-1?' disabled':'')+'>&#9660;</button>'
+      + '<button class="pt-arrow" title="Su" onclick="muoviPunto(' + q + zid + q + ',' + i + ',-1)"'+(i===0?' disabled':'')+'>&#9650;</button>'
+      + '<button class="pt-arrow" title="Giu" onclick="muoviPunto(' + q + zid + q + ',' + i + ',+1)"'+(i===punti.length-1?' disabled':'')+'>&#9660;</button>'
       + '</div>'
-      + '<button class="pt-arrow" title="Sposta in altro giro" style="margin-left:2px;width:24px;height:42px;" onclick="avviaSposta(\'' + zid + '\',' + i + ')">&#8596;</button>';
+      + '<button class="pt-arrow" title="Sposta in altro giro" style="margin-left:2px;width:24px;height:42px;" onclick="avviaSposta(' + q + zid + q + ',' + i + ')">&#8596;</button>';
   }
 
   return '<div class="point-row'+(isSel?' dividi-sel':'')+'" style="'+isLate+'" id="pr-'+zid+'-'+i+'"'+_divAttr+'>'

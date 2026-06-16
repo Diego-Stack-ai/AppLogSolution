@@ -1007,8 +1007,13 @@ function toggleLock(){
 function toggleHidden(zid){
   if(ZONE_HIDDEN.has(zid)) ZONE_HIDDEN.delete(zid);
   else ZONE_HIDDEN.add(zid);
-  renderMarkers();
-  renderPolylines();
+  // Nel popup la mappa e' nella finestra principale: delega tramite postMessage
+  if(IS_POPUP){
+    if(window.opener && !window.opener.closed)
+      window.opener.postMessage({type:'toggleHidden', zid}, '*');
+  } else {
+    if(gMap){ renderMarkers(); renderPolylines(); }
+  }
   renderCardById(zid);
 }
 
@@ -1259,6 +1264,19 @@ window.onGoogleMapsReady = async function onGoogleMapsReady(){
 // Se Google Maps aveva già chiamato il placeholder prima di questo blocco:
 console.log('[DEBUG] fine blocco main, __mapsApiReady=', window.__mapsApiReady);
 if(window.__mapsApiReady){ window.onGoogleMapsReady(); }
+
+// ── Listener messaggi dal popup (es. toggleHidden) ───────────────────────────
+if(!IS_POPUP){
+  window.addEventListener('message', function(ev){
+    if(!ev.data || typeof ev.data !== 'object') return;
+    if(ev.data.type === 'toggleHidden'){
+      const zid = ev.data.zid;
+      if(ZONE_HIDDEN.has(zid)) ZONE_HIDDEN.delete(zid);
+      else ZONE_HIDDEN.add(zid);
+      if(gMap){ renderMarkers(); renderPolylines(); }
+    }
+  });
+}
 """
 
 

@@ -476,7 +476,7 @@ def api_genera_completo():
             log.append("\u23f3 Generazione distinte PDF...")
             try:
                 _r = subprocess.run(
-                    [sys.executable, str(_script_distinte)],
+                    [sys.executable, str(_script_distinte), DATA_GIORNO],
                     cwd=str(prog_dir.parent),
                     capture_output=True, text=True, encoding="utf-8", errors="replace",
                     timeout=180
@@ -493,48 +493,72 @@ def api_genera_completo():
             except Exception as _ex:
                 errori.append(f"\u26a0\ufe0f Errore distinte: {_ex}")
 
+        # Controlliamo se tutti i PDF delle distinte sono stati generati prima di fare le mappe
+        pdf_mancanti = []
+        if flags.get("mappe"):
+            for z in ZONE_CACHE:
+                zid   = z.get("id_zona")
+                if not zid or zid == "DDT_DA_INSERIRE": continue
+                punti = z.get("lista_punti", [])
+                if not punti: continue
+                v_id  = z.get("nome_giro") or zid
+                _v_san     = _re.sub(r'[\\/*?:"<>|]', '_', v_id)
+                _zone_pdf  = "_".join(sorted(set(
+                    str(p.get("zona", "")).strip() for p in punti if p.get("zona")
+                )))
+                _dist_name = f"DISTINTA_{_v_san}_Zone_{_zone_pdf}.pdf"
+                _dist_path = TARGET_DIR / "DISTINTE_VIAGGIO" / _dist_name
+                if not _dist_path.exists():
+                    pdf_mancanti.append(f"{v_id} ({_dist_name})")
+
         # ── Step 3: Genera HTML mappe (i PDF esistono gia') ──────────────────
-        out_dir = TARGET_DIR / "PERCORSI_VEGGIANO"
-        if out_dir.exists():
-            for _f in out_dir.glob("*.html"):
-                try: _f.unlink()
-                except: pass
-        out_dir.mkdir(exist_ok=True)
         summary = []
-        for z in ZONE_CACHE:
-            zid   = z.get("id_zona")
-            if not zid or zid == "DDT_DA_INSERIRE": continue
-            punti = z.get("lista_punti", [])
-            if not punti: continue
-            st    = STATO_GIRI.get(zid, {})
-            poly  = st.get("polylines", [])
-            stats = st.get("stats", {})
-            km    = stats.get("km", 0)
-            t_g   = stats.get("t_guida", 0)
-            t_s   = stats.get("t_sosta", 0)
-            t_tot = stats.get("t_tot", 0)
-            v_id  = z.get("nome_giro") or zid
-            z_str = ", ".join(sorted(set(str(p.get("zona", "")) for p in punti)))
-            depot = bat3.get_depot_for_points(punti)
-            is_gc     = stats.get("is_gc", False)
-            tot_ddt   = stats.get("tot_ddt", 0)
-            fatturato = stats.get("fatturato", "0.00")
-            fname = bat3.sanitize_filename(f"{v_id}_Zone_{zid}.html")
-            # Percorso relativo alla distinta PDF (URL-encoded per spazi)
-            _v_san     = _re.sub(r'[\\/*?:"<>|]', '_', v_id)
-            _zone_pdf  = "_".join(sorted(set(
-                str(p.get("zona", "")).strip() for p in punti if p.get("zona")
-            )))
-            _dist_name = f"DISTINTA_{_v_san}_Zone_{_zone_pdf}.pdf"
-            _dist_rel  = f"../DISTINTE_VIAGGIO/{_quote(_dist_name)}"
-            bat3.genera_html_giro(v_id, z_str, punti, (km, t_g, t_s, t_tot), poly,
-                                  out_dir / fname, depot, distinta_rel_path=_dist_rel)
-            summary.append({"v_id": v_id, "zone_str": z_str, "fname": fname,
-                            "km": km, "t_guida": t_g, "t_sosta": t_s, "t_tot": t_tot,
-                            "punti": len(punti), "tot_ddt": tot_ddt,
-                            "fatturato": fatturato, "is_grand_chef": is_gc})
-        bat3.gera_riepilogo(summary, out_dir / "RIEPILOGO_GIRI.html")
-        log.append(f"\u2705 Generati {len(summary)} giri HTML")
+        if flags.get("mappe"):
+            if pdf_mancanti:
+                for m in pdf_mancanti:
+                    errori.append(f"\u26a0\ufe0f Distinta PDF mancante per: {m}")
+                errori.append("\u26a0\ufe0f Generazione mappe HTML e Mobile interrotta per via delle distinte mancanti.")
+            else:
+                out_dir = TARGET_DIR / "PERCORSI_VEGGIANO"
+                if out_dir.exists():
+                    for _f in out_dir.glob("*.html"):
+                        try: _f.unlink()
+                        except: pass
+                out_dir.mkdir(exist_ok=True)
+                for z in ZONE_CACHE:
+                    zid   = z.get("id_zona")
+                    if not zid or zid == "DDT_DA_INSERIRE": continue
+                    punti = z.get("lista_punti", [])
+                    if not punti: continue
+                    st    = STATO_GIRI.get(zid, {})
+                    poly  = st.get("polylines", [])
+                    stats = st.get("stats", {})
+                    km    = stats.get("km", 0)
+                    t_g   = stats.get("t_guida", 0)
+                    t_s   = stats.get("t_sosta", 0)
+                    t_tot = stats.get("t_tot", 0)
+                    v_id  = z.get("nome_giro") or zid
+                    z_str = ", ".join(sorted(set(str(p.get("zona", "")) for p in punti)))
+                    depot = bat3.get_depot_for_points(punti)
+                    is_gc     = stats.get("is_gc", False)
+                    tot_ddt   = stats.get("tot_ddt", 0)
+                    fatturato = stats.get("fatturato", "0.00")
+                    fname = bat3.sanitize_filename(f"{v_id}_Zone_{zid}.html")
+                    # Percorso relativo alla distinta PDF (URL-encoded per spazi)
+                    _v_san     = _re.sub(r'[\\/*?:"<>|]', '_', v_id)
+                    _zone_pdf  = "_".join(sorted(set(
+                        str(p.get("zona", "")).strip() for p in punti if p.get("zona")
+                    )))
+                    _dist_name = f"DISTINTA_{_v_san}_Zone_{_zone_pdf}.pdf"
+                    _dist_rel  = f"../DISTINTE_VIAGGIO/{_quote(_dist_name)}"
+                    bat3.genera_html_giro(v_id, z_str, punti, (km, t_g, t_s, t_tot), poly,
+                                          out_dir / fname, depot, distinta_rel_path=_dist_rel)
+                    summary.append({"v_id": v_id, "zone_str": z_str, "fname": fname,
+                                    "km": km, "t_guida": t_g, "t_sosta": t_s, "t_tot": t_tot,
+                                    "punti": len(punti), "tot_ddt": tot_ddt,
+                                    "fatturato": fatturato, "is_grand_chef": is_gc})
+                bat3.gera_riepilogo(summary, out_dir / "RIEPILOGO_GIRI.html")
+                log.append(f"\u2705 Generati {len(summary)} giri HTML")
 
         # ── Step 4: Lancia BAT async (notifica autisti e traffico) ────────────
         # BAT 6 = Avvia Mobile Autisti | BAT 7B = Traffico serale
@@ -544,6 +568,8 @@ def api_genera_completo():
         }
         for flag_key, bat_paths in bat_map.items():
             if flags.get(flag_key):
+                if flag_key == "mappe" and pdf_mancanti:
+                    continue  # Non lanciare Mobile Autisti se mancano le distinte!
                 for bat_path in bat_paths:
                     if bat_path.exists():
                         try:
@@ -1786,7 +1812,7 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
     <div class="popup-genera-flags">
       <label class="popup-genera-flag">
         <input type="checkbox" id="flag-mappe" checked>
-        📋🗺️ Genera Distinte (BAT 5) + Mappe Autisti (BAT 6)
+        📋🗺️ Genera Distinte + Mappe (BAT 5→6)
       </label>
       <label class="popup-genera-flag">
         <input type="checkbox" id="flag-traffico">

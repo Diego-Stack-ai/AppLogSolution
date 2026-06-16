@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Nuovi Clienti (Anomalie) - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.37">
+    <link rel="stylesheet" href="styles.css?v=1.38">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <style>
@@ -65,7 +65,7 @@
         const db = getFirestore(app);
 
         const COLL_PATH = ['customers', 'DNR', 'gestione_nuovi_clienti'];
-        const FIELDS = ['Codice Frutta', 'Codice Latte', 'A chi va consegnato', 'Indirizzo', 'CAP', 'Città', 'Provincia', 'Orario min', 'Orario max', 'Tipologia consegna'];
+        const FIELDS = ['Codice Frutta', 'Codice Latte', 'A chi va consegnato', 'Indirizzo', 'CAP', 'CittÃ ', 'Provincia', 'Orario min', 'Orario max', 'Tipologia consegna'];
         let items = [];
 
         onSnapshot(collection(db, ...COLL_PATH), (snapshot) => {

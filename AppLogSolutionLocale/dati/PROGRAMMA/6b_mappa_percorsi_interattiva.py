@@ -806,18 +806,8 @@ function renderCard(z){
       + '<button class="btn-annulla" onclick="annullaDividi()">Annulla</button></div>'
     : '';
   const _puntiRows = punti.map((p,i)=>renderPuntoRow(p,i,zid,punti,isCalc,isSpec,isDividiActive,isBloccato)).join('');
-  const _ricalcolaBtn = isCalc
-    ? '<button class="btn-zona btn-ricalcola-giro" onclick="calcolaGiro(' + q + zid + q + ')">&#8635; Ricalcola</button>'
-    : '';
-  const _azioniDiv = (!isSpec && !isBloccato && !isDividiActive)
-    ? '<div class="zc-actions">'
-      + '<button class="btn-zona btn-dividi" onclick="avviaDividi(' + q + zid + q + ')">&#9986; Dividi</button>'
-      + '<button class="btn-zona btn-rinomina" onclick="apriModal(' + q + zid + q + ')">&#9998; Rinomina</button>'
-      + _ricalcolaBtn
-      + '</div>'
-    : '';
   const listaPunti = isOpen
-    ? '<div class="zc-body open">' + _dividiBar + _puntiRows + _azioniDiv + '</div>'
+    ? '<div class="zc-body open">' + _dividiBar + _puntiRows + '</div>'
     : '';
 
   const nDDT = punti.reduce((a,p)=>{
@@ -842,6 +832,7 @@ function renderCard(z){
         </div>
         <div class="zc-sub">${punti.length} fermate${nDDT?' &middot; '+nDDT+' DDT':''}${_pesoStr}${stats.fatturato&&stats.fatturato!=='GranChef'?' &middot; &euro;'+stats.fatturato:''}</div>
       </div>
+      ${!isBloccato && !isSpec ? '<button class="btn-forbici" title="Dividi giro" onclick="event.stopPropagation();avviaDividi(' + q + zid + q + ')">&#9986;</button>' : ''}
       <button class="btn-eye${ZONE_HIDDEN.has(zid)?' hidden-zone':''}" title="${ZONE_HIDDEN.has(zid)?'Mostra':'Nascondi'} sulla mappa" onclick="event.stopPropagation();toggleHidden('${zid}')">&#128065;</button>
       ${!isBloccato && !isSpec ? '<button class="btn-matita" title="Rinomina giro" onclick="event.stopPropagation();apriModal(' + q + zid + q + ')">&#9998;</button>' : ''}
     </div>
@@ -1731,9 +1722,12 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
 .btn-dividi{background:#eef2ff;color:var(--p);}
 .btn-dividi:hover{background:var(--p);color:#fff;}
 /* Occhio visibilita zona sulla mappa */
-.btn-eye{background:none;border:1.5px solid #e2e8f0;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;margin-left:2px;}
+.btn-eye{background:none;border:1.5px solid #e2e8f0;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;margin-left:2px;}
 .btn-eye:hover{background:#f1f5f9;}
 .btn-eye.hidden-zone{background:#fef3c7;border-color:#f59e0b;}
+/* Forbici (Dividi) nell'header card */
+.btn-forbici{background:none;border:1.5px solid #e2e8f0;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;margin-left:4px;color:#4f46e5;}
+.btn-forbici:hover{background:#eef2ff;border-color:#4f46e5;transform:scale(1.1);}
 /* Modalita DIVIDI */
 .dividi-mode .point-row{cursor:pointer;border-radius:6px;}
 .dividi-mode .point-row:hover{background:#eff6ff!important;}

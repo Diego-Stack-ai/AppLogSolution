@@ -1227,8 +1227,8 @@ async function eseguiGeneraCompleto(){
     const d = await r.json();
     chiudiPopupGenera();
     if(d.ok){
-      let msg = d.log ? d.log.join('\n') : '\\u2705 Completato.';
-      if(d.errori && d.errori.length) msg += '\n\n\\u26A0\\uFE0F Errori:\n' + d.errori.join('\n');
+      let msg = d.log ? d.log.join('\\n') : '\\u2705 Completato.';
+      if(d.errori && d.errori.length) msg += '\\n\\n\\u26A0\\uFE0F Errori:\\n' + d.errori.join('\\n');
       alert(msg);
     } else {
       alert('\\u274C Errore: ' + (d.err||'Sconosciuto'));

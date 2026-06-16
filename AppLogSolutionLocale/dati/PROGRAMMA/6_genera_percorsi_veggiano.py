@@ -723,9 +723,9 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path, de
         .depot-info-col {{ flex: 2; padding: 16px; display: flex; gap: 14px; align-items: center; min-width: 0; }}
         .distinta-col {{ flex: 1; min-width: 90px; border-left: 2px solid #bae6fd; background: #f0f9ff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 8px; gap: 6px; }}
         .distinta-col-lbl {{ font-size: 0.58rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #0369a1; margin-bottom: 2px; }}
-        .distinta-btn {{ background: #0284c7; color: white; border: none; border-radius: 8px; padding: 7px 10px; font-size: 0.7rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 4px; width: 100%%; justify-content: center; }}
+        .distinta-btn {{ background: #0284c7; color: white; border: none; border-radius: 8px; padding: 7px 10px; font-size: 0.7rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 4px; width: 100%; justify-content: center; }}
         .distinta-btn:hover {{ background: #0369a1; }}
-        .distinta-embed {{ width: 100%%; height: 180px; border: 1px solid #e0f2fe; border-radius: 6px; background: white; display: block; }}
+        .distinta-embed {{ width: 100%; height: 180px; border: 1px solid #e0f2fe; border-radius: 6px; background: white; display: block; }}
         @media (max-width: 500px) {{ .distinta-embed {{ display: none; }} }}
         @media (max-width: 800px) {{ .main-container {{ flex-direction: column; }} #sidebar {{ width: 100%; height: 50%; }} #map {{ height: 50%; }} }}
     </style>

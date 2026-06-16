@@ -832,7 +832,7 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
 const IS_POPUP      = {{POPUP_MODE}};  // true quando aperto come popup secondo schermo
 if(IS_POPUP){
   document.body.classList.add('popup-mode');
-  // Se la finestra principale viene chiusa → chiudi anche questo popup
+  // Se la finestra principale viene chiusa \\u2192 chiudi anche questo popup
   setInterval(()=>{
     try{ if(!window.opener || window.opener.closed) window.close(); }
     catch(e){ window.close(); } // errore cross-origin = opener sparito
@@ -890,8 +890,8 @@ function badgeStato(stato){
     'bloccato':'badge-bloccato'
   };
   const labels={
-    'calcolato':'✅ Pronto','in_elaborazione':'⏳ Calcolo...','modificato':'🔄 Modificato',
-    'errore':'❌ Errore','da_calcolare':'⏸ Da calcolare','bloccato':'🔒 Bloccato'
+    'calcolato':'\\u2705 Pronto','in_elaborazione':'\\u23F3 Calcolo...','modificato':'\\u{1F504} Modificato',
+    'errore':'\\u274C Errore','da_calcolare':'\\u23F8 Da calcolare','bloccato':'\\u{1F512} Bloccato'
   };
   const cls=m[stato]||'badge-da-calcolare';
   return `<span class="zc-badge ${cls}">${labels[stato]||stato}</span>`;
@@ -936,8 +936,8 @@ function connectSSE(){
     renderCardById(zid);
     if(d.polylines && d.polylines.length) renderPolylinesZona(zid, d.polylines, ZONE.find(x=>x.id_zona===zid)?.color||'#4f46e5');
     aggiornaFase();
-    if(d.stato==='calcolato') toast(`✅ ${ZONE.find(x=>x.id_zona===zid)?.nome_giro||zid} calcolato!`);
-    if(d.stato==='errore')    toast(`❌ Errore su ${zid}: ${d.err||''}`, 5000);
+    if(d.stato==='calcolato') toast(`\\u2705 ${ZONE.find(x=>x.id_zona===zid)?.nome_giro||zid} calcolato!`);
+    if(d.stato==='errore')    toast(`\\u274C Errore su ${zid}: ${d.err||''}`, 5000);
   });
   es.addEventListener('connected', ()=>console.log('SSE connesso'));
   es.onerror=()=>setTimeout(connectSSE, 3000);
@@ -962,13 +962,13 @@ function aggiornaFase(){
   const btnGenera = document.getElementById('btn-genera');
   btnGenera.disabled = !prontoPerGenerare;
   btnGenera.title = !prontoPerGenerare
-    ? (inCalc ? 'Attendi il completamento del calcolo…' :
+    ? (inCalc ? 'Attendi il completamento del calcolo\\u2026' :
        modificati > 0 ? 'Clicca prima su Aggiorna modificati' :
        'Calcola tutti i percorsi prima di generare')
     : 'Salva e genera i file per BAT 5';
 
   const btnAgg = document.getElementById('btn-aggiorna');
-  if(modificati > 0){ btnAgg.style.display='flex'; btnAgg.textContent=`🔄 Aggiorna (${modificati})`; }
+  if(modificati > 0){ btnAgg.style.display='flex'; btnAgg.textContent=`\\u{1F504} Aggiorna (${modificati})`; }
   else { btnAgg.style.display='none'; }
 }
 
@@ -1001,14 +1001,14 @@ function renderCard(z){
   // cardBtns: variabili intermedie evitano ternari con virgolette annidati
   const _calcDisabled = (isBloccato || isInCalc) ? 'disabled' : '';
   const _lockCls      = isBloccato ? 'btn-card-locked' : 'btn-card-lock';
-  const _lockLabel    = isBloccato ? '🔒 Sblocca' : '🔓 Blocca';
+  const _lockLabel    = isBloccato ? '\\u{1F512} Sblocca' : '\\u{1F513} Blocca';
   const _lockDisabled = (isInCalc || (!isCalc && !isBloccato)) ? 'disabled' : '';
   const cardBtns = !isSpec ? `
     <div class="zc-card-btns">
       <button class="btn-card btn-card-calcola"
         onclick="event.stopPropagation(); calcolaGiro('${zid}')"
         ${_calcDisabled}>
-        📍 Calcola percorso
+        \\u{1F4CD} Calcola percorso
       </button>
       <button class="btn-card ${_lockCls}"
         onclick="event.stopPropagation(); toggleLockZona('${zid}')"
@@ -1272,28 +1272,28 @@ async function toggleLockZona(zid){
   if(!st) return;
   const action = st.stato==='bloccato' ? 'unlock' : 'lock';
   if(action==='lock' && st.stato!=='calcolato' && st.stato!=='bloccato'){
-    toast('⚠️ Calcola prima il percorso per poter bloccare il giro.');
+    toast('\\u26A0\\uFE0F Calcola prima il percorso per poter bloccare il giro.');
     return;
   }
   const r = await fetch('/api/blocca_zona',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id_zona:zid,action})});
   const d = await r.json();
-  if(!d.ok){ toast('❌ ' + (d.err||'Errore'), 4000); return; }
+  if(!d.ok){ toast('\\u274C ' + (d.err||'Errore'), 4000); return; }
   STATI[zid].stato = d.stato;
   renderCardById(zid);
   aggiornaFase();
-  toast(d.stato==='bloccato' ? `🔒 ${ZONE.find(x=>x.id_zona===zid)?.nome_giro||zid} bloccato` : `🔓 ${ZONE.find(x=>x.id_zona===zid)?.nome_giro||zid} sbloccato`);
+  toast(d.stato==='bloccato' ? `\\u{1F512} ${ZONE.find(x=>x.id_zona===zid)?.nome_giro||zid} bloccato` : `\\u{1F513} ${ZONE.find(x=>x.id_zona===zid)?.nome_giro||zid} sbloccato`);
 }
 
 // ── Calcola singolo giro (per-card) ────────────────────────────────────────────
 async function calcolaGiro(zid){
   const r = await fetch('/api/calcola',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id_zone:[zid],usa_or_tools:true})});
   const d = await r.json();
-  toast(d.ok ? `▶ Calcolo ${ZONE.find(x=>x.id_zona===zid)?.nome_giro||zid} avviato…` : '❌ Errore: '+d.err);
+  toast(d.ok ? `\\u25B6 Calcolo ${ZONE.find(x=>x.id_zona===zid)?.nome_giro||zid} avviato\\u2026` : '\\u274C Errore: '+d.err);
 }
 
 // ── Lock / Unlock globale (mantenuto per retrocompatibilità popup) ──────────────
 function toggleLock(){
-  toast('ℹ️ Usa il pulsante Blocca/Sblocca su ogni singolo giro.');
+  toast('\\u2139\\uFE0F Usa il pulsante Blocca/Sblocca su ogni singolo giro.');
 }
 
 // ── Visibilita zona sulla mappa ───────────────────────────────────────────────
@@ -1328,7 +1328,7 @@ async function confermaDividi(zid){
   const r = await fetch('/api/dividi',{method:'POST',headers:{'Content-Type':'application/json'},
     body: JSON.stringify({id_zona: zid, indici: Array.from(dividiSel)})});
   const d = await r.json();
-  if(!d.ok){ toast('❌ ' + (d.err||'Errore'), 4000); return; }
+  if(!d.ok){ toast('\\u274C ' + (d.err||'Errore'), 4000); return; }
   ZONE = d.zone;
   STATI = {};
   ZONE.forEach(z=>{ STATI[z.id_zona]={stato:'da_calcolare',polylines:[],stats:{}}; });
@@ -1349,7 +1349,7 @@ function annullaDividi(){
 async function salvaTutto(){
   const r = await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(ZONE)});
   const d = await r.json();
-  toast(d.ok ? '💾 Salvato!' : '❌ Errore salvataggio: '+d.err);
+  toast(d.ok ? '\\u{1F4BE} Salvato!' : '\\u274C Errore salvataggio: '+d.err);
 }
 
 
@@ -1357,8 +1357,8 @@ async function calcolaTutto(){
   document.getElementById('btn-calcola').disabled=true;
   const r = await fetch('/api/calcola',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id_zone:[],usa_or_tools:true})});
   const d = await r.json();
-  if(!d.ok){ toast('❌ Errore: '+d.err, 5000); document.getElementById('btn-calcola').disabled=false; return; }
-  toast(`▶ Calcolo avviato per ${d.avviati.length} giri…`);
+  if(!d.ok){ toast('\\u274C Errore: '+d.err, 5000); document.getElementById('btn-calcola').disabled=false; return; }
+  toast(`\\u25B6 Calcolo avviato per ${d.avviati.length} giri\\u2026`);
 }
 
 async function aggiornaModificati(){
@@ -1367,31 +1367,31 @@ async function aggiornaModificati(){
   // Per giri modificati manualmente: salta OR-Tools, ricalcola solo Directions
   const r = await fetch('/api/calcola',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id_zone:modificati,usa_or_tools:false})});
   const d = await r.json();
-  toast(d.ok ? `🔄 Aggiornamento avviato (${modificati.length} giri)…` : '❌ Errore: '+d.err);
+  toast(d.ok ? `\\u{1F504} Aggiornamento avviato (${modificati.length} giri)\\u2026` : '\\u274C Errore: '+d.err);
 }
 
 async function ricalcolaGiro(zid){
   const r = await fetch('/api/calcola',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id_zone:[zid],usa_or_tools:true})});
   const d = await r.json();
-  toast(d.ok ? `▶ Ricalcolo ${zid} avviato…` : '❌ Errore: '+d.err);
+  toast(d.ok ? `\\u25B6 Ricalcolo ${zid} avviato\\u2026` : '\\u274C Errore: '+d.err);
 }
 
 async function generaFile(){
   // Sicurezza: verifica che tutti i giri siano calcolati
   const nonPronti = Object.entries(STATI).filter(([,v])=>v.stato!=='calcolato').map(([k])=>k);
   if(nonPronti.length > 0){
-    toast(`⚠️ ${nonPronti.length} giri non ancora calcolati. Calcola tutto prima di generare.`, 5000);
+    toast(`\\u26A0\\uFE0F ${nonPronti.length} giri non ancora calcolati. Calcola tutto prima di generare.`, 5000);
     return;
   }
   // Prima salva lo stato corrente, poi genera gli HTML
   const rs = await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(ZONE)});
   const ds = await rs.json();
-  if(!ds.ok){ toast('❌ Errore salvataggio: '+ds.err, 5000); return; }
-  toast('💾 Salvato. Generazione file in corso…', 8000);
+  if(!ds.ok){ toast('\\u274C Errore salvataggio: '+ds.err, 5000); return; }
+  toast('\\u{1F4BE} Salvato. Generazione file in corso\\u2026', 8000);
   const r = await fetch('/api/genera',{method:'POST'});
   const d = await r.json();
-  if(d.ok) toast(`✅ File generati! ${d.giri} giri → pronti per BAT 5`, 5000);
-  else     toast('❌ Errore generazione: '+d.err, 5000);
+  if(d.ok) toast(`\\u2705 File generati! ${d.giri} giri \\u2192 pronti per BAT 5`, 5000);
+  else     toast('\\u274C Errore generazione: '+d.err, 5000);
 }
 
 // ── Riordino frecce ───────────────────────────────────────────────────────────
@@ -1420,17 +1420,17 @@ function avviaSposta(zid, idx){
   _spostaPunto   = z.lista_punti[idx];
   _spostaFromZid = zid;
   _spostaPIdx    = idx;
-  document.getElementById('sposta-sub-txt').textContent = `"${_spostaPunto.nome}" → scegli destinazione:`;
+  document.getElementById('sposta-sub-txt').textContent = `"${_spostaPunto.nome}" \\u2192 scegli destinazione:`;
   const chips = document.getElementById('sposta-chips');
   // GUARD: esclude zone bloccate come destinazione
   const destinazioni = ZONE.filter(x=>x.id_zona!==zid && x.id_zona!=='DDT_DA_INSERIRE' && (STATI[x.id_zona]?.stato||'')!=='bloccato');
   if(!destinazioni.length){
-    toast('⚠️ Tutti gli altri giri sono bloccati. Sblocca un giro prima di spostare.');
+    toast('\\u26A0\\uFE0F Tutti gli altri giri sono bloccati. Sblocca un giro prima di spostare.');
     return;
   }
   chips.innerHTML = destinazioni.map(x=>`
     <div class="sposta-chip" style="border-color:${x.color}" onclick="eseguiSposta('${x.id_zona}')">
-      <span style="color:${x.color}">●</span> ${x.nome_giro||x.id_zona}
+      <span style="color:${x.color}">\\u25CF</span> ${x.nome_giro||x.id_zona}
     </div>`).join('');
   document.getElementById('sposta-overlay').classList.add('open');
 }
@@ -1450,7 +1450,7 @@ async function eseguiSposta(toZid){
   await pulisciZoneVuote();  // se la zona sorgente è rimasta vuota, la rimuove e salva
   aggiornaFase();
   await salvaTutto();         // salva comunque (aggiorna gli stati modificato)
-  toast(`↔ Spostato: ${_spostaPunto.nome} → ${toZ.nome_giro}`);
+  toast(`\\u2194 Spostato: ${_spostaPunto.nome} \\u2192 ${toZ.nome_giro}`);
 }
 
 function chiudiSposta(){ document.getElementById('sposta-overlay').classList.remove('open'); }
@@ -1461,7 +1461,7 @@ function apriModal(zid){
   const z=ZONE.find(x=>x.id_zona===zid);
   const isGC = (zid||'').startsWith('GranChef');
   const nomi = isGC ? NOMI_GC : NOMI_DNR;
-  document.getElementById('modal-title').textContent = isGC ? '🍽️ Rinomina giro GranChef' : '🚚 Rinomina giro';
+  document.getElementById('modal-title').textContent = isGC ? '\\u{1F37D}\\uFE0F Rinomina giro GranChef' : '\\u{1F69A} Rinomina giro';
   document.getElementById('modal-sub').textContent   = `ID zona: ${zid}`;
   const sel = document.getElementById('modal-select');
   sel.innerHTML = '<option value="">— Seleziona nome —</option>' + nomi.map(n=>`<option value="${n}"${z&&z.nome_giro===n?' selected':''}>${n}</option>`).join('');
@@ -1481,7 +1481,7 @@ async function salvaRinomina(){
   const duplicato = ZONE.find(x => x.id_zona !== modalZid && (x.nome_giro||x.id_zona) === v);
   if(duplicato){
     alert(
-      `❌ NOME NON DISPONIBILE\n\n` +
+      `\\u274C NOME NON DISPONIBILE\n\n` +
       `Il nome "${v}" è già usato dal giro "${duplicato.nome_giro||duplicato.id_zona}".\n\n` +
       `Scegli un nome diverso.`
     );
@@ -1492,7 +1492,7 @@ async function salvaRinomina(){
   chiudiModal();
   renderCardById(modalZid);
   await salvaTutto();
-  toast(`✏️ Rinominato: ${v}`);
+  toast(`\\u270F\\uFE0F Rinominato: ${v}`);
 }
 
 function chiudiModal(){ document.getElementById('modal-overlay').classList.remove('open'); }
@@ -1503,7 +1503,7 @@ function apriPopupGenera(){
   // Sicurezza: tutti devono essere calcolati/bloccati
   const nonPronti = Object.entries(STATI).filter(([,v])=>v.stato!=='calcolato'&&v.stato!=='bloccato').map(([k])=>k);
   if(nonPronti.length>0){
-    toast(`⚠️ ${nonPronti.length} giri non ancora calcolati.`, 5000);
+    toast(`\\u26A0\\uFE0F ${nonPronti.length} giri non ancora calcolati.`, 5000);
     return;
   }
   document.getElementById('popup-genera-overlay').classList.add('open');
@@ -1515,7 +1515,7 @@ function chiudiPopupGenera(){
 
 async function eseguiGeneraCompleto(){
   const btn = document.getElementById('btn-avvia-genera');
-  btn.disabled = true; btn.textContent = '⏳ Elaborazione…';
+  btn.disabled = true; btn.textContent = '\\u23F3 Elaborazione\\u2026';
   const flags = {
     mappe:    document.getElementById('flag-mappe').checked,
     distinte: document.getElementById('flag-distinte').checked,
@@ -1526,17 +1526,17 @@ async function eseguiGeneraCompleto(){
     const d = await r.json();
     chiudiPopupGenera();
     if(d.ok){
-      let msg = d.log ? d.log.join('\n') : '✅ Completato.';
-      if(d.errori && d.errori.length) msg += '\n\n⚠️ Errori:\n' + d.errori.join('\n');
+      let msg = d.log ? d.log.join('\n') : '\\u2705 Completato.';
+      if(d.errori && d.errori.length) msg += '\n\n\\u26A0\\uFE0F Errori:\n' + d.errori.join('\n');
       alert(msg);
     } else {
-      alert('❌ Errore: ' + (d.err||'Sconosciuto'));
+      alert('\\u274C Errore: ' + (d.err||'Sconosciuto'));
     }
   } catch(e){
     chiudiPopupGenera();
-    alert('❌ Errore di rete durante la generazione.');
+    alert('\\u274C Errore di rete durante la generazione.');
   } finally {
-    btn.disabled=false; btn.textContent='▶ Avvia selezionati';
+    btn.disabled=false; btn.textContent='\\u25B6 Avvia selezionati';
   }
 }
 
@@ -1594,7 +1594,7 @@ let _popupChecker = null;
 function apriPopup(e){
   e && e.stopPropagation();
 
-  // Se popup già aperto → portalo in primo piano
+  // Se popup già aperto \\u2192 portalo in primo piano
   if(_popupRef && !_popupRef.closed){
     _popupRef.focus();
     return;

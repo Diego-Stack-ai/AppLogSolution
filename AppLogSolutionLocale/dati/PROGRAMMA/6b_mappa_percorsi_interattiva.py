@@ -653,10 +653,6 @@ function aggiornaFase(){
   const inCalc   = stati.some(s=>s==='in_elaborazione');
   const modificati = stati.filter(s=>s==='modificato').length;
 
-  document.getElementById('fase1-pill').className = 'fase-pill ' + (alcuniCal?'done':'active');
-  document.getElementById('fase2-pill').className = 'fase-pill ' + (inCalc?'active':(alcuniCal?'done':''));
-  document.getElementById('fase3-pill').className = 'fase-pill ' + (tuttiCal?'active':'');
-
   document.getElementById('btn-calcola').disabled = inCalc;
 
   const prontoPerGenerare = tuttiCal && modificati === 0 && !inCalc;
@@ -691,6 +687,15 @@ function renderCard(z){
   const isOpen = activeZid===zid;
   const col    = z.color||'#4f46e5';
   const txt    = colorContrast(col);
+
+  // Fase per-card: 1=Editing, 2=Calcolo, 3=Revisione
+  const _cardFase = isInCalc ? 2 : isCalc ? 3 : 1;
+  const _fasePills = !isSpec ? `
+    <div class="card-fase-bar">
+      <div class="card-fase-pill${_cardFase===1?' active':_cardFase>1?' done':''}">1 \\u00B7 Editing</div>
+      <div class="card-fase-pill${_cardFase===2?' active':_cardFase>2?' done':''}">2 \\u00B7 Calcolo</div>
+      <div class="card-fase-pill${_cardFase===3?' active':''}">3 \\u00B7 Revisione</div>
+    </div>` : '';
 
   const statsBar = isCalc ? `
     <div class="zc-stats">
@@ -762,6 +767,7 @@ function renderCard(z){
       <button class="btn-eye${ZONE_HIDDEN.has(zid)?' hidden-zone':''}" title="${ZONE_HIDDEN.has(zid)?'Mostra':'Nascondi'} sulla mappa" onclick="event.stopPropagation();toggleHidden('${zid}')">&#128065;</button>
       ${!isBloccato && !isSpec ? '<button class="btn-matita" title="Rinomina giro" onclick="event.stopPropagation();apriModal(' + q + zid + q + ')">&#9998;</button>' : ''}
     </div>
+    ${_fasePills}
     ${cardBtns}
     ${statsBar}
     ${listaPunti}
@@ -1433,13 +1439,13 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
 .btn-matita{background:none;border:1.5px solid #e2e8f0;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;margin-left:4px;}
 .btn-matita:hover{background:#eef2ff;border-color:#4f46e5;transform:scale(1.1);}
 
-/* ── FASE INDICATOR ── */
-#fase-bar{display:flex;gap:0;margin-top:10px;}
-.fase-pill{flex:1;text-align:center;padding:4px 6px;font-size:0.65rem;font-weight:700;border-radius:0;cursor:default;color:#475569;background:rgba(255,255,255,0.05);}
-.fase-pill:first-child{border-radius:6px 0 0 6px;}
-.fase-pill:last-child{border-radius:0 6px 6px 0;}
-.fase-pill.active{background:var(--p);color:#fff;}
-.fase-pill.done{background:#10b981;color:#fff;}
+/* ── FASE INDICATOR PER-CARD ── */
+.card-fase-bar{display:flex;gap:0;margin:6px 10px 0;}  
+.card-fase-pill{flex:1;text-align:center;padding:3px 4px;font-size:0.6rem;font-weight:700;border-radius:0;cursor:default;color:#94a3b8;background:rgba(0,0,0,0.04);border:1px solid #e2e8f0;border-right:none;}
+.card-fase-pill:first-child{border-radius:6px 0 0 6px;}
+.card-fase-pill:last-child{border-radius:0 6px 6px 0;border-right:1px solid #e2e8f0;}
+.card-fase-pill.active{background:var(--p);color:#fff;border-color:var(--p);}
+.card-fase-pill.done{background:#10b981;color:#fff;border-color:#10b981;}
 
 /* ── ZONA LISTA ── */
 #zone-list{flex:1;overflow-y:auto;padding:12px 10px;}
@@ -1648,11 +1654,6 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
       <button class="btn-hdr btn-calcola" id="btn-calcola" onclick="calcolaTutto()">▶ Calcola percorsi</button>
       <button class="btn-hdr btn-aggiorna" id="btn-aggiorna" onclick="aggiornaModificati()" style="display:none;">🔄 Aggiorna modificati</button>
       <button class="btn-hdr btn-genera" id="btn-genera" onclick="apriPopupGenera()" disabled>💾 Salva e Genera file</button>
-    </div>
-    <div id="fase-bar">
-      <div class="fase-pill active" id="fase1-pill">1 · Editing</div>
-      <div class="fase-pill" id="fase2-pill">2 · Calcolo</div>
-      <div class="fase-pill" id="fase3-pill">3 · Revisione</div>
     </div>
   </div>
   <div id="zone-list"></div>

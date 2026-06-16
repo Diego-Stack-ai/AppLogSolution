@@ -118,12 +118,22 @@ def _carica_dati(data_dir: Path) -> bool:
     else:
         return False
 
-    # Inizializza stati
+    # Inizializza stati — ripristina da JSON se già disponibile
     STATO_GIRI = {}
     for z in ZONE_CACHE:
         zid = z.get("id_zona", "")
-        if zid not in ("DDT_DA_INSERIRE",):
-            STATO_GIRI[zid] = {"stato": "da_calcolare", "polylines": [], "stats": {}, "err": ""}
+        if zid in ("DDT_DA_INSERIRE",):
+            continue
+        # Legge 'stato' scritto in precedenza nel JSON (calcolato/bloccato) con fallback
+        stato_salvato = z.get("_stato", "da_calcolare")
+        if stato_salvato not in ("calcolato", "bloccato"):
+            stato_salvato = "da_calcolare"
+        STATO_GIRI[zid] = {
+            "stato":     stato_salvato,
+            "polylines": z.get("_polylines", []),
+            "stats":     z.get("_stats", {}),
+            "err":       ""
+        }
     return True
 
 # ── Calcolo asincrono per singolo giro ────────────────────────────────────────
@@ -164,6 +174,8 @@ def _calcola_giro(zid: str, punti: list, usa_or_tools: bool = True):
                     z["lista_punti"] = perc
                     break
             STATO_GIRI[zid].update({"stato": "calcolato", "polylines": polylines, "stats": stats, "err": ""})
+            # Persisti stato nel record JSON per il prossimo riavvio
+            _persisti_stato_giro(zid)
 
         _broadcast("stato_giro", {
             "id_zona": zid, "stato": "calcolato",
@@ -175,6 +187,24 @@ def _calcola_giro(zid: str, punti: list, usa_or_tools: bool = True):
             if zid in STATO_GIRI:
                 STATO_GIRI[zid].update({"stato": "errore", "err": str(e)})
         _broadcast("stato_giro", {"id_zona": zid, "stato": "errore", "err": str(e)})
+
+# ── Persistenza stato giro nel JSON ──────────────────────────────────────────
+def _persisti_stato_giro(zid: str):
+    """Scrive _stato, _polylines, _stats nel record della zona nel JSON su disco."""
+    if not TARGET_DIR:
+        return
+    try:
+        st = STATO_GIRI.get(zid, {})
+        for z in ZONE_CACHE:
+            if z.get("id_zona") == zid:
+                z["_stato"]     = st.get("stato", "da_calcolare")
+                z["_polylines"] = st.get("polylines", [])
+                z["_stats"]     = st.get("stats", {})
+                break
+        (TARGET_DIR / "viaggi_giornalieri.json").write_text(
+            json.dumps(ZONE_CACHE, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
 
 # ── Flask routes ──────────────────────────────────────────────────────────────
 @app.after_request
@@ -382,6 +412,102 @@ def api_genera():
     except Exception as e:
         return jsonify({"ok": False, "err": str(e)}), 500
 
+@app.route("/api/blocca_zona", methods=["POST"])
+def api_blocca_zona():
+    """Blocca o sblocca un singolo giro. Solo giri calcolati possono essere bloccati."""
+    try:
+        body   = request.json or {}
+        zid    = body.get("id_zona", "")
+        action = body.get("action", "lock")  # 'lock' | 'unlock'
+        with _lock:
+            st = STATO_GIRI.get(zid)
+            if not st:
+                return jsonify({"ok": False, "err": "Zona non trovata"}), 404
+            if action == "lock":
+                if st["stato"] not in ("calcolato", "bloccato"):
+                    return jsonify({"ok": False, "err": "Calcola il percorso prima di bloccare"}), 400
+                st["stato"] = "bloccato"
+            else:
+                st["stato"] = "calcolato"
+            _persisti_stato_giro(zid)
+        _broadcast("stato_giro", {"id_zona": zid, "stato": st["stato"]})
+        return jsonify({"ok": True, "stato": st["stato"]})
+    except Exception as e:
+        return jsonify({"ok": False, "err": str(e)}), 500
+
+@app.route("/api/genera_completo", methods=["POST"])
+def api_genera_completo():
+    """Salva + genera HTML + lancia opzionalmente BAT 5, 6, 7B."""
+    import subprocess, sys
+    try:
+        body      = request.json or {}
+        flags     = body.get("flags", {})
+        # Prima esegui api_genera (salva JSON + HTML percorsi)
+        with app.test_request_context():
+            pass  # usato solo per chiamata interna
+        # Chiama la logica di genera direttamente
+        out_dir = TARGET_DIR / "PERCORSI_VEGGIANO"
+        if out_dir.exists():
+            for f in out_dir.glob("*.html"):
+                try: f.unlink()
+                except: pass
+        out_dir.mkdir(exist_ok=True)
+        summary = []
+        for z in ZONE_CACHE:
+            zid   = z.get("id_zona")
+            if not zid or zid == "DDT_DA_INSERIRE": continue
+            punti = z.get("lista_punti", [])
+            if not punti: continue
+            st    = STATO_GIRI.get(zid, {})
+            poly  = st.get("polylines", [])
+            stats = st.get("stats", {})
+            km    = stats.get("km", 0)
+            t_g   = stats.get("t_guida", 0)
+            t_s   = stats.get("t_sosta", 0)
+            t_tot = stats.get("t_tot", 0)
+            v_id  = z.get("nome_giro") or zid
+            z_str = ", ".join(sorted(set(str(p.get("zona","")) for p in punti)))
+            depot = bat3.get_depot_for_points(punti)
+            is_gc = stats.get("is_gc", False)
+            tot_ddt   = stats.get("tot_ddt", 0)
+            fatturato = stats.get("fatturato", "0.00")
+            fname = bat3.sanitize_filename(f"{v_id}_Zone_{zid}.html")
+            bat3.genera_html_giro(v_id, z_str, punti, (km, t_g, t_s, t_tot), poly, out_dir / fname, depot)
+            summary.append({"v_id": v_id, "zone_str": z_str, "fname": fname,
+                            "km": km, "t_guida": t_g, "t_sosta": t_s, "t_tot": t_tot,
+                            "punti": len(punti), "tot_ddt": tot_ddt,
+                            "fatturato": fatturato, "is_grand_chef": is_gc})
+        bat3.gera_riepilogo(summary, out_dir / "RIEPILOGO_GIRI.html")
+        (TARGET_DIR / "viaggi_giornalieri.json").write_text(
+            json.dumps(ZONE_CACHE, indent=2, ensure_ascii=False), encoding="utf-8")
+        ZONE_ESCLUSE = {"DDT_DA_INSERIRE", "SENZA_ZONA"}
+        zone_ottimizzato = [z for z in ZONE_CACHE if z.get("id_zona") not in ZONE_ESCLUSE and z.get("lista_punti")]
+        (TARGET_DIR / "viaggi_giornalieri_OTTIMIZZATO.json").write_text(
+            json.dumps(zone_ottimizzato, indent=2, ensure_ascii=False), encoding="utf-8")
+        log = [f"✅ Generati {len(summary)} giri HTML"]
+        errori = []
+        prog_dir = Path(__file__).resolve().parent
+        # Lancia script facoltativi
+        script_map = {
+            "mappe":    prog_dir.parent / "5_AVVIA_MOBILE_AUTISTI.bat",
+            "distinte": prog_dir.parent / "6_GENERA_DISTINTE_PDF.bat",
+            "traffico": prog_dir.parent / "7B_AGGIORNA_TRAFFICO_SERALE.bat",
+        }
+        for flag_key, bat_path in script_map.items():
+            if flags.get(flag_key):
+                if bat_path.exists():
+                    try:
+                        subprocess.Popen([str(bat_path)], shell=True, cwd=str(bat_path.parent))
+                        log.append(f"▶ Avviato: {bat_path.name}")
+                    except Exception as ex:
+                        errori.append(f"Errore {bat_path.name}: {ex}")
+                else:
+                    errori.append(f"File non trovato: {bat_path.name}")
+        status = "partial" if errori else "ok"
+        return jsonify({"ok": True, "status": status, "log": log, "errori": errori, "giri": len(summary)})
+    except Exception as e:
+        return jsonify({"ok": False, "err": str(e)}), 500
+
 @app.route("/api/sse")
 def api_sse():
     """Server-Sent Events: stream real-time aggiornamenti al browser."""
@@ -492,7 +618,34 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
 .badge-modificato{background:#fef3c7;color:#92400e;}
 .badge-errore{background:#fee2e2;color:#991b1b;}
 .badge-da-calcolare{background:#f1f5f9;color:#64748b;}
+.badge-bloccato{background:#1e293b;color:#94a3b8;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
+
+/* Pulsanti per-card (calcola / lock) */
+.zc-card-btns{display:flex;gap:5px;padding:0 14px 10px;}
+.btn-card{flex:1;border:none;border-radius:7px;padding:6px 4px;font-size:0.68rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:3px;}
+.btn-card-calcola{background:#eef2ff;color:#4f46e5;}
+.btn-card-calcola:hover:not(:disabled){background:#4f46e5;color:#fff;}
+.btn-card-calcola:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed;}
+.btn-card-lock{background:#f0fdf4;color:#059669;}
+.btn-card-lock:hover:not(:disabled){background:#10b981;color:#fff;}
+.btn-card-lock:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed;}
+.btn-card-locked{background:#1e293b;color:#94a3b8;}
+.btn-card-locked:hover{background:#334155;color:#fff;}
+
+/* POPUP SALVA E GENERA */
+#popup-genera-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#popup-genera-overlay.open{display:flex;}
+.popup-genera-box{background:#fff;border-radius:20px;padding:28px;width:360px;box-shadow:0 24px 64px rgba(0,0,0,0.3);}
+.popup-genera-title{font-size:1.1rem;font-weight:900;color:#1e293b;margin-bottom:4px;}
+.popup-genera-sub{font-size:0.8rem;color:#64748b;margin-bottom:20px;}
+.popup-genera-flags{display:flex;flex-direction:column;gap:12px;margin-bottom:22px;}
+.popup-genera-flag{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.88rem;font-weight:600;color:#1e293b;}
+.popup-genera-flag input[type=checkbox]{width:18px;height:18px;accent-color:#4f46e5;cursor:pointer;}
+.popup-genera-btns{display:flex;gap:10px;}
+.popup-genera-cancel{flex:1;background:#f1f5f9;color:#64748b;border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;font-size:0.85rem;}
+.popup-genera-ok{flex:2;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:10px;font-weight:800;cursor:pointer;font-size:0.85rem;}
+.popup-genera-ok:disabled{background:#94a3b8;cursor:not-allowed;}
 
 /* Stats barra */
 .zc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:0 14px 10px;border-top:1px solid var(--border);margin-top:-2px;}
@@ -616,16 +769,41 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
 <!-- TOAST -->
 <div id="toast"></div>
 
+<!-- POPUP SALVA E GENERA FILE -->
+<div id="popup-genera-overlay">
+  <div class="popup-genera-box">
+    <div class="popup-genera-title">💾 Salva e genera file</div>
+    <div class="popup-genera-sub">Il JSON viene aggiornato. Vuoi lanciare anche:</div>
+    <div class="popup-genera-flags">
+      <label class="popup-genera-flag">
+        <input type="checkbox" id="flag-mappe" checked>
+        🗺️ Genera Mappe + Link WhatsApp (BAT 5)
+      </label>
+      <label class="popup-genera-flag">
+        <input type="checkbox" id="flag-distinte" checked>
+        📄 Genera Distinte (BAT 6)
+      </label>
+      <label class="popup-genera-flag">
+        <input type="checkbox" id="flag-traffico">
+        🚦 Aggiorna Traffico Serale (BAT 7B)
+      </label>
+    </div>
+    <div class="popup-genera-btns">
+      <button class="popup-genera-cancel" onclick="chiudiPopupGenera()">Annulla</button>
+      <button class="popup-genera-ok" id="btn-avvia-genera" onclick="eseguiGeneraCompleto()">▶ Avvia selezionati</button>
+    </div>
+  </div>
+</div>
+
 <!-- SIDEBAR -->
 <div id="sidebar">
   <div id="hdr">
     <div class="logo" style="justify-content:space-between;"><span style="display:flex;align-items:center;gap:8px;"><span>🗺️</span> Mappa Percorsi Interattiva</span><span class="btns-sgancia-wrap" style="display:flex;gap:4px;"><button class="btn-sgancia" id="btn-sgancia" onclick="toggleSgancia(event)" title="Sgancia pannello (galleggiante)">&#10697;</button><button class="btn-sgancia" id="btn-popup" onclick="apriPopup(event)" title="Apri su secondo schermo">&#8599;</button></span></div>
     <div class="data-badge">{{DATA_GIORNO}}</div>
     <div class="hdr-btns">
-      <button class="btn-hdr btn-lock locked" id="btn-lock" onclick="toggleLock()">BLOCCATA 🔒</button>
       <button class="btn-hdr btn-calcola" id="btn-calcola" onclick="calcolaTutto()">▶ Calcola percorsi</button>
       <button class="btn-hdr btn-aggiorna" id="btn-aggiorna" onclick="aggiornaModificati()" style="display:none;">🔄 Aggiorna modificati</button>
-      <button class="btn-hdr btn-genera" id="btn-genera" onclick="generaFile()" disabled>💾 Salva e Genera file</button>
+      <button class="btn-hdr btn-genera" id="btn-genera" onclick="apriPopupGenera()" disabled>💾 Salva e Genera file</button>
     </div>
     <div id="fase-bar">
       <div class="fase-pill active" id="fase1-pill">1 · Editing</div>
@@ -698,11 +876,12 @@ function badgeStato(stato){
     'in_elaborazione':'badge-elaborazione',
     'modificato':'badge-modificato',
     'errore':'badge-errore',
-    'da_calcolare':'badge-da-calcolare'
+    'da_calcolare':'badge-da-calcolare',
+    'bloccato':'badge-bloccato'
   };
   const labels={
     'calcolato':'✅ Pronto','in_elaborazione':'⏳ Calcolo...','modificato':'🔄 Modificato',
-    'errore':'❌ Errore','da_calcolare':'⏸ Da calcolare'
+    'errore':'❌ Errore','da_calcolare':'⏸ Da calcolare','bloccato':'🔒 Bloccato'
   };
   const cls=m[stato]||'badge-da-calcolare';
   return `<span class="zc-badge ${cls}">${labels[stato]||stato}</span>`;
@@ -722,7 +901,6 @@ async function init(){
     renderMarkers();
     renderPolylines();
   }
-  // Rimuovi silenziosamente i giri vuoti appena caricati (es. da BAT 2 con zone extra)
   await pulisciZoneVuote(true);
   connectSSE();
   aggiornaFase();
@@ -753,8 +931,9 @@ function connectSSE(){
 // ── Fase indicator ────────────────────────────────────────────────────────────
 function aggiornaFase(){
   const stati    = Object.values(STATI).map(s=>s.stato);
-  const tuttiCal = stati.length>0 && stati.every(s=>s==='calcolato');
-  const alcuniCal= stati.some(s=>s==='calcolato');
+  const isPronto = s => s==='calcolato' || s==='bloccato';
+  const tuttiCal = stati.length>0 && stati.every(s=>isPronto(s));
+  const alcuniCal= stati.some(s=>isPronto(s));
   const inCalc   = stati.some(s=>s==='in_elaborazione');
   const modificati = stati.filter(s=>s==='modificato').length;
 
@@ -764,7 +943,6 @@ function aggiornaFase(){
 
   document.getElementById('btn-calcola').disabled = inCalc;
 
-  // Genera abilitato SOLO se tutti i giri sono calcolati e nessuno in modifica
   const prontoPerGenerare = tuttiCal && modificati === 0 && !inCalc;
   const btnGenera = document.getElementById('btn-genera');
   btnGenera.disabled = !prontoPerGenerare;
@@ -790,14 +968,14 @@ function renderCard(z){
   const isSpec = zid==='DDT_DA_INSERIRE' || zid==='SENZA_ZONA';
   const st     = STATI[zid]||{stato:'da_calcolare',stats:{}};
   const stats  = st.stats||{};
-  const isCalc = st.stato==='calcolato';
+  const isCalc = st.stato==='calcolato' || st.stato==='bloccato';
+  const isBloccato = st.stato==='bloccato';
+  const isInCalc   = st.stato==='in_elaborazione';
   const punti  = z.lista_punti||[];
   const isOpen = activeZid===zid;
   const col    = z.color||'#4f46e5';
   const txt    = colorContrast(col);
-  const isHidden = ZONE_HIDDEN.has(zid);
 
-  // Stat bar (solo se calcolato)
   const statsBar = isCalc ? `
     <div class="zc-stats">
       <div class="stat-item"><div class="stat-val">${stats.km||0} km</div><div class="stat-lbl">Distanza</div></div>
@@ -805,21 +983,33 @@ function renderCard(z){
       <div class="stat-item"><div class="stat-val">${fmtMin(stats.t_tot)}</div><div class="stat-lbl">Totale</div></div>
     </div>` : '';
 
-  // Modalita DIVIDI attiva su questo giro?
+  const cardBtns = !isSpec ? `
+    <div class="zc-card-btns">
+      <button class="btn-card btn-card-calcola"
+        onclick="event.stopPropagation(); calcolaGiro('${zid}')"
+        ${isBloccato || isInCalc ? 'disabled' : ''}>
+        📍 Calcola percorso
+      </button>
+      <button class="btn-card ${isBloccato ? 'btn-card-locked' : 'btn-card-lock'}"
+        onclick="event.stopPropagation(); toggleLockZona('${zid}')"
+        ${isInCalc ? 'disabled title="Attendi la fine del calcolo"' : !isCalc && !isBloccato ? 'disabled title="Calcola il percorso prima di bloccare"' : ''}>
+        ${isBloccato ? '🔒 Sblocca' : '🔓 Blocca'}
+      </button>
+    </div>` : '';
+
   const isDividiActive = dividiZid === zid;
 
-  // Lista punti espansa
   const listaPunti = isOpen ? `
     <div class="zc-body open">
       ${isDividiActive ? `<div class="dividi-bar">&#9986; Seleziona fermate da spostare <b>${dividiSel.size}</b> sel.<button onclick="confermaDividi('${zid}')">Crea giro</button><button class="btn-annulla" onclick="annullaDividi()">Annulla</button></div>` : ''}
-      ${punti.map((p,i)=>renderPuntoRow(p,i,zid,punti,isCalc,isSpec,isDividiActive)).join('')}
-      ${!isSpec && !isLocked && !isDividiActive ? `
+      ${punti.map((p,i)=>renderPuntoRow(p,i,zid,punti,isCalc,isSpec,isDividiActive,isBloccato)).join('')}
+      ${!isSpec && !isBloccato && !isDividiActive ? `
       <div class="zc-actions">
         <button class="btn-zona btn-dividi" onclick="avviaDividi('${zid}')">&#9986; Dividi</button>
         <button class="btn-zona btn-rinomina" onclick="apriModal('${zid}')">&#9998; Rinomina</button>
-        ${isCalc?`<button class="btn-zona btn-ricalcola-giro" onclick="ricalcolaGiro('${zid}')">&#8635; Ricalcola</button>`:''}
+        ${isCalc?`<button class="btn-zona btn-ricalcola-giro" onclick="calcolaGiro('${zid}')">&#8635; Ricalcola</button>`:''}
       </div>` : ''}
-    </div>` : '';;
+    </div>` : ''
 
   const nDDT = punti.reduce((a,p)=>{
     const cf=p.codici_ddt_frutta||[]; const cl=p.codici_ddt_latte||[];
@@ -827,7 +1017,7 @@ function renderCard(z){
   }, 0);
 
   return `
-  <div class="zone-card${isOpen?' active':''}" id="zcard-${zid}" data-zid="${zid}">
+  <div class="zone-card${isOpen?' active':''}${isBloccato?' bloccata':''}" id="zcard-${zid}" data-zid="${zid}">
     <div class="zc-head" onclick="toggleCard('${zid}')">
       <div class="zc-pill" style="background:${col};color:${txt}">${punti.length}</div>
       <div class="zc-info">
@@ -838,16 +1028,16 @@ function renderCard(z){
         <div class="zc-sub">${punti.length} fermate${nDDT?' &middot; '+nDDT+' DDT':''}${stats.fatturato&&stats.fatturato!=='GranChef'?' &middot; &euro;'+stats.fatturato:''}</div>
       </div>
       <button class="btn-eye${ZONE_HIDDEN.has(zid)?' hidden-zone':''}" title="${ZONE_HIDDEN.has(zid)?'Mostra':'Nascondi'} sulla mappa" onclick="event.stopPropagation();toggleHidden('${zid}')">&#128065;</button>
-      ${!isLocked && !isSpec ? `<button class="btn-matita" title="Rinomina giro" onclick="event.stopPropagation();apriModal('${zid}')">&#9998;</button>` : ''}
+      ${!isBloccato && !isSpec ? `<button class="btn-matita" title="Rinomina giro" onclick="event.stopPropagation();apriModal('${zid}')">&#9998;</button>` : ''}
     </div>
+    ${cardBtns}
     ${statsBar}
     ${listaPunti}
   </div>`;
 }
 
-function renderPuntoRow(p,i,zid,punti,isCalc,isSpec,isDividiActive=false){
+function renderPuntoRow(p,i,zid,punti,isCalc,isSpec,isDividiActive=false,isBloccato=false){
   const eta    = p.ora_arrivo ? `&#9201; ${p.ora_arrivo}` : '';
-  // Fascia oraria di consegna (da BAT 1: orario_min / orario_max)
   const oMin   = p.orario_min || p.orario_min_frutta || p.orario_min_latte || '';
   const oMax   = p.orario_max || p.orario_max_frutta || p.orario_max_latte || '';
   const fascia = (oMin||oMax) ? `&#128344; ${oMin||'?'}&ndash;${oMax||'?'}` : '';
@@ -857,14 +1047,14 @@ function renderPuntoRow(p,i,zid,punti,isCalc,isSpec,isDividiActive=false){
   return `
   <div class="point-row${isSel?' dividi-sel':''}" style="${isLate}" id="pr-${zid}-${i}" ${isDividiActive?`onclick="toggleDividiSel(${i})"`:''}>
     <div class="pt-num" style="${p.ritardo?'background:#ef4444':isSel?'background:#3b82f6':''}">`+(isSel?'&#10003;':(i+1))+`</div>
-    <div class="pt-info" onclick="${isDividiActive?'event.stopPropagation();toggleDividiSel('+i+')':'panToPoint('+(p.lat||0)+','+(p.lon||0)+')'}">
+    <div class="pt-info" onclick="${isDividiActive?'event.stopPropagation();toggleDividiSel('+i+')':'panToPoint('+(p.lat||0)+','+(p.lon||0)+')'}">  
       <div class="pt-nome">${p.nome||'&mdash;'}</div>
       <div class="pt-addr">${(p.indirizzo||'').substring(0,45)}</div>
       ${fascia?`<div class="pt-eta" style="color:#0369a1;">${fascia}</div>`:''}
       ${eta?`<div class="pt-eta">${eta}</div>`:''}
       ${nota?`<div class="pt-addr" style="color:#92400e;font-style:italic;">&#128221; ${nota.substring(0,50)}</div>`:''}
     </div>
-    ${!isSpec && !isLocked && !isDividiActive ? `
+    ${!isSpec && !isBloccato && !isDividiActive ? `
     <div class="pt-arrow-btns">
       <button class="pt-arrow" title="Su" onclick="muoviPunto('${zid}',`+i+`,-1)" ${i===0?'disabled':''}>&#9650;</button>
       <button class="pt-arrow" title="Giu" onclick="muoviPunto('${zid}',`+i+`,+1)" ${i===punti.length-1?'disabled':''}>&#9660;</button>
@@ -882,7 +1072,6 @@ function renderCardById(zid){
   el.outerHTML = renderCard(z);
 }
 
-// Rimuove automaticamente le zone rimaste senza fermate (anche al caricamento)
 async function pulisciZoneVuote(silenzioso=false){
   const vuote = ZONE.filter(z => (z.lista_punti||[]).length === 0
     && z.id_zona !== 'DDT_DA_INSERIRE' && z.id_zona !== 'SENZA_ZONA');
@@ -892,7 +1081,6 @@ async function pulisciZoneVuote(silenzioso=false){
     if(idx > -1) ZONE.splice(idx, 1);
     delete STATI[z.id_zona];
   });
-  // Salva su disco: la zona vuota non riappare al prossimo riavvio
   await salvaTutto();
   if(!silenzioso){
     const nomi = vuote.map(z=>z.nome_giro||z.id_zona).join(', ');
@@ -912,7 +1100,6 @@ function toggleCard(zid){
   }
 }
 
-// ── Google Maps ───────────────────────────────────────────────────────────────
 async function initMap(){
   const {Map, InfoWindow, Size} = await google.maps.importLibrary("maps");
   _InfoWindow = InfoWindow;
@@ -923,7 +1110,6 @@ async function initMap(){
     mapTypeId:"hybrid",
     mapTypeControl:false, streetViewControl:false
   });
-  // Chiudi InfoWindow cliccando su punto vuoto della mappa
   gMap.addListener('click', ()=>{ if(gInfoWindow){ gInfoWindow.close(); gInfoWindow=null; } });
 }
 
@@ -936,51 +1122,39 @@ function renderMarkers(){
   ZONE.forEach(z=>{
     const col = z.color||'#4f46e5';
     const zid = z.id_zona;
-    if(ZONE_HIDDEN.has(zid)) return; // zona nascosta - salta
+    if(ZONE_HIDDEN.has(zid)) return;
     (z.lista_punti||[]).forEach((p,i)=>{
       if(!p.lat||!p.lon) return;
       hasPoints=true;
       bounds.extend({lat:p.lat,lng:p.lon});
       const isGC = (p.tipologia_grado||'').toUpperCase().includes('GRAND') || (p.tipologia_grado||'').toUpperCase().includes('CHEF');
-
-      // Wrapper: AdvancedMarkerElement ancora il bottom-center del content alla coordinata.
-      // Il wrapper include il cerchio + il triangolino puntato sotto (solo per DNR).
       const el = document.createElement('div');
       el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;';
-
       const circle = document.createElement('div');
-      // Il numero è SEMPRE visibile su tutti i marker per corrispondere alle card
       if(isGC){
-        // GranChef: emoji + numero come etichetta sotto
         circle.style.cssText = `width:28px;height:28px;border-radius:50%;background:${col};border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:14px;transition:transform 0.15s;flex-shrink:0;`;
         circle.innerHTML = '&#x1F468;&#x200D;&#x1F373;';
         el.appendChild(circle);
-        // Numero sotto l'emoji (piccola pill)
         const numBadge = document.createElement('div');
         numBadge.style.cssText = `background:${col};color:white;font-size:10px;font-weight:800;line-height:15px;padding:0 4px;border-radius:6px;margin-top:1px;border:1px solid white;`;
         numBadge.textContent = `${i+1}`;
         el.appendChild(numBadge);
       } else {
-        // DNR: cerchio numerato + triangolino (goccia)
         circle.style.cssText = `width:28px;height:28px;border-radius:50%;background:${col};border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:800;transition:transform 0.15s;flex-shrink:0;`;
         circle.innerHTML = `${i+1}`;
         el.appendChild(circle);
-        // Triangolino puntato giù — fa "toccare" la coordinata con la punta
         const tip = document.createElement('div');
         tip.style.cssText = `width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid ${col};margin-top:-1px;flex-shrink:0;`;
         el.appendChild(tip);
       }
-
-
       el.addEventListener('mouseenter', ()=>{ circle.style.transform='scale(1.15)'; });
       el.addEventListener('mouseleave', ()=>{ circle.style.transform='scale(1)'; });
       el.addEventListener('click', (e)=>{
-        e.stopPropagation();  // evita che il click raggiunga gMap e chiuda subito l'InfoWindow
+        e.stopPropagation();
         toggleCard(zid);
         setTimeout(()=>panToPoint(p.lat,p.lon),200);
         mostraInfoMarker(p);
       });
-
       const {AdvancedMarkerElement} = google.maps.marker||{};
       if(AdvancedMarkerElement){
         const m = new AdvancedMarkerElement({position:{lat:p.lat,lng:p.lon},map:gMap,title:p.nome,content:el});
@@ -991,7 +1165,6 @@ function renderMarkers(){
   if(hasPoints) gMap.fitBounds(bounds,{padding:60});
 }
 
-// InfoWindow al click sul marker
 function mostraInfoMarker(p){
   if(gInfoWindow){ gInfoWindow.close(); gInfoWindow=null; }
   if(!_InfoWindow || !gMap) return;
@@ -1023,7 +1196,7 @@ function renderPolylinesZona(zid, polylines, color){
   if(gPolylines[zid]){ gPolylines[zid].forEach(pl=>pl.setMap(null)); }
   gPolylines[zid]=[];
   if(!polylines||!polylines.length) return;
-  if(ZONE_HIDDEN.has(zid)) return; // zona nascosta - non disegnare
+  if(ZONE_HIDDEN.has(zid)) return;
   polylines.forEach(enc=>{
     if(!enc) return;
     const path = google.maps.geometry.encoding.decodePath(enc);
@@ -1043,22 +1216,34 @@ function panToPoint(lat,lng){
   gMap.setZoom(Math.max(gMap.getZoom(),13));
 }
 
-// ── Lock / Unlock ─────────────────────────────────────────────────────────────
-function toggleLock(){
-  isLocked = !isLocked;
-  const btn = document.getElementById('btn-lock');
-  const btnSalva = document.getElementById('btn-salva');
-  if(isLocked){
-    btn.textContent = 'BLOCCATA 🔒';
-    btn.className = 'btn-hdr btn-lock locked';
-    btnSalva.style.display = 'none';
-  } else {
-    btn.textContent = 'SBLOCCATA 🔓';
-    btn.className = 'btn-hdr btn-lock unlocked';
-    btnSalva.style.display = 'flex';
+// ── Lock per-card ──────────────────────────────────────────────────────────────
+async function toggleLockZona(zid){
+  const st = STATI[zid];
+  if(!st) return;
+  const action = st.stato==='bloccato' ? 'unlock' : 'lock';
+  if(action==='lock' && st.stato!=='calcolato' && st.stato!=='bloccato'){
+    toast('⚠️ Calcola prima il percorso per poter bloccare il giro.');
+    return;
   }
-  renderSidebar();
-  toast(isLocked ? '🔒 Mappa bloccata' : '🔓 Mappa sbloccata - ora puoi modificare');
+  const r = await fetch('/api/blocca_zona',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id_zona:zid,action})});
+  const d = await r.json();
+  if(!d.ok){ toast('❌ ' + (d.err||'Errore'), 4000); return; }
+  STATI[zid].stato = d.stato;
+  renderCardById(zid);
+  aggiornaFase();
+  toast(d.stato==='bloccato' ? `🔒 ${ZONE.find(x=>x.id_zona===zid)?.nome_giro||zid} bloccato` : `🔓 ${ZONE.find(x=>x.id_zona===zid)?.nome_giro||zid} sbloccato`);
+}
+
+// ── Calcola singolo giro (per-card) ────────────────────────────────────────────
+async function calcolaGiro(zid){
+  const r = await fetch('/api/calcola',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id_zone:[zid],usa_or_tools:true})});
+  const d = await r.json();
+  toast(d.ok ? `▶ Calcolo ${ZONE.find(x=>x.id_zona===zid)?.nome_giro||zid} avviato…` : '❌ Errore: '+d.err);
+}
+
+// ── Lock / Unlock globale (mantenuto per retrocompatibilità popup) ──────────────
+function toggleLock(){
+  toast('ℹ️ Usa il pulsante Blocca/Sblocca su ogni singolo giro.');
 }
 
 // ── Visibilita zona sulla mappa ───────────────────────────────────────────────
@@ -1187,7 +1372,13 @@ function avviaSposta(zid, idx){
   _spostaPIdx    = idx;
   document.getElementById('sposta-sub-txt').textContent = `"${_spostaPunto.nome}" → scegli destinazione:`;
   const chips = document.getElementById('sposta-chips');
-  chips.innerHTML = ZONE.filter(x=>x.id_zona!==zid && x.id_zona!=='DDT_DA_INSERIRE').map(x=>`
+  // GUARD: esclude zone bloccate come destinazione
+  const destinazioni = ZONE.filter(x=>x.id_zona!==zid && x.id_zona!=='DDT_DA_INSERIRE' && (STATI[x.id_zona]?.stato||'')!=='bloccato');
+  if(!destinazioni.length){
+    toast('⚠️ Tutti gli altri giri sono bloccati. Sblocca un giro prima di spostare.');
+    return;
+  }
+  chips.innerHTML = destinazioni.map(x=>`
     <div class="sposta-chip" style="border-color:${x.color}" onclick="eseguiSposta('${x.id_zona}')">
       <span style="color:${x.color}">●</span> ${x.nome_giro||x.id_zona}
     </div>`).join('');
@@ -1236,6 +1427,16 @@ function onSelectChange(){
 async function salvaRinomina(){
   const v = document.getElementById('modal-input').value.trim() || document.getElementById('modal-select').value;
   if(!v){ toast('Inserisci un nome.'); return; }
+  // BLOCCO HARD: nomi duplicati non ammessi
+  const duplicato = ZONE.find(x => x.id_zona !== modalZid && (x.nome_giro||x.id_zona) === v);
+  if(duplicato){
+    alert(
+      `❌ NOME NON DISPONIBILE\n\n` +
+      `Il nome "${v}" è già usato dal giro "${duplicato.nome_giro||duplicato.id_zona}".\n\n` +
+      `Scegli un nome diverso.`
+    );
+    return;
+  }
   const z=ZONE.find(x=>x.id_zona===modalZid);
   if(z) z.nome_giro=v;
   chiudiModal();
@@ -1245,7 +1446,52 @@ async function salvaRinomina(){
 }
 
 function chiudiModal(){ document.getElementById('modal-overlay').classList.remove('open'); }
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ chiudiModal(); chiudiSposta(); }});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ chiudiModal(); chiudiSposta(); chiudiPopupGenera(); }});
+
+// ── POPUP SALVA E GENERA FILE ─────────────────────────────────────────────────────
+function apriPopupGenera(){
+  // Sicurezza: tutti devono essere calcolati/bloccati
+  const nonPronti = Object.entries(STATI).filter(([,v])=>v.stato!=='calcolato'&&v.stato!=='bloccato').map(([k])=>k);
+  if(nonPronti.length>0){
+    toast(`⚠️ ${nonPronti.length} giri non ancora calcolati.`, 5000);
+    return;
+  }
+  document.getElementById('popup-genera-overlay').classList.add('open');
+}
+
+function chiudiPopupGenera(){
+  document.getElementById('popup-genera-overlay').classList.remove('open');
+}
+
+async function eseguiGeneraCompleto(){
+  const btn = document.getElementById('btn-avvia-genera');
+  btn.disabled = true; btn.textContent = '⏳ Elaborazione…';
+  const flags = {
+    mappe:    document.getElementById('flag-mappe').checked,
+    distinte: document.getElementById('flag-distinte').checked,
+    traffico: document.getElementById('flag-traffico').checked
+  };
+  try{
+    const r = await fetch('/api/genera_completo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({flags})});
+    const d = await r.json();
+    chiudiPopupGenera();
+    if(d.ok){
+      let msg = d.log ? d.log.join('\n') : '✅ Completato.';
+      if(d.errori && d.errori.length) msg += '\n\n⚠️ Errori:\n' + d.errori.join('\n');
+      alert(msg);
+    } else {
+      alert('❌ Errore: ' + (d.err||'Sconosciuto'));
+    }
+  } catch(e){
+    chiudiPopupGenera();
+    alert('❌ Errore di rete durante la generazione.');
+  } finally {
+    btn.disabled=false; btn.textContent='▶ Avvia selezionati';
+  }
+}
+
+// Mantieni vecchia generaFile per retrocompatibilità con eventuali chiamate residue
+async function generaFile(){ apriPopupGenera(); }
 
 // ── Google Maps callback (chiamato quando le API sono pronte) ─────────────────
 async function onGoogleMapsReady(){

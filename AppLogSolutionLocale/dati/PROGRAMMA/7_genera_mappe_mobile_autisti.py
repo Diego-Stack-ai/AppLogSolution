@@ -909,6 +909,15 @@ def cleanup_webapp_folder():
                         f.unlink()
                 except Exception:
                     pass
+        # Pulisce le distinte pdf locale
+        dist_folder = WEBAPP_FOLDER / "distinte"
+        if dist_folder.exists():
+            for f in dist_folder.glob("*.pdf"):
+                try:
+                    if now - f.stat().st_mtime > 10 * 86400:
+                        f.unlink()
+                except Exception:
+                    pass
 
     # 2. Pulisce la cartella web di parità
     webapp_web = ROOT_DIR.parent / "AppLogSolutionsWeb" / "frontend" / "mappe_autisti"
@@ -918,6 +927,15 @@ def cleanup_webapp_folder():
             for f in webapp_web.glob(ext):
                 try:
                     # Elimina solo i file più vecchi di 10 giorni (86400 secondi * 10)
+                    if now - f.stat().st_mtime > 10 * 86400:
+                        f.unlink()
+                except Exception:
+                    pass
+        # Pulisce le distinte pdf webapp di parità
+        dist_folder_web = webapp_web / "distinte"
+        if dist_folder_web.exists():
+            for f in dist_folder_web.glob("*.pdf"):
+                try:
                     if now - f.stat().st_mtime > 10 * 86400:
                         f.unlink()
                 except Exception:
@@ -1029,6 +1047,37 @@ def main():
         depot = gen_percorsi.get_depot_for_points(perc) if gen_percorsi else DEPOT
         perc_completo = [depot] + perc + [depot]
 
+        # Rileva e copia la distinta PDF se esiste
+        import shutil
+        from urllib.parse import quote as _quote
+        _v_san = re.sub(r'[\\/*?:"<>|]', '_', v_id)
+        _zone_pdf = "_".join(sorted(set(
+            str(p.get("zona", "")).strip() for p in perc if p.get("zona")
+        )))
+        _dist_name = f"DISTINTA_{_v_san}_Zone_{_zone_pdf}.pdf"
+        _dist_path = target_dir / "DISTINTE_VIAGGIO" / _dist_name
+        
+        has_distinta = False
+        distinta_rel = ""
+        if _dist_path.exists():
+            try:
+                (out_folder / "distinte").mkdir(exist_ok=True)
+                (WEBAPP_FOLDER / "distinte").mkdir(exist_ok=True)
+                
+                shutil.copy2(_dist_path, out_folder / "distinte" / _dist_name)
+                shutil.copy2(_dist_path, WEBAPP_FOLDER / "distinte" / _dist_name)
+                
+                # Copia parità
+                webapp_web = ROOT_DIR.parent / "AppLogSolutionsWeb" / "frontend" / "mappe_autisti"
+                if webapp_web.exists():
+                    (webapp_web / "distinte").mkdir(exist_ok=True)
+                    shutil.copy2(_dist_path, webapp_web / "distinte" / _dist_name)
+                
+                distinta_rel = f"distinte/{_quote(_dist_name)}"
+                has_distinta = True
+            except Exception as _copy_ex:
+                print(f"⚠️ Errore copia distinta per {v_id}: {_copy_ex}")
+
         # --- Rilevamento Grand Chef ---
         is_gc = any(
             "GRAND CHEF" in str(p.get("tipologia_grado") or "").upper() or
@@ -1124,15 +1173,30 @@ def main():
         cards_list = []
         
         # Card di Partenza
-        cards_list.append(f'''
-            <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
-                <div class="stop-num" style="background:#475569;"><span class="material-icons-round">home</span></div>
-                <div class="stop-info">
-                    <b class="name">PARTENZA</b>
-                    <span class="addr">{depot['nome'].title()}</span>
-                    <span class="orario-badge" style="background:#1e293b; color:white; margin-top:4px;"><span class="material-icons-round">schedule</span>Partenza: {ora_partenza_dep}</span>
-                </div>
-            </div>''')
+        if has_distinta:
+            cards_list.append(f'''
+                <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1.4fr 1fr; padding: 10px; gap: 8px; align-items: stretch;">
+                    <div class="stop-num" style="background:#475569; align-self: center;"><span class="material-icons-round">home</span></div>
+                    <div class="stop-info" style="justify-content: center;">
+                        <b class="name" style="font-size: 0.8rem;">PARTENZA</b>
+                        <span class="addr" style="font-size: 0.7rem;">{depot['nome'].title()}</span>
+                        <span class="orario-badge" style="background:#1e293b; color:white; margin-top:2px; font-size: 0.55rem;"><span class="material-icons-round" style="font-size: 10px !important;">schedule</span>Partenza: {ora_partenza_dep}</span>
+                    </div>
+                    <div style="border-left: 2px solid #bae6fd; background: #f0f9ff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; border-radius: 8px; gap: 4px;">
+                        <div style="font-size: 0.52rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #0369a1;">📋 Distinta</div>
+                        <a href="{distinta_rel}" target="_blank" style="background: #0284c7; color: white; border: none; border-radius: 6px; padding: 5px 6px; font-size: 0.62rem; font-weight: 800; text-decoration: none; display: flex; align-items: center; gap: 3px; width: 100%; justify-content: center;">🔗 Apri PDF</a>
+                    </div>
+                </div>''')
+        else:
+            cards_list.append(f'''
+                <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr;">
+                    <div class="stop-num" style="background:#475569;"><span class="material-icons-round">home</span></div>
+                    <div class="stop-info">
+                        <b class="name">PARTENZA</b>
+                        <span class="addr">{depot['nome'].title()}</span>
+                        <span class="orario-badge" style="background:#1e293b; color:white; margin-top:4px;"><span class="material-icons-round">schedule</span>Partenza: {ora_partenza_dep}</span>
+                    </div>
+                </div>''')
 
         for idx, p in enumerate(perc):
             d = {"cliente": p.get("nome", "Cliente"), "indirizzo": p.get("indirizzo", "-"), "lat": p.get("lat"), "lon": p.get("lon")}

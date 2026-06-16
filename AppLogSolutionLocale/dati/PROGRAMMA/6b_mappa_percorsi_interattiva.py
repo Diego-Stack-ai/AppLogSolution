@@ -281,7 +281,8 @@ def api_calcola():
             snapshot = [(z["id_zona"], list(z["lista_punti"])) for z in ZONE_CACHE
                         if z.get("id_zona") not in ("DDT_DA_INSERIRE",)
                         and z.get("lista_punti")
-                        and (not id_zone or z["id_zona"] in id_zone)]
+                        and (not id_zone or z["id_zona"] in id_zone)
+                        and STATO_GIRI.get(z["id_zona"], {}).get("stato") != "bloccato"]  # 🔒 salta bloccati
         for zid, punti in snapshot:
             _executor.submit(_calcola_giro, zid, punti, or_tools)
             avviati.append(zid)
@@ -1066,11 +1067,65 @@ async function salvaTutto(){
 
 
 async function calcolaTutto(){
-  document.getElementById('btn-calcola').disabled=true;
-  const r = await fetch('/api/calcola',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id_zone:[],usa_or_tools:true})});
+  // Classifica giri: da calcolare vs bloccati vs in elaborazione
+  const SPEC = new Set(['DDT_DA_INSERIRE','SENZA_ZONA']);
+  const daCal    = ZONE.filter(z => !SPEC.has(z.id_zona)
+    && (STATI[z.id_zona]?.stato||'da_calcolare') !== 'bloccato'
+    && (STATI[z.id_zona]?.stato||'da_calcolare') !== 'in_elaborazione');
+  const bloccati = ZONE.filter(z => !SPEC.has(z.id_zona) && STATI[z.id_zona]?.stato === 'bloccato');
+
+  if(!daCal.length){
+    toast('\u26a0\ufe0f Nessun giro da calcolare (tutti bloccati o in elaborazione).');
+    return;
+  }
+
+  // Mostra popup di conferma con elenco giri
+  const go = await _confermaCalcola(daCal, bloccati);
+  if(!go) return;
+
+  document.getElementById('btn-calcola').disabled = true;
+  const idDaCal = daCal.map(z => z.id_zona);
+  const r = await fetch('/api/calcola',{method:'POST',headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({id_zone: idDaCal, usa_or_tools: true})});
   const d = await r.json();
-  if(!d.ok){ toast('\\u274C Errore: '+d.err, 5000); document.getElementById('btn-calcola').disabled=false; return; }
-  toast(`\\u25B6 Calcolo avviato per ${d.avviati.length} giri\\u2026`);
+  if(!d.ok){ toast('\u274c Errore: '+d.err, 5000); document.getElementById('btn-calcola').disabled=false; return; }
+  toast('\u25b6 Calcolo avviato per ' + d.avviati.length + ' giri\u2026');
+}
+
+function _confermaCalcola(daCal, bloccati){
+  return new Promise(resolve => {
+    const chipsDa = daCal.map(z =>
+      '<div class="cc-chip cc-chip-ok">' + (z.nome_giro||z.id_zona) + '</div>'
+    ).join('');
+    const chipsBl = bloccati.map(z =>
+      '<div class="cc-chip cc-chip-lock">&#x1F512; ' + (z.nome_giro||z.id_zona) + '</div>'
+    ).join('');
+    const blSez = bloccati.length ? `
+      <div class="cc-section cc-section-lock">
+        <div class="cc-lbl">&#x1F512; Bloccati &mdash; NON verranno calcolati (${bloccati.length})</div>
+        <div class="cc-chips">${chipsBl}</div>
+      </div>` : `<div class="cc-note">&check; Nessun giro bloccato &mdash; verranno calcolati tutti.</div>`;
+    const el = document.createElement('div');
+    el.className = 'cc-overlay';
+    el.innerHTML = `
+      <div class="cc-box">
+        <div class="cc-title">&#x25B6; Calcola percorsi</div>
+        <div class="cc-section">
+          <div class="cc-lbl">Verranno calcolati (${daCal.length})</div>
+          <div class="cc-chips">${chipsDa}</div>
+        </div>
+        ${blSez}
+        <div class="cc-btns">
+          <button class="cc-cancel" id="cc-cancel">Annulla</button>
+          <button class="cc-ok" id="cc-ok">&#x25B6; Avvia calcolo</button>
+        </div>
+      </div>`;
+    document.body.appendChild(el);
+    const cleanup = (val) => { el.remove(); resolve(val); };
+    document.getElementById('cc-ok').onclick     = () => cleanup(true);
+    document.getElementById('cc-cancel').onclick = () => cleanup(false);
+    el.addEventListener('click', e => { if(e.target === el) cleanup(false); });
+  });
 }
 
 async function aggiornaModificati(){
@@ -1508,6 +1563,25 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
 .btn-card-lock:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed;}
 .btn-card-locked{background:#1e293b;color:#94a3b8;}
 .btn-card-locked:hover{background:#334155;color:#fff;}
+
+/* POPUP CONFERMA CALCOLA */
+.cc-overlay{position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:600;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.cc-box{background:#fff;border-radius:20px;padding:26px 28px;width:360px;max-height:80vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.3);}
+.cc-title{font-size:1.05rem;font-weight:900;color:#1e293b;margin-bottom:18px;}
+.cc-section{margin-bottom:14px;}
+.cc-section-lock{background:#fef2f2;border-radius:10px;padding:10px 12px;margin-top:10px;}
+.cc-lbl{font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin-bottom:8px;}
+.cc-section-lock .cc-lbl{color:#dc2626;}
+.cc-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.cc-chip{padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;}
+.cc-chip-ok{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+.cc-chip-lock{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca;}
+.cc-note{font-size:0.78rem;color:#059669;font-weight:600;margin-top:4px;}
+.cc-btns{display:flex;gap:10px;margin-top:20px;}
+.cc-cancel{flex:1;background:#f1f5f9;color:#64748b;border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;font-size:0.85rem;}
+.cc-cancel:hover{background:#e2e8f0;}
+.cc-ok{flex:2;background:linear-gradient(135deg,#4f46e5,#6d28d9);color:#fff;border:none;border-radius:10px;padding:10px;font-weight:800;cursor:pointer;font-size:0.85rem;}
+.cc-ok:hover{opacity:0.9;}
 
 /* POPUP SALVA E GENERA */
 #popup-genera-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);}

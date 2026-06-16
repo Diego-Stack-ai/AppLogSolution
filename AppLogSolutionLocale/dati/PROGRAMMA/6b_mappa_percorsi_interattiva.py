@@ -1159,7 +1159,7 @@ function apriModal(zid){
   document.getElementById('modal-title').textContent = isGC ? '\\u{1F37D}\\uFE0F Rinomina giro GranChef' : '\\u{1F69A} Rinomina giro';
   document.getElementById('modal-sub').textContent   = `ID zona: ${zid}`;
   const sel = document.getElementById('modal-select');
-  sel.innerHTML = '<option value="">— Seleziona nome —</option>' + nomi.map(n=>`<option value="${n}"${z&&z.nome_giro===n?' selected':''}>${n}</option>`).join('');
+  sel.innerHTML = '<option value="">\\u2014 Seleziona nome \\u2014</option>' + nomi.map(n=>`<option value="${n}"${z&&z.nome_giro===n?' selected':''}>${n}</option>`).join('');
   document.getElementById('modal-input').value = '';
   document.getElementById('modal-overlay').classList.add('open');
 }
@@ -1177,7 +1177,7 @@ async function salvaRinomina(){
   if(duplicato){
     alert(
       `\\u274C NOME NON DISPONIBILE\n\n` +
-      `Il nome "${v}" è già usato dal giro "${duplicato.nome_giro||duplicato.id_zona}".\n\n` +
+      `Il nome "${v}" \\u00E8 gi\\u00E0 usato dal giro "${duplicato.nome_giro||duplicato.id_zona}".\n\n` +
       `Scegli un nome diverso.`
     );
     return;
@@ -1468,6 +1468,8 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
 </style>
 </head>
 <body>
+<div id="js-debug-bar" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#ef4444;color:white;padding:8px 16px;font:bold 13px monospace;text-align:center;letter-spacing:.5px;">SCRIPT NON ESEGUITO — riavviare il server</div>
+
 
 <!-- SPOSTA OVERLAY -->
 <div id="sposta-overlay">
@@ -1547,6 +1549,8 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
 <div id="map"></div>
 
 <script>
+document.getElementById('js-debug-bar').style.background='#16a34a';
+document.getElementById('js-debug-bar').textContent='JS INLINE OK - caricamento app.js...';
 // ── Costanti ────────────────────────────────────────────────────────────────
 const IS_POPUP      = {{POPUP_MODE}};  // true quando aperto come popup secondo schermo
 if(IS_POPUP){

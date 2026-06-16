@@ -1582,7 +1582,6 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
 </style>
 </head>
 <body>
-<div id="js-debug-bar" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#ef4444;color:white;padding:8px 16px;font:bold 13px monospace;text-align:center;letter-spacing:.5px;">SCRIPT NON ESEGUITO — riavviare il server</div>
 
 
 <!-- SPOSTA OVERLAY -->
@@ -1663,8 +1662,6 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
 <div id="map"></div>
 
 <script>
-document.getElementById('js-debug-bar').style.background='#16a34a';
-document.getElementById('js-debug-bar').textContent='JS INLINE OK - caricamento app.js...';
 // ── Costanti ────────────────────────────────────────────────────────────────
 const IS_POPUP      = {{POPUP_MODE}};  // true quando aperto come popup secondo schermo
 if(IS_POPUP){

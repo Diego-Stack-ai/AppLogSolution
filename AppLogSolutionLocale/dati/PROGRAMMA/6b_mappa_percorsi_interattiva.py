@@ -1303,7 +1303,7 @@ let _popupChecker = null;
 function apriPopup(e){
   e && e.stopPropagation();
 
-  // Se la scheda popup e' gia' aperta -> portala in primo piano (se possibile)
+  // Se popup gia' aperto -> portalo in primo piano
   if(_popupRef && !_popupRef.closed){
     try{ _popupRef.focus(); } catch(_){}
     return;
@@ -1312,17 +1312,27 @@ function apriPopup(e){
   // Se il pannello era flottante, riaggancia prima
   if(_sganciato) toggleSgancia();
 
-  // Apre in nuova scheda (_blank = mai bloccato da Chrome)
-  // L'utente puo' trascinarla sul secondo schermo
-  const w = window.open('/sidebar', '_blank');
+  // Popup window compatta (senza toolbar/address bar), permessa da click utente
+  // popup=1 e' esplicito per Chrome 88+; toolbar=0 per browser piu' vecchi
+  const w = window.open(
+    '/sidebar',
+    'pannello_controllo',
+    'popup=1,width=460,height=920,left=30,top=30,scrollbars=1,resizable=1'
+  );
   if(!w){
-    toast('\u26a0\ufe0f Impossibile aprire la scheda \u2014 controlla le impostazioni del browser');
+    // Fallback: apri come nuova scheda
+    const w2 = window.open('/sidebar', '_blank');
+    if(w2){
+      _popupRef = w2;
+      toast('\u2197 Aperto in nuova scheda (consenti popup per localhost:5001 per usare la finestra compatta)');
+    } else {
+      toast('\u26a0\ufe0f Impossibile aprire \u2014 vai su Impostazioni Chrome > Popup e consenti localhost:5001');
+    }
     return;
   }
   _popupRef = w;
-  toast('\u2197 Pannello aperto in nuova scheda \u2014 trascinala sul secondo schermo');
 
-  // Chiudi scheda popup quando la finestra principale viene chiusa
+  // Chiudi popup quando la finestra principale viene chiusa
   window.addEventListener('beforeunload', function(){
     if(_popupRef && !_popupRef.closed) _popupRef.close();
   });
@@ -1333,7 +1343,7 @@ function apriPopup(e){
   document.getElementById('btn-popup').classList.add('active');
   if(gMap) setTimeout(()=>google.maps.event.trigger(gMap,'resize'), 80);
 
-  // Polling ogni 500ms: rileva chiusura scheda e ripristina sidebar
+  // Polling ogni 500ms: rileva chiusura popup e ripristina sidebar
   _popupChecker = setInterval(()=>{
     if(_popupRef && _popupRef.closed){
       clearInterval(_popupChecker);

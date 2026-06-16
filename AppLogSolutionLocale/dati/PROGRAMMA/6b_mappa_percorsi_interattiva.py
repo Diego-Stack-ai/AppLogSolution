@@ -1303,27 +1303,26 @@ let _popupChecker = null;
 function apriPopup(e){
   e && e.stopPropagation();
 
-  // Se popup già aperto \\u2192 portalo in primo piano
+  // Se la scheda popup e' gia' aperta -> portala in primo piano (se possibile)
   if(_popupRef && !_popupRef.closed){
-    _popupRef.focus();
+    try{ _popupRef.focus(); } catch(_){}
     return;
   }
 
   // Se il pannello era flottante, riaggancia prima
   if(_sganciato) toggleSgancia();
 
-  const w = window.open(
-    '/sidebar',
-    'pannello_controllo',
-    'width=460,height=920,toolbar=0,location=0,menubar=0,status=0,scrollbars=1,resizable=1'
-  );
+  // Apre in nuova scheda (_blank = mai bloccato da Chrome)
+  // L'utente puo' trascinarla sul secondo schermo
+  const w = window.open('/sidebar', '_blank');
   if(!w){
-    toast('\u26a0\ufe0f Popup bloccato \u2014 consenti i popup per localhost:5001 nelle impostazioni del browser');
+    toast('\u26a0\ufe0f Impossibile aprire la scheda \u2014 controlla le impostazioni del browser');
     return;
   }
   _popupRef = w;
+  toast('\u2197 Pannello aperto in nuova scheda \u2014 trascinala sul secondo schermo');
 
-  // Chiudi popup quando la finestra principale viene chiusa
+  // Chiudi scheda popup quando la finestra principale viene chiusa
   window.addEventListener('beforeunload', function(){
     if(_popupRef && !_popupRef.closed) _popupRef.close();
   });
@@ -1334,7 +1333,7 @@ function apriPopup(e){
   document.getElementById('btn-popup').classList.add('active');
   if(gMap) setTimeout(()=>google.maps.event.trigger(gMap,'resize'), 80);
 
-  // Polling ogni 500ms: rileva chiusura popup e ripristina sidebar
+  // Polling ogni 500ms: rileva chiusura scheda e ripristina sidebar
   _popupChecker = setInterval(()=>{
     if(_popupRef && _popupRef.closed){
       clearInterval(_popupChecker);

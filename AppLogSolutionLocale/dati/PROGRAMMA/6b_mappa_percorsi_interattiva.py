@@ -1079,18 +1079,21 @@ async function salvaTutto(){
 async function calcolaTutto(){
   // Classifica giri: da calcolare vs bloccati vs in elaborazione
   const SPEC = new Set(['DDT_DA_INSERIRE','SENZA_ZONA']);
+  const _st      = z => STATI[z.id_zona]?.stato||'da_calcolare';
   const daCal    = ZONE.filter(z => !SPEC.has(z.id_zona)
-    && (STATI[z.id_zona]?.stato||'da_calcolare') !== 'bloccato'
-    && (STATI[z.id_zona]?.stato||'da_calcolare') !== 'in_elaborazione');
-  const bloccati = ZONE.filter(z => !SPEC.has(z.id_zona) && STATI[z.id_zona]?.stato === 'bloccato');
+    && !['bloccato','in_elaborazione','calcolato'].includes(_st(z)));
+  const bloccati = ZONE.filter(z => !SPEC.has(z.id_zona) && _st(z) === 'bloccato');
+  const giaCalc  = ZONE.filter(z => !SPEC.has(z.id_zona) && _st(z) === 'calcolato');
 
   if(!daCal.length){
-    toast('\u26a0\ufe0f Nessun giro da calcolare (tutti bloccati o in elaborazione).');
-    return;
+    const m = giaCalc.length
+      ? '\u2705 Tutti i percorsi liberi sono gi\u00e0 calcolati (' + giaCalc.length + ')!'
+      : '\u26a0\ufe0f Nessun giro da calcolare (tutti bloccati o in elaborazione).';
+    toast(m); return;
   }
 
   // Mostra popup di conferma con elenco giri
-  const go = await _confermaCalcola(daCal, bloccati);
+  const go = await _confermaCalcola(daCal, bloccati, giaCalc);
   if(!go) return;
 
   document.getElementById('btn-calcola').disabled = true;
@@ -1102,19 +1105,27 @@ async function calcolaTutto(){
   toast('\u25b6 Calcolo avviato per ' + d.avviati.length + ' giri\u2026');
 }
 
-function _confermaCalcola(daCal, bloccati){
+function _confermaCalcola(daCal, bloccati, giaCalc=[]){
   return new Promise(resolve => {
     const chipsDa = daCal.map(z =>
       '<div class="cc-chip cc-chip-ok">' + (z.nome_giro||z.id_zona) + '</div>'
     ).join('');
-    const chipsBl = bloccati.map(z =>
+    const chipsBl  = bloccati.map(z =>
       '<div class="cc-chip cc-chip-lock">&#x1F512; ' + (z.nome_giro||z.id_zona) + '</div>'
+    ).join('');
+    const chipsGia = giaCalc.map(z =>
+      '<div class="cc-chip cc-chip-done">&#x2705; ' + (z.nome_giro||z.id_zona) + '</div>'
     ).join('');
     const blSez = bloccati.length ? `
       <div class="cc-section cc-section-lock">
-        <div class="cc-lbl">&#x1F512; Bloccati &mdash; NON verranno calcolati (${bloccati.length})</div>
+        <div class="cc-lbl">&#x1F512; Bloccati &mdash; NON calcolati (${bloccati.length})</div>
         <div class="cc-chips">${chipsBl}</div>
-      </div>` : `<div class="cc-note">&check; Nessun giro bloccato &mdash; verranno calcolati tutti.</div>`;
+      </div>` : ``;
+    const giaSez = giaCalc.length ? `
+      <div class="cc-section cc-section-done">
+        <div class="cc-lbl">&#x2705; Gia calcolati &mdash; invariati (${giaCalc.length})</div>
+        <div class="cc-chips">${chipsGia}</div>
+      </div>` : ``;
     const el = document.createElement('div');
     el.className = 'cc-overlay';
     el.innerHTML = `
@@ -1124,6 +1135,7 @@ function _confermaCalcola(daCal, bloccati){
           <div class="cc-lbl">Verranno calcolati (${daCal.length})</div>
           <div class="cc-chips">${chipsDa}</div>
         </div>
+        ${giaSez}
         ${blSez}
         <div class="cc-btns">
           <button class="cc-cancel" id="cc-cancel">Annulla</button>
@@ -1585,6 +1597,9 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
 .cc-chip{padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;}
 .cc-chip-ok{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
 .cc-chip-lock{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca;}
+.cc-chip-done{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;}
+.cc-section-done{background:#f0fdf4;border-radius:10px;padding:10px 12px;margin-top:10px;}
+.cc-section-done .cc-lbl{color:#15803d;}
 .cc-note{font-size:0.78rem;color:#059669;font-weight:600;margin-top:4px;}
 .cc-btns{display:flex;gap:10px;margin-top:20px;}
 .cc-cancel{flex:1;background:#f1f5f9;color:#64748b;border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;font-size:0.85rem;}

@@ -708,6 +708,7 @@ function connectSSE(){
     renderCardById(zid);
     if(d.polylines && d.polylines.length) renderPolylinesZona(zid, d.polylines, ZONE.find(x=>x.id_zona===zid)?.color||'#4f46e5');
     aggiornaFase();
+    if(gMap) renderMarkers();
     if(d.stato==='calcolato') toast(`\\u2705 ${ZONE.find(x=>x.id_zona===zid)?.nome_giro||zid} calcolato!`);
     if(d.stato==='errore')    toast(`\\u274C Errore su ${zid}: ${d.err||''}`, 5000);
   });
@@ -1255,6 +1256,7 @@ async function muoviPunto(zid, idx, dir){
   if(STATI[zid]) STATI[zid].stato='modificato';
   renderCardById(zid);
   aggiornaFase();
+  if(gMap) renderMarkers();
   // Salva su disco
   await fetch('/api/riordina',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({id_zona:zid, lista_punti:arr})});

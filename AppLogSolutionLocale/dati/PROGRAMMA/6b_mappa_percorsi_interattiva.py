@@ -825,6 +825,12 @@ function renderCard(z){
     return a + cf.filter(c=>c&&c!=='p00000').length + cl.filter(c=>c&&c!=='p00000').length;
   }, 0);
 
+  const totPeso = punti.reduce((a,p)=>{
+    const w = parseFloat(p.gc_peso_kg) || 0;
+    return a + w;
+  }, 0);
+  const _pesoStr = totPeso > 0 ? ' &middot; ' + totPeso.toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' kg' : '';
+
   return `
   <div class="zone-card${isOpen?' active':''}${isBloccato?' bloccata':''}" id="zcard-${zid}" data-zid="${zid}">
     <div class="zc-head" onclick="toggleCard('${zid}')">
@@ -834,7 +840,7 @@ function renderCard(z){
           ${z.nome_giro||zid}
           ${badgeStato(st.stato)}
         </div>
-        <div class="zc-sub">${punti.length} fermate${nDDT?' &middot; '+nDDT+' DDT':''}${stats.fatturato&&stats.fatturato!=='GranChef'?' &middot; &euro;'+stats.fatturato:''}</div>
+        <div class="zc-sub">${punti.length} fermate${nDDT?' &middot; '+nDDT+' DDT':''}${_pesoStr}${stats.fatturato&&stats.fatturato!=='GranChef'?' &middot; &euro;'+stats.fatturato:''}</div>
       </div>
       <button class="btn-eye${ZONE_HIDDEN.has(zid)?' hidden-zone':''}" title="${ZONE_HIDDEN.has(zid)?'Mostra':'Nascondi'} sulla mappa" onclick="event.stopPropagation();toggleHidden('${zid}')">&#128065;</button>
       ${!isBloccato && !isSpec ? '<button class="btn-matita" title="Rinomina giro" onclick="event.stopPropagation();apriModal(' + q + zid + q + ')">&#9998;</button>' : ''}
@@ -847,16 +853,16 @@ function renderCard(z){
 }
 
 function renderPuntoRow(p,i,zid,punti,isCalc,isSpec,isDividiActive=false,isBloccato=false){
-  const eta    = p.ora_arrivo ? '&#9201; ' + p.ora_arrivo : '';
   const oMin   = p.orario_min || p.orario_min_frutta || p.orario_min_latte || '';
   const oMax   = p.orario_max || p.orario_max_frutta || p.orario_max_latte || '';
-  const fascia = (oMin||oMax) ? '&#128344; '+(oMin||'?')+'&ndash;'+(oMax||'?') : '';
+  const fascia = (oMin||oMax) ? '⏰ '+(oMin||'?')+'&ndash;'+(oMax||'?') : '';
+  const eta    = (isCalc && p.ora_arrivo) ? '⏱️ ' + p.ora_arrivo : '';
   const nota   = (p.note || '').trim();
-  const isLate = p.ritardo ? 'border-color:#fca5a5;background:#fff1f2;' : '';
+  const isLate = (isCalc && p.ritardo) ? 'border-color:#fca5a5;background:#fff1f2;' : '';
   const isSel  = isDividiActive && dividiSel.has(i);
 
   const _divAttr  = isDividiActive ? ' onclick="toggleDividiSel('+i+')"' : '';
-  const _numStyle = p.ritardo ? 'background:#ef4444' : isSel ? 'background:#3b82f6' : '';
+  const _numStyle = (isCalc && p.ritardo) ? 'background:#ef4444' : isSel ? 'background:#3b82f6' : '';
   const _numTxt   = isSel ? '&#10003;' : String(i+1);
   const _infoClick = isDividiActive
     ? 'event.stopPropagation();toggleDividiSel('+i+')'
@@ -997,18 +1003,31 @@ function renderMarkers(){
 function mostraInfoMarker(p){
   if(gInfoWindow){ gInfoWindow.close(); gInfoWindow=null; }
   if(!_InfoWindow || !gMap) return;
-  const orario = (p.orario_min||p.ora_arrivo) ?
-    `<div style="font-size:0.72rem;color:#4f46e5;font-weight:700;margin-bottom:4px;">&#9201; ${
-      (p.orario_min&&p.orario_max) ? p.orario_min+' &ndash; '+p.orario_max :
-      p.orario_min||p.ora_arrivo||''
-    }</div>` : '';
+
+  const oMin   = p.orario_min || p.orario_min_frutta || p.orario_min_latte || '';
+  const oMax   = p.orario_max || p.orario_max_frutta || p.orario_max_latte || '';
+  const fascia = (oMin||oMax) ? '⏰ ' + (oMin||'?') + ' &ndash; ' + (oMax||'?') : '';
+
+  const zid    = p.zona || '';
+  const st     = STATI[zid];
+  const isCalc = st && (st.stato === 'calcolato' || st.stato === 'bloccato');
+  const eta    = (isCalc && p.ora_arrivo) ? '⏱️ Arrivo: ' + p.ora_arrivo : '';
+
+  let orarioHtml = '';
+  if(fascia) {
+    orarioHtml += `<div style="font-size:0.72rem;color:#0369a1;font-weight:700;margin-bottom:2px;">${fascia}</div>`;
+  }
+  if(eta) {
+    orarioHtml += `<div style="font-size:0.72rem;color:#047857;font-weight:700;margin-bottom:4px;">${eta}</div>`;
+  }
+
   const nota = p.note||p.note_consegna||p.note_cliente||'';
   const noteHtml = nota ? `<div style="font-size:0.7rem;color:#92400e;background:#fef3c7;border-radius:5px;padding:4px 7px;margin-top:3px;">&#128221; ${nota}</div>` : '';
   const opts = {
     content: `<div style="font-family:'Inter',sans-serif;max-width:230px;padding:2px 4px;">`+
       `<div style="font-weight:800;font-size:0.88rem;color:#1e293b;margin-bottom:2px;">${p.nome||''}</div>`+
       `<div style="font-size:0.72rem;color:#64748b;margin-bottom:4px;">${p.indirizzo||p.via||''}</div>`+
-      orario + noteHtml +
+      orarioHtml + noteHtml +
     `</div>`,
     position: {lat: p.lat, lng: p.lon}
   };

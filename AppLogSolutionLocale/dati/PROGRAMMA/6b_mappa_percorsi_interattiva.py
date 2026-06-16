@@ -220,6 +220,20 @@ def index():
                         .replace("{{NOMI_GC_JS}}",  json.dumps(NOMI_GRANCHEF)) \
                         .replace("{{POPUP_MODE}}", "false")
 
+@app.route("/api/debug_js")
+def debug_js():
+    """Serve il JS principale come file esterno: Chrome riporta riga esatta del SyntaxError."""
+    import re as _re
+    html = HTML_TEMPLATE.replace("{{DATA_GIORNO}}", DATA_GIORNO) \
+                        .replace("{{GOOGLE_MAPS_API_KEY}}", GOOGLE_MAPS_API_KEY) \
+                        .replace("{{NOMI_DNR_JS}}", json.dumps(NOMI_DNR)) \
+                        .replace("{{NOMI_GC_JS}}",  json.dumps(NOMI_GRANCHEF)) \
+                        .replace("{{POPUP_MODE}}", "false")
+    blocks = _re.findall(r'<script(?![^>]*src)[^>]*>([\s\S]*?)</script>', html)
+    main_js = max(blocks, key=len) if blocks else "// no JS found"
+    from flask import Response
+    return Response(main_js, mimetype='application/javascript')
+
 @app.route("/sidebar")
 def sidebar():
     """Pannello di controllo standalone per secondo schermo (aperto via window.open)."""

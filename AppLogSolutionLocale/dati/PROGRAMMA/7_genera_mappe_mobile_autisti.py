@@ -1073,7 +1073,9 @@ def main():
                     (webapp_web / "distinte").mkdir(exist_ok=True)
                     shutil.copy2(_dist_path, webapp_web / "distinte" / _dist_name)
                 
-                distinta_rel = f"distinte/{_quote(_dist_name)}"
+                import time as _time
+                _ts = int(_time.time())
+                distinta_rel = f"distinte/{_quote(_dist_name)}?v={_ts}"
                 has_distinta = True
             except Exception as _copy_ex:
                 print(f"⚠️ Errore copia distinta per {v_id}: {_copy_ex}")

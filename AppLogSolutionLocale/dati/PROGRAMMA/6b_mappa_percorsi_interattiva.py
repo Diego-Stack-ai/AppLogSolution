@@ -550,7 +550,9 @@ def api_genera_completo():
                         str(p.get("zona", "")).strip() for p in punti if p.get("zona")
                     )))
                     _dist_name = f"DISTINTA_{_v_san}_Zone_{_zone_pdf}.pdf"
-                    _dist_rel  = f"../DISTINTE_VIAGGIO/{_quote(_dist_name)}"
+                    import time as _time
+                    _ts = int(_time.time())
+                    _dist_rel  = f"../DISTINTE_VIAGGIO/{_quote(_dist_name)}?v={_ts}"
                     bat3.genera_html_giro(v_id, z_str, punti, (km, t_g, t_s, t_tot), poly,
                                           out_dir / fname, depot, distinta_rel_path=_dist_rel)
                     summary.append({"v_id": v_id, "zone_str": z_str, "fname": fname,

@@ -1004,17 +1004,26 @@ function renderCard(z){
 
   const isDividiActive = dividiZid === zid;
 
-  const listaPunti = isOpen ? `
-    <div class="zc-body open">
-      ${isDividiActive ? `<div class="dividi-bar">&#9986; Seleziona fermate da spostare <b>${dividiSel.size}</b> sel.<button onclick="confermaDividi('${zid}')">Crea giro</button><button class="btn-annulla" onclick="annullaDividi()">Annulla</button></div>` : ''}
-      ${punti.map((p,i)=>renderPuntoRow(p,i,zid,punti,isCalc,isSpec,isDividiActive,isBloccato)).join('')}
-      ${!isSpec && !isBloccato && !isDividiActive ? `
-      <div class="zc-actions">
-        <button class="btn-zona btn-dividi" onclick="avviaDividi('${zid}')">&#9986; Dividi</button>
-        <button class="btn-zona btn-rinomina" onclick="apriModal('${zid}')">&#9998; Rinomina</button>
-        ${isCalc?`<button class="btn-zona btn-ricalcola-giro" onclick="calcolaGiro('${zid}')">&#8635; Ricalcola</button>`:''}
-      </div>` : ''}
-    </div>` : ''
+  // listaPunti: pre-calcola le parti che avrebbero ternari annidati problematici
+  const _dividiBar = isDividiActive
+    ? '<div class="dividi-bar">&#9986; Seleziona fermate da spostare <b>' + dividiSel.size + '</b> sel.'
+      + '<button onclick="confermaDividi(\'' + zid + '\')">Crea giro</button>'
+      + '<button class="btn-annulla" onclick="annullaDividi()">Annulla</button></div>'
+    : '';
+  const _puntiRows = punti.map((p,i)=>renderPuntoRow(p,i,zid,punti,isCalc,isSpec,isDividiActive,isBloccato)).join('');
+  const _ricalcolaBtn = isCalc
+    ? '<button class="btn-zona btn-ricalcola-giro" onclick="calcolaGiro(\'' + zid + '\')">&#8635; Ricalcola</button>'
+    : '';
+  const _azioniDiv = (!isSpec && !isBloccato && !isDividiActive)
+    ? '<div class="zc-actions">'
+      + '<button class="btn-zona btn-dividi" onclick="avviaDividi(\'' + zid + '\')">&#9986; Dividi</button>'
+      + '<button class="btn-zona btn-rinomina" onclick="apriModal(\'' + zid + '\')">&#9998; Rinomina</button>'
+      + _ricalcolaBtn
+      + '</div>'
+    : '';
+  const listaPunti = isOpen
+    ? '<div class="zc-body open">' + _dividiBar + _puntiRows + _azioniDiv + '</div>'
+    : '';
 
   const nDDT = punti.reduce((a,p)=>{
     const cf=p.codici_ddt_frutta||[]; const cl=p.codici_ddt_latte||[];
@@ -1033,7 +1042,7 @@ function renderCard(z){
         <div class="zc-sub">${punti.length} fermate${nDDT?' &middot; '+nDDT+' DDT':''}${stats.fatturato&&stats.fatturato!=='GranChef'?' &middot; &euro;'+stats.fatturato:''}</div>
       </div>
       <button class="btn-eye${ZONE_HIDDEN.has(zid)?' hidden-zone':''}" title="${ZONE_HIDDEN.has(zid)?'Mostra':'Nascondi'} sulla mappa" onclick="event.stopPropagation();toggleHidden('${zid}')">&#128065;</button>
-      ${!isBloccato && !isSpec ? `<button class="btn-matita" title="Rinomina giro" onclick="event.stopPropagation();apriModal('${zid}')">&#9998;</button>` : ''}
+      ${!isBloccato && !isSpec ? '<button class="btn-matita" title="Rinomina giro" onclick="event.stopPropagation();apriModal(\'' + zid + '\')">&#9998;</button>' : ''}
     </div>
     ${cardBtns}
     ${statsBar}
@@ -1042,32 +1051,45 @@ function renderCard(z){
 }
 
 function renderPuntoRow(p,i,zid,punti,isCalc,isSpec,isDividiActive=false,isBloccato=false){
-  const eta    = p.ora_arrivo ? `&#9201; ${p.ora_arrivo}` : '';
+  const eta    = p.ora_arrivo ? '&#9201; ' + p.ora_arrivo : '';
   const oMin   = p.orario_min || p.orario_min_frutta || p.orario_min_latte || '';
   const oMax   = p.orario_max || p.orario_max_frutta || p.orario_max_latte || '';
-  const fascia = (oMin||oMax) ? `&#128344; ${oMin||'?'}&ndash;${oMax||'?'}` : '';
+  const fascia = (oMin||oMax) ? '&#128344; '+(oMin||'?')+'&ndash;'+(oMax||'?') : '';
   const nota   = (p.note || '').trim();
   const isLate = p.ritardo ? 'border-color:#fca5a5;background:#fff1f2;' : '';
   const isSel  = isDividiActive && dividiSel.has(i);
-  return `
-  <div class="point-row${isSel?' dividi-sel':''}" style="${isLate}" id="pr-${zid}-${i}" ${isDividiActive?`onclick="toggleDividiSel(${i})"`:''}>
-    <div class="pt-num" style="${p.ritardo?'background:#ef4444':isSel?'background:#3b82f6':''}">`+(isSel?'&#10003;':(i+1))+`</div>
-    <div class="pt-info" onclick="${isDividiActive?'event.stopPropagation();toggleDividiSel('+i+')':'panToPoint('+(p.lat||0)+','+(p.lon||0)+')'}">  
-      <div class="pt-nome">${p.nome||'&mdash;'}</div>
-      <div class="pt-addr">${(p.indirizzo||'').substring(0,45)}</div>
-      ${fascia?`<div class="pt-eta" style="color:#0369a1;">${fascia}</div>`:''}
-      ${eta?`<div class="pt-eta">${eta}</div>`:''}
-      ${nota?`<div class="pt-addr" style="color:#92400e;font-style:italic;">&#128221; ${nota.substring(0,50)}</div>`:''}
-    </div>
-    ${!isSpec && !isBloccato && !isDividiActive ? `
-    <div class="pt-arrow-btns">
-      <button class="pt-arrow" title="Su" onclick="muoviPunto('${zid}',`+i+`,-1)" ${i===0?'disabled':''}>&#9650;</button>
-      <button class="pt-arrow" title="Giu" onclick="muoviPunto('${zid}',`+i+`,+1)" ${i===punti.length-1?'disabled':''}>&#9660;</button>
-    </div>
-    <button class="pt-arrow" title="Sposta in altro giro" style="margin-left:2px;width:24px;height:42px;" onclick="avviaSposta('${zid}',`+i+`)">&#8596;</button>
-    ` : ''}
-  </div>`;
+
+  const _divAttr  = isDividiActive ? ' onclick="toggleDividiSel('+i+')"' : '';
+  const _numStyle = p.ritardo ? 'background:#ef4444' : isSel ? 'background:#3b82f6' : '';
+  const _numTxt   = isSel ? '&#10003;' : String(i+1);
+  const _infoClick = isDividiActive
+    ? 'event.stopPropagation();toggleDividiSel('+i+')'
+    : 'panToPoint('+(p.lat||0)+','+(p.lon||0)+')';
+  const _fasciaHtml = fascia ? '<div class="pt-eta" style="color:#0369a1;">'+fascia+'</div>' : '';
+  const _etaHtml    = eta    ? '<div class="pt-eta">'+eta+'</div>' : '';
+  const _notaHtml   = nota   ? '<div class="pt-addr" style="color:#92400e;font-style:italic;">&#128221; '+nota.substring(0,50)+'</div>' : '';
+
+  let _arrowHtml = '';
+  if(!isSpec && !isBloccato && !isDividiActive){
+    _arrowHtml =
+      '<div class="pt-arrow-btns">'
+      + '<button class="pt-arrow" title="Su" onclick="muoviPunto(\'' + zid + '\',' + i + ',-1)"'+(i===0?' disabled':'')+'>&#9650;</button>'
+      + '<button class="pt-arrow" title="Giu" onclick="muoviPunto(\'' + zid + '\',' + i + ',+1)"'+(i===punti.length-1?' disabled':'')+'>&#9660;</button>'
+      + '</div>'
+      + '<button class="pt-arrow" title="Sposta in altro giro" style="margin-left:2px;width:24px;height:42px;" onclick="avviaSposta(\'' + zid + '\',' + i + ')">&#8596;</button>';
+  }
+
+  return '<div class="point-row'+(isSel?' dividi-sel':'')+'" style="'+isLate+'" id="pr-'+zid+'-'+i+'"'+_divAttr+'>'
+    + '<div class="pt-num" style="'+_numStyle+'">'+_numTxt+'</div>'
+    + '<div class="pt-info" onclick="'+_infoClick+'">'
+    + '<div class="pt-nome">'+(p.nome||'&mdash;')+'</div>'
+    + '<div class="pt-addr">'+(p.indirizzo||'').substring(0,45)+'</div>'
+    + _fasciaHtml + _etaHtml + _notaHtml
+    + '</div>'
+    + _arrowHtml
+    + '</div>';
 }
+
 
 function renderCardById(zid){
   const z = ZONE.find(x=>x.id_zona===zid);

@@ -485,7 +485,16 @@ def api_genera_completo():
             tot_ddt   = stats.get("tot_ddt", 0)
             fatturato = stats.get("fatturato", "0.00")
             fname = bat3.sanitize_filename(f"{v_id}_Zone_{zid}.html")
-            bat3.genera_html_giro(v_id, z_str, punti, (km, t_g, t_s, t_tot), poly, out_dir / fname, depot)
+            # Calcola percorso relativo alla distinta PDF (BAT 6)
+            import re as _re
+            _v_sanitized = _re.sub(r'[\\/*?:"<>|]', '_', v_id)
+            _zone_pdf = "_".join(sorted(set(
+                str(p.get("zona","")).strip() for p in punti if p.get("zona")
+            )))
+            _distinta_name = f"DISTINTA_{_v_sanitized}_Zone_{_zone_pdf}.pdf"
+            _distinta_rel  = f"../DISTINTE_VIAGGIO/{_distinta_name}"
+            bat3.genera_html_giro(v_id, z_str, punti, (km, t_g, t_s, t_tot), poly, out_dir / fname, depot,
+                                  distinta_rel_path=_distinta_rel)
             summary.append({"v_id": v_id, "zone_str": z_str, "fname": fname,
                             "km": km, "t_guida": t_g, "t_sosta": t_s, "t_tot": t_tot,
                             "punti": len(punti), "tot_ddt": tot_ddt,

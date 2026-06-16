@@ -655,13 +655,39 @@ def _build_stop_card(i, p, is_grand_chef):
   {action_col}
 </div>'''
 
-def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path, depot):
+def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path, depot, distinta_rel_path=None):
     is_grand_chef = "GRANCHEF" in str(v_id).upper() or any("GRAND" in str(p.get("tipologia_grado") or "").upper() or "CHEF" in str(p.get("tipologia_grado") or "").upper() or "GRANCHEF" in str(p.get("zona") or "").upper() for p in percorso)
     km, t_guida, t_sosta, t_tot = stats
     tutti_punti = [depot] + percorso + [depot]
     punti_js = json.dumps(tutti_punti, indent=2, ensure_ascii=False)
     poly_js = json.dumps(polylines)
     titolo_v = f"{v_id} - Zone: {zone_str}"
+
+    # Card PARTENZA: con pannello distinta se il PDF esiste
+    _depot_nome = depot['nome'].title()
+    if distinta_rel_path:
+        _partenza_card = (
+            '<div class="depot-card-wrap">'
+            '<div class="depot-info-col">'
+            '<div style="color:#475569;"><span class="material-icons-round">home</span></div>'
+            f'<div class="stop-info"><span class="depot-tag">PARTENZA</span><br>'
+            f'<b style="font-size:0.9rem;">{_depot_nome}</b></div>'
+            '</div>'
+            '<div class="distinta-col">'
+            '<div class="distinta-col-lbl">&#x1F4CB;&nbsp;Distinta</div>'
+            f'<a href="{distinta_rel_path}" target="_blank" class="distinta-btn">&#x1F517; Apri PDF</a>'
+            f'<embed src="{distinta_rel_path}" type="application/pdf" class="distinta-embed">'
+            '</div>'
+            '</div>'
+        )
+    else:
+        _partenza_card = (
+            '<div class="stop-card" style="background:#f8fafc;">'
+            '<div style="color:#475569;"><span class="material-icons-round">home</span></div>'
+            f'<div class="stop-info"><span class="depot-tag">PARTENZA</span><br>'
+            f'<b style="font-size:0.9rem;">{_depot_nome}</b></div>'
+            '</div>'
+        )
 
     html = f"""<!DOCTYPE html>
 <html lang="it">
@@ -692,6 +718,15 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path, de
         .action-col {{ display: flex; flex-direction: column; gap: 6px; align-items: center; }}
         #map {{ flex: 1; height: 100%; }}
         .depot-tag {{ background: #475569; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; }}
+        /* Pannello distinta accanto al deposito */
+        .depot-card-wrap {{ display: flex; border-radius: 14px; margin-bottom: 12px; overflow: hidden; border: 1.5px solid #e2e8f0; background: #f8fafc; }}
+        .depot-info-col {{ flex: 2; padding: 16px; display: flex; gap: 14px; align-items: center; min-width: 0; }}
+        .distinta-col {{ flex: 1; min-width: 90px; border-left: 2px solid #bae6fd; background: #f0f9ff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 8px; gap: 6px; }}
+        .distinta-col-lbl {{ font-size: 0.58rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #0369a1; margin-bottom: 2px; }}
+        .distinta-btn {{ background: #0284c7; color: white; border: none; border-radius: 8px; padding: 7px 10px; font-size: 0.7rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 4px; width: 100%%; justify-content: center; }}
+        .distinta-btn:hover {{ background: #0369a1; }}
+        .distinta-embed {{ width: 100%%; height: 180px; border: 1px solid #e0f2fe; border-radius: 6px; background: white; display: block; }}
+        @media (max-width: 500px) {{ .distinta-embed {{ display: none; }} }}
         @media (max-width: 800px) {{ .main-container {{ flex-direction: column; }} #sidebar {{ width: 100%; height: 50%; }} #map {{ height: 50%; }} }}
     </style>
 </head>
@@ -711,9 +746,7 @@ def genera_html_giro(v_id, zone_str, percorso, stats, polylines, output_path, de
                 <div class="stat-card tot-card"><span class="stat-val" style="font-size:1.3rem;">{fmt_min(t_tot)}</span><span class="stat-lbl">TEMPO TOTALE STIMATO</span></div>
             </div>
             <div id="stop-list">
-                <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">home</span></div>
-                    <div class="stop-info"><span class="depot-tag">PARTENZA</span><br><b style="font-size:0.9rem;">{depot['nome'].title()}</b></div>
-                </div>
+                {_partenza_card}
                 { "".join([_build_stop_card(i, p, is_grand_chef) for i, p in enumerate(percorso)]) }
                 <div class="stop-card" style="background:#f8fafc;"><div style="color:#475569;"><span class="material-icons-round">flag</span></div>
                     <div class="stop-info"><span class="depot-tag">ARRIVO</span><br><b style="font-size:0.9rem;">{depot['nome'].title()}</b></div>

@@ -226,6 +226,12 @@ def serve_app_js():
     from flask import Response
     return Response(_JS_MAIN_BLOCK, mimetype='application/javascript; charset=utf-8')
 
+@app.route("/api/panel.js")
+def serve_panel_js():
+    """Serve il blocco JS pannello flottante come file esterno."""
+    from flask import Response
+    return Response(_JS_PANEL_BLOCK, mimetype='application/javascript; charset=utf-8')
+
 @app.route("/sidebar")
 def sidebar():
     """Pannello di controllo standalone per secondo schermo (aperto via window.open)."""
@@ -1249,6 +1255,114 @@ console.log('[DEBUG] fine blocco main, __mapsApiReady=', window.__mapsApiReady);
 if(window.__mapsApiReady){ window.onGoogleMapsReady(); }
 """
 
+
+_JS_PANEL_BLOCK = """
+// ── PANNELLO FLOTTANTE ────────────────────────────────────────────────────────
+let _sganciato = false;
+let _dragOX=0, _dragOY=0;
+
+function toggleSgancia(e){
+  e && e.stopPropagation();
+  const sb  = document.getElementById('sidebar');
+  const btn = document.getElementById('btn-sgancia');
+  if(!_sganciato){
+    // Sgancia: diventa fixed nella posizione attuale
+    const rect = sb.getBoundingClientRect();
+    sb.style.left   = rect.left   + 'px';
+    sb.style.top    = rect.top    + 'px';
+    sb.style.width  = rect.width  + 'px';
+    sb.style.height = rect.height + 'px';
+    sb.classList.add('floating');
+    document.body.style.overflow = 'visible';  // ← rimuove clipping del body
+    btn.innerHTML = '&#8617;'; btn.title='Aggancia pannello'; btn.classList.add('active');
+    _sganciato = true;
+    if(gMap) setTimeout(()=>google.maps.event.trigger(gMap,'resize'),60);
+  } else {
+    // Aggancia: torna nel flusso normale con animazione
+    sb.classList.add('snap-back');
+    sb.classList.remove('floating');
+    sb.style.left = sb.style.top = sb.style.width = sb.style.height = '';
+    document.body.style.overflow = 'hidden';   // ← ripristina clipping
+    btn.innerHTML = '&#10697;'; btn.title='Sgancia pannello'; btn.classList.remove('active');
+    _sganciato = false;
+    setTimeout(()=>sb.classList.remove('snap-back'), 380);
+    if(gMap) setTimeout(()=>google.maps.event.trigger(gMap,'resize'),60);
+  }
+}
+
+// Apri pannello su secondo schermo (popup window)
+let _popupRef     = null;
+let _popupChecker = null;
+
+function apriPopup(e){
+  e && e.stopPropagation();
+
+  // Se popup già aperto \\u2192 portalo in primo piano
+  if(_popupRef && !_popupRef.closed){
+    _popupRef.focus();
+    return;
+  }
+
+  // Se il pannello era flottante, riaggancia prima
+  if(_sganciato) toggleSgancia();
+
+  const w = window.open(
+    '/sidebar',
+    'pannello_controllo',
+    'width=460,height=920,toolbar=0,location=0,menubar=0,status=0,scrollbars=1,resizable=1'
+  );
+  if(!w){
+    toast('\u26a0\ufe0f Popup bloccato \u2014 consenti i popup per localhost:5001 nelle impostazioni del browser');
+    return;
+  }
+  _popupRef = w;
+
+  // Chiudi popup quando la finestra principale viene chiusa
+  window.addEventListener('beforeunload', function(){
+    if(_popupRef && !_popupRef.closed) _popupRef.close();
+  });
+
+  // Nasconde sidebar nella finestra principale (mappa a tutto schermo)
+  const sb = document.getElementById('sidebar');
+  sb.style.display = 'none';
+  document.getElementById('btn-popup').classList.add('active');
+  if(gMap) setTimeout(()=>google.maps.event.trigger(gMap,'resize'), 80);
+
+  // Polling ogni 500ms: rileva chiusura popup e ripristina sidebar
+  _popupChecker = setInterval(()=>{
+    if(_popupRef && _popupRef.closed){
+      clearInterval(_popupChecker);
+      _popupRef = null; _popupChecker = null;
+      sb.style.display = '';
+      document.getElementById('btn-popup').classList.remove('active');
+      if(gMap) setTimeout(()=>google.maps.event.trigger(gMap,'resize'), 80);
+    }
+  }, 500);
+}
+
+// Drag: trascina il pannello tenendo premuto sull'header
+(function initFloatDrag(){
+  const hdr = document.getElementById('hdr');
+  hdr.addEventListener('mousedown', function(e){
+    if(!_sganciato) return;
+    if(e.target.tagName==='BUTTON'||e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+    const sb   = document.getElementById('sidebar');
+    const rect = sb.getBoundingClientRect();
+    _dragOX = e.clientX - rect.left;
+    _dragOY = e.clientY - rect.top;
+    hdr.classList.add('dragging');
+    e.preventDefault();
+    function onMove(ev){
+      sb.style.left = (ev.clientX - _dragOX) + 'px';
+      sb.style.top  = (ev.clientY - _dragOY) + 'px';
+    }
+    function onUp(){ hdr.classList.remove('dragging'); document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); }
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  });
+})();
+"""
+
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="it">
 <head>
@@ -1567,112 +1681,7 @@ const API_KEY       = "{{GOOGLE_MAPS_API_KEY}}";
 
 </script>
 <script src="/api/app.js" charset="utf-8"></script>
-<script>
-// ── PANNELLO FLOTTANTE ────────────────────────────────────────────────────────
-let _sganciato = false;
-let _dragOX=0, _dragOY=0;
-
-function toggleSgancia(e){
-  e && e.stopPropagation();
-  const sb  = document.getElementById('sidebar');
-  const btn = document.getElementById('btn-sgancia');
-  if(!_sganciato){
-    // Sgancia: diventa fixed nella posizione attuale
-    const rect = sb.getBoundingClientRect();
-    sb.style.left   = rect.left   + 'px';
-    sb.style.top    = rect.top    + 'px';
-    sb.style.width  = rect.width  + 'px';
-    sb.style.height = rect.height + 'px';
-    sb.classList.add('floating');
-    document.body.style.overflow = 'visible';  // ← rimuove clipping del body
-    btn.innerHTML = '&#8617;'; btn.title='Aggancia pannello'; btn.classList.add('active');
-    _sganciato = true;
-    if(gMap) setTimeout(()=>google.maps.event.trigger(gMap,'resize'),60);
-  } else {
-    // Aggancia: torna nel flusso normale con animazione
-    sb.classList.add('snap-back');
-    sb.classList.remove('floating');
-    sb.style.left = sb.style.top = sb.style.width = sb.style.height = '';
-    document.body.style.overflow = 'hidden';   // ← ripristina clipping
-    btn.innerHTML = '&#10697;'; btn.title='Sgancia pannello'; btn.classList.remove('active');
-    _sganciato = false;
-    setTimeout(()=>sb.classList.remove('snap-back'), 380);
-    if(gMap) setTimeout(()=>google.maps.event.trigger(gMap,'resize'),60);
-  }
-}
-
-// Apri pannello su secondo schermo (popup window)
-let _popupRef     = null;
-let _popupChecker = null;
-
-function apriPopup(e){
-  e && e.stopPropagation();
-
-  // Se popup già aperto \\u2192 portalo in primo piano
-  if(_popupRef && !_popupRef.closed){
-    _popupRef.focus();
-    return;
-  }
-
-  // Se il pannello era flottante, riaggancia prima
-  if(_sganciato) toggleSgancia();
-
-  const w = window.open(
-    '/sidebar',
-    'pannello_controllo',
-    'width=460,height=920,toolbar=0,location=0,menubar=0,status=0,scrollbars=1,resizable=1'
-  );
-  if(!w){
-    toast('\u26a0\ufe0f Popup bloccato \u2014 consenti i popup per localhost:5001 nelle impostazioni del browser');
-    return;
-  }
-  _popupRef = w;
-
-  // Chiudi popup quando la finestra principale viene chiusa
-  window.addEventListener('beforeunload', function(){
-    if(_popupRef && !_popupRef.closed) _popupRef.close();
-  });
-
-  // Nasconde sidebar nella finestra principale (mappa a tutto schermo)
-  const sb = document.getElementById('sidebar');
-  sb.style.display = 'none';
-  document.getElementById('btn-popup').classList.add('active');
-  if(gMap) setTimeout(()=>google.maps.event.trigger(gMap,'resize'), 80);
-
-  // Polling ogni 500ms: rileva chiusura popup e ripristina sidebar
-  _popupChecker = setInterval(()=>{
-    if(_popupRef && _popupRef.closed){
-      clearInterval(_popupChecker);
-      _popupRef = null; _popupChecker = null;
-      sb.style.display = '';
-      document.getElementById('btn-popup').classList.remove('active');
-      if(gMap) setTimeout(()=>google.maps.event.trigger(gMap,'resize'), 80);
-    }
-  }, 500);
-}
-
-// Drag: trascina il pannello tenendo premuto sull'header
-(function initFloatDrag(){
-  const hdr = document.getElementById('hdr');
-  hdr.addEventListener('mousedown', function(e){
-    if(!_sganciato) return;
-    if(e.target.tagName==='BUTTON'||e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
-    const sb   = document.getElementById('sidebar');
-    const rect = sb.getBoundingClientRect();
-    _dragOX = e.clientX - rect.left;
-    _dragOY = e.clientY - rect.top;
-    hdr.classList.add('dragging');
-    e.preventDefault();
-    function onMove(ev){
-      sb.style.left = (ev.clientX - _dragOX) + 'px';
-      sb.style.top  = (ev.clientY - _dragOY) + 'px';
-    }
-    function onUp(){ hdr.classList.remove('dragging'); document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); }
-    document.addEventListener('mousemove',onMove);
-    document.addEventListener('mouseup',onUp);
-  });
-})();
-</script>
+<script src="/api/panel.js" charset="utf-8"></script>
 <script
   src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_MAPS_API_KEY}}&libraries=maps,marker,geometry&v=weekly&callback=onGoogleMapsReady"
   async defer>

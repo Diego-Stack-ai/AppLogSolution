@@ -1027,6 +1027,7 @@ def main():
         
         # Dynamic depot calculation
         depot = gen_percorsi.get_depot_for_points(perc) if gen_percorsi else DEPOT
+        perc_completo = [depot] + perc + [depot]
 
         # --- Rilevamento Grand Chef ---
         is_gc = any(

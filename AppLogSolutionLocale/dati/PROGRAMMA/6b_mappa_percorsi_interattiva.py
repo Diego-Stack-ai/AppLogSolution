@@ -1361,6 +1361,17 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ chiudiModal(); c
 
 // ── POPUP SALVA E GENERA FILE ─────────────────────────────────────────────────────
 function apriPopupGenera(){
+  // Reset del popup allo stato iniziale
+  document.getElementById('popup-genera-content').style.display = 'block';
+  document.getElementById('popup-genera-results').style.display = 'none';
+  document.getElementById('popup-genera-results').innerHTML = '';
+  document.getElementById('btn-genera-cancel').style.display = 'block';
+  
+  const btnOk = document.getElementById('btn-avvia-genera');
+  btnOk.textContent = '\\u25B6 Avvia selezionati';
+  btnOk.onclick = eseguiGeneraCompleto;
+  btnOk.disabled = false;
+
   // Sicurezza: tutti devono essere calcolati/bloccati
   const nonPronti = Object.entries(STATI).filter(([,v])=>v.stato!=='calcolato'&&v.stato!=='bloccato').map(([k])=>k);
   if(nonPronti.length>0){
@@ -1384,19 +1395,47 @@ async function eseguiGeneraCompleto(){
   try{
     const r = await fetch('/api/genera_completo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({flags})});
     const d = await r.json();
-    chiudiPopupGenera();
+    
+    // Mostra i risultati all'interno del popup
+    document.getElementById('popup-genera-content').style.display = 'none';
+    document.getElementById('btn-genera-cancel').style.display = 'none';
+    
+    const resDiv = document.getElementById('popup-genera-results');
+    resDiv.style.display = 'block';
+    
     if(d.ok){
-      let msg = d.log ? d.log.join('\\n') : '\\u2705 Completato.';
-      if(d.errori && d.errori.length) msg += '\\n\\n\\u26A0\\uFE0F Errori:\\n' + d.errori.join('\\n');
-      alert(msg);
+      let html = '';
+      if(d.log && d.log.length) {
+        html += d.log.map(line => `<div style="margin-bottom:6px; display:flex; align-items:center; gap:6px;">${line}</div>`).join('');
+      } else {
+        html += `<div style="color:#10b981; font-weight:700;">\\u2705 Elaborazione completata con successo.</div>`;
+      }
+      if(d.errori && d.errori.length) {
+        html += `<div style="margin-top:12px; font-weight:800; color:#ef4444;">\\u26A0\\uFE0F Segnalazioni / Errori:</div>`;
+        html += d.errori.map(err => `<div style="color:#b91c1c; margin-left:8px; margin-top:4px; font-size:0.75rem;">• ${err}</div>`).join('');
+      }
+      resDiv.innerHTML = html;
+      
+      btn.disabled = false;
+      btn.textContent = 'Chiudi';
+      btn.onclick = chiudiPopupGenera;
     } else {
-      alert('\\u274C Errore: ' + (d.err||'Sconosciuto'));
+      resDiv.innerHTML = `<div style="color:#ef4444; font-weight:700;">\\u274C Errore durante la generazione:</div>` +
+                         `<div style="color:#b91c1c; margin-top:4px;">${d.err||'Sconosciuto'}</div>`;
+      btn.disabled = false;
+      btn.textContent = 'Chiudi';
+      btn.onclick = chiudiPopupGenera;
     }
   } catch(e){
-    chiudiPopupGenera();
-    alert('\\u274C Errore di rete durante la generazione.');
-  } finally {
-    btn.disabled=false; btn.textContent='\\u25B6 Avvia selezionati';
+    document.getElementById('popup-genera-content').style.display = 'none';
+    document.getElementById('btn-genera-cancel').style.display = 'none';
+    const resDiv = document.getElementById('popup-genera-results');
+    resDiv.style.display = 'block';
+    resDiv.innerHTML = `<div style="color:#ef4444; font-weight:700;">\\u274C Errore di rete:</div>` +
+                       `<div style="color:#b91c1c; margin-top:4px;">Impossibile comunicare con il server.</div>`;
+    btn.disabled = false;
+    btn.textContent = 'Chiudi';
+    btn.onclick = chiudiPopupGenera;
   }
 }
 
@@ -1682,7 +1721,7 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
 /* POPUP SALVA E GENERA */
 #popup-genera-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
 #popup-genera-overlay.open{display:flex;}
-.popup-genera-box{background:#fff;border-radius:20px;padding:28px;width:360px;box-shadow:0 24px 64px rgba(0,0,0,0.3);}
+.popup-genera-box{background:#fff;border-radius:20px;padding:28px;width:380px;box-shadow:0 24px 64px rgba(0,0,0,0.3);}
 .popup-genera-title{font-size:1.1rem;font-weight:900;color:#1e293b;margin-bottom:4px;}
 .popup-genera-sub{font-size:0.8rem;color:#64748b;margin-bottom:20px;}
 .popup-genera-flags{display:flex;flex-direction:column;gap:12px;margin-bottom:22px;}
@@ -1823,19 +1862,22 @@ body.popup-mode .btns-sgancia-wrap{display:none!important;}
 <div id="popup-genera-overlay">
   <div class="popup-genera-box">
     <div class="popup-genera-title">💾 Salva e genera file</div>
-    <div class="popup-genera-sub">Il JSON viene aggiornato. Vuoi lanciare anche:</div>
-    <div class="popup-genera-flags">
-      <label class="popup-genera-flag">
-        <input type="checkbox" id="flag-mappe" checked>
-        📋🗺️ Genera Distinte + Mappe (BAT 5→6)
-      </label>
-      <label class="popup-genera-flag">
-        <input type="checkbox" id="flag-traffico">
-        🚦 Aggiorna Traffico Serale (BAT 7B)
-      </label>
+    <div id="popup-genera-content">
+      <div class="popup-genera-sub">Il JSON viene aggiornato. Vuoi lanciare anche:</div>
+      <div class="popup-genera-flags">
+        <label class="popup-genera-flag">
+          <input type="checkbox" id="flag-mappe" checked>
+          📋🗺️ Genera Distinte + Mappe (BAT 5→6)
+        </label>
+        <label class="popup-genera-flag">
+          <input type="checkbox" id="flag-traffico">
+          🚦 Aggiorna Traffico Serale (BAT 7B)
+        </label>
+      </div>
     </div>
+    <div id="popup-genera-results" style="display:none; margin-bottom: 20px; max-height: 220px; overflow-y: auto; font-size: 0.8rem; line-height: 1.4; border-top: 1.5px solid #e2e8f0; padding-top: 12px; color: #334155;"></div>
     <div class="popup-genera-btns">
-      <button class="popup-genera-cancel" onclick="chiudiPopupGenera()">Annulla</button>
+      <button class="popup-genera-cancel" id="btn-genera-cancel" onclick="chiudiPopupGenera()">Annulla</button>
       <button class="popup-genera-ok" id="btn-avvia-genera" onclick="eseguiGeneraCompleto()">▶ Avvia selezionati</button>
     </div>
   </div>

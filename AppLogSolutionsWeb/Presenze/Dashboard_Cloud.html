@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Presenze Cloud (Google Sheets)</title>
+    <style>
+        :root { --bg-color: #f3f4f6; --text-color: #1f2937; --card-bg: #ffffff; --primary: #10b981; --primary-hover: #059669; --weekend-bg: #fee2e2; --weekend-text: #991b1b; --border: #e5e7eb; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg-color); margin: 0; padding: 2rem; display: flex; flex-direction: column; align-items: center; }
+        h1 { font-size: 2.2rem; margin-bottom: 0.5rem; color: #111827; }
+        .subtitle { color: #6b7280; margin-bottom: 1.5rem; }
+        .container { width: 100%; max-width: 95%; background: var(--card-bg); border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); padding: 1.5rem; }
+        
+        .api-config { width: calc(100% - 2rem); display: flex; gap: 1rem; margin-bottom: 1.5rem; padding: 1rem; background: #ecfdf5; border-radius: 8px; border: 1px dashed #6ee7b7; flex-wrap: wrap; }
+        .api-config input { flex: 1; padding: 0.5rem; border: 1px solid #a7f3d0; border-radius: 4px; min-width: 250px; }
+        .fetch-btn { background: var(--primary); color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .fetch-btn:hover { background: var(--primary-hover); }
+
+        .controls { display: flex; gap: 1rem; margin-bottom: 2rem; align-items: center; flex-wrap: wrap; }
+        .btn-group { display: flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+        .btn-group button { background: #f9fafb; border: none; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 600; color: #4b5563; border-right: 1px solid var(--border); transition: 0.2s; }
+        .btn-group button:last-child { border-right: none; }
+        .btn-group button.active { background: var(--primary); color: white; }
+        input[type="date"], input[type="week"], input[type="month"] { padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; }
+        
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background: #f9fafb; padding: 0.6rem; border-bottom: 2px solid var(--border); color: #374151; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        td { padding: 0.6rem; border-bottom: 1px solid var(--border); color: #4b5563; font-size: 0.85rem; }
+        tr:hover td { background: #f9fafb; }
+        .weekend td { background-color: var(--weekend-bg); color: var(--weekend-text); }
+        tr.weekend:hover td { background-color: #fca5a5; } /* Rosso leggermente più scuro per l'hover */
+        .driver-header td { background: var(--primary); color: white; font-weight: bold; padding: 0.8rem 1rem; font-size: 1rem; letter-spacing: 0.5px; border: none; }
+        tr.driver-header:hover td { background: var(--primary); color: white; } /* Evita che diventi grigio */
+        
+        .edit-input { width: 100%; border: none; background: transparent; padding: 0.2rem; font-family: inherit; font-size: inherit; color: inherit; border-radius: 4px; }
+        .edit-input:disabled { appearance: none; -webkit-appearance: none; color: inherit; opacity: 1; }
+        .num-sm { width: 55px; }
+        .time-sm { width: 70px; }
+        .btn-edit { background: #f3f4f6; border: 1px solid var(--border); padding: 0.3rem 0.5rem; border-radius: 6px; cursor: pointer; font-size: 0.75em; transition: 0.2s; white-space: nowrap; }
+        .btn-edit:hover { background: #e5e7eb; }
+        
+        .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 1.5rem; border-radius: 8px; text-align: center; }
+        .card h3 { margin: 0 0 0.5rem 0; font-size: 0.875rem; color: #64748b; text-transform: uppercase; }
+        .card p { margin: 0; font-size: 1.75rem; font-weight: 700; color: #0f172a; }
+
+        .loading { text-align: center; padding: 3rem; font-size: 1.25rem; color: #6b7280; display: none; }
+        .spinner { border: 4px solid rgba(0,0,0,0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--primary); animation: spin 1s linear infinite; margin: 0 auto 1rem auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <h1>Dashboard Presenze Cloud</h1>
+    <p class="subtitle">Lettura Live da Google Sheets nativi via Apps Script</p>
+    
+    <div class="container">
+        
+        <div class="api-config">
+            <label style="line-height: 2; font-weight: bold; color: #065f46;">URL Web App:</label>
+            <input type="text" id="apiUrl" placeholder="Incolla qui l'URL dello script di Google Apps Script" value="">
+            <button id="fetchBtn" class="fetch-btn">Scarica Dati Live</button>
+        </div>
+
+        <div class="controls">
+            <div class="btn-group">
+                <button onclick="setFilterMode('day')" id="btn-day">Giorno</button>
+                <button onclick="setFilterMode('week')" id="btn-week">Settimana</button>
+                <button class="active" onclick="setFilterMode('month')" id="btn-month">Mese</button>
+            </div>
+            <div class="input-group" id="filter-container">
+                <input type="month" id="dateFilter" onchange="renderData()">
+            </div>
+        </div>
+
+        <div class="summary-cards">
+            <div class="card"><h3>Totale Ore</h3><p id="sumHours">0</p></div>
+            <div class="card"><h3>Totale Km Delta</h3><p id="sumKm">0</p></div>
+            <div class="card"><h3>Autisti Attivi</h3><p id="sumDrivers">0</p></div>
+        </div>
+
+        <div id="loader" class="loading">
+            <div class="spinner"></div>
+            Recupero dati da Google Drive in corso. Può richiedere qualche secondo...
+        </div>
+
+        <div style="overflow-x: auto; display: none;" id="tableContainer">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Giorno e Data</th>
+                        <th>Cliente</th>
+                        <th>Km Partenza</th>
+                        <th>Km Arrivo</th>
+                        <th>Delta Km</th>
+                        <th>Inizio M.</th>
+                        <th>Fine M.</th>
+                        <th>Inizio P.</th>
+                        <th>Fine P.</th>
+                        <th>Ore</th>
+                        <th>Importo</th>
+                        <th>Litri</th>
+                        <th>Note</th>
+                        <th>Azione</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let globalData = [];
+        let currentMode = 'month';
+
+        // Ripristina l'ultimo URL usato se presente
+        if (localStorage.getItem('appsScriptUrl')) {
+            document.getElementById('apiUrl').value = localStorage.getItem('appsScriptUrl');
+            // Avvia automaticamente il caricamento dei dati!
+            setTimeout(() => {
+                document.getElementById('fetchBtn').click();
+            }, 100);
+        }
+
+        document.getElementById('fetchBtn').addEventListener('click', async () => {
+            const url = document.getElementById('apiUrl').value.trim();
+            if (!url) {
+                alert("Devi inserire l'URL di Google Apps Script!");
+                return;
+            }
+            
+            // Salva URL per la prossima volta
+            localStorage.setItem('appsScriptUrl', url);
+
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('tableContainer').style.display = 'none';
+            document.getElementById('tableBody').innerHTML = '';
+            
+            try {
+                // Aggiungiamo un parametro "?t=" con l'ora attuale per forzare il browser a NON usare la cache e scaricare i dati freschissimi
+                const response = await fetch(url + "?t=" + new Date().getTime());
+                if (!response.ok) throw new Error("Errore durante la chiamata API");
+                const data = await response.json();
+                
+                globalData = data;
+                
+                // Imposta di default l'ultimo mese
+                if (globalData.length > 0) {
+                    const lastDate = new Date(globalData[globalData.length - 1].data);
+                    document.getElementById('dateFilter').value = lastDate.toISOString().substring(0, 7);
+                } else {
+                    document.getElementById('dateFilter').value = new Date().toISOString().substring(0, 7);
+                }
+
+                document.getElementById('tableContainer').style.display = 'block';
+                renderData();
+            } catch (error) {
+                alert("Errore caricamento dati: " + error.message + "\nAssicurati che l'URL sia corretto e che i fogli siano validi.");
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+            }
+        });
+
+        function setFilterMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.btn-group button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${mode}`).classList.add('active');
+
+            const container = document.getElementById('filter-container');
+            const currentDateVal = document.getElementById('dateFilter').value || (globalData.length > 0 ? globalData[globalData.length - 1].data.split('T')[0] : '');
+            let dateObj = currentDateVal ? new Date(currentDateVal) : new Date();
+
+            if (mode === 'day') {
+                container.innerHTML = '<input type="date" id="dateFilter" onchange="renderData()">';
+                document.getElementById('dateFilter').value = dateObj.toISOString().split('T')[0];
+            } else if (mode === 'week') {
+                container.innerHTML = '<input type="week" id="dateFilter" onchange="renderData()">';
+                document.getElementById('dateFilter').value = getWeek(dateObj);
+            } else if (mode === 'month') {
+                container.innerHTML = '<input type="month" id="dateFilter" onchange="renderData()">';
+                document.getElementById('dateFilter').value = dateObj.toISOString().substring(0, 7);
+            }
+            renderData();
+        }
+
+        function getWeek(date) {
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            const dayNum = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+            return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
+        }
+
+        function renderData() {
+            const filterValue = document.getElementById('dateFilter').value;
+            if (!filterValue || globalData.length === 0) return;
+
+            let filteredData = globalData.filter(item => {
+                const itemDate = new Date(item.data);
+                // Convertiamo la data nel formato locale YYYY-MM-DD per evitare problemi di fuso orario (es. 23 aprile scambiato per 22 aprile)
+                const localStr = itemDate.getFullYear() + "-" + String(itemDate.getMonth() + 1).padStart(2, '0') + "-" + String(itemDate.getDate()).padStart(2, '0');
+                
+                if (currentMode === 'day') return localStr === filterValue;
+                if (currentMode === 'month') return localStr.startsWith(filterValue);
+                if (currentMode === 'week') return getWeek(itemDate) === filterValue;
+                return true;
+            });
+
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            const giorniSettimana = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+            let sumOre = 0, sumKm = 0, autistiSet = new Set();
+            let currentAutista = '';
+
+            filteredData.forEach(item => {
+                if (item.autista !== currentAutista) {
+                    currentAutista = item.autista;
+                    const headerTr = document.createElement('tr');
+                    headerTr.className = 'driver-header';
+                    headerTr.innerHTML = `<td colspan="14">🧑‍✈️ Autista: ${currentAutista}</td>`;
+                    tbody.appendChild(headerTr);
+                }
+
+                const tr = document.createElement('tr');
+                const dateObj = new Date(item.data);
+                const dayName = giorniSettimana[dateObj.getDay()];
+                if (dateObj.getDay() === 0 || dateObj.getDay() === 6) tr.classList.add('weekend');
+
+                const dateStr = dateObj.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+                tr.innerHTML = `
+                    <td><strong>${dayName}</strong><br><span style="font-size: 0.8em; color: #6b7280;">${dateStr}</span></td>
+                    <td><input type="text" class="edit-input" data-field="cliente" value="${item.cliente || ''}" disabled></td>
+                    <td><input type="number" class="edit-input num-sm" data-field="kmPartenza" value="${item.kmPartenza || 0}" disabled></td>
+                    <td><input type="number" class="edit-input num-sm" data-field="kmArrivo" value="${item.kmArrivo || 0}" disabled></td>
+                    <td><input type="number" class="edit-input num-sm" data-field="kmDelta" value="${item.kmDelta || 0}" disabled></td>
+                    <td><input type="text" class="edit-input time-sm" data-field="oraInizioM" value="${item.oraInizioM || ''}" disabled></td>
+                    <td><input type="text" class="edit-input time-sm" data-field="oraFineM" value="${item.oraFineM || ''}" disabled></td>
+                    <td><input type="text" class="edit-input time-sm" data-field="oraInizioP" value="${item.oraInizioP || ''}" disabled></td>
+                    <td><input type="text" class="edit-input time-sm" data-field="oraFineP" value="${item.oraFineP || ''}" disabled></td>
+                    <td><input type="number" step="0.01" class="edit-input num-sm" data-field="oreTotali" value="${item.oreTotali || 0}" disabled></td>
+                    <td><input type="number" step="0.01" class="edit-input num-sm" data-field="importo" value="${item.importo || 0}" disabled></td>
+                    <td><input type="number" step="0.01" class="edit-input num-sm" data-field="litri" value="${item.litri || 0}" disabled></td>
+                    <td><input type="text" class="edit-input" data-field="note" value="${item.note || ''}" disabled></td>
+                    <td>
+                        <button class="btn-edit" onclick="toggleEdit(this, '${item.autista}', '${item.mese}', '${item.data}')">✏️ Modifica</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+                sumOre += parseFloat(item.oreTotali) || 0;
+                sumKm += parseFloat(item.kmDelta) || 0;
+                autistiSet.add(item.autista);
+            });
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="14" style="text-align: center; padding: 2rem; color: #9ca3af;">Nessun dato trovato per il periodo selezionato.</td></tr>';
+            }
+
+            document.getElementById('sumHours').innerText = sumOre.toFixed(2);
+            document.getElementById('sumKm').innerText = sumKm.toFixed(2);
+            document.getElementById('sumDrivers').innerText = autistiSet.size;
+        }
+
+        async function toggleEdit(btn, autista, mese, dataIso) {
+            const tr = btn.closest('tr');
+            const inputs = tr.querySelectorAll('.edit-input');
+            
+            if (btn.innerText.includes('Modifica')) {
+                // Abilita la modifica
+                inputs.forEach(input => {
+                    input.disabled = false;
+                    input.style.border = "1px solid #10b981";
+                    input.style.backgroundColor = "#fff";
+                });
+                btn.innerText = "💾 Salva";
+                btn.style.backgroundColor = "#10b981";
+                btn.style.color = "white";
+            } else {
+                // Salva i dati
+                btn.innerText = "⏳ Salvataggio...";
+                btn.disabled = true;
+                
+                let updates = {};
+                inputs.forEach(input => {
+                    let val = input.value;
+                    if (input.type === 'number') val = parseFloat(val) || 0;
+                    updates[input.dataset.field] = val;
+                });
+
+                const payload = {
+                    autista: autista,
+                    mese: mese,
+                    dataIso: dataIso,
+                    updates: updates
+                };
+
+                const url = document.getElementById('apiUrl').value.trim();
+                
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                        // NOTA: Usa Content-Type di default (text/plain) per evitare preflight CORS bloccanti su Apps Script
+                    });
+                    
+                    const resData = await response.json();
+                    if (!resData.success) throw new Error(resData.error);
+                    
+                    // Salvataggio riuscito
+                    inputs.forEach(input => {
+                        input.disabled = true;
+                        input.style.border = "none";
+                        input.style.backgroundColor = "transparent";
+                    });
+                    btn.innerText = "✏️ Modifica";
+                    btn.style.backgroundColor = "#f3f4f6";
+                    btn.style.color = "#4b5563";
+                    btn.disabled = false;
+                    
+                    // Aggiorna il globalData per mantenerlo sincronizzato senza ricaricare
+                    let targetObj = globalData.find(d => d.autista === autista && d.data === dataIso);
+                    if (targetObj) {
+                       Object.assign(targetObj, updates);
+                    }
+                    
+                } catch (error) {
+                    alert("Errore durante il salvataggio: " + error.message);
+                    btn.innerText = "💾 Riprova Salva";
+                    btn.disabled = false;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

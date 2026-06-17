@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Link Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.30">
+    <link rel="stylesheet" href="styles.css?v=2.32">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -434,11 +434,12 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.30"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.30"></script>
+    <script src="script.js?v=2.32"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.32"></script>
     
     <script type="module">
-        import { auth } from "./firestore-service.js?v=2.30";
+        import { auth, db, storage, sRef, getDownloadURL } from "./firestore-service.js?v=2.32";
+        import { collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         let allLinks = [];
         let datesGrouped = {};
@@ -451,8 +452,60 @@
             loadLinks();
         };
 
-        // Caricamento dei link dal manifest statico
+        // Caricamento delle date disponibili da Firestore
         async function loadLinks(forceRefresh = false) {
+            const statusArea = document.getElementById('statusArea');
+            const refreshBtn = document.getElementById('refreshBtn');
+
+            if (forceRefresh) {
+                refreshBtn.classList.add('spinning');
+            }
+
+            try {
+                // Query Firestore per le ultime 20 date di report generate
+                const q = query(
+                    collection(db, "clienti", "DNR", "reports_logistici"),
+                    orderBy("created_at", "desc"),
+                    limit(20)
+                );
+                const snapshot = await getDocs(q);
+                const reportDates = snapshot.docs.map(doc => doc.id).filter(Boolean);
+
+                if (reportDates.length === 0) {
+                    showEmptyState(
+                        "Nessun report trovato", 
+                        "Non è ancora stato generato alcun report. Esegui l'ottimizzazione e la generazione file."
+                    );
+                    return;
+                }
+
+                // Popola il selettore date
+                const dateSelect = document.getElementById('dateSelect');
+                dateSelect.innerHTML = '';
+                reportDates.forEach(d => {
+                    const option = document.createElement('option');
+                    option.value = d;
+                    option.textContent = d;
+                    dateSelect.appendChild(option);
+                });
+
+                // Carica il manifest per la prima data
+                await loadManifestForDate(reportDates[0], forceRefresh);
+
+            } catch (error) {
+                console.error("Errore caricamento date da Firestore:", error);
+                showEmptyState(
+                    "Errore caricamento date",
+                    `Impossibile recuperare l'elenco delle date da Firestore: ${error.message}`,
+                    true
+                );
+            } finally {
+                refreshBtn.classList.remove('spinning');
+            }
+        }
+
+        // Caricamento del manifest JSON da Storage per la data selezionata
+        async function loadManifestForDate(date, forceRefresh = false) {
             const statusArea = document.getElementById('statusArea');
             const linksGrid = document.getElementById('linksGrid');
             const controlsPanel = document.getElementById('controlsPanel');
@@ -462,64 +515,50 @@
                 refreshBtn.classList.add('spinning');
             }
 
+            // Mostra loader prima di iniziare
+            statusArea.style.display = 'block';
+            statusArea.innerHTML = `
+                <div class="status-container">
+                    <div class="spinner"></div>
+                    <h3>Caricamento manifest...</h3>
+                    <p>Sto scaricando l'indice delle mappe per il ${date} dallo Storage.</p>
+                </div>
+            `;
+            linksGrid.style.display = 'none';
+
             try {
-                // Aggiunge cache-buster per saltare la cache CDN in caso di refresh esplicito
-                const cacheBuster = forceRefresh ? `?t=${Date.now()}` : `?v=${window.APP_VERSION}`;
-                const response = await fetch(`./mappe_autisti/manifest_link_viaggi.json${cacheBuster}`);
-                
+                const fileRef = sRef(storage, `REPORTS/${date}/manifest_link_viaggi.json`);
+                const downloadUrl = await getDownloadURL(fileRef);
+
+                const cacheBuster = forceRefresh ? `&t=${Date.now()}` : "";
+                const response = await fetch(downloadUrl + cacheBuster);
+
                 if (!response.ok) {
-                    throw new Error("Impossibile trovare il manifest dei link.");
+                    throw new Error("Impossibile trovare il file manifest.");
                 }
 
                 const data = await response.json();
-                allLinks = data.links || [];
+                const links = data.links || [];
 
-                if (allLinks.length === 0) {
-                    showEmptyState("Nessun link attivo trovato", "Non è stata generata alcuna mappa degli autisti negli ultimi 10 giorni. Esegui la pipeline locale per pubblicarle.");
+                if (links.length === 0) {
+                    showEmptyState("Nessun link attivo", `Non ci sono link attivi per il giorno ${date}.`);
                     return;
                 }
 
-                // Raggruppa i link per data
-                datesGrouped = {};
-                allLinks.forEach(link => {
-                    if (!datesGrouped[link.date]) {
-                        datesGrouped[link.date] = [];
-                    }
-                    datesGrouped[link.date].push(link);
-                });
-
-                // Ordina le date in ordine decrescente
-                const sortedDates = Object.keys(datesGrouped).sort((a, b) => {
-                    const dateA = new Date(a.split('-').reverse().join('-'));
-                    const dateB = new Date(b.split('-').reverse().join('-'));
-                    return dateB - dateA;
-                });
-
-                // Popola il selettore date
-                const dateSelect = document.getElementById('dateSelect');
-                dateSelect.innerHTML = '';
-                sortedDates.forEach(d => {
-                    const option = document.createElement('option');
-                    option.value = d;
-                    option.textContent = d;
-                    dateSelect.appendChild(option);
-                });
+                datesGrouped[date] = links;
 
                 // Mostra i controlli e nasconde il loader
                 statusArea.style.display = 'none';
                 controlsPanel.style.display = 'flex';
                 linksGrid.style.display = 'grid';
 
-                // Renderizza i link della prima data disponibile
-                if (sortedDates.length > 0) {
-                    renderLinksForDate(sortedDates[0]);
-                }
+                renderLinksForDate(date);
 
             } catch (error) {
-                console.error("Errore caricamento link:", error);
+                console.error(`Errore caricamento manifest per ${date} da Storage:`, error);
                 showEmptyState(
                     "Mappe Autisti non pronte",
-                    "Il server non ha ancora un indice delle mappe attive. Assicurati di aver avviato almeno una volta il programma locale <b>6_AVVIA_MOBILE_AUTISTI.bat</b> e di aver eseguito con successo il deploy.",
+                    `Il manifest delle mappe per il <b>${date}</b> non è presente o leggibile nello Storage. Controlla che la generazione sia stata eseguita con successo.`,
                     true
                 );
             } finally {
@@ -579,7 +618,7 @@
         // Gestione cambio data nel selettore
         window.onDateChanged = function() {
             const selectedDate = document.getElementById('dateSelect').value;
-            renderLinksForDate(selectedDate);
+            loadManifestForDate(selectedDate);
         };
 
         // Aggiorna manifest bypassando cache

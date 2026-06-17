@@ -18,6 +18,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getStorage, ref as sRef, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
@@ -145,4 +146,6 @@ export async function deleteTrip(tripId) {
     console.log(`[Firestore] Viaggio ${tripId} eliminato con ${snapshot.docs.length} log.`);
 }
 
-export { db, auth };
+const storage = getStorage(app);
+
+export { db, auth, storage, sRef, getDownloadURL };

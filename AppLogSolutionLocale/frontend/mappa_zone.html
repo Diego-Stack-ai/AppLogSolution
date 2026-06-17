@@ -948,8 +948,10 @@
         // Lock/Unlock Button UI Updates
         function _updateLockUI() {
             const btn = document.getElementById('btn-lock-map');
-            btn.innerHTML = isLockedGlobal ? '<span class="material-icons-round">lock</span> BLOCCATA 🔒' : '<span class="material-icons-round">lock_open</span> SBLOCCATA 🔓';
-            btn.className = 'btn-control btn-lock' + (isLockedGlobal ? ' locked' : '');
+            if (btn) {
+                btn.innerHTML = isLockedGlobal ? '<span class="material-icons-round">lock</span> BLOCCATA 🔒' : '<span class="material-icons-round">lock_open</span> SBLOCCATA 🔓';
+                btn.className = 'btn-control btn-lock' + (isLockedGlobal ? ' locked' : '');
+            }
             
             // If locked, we disable dragging immediately
             if (isLockedGlobal && DRAGGING_ENABLED) {

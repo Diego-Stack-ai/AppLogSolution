@@ -1056,22 +1056,30 @@ def main():
         )))
         _dist_name = f"DISTINTA_{_v_san}_Zone_{_zone_pdf}.pdf"
         _dist_path = target_dir / "DISTINTE_VIAGGIO" / _dist_name
+        _light_name = f"DISTINTA_LIGHT_{_v_san}_Zone_{_zone_pdf}.pdf"
+        _light_path = target_dir / "DISTINTE_VIAGGIO" / _light_name
         
         has_distinta = False
         distinta_rel = ""
-        if _dist_path.exists():
+        
+        # Preferiamo la distinta light per i telefoni degli autisti (più leggera e mirata),
+        # altrimenti se manca usiamo quella completa come fallback.
+        path_to_copy = _light_path if _light_path.exists() else _dist_path
+        
+        if path_to_copy.exists():
             try:
                 (out_folder / "distinte").mkdir(exist_ok=True)
                 (WEBAPP_FOLDER / "distinte").mkdir(exist_ok=True)
                 
-                shutil.copy2(_dist_path, out_folder / "distinte" / _dist_name)
-                shutil.copy2(_dist_path, WEBAPP_FOLDER / "distinte" / _dist_name)
+                # Copiamo il file selezionato salvandolo come _dist_name (i link HTML restano identici)
+                shutil.copy2(path_to_copy, out_folder / "distinte" / _dist_name)
+                shutil.copy2(path_to_copy, WEBAPP_FOLDER / "distinte" / _dist_name)
                 
                 # Copia parità
                 webapp_web = ROOT_DIR.parent / "AppLogSolutionsWeb" / "frontend" / "mappe_autisti"
                 if webapp_web.exists():
                     (webapp_web / "distinte").mkdir(exist_ok=True)
-                    shutil.copy2(_dist_path, webapp_web / "distinte" / _dist_name)
+                    shutil.copy2(path_to_copy, webapp_web / "distinte" / _dist_name)
                 
                 import time as _time
                 _ts = int(_time.time())

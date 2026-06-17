@@ -689,6 +689,14 @@ def _genera_distinta_pdf(viaggio: dict, articoli_viaggio: dict, out_path: Path, 
         for i in range(n_per_copia):
             writer.add_page(reader_tmp.pages[i])
 
+        # Salva la versione "light" (solo Copia 1 - AUTISTA, senza Copia 2 e senza DDT allegati)
+        writer_light = PdfWriter()
+        for i in range(n_per_copia):
+            writer_light.add_page(reader_tmp.pages[i])
+        light_path = out_path.parent / out_path.name.replace("DISTINTA_", "DISTINTA_LIGHT_")
+        with open(light_path, "wb") as f_light:
+            writer_light.write(f_light)
+
         # Copia 2 (UFFICIO): pagine da n_per_copia in poi
         for i in range(n_per_copia, n_tot):
             writer.add_page(reader_tmp.pages[i])

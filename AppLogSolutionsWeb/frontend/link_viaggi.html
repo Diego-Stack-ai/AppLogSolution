@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Link Viaggi e Distinte Autisti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.54">
+    <link rel="stylesheet" href="styles.css?v=2.55">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -465,11 +465,11 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.54"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.54"></script>
+    <script src="script.js?v=2.55"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.55"></script>
     
     <script type="module">
-        import { auth, db, storage, sRef, getDownloadURL } from "./firestore-service.js?v=2.54";
+        import { auth, db, storage, sRef, getDownloadURL } from "./firestore-service.js?v=2.55";
         import { collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         let allLinks = [];
@@ -663,7 +663,7 @@
                             <span class="material-icons-round">open_in_new</span>
                             <span>Apri</span>
                         </a>
-                        <a href="${link.distinta_light || '#'}" target="_blank" class="btn-action btn-distinta" ${!link.distinta_light ? 'style="display:none;"' : ''}>
+                        <a href="${link.distinta_completa || link.distinta_light || '#'}" target="_blank" class="btn-action btn-distinta" ${!(link.distinta_completa || link.distinta_light) ? 'style="display:none;"' : ''}>
                             <span class="material-icons-round">receipt_long</span>
                             <span>Distinta</span>
                         </a>

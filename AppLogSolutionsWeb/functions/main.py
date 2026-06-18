@@ -2675,6 +2675,10 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
         if zid == "DDT_DA_INSERIRE":
             continue
             
+        # Esclude i percorsi bloccati
+        if zone.get("_bloccato") or zone.get("_stato") == "bloccato":
+            continue
+            
         punti = zone.get("lista_punti", [])
         if not punti:
             continue

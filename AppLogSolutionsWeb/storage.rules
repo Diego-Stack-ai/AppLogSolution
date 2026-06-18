@@ -37,7 +37,7 @@ service firebase.storage {
     // Cartella dei report e mappe Johnson
     match /REPORTS/{allPaths=**} {
       allow read: if isAuthenticated();
-      allow write: if false; // Scrittura solo da backend
+      allow write: if isAuthenticated();
     }
 
     // Cartella temporanea dei DDT splittati

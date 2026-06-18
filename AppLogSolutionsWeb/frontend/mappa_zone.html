@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2.32">
+    <link rel="stylesheet" href="styles.css?v=2.37">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
@@ -285,6 +285,41 @@
             margin-left: 6px;
             vertical-align: middle;
             letter-spacing: 0.05em;
+        }
+
+        /* Status Badges */
+        .zc-pill {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.82rem;
+            flex-shrink: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-right: 10px;
+        }
+        .zc-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            white-space: nowrap;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 6px;
+        }
+        .badge-calcolato { background: #d1fae5; color: #065f46; }
+        .badge-elaborazione { background: #dbeafe; color: #1e40af; animation: zc-pulse 1.5s infinite; }
+        .badge-modificato { background: #fef3c7; color: #92400e; }
+        .badge-errore { background: #fee2e2; color: #991b1b; }
+        .badge-da-calcolare { background: #f1f5f9; color: #64748b; }
+        .badge-bloccato { background: #1e293b; color: #94a3b8; }
+        @keyframes zc-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
         }
 
         .zone-value-summary {
@@ -677,6 +712,367 @@
         .point-eta, .point-fascia {
             padding-left: 30px;
         }
+
+        /* --- STILI 3B INTERATTIVI --- */
+        #sidebar.floating {
+            position: fixed !important;
+            z-index: 9999;
+            border-radius: 16px;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.45);
+            border: 1.5px solid rgba(255,255,255,0.08);
+            overflow: hidden;
+            width: 400px !important;
+        }
+        #sidebar.floating #header {
+            cursor: grab;
+            border-radius: 14px 14px 0 0;
+        }
+        #sidebar.floating #header.dragging {
+            cursor: grabbing;
+        }
+        #sidebar.floating #zone-list {
+            max-height: calc(100vh - 180px);
+        }
+        #sidebar.snap-back {
+            transition: box-shadow 0.35s ease, border-radius 0.35s ease, left 0.35s ease, top 0.35s ease, transform 0.35s ease;
+        }
+        .btn-sgancia {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #cbd5e1;
+            border-radius: 8px;
+            padding: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-sgancia:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+        .btn-sgancia.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+        }
+        body.popup-mode {
+            display: block !important;
+            overflow: auto;
+        }
+        body.popup-mode #sidebar {
+            width: 100vw !important;
+            height: 100vh !important;
+            border-right: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        body.popup-mode #map {
+            display: none !important;
+        }
+        body.popup-mode .btns-sgancia-wrap {
+            display: none !important;
+        }
+        .btn-matita, .btn-eye, .btn-forbici {
+            background: none;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            color: #64748b;
+        }
+        .btn-matita:hover, .btn-eye:hover, .btn-forbici:hover {
+            background: #f1f5f9;
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: scale(1.05);
+        }
+        .btn-eye.hidden-zone {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #d97706;
+        }
+        .card-fase-bar {
+            display: flex;
+            gap: 0;
+            margin: 10px 14px 0;
+        }
+        .card-fase-pill {
+            flex: 1;
+            text-align: center;
+            padding: 4px 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            border-radius: 0;
+            cursor: default;
+            color: #64748b;
+            background: rgba(15, 23, 42, 0.03);
+            border: 1px solid #e2e8f0;
+            border-right: none;
+        }
+        .card-fase-pill:first-child {
+            border-radius: 8px 0 0 8px;
+        }
+        .card-fase-pill:last-child {
+            border-radius: 0 8px 8px 0;
+            border-right: 1px solid #e2e8f0;
+        }
+        .card-fase-pill.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+        .card-fase-pill.done {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        #modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            z-index: 6000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        #modal-overlay.open {
+            display: flex;
+        }
+        .modal-box {
+            background: #fff;
+            border-radius: 20px;
+            padding: 28px;
+            width: 360px;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+        }
+        .modal-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+        .modal-sub {
+            font-size: 0.78rem;
+            color: #64748b;
+            margin-bottom: 18px;
+        }
+        .modal-box select, .modal-box input {
+            width: 100%;
+            border: 1.5px solid rgba(15, 23, 42, 0.15);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 0.85rem;
+            font-family: 'Outfit', sans-serif;
+            outline: none;
+            margin-bottom: 10px;
+        }
+        .modal-box select:focus, .modal-box input:focus {
+            border-color: var(--primary);
+        }
+        .modal-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 6px;
+        }
+        .modal-ok {
+            flex: 1;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .modal-cancel {
+            flex: 1;
+            background: #f1f5f9;
+            color: #64748b;
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        /* point row reordering buttons styling */
+        .pt-arrow-btns {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .pt-arrow {
+            background: none;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 4px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            color: #64748b;
+            transition: all 0.15s;
+        }
+        .pt-arrow:hover:not(:disabled) {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+        }
+        .pt-arrow:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* sposta overlay styling */
+        #sposta-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            z-index: 6000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        #sposta-overlay.open {
+            display: flex;
+        }
+        .sposta-box {
+            background: #fff;
+            border-radius: 20px;
+            padding: 28px;
+            max-width: 380px;
+            width: 90%;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+        }
+        .sposta-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+        .sposta-sub {
+            font-size: 0.78rem;
+            color: #64748b;
+            margin-bottom: 18px;
+        }
+        .sposta-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .sposta-chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 2px solid rgba(15, 23, 42, 0.08);
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .sposta-chip:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .sposta-cancel {
+            width: 100%;
+            margin-top: 14px;
+            border: none;
+            background: #f1f5f9;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: #64748b;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s;
+        }
+        .sposta-cancel:hover {
+            background: #e2e8f0;
+        }
+
+        /* per-card buttons styling */
+        .zc-card-btns {
+            display: flex;
+            gap: 8px;
+            padding: 8px 16px 12px;
+        }
+        .btn-card {
+            flex: 1;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .btn-card-calcola {
+            background: #eef2ff;
+            color: #4f46e5;
+            border: 1px solid rgba(79, 70, 229, 0.15);
+        }
+        .btn-card-calcola:hover:not(:disabled) {
+            background: #4f46e5;
+            color: #fff;
+        }
+        .btn-card-calcola:disabled {
+            background: #f1f5f9;
+            color: #94a3b8;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .btn-card-lock {
+            background: #f0fdf4;
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.15);
+        }
+        .btn-card-lock:hover:not(:disabled) {
+            background: #10b981;
+            color: #fff;
+        }
+        .btn-card-lock:disabled {
+            background: #f1f5f9;
+            color: #94a3b8;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .btn-card-locked {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid #334155;
+        }
+        .btn-card-locked:hover {
+            background: #334155;
+            color: #fff;
+        }
+        .zone-card.bloccata {
+            border-color: #64748b;
+            background: #f1f5f9;
+        }
+        .zone-card.bloccata .zone-header {
+            opacity: 0.85;
+        }
     </style>
 </head>
 <body>
@@ -707,8 +1103,18 @@
                 </button>
                 <div class="date-badge" id="data-giorno-badge">--/--/----</div>
             </div>
-            <h1 style="margin: 0; display:flex; align-items:center; gap:8px;">
-                <span class="material-icons-round" style="color:#818cf8; font-size:26px;">map</span> Gestione Zone
+            <h1 style="margin: 0; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <span style="display:flex; align-items:center; gap:8px;">
+                    <span class="material-icons-round" style="color:#818cf8; font-size:26px;">map</span> Gestione Zone
+                </span>
+                <span class="btns-sgancia-wrap" style="display:flex; gap:4px; align-items:center;">
+                    <button class="btn-sgancia" id="btn-sgancia" onclick="toggleSgancia(event)" title="Sgancia pannello (galleggiante)">
+                        <span class="material-icons-round" style="font-size: 16px;">unfold_more</span>
+                    </button>
+                    <button class="btn-sgancia" id="btn-popup" onclick="apriPopup(event)" title="Apri su secondo schermo">
+                        <span class="material-icons-round" style="font-size: 16px;">open_in_new</span>
+                    </button>
+                </span>
             </h1>
             <div class="summary-stats">
                 <span id="stat-punti">0 Fermate</span>
@@ -717,20 +1123,11 @@
 
             <!-- Global Actions -->
             <div class="controls-grid">
-                <button id="btn-save-all" onclick="saveAllToServer()" class="btn-control btn-save-all">
-                    <span class="material-icons-round">save</span> SALVA TUTTO
-                </button>
                 <button id="btn-calcola" onclick="window.calcolaPercorsi()" class="btn-control btn-secondary" style="background: var(--primary); color: white; border: none; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);">
                     <span class="material-icons-round">directions</span> CALCOLA PERCORSI
                 </button>
                 <button id="btn-genera" onclick="window.apriPopupGenerazione()" class="btn-control btn-secondary" style="background: var(--accent); color: white; border: none; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);">
                     <span class="material-icons-round">cloud_upload</span> SALVA E GENERA
-                </button>
-                <button id="btn-lock-map" onclick="toggleLockMap()" class="btn-control btn-lock">
-                    <span class="material-icons-round">hourglass_bottom</span> CARICAMENTO...
-                </button>
-                <button id="btn-toggle-drag" onclick="toggleDragging()" class="btn-control btn-secondary">
-                    <span class="material-icons-round">lock</span> SPOSTA PUNTI
                 </button>
                 <button id="btn-verifica" onclick="toggleVerificaViaggi()" class="btn-control btn-secondary" style="grid-column: span 2;">
                     <span class="material-icons-round">fact_check</span> VERIFICA VIAGGI (Vista Completa)
@@ -819,6 +1216,8 @@
         const functions = getFunctions(app, "europe-west1");
 
         // State Variables
+        const IS_POPUP = getQueryParam('popup') === 'true';
+        let ZONE_HIDDEN = new Set();
         let DATA_ZONE = [];
         let map;
         let gMarkers = [];
@@ -831,7 +1230,7 @@
         let _hasUnsavedChanges = false;
         let VIEW_MODE_PULITA = false; // true hides DDT_DA_INSERIRE zone
         let DRAGGING_ENABLED = false; // true allows dragging markers on map
-        let isLockedGlobal = true;    // routes lock status
+        let isLockedGlobal = false;    // routes lock status
         let targetFileDate = "";      // DD-MM-YYYY format
 
         // Helper: Format minutes into readable hours and minutes
@@ -844,10 +1243,303 @@
         }
 
         // Helper: Pan to point and zoom in
+        // Helper: Pan to point and zoom in
         window.panToPoint = (lat, lng) => {
             if (!map || !lat || !lng) return;
             map.panTo({ lat: parseFloat(lat), lng: parseFloat(lng) });
             map.setZoom(Math.max(map.getZoom(), 15));
+        };
+
+        // --- SISTEMA DI MESSAGGISTICA E SINCRONIZZAZIONE POPUP/SECONDO MONITOR ---
+        function syncStateToOpener() {
+            if (IS_POPUP && window.opener && !window.opener.closed) {
+                window.opener.postMessage({
+                    type: 'SYNC_STATE',
+                    DATA_ZONE: DATA_ZONE,
+                    ZONE_HIDDEN: Array.from(ZONE_HIDDEN),
+                    isLockedGlobal: isLockedGlobal,
+                    DRAGGING_ENABLED: DRAGGING_ENABLED,
+                    VIEW_MODE_PULITA: VIEW_MODE_PULITA,
+                    _hasUnsavedChanges: _hasUnsavedChanges
+                }, '*');
+            }
+        }
+
+        function syncStateToPopup() {
+            if (!IS_POPUP && _popupRef && !_popupRef.closed) {
+                _popupRef.postMessage({
+                    type: 'SYNC_STATE',
+                    DATA_ZONE: DATA_ZONE,
+                    ZONE_HIDDEN: Array.from(ZONE_HIDDEN),
+                    isLockedGlobal: isLockedGlobal,
+                    DRAGGING_ENABLED: DRAGGING_ENABLED,
+                    VIEW_MODE_PULITA: VIEW_MODE_PULITA,
+                    _hasUnsavedChanges: _hasUnsavedChanges
+                }, '*');
+            }
+        }
+
+        function syncState() {
+            if (IS_POPUP) {
+                syncStateToOpener();
+            } else {
+                syncStateToPopup();
+            }
+        }
+
+        // Listener messaggi (ricezione stato/richieste)
+        window.addEventListener('message', async (ev) => {
+            if (!ev.data || typeof ev.data !== 'object') return;
+            
+            if (ev.data.type === 'REQUEST_INITIAL_STATE') {
+                console.log("[Message] Ricevuta richiesta stato iniziale dal popup.");
+                syncStateToPopup();
+            }
+            else if (ev.data.type === 'SYNC_STATE') {
+                console.log("[Message] Ricevuto aggiornamento stato via postMessage.");
+                
+                if (IS_POPUP && window._initialStateTimeout) {
+                    clearTimeout(window._initialStateTimeout);
+                    window._initialStateTimeout = null;
+                }
+                
+                DATA_ZONE = ev.data.DATA_ZONE;
+                ZONE_HIDDEN = new Set(ev.data.ZONE_HIDDEN);
+                isLockedGlobal = ev.data.isLockedGlobal;
+                DRAGGING_ENABLED = ev.data.DRAGGING_ENABLED;
+                VIEW_MODE_PULITA = ev.data.VIEW_MODE_PULITA;
+                _hasUnsavedChanges = ev.data._hasUnsavedChanges;
+
+                _updateLockUI();
+                updateTotals();
+                if (!IS_POPUP) {
+                    await renderMarkers();
+                }
+                renderSidebar();
+            }
+        });
+
+        // --- GESTIONE PANNELLO FLOTTANTE (SGANCIO) ---
+        let _sganciato = false;
+        let _dragOX = 0, _dragOY = 0;
+
+        window.toggleSgancia = (e) => {
+            if (e) e.stopPropagation();
+            const sb = document.getElementById('sidebar');
+            const btn = document.getElementById('btn-sgancia');
+            if (!_sganciato) {
+                // Sgancia: posizionamento fisso trascinabile
+                const rect = sb.getBoundingClientRect();
+                sb.style.left = rect.left + 'px';
+                sb.style.top = rect.top + 'px';
+                sb.style.width = rect.width + 'px';
+                sb.style.height = rect.height + 'px';
+                sb.classList.add('floating');
+                document.body.style.overflow = 'visible';
+                btn.innerHTML = '<span class="material-icons-round" style="font-size: 16px;">unfold_less</span>';
+                btn.title = 'Aggancia pannello';
+                btn.classList.add('active');
+                _sganciato = true;
+                if (map) setTimeout(() => google.maps.event.trigger(map, 'resize'), 60);
+            } else {
+                // Aggancia: ritorna nel flusso normale
+                sb.classList.add('snap-back');
+                sb.classList.remove('floating');
+                sb.style.left = sb.style.top = sb.style.width = sb.style.height = '';
+                document.body.style.overflow = 'hidden';
+                btn.innerHTML = '<span class="material-icons-round" style="font-size: 16px;">unfold_more</span>';
+                btn.title = 'Sgancia pannello';
+                btn.classList.remove('active');
+                _sganciato = false;
+                setTimeout(() => sb.classList.remove('snap-back'), 380);
+                if (map) setTimeout(() => google.maps.event.trigger(map, 'resize'), 60);
+            }
+        };
+
+        // Trascina il pannello tramite mousedown sull'header
+        function initFloatDrag() {
+            const hdr = document.getElementById('header');
+            if (!hdr) return;
+            hdr.addEventListener('mousedown', function(e) {
+                if (!_sganciato) return;
+                if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) return;
+                
+                const sb = document.getElementById('sidebar');
+                const rect = sb.getBoundingClientRect();
+                _dragOX = e.clientX - rect.left;
+                _dragOY = e.clientY - rect.top;
+                hdr.classList.add('dragging');
+                e.preventDefault();
+                
+                function onMove(ev) {
+                    sb.style.left = (ev.clientX - _dragOX) + 'px';
+                    sb.style.top = (ev.clientY - _dragOY) + 'px';
+                }
+                
+                function onUp() {
+                    hdr.classList.remove('dragging');
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                }
+                
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
+        }
+
+        // --- GESTIONE SECONDO MONITOR (POPUP) ---
+        let _popupRef = null;
+        let _popupChecker = null;
+
+        window.apriPopup = (e) => {
+            if (e) e.stopPropagation();
+            
+            if (_popupRef && !_popupRef.closed) {
+                try { _popupRef.focus(); } catch (err) {}
+                return;
+            }
+            
+            if (_sganciato) toggleSgancia();
+            
+            const url = `mappa_zone.html?data=${targetFileDate}&popup=true`;
+            const w = window.open(
+                url,
+                'pannello_controllo_web',
+                'popup=1,width=460,height=920,left=30,top=30,scrollbars=1,resizable=1'
+            );
+            
+            if (!w) {
+                const w2 = window.open(url, '_blank');
+                if (w2) {
+                    _popupRef = w2;
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Aperto in una nuova scheda',
+                        text: 'Consenti i popup per questo sito per utilizzare la finestra compatta separata.'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Popup Bloccati',
+                        text: 'Consenti i popup nelle impostazioni del browser per visualizzare il secondo schermo.'
+                    });
+                }
+                return;
+            }
+            
+            _popupRef = w;
+            
+            window.addEventListener('beforeunload', () => {
+                if (_popupRef && !_popupRef.closed) _popupRef.close();
+            });
+            
+            const sb = document.getElementById('sidebar');
+            sb.style.display = 'none';
+            document.getElementById('btn-popup').classList.add('active');
+            if (map) setTimeout(() => google.maps.event.trigger(map, 'resize'), 80);
+            
+            _popupChecker = setInterval(() => {
+                if (_popupRef && _popupRef.closed) {
+                    clearInterval(_popupChecker);
+                    _popupRef = null;
+                    _popupChecker = null;
+                    sb.style.display = '';
+                    document.getElementById('btn-popup').classList.remove('active');
+                    if (map) setTimeout(() => google.maps.event.trigger(map, 'resize'), 80);
+                }
+            }, 500);
+        };
+
+        // --- NASCONDI / MOSTRA GIRO SULLA MAPPA (OCCHIO) ---
+        window.toggleHidden = (zid) => {
+            if (ZONE_HIDDEN.has(zid)) {
+                ZONE_HIDDEN.delete(zid);
+            } else {
+                ZONE_HIDDEN.add(zid);
+            }
+            if (IS_POPUP) {
+                syncState();
+            } else {
+                renderMarkers();
+                syncState();
+            }
+            renderSidebar();
+        };
+
+        // --- GESTIONE MODAL RINOMINA GIRO (MATITA) ---
+        let modalZid = null;
+        const NOMI_DNR = [
+            "BS", "FUORI BS", "LAGO BS 1", "LAGO BS 2", "LAGO BS 3",
+            "VR", "FUORI VR", "MN", "VR MN",
+            "LAGO VR 1", "LAGO VR 2", "LAGO VR 3"
+        ];
+        const NOMI_GC = [
+            "GranChef BS", "GranChef FUORI BS", "GranChef LAGO BS 1", "GranChef LAGO BS 2", "GranChef LAGO BS 3",
+            "GranChef VR", "GranChef FUORI VR", "GranChef MN", "GranChef VR MN",
+            "GranChef LAGO VR 1", "GranChef LAGO VR 2", "GranChef LAGO VR 3"
+        ];
+
+        window.apriModal = (zid) => {
+            modalZid = zid;
+            const z = DATA_ZONE.find(x => x.id_zona === zid);
+            const isGC = (zid || '').startsWith('GranChef') || (z && z.nome_giro && z.nome_giro.startsWith('GranChef'));
+            const nomi = isGC ? NOMI_GC : NOMI_DNR;
+            
+            document.getElementById('modal-title').textContent = isGC ? '🍽️ Rinomina giro GranChef' : '🚚 Rinomina giro';
+            document.getElementById('modal-sub').textContent = `ID zona: ${zid}`;
+            
+            const sel = document.getElementById('modal-select');
+            sel.innerHTML = '<option value="">— Seleziona nome —</option>' + 
+                nomi.map(n => `<option value="${n}" ${z && z.nome_giro === n ? 'selected' : ''}>${n}</option>`).join('');
+            
+            document.getElementById('modal-input').value = '';
+            document.getElementById('modal-overlay').classList.add('open');
+        };
+
+        window.onSelectChange = () => {
+            const v = document.getElementById('modal-select').value;
+            if (v) document.getElementById('modal-input').value = '';
+        };
+
+        window.salvaRinomina = async () => {
+            const v = document.getElementById('modal-input').value.trim() || document.getElementById('modal-select').value;
+            if (!v) {
+                Swal.fire('Attenzione', 'Inserisci o seleziona un nome.', 'warning');
+                return;
+            }
+            
+            const duplicato = DATA_ZONE.find(x => x.id_zona !== modalZid && (x.nome_giro || x.id_zona) === v);
+            if (duplicato) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Nome non disponibile',
+                    text: `Il nome "${v}" è già utilizzato dal giro "${duplicato.nome_giro || duplicato.id_zona}". Scegli un nome diverso.`
+                });
+                return;
+            }
+            
+            const z = DATA_ZONE.find(x => x.id_zona === modalZid);
+            if (z) z.nome_giro = v;
+            
+            window.chiudiModal();
+            _hasUnsavedChanges = true;
+            
+            syncState();
+            renderSidebar();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Giro rinominato!',
+                text: `Nuovo nome: ${v}`,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        };
+
+        window.chiudiModal = () => {
+            document.getElementById('modal-overlay').classList.remove('open');
         };
 
         // Helper: Reload daily voyage data from storage
@@ -867,7 +1559,9 @@
             DATA_ZONE = unparsedData;
             
             updateTotals();
-            await renderMarkers();
+            if (!IS_POPUP) {
+                await renderMarkers();
+            }
             renderSidebar();
         }
 
@@ -896,6 +1590,7 @@
             return results ? decodeURIComponent(results[1]) : null;
         }
 
+        // Initialize Web Application and Maps
         // Initialize Web Application and Maps
         async function initApp() {
             setLoaderMsg("Verifica autenticazione utente...");
@@ -934,32 +1629,73 @@
                     // Update UI date badge
                     document.getElementById('data-giorno-badge').textContent = targetFileDate;
 
-                    // 1. Wait for Google Maps and set local map ref
-                    setLoaderMsg("Inizializzazione Google Maps SDK...");
-                    await window.googleMapsPromise;
-                    
-                    if (!window.mapInstance) {
-                        throw new Error("Map non inizializzata");
-                    }
-                    map = window.mapInstance;
-                    
-                    const InfoWindow = google.maps.InfoWindow;
-                    if (!infoWindow) {
-                        infoWindow = new InfoWindow();
+                    if (!IS_POPUP) {
+                        // 1. Wait for Google Maps and set local map ref
+                        setLoaderMsg("Inizializzazione Google Maps SDK...");
+                        await window.googleMapsPromise;
+                        
+                        if (!window.mapInstance) {
+                            throw new Error("Map non inizializzata");
+                        }
+                        map = window.mapInstance;
+                        
+                        const InfoWindow = google.maps.InfoWindow;
+                        if (!infoWindow) {
+                            infoWindow = new InfoWindow();
+                        }
+
+                        // 2. Load Firestore customers database for coordinate matching
+                        setLoaderMsg("Lettura anagrafica clienti master...");
+                        const snap = await getDocs(collection(db, 'clienti', 'DNR', 'raccolta clienti'));
+                        masterClientiList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                        console.log(`[Map] Master clienti caricato: ${masterClientiList.length} record.`);
+                        
+                        // Inizializza trascinamento dell'header
+                        initFloatDrag();
+                    } else {
+                        // Preparazione UI Modalità Popup
+                        document.body.classList.add('popup-mode');
+                        const mapEl = document.getElementById('map');
+                        if (mapEl) mapEl.style.display = 'none';
+                        
+                        // Chiudi popup se la finestra principale viene chiusa
+                        setInterval(() => {
+                            try {
+                                if (!window.opener || window.opener.closed) {
+                                    window.close();
+                                }
+                            } catch (e) {
+                                window.close();
+                            }
+                        }, 1000);
                     }
 
-                    // 2. Load Firestore customers database for coordinate matching
-                    setLoaderMsg("Lettura anagrafica clienti master...");
-                    const snap = await getDocs(collection(db, 'clienti', 'DNR', 'raccolta clienti'));
-                    masterClientiList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    console.log(`[Map] Master clienti caricato: ${masterClientiList.length} record.`);
+                    // 3. Fetch Daily Voyages JSON from Firebase Storage (o chiedi all'opener)
+                    if (IS_POPUP) {
+                        setLoaderMsg("Sincronizzazione dati con la finestra principale...");
+                        
+                        // Fallback in caso la finestra opener non risponda
+                        window._initialStateTimeout = setTimeout(async () => {
+                            console.warn("[Popup] Timeout sincronizzazione. Carico da Storage...");
+                            try {
+                                await reloadVoyageData();
+                            } catch (err_data) {
+                                console.error("[Storage] Impossibile caricare i dati dei viaggi:", err_data);
+                                Swal.fire('Errore', 'Impossibile caricare i dati dei viaggi.', 'error');
+                            }
+                            hideLoader();
+                        }, 500);
 
-                    // 3. Fetch Daily Voyages JSON from Firebase Storage
-                    try {
-                        await reloadVoyageData();
-                    } catch (err_data) {
-                        console.error("[Storage] Impossibile caricare i dati dei viaggi:", err_data);
-                        throw new Error(`Nessun report generato per il ${targetFileDate}. Torna alla scheda 'CARICAMENTO PDF' ed elabora i dati.`);
+                        if (window.opener && !window.opener.closed) {
+                            window.opener.postMessage({ type: 'REQUEST_INITIAL_STATE' }, '*');
+                        }
+                    } else {
+                        try {
+                            await reloadVoyageData();
+                        } catch (err_data) {
+                            console.error("[Storage] Impossibile caricare i dati dei viaggi:", err_data);
+                            throw new Error(`Nessun report generato per il ${targetFileDate}. Torna alla scheda 'CARICAMENTO PDF' ed elabora i dati.`);
+                        }
                     }
 
                     // Set up beforeunload alerts
@@ -976,14 +1712,18 @@
                     renderSidebar();
 
                     // Auto-zoom map to fit all markers
-                    if (gMarkers.length > 0) {
+                    if (!IS_POPUP && gMarkers.length > 0) {
                         let bounds = new google.maps.LatLngBounds();
                         gMarkers.forEach(m => bounds.extend(m.position));
                         map.fitBounds(bounds);
                     }
 
                     clearTimeout(safetyTimeout);
-                    hideLoader();
+                    if (!IS_POPUP) {
+                        hideLoader();
+                    } else if (!window._initialStateTimeout) {
+                        hideLoader();
+                    }
 
                 } catch (error) {
                     clearTimeout(safetyTimeout);
@@ -1004,8 +1744,10 @@
         // Lock/Unlock Button UI Updates
         function _updateLockUI() {
             const btn = document.getElementById('btn-lock-map');
-            btn.innerHTML = isLockedGlobal ? '<span class="material-icons-round">lock</span> BLOCCATA 🔒' : '<span class="material-icons-round">lock_open</span> SBLOCCATA 🔓';
-            btn.className = 'btn-control btn-lock' + (isLockedGlobal ? ' locked' : '');
+            if (btn) {
+                btn.innerHTML = isLockedGlobal ? '<span class="material-icons-round">lock</span> BLOCCATA 🔒' : '<span class="material-icons-round">lock_open</span> SBLOCCATA 🔓';
+                btn.className = 'btn-control btn-lock' + (isLockedGlobal ? ' locked' : '');
+            }
             
             // If locked, we disable dragging immediately
             if (isLockedGlobal && DRAGGING_ENABLED) {
@@ -1022,29 +1764,62 @@
             showSaveBanner(isLockedGlobal ? "Mappa Bloccata 🔒" : "Mappa Sbloccata per Modifiche 🔓", isLockedGlobal ? "#ef4444" : "#10b981");
             
             // Re-render markers to update drag states
-            await renderMarkers();
+            if (!IS_POPUP) {
+                await renderMarkers();
+            }
             renderSidebar();
+            syncState();
         };
 
         // Toggle Drag and Drop on Markers
         window.toggleDragging = async () => {
-            if (isLockedGlobal) {
-                Swal.fire('Mappa Bloccata', 'Sblocca prima la mappa per poter spostare i punti!', 'warning');
-                return;
-            }
             DRAGGING_ENABLED = !DRAGGING_ENABLED;
             const btn = document.getElementById('btn-toggle-drag');
-            btn.innerHTML = DRAGGING_ENABLED ? '<span class="material-icons-round">pinch</span> DRAG MARKERS ON' : '<span class="material-icons-round">lock</span> DRAG MARKERS OFF';
-            btn.style.background = DRAGGING_ENABLED ? "var(--accent)" : "rgba(255,255,255,0.1)";
-            btn.style.borderColor = DRAGGING_ENABLED ? "var(--accent)" : "rgba(255,255,255,0.1)";
+            if (btn) {
+                btn.innerHTML = DRAGGING_ENABLED ? '<span class="material-icons-round">pinch</span> DRAG MARKERS ON' : '<span class="material-icons-round">lock</span> DRAG MARKERS OFF';
+                btn.style.background = DRAGGING_ENABLED ? "var(--accent)" : "rgba(255,255,255,0.1)";
+                btn.style.borderColor = DRAGGING_ENABLED ? "var(--accent)" : "rgba(255,255,255,0.1)";
+            }
             
             showSaveBanner(DRAGGING_ENABLED ? "Spostamento punti abilitato: trascina i marker sulla mappa" : "Spostamento punti disabilitato", DRAGGING_ENABLED ? "var(--accent)" : "var(--primary)");
             
-            await renderMarkers();
+            if (!IS_POPUP) {
+                await renderMarkers();
+            }
+            syncState();
         };
 
         const LOCAL_PALETTE = ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#14b8a6", "#6366f1", "#a855f7", "#3b82f6", "#22c55e", "#d946ef", "#84cc16"];
         function _get_color(idx) { return LOCAL_PALETTE[idx % LOCAL_PALETTE.length]; }
+
+        function colorContrast(hex) {
+            if (!hex || hex.length < 7) return '#ffffff';
+            const r = parseInt(hex.slice(1,3), 16);
+            const g = parseInt(hex.slice(3,5), 16);
+            const b = parseInt(hex.slice(5,7), 16);
+            return (r*299 + g*587 + b*114) / 1000 > 128 ? '#1e293b' : '#ffffff';
+        }
+
+        function badgeStato(stato) {
+            const m = {
+                'calcolato': 'badge-calcolato',
+                'in_elaborazione': 'badge-elaborazione',
+                'modificato': 'badge-modificato',
+                'errore': 'badge-errore',
+                'da_calcolare': 'badge-da-calcolare',
+                'bloccato': 'badge-bloccato'
+            };
+            const labels = {
+                'calcolato': '✅ Pronto',
+                'in_elaborazione': '⏳ Calcolo...',
+                'modificato': '🔄 Modificato',
+                'errore': '❌ Errore',
+                'da_calcolare': '⏸️ Da calcolare',
+                'bloccato': '🔒 Bloccato'
+            };
+            const cls = m[stato] || 'badge-da-calcolare';
+            return `<span class="zc-badge ${cls}">${labels[stato] || stato}</span>`;
+        }
 
         // Render Custom Advanced Markers
         async function renderMarkers() {
@@ -1063,6 +1838,7 @@
             const coordCounts = {};
             
             DATA_ZONE.forEach((z, zIdx) => {
+                if (ZONE_HIDDEN.has(z.id_zona)) return;
                 const isSpeciale = (z.id_zona === 'DDT_DA_INSERIRE');
                 if (VIEW_MODE_PULITA && isSpeciale) return;
 
@@ -1077,7 +1853,12 @@
                     const codLLower = (p.codice_latte || '').toLowerCase();
                     
                     let channel = 'DNR';
-                    if (nomeLower.includes('grand chef') || nomeLower.includes('gran chef') || p.tipo === 'GRAND_CHEF') {
+                    const isGC = (p.tipologia_grado || '').toUpperCase().includes('GRAND') || 
+                                 (p.tipologia_grado || '').toUpperCase().includes('CHEF') || 
+                                 nomeLower.includes('grand chef') || 
+                                 nomeLower.includes('gran chef') || 
+                                 (p.tipo === 'GRAND_CHEF');
+                    if (isGC) {
                         channel = 'GRAND_CHEF';
                     } else if (nomeLower.includes('cattell') || nomeLower.includes('cattel') || nomeLower.includes('catel') || codFLower.includes('cattell') || codLLower.includes('cattell')) {
                         channel = 'CATTEL';
@@ -1118,21 +1899,19 @@
                         bgStyle = 'repeating-linear-gradient(-45deg, ' + resolvedColor + ', ' + resolvedColor + ' 4px, #000 4px, #000 8px)';
                     }
 
-                    const isGC = (channel === 'GRAND_CHEF');
-
                     if (isGC) {
                         // Grand Chef layout: circle with chef emoji + sequence badge below
                         const circle = document.createElement('div');
-                        circle.style.width = '32px';
-                        circle.style.height = '32px';
+                        circle.style.width = '28px';
+                        circle.style.height = '28px';
                         circle.style.borderRadius = '50%';
                         circle.style.background = bgStyle;
                         circle.style.border = '2px solid white';
-                        circle.style.boxShadow = '0 4px 10px rgba(0,0,0,0.3)';
+                        circle.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
                         circle.style.display = 'flex';
                         circle.style.alignItems = 'center';
                         circle.style.justifyContent = 'center';
-                        circle.style.fontSize = '16px';
+                        circle.style.fontSize = '14px';
                         circle.style.flexShrink = '0';
                         circle.innerHTML = '&#x1F468;&#x200D;&#x1F373;'; // Chef emoji
                         
@@ -1141,12 +1920,11 @@
                         numBadge.style.color = 'white';
                         numBadge.style.fontSize = '10px';
                         numBadge.style.fontWeight = '800';
-                        numBadge.style.lineHeight = '14px';
-                        numBadge.style.padding = '0 6px';
+                        numBadge.style.lineHeight = '15px';
+                        numBadge.style.padding = '0 4px';
                         numBadge.style.borderRadius = '6px';
-                        numBadge.style.marginTop = '2px';
+                        numBadge.style.marginTop = '1px';
                         numBadge.style.border = '1px solid white';
-                        numBadge.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
                         numBadge.textContent = `${idx + 1}`;
                         
                         el.appendChild(circle);
@@ -1200,6 +1978,8 @@
                         p.lon = newLon;
                         _hasUnsavedChanges = true;
                         
+                        syncState();
+                        
                         const uniqueId = p.codice_univoco || `${p.codice_frutta}_${p.codice_latte}`;
                         await _salvaCoordinataFirestore(p.codice_frutta, p.codice_latte, p.nome, newLat, newLon, uniqueId);
                     });
@@ -1246,6 +2026,7 @@
             gPolylines = {};
 
             DATA_ZONE.forEach((z, zIdx) => {
+                if (ZONE_HIDDEN.has(z.id_zona)) return;
                 if (z.id_zona === 'DDT_DA_INSERIRE') return;
                 if (VIEW_MODE_PULITA && z.id_zona === 'DDT_DA_INSERIRE') return;
                 
@@ -1352,10 +2133,17 @@
             } else {
                 listContainer.innerHTML = activeZones.map(z => {
                 const isSpeciale = (z.id_zona === 'DDT_DA_INSERIRE');
+                const isBloccato = (z._bloccato === true);
                 const isSelected = (activeExpandedZid === z.id_zona) || (activeSourceZid === z.id_zona);
                 const stats = calcolaValoreZona(z);
                 const zIdx = DATA_ZONE.indexOf(z);
                 const resolvedColor = z.color || _get_color(zIdx);
+                const totPeso = z.lista_punti.reduce((sum, p) => {
+                    const w = parseFloat(p.gc_peso_kg) || 0;
+                    return sum + w;
+                }, 0);
+                const pesoStr = totPeso > 0 ? ` · ${totPeso.toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 1 })} kg` : '';
+
                 const zStats = z._stats || {};
                 const isCalc = (z._stato === 'calcolato');
 
@@ -1366,19 +2154,59 @@
                         <div class="stat-item"><div class="stat-val">${fmtMin(zStats.t_tot)}</div><div class="stat-lbl">Totale</div></div>
                     </div>` : '';
 
+                const _cardFase = (z._stato === 'calcolato') ? 3 : 1;
+                const _fasePills = !isSpeciale ? `
+                    <div class="card-fase-bar" onclick="event.stopPropagation()">
+                        <div class="card-fase-pill${_cardFase===1?' active':_cardFase>1?' done':''}">1 · Editing</div>
+                        <div class="card-fase-pill${_cardFase===2?' active':_cardFase>2?' done':''}">2 · Calcolo</div>
+                        <div class="card-fase-pill${_cardFase===3?' active':''}">3 · Revisione</div>
+                    </div>` : '';
+
+                const cardBtns = !isSpeciale ? `
+                    <div class="zc-card-btns" onclick="event.stopPropagation()">
+                        <button class="btn-card btn-card-calcola"
+                            onclick="window.calcolaGiroSingolo('${z.id_zona}')"
+                            ${isBloccato ? 'disabled' : ''}>
+                            <span class="material-icons-round" style="font-size: 14px;">directions</span> Calcola percorso
+                        </button>
+                        <button class="btn-card ${isBloccato ? 'btn-card-locked' : 'btn-card-lock'}"
+                            onclick="window.toggleLockZona('${z.id_zona}')">
+                            <span class="material-icons-round" style="font-size: 14px;">${isBloccato ? 'lock' : 'lock_open'}</span>
+                            ${isBloccato ? 'Sblocca' : 'Blocca'}
+                        </button>
+                    </div>` : '';
+
+                const isGcOrSpecial = isSpeciale || (z.nome_giro || z.id_zona).toLowerCase().includes('chef');
+
                 return `
-                    <div class="zone-card ${isSelected ? 'selected' : ''} ${isSpeciale ? 'speciale' : ''}" onclick="focusZone('${z.id_zona}')">
-                        <div class="zone-header">
-                            <div class="color-pill" style="background: ${resolvedColor}"></div>
-                            <div class="zone-title">
-                                <span>${z.nome_giro || z.id_zona}${isSpeciale ? '<span class="badge-speciale-label">RIENTRI</span>' : ''}</span>
-                                <span>${isSpeciale ? 'Assegna i DDT ad un autista' : 'Viaggio Zona ' + z.id_zona}</span>
+                    <div class="zone-card ${isSelected ? 'selected' : ''} ${isSpeciale ? 'speciale' : ''} ${isBloccato ? 'bloccata' : ''}" onclick="focusZone('${z.id_zona}')">
+                        <div class="zone-header" style="display:flex; align-items:center; gap:10px;">
+                            <div class="zc-pill" style="background:${resolvedColor}; color:${colorContrast(resolvedColor)};">${z.lista_punti.length}</div>
+                            <div class="zc-info" style="flex: 1; min-width: 0;">
+                                <div class="zc-name" style="font-size:0.92rem; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:6px; flex-wrap: wrap; line-height: 1.2;">
+                                    <span>${isBloccato ? '🔒 ' : ''}${z.nome_giro || z.id_zona}${isSpeciale ? '<span class="badge-speciale-label">RIENTRI</span>' : ''}</span>
+                                    ${badgeStato(isBloccato ? 'bloccato' : (z._stato || 'da_calcolare'))}
+                                </div>
+                                <div class="zc-sub" style="font-size:0.72rem; color:var(--text-muted); margin-top:3px;">
+                                    ${z.lista_punti.length} fermate${stats.tot_ddt > 0 ? ` · ${stats.tot_ddt} DDT` : ''}${pesoStr}${stats.valore > 0 && !isGcOrSpecial ? ` · € ${stats.valore}` : ''}
+                                </div>
                             </div>
-                            <div class="zone-meta-right">
-                                <span class="badge-points">${z.lista_punti.length} fermate</span>
-                                ${stats.tot_ddt > 0 ? `<div class="zone-value-summary">${stats.tot_ddt} DDT Â· â‚¬ ${stats.valore}</div>` : ''}
+                            <div class="zone-meta-right" style="display:flex; align-items:center; gap:6px; flex-shrink: 0;" onclick="event.stopPropagation()">
+                                <button class="btn-eye${ZONE_HIDDEN.has(z.id_zona)?' hidden-zone':''}" title="${ZONE_HIDDEN.has(z.id_zona)?'Mostra':'Nascondi'} sulla mappa" onclick="window.toggleHidden('${z.id_zona}')">
+                                    <span class="material-icons-round" style="font-size: 16px;">${ZONE_HIDDEN.has(z.id_zona) ? 'visibility_off' : 'visibility'}</span>
+                                </button>
+                                ${!isSpeciale && !isBloccato ? `
+                                    <button class="btn-forbici" title="Dividi viaggio" onclick="startAction('dividi', '${z.id_zona}')">
+                                        <span class="material-icons-round" style="font-size: 16px;">content_cut</span>
+                                    </button>
+                                    <button class="btn-matita" title="Rinomina giro" onclick="window.apriModal('${z.id_zona}')">
+                                        <span class="material-icons-round" style="font-size: 16px;">edit</span>
+                                    </button>
+                                ` : ''}
                             </div>
                         </div>
+                        ${_fasePills}
+                        ${cardBtns}
                         ${statsBar}
 
                         ${isSelected ? `
@@ -1400,30 +2228,26 @@
                                     const cityName = addressParts.slice(1).join(',').trim();
                                     const ddtCodes = [...(p.codici_ddt_frutta || []), ...(p.codici_ddt_latte || [])].filter(c => c && c !== 'p00000').join(', ');
 
-                                    // Action checkboxes or chips
+                                    // Action checkboxes
                                     let controlHtml = '';
                                     if (activeAction === 'dividi' && !isSpeciale) {
                                         controlHtml = `
                                             <input type="checkbox" id="chk-${pointHash}" class="chk-box dividi-chk" value="${pointHash}">
-                                            <label for="chk-${pointHash}" class="chk-lbl">âœ“</label>
+                                            <label for="chk-${pointHash}" class="chk-lbl">✓</label>
                                         `;
-                                    } else if (activeAction === 'sposta') {
-                                        // Generate list of available target voyages
-                                        const chips = DATA_ZONE
-                                            .filter(o => o.id_zona !== z.id_zona && o.id_zona !== 'DDT_DA_INSERIRE' && o.lista_punti.length >= 0)
-                                            .map(o => {
-                                                const oIdx = DATA_ZONE.indexOf(o);
-                                                const resolvedOColor = o.color || _get_color(oIdx);
-                                                return `
-                                                    <span class="zone-chip" data-zone="${o.id_zona}" onclick="_selectDestChip(this, '${resolvedOColor}')">
-                                                        ${o.nome_giro || o.id_zona}
-                                                    </span>
-                                                `;
-                                            }).join('');
+                                    }
 
-                                        controlHtml = `
-                                            <div class="zone-chips-container" data-pid="${pointHash}">
-                                                ${chips}
+                                    let _arrowHtml = '';
+                                    if (!isBloccato && !activeAction) {
+                                        _arrowHtml = `
+                                            <div style="display:flex; align-items:center; gap:4px;" onclick="event.stopPropagation()">
+                                                ${!isSpeciale ? `
+                                                <div class="pt-arrow-btns">
+                                                    <button class="pt-arrow" title="Su" onclick="window.muoviPunto('${z.id_zona}', ${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
+                                                    <button class="pt-arrow" title="Giu" onclick="window.muoviPunto('${z.id_zona}', ${idx}, 1)" ${idx === z.lista_punti.length - 1 ? 'disabled' : ''}>▼</button>
+                                                </div>
+                                                ` : ''}
+                                                <button class="pt-arrow" title="Sposta in altro giro" style="width:24px; height:42px; font-size:14px;" onclick="window.avviaSposta('${z.id_zona}', ${idx})">↔</button>
                                             </div>
                                         `;
                                     }
@@ -1457,6 +2281,15 @@
                                         </div>`;
                                     }
 
+                                    const nota = (p.note || p.note_consegna || p.note_cliente || '').trim();
+                                    let noteHtml = '';
+                                    if (nota) {
+                                        noteHtml = `<div class="point-note" style="color: #92400e; font-style: italic; font-size: 11px; margin-top: 4px; display: flex; align-items: center; gap: 4px; background: #fef3c7; padding: 4px 8px; border-radius: 6px; border: 1.5px dashed #f59e0b;">
+                                            <span class="material-icons-round" style="font-size: 14px; color: #d97706;">notes</span>
+                                            Nota: ${nota}
+                                        </div>`;
+                                    }
+
                                     return `
                                         <div class="point-card" style="${pointStyle}">
                                             <div class="point-header">
@@ -1464,40 +2297,31 @@
                                                     <span class="point-num" style="${numBgStyle}">${idx + 1}</span>
                                                     <span class="point-name" style="cursor:pointer;" title="${p.nome}" onclick="window.panToPoint(${p.lat || 0}, ${p.lon || 0})">${p.nome}</span>
                                                 </div>
+                                                ${_arrowHtml}
                                                 ${activeAction === 'dividi' ? controlHtml : ''}
                                             </div>
-                                            ${ddtCodes ? `<div class="point-ddt">DDT: ${ddtCodes}</div>` : ''}
                                             <div class="point-addr">
                                                 <span>${streetName}</span>
                                                 ${cityName ? `<span style="font-weight:700; color:#334155; display:block;">${cityName}</span>` : ''}
                                             </div>
                                             ${fasciaHtml}
                                             ${etaHtml}
-                                            ${activeAction === 'sposta' ? controlHtml : ''}
+                                            ${noteHtml}
                                         </div>
                                     `;
                                 }).join('')}
                             </div>
 
+                            ${activeAction ? `
                             <div class="action-panel-footer" onclick="event.stopPropagation()">
-                                ${activeAction ? `
-                                    <button class="btn-action-trigger btn-cancel-action" onclick="cancelAction()">
-                                        <span class="material-icons-round" style="font-size:14px; vertical-align:middle;">close</span> Annulla
-                                    </button>
-                                    <button class="btn-action-trigger btn-confirm-action" onclick="executeAction('${z.id_zona}')">
-                                        <span class="material-icons-round" style="font-size:14px; vertical-align:middle;">done</span> Conferma
-                                    </button>
-                                ` : `
-                                    ${!isSpeciale ? `
-                                        <button class="btn-action-trigger" ${isLockedGlobal ? 'disabled' : ''} onclick="startAction('dividi', '${z.id_zona}')">
-                                            DIVIDI VIAGGIO
-                                        </button>
-                                    ` : ''}
-                                    <button class="btn-action-trigger" ${isLockedGlobal ? 'disabled' : ''} onclick="startAction('sposta', '${z.id_zona}')">
-                                        ${isSpeciale ? '📦 ASSEGNA A AUTISTA' : 'SPOSTA FERMATE'}
-                                    </button>
-                                `}
+                                <button class="btn-action-trigger btn-cancel-action" onclick="cancelAction()">
+                                    <span class="material-icons-round" style="font-size:14px; vertical-align:middle;">close</span> Annulla
+                                </button>
+                                <button class="btn-action-trigger btn-confirm-action" onclick="executeAction('${z.id_zona}')">
+                                    <span class="material-icons-round" style="font-size:14px; vertical-align:middle;">done</span> Conferma
+                                </button>
                             </div>
+                            ` : ''}
                         ` : ''}
                     </div>
                 `;
@@ -1630,8 +2454,11 @@
 
             cancelAction();
             updateTotals();
-            renderMarkers();
+            if (!IS_POPUP) {
+                renderMarkers();
+            }
             renderSidebar();
+            syncState();
             
             Swal.fire({
                 icon: 'success',
@@ -1644,55 +2471,212 @@
             });
         }
 
-        // Execute moving stops between trips
-        function executeSposta(sourceZid) {
-            const z = DATA_ZONE.find(x => x.id_zona === sourceZid);
-            const chipsContainers = document.querySelectorAll('.zone-chips-container');
+        // per-card lock/unlock toggle
+        window.toggleLockZona = async (zid) => {
+            const z = DATA_ZONE.find(x => x.id_zona === zid);
+            if (!z) return;
+            z._bloccato = !z._bloccato;
             
-            let movedCount = 0;
+            renderSidebar();
+            if (!IS_POPUP) {
+                await renderMarkers();
+            }
+            syncState();
             
-            chipsContainers.forEach(container => {
-                const selectedChip = container.querySelector('.zone-chip.selected');
-                if (selectedChip) {
-                    const targetZid = selectedChip.dataset.zone;
-                    const targetVoyage = DATA_ZONE.find(x => x.id_zona === targetZid);
-                    
-                    const pointHash = container.dataset.pid;
-                    const pointIdx = z.lista_punti.findIndex(p => {
-                        const hash = (p.codice_frutta + "_" + p.nome).replace(/[^a-zA-Z0-9]/g, '_');
-                        return hash === pointHash;
-                    });
+            // Save state immediately in background
+            await window.saveToServerBackground();
+        };
 
-                    if (pointIdx >= 0 && targetVoyage) {
-                        const stop = z.lista_punti.splice(pointIdx, 1)[0];
-                        stop.zona = targetZid; // Update coordinate's zone property
-                        targetVoyage.lista_punti.push(stop);
-                        movedCount++;
-                    }
-                }
-            });
-
-            if (movedCount === 0) {
-                Swal.fire('Nessuna fermata spostata', 'Seleziona una destinazione per le fermate da spostare!', 'info');
+        // per-card calculate single voyage path
+        window.calcolaGiroSingolo = async (zid) => {
+            const z = DATA_ZONE.find(x => x.id_zona === zid);
+            if (!z) return;
+            if (z._bloccato) {
+                Swal.fire('Viaggio Bloccato', 'Sblocca questo viaggio per poter calcolare il percorso!', 'warning');
                 return;
             }
 
-            _hasUnsavedChanges = true;
-            cancelAction();
-            updateTotals();
-            renderMarkers();
-            renderSidebar();
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Fermate Spostate!',
-                text: `Spostate con successo ${movedCount} fermate.`,
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 2500
+            const result = await Swal.fire({
+                title: 'Calcola Percorso Giro',
+                text: `Vuoi calcolare il percorso per il giro "${z.nome_giro || zid}"?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sì, Calcola! 🚗',
+                cancelButtonText: 'Annulla'
             });
+            
+            if (!result.isConfirmed) return;
+            
+            // First save background changes so server works on latest stop list
+            await window.saveToServerBackground();
+
+            setLoaderMsg(`Ottimizzazione percorso ${z.nome_giro || zid} (OR-Tools Cloud)...`);
+            document.getElementById('loading-overlay').style.display = 'flex';
+            document.getElementById('loading-overlay').style.opacity = '1';
+            
+            try {
+                const webCalcolaPercorsiFn = httpsCallable(functions, 'web_calcola_percorsi');
+                const res = await webCalcolaPercorsiFn({
+                    data_consegna: targetFileDate,
+                    id_zona: zid,
+                    aggiorna_traffico: false // Single giro calculation defaults to false for speed
+                });
+                
+                console.log("[Calcolo Cloud Singolo] Risultato:", res.data);
+                
+                if (res.data && res.data.status === 'ok') {
+                    await reloadVoyageData();
+                    syncState();
+                    Swal.fire('Percorso Calcolato', res.data.message || 'Ottimizzazione completata con successo!', 'success');
+                } else {
+                    throw new Error(res.data ? res.data.message : 'Risposta non valida dal server.');
+                }
+            } catch (err) {
+                console.error("[Calcolo Cloud Singolo] Errore:", err);
+                Swal.fire('Errore di Calcolo', err.message || 'Si è verificato un errore nel calcolo del percorso.', 'error');
+            } finally {
+                hideLoader();
+            }
+        };
+
+        // Row stop reordering (up/down arrows)
+        window.muoviPunto = async (zid, idx, dir) => {
+            const z = DATA_ZONE.find(x => x.id_zona === zid);
+            if (!z) return;
+            if (z._bloccato) {
+                showSaveBanner("⚠️ Questo giro è bloccato!", "var(--danger)");
+                return;
+            }
+            const arr = z.lista_punti;
+            const newIdx = idx + dir;
+            if (newIdx < 0 || newIdx >= arr.length) return;
+            
+            // Swap points
+            [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+            
+            _hasUnsavedChanges = true;
+            renderSidebar();
+            if (!IS_POPUP) {
+                await renderMarkers();
+            }
+            syncState();
+            
+            // Background save
+            await window.saveToServerBackground();
+        };
+
+        // Row stop moving start (opens #sposta-overlay modal)
+        let _spostaPunto = null;
+        let _spostaFromZid = null;
+        let _spostaPIdx = null;
+
+        window.avviaSposta = (zid, idx) => {
+            const z = DATA_ZONE.find(x => x.id_zona === zid);
+            if (!z) return;
+            if (z._bloccato) {
+                showSaveBanner("⚠️ Questo giro è bloccato!", "var(--danger)");
+                return;
+            }
+            _spostaPunto = z.lista_punti[idx];
+            _spostaFromZid = zid;
+            _spostaPIdx = idx;
+            
+            document.getElementById('sposta-sub-txt').textContent = `"${_spostaPunto.nome}" → scegli destinazione:`;
+            
+            // Filter target voyages: not current zone, not DDT_DA_INSERIRE, and not blocked
+            const destinazioni = DATA_ZONE.filter(x => x.id_zona !== zid && x.id_zona !== 'DDT_DA_INSERIRE' && !x._bloccato);
+            if (!destinazioni.length) {
+                Swal.fire('Giri bloccati', 'Tutti gli altri viaggi sono bloccati o non disponibili. Sblocca o crea un viaggio prima di spostare.', 'warning');
+                return;
+            }
+            
+            const chips = document.getElementById('sposta-chips');
+            chips.innerHTML = destinazioni.map(x => `
+                <div class="sposta-chip" style="border-color: ${x.color || '#4f46e5'}" onclick="window.eseguiSposta('${x.id_zona}')">
+                    <span style="color: ${x.color || '#4f46e5'}">●</span> ${x.nome_giro || x.id_zona}
+                </div>
+            `).join('');
+            
+            document.getElementById('sposta-overlay').classList.add('open');
+        };
+
+        // Row stop moving execution
+        window.eseguiSposta = async (toZid) => {
+            window.chiudiSposta();
+            const fromZ = DATA_ZONE.find(x => x.id_zona === _spostaFromZid);
+            const toZ = DATA_ZONE.find(x => x.id_zona === toZid);
+            if (!fromZ || !toZ || !_spostaPunto) return;
+            
+            fromZ.lista_punti.splice(_spostaPIdx, 1);
+            
+            // Update the zone property of the point
+            _spostaPunto.zona = toZid;
+            toZ.lista_punti.push(_spostaPunto);
+            
+            _hasUnsavedChanges = true;
+            renderSidebar();
+            if (!IS_POPUP) {
+                await renderMarkers();
+            }
+            syncState();
+            
+            // Clean empty zones (except DDT_DA_INSERIRE)
+            await pulisciZoneVuoteWeb();
+            
+            // Background save
+            await window.saveToServerBackground();
+            
+            showSaveBanner(`↔ Spostato: ${_spostaPunto.nome} → ${toZ.nome_giro || toZid}`, "var(--accent)");
+        };
+
+        window.chiudiSposta = () => {
+            document.getElementById('sposta-overlay').classList.remove('open');
+        };
+
+        // Clean empty zones helper
+        async function pulisciZoneVuoteWeb() {
+            const initialLen = DATA_ZONE.length;
+            DATA_ZONE = DATA_ZONE.filter(z => z.lista_punti.length > 0 || z.id_zona === 'DDT_DA_INSERIRE');
+            if (DATA_ZONE.length !== initialLen) {
+                _hasUnsavedChanges = true;
+            }
         }
+
+        // Silent background save to Firebase Storage
+        window.saveToServerBackground = async () => {
+            try {
+                const formattedVoyages = DATA_ZONE.filter(z => z.lista_punti.length > 0);
+                const flatPoints = [];
+                formattedVoyages.forEach(z => {
+                    z.lista_punti.forEach(p => {
+                        flatPoints.push(p);
+                    });
+                });
+
+                const pathBase = `REPORTS/${targetFileDate}`;
+                
+                const jsonViaggi = JSON.stringify(formattedVoyages, null, 2);
+                await uploadString(ref(storage, `${pathBase}/viaggi_giornalieri_Johnson.json`), jsonViaggi, 'raw', {
+                    contentType: 'application/json'
+                });
+
+                const jsonUnificato = JSON.stringify(flatPoints, null, 2);
+                await uploadString(ref(storage, `${pathBase}/punti_consegna_unificati_Johnson.json`), jsonUnificato, 'raw', {
+                    contentType: 'application/json'
+                });
+
+                await uploadString(ref(storage, `${pathBase}/punti_consegna.json`), jsonUnificato, 'raw', {
+                    contentType: 'application/json'
+                });
+
+                _hasUnsavedChanges = false;
+                syncState();
+                showSaveBanner("💾 SALVATO!", "var(--accent)");
+            } catch (error) {
+                console.error("[Storage] Errore salvataggio background:", error);
+                showSaveBanner("❌ ERRORE SALVATAGGIO!", "var(--danger)");
+            }
+        };
 
         // Calculate Voyage statistics
         const VALORE_DDT = 16.50;
@@ -1734,9 +2718,12 @@
                 btn.classList.remove('active');
                 btn.innerHTML = '<span class="material-icons-round">fact_check</span> VERIFICA VIAGGI (Vista Completa)';
             }
-            renderMarkers();
+            if (!IS_POPUP) {
+                renderMarkers();
+            }
             renderSidebar();
             updateTotals();
+            syncState();
         };
 
         // Save All Changes to Firebase Storage
@@ -1782,6 +2769,7 @@
                 });
 
                 _hasUnsavedChanges = false;
+                syncState();
                 Swal.close();
                 
                 // Show floating banner
@@ -1815,10 +2803,6 @@
 
         // Cloud-based voyage path optimization trigger (OR-Tools Cloud Function)
         window.calcolaPercorsi = async () => {
-            if (isLockedGlobal) {
-                Swal.fire('Mappa Bloccata', 'Sblocca prima la mappa per poter ricalcolare i percorsi!', 'warning');
-                return;
-            }
             
             // Confirm traffic updates
             const result = await Swal.fire({
@@ -1838,6 +2822,9 @@
             
             const aggiornaTraffico = result.isConfirmed;
             
+            // First save background changes so server works on latest stop list and lock statuses
+            await window.saveToServerBackground();
+            
             setLoaderMsg("Ottimizzazione percorsi in corso (OR-Tools Cloud)...");
             document.getElementById('loading-overlay').style.display = 'flex';
             document.getElementById('loading-overlay').style.opacity = '1';
@@ -1853,6 +2840,7 @@
                 
                 if (res.data && res.data.status === 'ok') {
                     await reloadVoyageData();
+                    syncState();
                     Swal.fire('Percorsi Calcolati', res.data.message || 'Ottimizzazione completata con successo!', 'success');
                 } else {
                     throw new Error(res.data ? res.data.message : 'Risposta non valida dal server.');
@@ -1917,10 +2905,7 @@
                 });
                 
                 _hasUnsavedChanges = false;
-                
-                // Lock map UI on complete generation
-                isLockedGlobal = true;
-                _updateLockUI();
+                syncState();
                 
                 // Step 2: Generazione Cloud
                 Swal.update({
@@ -1956,5 +2941,31 @@
         // Initialize script
         initApp();
     </script>
+
+    <!-- MODAL RINOMINA -->
+    <div id="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-title" id="modal-title">✏️ Rinomina giro</div>
+            <div class="modal-sub" id="modal-sub"></div>
+            <select id="modal-select" onchange="onSelectChange()">
+                <option value="">— Seleziona nome —</option>
+            </select>
+            <input id="modal-input" type="text" placeholder="Oppure scrivi nome personalizzato…">
+            <div class="modal-btns">
+                <button class="modal-ok" onclick="salvaRinomina()">Salva</button>
+                <button class="modal-cancel" onclick="chiudiModal()">Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SPOSTA OVERLAY -->
+    <div id="sposta-overlay">
+        <div class="sposta-box">
+            <div class="sposta-title">↔ Sposta consegna</div>
+            <div class="sposta-sub" id="sposta-sub-txt"></div>
+            <div class="sposta-chips" id="sposta-chips"></div>
+            <button class="sposta-cancel" onclick="window.chiudiSposta()">Annulla</button>
+        </div>
+    </div>
 </body>
 </html>

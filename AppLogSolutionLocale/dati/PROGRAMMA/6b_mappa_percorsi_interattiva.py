@@ -141,8 +141,9 @@ def _calcola_giro(zid: str, punti: list, usa_or_tools: bool = True):
     """Calcola percorso ottimizzato per un giro. Gira in thread separato."""
     try:
         with _lock:
-            if zid in STATO_GIRI:
-                STATO_GIRI[zid].update({"stato": "in_elaborazione", "err": ""})
+            if zid not in STATO_GIRI:
+                STATO_GIRI[zid] = {"stato": "da_calcolare", "polylines": [], "stats": {}, "err": ""}
+            STATO_GIRI[zid].update({"stato": "in_elaborazione", "err": ""})
         _broadcast("stato_giro", {"id_zona": zid, "stato": "in_elaborazione"})
 
         depot = bat3.get_depot_for_points(punti)
@@ -173,6 +174,8 @@ def _calcola_giro(zid: str, punti: list, usa_or_tools: bool = True):
                 if z["id_zona"] == zid:
                     z["lista_punti"] = perc
                     break
+            if zid not in STATO_GIRI:
+                STATO_GIRI[zid] = {"stato": "da_calcolare", "polylines": [], "stats": {}, "err": ""}
             STATO_GIRI[zid].update({"stato": "calcolato", "polylines": polylines, "stats": stats, "err": ""})
             # Persisti stato nel record JSON per il prossimo riavvio
             _persisti_stato_giro(zid)
@@ -184,8 +187,9 @@ def _calcola_giro(zid: str, punti: list, usa_or_tools: bool = True):
 
     except Exception as e:
         with _lock:
-            if zid in STATO_GIRI:
-                STATO_GIRI[zid].update({"stato": "errore", "err": str(e)})
+            if zid not in STATO_GIRI:
+                STATO_GIRI[zid] = {"stato": "da_calcolare", "polylines": [], "stats": {}, "err": ""}
+            STATO_GIRI[zid].update({"stato": "errore", "err": str(e)})
         _broadcast("stato_giro", {"id_zona": zid, "stato": "errore", "err": str(e)})
 
 # ── Persistenza stato giro nel JSON ──────────────────────────────────────────
@@ -352,6 +356,18 @@ def api_dividi():
                 "lista_punti": spostate
             }
             ZONE_CACHE.append(nuova_zona)
+
+            # Inizializza lo stato per il nuovo viaggio in memoria per evitare KeyError al ricalcolo
+            STATO_GIRI[nuovo_zid] = {
+                "stato": "da_calcolare",
+                "polylines": [],
+                "stats": {},
+                "err": ""
+            }
+            # Marca il viaggio originale come modificato se era già calcolato
+            if zid in STATO_GIRI:
+                if STATO_GIRI[zid].get("stato") == "calcolato":
+                    STATO_GIRI[zid]["stato"] = "modificato"
 
         # Salva JSON aggiornato
         (TARGET_DIR / "viaggi_giornalieri.json").write_text(

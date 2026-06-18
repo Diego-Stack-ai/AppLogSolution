@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.32">
+    <link rel="stylesheet" href="styles.css?v=2.37">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -274,21 +274,6 @@
             <button class="nav-tab active" title="1_2_3_4_estrai_ddt_consegne.py" onclick="location.reload()">
                 <span class="material-icons-round">upload_file</span> 1. CARICAMENTO PDF
             </button>
-            <button class="nav-tab" title="2_apri_mappa.bat" onclick="window.apriMappaGenerale()">
-                <span class="material-icons-round">map</span> 2. MAPPA
-            </button>
-            <button class="nav-tab" title="3_genera_percorsi.bat" onclick="window.navigateWithState('gestione_viaggi.html')">
-                <span class="material-icons-round">auto_fix_high</span> 3. PERCORSI
-            </button>
-            <button class="nav-tab" title="4_H10.bat" onclick="window.navigateWithState('gestione_viaggi.html?mode=h10')">
-                <span class="material-icons-round">rule</span> 4. VERIFICA H10
-            </button>
-            <button class="nav-tab" title="5_GENERA_DISTINTE_PDF.bat" onclick="window.navigateWithState('distinte_finali.html')">
-                <span class="material-icons-round">assignment</span> 5. DISTINTE
-            </button>
-            <button class="nav-tab" title="6_AVVIA_MOBILE_AUTISTI.bat" onclick="window.navigateWithState('invio_mobile.html')">
-                <span class="material-icons-round">send_to_mobile</span> 6. INVIO MOBILE
-            </button>
         </div>
         <div class="glass-panel form-card">
             <h2 style="margin-bottom: 8px;">Generazione Distinte per Autisti</h2>
@@ -385,8 +370,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.32"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.32"></script>
+    <script src="script.js?v=2.37"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.37"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
@@ -671,6 +656,7 @@
                                 <span style="font-size: 10px; background: ${data.tenant === 'GRAN CHEF' ? '#fef3c7' : '#e0e7ff'}; color: ${data.tenant === 'GRAN CHEF' ? '#d97706' : '#4f46e5'}; padding: 2px 6px; border-radius: 4px; font-weight: 700;">${data.tenant || 'DNR'}</span>
                             </div>
                             <div style="color: var(--text-muted); font-size: 13px;">Stato: <b style="color: ${color}; text-transform: uppercase;">${data.status}</b></div>
+                            ${data.error_message ? `<div style="color: #ef4444; font-size: 12px; margin-top: 6px; background: #fef2f2; border: 1px dashed #fca5a5; padding: 6px 10px; border-radius: 6px; font-family: monospace; white-space: pre-wrap; word-break: break-word;">❌ Errore: ${data.error_message}</div>` : ''}
                             ${data.data_rilevata ? `<div style="font-size: 12px; color: #4f46e5; font-weight: 700; margin-top:2px;">📅 Data nel file: ${data.data_rilevata}</div>` : ''}
                             <div style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">
                                 ${data.nuovi_clienti ? `<span style="background:#fee2e2; color:#ef4444; padding:2px 6px; border-radius:4px; font-weight:700; font-size:10px;">${data.nuovi_clienti} Clienti Ignoti</span>` : ''}

@@ -551,6 +551,7 @@ def sync_to_firebase(row_data, col_id_f, col_id_l):
             "provincia": provincia,
             "lat": float(lat_val) if pd.notnull(lat_val) and lat_val != 0 else None,
             "lon": float(lon_val) if pd.notnull(lon_val) and lon_val != 0 else None,
+            "stato": "ok"
         }
         
         if orario_min_f: data["orario_min_frutta"] = orario_min_f

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anomalie - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.42">
+    <link rel="stylesheet" href="styles.css?v=2.43">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -58,12 +58,9 @@
             Sale d'Attesa Dati
         </h1>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
-            <p style="color: var(--text-muted); margin: 0; font-size: 14px; max-width: 70%;">
+            <p style="color: var(--text-muted); margin: 0; font-size: 14px; max-width: 100%;">
                 Riconcilia i dati non riconosciuti durante l'elaborazione dei PDF. Aggiungili alle Master Collection di Firebase per istruire il sistema per le prossime volte.
             </p>
-            <button id="btn-apri-editor-massivo" class="action-btn" style="background: #4f46e5; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; height: fit-content;" onclick="apriEditorMassivoLocale()">
-                <span class="material-icons-round">open_in_new</span> Apri Editor Massivo (Locale)
-            </button>
         </div>
 
         <div class="tabs">
@@ -101,8 +98,8 @@
 
     </div>
 
-    <script src="script.js?v=2.42"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.42"></script>
+    <script src="script.js?v=2.43"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.43"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -200,6 +197,11 @@
                             <div class="section-title">Coordinate</div>
                             <div class="input-group"><label>Latitudine</label><input type="number" step="0.000001" id="cli-${id}-lat" value=""></div>
                             <div class="input-group"><label>Longitudine</label><input type="number" step="0.000001" id="cli-${id}-lon" value=""></div>
+                            <div class="input-group" style="grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 4px; margin-bottom: 12px;">
+                                <button type="button" class="action-btn" onclick="apriGeolocalizzatoreMappa('${id}', 'cli')" style="background: #0ea5e9; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 8px; border: none; color: white; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#0284c7';" onmouseout="this.style.background='#0ea5e9';">
+                                    <span class="material-icons-round" style="font-size: 18px;">map</span>📍 Geolocalizza con Google Maps
+                                </button>
+                            </div>
                             
                             <div class="section-title">Codici di Consegna</div>
                             <div class="input-group"><label>Codice Frutta</label><input type="text" id="cli-${id}-codF" value="${(d.tipo === 'FRUTTA' || d.tipo === 'GRAND CHEF' || tenant === 'GRAN CHEF') ? id : 'p00000'}"></div>
@@ -408,7 +410,8 @@
                 orario_min_frutta: document.getElementById(`cli-${id}-omF`).value,
                 orario_max_frutta: document.getElementById(`cli-${id}-oMF`).value,
                 orario_min_latte: document.getElementById(`cli-${id}-omL`).value,
-                orario_max_latte: document.getElementById(`cli-${id}-oML`).value
+                orario_max_latte: document.getElementById(`cli-${id}-oML`).value,
+                stato: "ok"
             };
 
             let docId = window.selectedMergeTarget[id];
@@ -616,6 +619,11 @@
                             <div class="section-title">Coordinate</div>
                             <div class="input-group"><label>Latitudine</label><input type="number" step="0.000001" id="ora-${id}-lat" value="${clientData.lat || ''}"></div>
                             <div class="input-group"><label>Longitudine</label><input type="number" step="0.000001" id="ora-${id}-lon" value="${clientData.lon || ''}"></div>
+                            <div class="input-group" style="grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 4px; margin-bottom: 12px;">
+                                <button type="button" class="action-btn" onclick="apriGeolocalizzatoreMappa('${id}', 'ora')" style="background: #0ea5e9; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 8px; border: none; color: white; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#0284c7';" onmouseout="this.style.background='#0ea5e9';">
+                                    <span class="material-icons-round" style="font-size: 18px;">map</span>📍 Geolocalizza con Google Maps
+                                </button>
+                            </div>
 
                             <div class="section-title">Codici di Consegna</div>
                             <div class="input-group"><label>Codice Frutta</label><input type="text" id="ora-${id}-codF" value="${clientData.codice_frutta || ''}"></div>
@@ -652,7 +660,8 @@
                 orario_min_frutta: document.getElementById(`ora-${idFromPdf}-omF`).value,
                 orario_max_frutta: document.getElementById(`ora-${idFromPdf}-oMF`).value,
                 orario_min_latte: document.getElementById(`ora-${idFromPdf}-omL`).value,
-                orario_max_latte: document.getElementById(`ora-${idFromPdf}-oML`).value
+                orario_max_latte: document.getElementById(`ora-${idFromPdf}-oML`).value,
+                stato: "ok"
             };
 
             try {
@@ -677,43 +686,203 @@
             }
         }
 
-        window.apriEditorMassivoLocale = () => {
-            Swal.fire({
-                title: 'Editor Massivo Locale',
-                text: 'Avvio dell\'editor massivo locale in corso...',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
+        // --- LOGICA GEOLOCALIZZAZIONE CLOUD INTERNA ---
+        let currentAnomalyId = null;
+        let currentPrefix = 'cli';
+        let geolocMap = null;
+        let geolocMarker = null;
+
+        function caricaGoogleMaps(callback) {
+            if (window.google && window.google.maps) {
+                if (callback) callback();
+                return;
+            }
+            const GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4";
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,geometry&loading=async`;
+            script.async = true;
+            script.defer = true;
+            script.onload = () => {
+                if (callback) callback();
+            };
+            document.head.appendChild(script);
+        }
+
+        window.apriGeolocalizzatoreMappa = (id, prefix = 'cli') => {
+            currentAnomalyId = id;
+            currentPrefix = prefix;
+            
+            // Mostra il modal
+            const modal = document.getElementById('geoloc-modal');
+            modal.style.display = 'flex';
+            
+            // Leggi anagrafica corrente dai campi input
+            const ragSoc = document.getElementById(`${prefix}-${id}-cliente`)?.value || '';
+            const ind = document.getElementById(`${prefix}-${id}-ind`)?.value || '';
+            const cit = document.getElementById(`${prefix}-${id}-cit`)?.value || '';
+            const cap = document.getElementById(`${prefix}-${id}-cap`)?.value || '';
+            const prov = document.getElementById(`${prefix}-${id}-prov`)?.value || '';
+            
+            document.getElementById('geoloc-title').textContent = `Geolocalizza: ${ragSoc || 'Nuovo Cliente'}`;
+            
+            // Precompila l'input di ricerca con l'indirizzo attuale
+            const fullAddress = `${ind}, ${cit} ${cap} (${prov})`;
+            document.getElementById('geoloc-search-input').value = ind ? fullAddress : '';
+            
+            // Inizializza i valori visualizzati delle coordinate
+            const currentLat = parseFloat(document.getElementById(`${prefix}-${id}-lat`)?.value) || 0;
+            const currentLon = parseFloat(document.getElementById(`${prefix}-${id}-lon`)?.value) || 0;
+            
+            document.getElementById('geoloc-val-lat').textContent = currentLat !== 0 ? currentLat.toFixed(6) : '-';
+            document.getElementById('geoloc-val-lon').textContent = currentLon !== 0 ? currentLon.toFixed(6) : '-';
+
+            // Carica Google Maps se non è già caricato ed esegue l'init
+            caricaGoogleMaps(() => {
+                initGeolocMap(ind, cit, cap, prov, currentLat, currentLon);
+            });
+        };
+
+        function initGeolocMap(ind, cit, cap, prov, currentLat, currentLon) {
+            let initialPos = { lat: 45.4383, lng: 10.9916 }; // Centro di default (Verona)
+            let hasCoords = false;
+            
+            if (currentLat !== 0 && currentLon !== 0) {
+                initialPos = { lat: currentLat, lng: currentLon };
+                hasCoords = true;
+            }
+            
+            geolocMap = new google.maps.Map(document.getElementById('geoloc-map'), {
+                zoom: hasCoords ? 17 : 12,
+                center: initialPos
+            });
+            
+            geolocMarker = new google.maps.Marker({
+                position: initialPos,
+                map: geolocMap,
+                draggable: true,
+                title: "Trascina per posizionare"
+            });
+            
+            // Ascolta il drag del marker
+            google.maps.event.addListener(geolocMarker, 'dragend', function() {
+                const pos = geolocMarker.getPosition();
+                document.getElementById('geoloc-val-lat').textContent = pos.lat().toFixed(6);
+                document.getElementById('geoloc-val-lon').textContent = pos.lng().toFixed(6);
+            });
+            
+            // Se non abbiamo coordinate pre-esistenti ma c'è un indirizzo, eseguiamo subito la geolocalizzazione automatica
+            if (!hasCoords && ind) {
+                cercaIndirizzoGeoloc();
+            }
+        }
+
+        window.cercaIndirizzoGeoloc = () => {
+            const address = document.getElementById('geoloc-search-input').value;
+            if (!address) return;
+            
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address: address }, (results, status) => {
+                if (status === 'OK' && results[0]) {
+                    const loc = results[0].geometry.location;
+                    geolocMap.setCenter(loc);
+                    geolocMap.setZoom(17);
+                    geolocMarker.setPosition(loc);
+                    
+                    document.getElementById('geoloc-val-lat').textContent = loc.lat().toFixed(6);
+                    document.getElementById('geoloc-val-lon').textContent = loc.lng().toFixed(6);
+                } else {
+                    Swal.fire('Attenzione', 'Impossibile trovare l\'indirizzo cercato su Google Maps.', 'warning');
                 }
             });
+        };
 
-            fetch('http://localhost:5001/api/apri_editor_massivo')
-                .then(r => r.json())
-                .then(res => {
-                    if (res.ok) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Avviato!',
-                            text: 'L\'editor massivo è stato avviato correttamente.',
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
-                    } else {
-                        Swal.fire('Errore', 'Impossibile avviare l\'editor locale: ' + res.err, 'error');
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Connessione Fallita',
-                        html: 'Impossibile comunicare con il server locale (porta 5001).<br><br>' +
-                              'Assicurati che:<br>' +
-                              '1. Stia eseguendo l\'app sul tuo computer locale.<br>' +
-                              '2. Il server locale sia attivo (esegui <b>LANCIA_6B_MAPPA_PERCORSI.bat</b>).'
-                    });
+        window.chiudiGeolocalizzatoreMappa = () => {
+            document.getElementById('geoloc-modal').style.display = 'none';
+        };
+
+        window.applicaCoordinateGeoloc = () => {
+            const latStr = document.getElementById('geoloc-val-lat').textContent;
+            const lonStr = document.getElementById('geoloc-val-lon').textContent;
+            
+            if (latStr === '-' || lonStr === '-') {
+                Swal.fire('Attenzione', 'Devi prima posizionare il marcatore sulla mappa o cercare un indirizzo.', 'warning');
+                return;
+            }
+            
+            const latInput = document.getElementById(`${currentPrefix}-${currentAnomalyId}-lat`);
+            const lonInput = document.getElementById(`${currentPrefix}-${currentAnomalyId}-lon`);
+            
+            if (latInput && lonInput) {
+                latInput.value = latStr;
+                lonInput.value = lonStr;
+                
+                // Coloriamo i campi per dare feedback visivo
+                latInput.style.backgroundColor = '#ecfdf5';
+                latInput.style.borderColor = '#10b981';
+                lonInput.style.backgroundColor = '#ecfdf5';
+                lonInput.style.borderColor = '#10b981';
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Coordinate Applicate!',
+                    text: `Lat: ${latStr}, Lon: ${lonStr}`,
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000
                 });
+            }
+            
+            chiudiGeolocalizzatoreMappa();
         };
     </script>
+
+    <!-- Modal Overlay per Geolocalizzazione Mappa -->
+    <div id="geoloc-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+        <div style="background:white; border-radius:16px; width:100%; max-width:800px; height:80vh; display:flex; flex-direction:column; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); overflow:hidden;">
+            <!-- Header -->
+            <div style="padding:16px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:#f8fafc;">
+                <div>
+                    <h3 style="margin:0; font-size:18px; font-weight:700; color:#0f172a;" id="geoloc-title">Geolocalizza Cliente</h3>
+                    <p style="margin:4px 0 0 0; font-size:13px; color:#64748b;" id="geoloc-subtitle">Cerca l'indirizzo o trascina il marcatore sul punto esatto</p>
+                </div>
+                <button onclick="chiudiGeolocalizzatoreMappa()" style="background:none; border:none; color:#94a3b8; cursor:pointer; padding:4px; border-radius:6px; display:flex; align-items:center; transition:all 0.2s;" onmouseover="this.style.color='#0f172a'; this.style.background='#f1f5f9';" onmouseout="this.style.color='#94a3b8'; this.style.background='none';">
+                    <span class="material-icons-round" style="font-size:24px;">close</span>
+                </button>
+            </div>
+            <!-- Body -->
+            <div style="flex:1; display:flex; flex-direction:column; padding:20px; gap:16px; min-height:0; overflow:hidden;">
+                <!-- Search Bar -->
+                <div style="display:flex; gap:8px; align-items:stretch; flex-shrink:0;">
+                    <div style="position:relative; flex:1;">
+                        <span class="material-icons-round" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:20px;">search</span>
+                        <input type="text" id="geoloc-search-input" placeholder="Cerca indirizzo su Google Maps..." style="width:100%; padding:10px 12px 10px 40px; border:1px solid #cbd5e1; border-radius:10px; font-size:14px; outline:none; transition:all 0.2s; box-shadow:0 1px 2px rgba(0,0,0,0.05);" onfocus="this.style.borderColor='#4f46e5'; this.style.boxShadow='0 0 0 3px rgba(79,70,229,0.15)';" onkeydown="if(event.key === 'Enter') { cercaIndirizzoGeoloc(); event.preventDefault(); }">
+                    </div>
+                    <button onclick="cercaIndirizzoGeoloc()" style="background:#4f46e5; color:white; border:none; border-radius:10px; padding:0 20px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px; transition:background 0.2s;" onmouseover="this.style.background='#4338ca';" onmouseout="this.style.background='#4f46e5';">
+                        Cerca
+                    </button>
+                </div>
+                <!-- Map Container -->
+                <div id="geoloc-map-container" style="flex:1; border-radius:12px; border:1px solid #cbd5e1; position:relative; overflow:hidden; box-shadow:inset 0 2px 4px rgba(0,0,0,0.05);">
+                    <div id="geoloc-map" style="width:100%; height:100%;"></div>
+                </div>
+                <!-- Coordinates / Display -->
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; flex-shrink:0;">
+                    <div style="display:flex; gap:16px; font-size:13px; color:#334155;">
+                        <div>Latitudine: <b id="geoloc-val-lat" style="font-family:monospace; color:#0f172a;">-</b></div>
+                        <div>Longitudine: <b id="geoloc-val-lon" style="font-family:monospace; color:#0f172a;">-</b></div>
+                    </div>
+                    <div style="font-size:12px; color:#64748b;" id="geoloc-precision-hint">Trascina il marker rosso per precisione millimetrica</div>
+                </div>
+            </div>
+            <!-- Footer -->
+            <div style="padding:16px 24px; border-top:1px solid #e2e8f0; display:flex; justify-content:end; gap:12px; background:#f8fafc; flex-shrink:0;">
+                <button onclick="chiudiGeolocalizzatoreMappa()" style="background:white; border:1px solid #cbd5e1; border-radius:10px; padding:10px 20px; font-weight:700; color:#475569; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9';" onmouseout="this.style.background='white';">Annulla</button>
+                <button onclick="applicaCoordinateGeoloc()" style="background:#10b981; border:none; border-radius:10px; padding:10px 24px; font-weight:700; color:white; cursor:pointer; display:flex; align-items:center; gap:8px; transition:background 0.2s;" onmouseover="this.style.background='#059669';" onmouseout="this.style.background='#10b981';">
+                    <span class="material-icons-round" style="font-size: 20px;">check_circle</span> Applica Coordinate
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

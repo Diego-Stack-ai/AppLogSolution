@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.44">
+    <link rel="stylesheet" href="styles.css?v=2.45">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -370,8 +370,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.44"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.44"></script>
+    <script src="script.js?v=2.45"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.45"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
@@ -583,6 +583,8 @@
         let activeJobsGC = [];
         let initialLoad = true;
         let notifiedJobs = new Set();
+        let loadedDNR = false;
+        let loadedGC = false;
 
         function renderMergedJobs() {
             const jobsList = document.getElementById('jobs-list');
@@ -608,43 +610,44 @@
                 if (data.status === 'error') { icon = 'error'; color = '#ef4444'; }
                 if (data.status === 'processing') { icon = 'autorenew'; color = '#3b82f6'; }
 
-                if (data.status === 'completed' && !initialLoad && !notifiedJobs.has(data.id)) {
-                    notifiedJobs.add(data.id);
-                    let n_c = data.nuovi_clienti || 0;
-                    let n_a = data.nuovi_articoli || 0;
-                    let n_o = data.nuovi_orari || 0;
-                    
-                    if (n_c > 0 || n_a > 0 || n_o > 0) {
-                        hasNewAnomalies = true;
-                        combinedMsg += `<div style='text-align:left; font-size:14px; margin-top:10px; padding:12px; background:#f8fafc; border-radius:8px; border: 1px solid #e2e8f0;'>`;
-                        combinedMsg += `<div style='color:#0f172a; font-size:15px; font-weight:800; text-transform:uppercase; margin-bottom:10px;'>📌 JOB ${data.type} <span style='font-size:10px; color:#94a3b8; font-weight:700;'>[${data.tenant || 'DNR'}]</span></div>`;
+                if (data.status === 'completed') {
+                    if (initialLoad) {
+                        notifiedJobs.add(data.id);
+                    } else if (!notifiedJobs.has(data.id)) {
+                        notifiedJobs.add(data.id);
+                        let n_c = data.nuovi_clienti || 0;
+                        let n_a = data.nuovi_articoli || 0;
+                        let n_o = data.nuovi_orari || 0;
                         
-                        if (n_c > 0) {
-                            let listC = data.nuovi_clienti_list ? data.nuovi_clienti_list.join(', ') : '';
-                            combinedMsg += `<div style='margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;'>
-                                <span style='background:#fee2e2; color:#ef4444; padding:3px 8px; border-radius:4px; font-weight:700; white-space:nowrap; font-size:11px;'>👥 ${n_c} Clienti</span>
-                                <span style='font-size:12px; color:#475569; line-height:1.4;'>${listC}</span>
-                            </div>`;
+                        if (n_c > 0 || n_a > 0 || n_o > 0) {
+                            hasNewAnomalies = true;
+                            combinedMsg += `<div style='text-align:left; font-size:14px; margin-top:10px; padding:12px; background:#f8fafc; border-radius:8px; border: 1px solid #e2e8f0;'>`;
+                            combinedMsg += `<div style='color:#0f172a; font-size:15px; font-weight:800; text-transform:uppercase; margin-bottom:10px;'>📌 JOB ${data.type} <span style='font-size:10px; color:#94a3b8; font-weight:700;'>[${data.tenant || 'DNR'}]</span></div>`;
+                            
+                            if (n_c > 0) {
+                                let listC = data.nuovi_clienti_list ? data.nuovi_clienti_list.join(', ') : '';
+                                combinedMsg += `<div style='margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;'>
+                                    <span style='background:#fee2e2; color:#ef4444; padding:3px 8px; border-radius:4px; font-weight:700; white-space:nowrap; font-size:11px;'>👥 ${n_c} Clienti</span>
+                                    <span style='font-size:12px; color:#475569; line-height:1.4;'>${listC}</span>
+                                </div>`;
+                            }
+                            if (n_a > 0) {
+                                let listA = data.nuovi_articoli_list ? data.nuovi_articoli_list.join(', ') : '';
+                                combinedMsg += `<div style='margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;'>
+                                    <span style='background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px; font-weight:700; white-space:nowrap; font-size:11px;'>📦 ${n_a} Articoli</span>
+                                    <span style='font-size:12px; color:#475569; line-height:1.4;'>${listA}</span>
+                                </div>`;
+                            }
+                            if (n_o > 0) {
+                                let listO = data.nuovi_orari_list ? data.nuovi_orari_list.join(', ') : '';
+                                combinedMsg += `<div style='margin-bottom:0px; display:flex; align-items:flex-start; gap:8px;'>
+                                    <span style='background:#e0e7ff; color:#4f46e5; padding:3px 8px; border-radius:4px; font-weight:700; white-space:nowrap; font-size:11px;'>🕒 ${n_o} Orari</span>
+                                    <span style='font-size:12px; color:#475569; line-height:1.4;'>${listO}</span>
+                                </div>`;
+                            }
+                            combinedMsg += `</div>`;
                         }
-                        if (n_a > 0) {
-                            let listA = data.nuovi_articoli_list ? data.nuovi_articoli_list.join(', ') : '';
-                            combinedMsg += `<div style='margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;'>
-                                <span style='background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px; font-weight:700; white-space:nowrap; font-size:11px;'>📦 ${n_a} Articoli</span>
-                                <span style='font-size:12px; color:#475569; line-height:1.4;'>${listA}</span>
-                            </div>`;
-                        }
-                        if (n_o > 0) {
-                            let listO = data.nuovi_orari_list ? data.nuovi_orari_list.join(', ') : '';
-                            combinedMsg += `<div style='margin-bottom:0px; display:flex; align-items:flex-start; gap:8px;'>
-                                <span style='background:#e0e7ff; color:#4f46e5; padding:3px 8px; border-radius:4px; font-weight:700; white-space:nowrap; font-size:11px;'>🕒 ${n_o} Orari</span>
-                                <span style='font-size:12px; color:#475569; line-height:1.4;'>${listO}</span>
-                            </div>`;
-                        }
-                        combinedMsg += `</div>`;
                     }
-                }
-                if (initialLoad && data.status === 'completed') {
-                    notifiedJobs.add(data.id);
                 }
 
                 html += `
@@ -694,6 +697,10 @@
             }
 
             jobsList.innerHTML = html;
+
+            if (loadedDNR && loadedGC) {
+                initialLoad = false;
+            }
         }
 
         // Ascolto in realtime della coda dei job (ultimi 10 per ciascun tenant)
@@ -706,8 +713,8 @@
             onSnapshot(qDNR, (snapshot) => {
                 activeJobsDNR = [];
                 snapshot.forEach(doc => activeJobsDNR.push({ id: doc.id, ...doc.data() }));
+                loadedDNR = true;
                 renderMergedJobs();
-                initialLoad = false;
             });
 
             // Sottoscrizione GRAND CHEF
@@ -716,8 +723,8 @@
             onSnapshot(qGC, (snapshot) => {
                 activeJobsGC = [];
                 snapshot.forEach(doc => activeJobsGC.push({ id: doc.id, ...doc.data() }));
+                loadedGC = true;
                 renderMergedJobs();
-                initialLoad = false;
             });
         }
 

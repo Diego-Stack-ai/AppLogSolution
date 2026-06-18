@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "2.57";
+const APP_VERSION = "2.58";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -245,14 +245,23 @@ window.updateViaggi = async function() {
     let options = [];
     let loadedFromManifest = false;
 
-    if (selectedDate && (clienteNome.toUpperCase() === 'GRAN CHEF' || clienteNome.toUpperCase() === 'GRAND CHEF' || clienteNome.toUpperCase() === 'PROGETTO SCUOLE')) {
+    let formattedDate = selectedDate || "";
+    if (selectedDate && selectedDate.includes('-')) {
+        const parts = selectedDate.split('-');
+        if (parts.length === 3 && parts[0].length === 4) {
+            // Converts YYYY-MM-DD to DD-MM-YYYY
+            formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+    }
+
+    if (formattedDate && (clienteNome.toUpperCase() === 'GRAN CHEF' || clienteNome.toUpperCase() === 'GRAND CHEF' || clienteNome.toUpperCase() === 'PROGETTO SCUOLE')) {
         try {
             const storage = window.firebaseStorage || (typeof firebaseStorage !== 'undefined' ? firebaseStorage : null);
             const sRef = window.sRef;
             const getDownloadURL = window.getDownloadURL;
 
             if (storage && sRef && getDownloadURL) {
-                const fileRef = sRef(storage, `REPORTS/${selectedDate}/manifest_link_viaggi.json`);
+                const fileRef = sRef(storage, `REPORTS/${formattedDate}/manifest_link_viaggi.json`);
                 const downloadUrl = await getDownloadURL(fileRef);
                 const response = await fetch(downloadUrl);
                 if (response.ok) {
@@ -271,7 +280,7 @@ window.updateViaggi = async function() {
                     
                     if (options.length > 0) {
                         loadedFromManifest = true;
-                        console.log(`[updateViaggi] Caricati ${options.length} viaggi dal manifest di Storage per ${selectedDate}.`);
+                        console.log(`[updateViaggi] Caricati ${options.length} viaggi dal manifest di Storage per ${formattedDate}.`);
                     }
                 }
             }

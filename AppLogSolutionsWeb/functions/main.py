@@ -3621,7 +3621,7 @@ def core_genera_completo_giornata(data_consegna):
                         match = next((d for d in deliveries_all if str(d.get("codice_consegna")).strip().lower() == cf and str(d.get("num_ddt")).strip() == str(num)), None)
                         if match: ddt_trovati.append(match)
                 else:
-                    match = next((d for d in deliveries_all if str(d.get("codice_consegna")).strip().lower() == cf and d.get("tipo") == "FRUTTA"), None)
+                    match = next((d for d in deliveries_all if str(d.get("codice_consegna")).strip().lower() == cf and d.get("tipo") in ("FRUTTA", "GRAND_CHEF")), None)
                     if match: ddt_trovati.append(match)
                     
             if cl and cl != "p00000":
@@ -3630,7 +3630,7 @@ def core_genera_completo_giornata(data_consegna):
                         match = next((d for d in deliveries_all if str(d.get("codice_consegna")).strip().lower() == cl and str(d.get("num_ddt")).strip() == str(num)), None)
                         if match: ddt_trovati.append(match)
                 else:
-                    match = next((d for d in deliveries_all if str(d.get("codice_consegna")).strip().lower() == cl and d.get("tipo") == "LATTE"), None)
+                    match = next((d for d in deliveries_all if str(d.get("codice_consegna")).strip().lower() == cl and d.get("tipo") in ("LATTE", "GRAND_CHEF")), None)
                     if match: ddt_trovati.append(match)
 
             for ddt in ddt_trovati:

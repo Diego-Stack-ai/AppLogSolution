@@ -2027,7 +2027,12 @@ def core_genera_report_giornaliero(uid, data_consegna):
                 "zona": ddt.get('zona') or ((cliente_info.get('codice_zona') or cliente_info.get('zona') or '0000') if cliente_info else '0000'),
                 "lat": float(cliente_info.get('lat', 0)) if cliente_info and cliente_info.get('lat') else 0,
                 "lon": float(cliente_info.get('lon', 0)) if cliente_info and cliente_info.get('lon') else 0,
-                "rientri_alert": []
+                "rientri_alert": [],
+                "tipologia_grado": cliente_info.get('tipologia_grado', '') if cliente_info else ('GRAND CHEF' if tipo == 'GRAND_CHEF' else ''),
+                "tipo": tipo,
+                "gc_colli": ddt.get("gc_colli", ""),
+                "gc_peso_kg": ddt.get("gc_peso_kg", ""),
+                "gc_num_cartone": ddt.get("gc_num_cartone", "")
             }
         else:
             # Se esiste già, aggiorna i codici reali se quello preesistente era fittizio/vuoto
@@ -2036,6 +2041,13 @@ def core_genera_report_giornaliero(uid, data_consegna):
                 esistente["codice_frutta"] = cf_val
             if cl_val != 'p00000' and esistente["codice_latte"] == 'p00000':
                 esistente["codice_latte"] = cl_val
+            if ddt.get("gc_colli"): esistente["gc_colli"] = ddt.get("gc_colli")
+            if ddt.get("gc_peso_kg"): esistente["gc_peso_kg"] = ddt.get("gc_peso_kg")
+            if ddt.get("gc_num_cartone"): esistente["gc_num_cartone"] = ddt.get("gc_num_cartone")
+            if tipo == 'GRAND_CHEF':
+                esistente["tipo"] = 'GRAND_CHEF'
+                if not esistente.get("tipologia_grado"):
+                    esistente["tipologia_grado"] = 'GRAND CHEF'
         
         if tipo == 'FRUTTA':
             punti_map[chiave]["codici_ddt_frutta"].append(ddt.get('num_ddt', 'UNK'))

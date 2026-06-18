@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Presenze Dipendenti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.63">
+    <link rel="stylesheet" href="styles.css?v=2.64">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .filters-container {
@@ -64,24 +64,25 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         th {
             background: #f8fafc;
             text-align: left;
-            padding: 10px 12px;
+            padding: 8px 6px;
             font-weight: 700;
             color: #475569;
             border-bottom: 2px solid #e2e8f0;
-            white-space: nowrap;
+            white-space: normal;
+            line-height: 1.2;
             position: sticky;
             top: 0;
             z-index: 10;
         }
 
         td {
-            padding: 8px 12px;
+            padding: 6px 6px;
             border-bottom: 1px solid #f1f5f9;
             color: var(--text-main);
             vertical-align: middle;
@@ -101,7 +102,7 @@
 
         .edit-input {
             width: 100%;
-            padding: 6px 8px;
+            padding: 4px 6px;
             border: 1px solid transparent;
             background: transparent;
             font-family: inherit;
@@ -129,12 +130,19 @@
         }
 
         .num-input {
-            width: 70px;
+            width: 55px;
             text-align: right;
+            -moz-appearance: textfield;
+        }
+        
+        .num-input::-webkit-outer-spin-button,
+        .num-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
         }
 
         .time-input {
-            width: 75px;
+            width: 55px;
             text-align: center;
         }
 
@@ -249,18 +257,18 @@
                     <thead>
                         <tr>
                             <th>Data</th>
-                            <th style="text-align:center;">Magazzino/Sdoppiato</th>
+                            <th style="text-align:center;">Magazzino<br>Sdoppiato</th>
                             <th>Cliente</th>
-                            <th style="text-align:right;">Km Partenza</th>
-                            <th style="text-align:right;">Km Arrivo</th>
-                            <th style="text-align:right;">Delta Km</th>
-                            <th style="text-align:center;">Inizio M.</th>
-                            <th style="text-align:center;">Fine M.</th>
-                            <th style="text-align:center;">Inizio P.</th>
-                            <th style="text-align:center;">Fine P.</th>
-                            <th style="text-align:right;">Tot. Ore</th>
-                            <th style="text-align:right;">Ordinarie</th>
-                            <th style="text-align:right;">Straordinarie</th>
+                            <th style="text-align:right;">Km<br>Part.</th>
+                            <th style="text-align:right;">Km<br>Arr.</th>
+                            <th style="text-align:right;">Delta<br>Km</th>
+                            <th style="text-align:center;">Iniz<br>M.</th>
+                            <th style="text-align:center;">Fine<br>M.</th>
+                            <th style="text-align:center;">Iniz<br>P.</th>
+                            <th style="text-align:center;">Fine<br>P.</th>
+                            <th style="text-align:right;">Tot.<br>Ore</th>
+                            <th style="text-align:right;">Ord.</th>
+                            <th style="text-align:right;">Straord.</th>
                             <th style="text-align:right;">Importo</th>
                             <th style="text-align:right;">Litri</th>
                             <th>Note</th>
@@ -295,8 +303,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.63"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.63"></script>
+    <script src="script.js?v=2.64"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.64"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";

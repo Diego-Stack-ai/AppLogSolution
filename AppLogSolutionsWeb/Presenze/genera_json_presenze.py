@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 # Cartella corrente dove si trovano i file .xlsx
-cartella = r"g:\Il mio Drive\1-PRESENZE 2026"
+cartella = os.path.dirname(os.path.abspath(__file__))
 
 tutti_i_dati = []
 

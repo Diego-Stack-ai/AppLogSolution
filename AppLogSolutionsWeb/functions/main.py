@@ -3701,6 +3701,7 @@ def core_genera_completo_giornata(data_consegna):
         })
 
     # Master PDF
+    master_distinte_url = None
     try:
         from pypdf import PdfWriter
         riepilogo_zone_pdf = _genera_pagina_riepilogo_zone_cloud(zone_list, data_consegna, pdf_non_trovati_giorno)
@@ -3723,6 +3724,7 @@ def core_genera_completo_giornata(data_consegna):
         
         master_blob = bucket.blob(f"REPORTS/{data_consegna}/MASTER_DISTINTE_{data_consegna}.pdf")
         master_blob.upload_from_file(master_stream, content_type="application/pdf")
+        master_distinte_url = _genera_url_storage_token(master_blob)
         print(f"[MASTER] Generato MASTER_DISTINTE_{data_consegna}.pdf con successo.")
     except Exception as e_master:
         print(f"[MASTER] Errore assemblaggio: {e_master}")
@@ -3735,6 +3737,8 @@ def core_genera_completo_giornata(data_consegna):
         "date": data_consegna,
         "links": links
     }
+    if master_distinte_url:
+        manifest_data["master_distinte_url"] = master_distinte_url
     bucket.blob(f"REPORTS/{data_consegna}/manifest_link_viaggi.json").upload_from_string(json.dumps(manifest_data, indent=2), content_type='application/json')
 
     punti_totali = sum(len(z.get("lista_punti", [])) for z in zone_list if z.get("id_zona") != "DDT_DA_INSERIRE")

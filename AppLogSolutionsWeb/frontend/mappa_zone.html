@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2.47">
+    <link rel="stylesheet" href="styles.css?v=2.48">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
@@ -2515,7 +2515,7 @@
             document.getElementById('loading-overlay').style.opacity = '1';
             
             try {
-                const webCalcolaPercorsiFn = httpsCallable(functions, 'web_calcola_percorsi');
+                const webCalcolaPercorsiFn = httpsCallable(functions, 'web_calcola_percorsi', { timeout: 300000 });
                 const res = await webCalcolaPercorsiFn({
                     data_consegna: targetFileDate,
                     id_zona: zid,
@@ -2830,7 +2830,7 @@
             document.getElementById('loading-overlay').style.opacity = '1';
             
             try {
-                const webCalcolaPercorsiFn = httpsCallable(functions, 'web_calcola_percorsi');
+                const webCalcolaPercorsiFn = httpsCallable(functions, 'web_calcola_percorsi', { timeout: 540000 });
                 const res = await webCalcolaPercorsiFn({
                     data_consegna: targetFileDate,
                     aggiorna_traffico: aggiornaTraffico
@@ -2913,7 +2913,7 @@
                     text: 'Creazione PDF distinte, Master PDF e mappe mobile in cloud (BAT 5, 6, 7B)...'
                 });
                 
-                const generaCompletoFn = httpsCallable(functions, 'genera_completo_giornata');
+                const generaCompletoFn = httpsCallable(functions, 'genera_completo_giornata', { timeout: 300000 });
                 const res = await generaCompletoFn({
                     data_consegna: targetFileDate
                 });

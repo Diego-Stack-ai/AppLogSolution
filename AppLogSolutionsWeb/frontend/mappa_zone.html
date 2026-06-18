@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2.48">
+    <link rel="stylesheet" href="styles.css?v=2.52">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
@@ -1073,6 +1073,11 @@
         .zone-card.bloccata .zone-header {
             opacity: 0.85;
         }
+        #btn-annulla-loading:hover {
+            background: rgba(255, 255, 255, 0.22) !important;
+            border-color: white !important;
+            transform: scale(1.02);
+        }
     </style>
 </head>
 <body>
@@ -1084,8 +1089,11 @@
     <!-- Loading Overlay -->
     <div id="loading-overlay">
         <div class="spinner"></div>
-        <h3 style="color: white; margin: 0 0 8px 0; font-weight: 700;">Inizializzazione Mappa...</h3>
-        <p style="color: #94a3b8; font-size: 0.9rem; margin: 0;" id="loading-msg">Caricamento delle configurazioni Firebase...</p>
+        <h3 style="color: white; margin: 0 0 8px 0; font-weight: 700;">Elaborazione in corso...</h3>
+        <p style="color: #94a3b8; font-size: 0.9rem; margin: 0 0 24px 0;" id="loading-msg">Caricamento delle configurazioni Firebase...</p>
+        <button id="btn-annulla-loading" onclick="window.annullaLoading()" style="background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.25); padding: 10px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; font-family: 'Outfit', sans-serif; font-size: 0.85rem; transition: all 0.2s;">
+            <span class="material-icons-round" style="font-size: 18px;">close</span> ANNULLA E TORNA ALLA MAPPA
+        </button>
     </div>
 
     <!-- Save status banner -->
@@ -1577,6 +1585,22 @@
             setTimeout(() => {
                 if (overlay) overlay.style.display = 'none';
             }, 400);
+        };
+
+        window.annullaLoading = () => {
+            hideLoader();
+            // SweetAlert2 non-blocking toast notification
+            const toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 4500,
+                timerProgressBar: true
+            });
+            toast.fire({
+                icon: 'info',
+                title: 'Schermata chiusa. L\'elaborazione Cloud potrebbe continuare in background.'
+            });
         };
 
         // Safety timeout to prevent infinite loading screen

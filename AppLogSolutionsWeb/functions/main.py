@@ -1125,9 +1125,11 @@ DEPOT_CLOUD = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO"}
 AVG_SPEED_KMH = 45
 TIME_PER_STOP_MIN = 8
 
-def _get_directions_data(percorso_punti):
+def _get_directions_data(percorso_punti, depot=None):
     """Chiama Directions API. Restituisce (km, sec_guida, lista_polylines)."""
-    punti_pieni = [DEPOT_CLOUD] + percorso_punti + [DEPOT_CLOUD]
+    if depot is None:
+        depot = _get_depot_for_points_cloud(percorso_punti)
+    punti_pieni = [depot] + percorso_punti + [depot]
     km_tot, sec_tot, polylines, nuove_coppie = 0.0, 0, [], []
 
     km_stima = sum(_haversine(punti_pieni[k], punti_pieni[k+1]) / 1000 * 1.3
@@ -1169,8 +1171,22 @@ def _get_directions_data(percorso_punti):
     return final_km, final_sec, polylines
 
 
-def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines):
+_PHONE_RE = re.compile(r'(?:\+39)?[\s\-]?(?:0\d{1,4}[\s\-]?\d{4,8}|3\d{2}[\s\-]?\d{6,7})')
+
+def _extract_phone(p):
+    """Estrae e normalizza un numero di telefono dal punto di consegna."""
+    tel = str(p.get('telefono', p.get('tel', p.get('phone', ''))) or '').strip()
+    if not tel:
+        note_text = str(p.get('note', p.get('nota_integrativa', p.get('Note', ''))) or '')
+        m = _PHONE_RE.search(note_text)
+        if m:
+            tel = m.group(0).strip()
+    return re.sub(r'[\s\-]', '', tel) if tel else ''
+
+def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, distinta_url=None):
     """Genera HTML mappa mobile-first con polyline strade vere."""
+    if depot is None:
+        depot = _get_depot_for_points_cloud(punti)
     t_guida_min = sec_guida // 60
     t_sosta_min = len(punti) * TIME_PER_STOP_MIN
     t_tot_min   = t_guida_min + t_sosta_min
@@ -1179,23 +1195,125 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines):
         hh, mm = divmod(m, 60)
         return f"{hh}h {mm}m" if hh > 0 else f"{mm}m"
 
+    depot_nome = depot.get("nome", "Deposito").title() if depot else "Deposito"
+    ora_partenza_dep = "07:00"
+    
     fermate_html = ""
+    
+    # 1. Card di Partenza
+    if distinta_url:
+        fermate_html += f'''
+            <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1.4fr 1fr; padding: 10px; gap: 8px; align-items: stretch; cursor: default;">
+                <div class="stop-num" style="background:#475569; align-self: center;"><span class="material-icons-round">home</span></div>
+                <div class="stop-info" style="justify-content: center;">
+                    <b class="name" style="font-size: 0.8rem;">PARTENZA</b>
+                    <span class="addr" style="font-size: 0.7rem;">{depot_nome}</span>
+                    <span class="orario-badge" style="background:#1e293b; color:white; margin-top:2px; font-size: 0.6rem;"><span class="material-icons-round" style="font-size: 10px !important;">schedule</span>Partenza: {ora_partenza_dep}</span>
+                </div>
+                <div style="border-left: 2px solid #bae6fd; background: #f0f9ff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; border-radius: 8px; gap: 4px;">
+                    <div style="font-size: 0.52rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #0369a1;">📋 Distinta</div>
+                    <a href="{distinta_url}" target="_blank" onclick="event.stopPropagation()" style="background: #0284c7; color: white; border: none; border-radius: 6px; padding: 5px 6px; font-size: 0.62rem; font-weight: 800; text-decoration: none; display: flex; align-items: center; gap: 3px; width: 100%; justify-content: center;">🔗 Apri PDF</a>
+                </div>
+            </div>'''
+    else:
+        fermate_html += f'''
+            <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr; cursor: default;">
+                <div class="stop-num" style="background:#475569;"><span class="material-icons-round">home</span></div>
+                <div class="stop-info">
+                    <b class="name">PARTENZA</b>
+                    <span class="addr">{depot_nome}</span>
+                    <span class="orario-badge" style="background:#1e293b; color:white; margin-top:4px;"><span class="material-icons-round">schedule</span>Partenza: {ora_partenza_dep}</span>
+                </div>
+            </div>'''
+
     for idx, p in enumerate(punti):
         nome = p.get("nome", p.get("codice_cliente", f"Tappa {idx+1}"))
         ind  = p.get("indirizzo", "")
         lat  = p.get("lat", "")
         lon  = p.get("lon", p.get("lng", ""))
-        nav  = f"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}"
+        nav  = f"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}&travelmode=driving"
         
         is_parz = any(r.get("is_parziale") for r in p.get("rientri_alert", []) if isinstance(r, dict))
         warn_class = " warning" if is_parz else ""
         
+        # Note
+        note_txt = str(p.get("note", p.get("nota_integrativa", p.get("Note", ""))) or "").strip()
+        note_html = ""
+        if note_txt and note_txt.lower() != "nan":
+            note_safe = note_txt.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
+            note_html = f'<div class="note-chip"><span class="material-icons-round">sticky_note_2</span>Note: {note_safe}</div>'
+            
+        # Orari
+        om_val = str(p.get("orario_min") or p.get("orario_min_frutta", p.get("orario_min_latte", ""))).strip()
+        oM_val = str(p.get("orario_max") or p.get("orario_max_frutta", p.get("orario_max_latte", ""))).strip()
+        
+        orario_html = ""
+        if (om_val and om_val.lower() != "nan") or (oM_val and oM_val.lower() != "nan"):
+            if om_val and oM_val:
+                orario_txt = f"{om_val} - {oM_val}"
+            elif om_val:
+                orario_txt = f"Dalle {om_val}"
+            else:
+                orario_txt = f"Entro le {oM_val}"
+            orario_html = f'<span class="orario-badge"><span class="material-icons-round">schedule</span>Fascia: {orario_txt}</span>'
+            
+        # Orario stimato arrivo / ripartenza
+        ora_arr = str(p.get("ora_arrivo") or "").strip()
+        ora_rip = str(p.get("ora_ripartenza") or "").strip()
+        eta_html = ""
+        if ora_arr and ora_rip:
+            eta_html = f'<span class="eta-badge"><span class="material-icons-round">timer</span>Arrivo {ora_arr} &mdash; Ripart. {ora_rip}</span>'
+        elif ora_arr:
+            eta_html = f'<span class="eta-badge"><span class="material-icons-round">timer</span>Arrivo stimato {ora_arr}</span>'
+            
+        # Chiamata
+        phone_num = _extract_phone(p)
+        if phone_num:
+            action_col = (
+                f'<div class="nav-col">'
+                f'<a href="{nav}" target="_blank" class="btn-nav" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a>'
+                f'<a href="tel:{phone_num}" class="btn-call" onclick="event.stopPropagation()"><span class="material-icons-round">call</span></a>'
+                f'</div>'
+            )
+            card_style = 'grid-template-columns: 42px 1fr auto;'
+        else:
+            action_col = f'<a href="{nav}" target="_blank" class="btn-nav" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a>'
+            card_style = 'grid-template-columns: 42px 1fr 44px;'
+            
         fermate_html += (
-            f'<div class="card" id="card-{idx}" onclick="selectCard({idx})">'
+            f'<div class="card" id="card-{idx}" onclick="selectCard({idx})" style="{card_style}">'
             f'<div class="stop-num{warn_class}">{idx+1}</div>'
-            f'<div class="stop-info"><span class="name">{nome}</span><span class="addr">{ind}</span></div>'
-            f'<a href="{nav}" target="_blank" class="btn-nav">&#x2BAC;</a></div>'
+            f'<div class="stop-info">'
+            f'<span class="name">{nome}</span>'
+            f'<span class="addr">{ind}</span>'
+            f'{orario_html}'
+            f'{eta_html}'
+            f'{note_html}'
+            f'</div>'
+            f'{action_col}</div>'
         )
+
+    # 3. Card di Arrivo
+    ora_rientro_dep = ""
+    try:
+        t_tot_min = (sec_guida // 60) + len(punti) * TIME_PER_STOP_MIN
+        hh_ret, mm_ret = divmod(7 * 60 + int(t_tot_min), 60)
+        hh_ret = hh_ret % 24
+        ora_rientro_dep = f"{hh_ret:02d}:{mm_ret:02d}"
+    except Exception as e_time:
+        print(f"[WARN] Impossibile calcolare ora rientro: {e_time}")
+
+    rientro_badge = f'<span class="orario-badge" style="background:#1e293b; color:white; margin-top:4px;"><span class="material-icons-round">schedule</span>Rientro stimato: {ora_rientro_dep}</span>' if ora_rientro_dep else ''
+    
+    fermate_html += f'''
+        <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr; cursor: default;">
+            <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
+            <div class="stop-info">
+                <b class="name">ARRIVO</b>
+                <span class="addr">{depot_nome}</span>
+                {rientro_badge}
+            </div>
+        </div>'''
 
     punti_js_list = []
     for p in punti:
@@ -1216,9 +1334,10 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines):
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Mappa {viaggio_id}</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 <script src="https://maps.googleapis.com/maps/api/js?key={GOOGLE_MAPS_API_KEY}&libraries=geometry&callback=initMap" async defer></script>
 <style>
-:root{{--p:#4f46e5;--accent:#10b981}}
+:root{{--p:#4f46e5;--accent:#10b981;--call:#16a34a}}
 body,html{{margin:0;padding:0;height:100%;font-family:'Outfit',sans-serif;overflow:hidden}}
 .main-container{{display:flex;flex-direction:column;height:100vh}}
 #map{{height:42vh;width:100%;background:#dfe5eb}}
@@ -1229,9 +1348,9 @@ body,html{{margin:0;padding:0;height:100%;font-family:'Outfit',sans-serif;overfl
 .stat-val{{font-size:.85rem;font-weight:800;color:white}}
 .stat-lbl{{font-size:.52rem;color:#94a3b8;text-transform:uppercase}}
 #delivery-list{{flex:1;overflow-y:auto;padding:8px;background:#f1f5f9;padding-bottom:60px}}
-.card{{background:white;border-radius:12px;padding:10px;margin-bottom:8px;display:grid;grid-template-columns:42px 1fr 40px;gap:8px;align-items:center;border:1px solid #cbd5e1;cursor:pointer;transition:all .2s}}
+.card{{background:white;border-radius:12px;padding:10px;margin-bottom:8px;display:grid;gap:8px;align-items:center;border:1px solid #cbd5e1;cursor:pointer;transition:all .2s}}
 .card.active{{border-color:var(--p);border-left:5px solid var(--p);background:#eef2ff}}
-.stop-num{{width:32px;height:32px;background:var(--p);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}}
+.stop-num{{width:32px;height:32px;background:var(--p);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}}
 .stop-num.warning {{
 background: repeating-linear-gradient(45deg, #000, #000 4px, #f59e0b 4px, #f59e0b 8px) !important;
 color: white !important;
@@ -1240,8 +1359,17 @@ border: 2px solid black;
 }}
 .stop-info{{display:flex;flex-direction:column;gap:3px;min-width:0}}
 .name{{font-size:.85rem;font-weight:800;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
-.addr{{font-size:.75rem;color:#64748b;font-weight:600}}
-.btn-nav{{background:var(--accent);color:white;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:20px}}
+.addr{{font-size:.75rem;color:#64748b;font-weight:600;line-height:1.1}}
+.orario-badge{{display:inline-flex;align-items:center;gap:3px;background:#eff6ff;color:#2563eb;font-size:0.65rem;font-weight:800;padding:2px 7px;border-radius:20px;border:1px solid #bfdbfe;margin-top:1px;width:fit-content}}
+.orario-badge .material-icons-round{{font-size:12px !important}}
+.eta-badge{{display:inline-flex;align-items:center;gap:3px;background:#e0f2fe;color:#0369a1;font-size:0.65rem;font-weight:800;padding:2px 7px;border-radius:20px;border:1px solid #bae6fd;margin-top:1px;width:fit-content}}
+.eta-badge .material-icons-round{{font-size:12px !important}}
+.note-chip{{display:flex;align-items:flex-start;gap:4px;background:#fffbeb;color:#92400e;font-size:0.65rem;font-weight:700;padding:4px 7px;border-radius:8px;border:1px solid #fde68a;margin-top:3px;line-height:1.3}}
+.note-chip .material-icons-round{{font-size:12px !important;flex-shrink:0;margin-top:1px}}
+.btn-nav{{background:var(--accent);color:white;width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none}}
+.btn-call{{background:var(--call);color:white;width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none}}
+.nav-col{{display:flex;flex-direction:column;gap:5px;align-items:center}}
+.material-icons-round{{font-size:18px !important}}
 </style>
 </head>
 <body>
@@ -1263,7 +1391,7 @@ border: 2px solid black;
 <script>
 const PUNTI={punti_js};
 const POLYLINES={polylines_js};
-const DEPOT={{lat:{DEPOT_CLOUD["lat"]},lng:{DEPOT_CLOUD["lon"]}}};
+const DEPOT={{lat:{depot["lat"]},lng:{depot["lon"]}}};
 let map,markers=[];
 function initMap(){{
 map=new google.maps.Map(document.getElementById("map"),{{
@@ -1326,8 +1454,9 @@ def core_genera_mappa_autista(viaggio_id):
         except:
             pass
 
-    km, sec_guida, polylines = _get_directions_data(punti_norm)
-    html = _genera_html_mappa(viaggio_id, punti_norm, km, sec_guida, polylines)
+    depot = _get_depot_for_points_cloud(punti_norm)
+    km, sec_guida, polylines = _get_directions_data(punti_norm, depot=depot)
+    html = _genera_html_mappa(viaggio_id, punti_norm, km, sec_guida, polylines, depot=depot)
 
     bucket = storage.bucket(name=BUCKET_NAME)
     data_viaggio = viaggio.get("data", "sconosciuta").replace("/", "-")
@@ -1398,8 +1527,9 @@ def core_ricalcola_percorso(viaggio_id, nuovi_punti, num_locked=0):
         try:
             from ortools.constraint_solver import routing_enums_pb2, pywrapcp
 
-            start_node = locked[-1] if locked else DEPOT_CLOUD
-            all_locs   = [start_node] + to_optim + [DEPOT_CLOUD]
+            depot = _get_depot_for_points_cloud(punti_norm)
+            start_node = locked[-1] if locked else depot
+            all_locs   = [start_node] + to_optim + [depot]
             n          = len(all_locs)
 
             dist_matrix = _crea_matrice_distanze_cloud(all_locs, [])
@@ -1432,7 +1562,8 @@ def core_ricalcola_percorso(viaggio_id, nuovi_punti, num_locked=0):
             punti_finali.extend(to_optim)
 
     # Ricalcola KM e tempi con Directions API
-    km, sec_guida, polylines = _get_directions_data(punti_finali)
+    depot = _get_depot_for_points_cloud(punti_finali)
+    km, sec_guida, polylines = _get_directions_data(punti_finali, depot=depot)
 
     # Aggiorna Firestore
     doc_ref.update({
@@ -1447,7 +1578,7 @@ def core_ricalcola_percorso(viaggio_id, nuovi_punti, num_locked=0):
 
     # Rigenera mappa autista aggiornata
     viaggio = doc_viaggio.to_dict()
-    html = _genera_html_mappa(viaggio_id, punti_finali, km, sec_guida, polylines)
+    html = _genera_html_mappa(viaggio_id, punti_finali, km, sec_guida, polylines, depot=depot)
     bucket = storage.bucket(name=BUCKET_NAME)
     data_v = viaggio.get("data", "sconosciuta").replace("/", "-")
     html_path = f"CONSEGNE/CONSEGNE_{data_v}/MAPPE_AUTISTI/{viaggio_id}.html"
@@ -1773,7 +1904,10 @@ def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_c
                     "zona": f"GC_{job_id}",
                     "gc_colli": colli,
                     "gc_peso_kg": peso_kg,
-                    "gc_num_cartone": num_cartone
+                    "gc_num_cartone": num_cartone,
+                    "orario_min": orario_min,
+                    "orario_max": orario_max,
+                    "note": note
                 })
                 
     return {
@@ -2016,10 +2150,84 @@ def core_genera_report_giornaliero(uid, data_consegna):
         cf_val = (cliente_info.get('codice_frutta') or 'p00000') if cliente_info else (cod if tipo == 'FRUTTA' else 'p00000')
         cl_val = (cliente_info.get('codice_latte') or 'p00000') if cliente_info else (cod if tipo == 'LATTE' else 'p00000')
         
+        prov_code = ""
+        full_ind = ""
+        citta_val = ""
+        
+        if cliente_info:
+            prov_raw = str(cliente_info.get('provincia') or cliente_info.get('prov') or '').upper().strip()
+            prov_map = {
+                "BRESCIA": "BS", "VERONA": "VR", "MANTOVA": "MN", "PADOVA": "PD",
+                "VICENZA": "VI", "BELLUNO": "BL", "UDINE": "UD", "TREVISO": "TV",
+                "VENEZIA": "VE", "ROVIGO": "RO"
+            }
+            prov_code = prov_map.get(prov_raw, prov_raw)
+            if len(prov_code) > 2:
+                prov_code = prov_code[:2]
+                
+            citta_val = str(cliente_info.get('citta') or '').strip()
+            ind_val = str(cliente_info.get('indirizzo') or '').strip()
+            
+            ind_parts = [ind_val]
+            if citta_val:
+                ind_parts.append(citta_val)
+            full_ind = ", ".join([p for p in ind_parts if p])
+            if prov_code:
+                full_ind += f" ({prov_code})"
+        else:
+            full_ind = ddt.get('indirizzo', '')
+            
+        note_val = ""
+        tel_val = ""
+        om_frutta = ""
+        oM_frutta = ""
+        om_latte = ""
+        oM_latte = ""
+        om_val = ""
+        oM_val = ""
+        
+        if cliente_info:
+            note_val = str(cliente_info.get("note", cliente_info.get("nota_integrativa", cliente_info.get("Note", ""))) or "").strip()
+            tel_val = str(cliente_info.get("telefono", cliente_info.get("tel", cliente_info.get("phone", ""))) or "").strip()
+            om_frutta = str(cliente_info.get("orario_min_frutta") or "").strip()
+            oM_frutta = str(cliente_info.get("orario_max_frutta") or "").strip()
+            om_latte = str(cliente_info.get("orario_min_latte") or "").strip()
+            oM_latte = str(cliente_info.get("orario_max_latte") or "").strip()
+            
+            # Clean "nan"
+            if note_val.lower() == "nan": note_val = ""
+            if tel_val.lower() == "nan": tel_val = ""
+            if om_frutta.lower() == "nan": om_frutta = ""
+            if oM_frutta.lower() == "nan": oM_frutta = ""
+            if om_latte.lower() == "nan": om_latte = ""
+            if oM_latte.lower() == "nan": oM_latte = ""
+            
+            # Determina orario_min/max per il tipo
+            if tipo == "FRUTTA":
+                om_val = om_frutta if om_frutta else (str(cliente_info.get("orario_min") or "").strip())
+                oM_val = oM_frutta if oM_frutta else (str(cliente_info.get("orario_max") or "").strip())
+            else:
+                om_val = om_latte if om_latte else (str(cliente_info.get("orario_min") or "").strip())
+                oM_val = oM_latte if oM_latte else (str(cliente_info.get("orario_max") or "").strip())
+                
+            if om_val.lower() == "nan": om_val = ""
+            if oM_val.lower() == "nan": oM_val = ""
+            
+        # Sovrascrivi o imposta orari/note se presenti nel ddt
+        if ddt.get("orario_min"):
+            om_val = str(ddt["orario_min"]).strip()
+        if ddt.get("orario_max"):
+            oM_val = str(ddt["orario_max"]).strip()
+        if ddt.get("note"):
+            note_val = str(ddt["note"]).strip()
+
         if chiave not in punti_map:
             punti_map[chiave] = {
                 "nome": nome,
-                "indirizzo": cliente_info.get('indirizzo', '') if cliente_info else '',
+                "indirizzo": full_ind,
+                "provincia": prov_code,
+                "prov": prov_code,
+                "citta": citta_val,
                 "codice_frutta": cf_val,
                 "codice_latte": cl_val,
                 "codici_ddt_frutta": [],
@@ -2032,7 +2240,15 @@ def core_genera_report_giornaliero(uid, data_consegna):
                 "tipo": tipo,
                 "gc_colli": ddt.get("gc_colli", ""),
                 "gc_peso_kg": ddt.get("gc_peso_kg", ""),
-                "gc_num_cartone": ddt.get("gc_num_cartone", "")
+                "gc_num_cartone": ddt.get("gc_num_cartone", ""),
+                "orario_min_frutta": om_frutta,
+                "orario_max_frutta": oM_frutta,
+                "orario_min_latte": om_latte,
+                "orario_max_latte": oM_latte,
+                "orario_min": om_val,
+                "orario_max": oM_val,
+                "note": note_val,
+                "telefono": tel_val
             }
         else:
             # Se esiste già, aggiorna i codici reali se quello preesistente era fittizio/vuoto
@@ -2048,6 +2264,16 @@ def core_genera_report_giornaliero(uid, data_consegna):
                 esistente["tipo"] = 'GRAND_CHEF'
                 if not esistente.get("tipologia_grado"):
                     esistente["tipologia_grado"] = 'GRAND CHEF'
+            
+            # Aggiorna orari/note/telefono se mancanti
+            if not esistente.get("orario_min") and om_val:
+                esistente["orario_min"] = om_val
+            if not esistente.get("orario_max") and oM_val:
+                esistente["orario_max"] = oM_val
+            if not esistente.get("note") and note_val:
+                esistente["note"] = note_val
+            if not esistente.get("telefono") and tel_val:
+                esistente["telefono"] = tel_val
         
         if tipo == 'FRUTTA':
             punti_map[chiave]["codici_ddt_frutta"].append(ddt.get('num_ddt', 'UNK'))
@@ -2418,6 +2644,10 @@ def _get_depot_for_points_cloud(punti):
         "UD": 0, "BL": 0, "TV": 0, "VI": 0, "ALTRO": 0,
     }
     for p in punti:
+        prov_val = str(p.get("provincia") or p.get("prov") or "").upper().strip()
+        if prov_val in conteggio:
+            conteggio[prov_val] += 1
+            continue
         ind = str(p.get("indirizzo") or "").upper()
         m = re.search(r"\(([A-Z]{2})\)", ind)
         if m:
@@ -2430,9 +2660,9 @@ def _get_depot_for_points_cloud(punti):
             conteggio["ALTRO"] += 1
 
     castenedolo_tot   = conteggio["BS"]
-    sommacampagna_tot = conteggio["VR"] + conteggio["MN"] + conteggio["PD"]
-    veggiano_tot      = (conteggio["UD"] + conteggio["BL"] +
-                         conteggio["TV"] + conteggio["VI"] + conteggio["ALTRO"])
+    sommacampagna_tot = conteggio["VR"] + conteggio["MN"]
+    veggiano_tot      = (conteggio["PD"] + conteggio["VI"] + conteggio["BL"] +
+                         conteggio["UD"] + conteggio["TV"] + conteggio["ALTRO"])
 
     if castenedolo_tot > sommacampagna_tot and castenedolo_tot > veggiano_tot:
         return DEPOT_CASTENEDOLO
@@ -3454,7 +3684,8 @@ def core_genera_completo_giornata(data_consegna):
             except:
                 punti_html.append(p)
                 
-        html_map_content = _genera_html_mappa(f"Giro {nome_giro}", punti_html, km, sec_guida, polylines)
+        depot = _get_depot_for_points_cloud(punti_html)
+        html_map_content = _genera_html_mappa(f"Giro {nome_giro}", punti_html, km, sec_guida, polylines, depot=depot, distinta_url=distinta_light_url)
         
         map_blob = bucket.blob(f"REPORTS/{data_consegna}/MAPPE_AUTISTI/{nome_giro}.html")
         map_blob.upload_from_string(html_map_content.encode('utf-8'), content_type="text/html; charset=utf-8")

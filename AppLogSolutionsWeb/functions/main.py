@@ -1694,7 +1694,7 @@ def _genera_pdf_placeholder_grand_chef_io(codice: str, nome: str, ind: str, cit:
     out_stream.seek(0)
     return out_stream
 
-def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_consegna: str) -> dict:
+def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_consegna: str, job_id: str) -> dict:
     import pandas as pd
     
     nuovi_dati = {}
@@ -1714,6 +1714,10 @@ def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_c
             
     if header_row_idx is not None:
         df_data = df_clean.loc[header_row_idx + 1:]
+        
+        def _cell(row_data, col_idx):
+            return str(row_data.iloc[col_idx]).strip() if len(row_data) > col_idx and pd.notna(row_data.iloc[col_idx]) and str(row_data.iloc[col_idx]).strip() not in ("", "nan") else ""
+            
         for _, row in df_data.iterrows():
             if str(row.iloc[0]).lower().strip() == 'totale':
                 continue
@@ -1735,6 +1739,10 @@ def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_c
                 
             if not orario_max:
                 orario_max = "14:00"
+                
+            colli = _cell(row, 9)
+            peso_kg = _cell(row, 10)
+            num_cartone = _cell(row, 13)
                 
             codice_l = codice.lower()
             if codice_l not in db_mappati:
@@ -1762,7 +1770,10 @@ def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_c
                     "num_ddt": f"GC_{codice}",
                     "pdf_name": fname,
                     "tipo": "GRAND_CHEF",
-                    "zona": "0000"
+                    "zona": f"GC_{job_id}",
+                    "gc_colli": colli,
+                    "gc_peso_kg": peso_kg,
+                    "gc_num_cartone": num_cartone
                 })
                 
     return {
@@ -1813,7 +1824,7 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
         # 3. Processing
         if is_excel:
             data_elab = data_lavoro_forzata or datetime.now().strftime("%d-%m-%Y")
-            risultato = _processa_excel_chef_core_logic(file_bytes, db_mappati, data_elab)
+            risultato = _processa_excel_chef_core_logic(file_bytes, db_mappati, data_elab, job_id)
         else:
             risultato = _processa_pdf_core_logic(file_bytes, etichetta, db_mappati, db_articoli)
         
@@ -1863,7 +1874,7 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
             "tipo": etichetta,
             "deliveries": deliveries
         }
-        meta_path = f"split_ddt/{data_elab}/{etichetta}/ddt_estratti.json"
+        meta_path = f"split_ddt/{data_elab}/{etichetta}/ddt_estratti_{job_id}.json"
         bucket.blob(meta_path).upload_from_string(
             json.dumps(metadata_ddt, indent=2), 
             content_type='application/json'
@@ -1890,6 +1901,29 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
     except Exception as e:
         job_ref.update({"status": "error", "error_message": str(e), "updated_at": firestore.SERVER_TIMESTAMP})
         return {"status": "errore", "message": str(e)}
+
+def _ordina_job_ids_gc(job_ids, tenant="GRAN CHEF"):
+    db = get_db()
+    jobs_info = []
+    for jid in job_ids:
+        try:
+            doc = db.collection('clienti').document(tenant).collection('processing_jobs').document(jid).get()
+            if doc.exists:
+                d = doc.to_dict()
+                created = d.get('created_at') or 0
+                if hasattr(created, 'timestamp'):
+                    created = created.timestamp()
+                elif isinstance(created, (int, float)):
+                    pass
+                else:
+                    created = 0
+                jobs_info.append((jid, created))
+            else:
+                jobs_info.append((jid, 0))
+        except Exception:
+            jobs_info.append((jid, 0))
+    jobs_info.sort(key=lambda x: x[1])
+    return [x[0] for x in jobs_info]
 
 def core_genera_report_giornaliero(uid, data_consegna):
     """
@@ -1925,7 +1959,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
 
         blobs = bucket.list_blobs(prefix=prefix_search)
         for blob in blobs:
-            if blob.name.endswith("ddt_estratti.json"):
+            if "ddt_estratti" in blob.name and blob.name.endswith(".json"):
                 print(f"[INFO] Leggo file: {blob.name}")
                 try:
                     meta_data = json.loads(blob.download_as_string())
@@ -1946,7 +1980,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
 
     if not ddt_list:
         # Debug Radar: vediamo cosa c'e' effettivamente nello Storage
-        cercati = [f"split_ddt/{data_consegna}/FRUTTA/ddt_estratti.json", f"split_ddt/{data_consegna}/LATTE/ddt_estratti.json"]
+        cercati = [f"split_ddt/{data_consegna}/**/ddt_estratti_*.json"]
         try:
             prefix_check = f"split_ddt/{data_consegna}/"
             blobs_esistenti = list(bucket.list_blobs(prefix=prefix_check))
@@ -2010,10 +2044,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
 
     # --- INTEGRAZIONE RIENTRI DDT ---
     try:
-        rientri_ref = db.collection('clienti').document('DNR').collection('gestione_rientri')
-        # Wait, the collection used in gestione.html is 'rientri ddt'!
-        # Let's check gestione.html line 465: if(currentTab === 'rientri') collPath = 'clienti/DNR/rientri ddt';
-        # OH WOW. In main.py I used 'gestione_rientri'. I need to use 'rientri ddt'!
+        # Interroga direttamente la collezione 'rientri ddt' per garantire consistenza con il frontend
         rientri_ref = db.collection('clienti').document('DNR').collection('rientri ddt')
         
         for r_doc in rientri_ref.stream():
@@ -2091,17 +2122,59 @@ def core_genera_report_giornaliero(uid, data_consegna):
     for p in punti_map.values():
         zone_dict[p['zona']].append(p)
         
-    # Colori per le zone (stessa palette dello script 4)
-    palette = ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#14b8a6", "#6366f1", "#a855f7", "#3b82f6", "#22c55e", "#d946ef", "#84cc16"]
+    # Colori per le zone (palette dello script 4, escludendo arancione per DDT_DA_INSERIRE)
+    palette = ["#4f46e5", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#14b8a6", "#6366f1", "#a855f7", "#3b82f6", "#22c55e", "#d946ef", "#84cc16"]
+    
+    # Dividiamo le zone in categorie
+    dnr_keys = sorted([k for k in zone_dict.keys() if k not in ("DDT_DA_INSERIRE", "0000", "SENZA_ZONA") and not k.startswith("GC_")])
+    gc_keys = [k for k in zone_dict.keys() if k.startswith("GC_")]
+    
+    # Ordina le zone GC per timestamp di creazione del job
+    gc_job_ids = [k[3:] for k in gc_keys]
+    sorted_job_ids = _ordina_job_ids_gc(gc_job_ids)
+    sorted_gc_keys = [f"GC_{jid}" for jid in sorted_job_ids]
     
     zone_finali = []
-    chiavi_zone = sorted(zone_dict.keys())
-    for i, zid in enumerate(chiavi_zone):
+    color_index = 0
+    
+    # Aggiungi zone DNR
+    for idx_dnr, zid in enumerate(dnr_keys, start=1):
         zone_finali.append({
             "id_zona": zid,
-            "nome_giro": f"V{i+1:02d}" if zid != "0000" else "SENZA ZONA",
-            "color": palette[i % len(palette)],
+            "nome_giro": f"V{idx_dnr:02d}",
+            "color": palette[color_index % len(palette)],
             "lista_punti": zone_dict[zid]
+        })
+        color_index += 1
+        
+    # Aggiungi zone Grand Chef
+    for idx_gc, zid in enumerate(sorted_gc_keys, start=1):
+        zone_finali.append({
+            "id_zona": zid,
+            "nome_giro": f"Viaggio {idx_gc} Grand Chef",
+            "color": palette[color_index % len(palette)],
+            "lista_punti": zone_dict[zid],
+            "is_gc": True
+        })
+        color_index += 1
+        
+    # Aggiungi SENZA_ZONA (0000 o SENZA_ZONA) alla fine
+    for zid in ["0000", "SENZA_ZONA"]:
+        if zid in zone_dict:
+            zone_finali.append({
+                "id_zona": zid,
+                "nome_giro": "SENZA ZONA",
+                "color": "#9ca3af",
+                "lista_punti": zone_dict[zid]
+            })
+            
+    # Aggiungi DDT_DA_INSERIRE alla fine
+    if "DDT_DA_INSERIRE" in zone_dict:
+        zone_finali.append({
+            "id_zona": "DDT_DA_INSERIRE",
+            "nome_giro": "⚠️ DDT DA INSERIRE",
+            "color": "#f59e0b",
+            "lista_punti": zone_dict["DDT_DA_INSERIRE"]
         })
 
     # 4. Salvataggio file JSON storici nello Storage (Standard Johnson)
@@ -3242,15 +3315,18 @@ def core_genera_completo_giornata(data_consegna):
         return {"status": "errore", "message": f"Errore lettura JSON: {str(e)}"}
         
     deliveries_all = []
-    for tipo in ["FRUTTA", "LATTE"]:
-        meta_path = f"split_ddt/{data_consegna}/{tipo}/ddt_estratti.json"
-        meta_blob = bucket.blob(meta_path)
-        if meta_blob.exists():
-            try:
-                meta_data = json.loads(meta_blob.download_as_string().decode('utf-8'))
-                deliveries_all.extend(meta_data.get("deliveries", []))
-            except Exception as e_meta:
-                print(f"[METADATA] Errore lettura {meta_path}: {e_meta}")
+    prefix_search = f"split_ddt/{data_consegna}/"
+    try:
+        blobs = bucket.list_blobs(prefix=prefix_search)
+        for blob in blobs:
+            if "ddt_estratti" in blob.name and blob.name.endswith(".json"):
+                try:
+                    meta_data = json.loads(blob.download_as_string().decode('utf-8'))
+                    deliveries_all.extend(meta_data.get("deliveries", []))
+                except Exception as e_meta:
+                    print(f"[METADATA] Errore lettura {blob.name}: {e_meta}")
+    except Exception as e_list:
+        print(f"[METADATA] Errore scansione storage: {e_list}")
 
     articoli_noti, config_cons = get_config_app()
     

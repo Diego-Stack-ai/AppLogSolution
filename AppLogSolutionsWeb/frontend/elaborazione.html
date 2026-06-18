@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.37">
+    <link rel="stylesheet" href="styles.css?v=2.42">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -370,8 +370,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.37"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.37"></script>
+    <script src="script.js?v=2.42"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.42"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
@@ -846,6 +846,21 @@
             const statText = document.getElementById('progress-status-text');
 
             try {
+                // Pulizia preventiva centralizzata per la data selezionata
+                statText.textContent = "Preparazione e pulizia cartelle in corso sul cloud...";
+                fillDiv.style.width = '0%';
+                percText.textContent = '0%';
+                
+                const dateInput = document.getElementById('master-date-selector').value;
+                const dateStr = dateInput.split('-').reverse().join('-');
+                
+                try {
+                    const pulisciFn = httpsCallable(functions, 'pulisci_cartelle_elaborazione');
+                    await pulisciFn({ data_consegna: dateStr, tipologie: ["FRUTTA", "LATTE", "GRAND_CHEF"] });
+                } catch (err_cleanup) {
+                    console.warn("Avviso durante la pulizia preventiva:", err_cleanup);
+                }
+
                 // Upload Frutta
                 for (let file of filesFrutta) {
                     statText.textContent = `Caricamento Frutta: ${file.name} (${currentUploaded + 1}/${totalFiles})...`;

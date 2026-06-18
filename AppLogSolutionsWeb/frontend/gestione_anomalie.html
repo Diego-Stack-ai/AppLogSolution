@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anomalie - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.37">
+    <link rel="stylesheet" href="styles.css?v=2.42">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -57,9 +57,14 @@
             <span class="material-icons-round" style="font-size: 32px;">fact_check</span>
             Sale d'Attesa Dati
         </h1>
-        <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 14px;">
-            Riconcilia i dati non riconosciuti durante l'elaborazione dei PDF. Aggiungili alle Master Collection di Firebase per istruire il sistema per le prossime volte.
-        </p>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+            <p style="color: var(--text-muted); margin: 0; font-size: 14px; max-width: 70%;">
+                Riconcilia i dati non riconosciuti durante l'elaborazione dei PDF. Aggiungili alle Master Collection di Firebase per istruire il sistema per le prossime volte.
+            </p>
+            <button id="btn-apri-editor-massivo" class="action-btn" style="background: #4f46e5; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; height: fit-content;" onclick="apriEditorMassivoLocale()">
+                <span class="material-icons-round">open_in_new</span> Apri Editor Massivo (Locale)
+            </button>
+        </div>
 
         <div class="tabs">
             <button class="tab active" onclick="switchTab('clienti')">
@@ -96,8 +101,8 @@
 
     </div>
 
-    <script src="script.js?v=2.37"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.37"></script>
+    <script src="script.js?v=2.42"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.42"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -197,7 +202,7 @@
                             <div class="input-group"><label>Longitudine</label><input type="number" step="0.000001" id="cli-${id}-lon" value=""></div>
                             
                             <div class="section-title">Codici di Consegna</div>
-                            <div class="input-group"><label>Codice Frutta</label><input type="text" id="cli-${id}-codF" value="${d.tipo === 'FRUTTA' ? id : 'p00000'}"></div>
+                            <div class="input-group"><label>Codice Frutta</label><input type="text" id="cli-${id}-codF" value="${(d.tipo === 'FRUTTA' || d.tipo === 'GRAND CHEF' || tenant === 'GRAN CHEF') ? id : 'p00000'}"></div>
                             <div class="input-group"><label>Codice Latte</label><input type="text" id="cli-${id}-codL" value="${d.tipo === 'LATTE' ? id : 'p00000'}"></div>
                             
                             <div class="section-title">Orari di Consegna (Frutta)</div>
@@ -671,6 +676,44 @@
                 }
             }
         }
+
+        window.apriEditorMassivoLocale = () => {
+            Swal.fire({
+                title: 'Editor Massivo Locale',
+                text: 'Avvio dell\'editor massivo locale in corso...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            fetch('http://localhost:5001/api/apri_editor_massivo')
+                .then(r => r.json())
+                .then(res => {
+                    if (res.ok) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Avviato!',
+                            text: 'L\'editor massivo è stato avviato correttamente.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire('Errore', 'Impossibile avviare l\'editor locale: ' + res.err, 'error');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Connessione Fallita',
+                        html: 'Impossibile comunicare con il server locale (porta 5001).<br><br>' +
+                              'Assicurati che:<br>' +
+                              '1. Stia eseguendo l\'app sul tuo computer locale.<br>' +
+                              '2. Il server locale sia attivo (esegui <b>LANCIA_6B_MAPPA_PERCORSI.bat</b>).'
+                    });
+                });
+        };
     </script>
 </body>
 </html>

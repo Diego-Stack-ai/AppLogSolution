@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'log-solution-v2.37';
+﻿const CACHE_NAME = 'log-solution-v2.42';
 const ASSETS = [
     './',
     './index.html',
@@ -60,13 +60,15 @@ self.addEventListener('fetch', (event) => {
     // Ignora richieste non http (es: chrome-extension://) per evitare errori
     if (!url.startsWith('http')) return;
 
-    // ⚡ Bypass totale: Firebase, Firestore, autenticazione ⚡
+    // ⚡ Bypass totale: Firebase, Firestore, autenticazione, server locale ⚡
     if (
         url.includes('firebaseio.com') ||
         url.includes('firestore.googleapis.com') ||
         url.includes('identitytoolkit.googleapis.com') ||
         url.includes('securetoken.googleapis.com') ||
         url.includes('maps.googleapis.com') ||
+        url.includes('localhost') ||
+        url.includes('127.0.0.1') ||
         url.endsWith('.json')
     ) {
         return;

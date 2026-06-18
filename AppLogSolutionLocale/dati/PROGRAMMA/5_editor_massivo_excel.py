@@ -114,6 +114,9 @@ HTML_TEMPLATE = """
 
 <div id="map"></div>
 <div id="map-overlay">
+    <input type="text" id="google-search-input" placeholder="Cerca indirizzo su Google Maps..." style="width:250px; margin-bottom:0; margin-right:8px; border:1px solid #cbd5e1; border-radius:8px; padding:10px; font-family:inherit; font-size:0.85rem;" onkeydown="if(event.key === 'Enter') cercaIndirizzoSuGoogle()">
+    <button class="btn" onclick="cercaIndirizzoSuGoogle()" style="background:var(--primary); margin-right:16px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); color:white;"><span class="material-icons-round">search</span> CERCA</button>
+    
     <button id="btn-lock" class="btn btn-unlock" onclick="toggleLock()"><span class="material-icons-round">lock</span> SBLOCCA SPOSTAMENTO</button>
     <button id="btn-save" class="btn btn-save" onclick="saveAll()" disabled><span class="material-icons-round">save</span> SALVA TUTTO <span id="save-counter"></span></button>
 </div>
@@ -125,6 +128,7 @@ HTML_TEMPLATE = """
     let IS_LOCKED = true;
     let gMarkers = [];
     let infoWindow;
+    let activePoint = null;
 
     async function initMap() {
         const { InfoWindow } = await google.maps.importLibrary("maps");
@@ -276,6 +280,7 @@ HTML_TEMPLATE = """
             });
 
             m.addListener('click', () => {
+                activePoint = p;
                 infoWindow.setContent(getPopupHtml(p, isMissing, isVerified, isModified));
                 infoWindow.open(map, m);
             });
@@ -340,6 +345,46 @@ HTML_TEMPLATE = """
         btn.innerHTML = IS_LOCKED ? '<span class="material-icons-round">lock</span> SBLOCCA SPOSTAMENTO' : '<span class="material-icons-round">lock_open</span> BLOCCA SPOSTAMENTO';
         btn.classList.toggle('active', !IS_LOCKED);
         gMarkers.forEach(m => m.setDraggable(!IS_LOCKED));
+    }
+
+    function cercaIndirizzoSuGoogle() {
+        const query = document.getElementById('google-search-input').value.trim();
+        if (!query) return;
+        
+        if (!activePoint) {
+            alert("Seleziona prima un cliente dalla lista laterale o sulla mappa!");
+            return;
+        }
+        
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address: query }, (results, status) => {
+            if (status === 'OK' && results[0]) {
+                const pos = results[0].geometry.location;
+                map.setCenter(pos);
+                map.setZoom(18);
+                
+                // Trova il marker del cliente attivo
+                const m = gMarkers.find(x => x.getTitle() === activePoint.destinatario);
+                if (m) {
+                    // Sblocca lo spostamento se bloccato per poterlo spostare/regolare
+                    if (IS_LOCKED) {
+                        toggleLock();
+                    }
+                    m.setPosition(pos);
+                    activePoint.lat = pos.lat();
+                    activePoint.lng = pos.lng();
+                    marcaModificato(activePoint, m);
+                    
+                    // Apri l'infoWindow sul marker spostato
+                    infoWindow.setContent(getPopupHtml(activePoint, activePoint.is_missing, (activePoint.stato === 'ok'), true));
+                    infoWindow.open(map, m);
+                } else {
+                    alert("Marker del cliente selezionato non trovato sulla mappa.");
+                }
+            } else {
+                alert("Indirizzo non trovato su Google Maps: " + status);
+            }
+        });
     }
 
     function marcaModificato(p, m) {
@@ -424,6 +469,110 @@ def get_points():
         print(f"DEBUG: Inviati {len(points)} punti (di cui {missing_count} rossi/non verificati)")
         return jsonify(points)
 
+def sync_to_firebase(row_data, col_id_f, col_id_l):
+    """Sincronizza una riga di anagrafica modificata dall'Excel a Firebase Firestore."""
+    try:
+        import firebase_admin
+        from firebase_admin import credentials, firestore
+        from pathlib import Path
+        
+        # Inizializza Firebase Admin se non è già inizializzato
+        if not firebase_admin._apps:
+            prog_dir = Path(__file__).resolve().parent
+            cred_path = prog_dir.parent.parent.parent / "AppLogSolutionsWeb" / "backend" / "config" / "log-solution-60007-firebase-adminsdk-fbsvc-2cf3d0c171.json"
+            if not cred_path.exists():
+                cred_path = Path("g:/Il mio Drive/App/AppLogSolutionsWeb/backend/config/log-solution-60007-firebase-adminsdk-fbsvc-2cf3d0c171.json")
+            
+            if not cred_path.exists():
+                print(f"⚠️ Errore: Chiave Firebase non trovata in {cred_path}")
+                return False
+                
+            cred = credentials.Certificate(str(cred_path))
+            firebase_admin.initialize_app(cred)
+            
+        db = firestore.client()
+        
+        cod_f = str(row_data.get(col_id_f) or '').strip()
+        cod_l = str(row_data.get(col_id_l) or '').strip()
+        
+        if not cod_f or cod_f.lower() == 'nan':
+            cod_f = ''
+        if not cod_l or cod_l.lower() == 'nan':
+            cod_l = ''
+            
+        if not cod_f and not cod_l:
+            return False
+            
+        # Logica codici vuoti -> default a 'p00000' come richiesto dall'utente
+        if not cod_f:
+            cod_f = 'p00000'
+        if not cod_l:
+            cod_l = 'p00000'
+            
+        doc_id = cod_f if cod_f and cod_f != 'p00000' else (cod_l if cod_l else 'p00000_gen')
+        
+        tipologia = ''
+        for col in row_data.keys():
+            if 'tipologia' in str(col).lower() or 'grado' in str(col).lower():
+                val = row_data[col]
+                tipologia = str(val).strip().upper() if pd.notnull(val) else ''
+                break
+                
+        tenant = 'GRAN CHEF' if ('GRAND' in tipologia or 'CHEF' in tipologia) else 'DNR'
+        
+        def _get_val(keys):
+            for k in keys:
+                for col in row_data.keys():
+                    if k.lower() in str(col).lower() and pd.notnull(row_data[col]):
+                        return str(row_data[col]).strip()
+            return ''
+            
+        cliente = _get_val(['consegnato', 'Destinatario', 'Nome'])
+        indirizzo = _get_val(['Indirizzo'])
+        cap = _get_val(['CAP'])
+        citta = _get_val(['Citt', 'Comune'])
+        provincia = _get_val(['Provincia', 'Prov'])
+        
+        orario_min_f = _get_val(['Orario min Frutta'])
+        orario_max_f = _get_val(['Orario max Frutta'])
+        orario_min_l = _get_val(['Orario min Latte'])
+        orario_max_l = _get_val(['Orario max Latte'])
+        
+        lat_val = row_data.get('Latitudine') or row_data.get('Lat')
+        lon_val = row_data.get('Longitudine') or row_data.get('Lng')
+        
+        data = {
+            "codice_frutta": cod_f,
+            "codice_latte": cod_l,
+            "cliente": cliente,
+            "indirizzo": indirizzo,
+            "cap": cap,
+            "citta": citta,
+            "provincia": provincia,
+            "lat": float(lat_val) if pd.notnull(lat_val) and lat_val != 0 else None,
+            "lon": float(lon_val) if pd.notnull(lon_val) and lon_val != 0 else None,
+        }
+        
+        if orario_min_f: data["orario_min_frutta"] = orario_min_f
+        if orario_max_f: data["orario_max_frutta"] = orario_max_f
+        if orario_min_l: data["orario_min_latte"] = orario_min_l
+        if orario_max_l: data["orario_max_latte"] = orario_max_l
+        
+        # Scrivi su raccolta clienti
+        db.collection('clienti').document(tenant).collection('raccolta clienti').document(doc_id).set(data, merge=True)
+        print(f"🔥 Sincronizzato cliente {doc_id} su Firebase ({tenant}): {cliente}")
+        
+        # Cancella da nuovi codici consegna
+        if cod_f and cod_f != 'p00000':
+            db.collection('clienti').document(tenant).collection('nuovi codici consegna').document(cod_f).delete()
+        if cod_l and cod_l != 'p00000':
+            db.collection('clienti').document(tenant).collection('nuovi codici consegna').document(cod_l).delete()
+            
+        return True
+    except Exception as e:
+        print(f"⚠️ Errore durante sincronizzazione Firebase: {e}")
+        return False
+
 @app.route('/save_all', methods=['POST'])
 def save_all():
     items = request.json
@@ -448,6 +597,10 @@ def save_all():
                     df.loc[mask, col_lng] = item['lng']
                     if col_status:
                         df.loc[mask, col_status] = 'ok'
+                    
+                    # Estrai dati aggiornati per la sincronizzazione
+                    row_data = df.loc[mask].iloc[0].to_dict()
+                    sync_to_firebase(row_data, col_id_f, col_id_l)
             
             df.to_excel(EXCEL_FILE, index=False)
             return jsonify({'status': 'success'})

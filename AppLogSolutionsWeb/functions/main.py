@@ -555,7 +555,11 @@ def core_elabora_pdf_estrazione(uid):
                             
                             # 1. Svuota Storage
                             blobs_del = bucket.list_blobs(prefix=cart_out_base)
-                            for b in blobs_del: b.delete()
+                            for b in blobs_del:
+                                try:
+                                    b.delete()
+                                except Exception as e_b_del:
+                                    print(f"[WARN] Impossibile eliminare blob {b.name} (potrebbe essere gia stato eliminato): {e_b_del}")
                             
                             # 2. Svuota Firestore (deliveries)
                             old_docs = db.collection('clienti').document('DNR').collection('deliveries')\
@@ -1831,14 +1835,8 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
             data_elab = deliveries[0]["data"]
             print(f"[INFO] Uso data estratta dal file: {data_elab}")
         
-        # --- PULIZIA PREVENTIVA (Sovrascrittura pulita) ---
-        print(f"[INFO] Pulizia preventiva per {data_elab} - {etichetta}")
-        
-        # Rimuovi vecchi file da Storage
-        cart_out_base = f"split_ddt/{data_elab}/{etichetta}/"
-        blobs_del = bucket.list_blobs(prefix=cart_out_base)
-        for b in blobs_del: b.delete()
-        print(f"[INFO] Pulizia Storage completata per {data_elab}.")
+        # --- PULIZIA PREVENTIVA RIMOSSA (Gestita centralmente al caricamento) ---
+        print(f"[INFO] Elaborazione file per {data_elab} - {etichetta}")
 
         # 4. Upload split e salvataggio DDT
         for fname, out_stream in split_files.items():
@@ -3509,6 +3507,41 @@ def riepilogo_fatturazione(req: https_fn.CallableRequest):
         req.data.get("mese", ""),
         req.data.get("anno", "2026")
     )
+
+@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=120,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def pulisci_cartelle_elaborazione(req: https_fn.CallableRequest):
+    """Pulisce le cartelle di storage e i job Firestore per la giornata selezionata prima di caricare i nuovi file."""
+    try:
+        data_consegna = req.data.get("data_consegna")
+        tipologie = req.data.get("tipologie", ["FRUTTA", "LATTE", "GRAND_CHEF"])
+        if not data_consegna:
+            return {"status": "errore", "message": "Data non fornita"}
+            
+        bucket = storage.bucket()
+        db = get_db()
+        
+        for t in tipologie:
+            cart_out_base = f"split_ddt/{data_consegna}/{t.upper()}/"
+            blobs = bucket.list_blobs(prefix=cart_out_base)
+            for b in blobs:
+                try:
+                    b.delete()
+                except Exception:
+                    pass
+                    
+            tenant = "GRAN CHEF" if t.upper() == "GRAND_CHEF" else "DNR"
+            jobs_ref = db.collection('clienti').document(tenant).collection('processing_jobs')
+            old_jobs = jobs_ref.where('data_lavoro', '==', data_consegna).stream()
+            for oj in old_jobs:
+                try:
+                    oj.reference.delete()
+                except Exception:
+                    pass
+                    
+        return {"status": "ok", "message": f"Pulizia completata per {data_consegna}"}
+    except Exception as e:
+        return {"status": "errore", "message": str(e)}
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=60,
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))

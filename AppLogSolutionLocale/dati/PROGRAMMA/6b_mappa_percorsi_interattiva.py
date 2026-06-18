@@ -464,6 +464,29 @@ def api_blocca_zona():
     except Exception as e:
         return jsonify({"ok": False, "err": str(e)}), 500
 
+@app.route("/api/apri_editor_massivo", methods=["GET", "POST"])
+def api_apri_editor_massivo():
+    """Avvia l'editor massivo coordinate Excel (5_editor_massivo_excel.py) locale."""
+    import subprocess
+    import sys
+    try:
+        prog_dir = Path(__file__).resolve().parent
+        bat_path = prog_dir.parent / "APRI_EDITOR_MASSIVO.bat"
+        if bat_path.exists():
+            print(f"DEBUG: Avvio di {bat_path}")
+            subprocess.Popen([str(bat_path)], shell=True, cwd=str(bat_path.parent))
+            return jsonify({"ok": True, "message": "Editor massivo avviato tramite BAT"})
+        else:
+            py_path = prog_dir / "5_editor_massivo_excel.py"
+            if py_path.exists():
+                print(f"DEBUG: Avvio di {py_path}")
+                subprocess.Popen([sys.executable, str(py_path)], cwd=str(py_path.parent))
+                return jsonify({"ok": True, "message": "Editor massivo avviato tramite Python"})
+            else:
+                return jsonify({"ok": False, "err": f"File non trovato in {bat_path} o {py_path}"})
+    except Exception as e:
+        return jsonify({"ok": False, "err": str(e)}), 500
+
 @app.route("/api/genera_completo", methods=["POST"])
 def api_genera_completo():
     """Salva JSON → genera distinte PDF (sincrono) → genera mappe HTML → lancia BAT 6."""

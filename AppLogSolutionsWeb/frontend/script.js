@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "2.59";
+const APP_VERSION = "2.61";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -365,10 +365,15 @@ document.addEventListener('DOMContentLoaded', () => {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             let email = document.getElementById('username')?.value.trim().toLowerCase();
-            if (email && !email.includes('@')) {
-                // Normalizza: trasforma gli spazi in punti (es. "ayoub berradia" -> "ayoub.berradia")
-                email = email.replace(/\s+/g, '.');
-                email += '@logsolution.app';
+            if (email) {
+                if (!email.includes('@')) {
+                    // Normalizza: trasforma gli spazi in punti (es. "ayoub berradia" -> "ayoub.berradia")
+                    email = email.replace(/\s+/g, '.');
+                    email += '@logsolution.app';
+                } else {
+                    // Rimuovi eventuali spazi accidentali per evitare "auth/invalid-email"
+                    email = email.replace(/\s+/g, '');
+                }
             }
             const password = document.getElementById('password')?.value.trim();
             const btn = loginForm.querySelector('.btn-primary');

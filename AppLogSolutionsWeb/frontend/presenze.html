@@ -1,0 +1,695 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presenze Dipendenti - Log Solution</title>
+    <link rel="stylesheet" href="styles.css?v=2.61">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        .filters-container {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 200px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .summary-card h4 {
+            margin: 0 0 8px 0;
+            color: var(--text-muted);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .summary-card p {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .data-table-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            background: #f8fafc;
+            text-align: left;
+            padding: 10px 12px;
+            font-weight: 700;
+            color: #475569;
+            border-bottom: 2px solid #e2e8f0;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            color: var(--text-main);
+            vertical-align: middle;
+        }
+
+        tr:hover td {
+            background: #f8fafc;
+        }
+
+        .weekend td {
+            background-color: #fef2f2;
+        }
+
+        tr.weekend:hover td {
+            background-color: #fee2e2;
+        }
+
+        .edit-input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid transparent;
+            background: transparent;
+            font-family: inherit;
+            font-size: inherit;
+            color: inherit;
+            border-radius: 6px;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+
+        .edit-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+
+        .edit-input:disabled {
+            appearance: none;
+            -webkit-appearance: none;
+            color: inherit;
+            opacity: 1;
+            background: transparent;
+            border-color: transparent;
+        }
+
+        .num-input {
+            width: 70px;
+            text-align: right;
+        }
+
+        .time-input {
+            width: 75px;
+            text-align: center;
+        }
+
+        .btn-edit {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-edit:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-save {
+            background: var(--success);
+            border: 1px solid var(--success);
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #059669;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .tfoot-totals {
+            font-weight: 700;
+            background: #f8fafc;
+            border-top: 2px solid #e2e8f0;
+        }
+
+        .tfoot-totals td {
+            padding: 12px;
+            color: var(--text-main);
+        }
+    </style>
+</head>
+<body>
+    <nav class="glass-nav">
+        <div class="nav-content">
+            <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
+            <button id="dashboardBtn" class="logout-btn" title="Dashboard"
+                onclick="window.navigateWithState('dashboard.html')"
+                style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
+                <span class="material-icons-round">dashboard</span>
+            </button>
+            <div class="nav-title" style="flex: 1;">Ore Presenze Dipendenti</div>
+            <a href="#" onclick="window.logoutFirebase(); return false;" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
+        </div>
+    </nav>
+
+    <main class="main-container">
+        <div class="glass-panel" style="padding: 24px;">
+            <div class="filters-container">
+                <div class="filter-item">
+                    <label for="selectEmployee">Dipendente</label>
+                    <select id="selectEmployee">
+                        <option value="">Caricamento dipendenti...</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label for="inputMonth">Mese di Riferimento</label>
+                    <input type="month" id="inputMonth">
+                </div>
+            </div>
+
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <h4>Totale Ore</h4>
+                    <p id="sumHours">0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h4>Ore Ordinarie</h4>
+                    <p id="sumOrdHours">0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h4>Ore Straordinarie</h4>
+                    <p id="sumExtraHours">0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h4>Delta Km Totali</h4>
+                    <p id="sumKm">0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h4>Importo Rimborsi</h4>
+                    <p id="sumImporto">€ 0.00</p>
+                </div>
+            </div>
+
+            <div class="data-table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th style="text-align:center;">Magazzino/Sdoppiato</th>
+                            <th>Cliente</th>
+                            <th style="text-align:right;">Km Partenza</th>
+                            <th style="text-align:right;">Km Arrivo</th>
+                            <th style="text-align:right;">Delta Km</th>
+                            <th style="text-align:center;">Inizio M.</th>
+                            <th style="text-align:center;">Fine M.</th>
+                            <th style="text-align:center;">Inizio P.</th>
+                            <th style="text-align:center;">Fine P.</th>
+                            <th style="text-align:right;">Tot. Ore</th>
+                            <th style="text-align:right;">Ordinarie</th>
+                            <th style="text-align:right;">Straordinarie</th>
+                            <th style="text-align:right;">Importo</th>
+                            <th style="text-align:right;">Litri</th>
+                            <th>Note</th>
+                            <th style="text-align:center;">Azione</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="17" style="text-align:center; padding: 32px; color: var(--text-muted);">
+                                Seleziona un dipendente e un mese per visualizzare il registro delle presenze.
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot id="tableFoot" style="display:none;">
+                        <tr class="tfoot-totals">
+                            <td colspan="2">TOTALI GENERALI</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td id="totDeltaKm" style="text-align:right;">0.00</td>
+                            <td colspan="4"></td>
+                            <td id="totOre" style="text-align:right;">0.00</td>
+                            <td id="totOrd" style="text-align:right;">0.00</td>
+                            <td id="totExtra" style="text-align:right;">0.00</td>
+                            <td id="totImporto" style="text-align:right;">€ 0.00</td>
+                            <td id="totLitri" style="text-align:right;">0.00</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js?v=2.61"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.61"></script>
+    <script type="module">
+        import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, doc, setDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { firebaseConfig } from "./firebase-config.js";
+
+        const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currentUnsub = null;
+        let selectedEmployee = null;
+        let selectedMonth = "";
+        let currentPresenzeData = {};
+
+        // Inizializza mese corrente
+        document.getElementById('inputMonth').value = new Date().toISOString().substring(0, 7);
+
+        // Popola dropdown dipendenti da window.appData.lista_autisti caricata da firebase-auth-sync.js
+        window.renderAutistiDropdown = function() {
+            const select = document.getElementById("selectEmployee");
+            if (!select) return;
+            const previousValue = select.value;
+            select.innerHTML = '<option value="">-- Seleziona Dipendente --</option>';
+            
+            // Ordina alfabeticamente
+            const sorted = [...(window.appData.lista_autisti || [])].sort((a, b) => 
+                (a.nome || '').localeCompare(b.nome || '')
+            );
+            
+            sorted.forEach(emp => {
+                const opt = document.createElement("option");
+                opt.value = emp.id;
+                opt.textContent = emp.nome + (emp.ruolo ? ` (${emp.ruolo})` : '');
+                select.appendChild(opt);
+            });
+            
+            if (previousValue && sorted.some(e => e.id === previousValue)) {
+                select.value = previousValue;
+            }
+        };
+
+        // Event Listeners
+        document.getElementById('selectEmployee').addEventListener('change', onFilterChange);
+        document.getElementById('inputMonth').addEventListener('change', onFilterChange);
+
+        function onFilterChange() {
+            const empId = document.getElementById('selectEmployee').value;
+            const month = document.getElementById('inputMonth').value;
+
+            if (currentUnsub) {
+                currentUnsub();
+                currentUnsub = null;
+            }
+
+            if (!empId || !month) {
+                document.getElementById('tableBody').innerHTML = `
+                    <tr>
+                        <td colspan="17" style="text-align:center; padding: 32px; color: var(--text-muted);">
+                            Seleziona un dipendente e un mese per visualizzare il registro delle presenze.
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('tableFoot').style.display = 'none';
+                resetSummary();
+                return;
+            }
+
+            selectedEmployee = window.appData.lista_autisti.find(e => e.id === empId);
+            selectedMonth = month;
+
+            // Avvia la sottoscrizione Firestore in tempo reale
+            const q = query(
+                collection(db, "presenze"),
+                where("autistaId", "==", empId),
+                where("mese", "==", month)
+            );
+
+            currentUnsub = onSnapshot(q, (snapshot) => {
+                const presenzeMap = {};
+                snapshot.forEach((doc) => {
+                    presenzeMap[doc.id] = doc.data();
+                });
+                currentPresenzeData = presenzeMap;
+                renderCalendar(presenzeMap);
+            }, (error) => {
+                console.error("Errore onSnapshot presenze:", error);
+                alert("Errore nel caricamento delle presenze in tempo reale.");
+            });
+        }
+
+        function resetSummary() {
+            document.getElementById('sumHours').innerText = "0.00";
+            document.getElementById('sumOrdHours').innerText = "0.00";
+            document.getElementById('sumExtraHours').innerText = "0.00";
+            document.getElementById('sumKm').innerText = "0.00";
+            document.getElementById('sumImporto').innerText = "€ 0.00";
+        }
+
+        // Helper per parsing dei tempi in formato HH:MM o stringhe decimali
+        function parseTime(val) {
+            if (!val || val.trim() === "") return 0.0;
+            const cleanVal = val.trim().replace(',', '.');
+            if (cleanVal.includes(':')) {
+                const parts = cleanVal.split(':');
+                const h = parseInt(parts[0]) || 0;
+                const m = parseInt(parts[1]) || 0;
+                return h + m / 60.0;
+            }
+            const f = parseFloat(cleanVal);
+            return isNaN(f) ? 0.0 : f;
+        }
+
+        function formatTimeDecimal(dec) {
+            if (!dec || dec === 0.0) return "";
+            const h = Math.floor(dec);
+            const m = Math.round((dec - h) * 60);
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+        }
+
+        // Genera tutti i giorni del mese selezionato
+        function renderCalendar(presenzeMap) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            const [year, month] = selectedMonth.split('-').map(Number);
+            const numDays = new Date(year, month, 0).getDate();
+            const giorniSettimana = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+
+            let totalOre = 0.0;
+            let totalOrd = 0.0;
+            let totalExtra = 0.0;
+            let totalDeltaKm = 0.0;
+            let totalImporto = 0.0;
+            let totalLitri = 0.0;
+
+            const isDiego = selectedEmployee.nome.toLowerCase().includes('diego boschetto') || selectedEmployee.nome.toLowerCase().includes('boschetto diego');
+            const isIona = selectedEmployee.nome.toLowerCase().includes('jona') || selectedEmployee.nome.toLowerCase().includes('iona');
+            const defaultDoubleShift = isDiego || isIona || (selectedEmployee.tipoTurno === 'giornata');
+
+            for (let day = 1; day <= numDays; day++) {
+                const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                const dt = new Date(year, month - 1, day);
+                const dayName = giorniSettimana[dt.getDay()];
+                const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
+
+                // Document ID in Firestore: {autistaId}_{data}
+                const docId = `${selectedEmployee.id}_${dateStr}`;
+                const record = presenzeMap[docId] || {};
+
+                // Determina se abilitare l'orario sdoppiato
+                const isMagazzino = record.isMagazzino !== undefined ? record.isMagazzino : false;
+                const isDoubleShift = defaultDoubleShift || isMagazzino;
+
+                const tr = document.createElement('tr');
+                if (isWeekend) tr.classList.add('weekend');
+                tr.dataset.date = dateStr;
+                tr.dataset.docId = docId;
+
+                const displayDate = dt.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+
+                tr.innerHTML = `
+                    <td><strong>${dayName}</strong><br><span style="font-size: 0.8em; color: #6b7280;">${displayDate}</span></td>
+                    <td style="text-align:center;">
+                        <div class="checkbox-container">
+                            <input type="checkbox" data-field="isMagazzino" ${isMagazzino ? 'checked' : ''} ${defaultDoubleShift ? 'disabled checked' : 'disabled'} onchange="onDoubleShiftToggle(this)">
+                        </div>
+                    </td>
+                    <td><input type="text" class="edit-input" data-field="cliente" value="${record.cliente || ''}" disabled></td>
+                    <td><input type="number" class="edit-input num-input" data-field="kmPartenza" value="${record.kmPartenza || 0}" disabled onchange="onKmChange(this)"></td>
+                    <td><input type="number" class="edit-input num-input" data-field="kmArrivo" value="${record.kmArrivo || 0}" disabled onchange="onKmChange(this)"></td>
+                    <td><input type="number" class="edit-input num-input" data-field="kmDelta" value="${record.kmDelta || 0}" disabled readonly></td>
+                    <td><input type="text" class="edit-input time-input" data-field="oraInizioM" value="${record.oraInizioM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)"></td>
+                    <td><input type="text" class="edit-input time-input" data-field="oraFineM" value="${record.oraFineM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)"></td>
+                    <td><input type="text" class="edit-input time-input" data-field="oraInizioP" value="${record.oraInizioP || ''}" disabled placeholder="00:00" ${isDoubleShift ? '' : 'style="opacity:0.3;"'} onchange="onTimeChange(this)"></td>
+                    <td><input type="text" class="edit-input time-input" data-field="oraFineP" value="${record.oraFineP || ''}" disabled placeholder="00:00" ${isDoubleShift ? '' : 'style="opacity:0.3;"'} onchange="onTimeChange(this)"></td>
+                    <td><input type="number" step="0.01" class="edit-input num-input" data-field="oreTotali" value="${record.oreTotali || 0}" disabled readonly></td>
+                    <td><input type="number" step="0.01" class="edit-input num-input" data-field="oreOrdinarie" value="${record.oreOrdinarie || 0}" disabled readonly></td>
+                    <td><input type="number" step="0.01" class="edit-input num-input" data-field="oreStraordinarie" value="${record.oreStraordinarie || 0}" disabled readonly></td>
+                    <td><input type="number" step="0.01" class="edit-input num-input" data-field="importo" value="${record.importo || 0}" disabled></td>
+                    <td><input type="number" step="0.01" class="edit-input num-input" data-field="litri" value="${record.litri || 0}" disabled></td>
+                    <td><input type="text" class="edit-input" data-field="note" value="${record.note || ''}" disabled></td>
+                    <td style="text-align:center;">
+                        <button class="btn-edit" onclick="toggleRowEdit(this)">✏️ Modifica</button>
+                    </td>
+                `;
+
+                tbody.appendChild(tr);
+
+                // Accumula totali
+                totalOre += parseFloat(record.oreTotali) || 0.0;
+                totalOrd += parseFloat(record.oreOrdinarie) || 0.0;
+                totalExtra += parseFloat(record.oreStraordinarie) || 0.0;
+                totalDeltaKm += parseFloat(record.kmDelta) || 0.0;
+                totalImporto += parseFloat(record.importo) || 0.0;
+                totalLitri += parseFloat(record.litri) || 0.0;
+            }
+
+            // Mostra footer e popola totali
+            document.getElementById('tableFoot').style.display = 'table-footer-group';
+            document.getElementById('totDeltaKm').innerText = totalDeltaKm.toFixed(2);
+            document.getElementById('totOre').innerText = totalOre.toFixed(2);
+            document.getElementById('totOrd').innerText = totalOrd.toFixed(2);
+            document.getElementById('totExtra').innerText = totalExtra.toFixed(2);
+            document.getElementById('totImporto').innerText = `€ ${totalImporto.toFixed(2)}`;
+            document.getElementById('totLitri').innerText = totalLitri.toFixed(2);
+
+            // Popola summary cards
+            document.getElementById('sumHours').innerText = totalOre.toFixed(2);
+            document.getElementById('sumOrdHours').innerText = totalOrd.toFixed(2);
+            document.getElementById('sumExtraHours').innerText = totalExtra.toFixed(2);
+            document.getElementById('sumKm').innerText = totalDeltaKm.toFixed(2);
+            document.getElementById('sumImporto').innerText = `€ ${totalImporto.toFixed(2)}`;
+        }
+
+        // Gestione cambio flag orario sdoppiato magazzino
+        window.onDoubleShiftToggle = function(chk) {
+            const tr = chk.closest('tr');
+            const isChecked = chk.checked;
+            const oraInizioP = tr.querySelector('[data-field="oraInizioP"]');
+            const oraFineP = tr.querySelector('[data-field="oraFineP"]');
+
+            if (isChecked) {
+                oraInizioP.style.opacity = "1";
+                oraFineP.style.opacity = "1";
+            } else {
+                oraInizioP.value = "";
+                oraFineP.value = "";
+                oraInizioP.style.opacity = "0.3";
+                oraFineP.style.opacity = "0.3";
+            }
+            recalculateRowHours(tr);
+        };
+
+        // Recalcolo in tempo reale su variazione chilometri
+        window.onKmChange = function(input) {
+            const tr = input.closest('tr');
+            const kmPartenza = parseFloat(tr.querySelector('[data-field="kmPartenza"]').value) || 0.0;
+            const kmArrivo = parseFloat(tr.querySelector('[data-field="kmArrivo"]').value) || 0.0;
+            const kmDelta = tr.querySelector('[data-field="kmDelta"]');
+            kmDelta.value = Math.max(0, kmArrivo - kmPartenza).toFixed(2);
+        };
+
+        // Recalcolo in tempo reale su variazione tempi
+        window.onTimeChange = function(input) {
+            const tr = input.closest('tr');
+            recalculateRowHours(tr);
+        };
+
+        function recalculateRowHours(tr) {
+            const chkMagazzino = tr.querySelector('[data-field="isMagazzino"]');
+            const isMagazzino = chkMagazzino.checked;
+
+            const isDiego = selectedEmployee.nome.toLowerCase().includes('diego boschetto') || selectedEmployee.nome.toLowerCase().includes('boschetto diego');
+            const isIona = selectedEmployee.nome.toLowerCase().includes('jona') || selectedEmployee.nome.toLowerCase().includes('iona');
+            const defaultDoubleShift = isDiego || isIona || (selectedEmployee.tipoTurno === 'giornata');
+            const isDoubleShift = defaultDoubleShift || isMagazzino;
+
+            const valInizioM = tr.querySelector('[data-field="oraInizioM"]').value;
+            const valFineM = tr.querySelector('[data-field="oraFineM"]').value;
+            const valInizioP = tr.querySelector('[data-field="oraInizioP"]').value;
+            const valFineP = tr.querySelector('[data-field="oraFineP"]').value;
+
+            const decInizioM = parseTime(valInizioM);
+            const decFineM = parseTime(valFineM);
+
+            let mornHours = 0.0;
+            if (valInizioM && valFineM) {
+                mornHours = Math.max(0.0, decFineM - decInizioM);
+            }
+
+            let aftHours = 0.0;
+            if (isDoubleShift && valInizioP && valFineP) {
+                const decInizioP = parseTime(valInizioP);
+                const decFineP = parseTime(valFineP);
+                aftHours = Math.max(0.0, decFineP - decInizioP);
+            }
+
+            const totalHours = mornHours + aftHours;
+
+            // Determina ore standard (Diego Boschetto: 8 ore, altri: 8.5 ore)
+            const standardHours = isDiego ? 8.0 : 8.5;
+            const ordinarie = Math.min(totalHours, standardHours);
+            const straordinarie = Math.max(0.0, totalHours - standardHours);
+
+            tr.querySelector('[data-field="oreTotali"]').value = totalHours.toFixed(2);
+            tr.querySelector('[data-field="oreOrdinarie"]').value = ordinarie.toFixed(2);
+            tr.querySelector('[data-field="oreStraordinarie"]').value = straordinarie.toFixed(2);
+        }
+
+        // Toggle edit della riga
+        window.toggleRowEdit = async function(btn) {
+            const tr = btn.closest('tr');
+            const inputs = tr.querySelectorAll('.edit-input');
+            const chkMagazzino = tr.querySelector('[data-field="isMagazzino"]');
+
+            const isDiego = selectedEmployee.nome.toLowerCase().includes('diego boschetto') || selectedEmployee.nome.toLowerCase().includes('boschetto diego');
+            const isIona = selectedEmployee.nome.toLowerCase().includes('jona') || selectedEmployee.nome.toLowerCase().includes('iona');
+            const defaultDoubleShift = isDiego || isIona || (selectedEmployee.tipoTurno === 'giornata');
+
+            if (btn.innerText.includes('Modifica')) {
+                // Attiva modalità modifica
+                inputs.forEach(input => {
+                    if (input.dataset.field !== 'oreTotali' && input.dataset.field !== 'oreOrdinarie' && input.dataset.field !== 'oreStraordinarie' && input.dataset.field !== 'kmDelta') {
+                        input.disabled = false;
+                        input.style.border = "1px solid var(--primary)";
+                        input.style.background = "white";
+                    }
+                });
+
+                if (!defaultDoubleShift) {
+                    chkMagazzino.disabled = false;
+                }
+
+                btn.innerText = "💾 Salva";
+                btn.classList.add('btn-save');
+            } else {
+                // Salva le modifiche su Firestore
+                btn.innerText = "⏳ Salva...";
+                btn.disabled = true;
+
+                const dateStr = tr.dataset.date;
+                const docId = tr.dataset.docId;
+
+                const kmPartenza = parseFloat(tr.querySelector('[data-field="kmPartenza"]').value) || 0.0;
+                const kmArrivo = parseFloat(tr.querySelector('[data-field="kmArrivo"]').value) || 0.0;
+                const kmDelta = parseFloat(tr.querySelector('[data-field="kmDelta"]').value) || 0.0;
+                const oreTotali = parseFloat(tr.querySelector('[data-field="oreTotali"]').value) || 0.0;
+                const oreOrdinarie = parseFloat(tr.querySelector('[data-field="oreOrdinarie"]').value) || 0.0;
+                const oreStraordinarie = parseFloat(tr.querySelector('[data-field="oreStraordinarie"]').value) || 0.0;
+                const importo = parseFloat(tr.querySelector('[data-field="importo"]').value) || 0.0;
+                const litri = parseFloat(tr.querySelector('[data-field="litri"]').value) || 0.0;
+
+                const rawInizioM = tr.querySelector('[data-field="oraInizioM"]').value.trim();
+                const rawFineM = tr.querySelector('[data-field="oraFineM"]').value.trim();
+                const rawInizioP = tr.querySelector('[data-field="oraInizioP"]').value.trim();
+                const rawFineP = tr.querySelector('[data-field="oraFineP"]').value.trim();
+
+                // Format times for display consistency
+                const oraInizioM = rawInizioM ? formatTimeDecimal(parseTime(rawInizioM)) : "";
+                const oraFineM = rawFineM ? formatTimeDecimal(parseTime(rawFineM)) : "";
+                const oraInizioP = rawInizioP ? formatTimeDecimal(parseTime(rawInizioP)) : "";
+                const oraFineP = rawFineP ? formatTimeDecimal(parseTime(rawFineP)) : "";
+
+                // Aggiorna i valori formattati negli input
+                tr.querySelector('[data-field="oraInizioM"]').value = oraInizioM;
+                tr.querySelector('[data-field="oraFineM"]').value = oraFineM;
+                tr.querySelector('[data-field="oraInizioP"]').value = oraInizioP;
+                tr.querySelector('[data-field="oraFineP"]').value = oraFineP;
+
+                const updatedData = {
+                    autistaId: selectedEmployee.id,
+                    autistaNome: selectedEmployee.nome,
+                    data: dateStr,
+                    mese: selectedMonth,
+                    giornoSettimana: tr.querySelector('strong').innerText,
+                    cliente: tr.querySelector('[data-field="cliente"]').value,
+                    kmPartenza: kmPartenza,
+                    kmArrivo: kmArrivo,
+                    kmDelta: kmDelta,
+                    oraInizioM: oraInizioM,
+                    oraFineM: oraFineM,
+                    oraInizioP: oraInizioP,
+                    oraFineP: oraFineP,
+                    oreTotali: oreTotali,
+                    oreOrdinarie: oreOrdinarie,
+                    oreStraordinarie: oreStraordinarie,
+                    importo: importo,
+                    litri: litri,
+                    note: tr.querySelector('[data-field="note"]').value,
+                    isMagazzino: chkMagazzino.checked
+                };
+
+                try {
+                    await setDoc(doc(db, "presenze", docId), updatedData);
+
+                    // Disattiva input
+                    inputs.forEach(input => {
+                        input.disabled = true;
+                        input.style.border = "1px solid transparent";
+                        input.style.background = "transparent";
+                    });
+                    chkMagazzino.disabled = true;
+
+                    btn.innerText = "✏️ Modifica";
+                    btn.classList.remove('btn-save');
+                } catch (error) {
+                    console.error("Errore salvataggio presenza:", error);
+                    alert("Errore durante il salvataggio: " + error.message);
+                    btn.innerText = "💾 Riprova";
+                } finally {
+                    btn.disabled = false;
+                }
+            }
+        };
+    </script>
+</body>
+</html>

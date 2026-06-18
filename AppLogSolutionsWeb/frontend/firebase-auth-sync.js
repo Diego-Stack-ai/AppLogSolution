@@ -41,35 +41,7 @@ window.forcePasswordResetDebug = async (newPassword) => {
     }
 };
 
-// --- FUNZIONI DI SERVIZIO AUTH ---
-window.sendVerificationEmail = async () => {
-    const user = auth.currentUser;
-    if (!user) return alert("Nessun utente loggato.");
-    try {
-        await sendEmailVerification(user);
-        alert("Email di verifica inviata correttamente.");
-    } catch (e) {
-        alert("Errore invio: " + e.message);
-    }
-};
-
-// --- GESTIONE AUTENTICAZIONE ---
-window.sendResetEmail = async (email) => {
-    if (!email) return alert("Email non valida.");
-    let targetEmail = email.trim().toLowerCase();
-    if (!targetEmail.includes('@')) {
-        targetEmail += '@logsolution.app';
-    }
-    try {
-        await sendPasswordResetEmail(auth, targetEmail);
-        alert("Email di ripristino password inviata con successo a: " + targetEmail);
-    } catch (error) {
-        console.error("Errore invio email reset:", error);
-        alert("Errore nell'invio dell'email: " + error.message);
-    }
-};
-
-// --- GESTIONE LOGOUT GLOBALE ---
+// --- FUNZIONI DI SERVIZIO AUTH REMOSSE POICHE' GESTITE CENTRALMENTE ---// --- GESTIONE LOGOUT GLOBALE ---
 let isLoggingOut = false;
 window.logoutFirebase = async () => {
     console.log("Auth: Avvio procedura di logout...");
@@ -104,22 +76,12 @@ onAuthStateChanged(auth, async (user) => {
     
     // Classificazione Pagine
     const isPublicPage = page === 'login.html' || page === 'index.html' || page === '';
-    const isAdminOnlyPage = ['clienti.html', 'impostazioni.html', 'visualizzazione.html', 'mappa_consegne.html', 'dashboard.html', 'link_viaggi.html'].includes(page);
+    const isAdminOnlyPage = ['clienti.html', 'impostazioni.html', 'visualizzazione.html', 'mappa_consegne.html', 'dashboard.html', 'link_viaggi.html', 'presenze.html'].includes(page);
     const isAutistaOnlyPage = ['inserimento.html'].includes(page);
 
     console.log(`Auth Listener: Utente = ${user ? user.uid : 'NULL'}, Pagina Corrente = ${page}`);
 
     if (user) {
-        // --- 1. CONTROLLO EMAIL VERIFICATA ---
-        if (!user.emailVerified) {
-            console.warn("Auth: Email non verificata.");
-            if (!isPublicPage) {
-                await signOut(auth);
-                window.location.replace('login.html?status=verify_sent');
-            }
-            return;
-        }
-
         try {
             const userDoc = await getDoc(doc(db, "dipendenti", user.uid));
             

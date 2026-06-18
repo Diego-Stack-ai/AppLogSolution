@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anomalie - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.43">
+    <link rel="stylesheet" href="styles.css?v=2.44">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -98,8 +98,8 @@
 
     </div>
 
-    <script src="script.js?v=2.43"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.43"></script>
+    <script src="script.js?v=2.44"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.44"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -692,20 +692,32 @@
         let geolocMap = null;
         let geolocMarker = null;
 
+        let mapsLoadedPromise = null;
         function caricaGoogleMaps(callback) {
-            if (window.google && window.google.maps) {
+            if (window.google && window.google.maps && window.google.maps.Map) {
                 if (callback) callback();
                 return;
             }
-            const GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4";
-            const script = document.createElement('script');
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,geometry&loading=async`;
-            script.async = true;
-            script.defer = true;
-            script.onload = () => {
-                if (callback) callback();
-            };
-            document.head.appendChild(script);
+            if (mapsLoadedPromise) {
+                mapsLoadedPromise.then(callback);
+                return;
+            }
+            mapsLoadedPromise = new Promise((resolve) => {
+                window.initGeolocGoogleMaps = () => {
+                    resolve();
+                };
+                const GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4";
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,geometry&callback=initGeolocGoogleMaps&v=weekly&loading=async`;
+                script.async = true;
+                script.defer = true;
+                script.onerror = (err) => {
+                    console.error("Errore caricamento Google Maps:", err);
+                    Swal.fire("Errore", "Impossibile caricare le mappe di Google. Controlla la connessione internet.", "error");
+                };
+                document.head.appendChild(script);
+            });
+            mapsLoadedPromise.then(callback);
         }
 
         window.apriGeolocalizzatoreMappa = (id, prefix = 'cli') => {

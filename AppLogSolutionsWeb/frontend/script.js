@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "2.58";
+const APP_VERSION = "2.59";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -240,6 +240,14 @@ window.updateViaggi = async function() {
     viaggioSelect.innerHTML = '<option value="">Seleziona viaggio</option>';
     viaggioSelect.disabled = true;
 
+    // Reset link mappa
+    const linkMappa = document.getElementById('linkMappaViaggio');
+    if (linkMappa) {
+        linkMappa.href = '#';
+        linkMappa.style.display = 'none';
+    }
+    window.viaggiLinksMap = {};
+
     const selectedDate = document.getElementById("data")?.value;
     
     let options = [];
@@ -267,6 +275,13 @@ window.updateViaggi = async function() {
                 if (response.ok) {
                     const data = await response.json();
                     const links = data.links || [];
+                    
+                    // Salva la mappa dei link
+                    links.forEach(l => {
+                        if (l.v_id && l.url) {
+                            window.viaggiLinksMap[l.v_id.toUpperCase()] = l.url;
+                        }
+                    });
                     
                     if (clienteNome.toUpperCase() === 'GRAN CHEF' || clienteNome.toUpperCase() === 'GRAND CHEF') {
                         options = links

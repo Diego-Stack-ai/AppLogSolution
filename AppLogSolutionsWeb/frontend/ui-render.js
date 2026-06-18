@@ -71,7 +71,11 @@ export function renderTripList(trips, containerId, isAdmin = false) {
                 </div>
                 <div class="data-item">
                     <span class="data-label">Viaggio</span>
-                    <span class="data-value" style="font-size:11px;">${r.viaggio || '-'}</span>
+                    <span class="data-value" style="font-size:11px;">
+                        ${r.mappaUrl ? `<a href="${r.mappaUrl}" target="_blank" style="color: var(--primary); text-decoration: underline; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                            <span class="material-icons-round" style="font-size: 14px;">map</span> ${r.viaggio}
+                        </a>` : (r.viaggio || '-')}
+                    </span>
                 </div>
             </div>
 

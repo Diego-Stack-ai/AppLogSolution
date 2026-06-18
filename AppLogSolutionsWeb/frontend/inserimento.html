@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.58">
+    <link rel="stylesheet" href="styles.css?v=2.59">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -186,7 +186,12 @@
                                 </select>
                             </div>
                             <div class="input-group">
-                                <label for="viaggioSelect">Viaggio *</label>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <label for="viaggioSelect" style="margin-bottom: 0;">Viaggio *</label>
+                                    <a id="linkMappaViaggio" href="#" target="_blank" style="display: none; font-size: 13px; color: var(--primary); text-decoration: underline; font-weight: 600; align-items: center; gap: 4px;">
+                                        <span class="material-icons-round" style="font-size: 16px; vertical-align: middle;">map</span> Apri Mappa
+                                    </a>
+                                </div>
                                 <select id="viaggioSelect" required disabled>
                                     <option value="">Seleziona viaggio</option>
                                 </select>
@@ -412,11 +417,11 @@
         </div>
     </div>
 
-    <script src="script.js?v=2.58"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.58"></script>
+    <script src="script.js?v=2.59"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.59"></script>
     <script type="module">
-        import { saveTrip } from "./firestore-service.js?v=2.58";
-        import "./gps-tracker.js?v=2.58";
+        import { saveTrip } from "./firestore-service.js?v=2.59";
+        import "./gps-tracker.js?v=2.59";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -449,6 +454,25 @@
             }
         });
 
+        // Gestione visibilità link mappa viaggio
+        const vSelect = document.getElementById('viaggioSelect');
+        const linkMappa = document.getElementById('linkMappaViaggio');
+        if (vSelect && linkMappa) {
+            const updateLinkVisibility = () => {
+                const val = vSelect.value;
+                const url = (window.viaggiLinksMap && val) ? (window.viaggiLinksMap[val.toUpperCase()] || "") : "";
+                if (url) {
+                    linkMappa.href = url;
+                    linkMappa.style.display = 'inline-flex';
+                } else {
+                    linkMappa.href = '#';
+                    linkMappa.style.display = 'none';
+                }
+            };
+            vSelect.addEventListener('change', updateLinkVisibility);
+            vSelect.addEventListener('input', updateLinkVisibility);
+        }
+
         // Logic for Starting Trip
         btnStartTrip.onclick = async () => {
             // Check HTML5 validity for required fields
@@ -457,12 +481,16 @@
             const targa = document.getElementById('automezzo').value;
             const kmPartenza = document.getElementById('kmPartenza').value;
             
+            const vSelected = document.getElementById('viaggioSelect').value;
+            const mapUrl = (window.viaggiLinksMap && vSelected) ? (window.viaggiLinksMap[vSelected.toUpperCase()] || "") : "";
+
             const tripData = {
                 data: document.getElementById('data').value,
                 autista: window.appData.currentUser.nome,
                 automezzo: targa,
                 cliente: document.getElementById('clienteSelect').value,
-                viaggio: document.getElementById('viaggioSelect').value,
+                viaggio: vSelected,
+                mappaUrl: mapUrl,
                 kmPartenza: Number(kmPartenza),
                 mattinaInizio: window.getTimeValue('mattinaInizio'),
                 stato: "in corso"
@@ -494,13 +522,17 @@
             const tripId = sessionStorage.getItem('currentTripId');
             const kmArrivo = document.getElementById('kmArrivo').value;
 
+            const vSelected = document.getElementById('viaggioSelect').value;
+            const mapUrl = (window.viaggiLinksMap && vSelected) ? (window.viaggiLinksMap[vSelected.toUpperCase()] || "") : "";
+
             const finalData = {
                 id: tripId,
                 data: document.getElementById('data').value,
                 autista: window.appData.currentUser.nome,
                 automezzo: document.getElementById('automezzo').value,
                 cliente: document.getElementById('clienteSelect').value,
-                viaggio: document.getElementById('viaggioSelect').value,
+                viaggio: vSelected,
+                mappaUrl: mapUrl,
                 kmPartenza: Number(document.getElementById('kmPartenza').value),
                 kmArrivo: Number(kmArrivo),
                 delta_km: document.getElementById('deltaKm').value,

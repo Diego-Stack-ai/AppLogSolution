@@ -52,7 +52,7 @@ body {
 /* Login specific */
 .login-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
   padding: 40px;
   animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;

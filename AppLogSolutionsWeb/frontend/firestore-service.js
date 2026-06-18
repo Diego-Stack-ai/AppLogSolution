@@ -148,4 +148,8 @@ export async function deleteTrip(tripId) {
 
 const storage = getStorage(app);
 
+window.firebaseStorage = storage;
+window.sRef = sRef;
+window.getDownloadURL = getDownloadURL;
+
 export { db, auth, storage, sRef, getDownloadURL };

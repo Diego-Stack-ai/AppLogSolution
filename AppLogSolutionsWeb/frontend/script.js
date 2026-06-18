@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "2.56";
+const APP_VERSION = "2.57";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -232,7 +232,7 @@ window.updateNomeGiorno = function() {
     nomeGiornoEl.textContent = dayName;
 };
 
-window.updateViaggi = function() {
+window.updateViaggi = async function() {
     const clienteNome = document.getElementById("clienteSelect")?.value || "";
     const viaggioSelect = document.getElementById("viaggioSelect");
     if (!viaggioSelect) return;
@@ -240,42 +240,80 @@ window.updateViaggi = function() {
     viaggioSelect.innerHTML = '<option value="">Seleziona viaggio</option>';
     viaggioSelect.disabled = true;
 
-    // 1. Cerca il progetto su Firestore (lista_progetti)
-    const progetto = (window.appData.lista_progetti || []).find(
-        p => (p.nome || '').toUpperCase() === clienteNome.toUpperCase()
-    );
-    let options = progetto ? (progetto.viaggi || []) : [];
+    const selectedDate = document.getElementById("data")?.value;
+    
+    let options = [];
+    let loadedFromManifest = false;
 
-    // 2. Fallback hardcoded se non trovato su Firestore
-    if (options.length === 0) {
-        const viaggiMap = {
-            "PROGETTO SCUOLE": ["VIAGGIO 01", "VIAGGIO 02", "VIAGGIO 03", "VIAGGIO 04", "VIAGGIO 05", "VIAGGIO 06", "VIAGGIO 07", "VIAGGIO 08", "VIAGGIO 09", "VIAGGIO 10"],
-            "CATTEL": ["BS * BRESCIA", "FBS * FUORI BRESCIA"],
-            "GRAN CHEF": ["BL 1 * BELLUNO", "BS * BRESCIA"],
-            "BAUER": [
-                "1 - LUNEDI - VI * VICENZA", 
-                "2 - MARTEDI - TV * TREVISO", 
-                "3 - MERCOLEDI - VI * VICENZA", 
-                "4 - GIOVEDI - TV * TREVISO", 
-                "5 - VENERDI - VI * VICENZA"
-            ]
-        };
-        options = viaggiMap[clienteNome.toUpperCase()] || [];
+    if (selectedDate && (clienteNome.toUpperCase() === 'GRAN CHEF' || clienteNome.toUpperCase() === 'GRAND CHEF' || clienteNome.toUpperCase() === 'PROGETTO SCUOLE')) {
+        try {
+            const storage = window.firebaseStorage || (typeof firebaseStorage !== 'undefined' ? firebaseStorage : null);
+            const sRef = window.sRef;
+            const getDownloadURL = window.getDownloadURL;
+
+            if (storage && sRef && getDownloadURL) {
+                const fileRef = sRef(storage, `REPORTS/${selectedDate}/manifest_link_viaggi.json`);
+                const downloadUrl = await getDownloadURL(fileRef);
+                const response = await fetch(downloadUrl);
+                if (response.ok) {
+                    const data = await response.json();
+                    const links = data.links || [];
+                    
+                    if (clienteNome.toUpperCase() === 'GRAN CHEF' || clienteNome.toUpperCase() === 'GRAND CHEF') {
+                        options = links
+                            .map(l => l.v_id)
+                            .filter(v_id => v_id && (v_id.toLowerCase().includes('chef') || v_id.toLowerCase().includes('grand')));
+                    } else if (clienteNome.toUpperCase() === 'PROGETTO SCUOLE') {
+                        options = links
+                            .map(l => l.v_id)
+                            .filter(v_id => v_id && !(v_id.toLowerCase().includes('chef') || v_id.toLowerCase().includes('grand')));
+                    }
+                    
+                    if (options.length > 0) {
+                        loadedFromManifest = true;
+                        console.log(`[updateViaggi] Caricati ${options.length} viaggi dal manifest di Storage per ${selectedDate}.`);
+                    }
+                }
+            }
+        } catch (err) {
+            console.warn("[updateViaggi] Manifest non trovato o errore nel recupero: ", err.message);
+        }
     }
 
-    // --- NUOVO FILTRO BAUER BASATO SULLA DATA ---
-    if (clienteNome.toUpperCase() === 'BAUER') {
-        const dataInput = document.getElementById('data');
-        if (dataInput && dataInput.value) {
-            const date = new Date(dataInput.value);
-            if (!isNaN(date.getTime())) {
-                const dayOfWeek = date.getDay(); // 0 = Dom, 1 = Lun, 2 = Mar, 3 = Mer, 4 = Gio, 5 = Ven, 6 = Sab
-                
-                // Mappa il giorno della settimana (1 = Lun, 2 = Mar, ..., 7 = Dom)
-                const dayDigit = dayOfWeek === 0 ? "7" : String(dayOfWeek);
-                
-                // Filtra solo i viaggi che iniziano con la cifra del giorno lavorativo
-                options = options.filter(v => v.trim().startsWith(dayDigit));
+    if (!loadedFromManifest) {
+        // 1. Cerca il progetto su Firestore (lista_progetti)
+        const progetto = (window.appData.lista_progetti || []).find(
+            p => (p.nome || '').toUpperCase() === clienteNome.toUpperCase()
+        );
+        options = progetto ? (progetto.viaggi || []) : [];
+
+        // 2. Fallback hardcoded se non trovato su Firestore
+        if (options.length === 0) {
+            const viaggiMap = {
+                "PROGETTO SCUOLE": ["VIAGGIO 01", "VIAGGIO 02", "VIAGGIO 03", "VIAGGIO 04", "VIAGGIO 05", "VIAGGIO 06", "VIAGGIO 07", "VIAGGIO 08", "VIAGGIO 09", "VIAGGIO 10"],
+                "CATTEL": ["BS * BRESCIA", "FBS * FUORI BRESCIA"],
+                "GRAN CHEF": ["BL 1 * BELLUNO", "BS * BRESCIA"],
+                "BAUER": [
+                    "1 - LUNEDI - VI * VICENZA", 
+                    "2 - MARTEDI - TV * TREVISO", 
+                    "3 - MERCOLEDI - VI * VICENZA", 
+                    "4 - GIOVEDI - TV * TREVISO", 
+                    "5 - VENERDI - VI * VICENZA"
+                ]
+            };
+            options = viaggiMap[clienteNome.toUpperCase()] || [];
+        }
+
+        // --- FILTRO BAUER BASATO SULLA DATA ---
+        if (clienteNome.toUpperCase() === 'BAUER') {
+            const dataInput = document.getElementById('data');
+            if (dataInput && dataInput.value) {
+                const date = new Date(dataInput.value);
+                if (!isNaN(date.getTime())) {
+                    const dayOfWeek = date.getDay();
+                    const dayDigit = dayOfWeek === 0 ? "7" : String(dayOfWeek);
+                    options = options.filter(v => v.trim().startsWith(dayDigit));
+                }
             }
         }
     }
@@ -283,7 +321,7 @@ window.updateViaggi = function() {
     if (options.length > 0) {
         options.forEach(v => {
             const opt = document.createElement('option');
-            opt.value = v; opt.textContent = v;
+            opt.value = v; opt.textContent = v.toUpperCase();
             viaggioSelect.appendChild(opt);
         });
         viaggioSelect.disabled = false;
@@ -368,13 +406,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         dataInput.addEventListener('change', () => {
             if (typeof window.updateNomeGiorno === 'function') window.updateNomeGiorno();
-            if (document.getElementById('clienteSelect')?.value?.toUpperCase() === 'BAUER') {
+            const client = document.getElementById('clienteSelect')?.value?.toUpperCase();
+            if (client === 'BAUER' || client === 'GRAN CHEF' || client === 'GRAND CHEF' || client === 'PROGETTO SCUOLE') {
                 if (typeof window.updateViaggi === 'function') window.updateViaggi();
             }
         });
         dataInput.addEventListener('input', () => {
             if (typeof window.updateNomeGiorno === 'function') window.updateNomeGiorno();
-            if (document.getElementById('clienteSelect')?.value?.toUpperCase() === 'BAUER') {
+            const client = document.getElementById('clienteSelect')?.value?.toUpperCase();
+            if (client === 'BAUER' || client === 'GRAN CHEF' || client === 'GRAND CHEF' || client === 'PROGETTO SCUOLE') {
                 if (typeof window.updateViaggi === 'function') window.updateViaggi();
             }
         });

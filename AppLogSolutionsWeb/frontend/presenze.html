@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Presenze Dipendenti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.64">
+    <link rel="stylesheet" href="styles.css?v=2.65">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .filters-container {
@@ -255,7 +255,7 @@
             <div class="data-table-container">
                 <table>
                     <thead>
-                        <tr>
+                        <tr id="tableHeadTr">
                             <th>Data</th>
                             <th style="text-align:center;">Magazzino<br>Sdoppiato</th>
                             <th>Cliente</th>
@@ -303,8 +303,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.64"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.64"></script>
+    <script src="script.js?v=2.65"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.65"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -439,9 +439,42 @@
             let totalImporto = 0.0;
             let totalLitri = 0.0;
 
-            const isDiego = selectedEmployee.nome.toLowerCase().includes('diego boschetto') || selectedEmployee.nome.toLowerCase().includes('boschetto diego');
-            const isIona = selectedEmployee.nome.toLowerCase().includes('jona') || selectedEmployee.nome.toLowerCase().includes('iona');
-            const defaultDoubleShift = isDiego || isIona || (selectedEmployee.tipoTurno === 'giornata');
+            const isAdmin = selectedEmployee.ruolo === 'amministratore' || selectedEmployee.ruolo === 'impiegata';
+            const defaultDoubleShift = isAdmin;
+
+            const tableHeadTr = document.getElementById('tableHeadTr');
+            let headerHtml = `
+                <th>Data</th>
+                <th style="text-align:center;">Magazzino<br>Sdoppiato</th>
+                <th>Cliente</th>
+                <th style="text-align:right;">Km<br>Part.</th>
+                <th style="text-align:right;">Km<br>Arr.</th>
+                <th style="text-align:right;">Delta<br>Km</th>
+            `;
+            if (isAdmin) {
+                headerHtml += `
+                    <th style="text-align:center;">Iniz<br>M.</th>
+                    <th style="text-align:center;">Fine<br>M.</th>
+                    <th style="text-align:center;">Iniz<br>P.</th>
+                    <th style="text-align:center;">Fine<br>P.</th>
+                `;
+            } else {
+                headerHtml += `
+                    <th style="text-align:center;">Inizio</th>
+                    <th style="text-align:center;">Fine</th>
+                `;
+            }
+            headerHtml += `
+                <th style="text-align:right;">Tot.<br>Ore</th>
+                <th style="text-align:right;">Ord.</th>
+                <th style="text-align:right;">Straord.</th>
+                <th style="text-align:right;">Importo</th>
+                <th style="text-align:right;">Litri</th>
+                <th>Note</th>
+                <th style="text-align:center;">Azione</th>
+            `;
+            if (tableHeadTr) tableHeadTr.innerHTML = headerHtml;
+
 
             for (let day = 1; day <= numDays; day++) {
                 const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
@@ -475,10 +508,21 @@
                     <td><input type="number" class="edit-input num-input" data-field="kmPartenza" value="${record.kmPartenza || 0}" disabled onchange="onKmChange(this)"></td>
                     <td><input type="number" class="edit-input num-input" data-field="kmArrivo" value="${record.kmArrivo || 0}" disabled onchange="onKmChange(this)"></td>
                     <td><input type="number" class="edit-input num-input" data-field="kmDelta" value="${record.kmDelta || 0}" disabled readonly></td>
-                    <td><input type="text" class="edit-input time-input" data-field="oraInizioM" value="${record.oraInizioM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)"></td>
-                    <td><input type="text" class="edit-input time-input" data-field="oraFineM" value="${record.oraFineM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)"></td>
-                    <td><input type="text" class="edit-input time-input" data-field="oraInizioP" value="${record.oraInizioP || ''}" disabled placeholder="00:00" ${isDoubleShift ? '' : 'style="opacity:0.3;"'} onchange="onTimeChange(this)"></td>
-                    <td><input type="text" class="edit-input time-input" data-field="oraFineP" value="${record.oraFineP || ''}" disabled placeholder="00:00" ${isDoubleShift ? '' : 'style="opacity:0.3;"'} onchange="onTimeChange(this)"></td>
+                    ${isAdmin ? `
+                        <td><input type="text" class="edit-input time-input" data-field="oraInizioM" value="${record.oraInizioM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)"></td>
+                        <td><input type="text" class="edit-input time-input" data-field="oraFineM" value="${record.oraFineM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)"></td>
+                        <td><input type="text" class="edit-input time-input" data-field="oraInizioP" value="${record.oraInizioP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)"></td>
+                        <td><input type="text" class="edit-input time-input" data-field="oraFineP" value="${record.oraFineP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)"></td>
+                    ` : `
+                        <td>
+                            <input type="text" class="edit-input time-input" data-field="oraInizioM" value="${record.oraInizioM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)">
+                            <input type="text" class="edit-input time-input" data-field="oraInizioP" value="${record.oraInizioP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" style="display:${isMagazzino ? 'block' : 'none'}; margin-top:4px; border-top:1px dashed #ccc; padding-top:4px;">
+                        </td>
+                        <td>
+                            <input type="text" class="edit-input time-input" data-field="oraFineM" value="${record.oraFineM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)">
+                            <input type="text" class="edit-input time-input" data-field="oraFineP" value="${record.oraFineP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" style="display:${isMagazzino ? 'block' : 'none'}; margin-top:4px; border-top:1px dashed #ccc; padding-top:4px;">
+                        </td>
+                    `}
                     <td><input type="number" step="0.01" class="edit-input num-input" data-field="oreTotali" value="${record.oreTotali || 0}" disabled readonly></td>
                     <td><input type="number" step="0.01" class="edit-input num-input" data-field="oreOrdinarie" value="${record.oreOrdinarie || 0}" disabled readonly></td>
                     <td><input type="number" step="0.01" class="edit-input num-input" data-field="oreStraordinarie" value="${record.oreStraordinarie || 0}" disabled readonly></td>
@@ -503,6 +547,14 @@
 
             // Mostra footer e popola totali
             document.getElementById('tableFoot').style.display = 'table-footer-group';
+            const tfootTotals = document.querySelector('.tfoot-totals');
+            if (tfootTotals) {
+                if (isAdmin) {
+                    tfootTotals.children[6].colSpan = 4; // Spazio sotto le 4 colonne ore
+                } else {
+                    tfootTotals.children[6].colSpan = 2; // Spazio sotto le 2 colonne ore
+                }
+            }
             document.getElementById('totDeltaKm').innerText = totalDeltaKm.toFixed(2);
             document.getElementById('totOre').innerText = totalOre.toFixed(2);
             document.getElementById('totOrd').innerText = totalOrd.toFixed(2);
@@ -525,14 +577,21 @@
             const oraInizioP = tr.querySelector('[data-field="oraInizioP"]');
             const oraFineP = tr.querySelector('[data-field="oraFineP"]');
 
-            if (isChecked) {
-                oraInizioP.style.opacity = "1";
-                oraFineP.style.opacity = "1";
+            const isAdmin = selectedEmployee.ruolo === 'amministratore' || selectedEmployee.ruolo === 'impiegata';
+
+            if (isAdmin) {
+                oraInizioP.style.opacity = isChecked ? "1" : "0.3";
+                oraFineP.style.opacity = isChecked ? "1" : "0.3";
             } else {
-                oraInizioP.value = "";
-                oraFineP.value = "";
-                oraInizioP.style.opacity = "0.3";
-                oraFineP.style.opacity = "0.3";
+                if (isChecked) {
+                    oraInizioP.style.display = "block";
+                    oraFineP.style.display = "block";
+                } else {
+                    oraInizioP.value = "";
+                    oraFineP.value = "";
+                    oraInizioP.style.display = "none";
+                    oraFineP.style.display = "none";
+                }
             }
             recalculateRowHours(tr);
         };
@@ -556,9 +615,42 @@
             const chkMagazzino = tr.querySelector('[data-field="isMagazzino"]');
             const isMagazzino = chkMagazzino.checked;
 
-            const isDiego = selectedEmployee.nome.toLowerCase().includes('diego boschetto') || selectedEmployee.nome.toLowerCase().includes('boschetto diego');
-            const isIona = selectedEmployee.nome.toLowerCase().includes('jona') || selectedEmployee.nome.toLowerCase().includes('iona');
-            const defaultDoubleShift = isDiego || isIona || (selectedEmployee.tipoTurno === 'giornata');
+            const isAdmin = selectedEmployee.ruolo === 'amministratore' || selectedEmployee.ruolo === 'impiegata';
+            const defaultDoubleShift = isAdmin;
+
+            const tableHeadTr = document.getElementById('tableHeadTr');
+            let headerHtml = `
+                <th>Data</th>
+                <th style="text-align:center;">Magazzino<br>Sdoppiato</th>
+                <th>Cliente</th>
+                <th style="text-align:right;">Km<br>Part.</th>
+                <th style="text-align:right;">Km<br>Arr.</th>
+                <th style="text-align:right;">Delta<br>Km</th>
+            `;
+            if (isAdmin) {
+                headerHtml += `
+                    <th style="text-align:center;">Iniz<br>M.</th>
+                    <th style="text-align:center;">Fine<br>M.</th>
+                    <th style="text-align:center;">Iniz<br>P.</th>
+                    <th style="text-align:center;">Fine<br>P.</th>
+                `;
+            } else {
+                headerHtml += `
+                    <th style="text-align:center;">Inizio</th>
+                    <th style="text-align:center;">Fine</th>
+                `;
+            }
+            headerHtml += `
+                <th style="text-align:right;">Tot.<br>Ore</th>
+                <th style="text-align:right;">Ord.</th>
+                <th style="text-align:right;">Straord.</th>
+                <th style="text-align:right;">Importo</th>
+                <th style="text-align:right;">Litri</th>
+                <th>Note</th>
+                <th style="text-align:center;">Azione</th>
+            `;
+            if (tableHeadTr) tableHeadTr.innerHTML = headerHtml;
+
             const isDoubleShift = defaultDoubleShift || isMagazzino;
 
             const valInizioM = tr.querySelector('[data-field="oraInizioM"]').value;
@@ -584,6 +676,7 @@
             const totalHours = mornHours + aftHours;
 
             // Determina ore standard (Diego Boschetto: 8 ore, altri: 8.5 ore)
+            const isDiego = selectedEmployee.nome.toLowerCase().includes('diego boschetto') || selectedEmployee.nome.toLowerCase().includes('boschetto diego');
             const standardHours = isDiego ? 8.0 : 8.5;
             const ordinarie = Math.min(totalHours, standardHours);
             const straordinarie = Math.max(0.0, totalHours - standardHours);
@@ -599,9 +692,42 @@
             const inputs = tr.querySelectorAll('.edit-input');
             const chkMagazzino = tr.querySelector('[data-field="isMagazzino"]');
 
-            const isDiego = selectedEmployee.nome.toLowerCase().includes('diego boschetto') || selectedEmployee.nome.toLowerCase().includes('boschetto diego');
-            const isIona = selectedEmployee.nome.toLowerCase().includes('jona') || selectedEmployee.nome.toLowerCase().includes('iona');
-            const defaultDoubleShift = isDiego || isIona || (selectedEmployee.tipoTurno === 'giornata');
+            const isAdmin = selectedEmployee.ruolo === 'amministratore' || selectedEmployee.ruolo === 'impiegata';
+            const defaultDoubleShift = isAdmin;
+
+            const tableHeadTr = document.getElementById('tableHeadTr');
+            let headerHtml = `
+                <th>Data</th>
+                <th style="text-align:center;">Magazzino<br>Sdoppiato</th>
+                <th>Cliente</th>
+                <th style="text-align:right;">Km<br>Part.</th>
+                <th style="text-align:right;">Km<br>Arr.</th>
+                <th style="text-align:right;">Delta<br>Km</th>
+            `;
+            if (isAdmin) {
+                headerHtml += `
+                    <th style="text-align:center;">Iniz<br>M.</th>
+                    <th style="text-align:center;">Fine<br>M.</th>
+                    <th style="text-align:center;">Iniz<br>P.</th>
+                    <th style="text-align:center;">Fine<br>P.</th>
+                `;
+            } else {
+                headerHtml += `
+                    <th style="text-align:center;">Inizio</th>
+                    <th style="text-align:center;">Fine</th>
+                `;
+            }
+            headerHtml += `
+                <th style="text-align:right;">Tot.<br>Ore</th>
+                <th style="text-align:right;">Ord.</th>
+                <th style="text-align:right;">Straord.</th>
+                <th style="text-align:right;">Importo</th>
+                <th style="text-align:right;">Litri</th>
+                <th>Note</th>
+                <th style="text-align:center;">Azione</th>
+            `;
+            if (tableHeadTr) tableHeadTr.innerHTML = headerHtml;
+
 
             if (btn.innerText.includes('Modifica')) {
                 // Attiva modalità modifica

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Presenze Dipendenti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.71">
+    <link rel="stylesheet" href="styles.css?v=2.72">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .filters-container {
@@ -268,6 +268,75 @@
             padding: 4px 8px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-size: 11px; margin-left: 4px;
         }
         .btn-dettagli:hover { background: #e2e8f0; }
+
+        .view-mode-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .view-mode-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #475569;
+            transition: all 0.2s;
+        }
+        .view-mode-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .sub-filter-container {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        .sub-filter-btn {
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #475569;
+        }
+        .sub-filter-btn:hover {
+            background: #f1f5f9;
+        }
+        .sub-filter-btn.active {
+            background: #334155;
+            color: white;
+            border-color: #334155;
+        }
+        .sub-filter-btn.weekend {
+            background: #fef08a; /* giallino */
+            color: #854d0e;
+            border-color: #fde047;
+        }
+        .sub-filter-btn.weekend.active {
+            background: #eab308;
+            color: white;
+            border-color: #ca8a04;
+        }
+        .employee-separator {
+            background: #f8fafc;
+            border-top: 2px solid #cbd5e1;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .employee-separator td {
+            padding: 12px;
+            font-weight: bold;
+            color: #1e293b;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
 </style>
 </head>
 <body>
@@ -285,8 +354,7 @@
     </nav>
 
     <main class="main-container">
-        <div class="glass-panel" style="padding: 24px;">
-            <div class="filters-container">
+        <div class="glass-panel" style="padding: 24px;"><div class="filters-container">
                 <div class="filter-item">
                     <label for="selectEmployee">Dipendente</label>
                     <select id="selectEmployee">
@@ -297,6 +365,14 @@
                     <label for="inputMonth">Mese di Riferimento</label>
                     <input type="month" id="inputMonth">
                 </div>
+            </div>
+            <div id="viewModeSection" style="display:none;">
+                <div class="view-mode-container">
+                    <button class="view-mode-btn" data-mode="giorno" onclick="setViewMode('giorno')">Giorno</button>
+                    <button class="view-mode-btn" data-mode="settimana" onclick="setViewMode('settimana')">Settimana</button>
+                    <button class="view-mode-btn active" data-mode="mese" onclick="setViewMode('mese')">Mese</button>
+                </div>
+                <div id="subFilterContainer" class="sub-filter-container"></div>
             </div>
 
             <div class="summary-grid">
@@ -373,8 +449,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.71"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.71"></script>
+    <script src="script.js?v=2.72"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.72"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -383,10 +459,15 @@
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        
         let currentUnsub = null;
         let selectedEmployee = null;
         let selectedMonth = "";
         let currentPresenzeData = {};
+        
+        let currentViewMode = 'mese'; // 'giorno', 'settimana', 'mese'
+        let currentSubFilter = null; // id of day or week
+
 
         // Inizializza mese corrente
         document.getElementById('inputMonth').value = new Date().toISOString().substring(0, 7);
@@ -396,7 +477,7 @@
             const select = document.getElementById("selectEmployee");
             if (!select) return;
             const previousValue = select.value;
-            select.innerHTML = '<option value="">-- Seleziona Dipendente --</option>';
+            select.innerHTML = '<option value="">-- Seleziona Dipendente --</option>\n<option value="tutti">-- Tutti i dipendenti --</option>';
             
             // Ordina alfabeticamente
             const sorted = [...(window.appData.lista_autisti || [])].sort((a, b) => 
@@ -429,6 +510,7 @@
             }
 
             if (!empId || !month) {
+                document.getElementById('viewModeSection').style.display = 'none';
                 document.getElementById('tableBody').innerHTML = `
                     <tr>
                         <td colspan="17" style="text-align:center; padding: 32px; color: var(--text-muted);">
@@ -441,15 +523,33 @@
                 return;
             }
 
-            selectedEmployee = window.appData.lista_autisti.find(e => e.id === empId);
+            if (empId === 'tutti') {
+                selectedEmployee = { id: 'tutti', nome: 'Tutti i dipendenti', ruolo: 'tutti' };
+                document.getElementById('viewModeSection').style.display = 'block';
+            } else {
+                selectedEmployee = window.appData.lista_autisti.find(e => e.id === empId);
+                // Can still show view mode if we want, or hide it. Let's show it so they can filter.
+                document.getElementById('viewModeSection').style.display = 'block';
+            }
             selectedMonth = month;
+            
+            renderSubFilters();
 
             // Avvia la sottoscrizione Firestore in tempo reale
-            const q = query(
-                collection(db, "presenze"),
-                where("autistaId", "==", empId),
-                where("mese", "==", month)
-            );
+            let q;
+            if (empId === 'tutti') {
+                q = query(
+                    collection(db, "presenze"),
+                    where("mese", "==", month)
+                );
+            } else {
+                q = query(
+                    collection(db, "presenze"),
+                    where("autistaId", "==", empId),
+                    where("mese", "==", month)
+                );
+            }
+
 
             currentUnsub = onSnapshot(q, (snapshot) => {
                 const presenzeMap = {};
@@ -462,6 +562,79 @@
                 console.error("Errore onSnapshot presenze:", error);
                 alert("Errore nel caricamento delle presenze in tempo reale.");
             });
+        }
+
+        
+        window.setViewMode = function(mode) {
+            currentViewMode = mode;
+            currentSubFilter = null; // reset
+            
+            document.querySelectorAll('.view-mode-btn').forEach(b => {
+                b.classList.remove('active');
+                if (b.dataset.mode === mode) b.classList.add('active');
+            });
+            
+            renderSubFilters();
+            renderCalendar(currentPresenzeData);
+        };
+
+        window.setSubFilter = function(val) {
+            currentSubFilter = val;
+            document.querySelectorAll('.sub-filter-btn').forEach(b => {
+                b.classList.remove('active');
+                if (b.dataset.val === String(val)) b.classList.add('active');
+            });
+            renderCalendar(currentPresenzeData);
+        };
+
+        function renderSubFilters() {
+            const container = document.getElementById('subFilterContainer');
+            container.innerHTML = '';
+            if (!selectedMonth) return;
+
+            const [year, month] = selectedMonth.split('-').map(Number);
+            const numDays = new Date(year, month, 0).getDate();
+
+            if (currentViewMode === 'giorno') {
+                for (let d = 1; d <= numDays; d++) {
+                    const dt = new Date(year, month - 1, d);
+                    const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
+                    const btn = document.createElement('button');
+                    btn.className = 'sub-filter-btn' + (isWeekend ? ' weekend' : '');
+                    btn.dataset.val = d;
+                    btn.textContent = d;
+                    btn.onclick = () => setSubFilter(d);
+                    if (currentSubFilter === d) btn.classList.add('active');
+                    container.appendChild(btn);
+                }
+            } else if (currentViewMode === 'settimana') {
+                let currentWeek = 1;
+                let startDay = 1;
+                for (let d = 1; d <= numDays; d++) {
+                    const dt = new Date(year, month - 1, d);
+                    // If it's sunday or the last day of month
+                    if (dt.getDay() === 0 || d === numDays) {
+                        const btn = document.createElement('button');
+                        btn.className = 'sub-filter-btn';
+                        btn.dataset.val = currentWeek;
+                        // Format: Sett 1 (1-7)
+                        btn.textContent = `Sett ${currentWeek} (${startDay}-${d})`;
+                        
+                        // store the range in the dataset so renderCalendar can read it
+                        btn.dataset.start = startDay;
+                        btn.dataset.end = d;
+                        
+                        btn.onclick = (e) => {
+                            setSubFilter(e.target.dataset.val);
+                        };
+                        if (String(currentSubFilter) === String(currentWeek)) btn.classList.add('active');
+                        container.appendChild(btn);
+                        
+                        startDay = d + 1;
+                        currentWeek++;
+                    }
+                }
+            }
         }
 
         function resetSummary() {
@@ -498,6 +671,8 @@
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
 
+            if (!selectedMonth) return;
+
             const [year, month] = selectedMonth.split('-').map(Number);
             const numDays = new Date(year, month, 0).getDate();
             const giorniSettimana = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
@@ -509,8 +684,8 @@
             let totalImporto = 0.0;
             let totalLitri = 0.0;
 
-            const isAdmin = selectedEmployee.ruolo === 'amministratore' || selectedEmployee.ruolo === 'impiegata';
-            const defaultDoubleShift = isAdmin;
+            const isTutti = selectedEmployee.id === 'tutti';
+            const forceFourCols = isTutti || selectedEmployee.ruolo === 'amministratore' || selectedEmployee.ruolo === 'impiegata';
 
             const tableHeadTr = document.getElementById('tableHeadTr');
             let headerHtml = `
@@ -520,7 +695,7 @@
                 <th style="text-align:right;">Km<br>Arr.</th>
                 <th style="text-align:right;">Delta<br>Km</th>
             `;
-            if (isAdmin) {
+            if (forceFourCols) {
                 headerHtml += `
                     <th style="text-align:center;">Iniz<br>M.</th>
                     <th style="text-align:center;">Fine<br>M.</th>
@@ -541,84 +716,124 @@
             `;
             if (tableHeadTr) tableHeadTr.innerHTML = headerHtml;
 
+            // Determine which days to render
+            let startDay = 1;
+            let endDay = numDays;
 
-            for (let day = 1; day <= numDays; day++) {
-                const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                const dt = new Date(year, month - 1, day);
-                const dayName = giorniSettimana[dt.getDay()];
-                const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
-
-                // Document ID in Firestore: {autistaId}_{data}
-                const docId = `${selectedEmployee.id}_${dateStr}`;
-                const record = presenzeMap[docId] || {};
-
-                // Determina se abilitare l'orario sdoppiato
-                const isMagazzino = record.isMagazzino !== undefined ? record.isMagazzino : false;
-                const isDoubleShift = defaultDoubleShift || isMagazzino;
-
-                const tr = document.createElement('tr');
-                if (isWeekend) tr.classList.add('weekend');
-                tr.dataset.date = dateStr;
-                tr.dataset.docId = docId;
-
-                const displayDate = dt.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
-
-                tr.innerHTML = `
-<td><strong>${dayName}</strong><br><span style="font-size: 0.8em; color: #6b7280;">${displayDate}</span></td>
-                    <td><input type="text" class="edit-input" data-field="cliente" value="${record.cliente || ''}" disabled></td>
-                    <td><input type="number" class="edit-input num-input" data-field="kmPartenza" value="${record.kmPartenza || 0}" disabled onchange="onKmChange(this)"></td>
-                    <td><input type="number" class="edit-input num-input" data-field="kmArrivo" value="${record.kmArrivo || 0}" disabled onchange="onKmChange(this)"></td>
-                    <td><input type="number" class="edit-input num-input" data-field="kmDelta" value="${record.kmDelta || 0}" disabled readonly></td>
-                    ${isAdmin ? `
-                        <td><input type="text" class="edit-input time-input" data-field="oraInizioM" value="${record.oraInizioM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)"></td>
-                        <td><input type="text" class="edit-input time-input" data-field="oraFineM" value="${record.oraFineM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)"></td>
-                        <td><input type="text" class="edit-input time-input" data-field="oraInizioP" value="${record.oraInizioP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)"></td>
-                        <td><input type="text" class="edit-input time-input" data-field="oraFineP" value="${record.oraFineP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)"></td>
-                    ` : `
-                        <td>
-                            <input type="text" class="edit-input time-input" data-field="oraInizioM" value="${record.oraInizioM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)">
-                            <input type="text" class="edit-input time-input" data-field="oraInizioP" value="${record.oraInizioP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" style="display:${isMagazzino ? 'block' : 'none'}; margin-top:4px; border-top:1px dashed #ccc; padding-top:4px;">
-                        </td>
-                        <td>
-                            <input type="text" class="edit-input time-input" data-field="oraFineM" value="${record.oraFineM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)">
-                            <input type="text" class="edit-input time-input" data-field="oraFineP" value="${record.oraFineP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" style="display:${isMagazzino ? 'block' : 'none'}; margin-top:4px; border-top:1px dashed #ccc; padding-top:4px;">
-                        </td>
-                    `}
-                    <td><input type="number" step="0.01" class="edit-input num-input" data-field="oreTotali" value="${record.oreTotali || 0}" disabled readonly></td>
-                    <td><input type="number" step="0.01" class="edit-input num-input" data-field="oreOrdinarie" value="${record.oreOrdinarie || 0}" disabled readonly></td>
-                    <td><input type="number" step="0.01" class="edit-input num-input" data-field="oreStraordinarie" value="${record.oreStraordinarie || 0}" disabled readonly></td>
-                    <td style="text-align:center;">
-                        <input type="hidden" data-field="importo" value="${record.importo || 0}">
-                        <input type="hidden" data-field="litri" value="${record.litri || 0}">
-                        <input type="hidden" data-field="note" value="${(record.note || '').replace(/"/g, '&quot;')}">
-                        <input type="checkbox" data-field="isMagazzino" ${isMagazzino ? 'checked' : ''} style="display:none;" onchange="onDoubleShiftToggle(this)">
-                        
-                        <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
-                            <button class="btn-edit" onclick="toggleRowEdit(this)">✏️ Mod.</button>
-                            <button class="btn-dettagli" 
-                                style="${(isMagazzino || parseFloat(record.importo || 0) > 0 || parseFloat(record.litri || 0) > 0 || (record.note && record.note.trim() !== '')) ? 'background-color: #dcfce3; color: #166534; border-color: #86efac;' : ''}" 
-                                onclick="openDettagli(this)">🔍 Dati</button>
-                        </div>
-                    </td>
-                `;
-
-                tbody.appendChild(tr);
-
-                // Accumula totali
-                totalOre += parseFloat(record.oreTotali) || 0.0;
-                totalOrd += parseFloat(record.oreOrdinarie) || 0.0;
-                totalExtra += parseFloat(record.oreStraordinarie) || 0.0;
-                totalDeltaKm += parseFloat(record.kmDelta) || 0.0;
-                totalImporto += parseFloat(record.importo) || 0.0;
-                totalLitri += parseFloat(record.litri) || 0.0;
+            if (currentViewMode === 'giorno') {
+                if (!currentSubFilter) {
+                    tbody.innerHTML = `<tr><td colspan="17" style="text-align:center; padding: 32px; color: var(--text-muted);">Seleziona un giorno dai filtri qui sopra.</td></tr>`;
+                    document.getElementById('tableFoot').style.display = 'none';
+                    resetSummary();
+                    return;
+                }
+                startDay = parseInt(currentSubFilter);
+                endDay = startDay;
+            } else if (currentViewMode === 'settimana') {
+                if (!currentSubFilter) {
+                    tbody.innerHTML = `<tr><td colspan="17" style="text-align:center; padding: 32px; color: var(--text-muted);">Seleziona una settimana dai filtri qui sopra.</td></tr>`;
+                    document.getElementById('tableFoot').style.display = 'none';
+                    resetSummary();
+                    return;
+                }
+                const activeBtn = document.querySelector(`.sub-filter-btn[data-val="${currentSubFilter}"]`);
+                if (activeBtn) {
+                    startDay = parseInt(activeBtn.dataset.start);
+                    endDay = parseInt(activeBtn.dataset.end);
+                }
             }
+
+            const autistiToRender = isTutti ? (window.appData.lista_autisti || []).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')) : [selectedEmployee];
+
+            autistiToRender.forEach(autista => {
+                const isAdmin = autista.ruolo === 'amministratore' || autista.ruolo === 'impiegata';
+                const defaultDoubleShift = isAdmin;
+
+                if (isTutti) {
+                    const sepTr = document.createElement('tr');
+                    sepTr.className = 'employee-separator';
+                    sepTr.innerHTML = `<td colspan="17">${autista.nome} ${autista.ruolo ? `(${autista.ruolo})` : ''}</td>`;
+                    tbody.appendChild(sepTr);
+                }
+
+                for (let day = startDay; day <= endDay; day++) {
+                    const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    const dt = new Date(year, month - 1, day);
+                    const dayName = giorniSettimana[dt.getDay()];
+                    const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
+
+                    // Document ID in Firestore: {autistaId}_{data}
+                    const docId = `${autista.id}_${dateStr}`;
+                    const record = presenzeMap[docId] || {};
+
+                    // Determina se abilitare l'orario sdoppiato
+                    const isMagazzino = record.isMagazzino !== undefined ? record.isMagazzino : false;
+                    const isDoubleShift = defaultDoubleShift || isMagazzino;
+
+                    const tr = document.createElement('tr');
+                    if (isWeekend) tr.classList.add('weekend');
+                    tr.dataset.date = dateStr;
+                    tr.dataset.docId = docId;
+                    tr.dataset.autistaId = autista.id; // NEEDED FOR SAVE LATER!
+
+                    const displayDate = dt.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+
+                    tr.innerHTML = `
+    <td><strong>${dayName}</strong><br><span style="font-size: 0.8em; color: #6b7280;">${displayDate}</span></td>
+                        <td><input type="text" class="edit-input" data-field="cliente" value="${record.cliente || ''}" disabled></td>
+                        <td><input type="number" class="edit-input num-input" data-field="kmPartenza" value="${record.kmPartenza || 0}" disabled onchange="onKmChange(this)"></td>
+                        <td><input type="number" class="edit-input num-input" data-field="kmArrivo" value="${record.kmArrivo || 0}" disabled onchange="onKmChange(this)"></td>
+                        <td><input type="number" class="edit-input num-input" data-field="kmDelta" value="${record.kmDelta || 0}" disabled readonly></td>
+                        ${forceFourCols ? `
+                            <td><input type="text" class="edit-input time-input" data-field="oraInizioM" value="${record.oraInizioM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" style="${(!isAdmin && !isDoubleShift) ? 'background:#f1f5f9' : ''}"></td>
+                            <td><input type="text" class="edit-input time-input" data-field="oraFineM" value="${record.oraFineM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" style="${(!isAdmin && !isDoubleShift) ? 'background:#f1f5f9' : ''}"></td>
+                            <td><input type="text" class="edit-input time-input" data-field="oraInizioP" value="${record.oraInizioP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" style="display:${(isAdmin || isDoubleShift) ? 'block' : 'none'};"></td>
+                            <td><input type="text" class="edit-input time-input" data-field="oraFineP" value="${record.oraFineP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" style="display:${(isAdmin || isDoubleShift) ? 'block' : 'none'};"></td>
+                        ` : `
+                            <td>
+                                <input type="text" class="edit-input time-input" data-field="oraInizioM" value="${record.oraInizioM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)">
+                                <input type="text" class="edit-input time-input" data-field="oraInizioP" value="${record.oraInizioP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" style="display:${isMagazzino ? 'block' : 'none'}; margin-top:4px; border-top:1px dashed #ccc; padding-top:4px;">
+                            </td>
+                            <td>
+                                <input type="text" class="edit-input time-input" data-field="oraFineM" value="${record.oraFineM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)">
+                                <input type="text" class="edit-input time-input" data-field="oraFineP" value="${record.oraFineP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" style="display:${isMagazzino ? 'block' : 'none'}; margin-top:4px; border-top:1px dashed #ccc; padding-top:4px;">
+                            </td>
+                        `}
+                        <td><input type="number" step="0.01" class="edit-input num-input" data-field="oreTotali" value="${record.oreTotali || 0}" disabled readonly></td>
+                        <td><input type="number" step="0.01" class="edit-input num-input" data-field="oreOrdinarie" value="${record.oreOrdinarie || 0}" disabled readonly></td>
+                        <td><input type="number" step="0.01" class="edit-input num-input" data-field="oreStraordinarie" value="${record.oreStraordinarie || 0}" disabled readonly></td>
+                        <td style="text-align:center;">
+                            <input type="hidden" data-field="importo" value="${record.importo || 0}">
+                            <input type="hidden" data-field="litri" value="${record.litri || 0}">
+                            <input type="hidden" data-field="note" value="${(record.note || '').replace(/"/g, '&quot;')}">
+                            <input type="checkbox" data-field="isMagazzino" ${isMagazzino ? 'checked' : ''} style="display:none;" onchange="onDoubleShiftToggle(this)">
+                            
+                            <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
+                                <button class="btn-edit" onclick="toggleRowEdit(this)">✏️ Mod.</button>
+                                <button class="btn-dettagli" 
+                                    style="${(isMagazzino || parseFloat(record.importo || 0) > 0 || parseFloat(record.litri || 0) > 0 || (record.note && record.note.trim() !== '')) ? 'background-color: #dcfce3; color: #166534; border-color: #86efac;' : ''}" 
+                                    onclick="openDettagli(this)">🔍 Dati</button>
+                            </div>
+                        </td>
+                    `;
+
+                    tbody.appendChild(tr);
+
+                    // Accumula totali
+                    totalOre += parseFloat(record.oreTotali) || 0.0;
+                    totalOrd += parseFloat(record.oreOrdinarie) || 0.0;
+                    totalExtra += parseFloat(record.oreStraordinarie) || 0.0;
+                    totalDeltaKm += parseFloat(record.kmDelta) || 0.0;
+                    totalImporto += parseFloat(record.importo) || 0.0;
+                    totalLitri += parseFloat(record.litri) || 0.0;
+                }
+            });
 
             // Mostra footer e popola totali
             document.getElementById('tableFoot').style.display = 'table-footer-group';
-            const tfootTotals = document.querySelector('.tfoot-totals');
             const tfootSpazioOre = document.getElementById('tfootSpazioOre');
             if (tfootSpazioOre) {
-                tfootSpazioOre.colSpan = isAdmin ? 4 : 2;
+                tfootSpazioOre.colSpan = forceFourCols ? 4 : 2;
             }
             document.getElementById('totDeltaKm').innerText = totalDeltaKm.toFixed(2);
             document.getElementById('totOre').innerText = totalOre.toFixed(2);
@@ -678,37 +893,17 @@
             const chkMagazzino = tr.querySelector('[data-field="isMagazzino"]');
             const isMagazzino = chkMagazzino.checked;
 
-            const isAdmin = selectedEmployee.ruolo === 'amministratore' || selectedEmployee.ruolo === 'impiegata';
+            
+            let rowAutista = selectedEmployee;
+            if (selectedEmployee && selectedEmployee.id === 'tutti') {
+                const aId = tr.dataset.autistaId;
+                rowAutista = window.appData.lista_autisti.find(a => a.id === aId) || {};
+            }
+            const isAdmin = rowAutista.ruolo === 'amministratore' || rowAutista.ruolo === 'impiegata';
+
             const defaultDoubleShift = isAdmin;
 
-            const tableHeadTr = document.getElementById('tableHeadTr');
-            let headerHtml = `
-                <th>Data</th>
-                <th>Cliente</th>
-                <th style="text-align:right;">Km<br>Part.</th>
-                <th style="text-align:right;">Km<br>Arr.</th>
-                <th style="text-align:right;">Delta<br>Km</th>
-            `;
-            if (isAdmin) {
-                headerHtml += `
-                    <th style="text-align:center;">Iniz<br>M.</th>
-                    <th style="text-align:center;">Fine<br>M.</th>
-                    <th style="text-align:center;">Iniz<br>P.</th>
-                    <th style="text-align:center;">Fine<br>P.</th>
-                `;
-            } else {
-                headerHtml += `
-                    <th style="text-align:center;">Inizio</th>
-                    <th style="text-align:center;">Fine</th>
-                `;
-            }
-            headerHtml += `
-                <th style="text-align:right;">Tot.<br>Ore</th>
-                <th style="text-align:right;">Ord.</th>
-                <th style="text-align:right;">Straord.</th>
-                <th style="text-align:center;">Azione</th>
-            `;
-            if (tableHeadTr) tableHeadTr.innerHTML = headerHtml;
+
 
             const isDoubleShift = defaultDoubleShift || isMagazzino;
 
@@ -735,7 +930,7 @@
             const totalHours = mornHours + aftHours;
 
             // Determina ore standard (Diego Boschetto: 8 ore, altri: 8.5 ore)
-            const isDiego = selectedEmployee.nome.toLowerCase().includes('diego boschetto') || selectedEmployee.nome.toLowerCase().includes('boschetto diego');
+            const isDiego = rowAutista && rowAutista.nome ? (rowAutista.nome.toLowerCase().includes('diego boschetto') || rowAutista.nome.toLowerCase().includes('boschetto diego')) : false;
             const standardHours = isDiego ? 8.0 : 8.5;
             const ordinarie = Math.min(totalHours, standardHours);
             const straordinarie = Math.max(0.0, totalHours - standardHours);
@@ -776,7 +971,14 @@
                 inLitri.value = litri;
                 inNote.value = note;
 
-                const isAdmin = selectedEmployee && (selectedEmployee.ruolo === 'amministratore' || selectedEmployee.ruolo === 'impiegata');
+                
+                let rowAutista = selectedEmployee;
+                if (selectedEmployee && selectedEmployee.id === 'tutti') {
+                    const aId = tr.dataset.autistaId;
+                    rowAutista = window.appData.lista_autisti.find(a => a.id === aId) || {};
+                }
+                const isAdmin = rowAutista && (rowAutista.ruolo === 'amministratore' || rowAutista.ruolo === 'impiegata');
+
                 
                 if (isAdmin) {
                     chkMagazzino.disabled = true;
@@ -876,37 +1078,17 @@
             const inputs = tr.querySelectorAll('.edit-input');
             const chkMagazzino = tr.querySelector('[data-field="isMagazzino"]');
 
-            const isAdmin = selectedEmployee.ruolo === 'amministratore' || selectedEmployee.ruolo === 'impiegata';
+            
+            let rowAutista = selectedEmployee;
+            if (selectedEmployee && selectedEmployee.id === 'tutti') {
+                const aId = tr.dataset.autistaId;
+                rowAutista = window.appData.lista_autisti.find(a => a.id === aId) || {};
+            }
+            const isAdmin = rowAutista.ruolo === 'amministratore' || rowAutista.ruolo === 'impiegata';
+
             const defaultDoubleShift = isAdmin;
 
-            const tableHeadTr = document.getElementById('tableHeadTr');
-            let headerHtml = `
-                <th>Data</th>
-                <th>Cliente</th>
-                <th style="text-align:right;">Km<br>Part.</th>
-                <th style="text-align:right;">Km<br>Arr.</th>
-                <th style="text-align:right;">Delta<br>Km</th>
-            `;
-            if (isAdmin) {
-                headerHtml += `
-                    <th style="text-align:center;">Iniz<br>M.</th>
-                    <th style="text-align:center;">Fine<br>M.</th>
-                    <th style="text-align:center;">Iniz<br>P.</th>
-                    <th style="text-align:center;">Fine<br>P.</th>
-                `;
-            } else {
-                headerHtml += `
-                    <th style="text-align:center;">Inizio</th>
-                    <th style="text-align:center;">Fine</th>
-                `;
-            }
-            headerHtml += `
-                <th style="text-align:right;">Tot.<br>Ore</th>
-                <th style="text-align:right;">Ord.</th>
-                <th style="text-align:right;">Straord.</th>
-                <th style="text-align:center;">Azione</th>
-            `;
-            if (tableHeadTr) tableHeadTr.innerHTML = headerHtml;
+
 
 
             if (btn.innerText.includes('Mod')) {

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Presenze Dipendenti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.69">
+    <link rel="stylesheet" href="styles.css?v=2.70">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .filters-container {
@@ -373,8 +373,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.69"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.69"></script>
+    <script src="script.js?v=2.70"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.70"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -749,7 +749,6 @@
         let currentRowForModal = null;
 
         window.openDettagli = function(btn) {
-            alert("DEBUG 1: Funzione openDettagli chiamata con successo!");
             try {
                 const tr = btn.closest('tr');
                 if (!tr) throw new Error("Riga TR non trovata");
@@ -799,61 +798,76 @@
                 if (titleEl) titleEl.innerText = 'Dettagli ' + (tr.dataset.date || '');
                 
                 const mod = document.getElementById('dettagliModal');
-                if (mod) {
-                    alert("DEBUG 2: Trovato dettagliModal nel DOM! Imposto display a flex.");
-                    mod.style.display = 'flex';
-                    mod.style.visibility = 'visible';
-                    mod.style.opacity = '1';
-                    alert("DEBUG 3: display impostato a " + mod.style.display);
-                }
+                if (mod) mod.style.display = 'flex';
                 else throw new Error("Overlay modale non trovato");
             } catch (error) {
                 console.error("Errore openDettagli:", error);
-                alert("Si è verificato un errore: " + error.message);
+                alert("Errore in apertura: " + error.message);
             }
         };
 
         window.closeDettagli = function(save) {
-            if (save && currentRowForModal) {
-                const isEditing = currentRowForModal.querySelector('.btn-edit').innerText.includes('Salva');
-                if (isEditing) {
-                    const hiddenMag = currentRowForModal.querySelector('[data-field="isMagazzino"]');
-                    const hiddenImp = currentRowForModal.querySelector('[data-field="importo"]');
-                    const hiddenLit = currentRowForModal.querySelector('[data-field="litri"]');
-                    const hiddenNot = currentRowForModal.querySelector('[data-field="note"]');
+            try {
+                if (save && currentRowForModal) {
+                    const btnEdit = currentRowForModal.querySelector('.btn-edit');
+                    const isEditing = btnEdit ? btnEdit.innerText.includes('Salva') : false;
+                    if (isEditing) {
+                        const hiddenMag = currentRowForModal.querySelector('[data-field="isMagazzino"]');
+                        const hiddenImp = currentRowForModal.querySelector('[data-field="importo"]');
+                        const hiddenLit = currentRowForModal.querySelector('[data-field="litri"]');
+                        const hiddenNot = currentRowForModal.querySelector('[data-field="note"]');
 
-                    const newMag = document.getElementById('modalMagazzino').checked;
-                    
-                    if (hiddenMag.checked !== newMag) {
-                        hiddenMag.checked = newMag;
-                        // trigger toggle visual
-                        if (typeof onDoubleShiftToggle === 'function') {
-                            onDoubleShiftToggle(hiddenMag);
+                        const chkMag = document.getElementById('modalMagazzino');
+                        const newMag = chkMag ? chkMag.checked : false;
+                        
+                        if (hiddenMag && hiddenMag.checked !== newMag) {
+                            hiddenMag.checked = newMag;
+                            // trigger toggle visual
+                            if (typeof onDoubleShiftToggle === 'function') {
+                                onDoubleShiftToggle(hiddenMag);
+                            }
                         }
-                    }
 
-                    hiddenImp.value = document.getElementById('modalImporto').value;
-                    hiddenLit.value = document.getElementById('modalLitri').value;
-                    hiddenNot.value = document.getElementById('modalNote').value;
-                    
-                    // Update button color immediately
-                    const hasData = hiddenMag.checked || parseFloat(hiddenImp.value || 0) > 0 || parseFloat(hiddenLit.value || 0) > 0 || hiddenNot.value.trim() !== '';
-                    const btnDet = currentRowForModal.querySelector('.btn-dettagli');
-                    if (btnDet) {
-                        if (hasData) {
-                            btnDet.style.backgroundColor = '#dcfce3';
-                            btnDet.style.color = '#166534';
-                            btnDet.style.borderColor = '#86efac';
-                        } else {
-                            btnDet.style.backgroundColor = '';
-                            btnDet.style.color = '';
-                            btnDet.style.borderColor = '';
+                        if (hiddenImp) {
+                            const modImp = document.getElementById('modalImporto');
+                            hiddenImp.value = modImp ? modImp.value : 0;
+                        }
+                        if (hiddenLit) {
+                            const modLit = document.getElementById('modalLitri');
+                            hiddenLit.value = modLit ? modLit.value : 0;
+                        }
+                        if (hiddenNot) {
+                            const modNot = document.getElementById('modalNote');
+                            hiddenNot.value = modNot ? modNot.value : '';
+                        }
+                        
+                        // Update button color immediately
+                        const hasData = newMag || parseFloat(hiddenImp ? hiddenImp.value : 0) > 0 || parseFloat(hiddenLit ? hiddenLit.value : 0) > 0 || (hiddenNot && hiddenNot.value.trim() !== '');
+                        const btnDet = currentRowForModal.querySelector('.btn-dettagli');
+                        if (btnDet) {
+                            if (hasData) {
+                                btnDet.style.backgroundColor = '#dcfce3';
+                                btnDet.style.color = '#166534';
+                                btnDet.style.borderColor = '#86efac';
+                            } else {
+                                btnDet.style.backgroundColor = '';
+                                btnDet.style.color = '';
+                                btnDet.style.borderColor = '';
+                            }
                         }
                     }
                 }
+                const mod = document.getElementById('dettagliModal');
+                if (mod) mod.style.display = 'none';
+                currentRowForModal = null;
+            } catch (error) {
+                console.error("Errore in closeDettagli:", error);
+                alert("Errore in chiusura: " + error.message);
+                
+                // Fallback attempt to hide modal
+                const mod = document.getElementById('dettagliModal');
+                if (mod) mod.style.display = 'none';
             }
-            document.getElementById('dettagliModal').style.display = 'none';
-            currentRowForModal = null;
         };
 
         // Toggle edit della riga

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Presenze Dipendenti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.68">
+    <link rel="stylesheet" href="styles.css?v=2.69">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .filters-container {
@@ -373,8 +373,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.68"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.68"></script>
+    <script src="script.js?v=2.69"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.69"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -590,7 +590,7 @@
                     <td style="text-align:center;">
                         <input type="hidden" data-field="importo" value="${record.importo || 0}">
                         <input type="hidden" data-field="litri" value="${record.litri || 0}">
-                        <input type="hidden" data-field="note" value="${record.note || ''}">
+                        <input type="hidden" data-field="note" value="${(record.note || '').replace(/"/g, '&quot;')}">
                         <input type="checkbox" data-field="isMagazzino" ${isMagazzino ? 'checked' : ''} style="display:none;" onchange="onDoubleShiftToggle(this)">
                         
                         <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
@@ -749,6 +749,7 @@
         let currentRowForModal = null;
 
         window.openDettagli = function(btn) {
+            alert("DEBUG 1: Funzione openDettagli chiamata con successo!");
             try {
                 const tr = btn.closest('tr');
                 if (!tr) throw new Error("Riga TR non trovata");
@@ -798,7 +799,13 @@
                 if (titleEl) titleEl.innerText = 'Dettagli ' + (tr.dataset.date || '');
                 
                 const mod = document.getElementById('dettagliModal');
-                if (mod) mod.style.display = 'flex';
+                if (mod) {
+                    alert("DEBUG 2: Trovato dettagliModal nel DOM! Imposto display a flex.");
+                    mod.style.display = 'flex';
+                    mod.style.visibility = 'visible';
+                    mod.style.opacity = '1';
+                    alert("DEBUG 3: display impostato a " + mod.style.display);
+                }
                 else throw new Error("Overlay modale non trovato");
             } catch (error) {
                 console.error("Errore openDettagli:", error);

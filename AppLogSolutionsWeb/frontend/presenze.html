@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Presenze Dipendenti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.66">
+    <link rel="stylesheet" href="styles.css?v=2.67">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .filters-container {
@@ -373,8 +373,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.66"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.66"></script>
+    <script src="script.js?v=2.67"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.67"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -587,14 +587,18 @@
                     <td><input type="number" step="0.01" class="edit-input num-input" data-field="oreTotali" value="${record.oreTotali || 0}" disabled readonly></td>
                     <td><input type="number" step="0.01" class="edit-input num-input" data-field="oreOrdinarie" value="${record.oreOrdinarie || 0}" disabled readonly></td>
                     <td><input type="number" step="0.01" class="edit-input num-input" data-field="oreStraordinarie" value="${record.oreStraordinarie || 0}" disabled readonly></td>
-                    <td style="text-align:center; white-space:nowrap;">
+                    <td style="text-align:center;">
                         <input type="hidden" data-field="importo" value="${record.importo || 0}">
                         <input type="hidden" data-field="litri" value="${record.litri || 0}">
                         <input type="hidden" data-field="note" value="${record.note || ''}">
                         <input type="checkbox" data-field="isMagazzino" ${isMagazzino ? 'checked' : ''} style="display:none;" onchange="onDoubleShiftToggle(this)">
                         
-                        <button class="btn-edit" onclick="toggleRowEdit(this)">✏️ Mod.</button>
-                        <button class="btn-dettagli" onclick="openDettagli(this)">🔍 Det.</button>
+                        <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
+                            <button class="btn-edit" onclick="toggleRowEdit(this)">✏️ Mod.</button>
+                            <button class="btn-dettagli" 
+                                style="${(isMagazzino || parseFloat(record.importo || 0) > 0 || parseFloat(record.litri || 0) > 0 || (record.note && record.note.trim() !== '')) ? 'background-color: #dcfce3; color: #166534; border-color: #86efac;' : ''}" 
+                                onclick="openDettagli(this)">🔍 Dati</button>
+                        </div>
                     </td>
                 `;
 
@@ -812,6 +816,21 @@
                     hiddenImp.value = document.getElementById('modalImporto').value;
                     hiddenLit.value = document.getElementById('modalLitri').value;
                     hiddenNot.value = document.getElementById('modalNote').value;
+                    
+                    // Update button color immediately
+                    const hasData = hiddenMag.checked || parseFloat(hiddenImp.value || 0) > 0 || parseFloat(hiddenLit.value || 0) > 0 || hiddenNot.value.trim() !== '';
+                    const btnDet = currentRowForModal.querySelector('.btn-dettagli');
+                    if (btnDet) {
+                        if (hasData) {
+                            btnDet.style.backgroundColor = '#dcfce3';
+                            btnDet.style.color = '#166534';
+                            btnDet.style.borderColor = '#86efac';
+                        } else {
+                            btnDet.style.backgroundColor = '';
+                            btnDet.style.color = '';
+                            btnDet.style.borderColor = '';
+                        }
+                    }
                 }
             }
             document.getElementById('dettagliModal').style.display = 'none';

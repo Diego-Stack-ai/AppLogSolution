@@ -862,8 +862,18 @@ function renderCard(z){
   }, 0);
   const _pesoStr = totPeso > 0 ? ' &middot; ' + totPeso.toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' kg' : '';
 
+  let cardStyle = '';
+  if (isCalc) {
+    const numRitardi = punti.filter(p => p.ritardo).length;
+    if (numRitardi === 1) {
+      cardStyle = 'background-color:#fff1f2; border-color:#fca5a5;';
+    } else if (numRitardi > 1) {
+      cardStyle = 'background-color:#fecdd3; border-color:#fb7185;';
+    }
+  }
+
   return `
-  <div class="zone-card${isOpen?' active':''}${isBloccato?' bloccata':''}" id="zcard-${zid}" data-zid="${zid}">
+  <div class="zone-card${isOpen?' active':''}${isBloccato?' bloccata':''}" id="zcard-${zid}" data-zid="${zid}" style="${cardStyle}">
     <div class="zc-head" onclick="toggleCard('${zid}')">
       <div class="zc-pill" style="background:${col};color:${txt}">${punti.length}</div>
       <div class="zc-info">

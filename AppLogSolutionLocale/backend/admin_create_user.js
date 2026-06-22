@@ -34,9 +34,9 @@ async function registerUser(email, tempPassword, nomeCompleto, ruolo = 'autista'
         const uid = userRecord.uid;
         console.log(`[AUTH] Utente creato correttamente. UID: ${uid}`);
 
-        // 2. Creazione Profilo in Firestore (Collezione "users")
+        // 2. Creazione Profilo in Firestore (Collezione "dipendenti")
         // Seguiamo lo standard ID = UID per normalizzazione
-        await db.collection('users').document(uid).set({
+        await db.collection('dipendenti').document(uid).set({
             uid: uid,
             nome: nomeCompleto,
             email: email,

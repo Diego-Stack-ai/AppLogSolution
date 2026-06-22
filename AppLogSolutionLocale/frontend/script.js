@@ -1,4 +1,4 @@
-﻿/**
+/**
  * script.js - v1.95
  * Modulo principale per la gestione della UI, validazioni e wizard.
  * Logica di persistenza spostata su firestore-service.js
@@ -257,12 +257,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('username')?.value.trim().toLowerCase();
+            let email = document.getElementById('username')?.value.trim().toLowerCase();
             const password = document.getElementById('password')?.value.trim();
             const btn = loginForm.querySelector('.btn-primary');
             const alertEl = document.getElementById('authAlert');
 
             if (!email || !password) return;
+
+            if (email) {
+                // Rimuove caratteri invisibili
+                email = email.replace(/[\u200B-\u200D\uFEFF]/g, '');
+                
+                if (!email.includes('@')) {
+                    // Trasforma gli spazi in punti (es. "ayoub berradia" -> "ayoub.berradia")
+                    email = email.replace(/\s+/g, '.');
+                    // Rimuove punti consecutivi o punti all'inizio/fine che causano invalid-email
+                    email = email.replace(/\.+/g, '.').replace(/^\.|\.$/g, '');
+                    email += '@logsolution.app';
+                } else {
+                    // Rimuovi eventuali spazi accidentali
+                    email = email.replace(/\s+/g, '');
+                }
+            }
 
             btn.disabled = true;
             btn.innerHTML = 'Accesso in corso...';

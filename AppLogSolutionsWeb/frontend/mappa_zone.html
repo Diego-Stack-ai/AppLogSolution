@@ -2412,7 +2412,7 @@
             
             // Check for modified zones to show the "Aggiorna modificati" button
             const numModificati = DATA_ZONE.filter(z => z._stato === 'modificato').length;
-            const btnAggiorna = document.getElementById('btn-aggiorna-modificati');
+            const btnAggiorna = document.getElementById('btnAggiornaModificati');
             if (btnAggiorna) {
                 if (numModificati > 0) {
                     btnAggiorna.style.display = 'inline-flex';

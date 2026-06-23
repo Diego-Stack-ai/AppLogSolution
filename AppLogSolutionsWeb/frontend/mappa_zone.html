@@ -125,7 +125,7 @@
         }
 
         .btn-control {
-            padding: 8px 12px;
+            padding: 6px 12px;
             font-size: 0.78rem;
             font-weight: 700;
             border-radius: 8px;
@@ -1120,9 +1120,7 @@
                 </span>
                 <div class="date-badge" id="data-giorno-badge">--/--/----</div>
             </div>
-            <h1 style="margin: 0; display:flex; align-items:center; gap:8px;">
-                <span class="material-icons-round" style="color:#818cf8; font-size:26px;">map</span> Gestione Zone
-            </h1>
+
             <div class="summary-stats">
                 <span id="stat-punti">0 Fermate</span>
                 <span id="stat-ddt" style="color:var(--accent);">0 DDT</span>
@@ -2381,7 +2379,8 @@
                                                 ${_arrowHtml}
                                                 ${activeAction === 'dividi' ? controlHtml : ''}
                                             </div>
-                                            <div class="point-addr">
+                                            ${p.codice_cliente ? `<div class="point-addr" style="margin-top: 2px; color: #4f46e5; font-weight: 700;">Codice: ${p.codice_cliente}</div>` : ''}
+                                            <div class="point-addr" style="margin-top: 2px;">
                                                 <span>${streetName}</span>
                                                 ${cityName ? `<span style="font-weight:700; color:#334155; display:block;">${cityName}</span>` : ''}
                                             </div>

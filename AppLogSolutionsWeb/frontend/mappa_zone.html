@@ -2915,7 +2915,7 @@
                 const functions = getFunctions(app, "europe-west1");
                 const webCalcolaPercorsiFn = httpsCallable(functions, 'web_calcola_percorsi', { timeout: 300000 });
                 const res = await webCalcolaPercorsiFn({
-                    data_consegna: CURRENT_DATE,
+                    data_consegna: targetFileDate,
                     target_zones: modificati,
                     aggiorna_traffico: false,
                     usa_or_tools: false // The magic flag!

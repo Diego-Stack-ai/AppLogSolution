@@ -43,6 +43,48 @@ if not firebase_admin._apps:
 def get_db():
     return firestore.client()
 
+# --- STORAGE CACHES ---
+_LOCAL_STORAGE_CACHES = {
+    "distanze_reali_cache.json": None,
+    "directions_cache.json": None,
+    "distanze_traffico_cache.json": None
+}
+
+def _load_storage_cache(filename):
+    global _LOCAL_STORAGE_CACHES
+    if _LOCAL_STORAGE_CACHES[filename] is not None:
+        return _LOCAL_STORAGE_CACHES[filename]
+        
+    try:
+        bucket = storage.bucket()
+        blob = bucket.blob(f"caches/{filename}")
+        if blob.exists():
+            data_str = blob.download_as_string().decode("utf-8")
+            _LOCAL_STORAGE_CACHES[filename] = json.loads(data_str)
+        else:
+            import os
+            local_path = os.path.join(os.path.dirname(__file__), "caches", filename)
+            if os.path.exists(local_path):
+                with open(local_path, "r", encoding="utf-8") as f:
+                    _LOCAL_STORAGE_CACHES[filename] = json.load(f)
+                blob.upload_from_filename(local_path, content_type="application/json")
+            else:
+                _LOCAL_STORAGE_CACHES[filename] = {}
+    except Exception as e:
+        print(f"[CACHE] Errore load {filename}: {e}")
+        _LOCAL_STORAGE_CACHES[filename] = {}
+        
+    return _LOCAL_STORAGE_CACHES[filename]
+
+def _save_storage_cache(filename):
+    try:
+        bucket = storage.bucket()
+        blob = bucket.blob(f"caches/{filename}")
+        blob.upload_from_string(json.dumps(_LOCAL_STORAGE_CACHES[filename], ensure_ascii=False), content_type="application/json")
+    except Exception as e:
+        print(f"[CACHE] Errore save {filename}: {e}")
+
+
 # --- GESTIONE CONFIGURAZIONI CACHE ---
 _CACHED_ARTICOLI_NOTI = None
 _CACHED_CONSOLIDAMENTO = None
@@ -744,36 +786,22 @@ def _cache_key(p1, p2):
     return f"{round(p1['lat'],5)},{round(p1['lon'],5)}_{round(p2['lat'],5)},{round(p2['lon'],5)}"
 
 def _leggi_cache_firestore(p1, p2):
-    """Legge il valore dalla cache distanze su Firestore. Restituisce dist in metri o None."""
-    try:
-        key = _cache_key(p1, p2)
-        doc = get_db().collection('distanze_cache').document(key).get()
-        if doc.exists:
-            return doc.to_dict().get('dist')
-        
-        # Fallback bidirezionale: controlla la rotta inversa
-        rev_key = _cache_key(p2, p1)
-        doc_rev = get_db().collection('distanze_cache').document(rev_key).get()
-        if doc_rev.exists:
-            return doc_rev.to_dict().get('dist')
-    except:
-        pass
+    cache = _load_storage_cache("distanze_reali_cache.json")
+    key = _cache_key(p1, p2)
+    val = cache.get(key)
+    if val: return val.get('dist')
+    rev_key = _cache_key(p2, p1)
+    val_rev = cache.get(rev_key)
+    if val_rev: return val_rev.get('dist')
     return None
 
 def _scrivi_cache_firestore(coppie):
-    """Scrive un batch di distanze su Firestore (max 500 per batch)."""
-    if not coppie:
-        return
-    try:
-        db = get_db()
-        batch = db.batch()
-        for key, dist, dur in coppie:
-            ref = db.collection('distanze_cache').document(key)
-            batch.set(ref, {'dist': dist, 'dur': dur}, merge=True)
-        batch.commit()
-        print(f"[CACHE] Scritte {len(coppie)} nuove distanze su Firestore.")
-    except Exception as e:
-        print(f"[CACHE] Errore scrittura Firestore: {e}")
+    if not coppie: return
+    cache = _load_storage_cache("distanze_reali_cache.json")
+    for key, dist, dur in coppie:
+        cache[key] = {'dist': dist, 'dur': dur}
+    _save_storage_cache("distanze_reali_cache.json")
+    print(f"[CACHE] Scritte {len(coppie)} nuove distanze su Storage.")
 
 def _crea_matrice_distanze_cloud(punti, errori_lista):
     """
@@ -1544,7 +1572,7 @@ def core_ricalcola_percorso(viaggio_id, nuovi_punti, num_locked=0):
             routing.SetArcCostEvaluatorOfAllVehicles(cb_idx)
             params = pywrapcp.DefaultRoutingSearchParameters()
             params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
-            params.time_limit.seconds = 8
+            params.time_limit.seconds = 10
 
             sol = routing.SolveWithParameters(params)
             if sol:
@@ -2624,19 +2652,13 @@ def _route_key(punti_pieni):
     return hashlib.md5(seq.encode()).hexdigest()
 
 def _leggi_percorsi_cache(key):
-    try:
-        doc = get_db().collection('percorsi_stradali_cache').document(key).get()
-        if doc.exists:
-            return doc.to_dict()
-    except Exception as e:
-        print(f"[CACHE] Errore lettura percorsi_stradali_cache: {e}")
-    return None
+    cache = _load_storage_cache("directions_cache.json")
+    return cache.get(key)
 
 def _scrivi_percorsi_cache(key, data):
-    try:
-        get_db().collection('percorsi_stradali_cache').document(key).set(data)
-    except Exception as e:
-        print(f"[CACHE] Errore scrittura percorsi_stradali_cache: {e}")
+    cache = _load_storage_cache("directions_cache.json")
+    cache[key] = data
+    _save_storage_cache("directions_cache.json")
 
 def _get_depot_for_points_cloud(punti):
     conteggio = {
@@ -2736,7 +2758,7 @@ def _ottimizza_singolo_viaggio_cloud(punti, depot, is_grand_chef):
 
             search_parameters = pywrapcp.DefaultRoutingSearchParameters()
             search_parameters.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
-            search_parameters.time_limit.seconds = 4
+            search_parameters.time_limit.seconds = 10
             solution = routing.SolveWithParameters(search_parameters)
         except Exception as e:
             print(f"[OR-Tools] Errore vincoli orari: {e}")
@@ -2745,7 +2767,7 @@ def _ottimizza_singolo_viaggio_cloud(punti, depot, is_grand_chef):
     if not is_grand_chef or solution is None:
         search_parameters = pywrapcp.DefaultRoutingSearchParameters()
         search_parameters.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
-        search_parameters.time_limit.seconds = 4
+        search_parameters.time_limit.seconds = 10
         manager2 = pywrapcp.RoutingIndexManager(n, 1, 0)
         routing2 = pywrapcp.RoutingModel(manager2)
         def distance_callback_fallback(from_index, to_index):
@@ -2768,39 +2790,32 @@ def _ottimizza_singolo_viaggio_cloud(punti, depot, is_grand_chef):
     return punti
 
 def _leggi_cache_completa_firestore(p1, p2):
-    try:
-        key = _cache_key(p1, p2)
-        doc = get_db().collection('distanze_cache').document(key).get()
-        if doc.exists:
-            d = doc.to_dict()
-            return {'dist': d.get('dist', 0), 'dur': d.get('dur', 0)}
-        rev_key = _cache_key(p2, p1)
-        doc_rev = get_db().collection('distanze_cache').document(rev_key).get()
-        if doc_rev.exists:
-            d = doc_rev.to_dict()
-            return {'dist': d.get('dist', 0), 'dur': d.get('dur', 0)}
-    except:
-        pass
+    cache = _load_storage_cache("distanze_reali_cache.json")
+    key = _cache_key(p1, p2)
+    val = cache.get(key)
+    if val: return val
+    rev_key = _cache_key(p2, p1)
+    val_rev = cache.get(rev_key)
+    if val_rev: return val_rev
     return None
 
 def _leggi_traffic_cache(p1, p2, slot_str):
-    try:
-        key = _cache_key(p1, p2)
-        doc = get_db().collection('traffic_cache').document(key).get()
-        if doc.exists:
-            return doc.to_dict().get(slot_str)
-        rev_key = _cache_key(p2, p1)
-        doc_rev = get_db().collection('traffic_cache').document(rev_key).get()
-        if doc_rev.exists:
-            return doc_rev.to_dict().get(slot_str)
-    except:
-        pass
+    cache = _load_storage_cache("distanze_traffico_cache.json")
+    key = _cache_key(p1, p2)
+    val = cache.get(key)
+    if val: return val.get(slot_str)
+    rev_key = _cache_key(p2, p1)
+    val_rev = cache.get(rev_key)
+    if val_rev: return val_rev.get(slot_str)
     return None
 
 def _scrivi_traffic_cache(p1, p2, slot_str, dur_sec):
     try:
+        cache = _load_storage_cache("distanze_traffico_cache.json")
         key = _cache_key(p1, p2)
-        get_db().collection('traffic_cache').document(key).set({slot_str: int(dur_sec)}, merge=True)
+        if key not in cache: cache[key] = {}
+        cache[key][slot_str] = int(dur_sec)
+        _save_storage_cache("distanze_traffico_cache.json")
     except:
         pass
 

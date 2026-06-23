@@ -1105,16 +1105,11 @@
     <!-- Sidebar editor -->
     <div id="sidebar">
         <div id="header">
-            <div class="header-title-row">
+            <div class="header-title-row" style="display:flex; align-items:center; gap: 8px;">
                 <button class="btn-back" onclick="window.navigateWithState('elaborazione.html')">
                     <span class="material-icons-round">arrow_back</span> Indietro
                 </button>
-                <div class="date-badge" id="data-giorno-badge">--/--/----</div>
-            </div>
-            <h1 style="margin: 0; display:flex; align-items:center; justify-content:space-between; gap:8px;">
-                <span style="display:flex; align-items:center; gap:8px;">
-                    <span class="material-icons-round" style="color:#818cf8; font-size:26px;">map</span> Gestione Zone
-                </span>
+                <div style="flex:1;"></div>
                 <span class="btns-sgancia-wrap" style="display:flex; gap:4px; align-items:center;">
                     <button class="btn-sgancia" id="btn-sgancia" onclick="toggleSgancia(event)" title="Sgancia pannello (galleggiante)">
                         <span class="material-icons-round" style="font-size: 16px;">unfold_more</span>
@@ -1123,6 +1118,10 @@
                         <span class="material-icons-round" style="font-size: 16px;">open_in_new</span>
                     </button>
                 </span>
+                <div class="date-badge" id="data-giorno-badge">--/--/----</div>
+            </div>
+            <h1 style="margin: 0; display:flex; align-items:center; gap:8px;">
+                <span class="material-icons-round" style="color:#818cf8; font-size:26px;">map</span> Gestione Zone
             </h1>
             <div class="summary-stats">
                 <span id="stat-punti">0 Fermate</span>

@@ -1131,10 +1131,9 @@ def main():
         sanitized = re.sub(r'[\\/*?:"<>|]', '_', nome_giro)
         # Zone = unione di quelle nel JSON + quelle dai punti reali (garanzia completezza)
         tutte_zone = sorted(set(viaggio.get("zone", [])) | zone_punti)
-        zone_str   = "_".join(tutte_zone)
         # Aggiorna anche il dict viaggio in memoria (usato da _blocco_distinta e riepilogo)
         viaggio["zone"] = tutte_zone
-        pdf_name  = f"DISTINTA_{sanitized}_Zone_{zone_str}.pdf"
+        pdf_name  = f"DISTINTA_{sanitized}.pdf"
         out_pdf   = out_dir / pdf_name
 
         try:

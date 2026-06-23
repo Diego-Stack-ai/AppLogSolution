@@ -958,33 +958,38 @@ def generate_links_manifest():
     print("\n Generazione manifest dei link attivi...")
     links = []
     if WEBAPP_FOLDER.exists():
-        # Nome file atteso: V01_Zone_3101_25-05-2026.html oppure V01_Zone_3101_25_05_2026.html
+        # Nome file atteso: V01_Zone_3101_25-05-2026.html oppure V01_Zone_3101_25_05_2026.html oppure solo Gardone.html
         pattern = re.compile(r'^(V\d+)_Zone_(.+)_(\d{2}[_-]\d{2}[_-]\d{4})\.html$')
         for f in WEBAPP_FOLDER.glob("*.html"):
             m = pattern.match(f.name)
             if m:
                 v_id = m.group(1)
-                zones_str = m.group(2)
-                zones = zones_str.split('_')
-                date_str = m.group(3) # Formato: DD-MM-YYYY o DD_MM_YYYY
-                
-                display_date = date_str.replace('_', '-') # Formato: DD-MM-YYYY
-                
-                # Calcola data ISO YYYY-MM-DD per l'ordinamento
-                try:
-                    parts = display_date.split('-')
-                    iso_date = f"{parts[2]}-{parts[1]}-{parts[0]}"
-                except Exception:
-                    iso_date = display_date
-                
-                links.append({
-                    "v_id": v_id,
-                    "zones": zones,
-                    "date": display_date,
-                    "iso_date": iso_date,
-                    "filename": f.name,
-                    "url": f"https://log-solution-60007.web.app/mappe_autisti/{f.name}"
-                })
+                zones = m.group(2).split('_')
+                date_str = m.group(3)
+                display_date = date_str.replace('_', '-')
+            else:
+                v_id = f.stem
+                zones = []
+                import datetime
+                # Usa la data di ultima modifica del file
+                mtime = f.stat().st_mtime
+                dt = datetime.datetime.fromtimestamp(mtime)
+                display_date = dt.strftime("%d-%m-%Y")
+
+            try:
+                parts = display_date.split('-')
+                iso_date = f"{parts[2]}-{parts[1]}-{parts[0]}"
+            except Exception:
+                iso_date = display_date
+            
+            links.append({
+                "v_id": v_id,
+                "zones": zones,
+                "date": display_date,
+                "iso_date": iso_date,
+                "filename": f.name,
+                "url": f"https://log-solution-60007.web.app/mappe_autisti/{f.name}"
+            })
         
         # Ordina per data decrescente (più recente prima) e per v_id crescente
         links.sort(key=lambda x: (x['iso_date'], x['v_id']), reverse=True)
@@ -1137,9 +1142,7 @@ def main():
             "lista_punti": [{"nome": p.get("nome", "Cliente"), "indirizzo": p.get("indirizzo", "-"), "lat": p.get("lat"), "lon": p.get("lon"), "codice_frutta": p.get("codice_frutta", ""), "codice_latte": p.get("codice_latte", ""), "tipologia_grado": p.get("tipologia_grado", "")} for p in perc]
         })
 
-        zone_list = sorted(list(set([str(p.get('zona', '0000')) for p in perc])))
-        z_str = "Zone: " + ", ".join(zone_list[:4])
-        fname = f"{v_id}_Zone_{'_'.join(zone_list[:4])}_{data_str}.html".replace(' ', '_')
+        fname = f"{v_id}.html"
 
         # Fallback per navigazione: se mancano lat/lon usa Nome + Indirizzo
         def get_nav_url(d):
@@ -1323,8 +1326,7 @@ def main():
     for i, v in enumerate(viaggi):
         v_id = v.get("nome_giro", f"V{i+1:02d}")
         # IMPORTANTE: Usiamo il nome del file già generato sopra
-        zone_list = sorted(list(set([str(p.get('zona', '0000')) for p in v.get("lista_punti", [])])))
-        fname = f"{v_id}_Zone_{'_'.join(zone_list[:4])}_{data_str}.html".replace(' ', '_')
+        fname = f"{v_id}.html"
         
         # Generiamo link Firebase (più stabili per la web app)
         firebase_link = f"https://log-solution-60007.web.app/mappe_autisti/{fname}"

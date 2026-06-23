@@ -2963,7 +2963,7 @@ def _get_directions_and_simulate_cloud(percorso, depot, is_grand_chef, data_cons
         
     return km_tot, sec_tot, polylines, percorso
 
-def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=False):
+def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=False, usa_or_tools=True):
     start_time = time.time()
     db = get_db()
     bucket = storage.bucket(name=BUCKET_NAME)
@@ -2983,8 +2983,12 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
     
     for zone in zone_list:
         zid = zone.get("id_zona")
-        if id_zona and zid != id_zona:
-            continue
+        if id_zona:
+            if isinstance(id_zona, list) and zid not in id_zona:
+                continue
+            elif isinstance(id_zona, str) and zid != id_zona:
+                continue
+        
         if zid == "DDT_DA_INSERIRE":
             continue
             
@@ -2999,7 +3003,10 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
         is_grand_chef = any("GRAND" in str(p.get("tipologia_grado") or "").upper() or "CHEF" in str(p.get("tipologia_grado") or "").upper() or "GRANCHEF" in str(p.get("zona") or "").upper() for p in punti)
         depot = _get_depot_for_points_cloud(punti)
         
-        punti_ottimizzati = _ottimizza_singolo_viaggio_cloud(punti, depot, is_grand_chef)
+        if usa_or_tools:
+            punti_ottimizzati = _ottimizza_singolo_viaggio_cloud(punti, depot, is_grand_chef)
+        else:
+            punti_ottimizzati = punti
         
         punti_pieni = []
         for p in punti_ottimizzati:
@@ -3770,9 +3777,10 @@ def core_genera_completo_giornata(data_consegna):
 def web_calcola_percorsi(req: https_fn.CallableRequest):
     try:
         data_consegna = req.data.get("data_consegna")
-        id_zona = req.data.get("id_zona")
+        id_zona = req.data.get("id_zona") or req.data.get("target_zones")
         aggiorna_traffico = bool(req.data.get("aggiorna_traffico", False))
-        return core_web_calcola_percorsi(data_consegna, id_zona, aggiorna_traffico)
+        usa_or_tools = bool(req.data.get("usa_or_tools", True))
+        return core_web_calcola_percorsi(data_consegna, id_zona, aggiorna_traffico, usa_or_tools)
     except Exception as e:
         import traceback
         traceback.print_exc()

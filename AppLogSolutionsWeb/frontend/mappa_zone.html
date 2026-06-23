@@ -1134,6 +1134,9 @@
                 <button id="btn-calcola" onclick="window.calcolaPercorsi()" class="btn-control btn-secondary" style="background: var(--primary); color: white; border: none; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);">
                     <span class="material-icons-round">directions</span> CALCOLA PERCORSI
                 </button>
+                <button id="btn-aggiorna-modificati" onclick="window.aggiornaModificati()" class="btn-control btn-secondary" style="background: #8b5cf6; color: white; border: none; box-shadow: 0 4px 10px rgba(139, 92, 246, 0.2); display: none;">
+                    <span class="material-icons-round">sync</span> AGGIORNA MODIFICATI
+                </button>
                 <button id="btn-genera" onclick="window.apriPopupGenerazione()" class="btn-control btn-secondary" style="background: var(--accent); color: white; border: none; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);">
                     <span class="material-icons-round">cloud_upload</span> SALVA E GENERA
                 </button>
@@ -2406,6 +2409,18 @@
                 `;
             }).join('');
             }
+            
+            // Check for modified zones to show the "Aggiorna modificati" button
+            const numModificati = DATA_ZONE.filter(z => z._stato === 'modificato').length;
+            const btnAggiorna = document.getElementById('btn-aggiorna-modificati');
+            if (btnAggiorna) {
+                if (numModificati > 0) {
+                    btnAggiorna.style.display = 'inline-flex';
+                    btnAggiorna.innerHTML = `<span class="material-icons-round">sync</span> AGGIORNA MODIFICATI (${numModificati})`;
+                } else {
+                    btnAggiorna.style.display = 'none';
+                }
+            }
         };
 
         // Focus and pan map to zone bounding box
@@ -2633,6 +2648,8 @@
             // Swap points
             [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
             
+            z._stato = 'modificato';
+            
             _hasUnsavedChanges = true;
             renderSidebar();
             if (!IS_POPUP) {
@@ -2691,6 +2708,9 @@
             // Update the zone property of the point
             _spostaPunto.zona = toZid;
             toZ.lista_punti.push(_spostaPunto);
+            
+            fromZ._stato = 'modificato';
+            toZ._stato = 'modificato';
             
             _hasUnsavedChanges = true;
             renderSidebar();
@@ -2879,6 +2899,41 @@
                 banner.classList.remove('show');
             }, 3500);
         }
+
+        window.aggiornaModificati = async () => {
+            const modificati = DATA_ZONE.filter(z => z._stato === 'modificato').map(z => z.id_zona);
+            if (!modificati.length) {
+                Swal.fire('Nessun Giro', 'Nessun giro modificato da aggiornare.', 'info');
+                return;
+            }
+
+            try {
+                showLoader("Aggiornamento modificati in corso... (Salto ottimizzazione)");
+                
+                const functions = getFunctions(app, "europe-west1");
+                const webCalcolaPercorsiFn = httpsCallable(functions, 'web_calcola_percorsi', { timeout: 300000 });
+                const res = await webCalcolaPercorsiFn({
+                    data_consegna: CURRENT_DATE,
+                    target_zones: modificati,
+                    aggiorna_traffico: false,
+                    usa_or_tools: false // The magic flag!
+                });
+
+                if (res.data && res.data.status === 'ok') {
+                    // Update frontend state with calculated data by reloading from cloud
+                    await reloadVoyageData();
+                    syncState();
+                    Swal.fire('Aggiornamento Completato', `Orari e mappa aggiornati per ${modificati.length} giri (mantenendo ordine manuale).`, 'success');
+                } else {
+                    throw new Error(res.data ? res.data.message : 'Risposta non valida dal server.');
+                }
+            } catch (err) {
+                console.error("[Aggiorna Modificati] Errore:", err);
+                Swal.fire('Errore di Calcolo', err.message || 'Si è verificato un errore nel calcolo del percorso.', 'error');
+            } finally {
+                hideLoader();
+            }
+        };
 
         // Cloud-based voyage path optimization trigger (OR-Tools Cloud Function)
         window.calcolaPercorsi = async () => {

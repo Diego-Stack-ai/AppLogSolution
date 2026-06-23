@@ -2908,7 +2908,9 @@
             }
 
             try {
-                showLoader("Aggiornamento modificati in corso... (Salto ottimizzazione)");
+                const overlay = document.getElementById('loading-overlay');
+                if (overlay) { overlay.style.display = 'flex'; overlay.style.opacity = '1'; }
+                setLoaderMsg("Aggiornamento modificati in corso... (Salto ottimizzazione)");
                 
                 const functions = getFunctions(app, "europe-west1");
                 const webCalcolaPercorsiFn = httpsCallable(functions, 'web_calcola_percorsi', { timeout: 300000 });

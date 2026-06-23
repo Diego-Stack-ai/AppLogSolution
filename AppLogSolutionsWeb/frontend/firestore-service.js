@@ -68,15 +68,54 @@ export async function saveTrip(tripData) {
         const tripRef = doc(db, "viaggi", tripId);
         await updateDoc(tripRef, payload);
         console.log(`[Firestore] Viaggio aggiornato [ID: ${tripId}]`);
-        return tripId;
     } else {
         const docRef = await addDoc(collection(db, "viaggi"), {
             ...payload,
             createdAt: serverTimestamp()
         });
         console.log(`[Firestore] Nuovo viaggio creato [ID: ${docRef.id}]`);
-        return docRef.id;
+        // We set tripId so we can return it correctly below
+        tripData.id = docRef.id;
     }
+
+    // --- SINCRO AUTOMATICA CON PRESENZE ---
+    try {
+        if (tripData.data && tripData.autista) {
+            const presenzeDocId = `${user.uid}_${tripData.data}`;
+            const presenzeRef = doc(db, "presenze", presenzeDocId);
+            
+            let clientePresenza = tripData.cliente || "";
+            if (tripData.viaggio && tripData.viaggio.trim() !== "") {
+                clientePresenza += ` - ${tripData.viaggio}`;
+            }
+
+            const presenzaPayload = {
+                autistaId: user.uid,
+                nomeAutista: tripData.autista,
+                data: tripData.data,
+                cliente: clientePresenza,
+                kmPartenza: Number(tripData.kmPartenza) || 0,
+                kmArrivo: Number(tripData.kmArrivo) || 0,
+                kmDelta: Number(tripData.delta_km) || 0,
+                oraInizioM: tripData.mattinaInizio || "",
+                oraFineM: tripData.mattinaFine || "",
+                oraInizioP: tripData.pomeriggioInizio || "",
+                oraFineP: tripData.pomeriggioFine || "",
+                oreOrdinarie: Number(tripData.ore_ordinarie) || 0,
+                oreStraordinarie: Number(tripData.ore_straordinarie) || 0,
+                oreTotali: Number(tripData.ore_totali) || 0,
+                note: tripData.nota || "",
+                importo: Number(tripData.importo) || 0
+            };
+            
+            await setDoc(presenzeRef, presenzaPayload, { merge: true });
+            console.log(`[Firestore] Sincronizzato con presenze [ID: ${presenzeDocId}]`);
+        }
+    } catch (err) {
+        console.error("Errore sincro presenze:", err);
+    }
+
+    return tripData.id || tripId;
 }
 
 // ─── LISTA VIAGGI ─────────────────────────────────────────────────────────────
@@ -151,5 +190,68 @@ const storage = getStorage(app);
 window.firebaseStorage = storage;
 window.sRef = sRef;
 window.getDownloadURL = getDownloadURL;
+
+// ─── GESTIONE TURNI IN SOSPESO ───────────────────────────────────────────────
+
+/**
+ * Controlla se c'è un turno "in corso" per l'autista corrente
+ */
+export async function checkPendingTrip() {
+    const user = auth.currentUser;
+    if (!user) return null;
+
+    try {
+        const q = query(
+            collection(db, "viaggi"),
+            where("autistaId", "==", user.uid),
+            where("stato", "==", "in corso")
+        );
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+            // Prende il primo trovato (dovrebbe essercene uno solo in corso)
+            const docSnap = snap.docs[0];
+            return { id: docSnap.id, ...docSnap.data() };
+        }
+    } catch (err) {
+        console.error("[Firestore] Errore checkPendingTrip:", err);
+    }
+    return null;
+}
+
+/**
+ * Chiude il turno in "anomalia" e segna la riga delle presenze come errata
+ */
+export async function closeTripWithAnomaly(tripData) {
+    const user = auth.currentUser;
+    if (!user || !tripData || !tripData.id) return;
+
+    try {
+        // 1. Marca il viaggio come anomalia
+        const tripRef = doc(db, "viaggi", tripData.id);
+        await updateDoc(tripRef, { 
+            stato: "anomalia", 
+            note: (tripData.nota ? tripData.nota + " | " : "") + "Turno annullato per dimenticanza chiusura",
+            updatedAt: serverTimestamp() 
+        });
+
+        // 2. Segna le presenze come "hasError"
+        if (tripData.data) {
+            const presenzeDocId = `${user.uid}_${tripData.data}`;
+            const presenzeRef = doc(db, "presenze", presenzeDocId);
+            
+            await setDoc(presenzeRef, {
+                hasError: true,
+                note: "Dimenticanza chiusura. Gestione manuale richiesta.",
+                autistaId: user.uid,
+                nomeAutista: tripData.autista || "",
+                data: tripData.data
+            }, { merge: true });
+        }
+        
+        console.log(`[Firestore] Viaggio ${tripData.id} chiuso in anomalia.`);
+    } catch (err) {
+        console.error("[Firestore] Errore closeTripWithAnomaly:", err);
+    }
+}
 
 export { db, auth, storage, sRef, getDownloadURL };

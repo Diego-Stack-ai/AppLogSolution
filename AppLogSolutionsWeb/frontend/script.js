@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "2.72";
+const APP_VERSION = "2.76";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -125,7 +125,9 @@ function calcolaTutto() {
 function diffMin(s, e) {
     const [h1, m1] = s.split(':').map(Number);
     const [h2, m2] = e.split(':').map(Number);
-    return Math.max(0, (h2 * 60 + m2) - (h1 * 60 + m1));
+    let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+    if (diff < 0) diff += 24 * 60; // Supporto scavalco mezzanotte
+    return diff;
 }
 
 function formatHHMM(min) {
@@ -366,12 +368,17 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             let email = document.getElementById('username')?.value.trim().toLowerCase();
             if (email) {
+                // Rimuove caratteri invisibili
+                email = email.replace(/[\u200B-\u200D\uFEFF]/g, '');
+                
                 if (!email.includes('@')) {
-                    // Normalizza: trasforma gli spazi in punti (es. "ayoub berradia" -> "ayoub.berradia")
+                    // Trasforma gli spazi in punti (es. "ayoub berradia" -> "ayoub.berradia")
                     email = email.replace(/\s+/g, '.');
+                    // Rimuove punti consecutivi o punti all'inizio/fine che causano invalid-email
+                    email = email.replace(/\.+/g, '.').replace(/^\.|\.$/g, '');
                     email += '@logsolution.app';
                 } else {
-                    // Rimuovi eventuali spazi accidentali per evitare "auth/invalid-email"
+                    // Rimuovi eventuali spazi accidentali
                     email = email.replace(/\s+/g, '');
                 }
             }

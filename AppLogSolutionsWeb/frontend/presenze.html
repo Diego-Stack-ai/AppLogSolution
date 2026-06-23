@@ -4,9 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Presenze Dipendenti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.72">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <!-- jsPDF and AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- pdf-lib and pdfjs-dist for Cedolino splitting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+
+    <link rel="stylesheet" href="styles.css?v=2.76">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
+        .row-error td {
+            background-color: #ffcccc !important; /* rosso più acceso */
+        }
+
         .filters-container {
             display: flex;
             gap: 16px;
@@ -23,34 +39,38 @@
         }
 
         .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
             margin-bottom: 24px;
+            justify-content: flex-start;
+            align-items: center;
         }
 
         .summary-card {
             background: white;
-            border-radius: 16px;
+            border-radius: 8px; /* Simile ai bottoni */
             border: 1px solid #e2e8f0;
-            padding: 20px;
+            padding: 8px 16px; /* Più piccolo, come un bottone */
             text-align: center;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .summary-card h4 {
-            margin: 0 0 8px 0;
+            margin: 0;
             color: var(--text-muted);
-            font-size: 13px;
+            font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
         }
 
         .summary-card p {
             margin: 0;
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-color);
         }
 
         .data-table-container {
@@ -93,11 +113,11 @@
         }
 
         .weekend td {
-            background-color: #fef2f2;
+            background-color: #f1f5f9; /* grigetto chiaro */
         }
 
         tr.weekend:hover td {
-            background-color: #fee2e2;
+            background-color: #e2e8f0; /* grigetto hover */
         }
 
         .edit-input {
@@ -365,6 +385,15 @@
                     <label for="inputMonth">Mese di Riferimento</label>
                     <input type="month" id="inputMonth">
                 </div>
+                <div class="filter-item" style="justify-content: flex-end; gap: 10px;">
+                    <button class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;" onclick="generateMonthlyPDF()">
+                        <span class="material-icons-round" style="font-size: 1.1rem;">picture_as_pdf</span> Esporta Tabella
+                    </button>
+                    <button class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem; background-color: #f59e0b; color: white;" onclick="document.getElementById('fileCedolone').click()">
+                        <span class="material-icons-round" style="font-size: 1.1rem;">content_cut</span> Dividi Cedoloni e Archivia
+                    </button>
+                    <input type="file" id="fileCedolone" accept="application/pdf" style="display:none" onchange="handleCedoloneUpload(event)">
+                </div>
             </div>
             <div id="viewModeSection" style="display:none;">
                 <div class="view-mode-container">
@@ -449,11 +478,11 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.72"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.72"></script>
+    <script src="script.js?v=2.76"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.76"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
@@ -479,8 +508,15 @@
             const previousValue = select.value;
             select.innerHTML = '<option value="">-- Seleziona Dipendente --</option>\n<option value="tutti">-- Tutti i dipendenti --</option>';
             
-            // Ordina alfabeticamente
-            const sorted = [...(window.appData.lista_autisti || [])].sort((a, b) => 
+            const selectedMonthStr = document.getElementById('inputMonth').value; // YYYY-MM
+            
+            // Ordina alfabeticamente e filtra i licenziati
+            const sorted = [...(window.appData.lista_autisti || [])].filter(emp => {
+                if (emp.data_licenziamento && selectedMonthStr) {
+                    return selectedMonthStr <= emp.data_licenziamento.substring(0, 7);
+                }
+                return true;
+            }).sort((a, b) => 
                 (a.nome || '').localeCompare(b.nome || '')
             );
             
@@ -685,7 +721,7 @@
             let totalLitri = 0.0;
 
             const isTutti = selectedEmployee.id === 'tutti';
-            const forceFourCols = isTutti || selectedEmployee.ruolo === 'amministratore' || selectedEmployee.ruolo === 'impiegata';
+            const forceFourCols = true;
 
             const tableHeadTr = document.getElementById('tableHeadTr');
             let headerHtml = `
@@ -743,7 +779,12 @@
                 }
             }
 
-            const autistiToRender = isTutti ? (window.appData.lista_autisti || []).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')) : [selectedEmployee];
+            const autistiToRender = isTutti ? (window.appData.lista_autisti || []).filter(emp => {
+                if (emp.data_licenziamento && selectedMonth) {
+                    return selectedMonth <= emp.data_licenziamento.substring(0, 7);
+                }
+                return true;
+            }).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')) : [selectedEmployee];
 
             autistiToRender.forEach(autista => {
                 const isAdmin = autista.ruolo === 'amministratore' || autista.ruolo === 'impiegata';
@@ -772,6 +813,7 @@
 
                     const tr = document.createElement('tr');
                     if (isWeekend) tr.classList.add('weekend');
+                    if (record.hasError) tr.classList.add('row-error');
                     tr.dataset.date = dateStr;
                     tr.dataset.docId = docId;
                     tr.dataset.autistaId = autista.id; // NEEDED FOR SAVE LATER!
@@ -785,10 +827,10 @@
                         <td><input type="number" class="edit-input num-input" data-field="kmArrivo" value="${record.kmArrivo || 0}" disabled onchange="onKmChange(this)"></td>
                         <td><input type="number" class="edit-input num-input" data-field="kmDelta" value="${record.kmDelta || 0}" disabled readonly></td>
                         ${forceFourCols ? `
-                            <td><input type="text" class="edit-input time-input" data-field="oraInizioM" value="${record.oraInizioM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" style="${(!isAdmin && !isDoubleShift) ? 'background:#f1f5f9' : ''}"></td>
-                            <td><input type="text" class="edit-input time-input" data-field="oraFineM" value="${record.oraFineM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" style="${(!isAdmin && !isDoubleShift) ? 'background:#f1f5f9' : ''}"></td>
-                            <td><input type="text" class="edit-input time-input" data-field="oraInizioP" value="${record.oraInizioP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" style="display:${(isAdmin || isDoubleShift) ? 'block' : 'none'};"></td>
-                            <td><input type="text" class="edit-input time-input" data-field="oraFineP" value="${record.oraFineP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" style="display:${(isAdmin || isDoubleShift) ? 'block' : 'none'};"></td>
+                            <td><input type="text" class="edit-input time-input" data-field="oraInizioM" value="${record.oraInizioM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" ></td>
+                            <td><input type="text" class="edit-input time-input" data-field="oraFineM" value="${record.oraFineM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" ></td>
+                            <td><input type="text" class="edit-input time-input" data-field="oraInizioP" value="${record.oraInizioP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" ></td>
+                            <td><input type="text" class="edit-input time-input" data-field="oraFineP" value="${record.oraFineP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" ></td>
                         ` : `
                             <td>
                                 <input type="text" class="edit-input time-input" data-field="oraInizioM" value="${record.oraInizioM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)">
@@ -885,49 +927,75 @@
 
         // Recalcolo in tempo reale su variazione tempi
         window.onTimeChange = function(input) {
+            let val = input.value.trim();
+            input.value = val; // Force trim in UI
+            if (val) {
+                val = val.replace(',', '.');
+                if (val.includes('.')) {
+                    let parts = val.split('.');
+                    let h = parts[0].padStart(2, '0');
+                    let m = parts[1].padEnd(2, '0').substring(0, 2);
+                    input.value = `${h}:${m}`;
+                } else if (!val.includes(':') && !isNaN(val)) {
+                    if (val.length === 3 || val.length === 4) {
+                        let h = val.length === 3 ? "0" + val[0] : val.substring(0,2);
+                        let m = val.substring(val.length - 2);
+                        input.value = `${h}:${m}`;
+                    } else {
+                        let h = val.padStart(2, '0');
+                        input.value = `${h}:00`;
+                    }
+                } else if (val.includes(':')) {
+                    let parts = val.split(':');
+                    let h = parts[0].padStart(2, '0');
+                    let m = parts[1].padEnd(2, '0').substring(0, 2);
+                    input.value = `${h}:${m}`;
+                }
+            }
             const tr = input.closest('tr');
             recalculateRowHours(tr);
         };
 
         function recalculateRowHours(tr) {
-            const chkMagazzino = tr.querySelector('[data-field="isMagazzino"]');
-            const isMagazzino = chkMagazzino.checked;
-
-            
             let rowAutista = selectedEmployee;
             if (selectedEmployee && selectedEmployee.id === 'tutti') {
                 const aId = tr.dataset.autistaId;
                 rowAutista = window.appData.lista_autisti.find(a => a.id === aId) || {};
             }
-            const isAdmin = rowAutista.ruolo === 'amministratore' || rowAutista.ruolo === 'impiegata';
 
-            const defaultDoubleShift = isAdmin;
-
-
-
-            const isDoubleShift = defaultDoubleShift || isMagazzino;
-
-            const valInizioM = tr.querySelector('[data-field="oraInizioM"]').value;
-            const valFineM = tr.querySelector('[data-field="oraFineM"]').value;
-            const valInizioP = tr.querySelector('[data-field="oraInizioP"]').value;
-            const valFineP = tr.querySelector('[data-field="oraFineP"]').value;
+            const valInizioM = tr.querySelector('[data-field="oraInizioM"]').value.trim();
+            const valFineM = tr.querySelector('[data-field="oraFineM"]').value.trim();
+            const valInizioP = tr.querySelector('[data-field="oraInizioP"]').value.trim();
+            const valFineP = tr.querySelector('[data-field="oraFineP"]').value.trim();
 
             const decInizioM = parseTime(valInizioM);
             const decFineM = parseTime(valFineM);
+            const decInizioP = parseTime(valInizioP);
+            const decFineP = parseTime(valFineP);
 
-            let mornHours = 0.0;
-            if (valInizioM && valFineM) {
-                mornHours = Math.max(0.0, decFineM - decInizioM);
+            let totalHours = 0.0;
+
+            // Turno unico lungo da InizioM a FineP
+            if (valInizioM && !valFineM && !valInizioP && valFineP) {
+                let diff = decFineP >= decInizioM ? decFineP - decInizioM : (24 - decInizioM) + decFineP;
+                if (decFineP === 0 && decInizioM === 0) diff = 0;
+                totalHours = diff;
+            } else {
+                // Turni separati
+                let mornHours = 0.0;
+                if (valInizioM && valFineM) {
+                    mornHours = decFineM >= decInizioM ? decFineM - decInizioM : (24 - decInizioM) + decFineM;
+                    if (decFineM === 0 && decInizioM === 0) mornHours = 0;
+                }
+                
+                let aftHours = 0.0;
+                if (valInizioP && valFineP) {
+                    aftHours = decFineP >= decInizioP ? decFineP - decInizioP : (24 - decInizioP) + decFineP;
+                    if (decFineP === 0 && decInizioP === 0) aftHours = 0;
+                }
+                
+                totalHours = mornHours + aftHours;
             }
-
-            let aftHours = 0.0;
-            if (isDoubleShift && valInizioP && valFineP) {
-                const decInizioP = parseTime(valInizioP);
-                const decFineP = parseTime(valFineP);
-                aftHours = Math.max(0.0, decFineP - decInizioP);
-            }
-
-            const totalHours = mornHours + aftHours;
 
             // Determina ore standard (Diego Boschetto: 8 ore, altri: 8.5 ore)
             const isDiego = rowAutista && rowAutista.nome ? (rowAutista.nome.toLowerCase().includes('diego boschetto') || rowAutista.nome.toLowerCase().includes('boschetto diego')) : false;
@@ -1186,6 +1254,213 @@
                 }
             }
         };
+
+        window.generateMonthlyPDF = async function() {
+              const monthVal = document.getElementById('inputMonth').value;
+              if (!monthVal) {
+                  alert("Seleziona prima un mese di riferimento!");
+                  return;
+              }
+              
+              const btn = event.currentTarget;
+              const originalText = btn.innerHTML;
+              btn.innerHTML = `<span class="material-icons-round" style="animation: spin 1s linear infinite;">autorenew</span> Generazione...`;
+              btn.disabled = true;
+
+              try {
+                  const presenzeRef = collection(getFirestore(), 'presenze');
+                  const q = query(presenzeRef, where('mese', '==', monthVal));
+                  const querySnapshot = await getDocs(q);
+                  
+                  const rawData = {};
+                  querySnapshot.forEach(doc => {
+                      const d = doc.data();
+                      if (!rawData[d.autistaId]) rawData[d.autistaId] = [];
+                      rawData[d.autistaId].push(d);
+                  });
+                  
+                  const listaAutisti = window.appData.lista_autisti || [];
+                  if (listaAutisti.length === 0) {
+                      alert("Lista dipendenti non caricata.");
+                      return;
+                  }
+
+                  const { jsPDF } = window.jspdf;
+                  const doc = new jsPDF('l', 'mm', 'a4');
+                  
+                  doc.setFontSize(14);
+                  doc.setFont("helvetica", "bold");
+                  doc.text("AZIENDA: LOG. SOLUTIONS S.R.L.", 14, 15);
+                  
+                  const monthNames = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
+                  const [y, m] = monthVal.split('-');
+                  const mName = monthNames[parseInt(m) - 1] + " " + y;
+                  
+                  doc.setFontSize(11);
+                  doc.setFont("helvetica", "normal");
+                  doc.text("MESE: " + mName.toUpperCase(), 14, 21);
+                  
+                  const numDays = new Date(parseInt(y), parseInt(m), 0).getDate();
+                  
+                  const headRow = ['Dipendente'];
+                  for(let i=1; i<=numDays; i++) headRow.push(i.toString());
+                  headRow.push('Ord.', 'Str.', 'GG', 'Note');
+                  
+                  const bodyRows = [];
+                  const sortedAutisti = [...listaAutisti].sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+                  
+                  function pt(val) {
+                      if (!val || val.trim() === "") return 0;
+                      const cleanVal = val.trim().replace(',', '.');
+                      if (cleanVal.includes(':')) {
+                          const parts = cleanVal.split(':');
+                          return (parseInt(parts[0]) || 0) + (parseInt(parts[1]) || 0) / 60;
+                      }
+                      const f = parseFloat(cleanVal);
+                      return isNaN(f) ? 0 : f;
+                  }
+
+                  sortedAutisti.forEach(autista => {
+                      const pres = rawData[autista.id] || [];
+                      let totOrd = 0; let totStr = 0; let totTrasf = 0; let ggLavorati = 0;
+                      const notes = [];
+                      const daysMap = {};
+                      
+                      pres.forEach(p => {
+                          const day = parseInt(p.data.substring(8,10));
+                          let ord = parseFloat(p.oreOrdinarie) || 0;
+                          let str = parseFloat(p.oreStraordinarie) || 0;
+                          let trasfStr = "";
+                          
+                          // Calcolo ore on the fly se a zero (per gli autisti senza colonna Totale)
+                          if (ord === 0 && str === 0 && (p.oraInizioM || p.oraFineM || p.oraInizioP || p.oraFineP)) {
+                              const startM = pt(p.oraInizioM); const endM = pt(p.oraFineM);
+                              const startP = pt(p.oraInizioP); const endP = pt(p.oraFineP);
+                              let diffM = endM >= startM ? endM - startM : (24 - startM) + endM;
+                              if (endM === 0 && startM === 0) diffM = 0;
+                              let diffP = endP >= startP ? endP - startP : (24 - startP) + endP;
+                              if (endP === 0 && startP === 0) diffP = 0;
+                              let tot = diffM + diffP;
+                              if (tot > 0) {
+                                  if (tot > 8) { ord = 8; str = tot - 8; } else { ord = tot; }
+                              }
+                          }
+                          
+                          // Estrai trasferta dalle note o importo
+                          if (p.note && p.note.toLowerCase().includes("trasferta")) {
+                              const match = p.note.match(/trasferta\s*(\d+)/i);
+                              if (match) trasfStr = match[1];
+                              else trasfStr = "1";
+                          } else if (p.importo && parseFloat(p.importo) > 0) {
+                              trasfStr = "X"; // Placeholder per Trasferta
+                          }
+
+                          // Formatta ore a 2 decimali se necessario
+                          ord = Math.round(ord * 100) / 100;
+                          str = Math.round(str * 100) / 100;
+
+                          daysMap[day] = { ord, str, trasf: trasfStr };
+                          totOrd += ord; totStr += str; 
+                          if (trasfStr && trasfStr !== "X") totTrasf += parseInt(trasfStr);
+                          else if (trasfStr === "X") totTrasf += 1;
+                          
+                          if (ord > 0 || str > 0) ggLavorati++;
+                          
+                          if (p.note) {
+                              let cleanNote = p.note.trim();
+                              if (cleanNote) notes.push(cleanNote);
+                          }
+                      });
+                      
+                      if (totOrd === 0 && totStr === 0 && totTrasf === 0) return;
+                      
+                      const nome = autista.nome.length > 20 ? autista.nome.substring(0,20) + '...' : autista.nome;
+                      
+                      const rowOrd = [nome + '\n(Ord.)'];
+                      for(let i=1; i<=numDays; i++) {
+                          const d = daysMap[i];
+                          rowOrd.push(d && d.ord > 0 ? d.ord.toString() : '');
+                      }
+                      rowOrd.push(totOrd.toFixed(2)); rowOrd.push(''); rowOrd.push(ggLavorati.toString());
+                      rowOrd.push([...new Set(notes)].join(' | '));
+                      bodyRows.push(rowOrd);
+                      
+                      if (totStr > 0) {
+                          const rowStr = ['(Str.)'];
+                          for(let i=1; i<=numDays; i++) {
+                              const d = daysMap[i];
+                              rowStr.push(d && d.str > 0 ? d.str.toString() : '');
+                          }
+                          rowStr.push(''); rowStr.push(totStr.toFixed(2)); rowStr.push(''); rowStr.push('');
+                          bodyRows.push(rowStr);
+                      }
+                      
+                      // Mostra trasferta se presente o se  un autista con trasferte
+                      if (totTrasf > 0) {
+                          const rowTrasf = ['(Trasf.)'];
+                          for(let i=1; i<=numDays; i++) {
+                              const d = daysMap[i];
+                              rowTrasf.push(d && d.trasf ? d.trasf : '');
+                          }
+                          rowTrasf.push(''); rowTrasf.push(''); rowTrasf.push(''); rowTrasf.push('');
+                          bodyRows.push(rowTrasf);
+                      }
+                  });
+                  
+                  doc.autoTable({
+                      startY: 25,
+                      head: [headRow],
+                      body: bodyRows,
+                      theme: 'grid',
+                      styles: { fontSize: 6, cellPadding: 1, overflow: 'linebreak' },
+                      headStyles: { fillColor: [51, 65, 85], textColor: 255, halign: 'center' },
+                      columnStyles: {
+                          0: { cellWidth: 30, fontStyle: 'bold' },
+                          [numDays + 1]: { cellWidth: 8, halign: 'center', fontStyle: 'bold', fillColor: [248, 250, 252] },
+                          [numDays + 2]: { cellWidth: 8, halign: 'center', fontStyle: 'bold', fillColor: [248, 250, 252] },
+                          [numDays + 3]: { cellWidth: 6, halign: 'center', fontStyle: 'bold' },
+                          [numDays + 4]: { cellWidth: 35 }
+                      },
+                      didParseCell: function(data) {
+                          if (data.section === 'body') {
+                              if (data.row.raw[0].includes('(Ord.)')) {
+                                  // Riga Ordinarie
+                                  if (data.column.index === 0) data.cell.styles.fillColor = [248, 250, 252];
+                              } else if (data.row.raw[0] === '(Str.)') {
+                                  // Riga Straordinarie
+                                  if (data.column.index === 0) data.cell.styles.fillColor = [255, 241, 242];
+                              } else if (data.row.raw[0] === '(Trasf.)') {
+                                  // Riga Trasferta
+                                  if (data.column.index === 0) data.cell.styles.fillColor = [254, 252, 232]; // giallognolo
+                              }
+                              
+                              if (data.column.index > 0 && data.column.index <= numDays) {
+                                  data.cell.styles.halign = 'center';
+                                  const day = data.column.index;
+                                  const dt = new Date(parseInt(y), parseInt(m)-1, day);
+                                  if (dt.getDay() === 0 || dt.getDay() === 6) {
+                                      if (data.row.raw[0] === '(Str.)') {
+                                          data.cell.styles.fillColor = [254, 226, 226]; // weekend rosso chiaro
+                                      } else if (data.row.raw[0] === '(Trasf.)') {
+                                          data.cell.styles.fillColor = [254, 240, 138]; // weekend giallo chiaro
+                                      } else {
+                                          data.cell.styles.fillColor = [226, 232, 240]; // weekend grigio
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  });
+                  
+                  doc.save(`Presenze_LogSolution_${monthVal}.pdf`);
+              } catch (err) {
+                  console.error(err);
+                  alert("Errore durante la generazione del PDF: " + err.message);
+              } finally {
+                  btn.innerHTML = originalText;
+                  btn.disabled = false;
+              }
+          };
     </script>
 
     <!-- DETTAGLI MODAL -->
@@ -1219,6 +1494,18 @@
             </div>
         </div>
     </div>
+
+    <!-- CEDOLINI SPLITTER SCRIPT E MODAL -->
+    <div id="cedoliniLoadingModal" class="presenze-modal-overlay" style="display:none; z-index: 9999;">
+        <div class="presenze-modal-box" style="text-align: center; max-width: 400px;">
+            <h3 style="margin-top:0;">Elaborazione Cedoloni</h3>
+            <p id="cedoliniProgressText">Lettura del PDF in corso...</p>
+            <div style="width: 100%; background-color: #e2e8f0; border-radius: 4px; height: 10px; margin-top: 15px; overflow: hidden;">
+                <div id="cedoliniProgressBar" style="width: 0%; height: 100%; background-color: #3b82f6; transition: width 0.3s;"></div>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="cedolini-splitter.js?v=2.76"></script>
 
 </body>
 </html>

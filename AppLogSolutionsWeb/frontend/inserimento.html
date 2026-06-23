@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.72">
+    <link rel="stylesheet" href="styles.css?v=2.76">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -150,7 +150,7 @@
                 </div>
             </div>
 
-            <form id="presenzeForm">
+            <form id="presenzeForm" onsubmit="event.preventDefault(); document.getElementById('confirmModal').classList.add('active');">
 
                 <!-- STEP 1: PARTENZA -->
                 <div id="step-1" class="step-container active">
@@ -417,15 +417,106 @@
         </div>
     </div>
 
-    <script src="script.js?v=2.72"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.72"></script>
+    <!-- Modal Gestione Anomalia Turno -->
+    <div id="anomalyModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="material-icons-round modal-icon" style="color: #f59e0b;">warning</span>
+            <h3>Turno Precedente Sospeso</h3>
+            <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">
+                Il sistema ha rilevato un turno iniziato in data <b id="anomalyDateStr"></b> e non ancora chiuso.
+                <br><br>
+                Come vuoi procedere?
+            </p>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <button id="btnAnomalyNight" class="btn-primary" style="background:#0f172a;">
+                    Sto chiudendo il turno di ieri (Turno Notturno)
+                </button>
+                <button id="btnAnomalyForgot" class="btn-primary" style="background:#fef2f2; color:#ef4444; border: 1px solid #ef4444; box-shadow:none;">
+                    Ho dimenticato di chiuderlo (Annulla Turno)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js?v=2.76"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.76"></script>
     <script type="module">
-        import { saveTrip } from "./firestore-service.js?v=2.72";
-        import "./gps-tracker.js?v=2.72";
+        import { saveTrip, checkPendingTrip, closeTripWithAnomaly } from "./firestore-service.js?v=2.76";
+        import { auth } from "./firestore-service.js?v=2.76";
+        import "./gps-tracker.js?v=2.76";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
         const btnConfirmSend = document.getElementById('btnConfirmSend');
+
+        // --- GESTIONE TURNI SOSPESI ---
+        let currentPendingTrip = null;
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const pendingTrip = await checkPendingTrip();
+                if (pendingTrip) {
+                    currentPendingTrip = pendingTrip;
+                    const tripDate = pendingTrip.data;
+                    // document.getElementById('data') usually has today's date set by script.js
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const inputDate = document.getElementById('data').value || todayStr;
+
+                    if (tripDate === inputDate) {
+                        restorePendingTrip(pendingTrip);
+                    } else {
+                        document.getElementById('anomalyDateStr').innerText = tripDate;
+                        document.getElementById('anomalyModal').classList.add('active');
+                    }
+                }
+            }
+        });
+
+        function restorePendingTrip(trip) {
+            sessionStorage.setItem('currentTripId', trip.id);
+            if(trip.data) document.getElementById('data').value = trip.data;
+            if(trip.automezzo) document.getElementById('automezzo').value = trip.automezzo;
+            if(trip.cliente) document.getElementById('clienteSelect').value = trip.cliente;
+            if(trip.viaggio) {
+                setTimeout(() => {
+                    document.getElementById('viaggioSelect').value = trip.viaggio;
+                    checkStep1();
+                }, 500);
+            }
+            if(trip.kmPartenza) document.getElementById('kmPartenza').value = trip.kmPartenza;
+            if(trip.mattinaInizio) {
+                const parts = trip.mattinaInizio.split(':');
+                if(parts.length === 2) {
+                    document.getElementById('mattinaInizioHH').value = parts[0];
+                    document.getElementById('mattinaInizioMM').value = parts[1];
+                }
+            }
+
+            btnStartTrip.innerHTML = '<span class="material-icons-round">gps_fixed</span> Tracking Attivo (Ripristinato)';
+            btnStartTrip.disabled = true;
+            btnStartTrip.style.display = 'flex';
+            setTimeout(() => { window.nextStep(2); }, 300);
+        }
+
+        document.getElementById('btnAnomalyNight').onclick = () => {
+            document.getElementById('anomalyModal').classList.remove('active');
+            restorePendingTrip(currentPendingTrip);
+        };
+
+        document.getElementById('btnAnomalyForgot').onclick = async () => {
+            const btn = document.getElementById('btnAnomalyForgot');
+            btn.innerHTML = 'Annullamento in corso...';
+            btn.disabled = true;
+            
+            await closeTripWithAnomaly(currentPendingTrip);
+            
+            alert("Turno chiuso con anomalia e notificato all'ufficio. Ora puoi inserire il nuovo turno di oggi.");
+            
+            sessionStorage.removeItem('currentTripId');
+            sessionStorage.removeItem('currentDraft');
+            window.location.reload();
+        };
+        // --- FINE GESTIONE TURNI SOSPESI ---
 
         // Logic to show/hide Start Trip button based on inputs
         const checkStep1 = () => {

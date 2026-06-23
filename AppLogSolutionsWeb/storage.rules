@@ -45,5 +45,11 @@ service firebase.storage {
       allow read: if isAuthenticated();
       allow write: if false; // Scrittura solo da backend
     }
+
+    // Cartella archivio cedolini
+    match /cedolini/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
   }
 }

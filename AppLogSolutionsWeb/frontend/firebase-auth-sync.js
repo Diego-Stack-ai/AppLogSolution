@@ -83,9 +83,22 @@ onAuthStateChanged(auth, async (user) => {
 
     if (user) {
         try {
-            const userDoc = await getDoc(doc(db, "dipendenti", user.uid));
+            // Implementiamo un semplice retry per connessioni mobili instabili
+            let userDoc = null;
+            let retries = 3;
+            while (retries > 0) {
+                try {
+                    userDoc = await getDoc(doc(db, "dipendenti", user.uid));
+                    break;
+                } catch (fetchErr) {
+                    retries--;
+                    if (retries === 0) throw fetchErr;
+                    console.warn(`Auth: getDoc fallito, ritento... tentativi rimasti: ${retries}`, fetchErr);
+                    await new Promise(r => setTimeout(r, 1000)); // aspetta 1 secondo
+                }
+            }
             
-            if (userDoc.exists()) {
+            if (userDoc && userDoc.exists()) {
                 const userData = userDoc.data();
 
                 // --- 2. CONTROLLO CAMBIO PASSWORD FORZATO ---
@@ -187,7 +200,11 @@ onAuthStateChanged(auth, async (user) => {
             }
         } catch (err) {
             console.error("Auth: Errore recupero profilo Firestore:", err);
-            alert("Errore di connessione al database durante il login: " + err.message);
+            let contextMsg = "";
+            if (err.message && err.message.includes('permission')) {
+                contextMsg = " (Controllo permessi su dipendenti/" + user.uid + ")";
+            }
+            alert("Errore di connessione al database durante il login: " + err.message + contextMsg);
             await window.logoutFirebase();
         }
     } else {

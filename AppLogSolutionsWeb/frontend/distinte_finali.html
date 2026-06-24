@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invio Mobile Autisti — Log Solution</title>
+    <title>Genera Distinte — Log Solution</title>
     <link rel="stylesheet" href="styles.css?v=2.91">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .page-header { margin-bottom: 28px; animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1); }
         .page-header h1 { font-size: 26px; font-weight: 800; margin: 0;
-            background: linear-gradient(135deg, #4f46e5, #a855f7);
+            background: linear-gradient(135deg, #10b981, #0ea5e9);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .page-header p { margin: 4px 0 0; color: var(--text-muted); font-size: 14px; }
 
@@ -18,13 +18,13 @@
             flex-wrap: wrap; animation: slideUp 0.5s 0.1s both; }
         .date-badge { background: var(--surface); border: 1px solid var(--border);
             border-radius: 12px; padding: 8px 16px; font-size: 14px; font-weight: 700;
-            color: var(--primary); display: flex; align-items: center; gap: 6px; }
-        .btn-genera-tutte { background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: #10b981; display: flex; align-items: center; gap: 6px; }
+        .btn-genera-tutte { background: linear-gradient(135deg, #10b981, #0ea5e9);
             color: white; border: none; padding: 10px 20px; border-radius: 12px;
             font-weight: 700; font-size: 13px; cursor: pointer; display: flex;
             align-items: center; gap: 6px; transition: all 0.2s;
-            box-shadow: 0 4px 14px rgba(79,70,229,0.35); }
-        .btn-genera-tutte:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,70,229,0.45); }
+            box-shadow: 0 4px 14px rgba(16,185,129,0.35); }
+        .btn-genera-tutte:hover { transform: translateY(-1px); }
         .btn-genera-tutte:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
         .badge-count { background: rgba(255,255,255,0.25); border-radius: 8px;
             padding: 1px 6px; font-size: 11px; }
@@ -42,51 +42,33 @@
         .card-title { font-weight: 800; font-size: 16px; color: #0f172a; flex: 1; }
         .card-badges { display: flex; gap: 6px; flex-wrap: wrap; }
         .badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
-        .badge-info { background: #eff6ff; color: #1d4ed8; }
-        .badge-km  { background: #f0fdf4; color: #15803d; }
-        .badge-min { background: #fefce8; color: #b45309; }
-        .badge-ok  { background: #dcfce7; color: #166534; }
-
-        .card-punti { padding: 0 20px 10px; }
-        .punti-list { list-style: none; margin: 0; padding: 0; max-height: 180px;
-            overflow-y: auto; border-top: 1px solid #f1f5f9; padding-top: 8px; }
-        .punti-list li { font-size: 12px; color: #475569; padding: 4px 0;
-            display: flex; align-items: flex-start; gap: 6px; border-bottom: 1px solid #f8fafc; }
-        .punti-list li:last-child { border-bottom: none; }
-        .punti-list li span.num { width: 18px; height: 18px; background: #f1f5f9;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 10px; font-weight: 700; color: #64748b; flex-shrink: 0; }
+        .badge-info  { background: #eff6ff; color: #1d4ed8; }
+        .badge-ok    { background: #dcfce7; color: #166534; }
+        .badge-warn  { background: #fef9c3; color: #854d0e; }
+        .badge-error { background: #fee2e2; color: #991b1b; }
 
         .card-actions { padding: 12px 20px 16px; display: flex; gap: 8px; flex-wrap: wrap;
             border-top: 1px solid #f1f5f9; }
-        .btn-genera { background: #4f46e5; color: white; border: none;
+        .btn-genera { background: #10b981; color: white; border: none;
             padding: 9px 18px; border-radius: 10px; font-weight: 700; font-size: 13px;
             cursor: pointer; display: flex; align-items: center; gap: 6px;
             transition: all 0.2s; }
-        .btn-genera:hover { background: #4338ca; transform: translateY(-1px); }
+        .btn-genera:hover { background: #059669; transform: translateY(-1px); }
         .btn-genera:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        .btn-copia { background: #f1f5f9; color: #334155; border: 1px solid #e2e8f0;
+        .btn-scarica { background: #0ea5e9; color: white; border: none;
             padding: 9px 16px; border-radius: 10px; font-weight: 600; font-size: 13px;
             cursor: pointer; display: flex; align-items: center; gap: 5px;
-            transition: all 0.2s; }
-        .btn-copia:hover { background: #e2e8f0; }
-        .btn-copia.copied { background: #dcfce7; color: #166534; border-color: #86efac; }
-        .btn-wa { background: #25d366; color: white; border: none;
-            padding: 9px 16px; border-radius: 10px; font-weight: 700; font-size: 13px;
-            cursor: pointer; display: flex; align-items: center; gap: 6px;
             transition: all 0.2s; text-decoration: none; }
-        .btn-wa:hover { background: #1da851; }
-        .btn-apri { background: #0ea5e9; color: white; border: none;
-            padding: 9px 14px; border-radius: 10px; font-weight: 600; font-size: 13px;
-            cursor: pointer; display: flex; align-items: center; gap: 5px;
-            transition: all 0.2s; text-decoration: none; }
-        .btn-apri:hover { background: #0284c7; }
+        .btn-scarica:hover { background: #0284c7; }
 
-        .mappa-result { background: #f8faff; border: 1px solid #c7d2fe;
+        .pdf-result { background: #f0fdf4; border: 1px solid #86efac;
             border-radius: 10px; padding: 10px 14px; margin: 0 20px 14px;
-            display: flex; align-items: center; gap: 8px; font-size: 12px; color: #4338ca;
-            word-break: break-all; }
-        .mappa-result span.mi { color: #6366f1; flex-shrink: 0; }
+            display: flex; align-items: center; gap: 8px; font-size: 12px; color: #166534; }
+
+        .info-box { background: #fef9c3; border: 1px solid #fde047; border-radius: 12px;
+            padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: #713f12;
+            display: flex; gap: 10px; align-items: flex-start; }
+        .info-box .material-icons-round { color: #ca8a04; flex-shrink: 0; font-size: 20px; }
 
         .empty-state { text-align: center; padding: 60px 20px; color: #94a3b8; }
         .empty-state .material-icons-round { font-size: 64px; opacity: 0.3; }
@@ -103,7 +85,7 @@
                 style="border:none;background:none;cursor:pointer;margin-right:8px;display:flex;">
                 <span class="material-icons-round">arrow_back</span>
             </button>
-            <div class="nav-title" style="flex:1;">Invio Mobile Autisti</div>
+            <div class="nav-title" style="flex:1;">Genera Distinte</div>
             <a href="login.html" class="logout-btn" title="Esci">
                 <span class="material-icons-round">logout</span>
             </a>
@@ -112,8 +94,16 @@
 
     <main class="main-container">
         <div class="page-header">
-            <h1><span style="-webkit-text-fill-color:unset;font-size:28px;">📱</span> Invio Mobile Autisti</h1>
-            <p>Genera la mappa di percorso per ogni autista (BAT 5) e invia il link via WhatsApp</p>
+            <h1><span style="-webkit-text-fill-color:unset;font-size:28px;">📋</span> Genera Distinte Autisti</h1>
+            <p>Genera il PDF distinta di carico per ogni viaggio (BAT 6)</p>
+        </div>
+
+        <div class="info-box" id="infoBox" style="display:none;">
+            <span class="material-icons-round">info</span>
+            <div>
+                <strong>Nota:</strong> La distinta richiede che i DDT siano stati elaborati e collegati al viaggio.
+                Se ricevi un errore "ddt_ids mancanti", significa che il viaggio non è ancora stato completo del collegamento DDT → Punto consegna.
+            </div>
         </div>
 
         <div class="toolbar" id="toolbar" style="display:none;">
@@ -121,9 +111,9 @@
                 <span class="material-icons-round" style="font-size:16px;">calendar_today</span>
                 <span id="dataBadge">—</span>
             </div>
-            <button class="btn-genera-tutte" id="btnGeneraTutte" onclick="generaTutteMappe()">
+            <button class="btn-genera-tutte" id="btnGeneraTutte" onclick="generaTutte()">
                 <span class="material-icons-round">auto_awesome</span>
-                GENERA TUTTE LE MAPPE
+                GENERA TUTTE LE DISTINTE
                 <span class="badge-count" id="countBadge">0</span>
             </button>
         </div>
@@ -137,11 +127,11 @@
             <p id="errorMsg">Errore durante il caricamento.</p>
         </div>
         <div id="emptyState" class="empty-state" style="display:none;">
-            <span class="material-icons-round">route</span>
-            <h3>Nessun viaggio trovato</h3>
+            <span class="material-icons-round">assignment_late</span>
+            <h3>Nessun viaggio ottimizzato trovato</h3>
             <p>Prima esegui CALCOLA PERCORSI dalla pagina Mappa & Percorsi.</p>
             <button onclick="window.navigateWithState('elaborazione.html')"
-                style="margin-top:16px;background:#4f46e5;color:white;border:none;padding:10px 20px;border-radius:10px;font-weight:700;cursor:pointer;">
+                style="margin-top:16px;background:#10b981;color:white;border:none;padding:10px 20px;border-radius:10px;font-weight:700;cursor:pointer;">
                 Torna all'elaborazione
             </button>
         </div>
@@ -154,14 +144,16 @@
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
         import { firebaseConfig } from "./firebase-config.js";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const storage = getStorage(app);
         const functions = getFunctions(app, "europe-west1");
 
-        let viaggi = [];   // [{id, data}, ...]
+        let viaggi = [];
         let dataLavoro = "";
 
         // ── init ──────────────────────────────────────────────────────────────
@@ -186,6 +178,7 @@
                 const snap = await getDocs(q);
                 viaggi = snap.docs
                     .map(d => ({ id: d.id, ...d.data() }))
+                    .filter(v => v.status === 'ottimizzato' || v.status === 'completato')
                     .filter(v => v.id_zona !== 'DDT_DA_INSERIRE')
                     .sort((a, b) => (a.nome_giro || '').localeCompare(b.nome_giro || ''));
 
@@ -197,6 +190,7 @@
                 }
 
                 document.getElementById('toolbar').style.display = 'flex';
+                document.getElementById('infoBox').style.display = 'flex';
                 document.getElementById('countBadge').textContent = viaggi.length;
                 renderViaggi();
             } catch (e) {
@@ -207,149 +201,124 @@
         function renderViaggi() {
             const grid = document.getElementById('viaggiGrid');
             grid.innerHTML = '';
-            viaggi.forEach(v => {
-                const card = buildCard(v);
-                grid.appendChild(card);
-            });
+            viaggi.forEach(v => grid.appendChild(buildCard(v)));
         }
 
         function buildCard(v) {
             const punti = v.punti_ottimizzati || v.punti || [];
             const nPunti = punti.length;
-            const km = v.km_reali ? `${v.km_reali.toFixed(1)} km` : null;
-            const min = v.t_tot_min ? `${v.t_tot_min} min` : null;
-            const hasMappa = !!v.mappa_url;
+            const hasDistinta = !!v.distinta_url;
+            const isCompletato = v.status === 'completato';
 
             const div = document.createElement('div');
             div.className = 'viaggio-card';
             div.id = `card-${v.id}`;
 
-            const puntiHtml = punti.slice(0, 12).map((p, i) => `
-                <li>
-                    <span class="num">${i+1}</span>
-                    <span>${p.nome || '—'}</span>
-                </li>`).join('') + (nPunti > 12 ? `<li style="color:#94a3b8;font-size:11px;">... e altri ${nPunti-12} punti</li>` : '');
-
             div.innerHTML = `
                 <div class="card-header">
-                    <div class="zona-pill" style="background:${v.color||'#4f46e5'};"></div>
+                    <div class="zona-pill" style="background:${v.color||'#10b981'};"></div>
                     <div class="card-title">${v.nome_giro || v.id_zona}</div>
                     <div class="card-badges">
                         <span class="badge badge-info">${nPunti} fermate</span>
-                        ${km ? `<span class="badge badge-km">${km}</span>` : ''}
-                        ${min ? `<span class="badge badge-min">${min}</span>` : ''}
-                        ${hasMappa ? '<span class="badge badge-ok">✓ Mappa pronta</span>' : ''}
+                        ${isCompletato ? '<span class="badge badge-ok">✓ Completato</span>' : '<span class="badge badge-warn">Ottimizzato</span>'}
                     </div>
                 </div>
-                <div class="card-punti">
-                    <ul class="punti-list">${puntiHtml}</ul>
-                </div>
-                ${hasMappa ? `<div class="mappa-result" id="result-${v.id}">
-                    <span class="material-icons-round mi">link</span>
-                    <span>${v.mappa_url}</span>
-                </div>` : `<div id="result-${v.id}" style="display:none;" class="mappa-result"></div>`}
-                <div class="card-actions">
-                    <button class="btn-genera" id="btn-${v.id}" onclick="window.generaMappa('${v.id}')">
-                        <span class="material-icons-round">directions_car</span>
-                        ${hasMappa ? 'RIGENERA MAPPA' : 'GENERA MAPPA'}
+                ${hasDistinta ? `<div class="pdf-result" id="result-${v.id}">
+                    <span class="material-icons-round">picture_as_pdf</span>
+                    <span>Distinta generata — pronta al download</span>
+                </div>` : `<div id="result-${v.id}" style="display:none;" class="pdf-result"></div>`}
+                <div class="card-actions" id="actions-${v.id}">
+                    <button class="btn-genera" id="btn-${v.id}" onclick="window.generaDistinta('${v.id}')">
+                        <span class="material-icons-round">assignment</span>
+                        ${hasDistinta ? 'RIGENERA DISTINTA' : 'GENERA DISTINTA'}
                     </button>
-                    ${hasMappa ? `
-                    <button class="btn-copia" id="copia-${v.id}" onclick="window.copiaLink('${v.id}','${v.mappa_url}')">
-                        <span class="material-icons-round" style="font-size:16px;">content_copy</span> Copia link
-                    </button>
-                    <a class="btn-wa" href="https://wa.me/?text=${encodeURIComponent('🗺️ Mappa percorso '+v.nome_giro+': '+v.mappa_url)}" target="_blank">
-                        <span class="material-icons-round" style="font-size:16px;">chat</span> WhatsApp
-                    </a>
-                    <a class="btn-apri" href="${v.mappa_url}" target="_blank">
-                        <span class="material-icons-round" style="font-size:16px;">open_in_new</span>
+                    ${hasDistinta ? `<a class="btn-scarica" href="${v.distinta_url}" target="_blank">
+                        <span class="material-icons-round" style="font-size:16px;">download</span> Scarica PDF
                     </a>` : ''}
                 </div>`;
             return div;
         }
 
-        // ── GENERA MAPPA (singola) ─────────────────────────────────────────────
-        window.generaMappa = async function(viaggioId) {
+        // ── GENERA SINGOLA DISTINTA ───────────────────────────────────────────
+        window.generaDistinta = async function(viaggioId) {
             const btn = document.getElementById(`btn-${viaggioId}`);
             btn.disabled = true;
             btn.innerHTML = '<span class="material-icons-round spinning">autorenew</span> Generazione...';
 
             try {
-                const fn = httpsCallable(functions, 'genera_mappa_autista', { timeout: 120000 });
+                const fn = httpsCallable(functions, 'genera_distinta_viaggio', { timeout: 180000 });
                 const res = (await fn({ viaggio_id: viaggioId })).data;
 
                 if (res.status === 'errore') throw new Error(res.message);
 
-                const url = res.data.mappa_url;
-                const km  = res.data.km_reali;
-                const min = Math.round((res.data.t_guida_min || 0));
+                // Recupera download URL dalla Storage
+                const gsPath = res.data.pdf_url.replace(`gs://${firebaseConfig.storageBucket}/`, '');
+                let downloadUrl = '#';
+                try {
+                    downloadUrl = await getDownloadURL(ref(storage, gsPath));
+                } catch { /* fallback: usa il link diretto */ }
 
-                // Aggiorna la card
+                // Aggiorna lo stato e la card
                 const v = viaggi.find(x => x.id === viaggioId);
-                if (v) { v.mappa_url = url; v.km_reali = km; v.t_guida_min = min; }
+                if (v) { v.distinta_url = downloadUrl; v.status = 'completato'; }
 
-                // Rimpiazza la card con dati aggiornati
-                const old = document.getElementById(`card-${viaggioId}`);
-                const newCard = buildCard({ ...v, mappa_url: url, km_reali: km });
-                old.replaceWith(newCard);
+                const resultDiv = document.getElementById(`result-${viaggioId}`);
+                resultDiv.style.display = 'flex';
+                resultDiv.innerHTML = `<span class="material-icons-round">picture_as_pdf</span>
+                    <span>${res.data.articoli_totali} articoli estratti — PDF pronto</span>`;
 
-                Swal.fire({ icon: 'success', title: 'Mappa generata!',
-                    html: `<b>${km?.toFixed(1)} km</b> — ${min} min guida<br><a href="${url}" target="_blank">Apri mappa</a>`,
-                    timer: 4000, timerProgressBar: true });
+                const actDiv = document.getElementById(`actions-${viaggioId}`);
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-icons-round">assignment</span> RIGENERA DISTINTA';
+                // Aggiunge pulsante download
+                const existing = actDiv.querySelector('.btn-scarica');
+                if (!existing && downloadUrl !== '#') {
+                    const a = document.createElement('a');
+                    a.className = 'btn-scarica';
+                    a.href = downloadUrl;
+                    a.target = '_blank';
+                    a.innerHTML = '<span class="material-icons-round" style="font-size:16px;">download</span> Scarica PDF';
+                    actDiv.appendChild(a);
+                }
+
+                Swal.fire({ icon: 'success', title: '✅ Distinta generata',
+                    html: `<b>${res.data.articoli_totali}</b> articoli estratti in ${res.data.tempo_sec?.toFixed(1)}s`,
+                    timer: 3000, timerProgressBar: true });
+
             } catch (e) {
-                console.error('[BAT5]', e);
+                console.error('[BAT6]', e);
                 Swal.fire('Errore', e.message || 'Errore Cloud Function', 'error');
                 btn.disabled = false;
-                btn.innerHTML = '<span class="material-icons-round">directions_car</span> GENERA MAPPA';
+                btn.innerHTML = '<span class="material-icons-round">assignment</span> GENERA DISTINTA';
             }
         };
 
         // ── GENERA TUTTE ──────────────────────────────────────────────────────
-        window.generaTutteMappe = async function() {
+        window.generaTutte = async function() {
             const btn = document.getElementById('btnGeneraTutte');
             btn.disabled = true;
             const tot = viaggi.length;
             let done = 0, errors = 0;
 
-            Swal.fire({ title: `Generazione mappe (0/${tot})`,
-                html: 'In corso...<br><small>Attendi il completamento di tutte le zone.</small>',
-                allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: `Generazione distinte (0/${tot})`,
+                html: 'In corso...', allowOutsideClick: false,
+                didOpen: () => Swal.showLoading() });
 
             for (const v of viaggi) {
                 try {
-                    const fn = httpsCallable(functions, 'genera_mappa_autista', { timeout: 120000 });
-                    const res = (await fn({ viaggio_id: v.id })).data;
-                    if (res.status === 'errore') throw new Error(res.message);
-                    v.mappa_url = res.data.mappa_url;
-                    v.km_reali  = res.data.km_reali;
+                    await window.generaDistinta(v.id);
                     done++;
-                } catch (e) {
-                    console.error(`[BAT5 batch] ${v.id}:`, e);
+                } catch {
                     errors++;
                 }
-                Swal.update({ title: `Generazione mappe (${done+errors}/${tot})` });
+                Swal.update({ title: `Generazione distinte (${done+errors}/${tot})` });
             }
 
-            renderViaggi();
             btn.disabled = false;
-
             const msg = errors
-                ? `${done} ok, ${errors} errori — vedi console`
-                : `Tutte le ${done} mappe generate con successo!`;
+                ? `${done} ok, ${errors} con errori`
+                : `Tutte le ${done} distinte generate!`;
             Swal.fire(errors ? 'Completato con avvisi' : '✅ Completato', msg, errors ? 'warning' : 'success');
-        };
-
-        // ── COPIA LINK ────────────────────────────────────────────────────────
-        window.copiaLink = async function(viaggioId, url) {
-            try {
-                await navigator.clipboard.writeText(url);
-                const btn = document.getElementById(`copia-${viaggioId}`);
-                btn.classList.add('copied');
-                btn.innerHTML = '<span class="material-icons-round" style="font-size:16px;">check</span> Copiato!';
-                setTimeout(() => {
-                    btn.classList.remove('copied');
-                    btn.innerHTML = '<span class="material-icons-round" style="font-size:16px;">content_copy</span> Copia link';
-                }, 2000);
-            } catch { Swal.fire('Errore', 'Impossibile copiare negli appunti', 'error'); }
         };
 
         function showError(msg) {

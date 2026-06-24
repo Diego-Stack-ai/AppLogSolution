@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.90">
+    <link rel="stylesheet" href="styles.css?v=2.91">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -274,10 +274,19 @@
             </button>
         </div>
 
-        <!-- Navigazione Workflow (Basata sui .bat locali) -->
+        <!-- Navigazione Workflow -->
         <div style="display: flex; gap: 8px; margin-bottom: 24px; overflow-x: auto; padding: 8px 0; scrollbar-width: none;">
-            <button class="nav-tab active" title="1_2_3_4_estrai_ddt_consegne.py" onclick="location.reload()">
+            <button class="nav-tab active" title="1_estrai_ddt.py" onclick="location.reload()">
                 <span class="material-icons-round">upload_file</span> 1. CARICAMENTO PDF
+            </button>
+            <button class="nav-tab" title="BAT 3B - mappa_zone + CALCOLA" onclick="window.apriMappaGenerale()">
+                <span class="material-icons-round">map</span> 2. MAPPA &amp; PERCORSI
+            </button>
+            <button class="nav-tab" title="5_invio_mobile_autisti - link WhatsApp autisti" onclick="window.navigateWithState('link_viaggi.html')">
+                <span class="material-icons-round">send_to_mobile</span> 3. INVIO MOBILE
+            </button>
+            <button class="nav-tab" title="6_genera_distinte - in sviluppo" onclick="window.navigateWithState('distinte_finali.html')">
+                <span class="material-icons-round">assignment</span> 4. DISTINTE
             </button>
         </div>
         <div class="glass-panel form-card">
@@ -375,8 +384,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.90"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.90"></script>
+    <script src="script.js?v=2.91"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.91"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
@@ -859,8 +868,11 @@ try {
                                 <button onclick="window.navigateWithState('mappa_complessiva.html?data=${data.data_consegna}&cb=' + Date.now())" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
                                     <span class="material-icons-round">visibility</span> VISTA COMPLESSIVA
                                 </button>
-                                <button onclick="window.navigateWithState('mappa_zone.html?data=${data.data_consegna}&cb=' + Date.now())" style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
-                                    <span class="material-icons-round">edit</span> MODIFICA PERCORSI
+                                <button onclick="window.navigateWithState('mappa_zone.html?data=${data.data_consegna}&cb=' + Date.now())" style="background: #64748b; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                                    <span class="material-icons-round">edit_location</span> GESTIONE ZONE
+                                </button>
+                                <button onclick="window.navigateWithState('mappa_percorsi.html?data=${data.data_consegna}&cb=' + Date.now())" style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                                    <span class="material-icons-round">route</span> MAPPA PERCORSI
                                 </button>
                                 <button onclick="window.cancellaGiornata('${data.data_consegna}')" style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
                                     <span class="material-icons-round">delete_forever</span> CANCELLA GIORNATA
@@ -878,7 +890,7 @@ try {
             if (!dateInput) return alert("Seleziona una data.");
             
             const formattedDate = dateInput.split('-').reverse().join('-');
-            window.navigateWithState(`mappa_zone.html?data=${formattedDate}`);
+            window.navigateWithState(`mappa_percorsi.html?data=${formattedDate}`);
         };
 
         const selector = document.getElementById('master-date-selector');

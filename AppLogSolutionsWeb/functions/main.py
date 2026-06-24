@@ -855,7 +855,7 @@ def core_genera_distinta_viaggio(viaggio_id):
     if not viaggio_id:
         return {"status": "errore", "message": "viaggio_id mancante", "errori": ["viaggio_id mancante"], "data": {}}
 
-    doc_ref = get_db().collection('customers').document('DNR').collection('Viaggi_DNR').document(viaggio_id)
+    doc_ref = get_db().collection('clienti').document('DNR').collection('viaggi ddt').document(viaggio_id)
     doc_viaggio = doc_ref.get()
     if not doc_viaggio.exists:
         return {"status": "errore", "message": "Viaggio non trovato", "errori": ["Viaggio non trovato"], "data": {}}
@@ -1315,7 +1315,7 @@ def core_genera_mappa_autista(viaggio_id):
     if not viaggio_id:
         return {"status": "errore", "message": "viaggio_id mancante", "errori": ["viaggio_id mancante"], "data": {}}
 
-    doc_ref = get_db().collection('customers').document('DNR').collection('Viaggi_DNR').document(viaggio_id)
+    doc_ref = get_db().collection('clienti').document('DNR').collection('viaggi ddt').document(viaggio_id)
     doc_viaggio = doc_ref.get()
     if not doc_viaggio.exists:
         return {"status": "errore", "message": "Viaggio non trovato", "errori": ["Viaggio non trovato"], "data": {}}
@@ -1382,7 +1382,7 @@ def core_ricalcola_percorso(viaggio_id, nuovi_punti, num_locked=0):
     if not viaggio_id or not nuovi_punti:
         return {"status": "errore", "message": "viaggio_id o punti mancanti", "errori": [], "data": {}}
 
-    doc_ref = get_db().collection('customers').document('DNR').collection('Viaggi_DNR').document(viaggio_id)
+    doc_ref = get_db().collection('clienti').document('DNR').collection('viaggi ddt').document(viaggio_id)
     doc_viaggio = doc_ref.get()
     if not doc_viaggio.exists:
         return {"status": "errore", "message": "Viaggio non trovato", "errori": [], "data": {}}
@@ -2923,6 +2923,53 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
         zone["_stats"] = stats
         zone["_stato"] = "calcolato"
         
+        # Scrittura/aggiornamento deterministico in Firestore 'clienti/DNR/viaggi ddt'
+        viaggio_id = f"{data_consegna}_{zid}"
+        try:
+            # Estrae gli ID dei DDT associati a questo viaggio
+            ddt_ids = []
+            for p in punti_simulati:
+                for c_frutta in p.get("codici_ddt_frutta", []):
+                    if c_frutta and c_frutta != "p00000":
+                        ddt_ids.append(f"{data_consegna}_{c_frutta}")
+                for c_latte in p.get("codici_ddt_latte", []):
+                    if c_latte and c_latte != "p00000":
+                        ddt_ids.append(f"{data_consegna}_{c_latte}")
+            
+            doc_ref = db.collection('clienti').document('DNR').collection('viaggi ddt').document(viaggio_id)
+            
+            # Preserva lo stato esistente (es. se è già completato/stampato) e i link
+            existing_doc = doc_ref.get()
+            current_status = "ottimizzato"
+            mappa_url = ""
+            distinta_url = ""
+            if existing_doc.exists:
+                existing_data = existing_doc.to_dict()
+                current_status = existing_data.get("status", "ottimizzato")
+                mappa_url = existing_data.get("mappa_url", "")
+                distinta_url = existing_data.get("distinta_url", "")
+            
+            doc_ref.set({
+                "id_zona": zid,
+                "nome_giro": zone.get("nome_giro", zid),
+                "color": zone.get("color", "#4f46e5"),
+                "data_lavoro": data_consegna,
+                "data": data_consegna,
+                "punti": punti_simulati,
+                "punti_ottimizzati": punti_simulati,
+                "ddt_ids": ddt_ids,
+                "km_reali": km,
+                "t_guida_min": sec_guida // 60,
+                "t_tot_min": (sec_guida // 60) + len(punti_simulati) * (12 if is_grand_chef else 8),
+                "status": current_status,
+                "mappa_url": mappa_url,
+                "distinta_url": distinta_url,
+                "updated_at": firestore.SERVER_TIMESTAMP
+            }, merge=True)
+            print(f"[Firestore] Scritto viaggio {viaggio_id} con successo.")
+        except Exception as e_fs:
+            print(f"[Firestore ERROR] Impossibile scrivere viaggio {viaggio_id}: {e_fs}")
+        
         calcolati.append(zone["nome_giro"])
         modificato = True
 
@@ -3822,4 +3869,137 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
         import traceback
         traceback.print_exc()
         return {"status": "errore", "message": f"Errore interno: {str(e)}"}
+
+
+# ─── CLOUD FUNCTION ALIAS PER CALCOLA PERCORSI ────────────────────────────────
+
+@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=540,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def calcola_percorsi_zone(req: https_fn.CallableRequest):
+    """Alias compatibile con mappa_percorsi.html che reindirizza al core_web_calcola_percorsi."""
+    try:
+        data_consegna = req.data.get("data_consegna")
+        zona_ids = req.data.get("zona_ids") or req.data.get("target_zones")
+        return core_web_calcola_percorsi(data_consegna, id_zona=zona_ids)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"status": "errore", "message": f"Global exception: {str(e)}"}
+
+
+# ─── CLOUD FUNCTION PER BAT 7B: AGGIORNA TRAFFICO SERALE ──────────────────────
+
+def _get_directions_sec_with_traffic(p_from, p_to):
+    """
+    Tempo di percorrenza con traffico reale (Directions API departure_time=now).
+    Restituisce i secondi di guida stimati con traffico attuale.
+    """
+    if not GOOGLE_MAPS_API_KEY or not requests:
+        # fallback haversine: ~43 km/h medi
+        return max(1, int(_haversine(p_from, p_to) / 12))
+
+    lat_f = p_from.get('lat', 0)
+    lon_f = p_from.get('lon', p_from.get('lng', 0))
+    lat_t = p_to.get('lat', 0)
+    lon_t = p_to.get('lon', p_to.get('lng', 0))
+    url = (
+        f"https://maps.googleapis.com/maps/api/directions/json"
+        f"?origin={lat_f},{lon_f}"
+        f"&destination={lat_t},{lon_t}"
+        f"&mode=driving&departure_time=now&traffic_model=best_guess"
+        f"&key={GOOGLE_MAPS_API_KEY}"
+    )
+    try:
+        resp = requests.get(url, timeout=8).json()
+        if resp.get('status') == 'OK' and resp.get('routes'):
+            leg = resp['routes'][0]['legs'][0]
+            # duration_in_traffic disponibile quando departure_time è impostato
+            sec = leg.get('duration_in_traffic', leg.get('duration', {})).get('value', 0)
+            return max(1, sec)
+    except Exception as e:
+        print(f"[BAT7B] Directions API errore tratta {lat_f},{lon_f}->{lat_t},{lon_t}: {e}")
+    return max(1, int(_haversine(p_from, p_to) / 12))
+
+
+def core_aggiorna_traffico_serale(data_consegna):
+    """
+    BAT 7B Web: Ricalcola tempi percorrenza con traffico reale attuale.
+    Legge tutti i viaggi del giorno da Firestore (status ottimizzato/completato),
+    chiama Directions API con departure_time=now per ogni tratta,
+    aggiorna t_guida_min, t_tot_min, km_reali in Firestore.
+    """
+    import time as time_module
+    start = time_module.time()
+
+    if not data_consegna:
+        return {"status": "errore", "message": "data_consegna mancante", "errori": [], "data": {}}
+
+    print(f"[BAT7B] Avvio aggiornamento traffico per {data_consegna}")
+    db_ref = get_db().collection('clienti').document('DNR').collection('viaggi ddt')
+    snap = db_ref.where('data_lavoro', '==', data_consegna).get()
+
+    zone_aggiornate = 0
+    errori = []
+
+    for doc in snap:
+        viaggio    = doc.to_dict()
+        viaggio_id = doc.id
+        stato      = viaggio.get('status', '')
+        if stato not in ('ottimizzato', 'completato'):
+            continue
+
+        punti = viaggio.get('punti_ottimizzati', [])
+        if len(punti) < 2:
+            continue
+
+        try:
+            sec_tot  = 0
+            km_tot   = 0.0
+            # Percorso completo: deposito → punti → deposito
+            tutti = [DEPOT_CLOUD] + list(punti) + [DEPOT_CLOUD]
+            for i in range(len(tutti) - 1):
+                sec      = _get_directions_sec_with_traffic(tutti[i], tutti[i + 1])
+                sec_tot += sec
+                km_tot  += _haversine(tutti[i], tutti[i + 1]) / 1000.0  # m → km
+
+            t_guida_min = sec_tot // 60
+            t_tot_min   = t_guida_min + len(punti) * TIME_PER_STOP_MIN
+
+            db_ref.document(viaggio_id).update({
+                't_guida_min':           t_guida_min,
+                't_tot_min':             t_tot_min,
+                'km_reali':              round(km_tot, 1),
+                'traffico_aggiornato_at': datetime.now().isoformat()
+            })
+            zone_aggiornate += 1
+            print(f"[BAT7B] ✓ {viaggio_id}: {t_guida_min}min guida, {km_tot:.1f}km (con traffico)")
+
+        except Exception as e:
+            errori.append(f"{viaggio_id}: {str(e)}")
+            print(f"[BAT7B WARN] {viaggio_id}: {e}")
+
+    elapsed = time_module.time() - start
+    _registra_statistica('aggiorna_traffico_serale', elapsed, len(errori))
+
+    return {
+        "status": "ok" if not errori else "parziale",
+        "message": f"{zone_aggiornate} zone aggiornate con traffico reale in {elapsed:.1f}s",
+        "errori": errori,
+        "data": {
+            "zone_aggiornate": zone_aggiornate,
+            "elapsed_sec":     round(elapsed, 1)
+        }
+    }
+
+
+@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def aggiorna_traffico_serale(req: https_fn.CallableRequest):
+    try:
+        data_consegna = req.data.get("data_consegna")
+        return core_aggiorna_traffico_serale(data_consegna)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"status": "errore", "message": f"Global exception: {str(e)}"}
 

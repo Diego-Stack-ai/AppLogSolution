@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.91">
+    <link rel="stylesheet" href="styles.css?v=2.92">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -195,40 +195,7 @@
             transition: width 0.5s ease;
         }
 
-        /* Nuovi stili per i Tab del Workflow */
-        .nav-tab {
-            padding: 8px 12px;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            background: white;
-            color: #64748b;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: 0.2s;
-            flex-shrink: 0;
-        }
 
-        .nav-tab:hover {
-            background: white;
-            color: var(--primary);
-            transform: translateY(-1px);
-        }
-
-        .nav-tab.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-            box-shadow: 0 4px 12px -4px var(--primary-glow);
-        }
-
-        .nav-tab .material-icons-round {
-            font-size: 18px;
-        }
     
         @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -274,21 +241,7 @@
             </button>
         </div>
 
-        <!-- Navigazione Workflow -->
-        <div style="display: flex; gap: 8px; margin-bottom: 24px; overflow-x: auto; padding: 8px 0; scrollbar-width: none;">
-            <button class="nav-tab active" title="1_estrai_ddt.py" onclick="location.reload()">
-                <span class="material-icons-round">upload_file</span> 1. CARICAMENTO PDF
-            </button>
-            <button class="nav-tab" title="BAT 3B - mappa_zone + CALCOLA" onclick="window.apriMappaGenerale()">
-                <span class="material-icons-round">map</span> 2. MAPPA &amp; PERCORSI
-            </button>
-            <button class="nav-tab" title="5_invio_mobile_autisti - link WhatsApp autisti" onclick="window.navigateWithState('link_viaggi.html')">
-                <span class="material-icons-round">send_to_mobile</span> 3. INVIO MOBILE
-            </button>
-            <button class="nav-tab" title="6_genera_distinte - in sviluppo" onclick="window.navigateWithState('distinte_finali.html')">
-                <span class="material-icons-round">assignment</span> 4. DISTINTE
-            </button>
-        </div>
+
         <div class="glass-panel form-card">
             <h2 style="margin-bottom: 8px;">Generazione Distinte per Autisti</h2>
             <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 14px;">
@@ -384,8 +337,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.91"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.91"></script>
+    <script src="script.js?v=2.92"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.92"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";

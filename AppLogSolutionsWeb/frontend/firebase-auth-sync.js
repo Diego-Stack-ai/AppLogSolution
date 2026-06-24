@@ -7,7 +7,12 @@ import { firebaseConfig } from "./firebase-config.js";
 
 const app = initializeApp(firebaseConfig);
 
-/* AppCheck Disabilitato temporaneamente */
+try {
+    initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider('6Le8IjAtAAAAAIFW6c_ToaLJELGoygI27BW6d1jZ'),
+        isTokenAutoRefreshEnabled: true
+    });
+} catch (e) { console.warn("AppCheck init:", e); }
 
 const db = getFirestore(app);
 const auth = getAuth(app);

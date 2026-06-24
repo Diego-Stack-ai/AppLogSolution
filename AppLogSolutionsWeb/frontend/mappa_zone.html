@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2.88">
+    <link rel="stylesheet" href="styles.css?v=2.89">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
@@ -1221,7 +1221,12 @@ import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com
         // Initialize Firebase
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
-/* AppCheck HTML Disabilitato */
+try {
+    initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider('6Le8IjAtAAAAAIFW6c_ToaLJELGoygI27BW6d1jZ'),
+        isTokenAutoRefreshEnabled: true
+    });
+} catch (e) { console.warn("AppCheck init:", e); }
 
         const db = getFirestore(app);
         const storage = getStorage(app);

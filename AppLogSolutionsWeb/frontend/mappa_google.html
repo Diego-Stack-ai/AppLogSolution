@@ -213,7 +213,12 @@ import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
-/* AppCheck HTML Disabilitato */
+try {
+    initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider('6Le8IjAtAAAAAIFW6c_ToaLJELGoygI27BW6d1jZ'),
+        isTokenAutoRefreshEnabled: true
+    });
+} catch (e) { console.warn("AppCheck init:", e); }
 
         const db = getFirestore(app);
 

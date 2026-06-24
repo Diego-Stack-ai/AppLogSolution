@@ -3,6 +3,7 @@ import re
 import json
 import time
 import math
+import gc
 from datetime import datetime, date
 from collections import defaultdict
 import firebase_admin
@@ -42,6 +43,48 @@ if not firebase_admin._apps:
 
 def get_db():
     return firestore.client()
+
+# --- STORAGE CACHES ---
+_LOCAL_STORAGE_CACHES = {
+    "distanze_reali_cache.json": None,
+    "directions_cache.json": None,
+    "distanze_traffico_cache.json": None
+}
+
+def _load_storage_cache(filename):
+    global _LOCAL_STORAGE_CACHES
+    if _LOCAL_STORAGE_CACHES[filename] is not None:
+        return _LOCAL_STORAGE_CACHES[filename]
+        
+    try:
+        bucket = storage.bucket(name=BUCKET_NAME)
+        blob = bucket.blob(f"caches/{filename}")
+        if blob.exists():
+            data_str = blob.download_as_string().decode("utf-8")
+            _LOCAL_STORAGE_CACHES[filename] = json.loads(data_str)
+        else:
+            import os
+            local_path = os.path.join(os.path.dirname(__file__), "caches", filename)
+            if os.path.exists(local_path):
+                with open(local_path, "r", encoding="utf-8") as f:
+                    _LOCAL_STORAGE_CACHES[filename] = json.load(f)
+                blob.upload_from_filename(local_path, content_type="application/json")
+            else:
+                _LOCAL_STORAGE_CACHES[filename] = {}
+    except Exception as e:
+        print(f"[CACHE] Errore load {filename}: {e}")
+        _LOCAL_STORAGE_CACHES[filename] = {}
+        
+    return _LOCAL_STORAGE_CACHES[filename]
+
+def _save_storage_cache(filename):
+    try:
+        bucket = storage.bucket(name=BUCKET_NAME)
+        blob = bucket.blob(f"caches/{filename}")
+        blob.upload_from_string(json.dumps(_LOCAL_STORAGE_CACHES[filename], ensure_ascii=False), content_type="application/json")
+    except Exception as e:
+        print(f"[CACHE] Errore save {filename}: {e}")
+
 
 # --- GESTIONE CONFIGURAZIONI CACHE ---
 _CACHED_ARTICOLI_NOTI = None
@@ -150,13 +193,6 @@ def _normalizza_cella_codice_base(raw: str) -> str:
         if pezzi: codice_base += pezzi[0]
     return codice_base
 
-def _is_primary_code(t, db_articoli):
-    t = str(t).strip().upper()
-    if t in db_articoli: return True
-    for key in db_articoli:
-        if key.endswith('-') and t.startswith(key.upper()): return True
-    return False
-
 def _processa_pdf_core_logic(pdf_bytes: bytes, etichetta: str, db_mappati: dict, db_articoli: dict) -> dict:
     nuovi_dati = {}
     nuovi_orari = {}
@@ -235,6 +271,12 @@ def _processa_pdf_core_logic(pdf_bytes: bytes, etichetta: str, db_mappati: dict,
             if chiave not in blocchi: blocchi[chiave] = []
             blocchi[chiave].append((text, reader.pages[i]))
             
+            # --- PROTEZIONE RAM (Chunking) ---
+            pg.flush_cache()
+            if i > 0 and i % 50 == 0:
+                gc.collect()
+            
+
     for chiave, lista_pagine in blocchi.items():
         writer = PdfWriter()
         l, d, num_ddt = chiave
@@ -511,152 +553,6 @@ def core_chiudi_giornata(uid):
     }
 
 
-def core_elabora_pdf_estrazione(uid):
-    start_time = time.time()
-    print("[INFO] Start elabora_pdf_estrazione")
-    
-    if not uid:
-        return {"status": "errore", "message": "Non autenticato", "errori": ["Manca UID"], "data": {}}
-
-    bucket = storage.bucket(name=BUCKET_NAME)
-    blobs = list(bucket.list_blobs(prefix="input_pdf_fornitore/"))
-    pdf_blobs = [b for b in blobs if b.name.endswith(".pdf")]
-    
-    if not pdf_blobs:
-        return {"status": "ok", "message": "Nessun file PDF trovato.", "errori": [], "data": {"ddt_estratti": 0}}
-
-    visti = {}
-    creati = 0
-    errori_lista = []
-    date_pulite = set()
-
-    for blob in pdf_blobs:
-        print(f"[INFO] Elaborando blob {blob.name}")
-        is_frutta = "frutta" in blob.name.lower()
-        tipo_label = "FRUTTA" if is_frutta else "LATTE"
-        is_duplicata = is_frutta
-        
-        try:
-            pdf_bytes = blob.download_as_bytes()
-            reader = PdfReader(io.BytesIO(pdf_bytes))
-            with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-                step = 2 if is_duplicata else 1
-                for i in range(0, len(pdf.pages), step):
-                    try:
-                        text = pdf.pages[i].extract_text() or ""
-                        data_estratta, l, num_ddt, zona = _estrai_data_luogo(text)
-                        if not data_estratta or not l: continue
-                        
-                        # --- PULIZIA PREVENTIVA (Solo alla prima occorrenza di data/tipo nel job) ---
-                        chiave_pulizia = (data_estratta, tipo_label)
-                        if chiave_pulizia not in date_pulite:
-                            print(f"[INFO] Pulizia preventiva per {data_estratta} - {tipo_label}")
-                            cart_out_base = f"CONSEGNE/CONSEGNE_{data_estratta}/DDT-ORIGINALI-DIVISI/{tipo_label}/"
-                            
-                            # 1. Svuota Storage
-                            blobs_del = bucket.list_blobs(prefix=cart_out_base)
-                            for b in blobs_del: b.delete()
-                            
-                            # 2. Svuota Firestore (deliveries)
-                            old_docs = db.collection('clienti').document('DNR').collection('deliveries')\
-                                         .where('data', '==', data_estratta).where('tipo', '==', tipo_label).stream()
-                            for od in old_docs: od.reference.delete()
-                            
-                            date_pulite.add(chiave_pulizia)
-
-                        d = data_estratta
-                        chiave = (d, l)
-                        cnt = visti.get(chiave, 0) + 1
-                        visti[chiave] = cnt
-                        
-                        fname = f"{l}_{d}_{cnt}.pdf" if cnt > 1 else f"{l}_{d}.pdf"
-                        cart_out = f"CONSEGNE/CONSEGNE_{d}/DDT-ORIGINALI-DIVISI/{tipo_label}"
-                        percorso_out = f"{cart_out}/{fname}"
-                        
-                        writer = PdfWriter()
-                        writer.add_page(reader.pages[i])
-                        out_io = io.BytesIO()
-                        writer.write(out_io)
-                        out_io.seek(0)
-                        
-                        out_blob = bucket.blob(percorso_out)
-                        out_blob.upload_from_file(out_io, content_type="application/pdf")
-                        creati += 1
-
-                        # ── PUNTO #4: Ricerca cliente con Tripla Chiave ──────────────
-                        cliente_nome = l
-                        cliente_trovato = False
-                        cliente_doc = None
-
-                        # Cerca il cliente per codice (rispettando la regola p00000)
-                        cliente_doc, _ = _cerca_cliente_cloud(l)
-
-                        if cliente_doc:
-                            cliente_nome = (cliente_doc.get('cliente')
-                                            or cliente_doc.get('nome_consegna')
-                                            or l)
-                            cliente_trovato = True
-
-                        # Determina i codici frutta/latte per costruire la chiave tripla
-                        cod_frutta = l if tipo_label == "FRUTTA" else "p00000"
-                        cod_latte  = l if tipo_label == "LATTE"  else "p00000"
-                        if cliente_doc:
-                            cod_frutta = cliente_doc.get('codice_frutta', cod_frutta)
-                            cod_latte  = cliente_doc.get('codice_latte',  cod_latte)
-
-                        stato_iniziale = "pronto" if cliente_trovato else "da_mappare"
-
-                        get_db().collection('clienti').document('DNR').collection('ddt').add({
-                            "codice_cliente": l,
-                            "codice_frutta":  cod_frutta,
-                            "codice_latte":   cod_latte,
-                            "tripla_chiave":  _build_tripla_chiave(cod_frutta, cod_latte, cliente_nome),
-                            "nome": cliente_nome,
-                            "data": d,
-                            "storage_path": percorso_out,
-                            "tipo": tipo_label,
-                            "stato": stato_iniziale,
-                            "zona": zona
-                        })
-
-                    except Exception as ex_page:
-                        err_msg = f"Errore pagina {i} in {blob.name}: {ex_page}"
-                        print(f"[ERROR] {err_msg}")
-                        errori_lista.append(err_msg)
-                        
-        except Exception as e:
-            err_msg = f"Errore apertura PDF {blob.name}: {e}"
-            print(f"[ERROR] {err_msg}")
-            errori_lista.append(err_msg)
-            
-    for blob in pdf_blobs:
-        try:
-            archived_name = blob.name.replace("input_pdf_fornitore/", "archivio_lenzuoloni_processati/")
-            bucket.copy_blob(blob, bucket, archived_name)
-            blob.delete()
-        except Exception as e_arch:
-            print(f"[ERROR] Errore archiviazione {blob.name}: {e_arch}")
-
-    end_time = time.time()
-    elapsed = end_time - start_time
-    print(f"[INFO] End elabora_pdf_estrazione. Tempo: {elapsed:.2f}s, Creati: {creati}, Errori: {len(errori_lista)}")
-    
-    _registra_statistica('elabora_pdf', elapsed, len(errori_lista))
-
-    status_code = "ok" if not errori_lista else "parziale"
-    if not creati and errori_lista: status_code = "errore"
-
-    return {
-        "status": status_code,
-        "message": f"Taglio completato in {elapsed:.2f}s",
-        "errori": errori_lista,
-        "data": {
-            "date_elaborate": list(date_valide),
-            "ddt_estratti": creati,
-            "tempo_sec": elapsed
-        }
-    }
-
 
 # ─── PUNTO #4: PROTEZIONE TRIPLA CHIAVE ────────────────────────────────────────
 
@@ -740,36 +636,22 @@ def _cache_key(p1, p2):
     return f"{round(p1['lat'],5)},{round(p1['lon'],5)}_{round(p2['lat'],5)},{round(p2['lon'],5)}"
 
 def _leggi_cache_firestore(p1, p2):
-    """Legge il valore dalla cache distanze su Firestore. Restituisce dist in metri o None."""
-    try:
-        key = _cache_key(p1, p2)
-        doc = get_db().collection('distanze_cache').document(key).get()
-        if doc.exists:
-            return doc.to_dict().get('dist')
-        
-        # Fallback bidirezionale: controlla la rotta inversa
-        rev_key = _cache_key(p2, p1)
-        doc_rev = get_db().collection('distanze_cache').document(rev_key).get()
-        if doc_rev.exists:
-            return doc_rev.to_dict().get('dist')
-    except:
-        pass
+    cache = _load_storage_cache("distanze_reali_cache.json")
+    key = _cache_key(p1, p2)
+    val = cache.get(key)
+    if val: return val.get('dist')
+    rev_key = _cache_key(p2, p1)
+    val_rev = cache.get(rev_key)
+    if val_rev: return val_rev.get('dist')
     return None
 
 def _scrivi_cache_firestore(coppie):
-    """Scrive un batch di distanze su Firestore (max 500 per batch)."""
-    if not coppie:
-        return
-    try:
-        db = get_db()
-        batch = db.batch()
-        for key, dist, dur in coppie:
-            ref = db.collection('distanze_cache').document(key)
-            batch.set(ref, {'dist': dist, 'dur': dur}, merge=True)
-        batch.commit()
-        print(f"[CACHE] Scritte {len(coppie)} nuove distanze su Firestore.")
-    except Exception as e:
-        print(f"[CACHE] Errore scrittura Firestore: {e}")
+    if not coppie: return
+    cache = _load_storage_cache("distanze_reali_cache.json")
+    for key, dist, dur in coppie:
+        cache[key] = {'dist': dist, 'dur': dur}
+    _save_storage_cache("distanze_reali_cache.json")
+    print(f"[CACHE] Scritte {len(coppie)} nuove distanze su Storage.")
 
 def _crea_matrice_distanze_cloud(punti, errori_lista):
     """
@@ -1121,9 +1003,11 @@ DEPOT_CLOUD = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO"}
 AVG_SPEED_KMH = 45
 TIME_PER_STOP_MIN = 8
 
-def _get_directions_data(percorso_punti):
+def _get_directions_data(percorso_punti, depot=None):
     """Chiama Directions API. Restituisce (km, sec_guida, lista_polylines)."""
-    punti_pieni = [DEPOT_CLOUD] + percorso_punti + [DEPOT_CLOUD]
+    if depot is None:
+        depot = _get_depot_for_points_cloud(percorso_punti)
+    punti_pieni = [depot] + percorso_punti + [depot]
     km_tot, sec_tot, polylines, nuove_coppie = 0.0, 0, [], []
 
     km_stima = sum(_haversine(punti_pieni[k], punti_pieni[k+1]) / 1000 * 1.3
@@ -1165,8 +1049,22 @@ def _get_directions_data(percorso_punti):
     return final_km, final_sec, polylines
 
 
-def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines):
+_PHONE_RE = re.compile(r'(?:\+39)?[\s\-]?(?:0\d{1,4}[\s\-]?\d{4,8}|3\d{2}[\s\-]?\d{6,7})')
+
+def _extract_phone(p):
+    """Estrae e normalizza un numero di telefono dal punto di consegna."""
+    tel = str(p.get('telefono', p.get('tel', p.get('phone', ''))) or '').strip()
+    if not tel:
+        note_text = str(p.get('note', p.get('nota_integrativa', p.get('Note', ''))) or '')
+        m = _PHONE_RE.search(note_text)
+        if m:
+            tel = m.group(0).strip()
+    return re.sub(r'[\s\-]', '', tel) if tel else ''
+
+def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, distinta_url=None):
     """Genera HTML mappa mobile-first con polyline strade vere."""
+    if depot is None:
+        depot = _get_depot_for_points_cloud(punti)
     t_guida_min = sec_guida // 60
     t_sosta_min = len(punti) * TIME_PER_STOP_MIN
     t_tot_min   = t_guida_min + t_sosta_min
@@ -1175,23 +1073,125 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines):
         hh, mm = divmod(m, 60)
         return f"{hh}h {mm}m" if hh > 0 else f"{mm}m"
 
+    depot_nome = depot.get("nome", "Deposito").title() if depot else "Deposito"
+    ora_partenza_dep = "07:00"
+    
     fermate_html = ""
+    
+    # 1. Card di Partenza
+    if distinta_url:
+        fermate_html += f'''
+            <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1.4fr 1fr; padding: 10px; gap: 8px; align-items: stretch; cursor: default;">
+                <div class="stop-num" style="background:#475569; align-self: center;"><span class="material-icons-round">home</span></div>
+                <div class="stop-info" style="justify-content: center;">
+                    <b class="name" style="font-size: 0.8rem;">PARTENZA</b>
+                    <span class="addr" style="font-size: 0.7rem;">{depot_nome}</span>
+                    <span class="orario-badge" style="background:#1e293b; color:white; margin-top:2px; font-size: 0.6rem;"><span class="material-icons-round" style="font-size: 10px !important;">schedule</span>Partenza: {ora_partenza_dep}</span>
+                </div>
+                <div style="border-left: 2px solid #bae6fd; background: #f0f9ff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; border-radius: 8px; gap: 4px;">
+                    <div style="font-size: 0.52rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #0369a1;">📋 Distinta</div>
+                    <a href="{distinta_url}" target="_blank" onclick="event.stopPropagation()" style="background: #0284c7; color: white; border: none; border-radius: 6px; padding: 5px 6px; font-size: 0.62rem; font-weight: 800; text-decoration: none; display: flex; align-items: center; gap: 3px; width: 100%; justify-content: center;">🔗 Apri PDF</a>
+                </div>
+            </div>'''
+    else:
+        fermate_html += f'''
+            <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr; cursor: default;">
+                <div class="stop-num" style="background:#475569;"><span class="material-icons-round">home</span></div>
+                <div class="stop-info">
+                    <b class="name">PARTENZA</b>
+                    <span class="addr">{depot_nome}</span>
+                    <span class="orario-badge" style="background:#1e293b; color:white; margin-top:4px;"><span class="material-icons-round">schedule</span>Partenza: {ora_partenza_dep}</span>
+                </div>
+            </div>'''
+
     for idx, p in enumerate(punti):
         nome = p.get("nome", p.get("codice_cliente", f"Tappa {idx+1}"))
         ind  = p.get("indirizzo", "")
         lat  = p.get("lat", "")
         lon  = p.get("lon", p.get("lng", ""))
-        nav  = f"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}"
+        nav  = f"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}&travelmode=driving"
         
         is_parz = any(r.get("is_parziale") for r in p.get("rientri_alert", []) if isinstance(r, dict))
         warn_class = " warning" if is_parz else ""
         
+        # Note
+        note_txt = str(p.get("note", p.get("nota_integrativa", p.get("Note", ""))) or "").strip()
+        note_html = ""
+        if note_txt and note_txt.lower() != "nan":
+            note_safe = note_txt.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
+            note_html = f'<div class="note-chip"><span class="material-icons-round">sticky_note_2</span>Note: {note_safe}</div>'
+            
+        # Orari
+        om_val = str(p.get("orario_min") or p.get("orario_min_frutta", p.get("orario_min_latte", ""))).strip()
+        oM_val = str(p.get("orario_max") or p.get("orario_max_frutta", p.get("orario_max_latte", ""))).strip()
+        
+        orario_html = ""
+        if (om_val and om_val.lower() != "nan") or (oM_val and oM_val.lower() != "nan"):
+            if om_val and oM_val:
+                orario_txt = f"{om_val} - {oM_val}"
+            elif om_val:
+                orario_txt = f"Dalle {om_val}"
+            else:
+                orario_txt = f"Entro le {oM_val}"
+            orario_html = f'<span class="orario-badge"><span class="material-icons-round">schedule</span>Fascia: {orario_txt}</span>'
+            
+        # Orario stimato arrivo / ripartenza
+        ora_arr = str(p.get("ora_arrivo") or "").strip()
+        ora_rip = str(p.get("ora_ripartenza") or "").strip()
+        eta_html = ""
+        if ora_arr and ora_rip:
+            eta_html = f'<span class="eta-badge"><span class="material-icons-round">timer</span>Arrivo {ora_arr} &mdash; Ripart. {ora_rip}</span>'
+        elif ora_arr:
+            eta_html = f'<span class="eta-badge"><span class="material-icons-round">timer</span>Arrivo stimato {ora_arr}</span>'
+            
+        # Chiamata
+        phone_num = _extract_phone(p)
+        if phone_num:
+            action_col = (
+                f'<div class="nav-col">'
+                f'<a href="{nav}" target="_blank" class="btn-nav" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a>'
+                f'<a href="tel:{phone_num}" class="btn-call" onclick="event.stopPropagation()"><span class="material-icons-round">call</span></a>'
+                f'</div>'
+            )
+            card_style = 'grid-template-columns: 42px 1fr auto;'
+        else:
+            action_col = f'<a href="{nav}" target="_blank" class="btn-nav" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a>'
+            card_style = 'grid-template-columns: 42px 1fr 44px;'
+            
         fermate_html += (
-            f'<div class="card" id="card-{idx}" onclick="selectCard({idx})">'
+            f'<div class="card" id="card-{idx}" onclick="selectCard({idx})" style="{card_style}">'
             f'<div class="stop-num{warn_class}">{idx+1}</div>'
-            f'<div class="stop-info"><span class="name">{nome}</span><span class="addr">{ind}</span></div>'
-            f'<a href="{nav}" target="_blank" class="btn-nav">&#x2BAC;</a></div>'
+            f'<div class="stop-info">'
+            f'<span class="name">{nome}</span>'
+            f'<span class="addr">{ind}</span>'
+            f'{orario_html}'
+            f'{eta_html}'
+            f'{note_html}'
+            f'</div>'
+            f'{action_col}</div>'
         )
+
+    # 3. Card di Arrivo
+    ora_rientro_dep = ""
+    try:
+        t_tot_min = (sec_guida // 60) + len(punti) * TIME_PER_STOP_MIN
+        hh_ret, mm_ret = divmod(7 * 60 + int(t_tot_min), 60)
+        hh_ret = hh_ret % 24
+        ora_rientro_dep = f"{hh_ret:02d}:{mm_ret:02d}"
+    except Exception as e_time:
+        print(f"[WARN] Impossibile calcolare ora rientro: {e_time}")
+
+    rientro_badge = f'<span class="orario-badge" style="background:#1e293b; color:white; margin-top:4px;"><span class="material-icons-round">schedule</span>Rientro stimato: {ora_rientro_dep}</span>' if ora_rientro_dep else ''
+    
+    fermate_html += f'''
+        <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr; cursor: default;">
+            <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
+            <div class="stop-info">
+                <b class="name">ARRIVO</b>
+                <span class="addr">{depot_nome}</span>
+                {rientro_badge}
+            </div>
+        </div>'''
 
     punti_js_list = []
     for p in punti:
@@ -1212,9 +1212,10 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines):
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Mappa {viaggio_id}</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 <script src="https://maps.googleapis.com/maps/api/js?key={GOOGLE_MAPS_API_KEY}&libraries=geometry&callback=initMap" async defer></script>
 <style>
-:root{{--p:#4f46e5;--accent:#10b981}}
+:root{{--p:#4f46e5;--accent:#10b981;--call:#16a34a}}
 body,html{{margin:0;padding:0;height:100%;font-family:'Outfit',sans-serif;overflow:hidden}}
 .main-container{{display:flex;flex-direction:column;height:100vh}}
 #map{{height:42vh;width:100%;background:#dfe5eb}}
@@ -1225,9 +1226,9 @@ body,html{{margin:0;padding:0;height:100%;font-family:'Outfit',sans-serif;overfl
 .stat-val{{font-size:.85rem;font-weight:800;color:white}}
 .stat-lbl{{font-size:.52rem;color:#94a3b8;text-transform:uppercase}}
 #delivery-list{{flex:1;overflow-y:auto;padding:8px;background:#f1f5f9;padding-bottom:60px}}
-.card{{background:white;border-radius:12px;padding:10px;margin-bottom:8px;display:grid;grid-template-columns:42px 1fr 40px;gap:8px;align-items:center;border:1px solid #cbd5e1;cursor:pointer;transition:all .2s}}
+.card{{background:white;border-radius:12px;padding:10px;margin-bottom:8px;display:grid;gap:8px;align-items:center;border:1px solid #cbd5e1;cursor:pointer;transition:all .2s}}
 .card.active{{border-color:var(--p);border-left:5px solid var(--p);background:#eef2ff}}
-.stop-num{{width:32px;height:32px;background:var(--p);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}}
+.stop-num{{width:32px;height:32px;background:var(--p);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}}
 .stop-num.warning {{
 background: repeating-linear-gradient(45deg, #000, #000 4px, #f59e0b 4px, #f59e0b 8px) !important;
 color: white !important;
@@ -1236,8 +1237,17 @@ border: 2px solid black;
 }}
 .stop-info{{display:flex;flex-direction:column;gap:3px;min-width:0}}
 .name{{font-size:.85rem;font-weight:800;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
-.addr{{font-size:.75rem;color:#64748b;font-weight:600}}
-.btn-nav{{background:var(--accent);color:white;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:20px}}
+.addr{{font-size:.75rem;color:#64748b;font-weight:600;line-height:1.1}}
+.orario-badge{{display:inline-flex;align-items:center;gap:3px;background:#eff6ff;color:#2563eb;font-size:0.65rem;font-weight:800;padding:2px 7px;border-radius:20px;border:1px solid #bfdbfe;margin-top:1px;width:fit-content}}
+.orario-badge .material-icons-round{{font-size:12px !important}}
+.eta-badge{{display:inline-flex;align-items:center;gap:3px;background:#e0f2fe;color:#0369a1;font-size:0.65rem;font-weight:800;padding:2px 7px;border-radius:20px;border:1px solid #bae6fd;margin-top:1px;width:fit-content}}
+.eta-badge .material-icons-round{{font-size:12px !important}}
+.note-chip{{display:flex;align-items:flex-start;gap:4px;background:#fffbeb;color:#92400e;font-size:0.65rem;font-weight:700;padding:4px 7px;border-radius:8px;border:1px solid #fde68a;margin-top:3px;line-height:1.3}}
+.note-chip .material-icons-round{{font-size:12px !important;flex-shrink:0;margin-top:1px}}
+.btn-nav{{background:var(--accent);color:white;width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none}}
+.btn-call{{background:var(--call);color:white;width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none}}
+.nav-col{{display:flex;flex-direction:column;gap:5px;align-items:center}}
+.material-icons-round{{font-size:18px !important}}
 </style>
 </head>
 <body>
@@ -1259,7 +1269,7 @@ border: 2px solid black;
 <script>
 const PUNTI={punti_js};
 const POLYLINES={polylines_js};
-const DEPOT={{lat:{DEPOT_CLOUD["lat"]},lng:{DEPOT_CLOUD["lon"]}}};
+const DEPOT={{lat:{depot["lat"]},lng:{depot["lon"]}}};
 let map,markers=[];
 function initMap(){{
 map=new google.maps.Map(document.getElementById("map"),{{
@@ -1322,8 +1332,9 @@ def core_genera_mappa_autista(viaggio_id):
         except:
             pass
 
-    km, sec_guida, polylines = _get_directions_data(punti_norm)
-    html = _genera_html_mappa(viaggio_id, punti_norm, km, sec_guida, polylines)
+    depot = _get_depot_for_points_cloud(punti_norm)
+    km, sec_guida, polylines = _get_directions_data(punti_norm, depot=depot)
+    html = _genera_html_mappa(viaggio_id, punti_norm, km, sec_guida, polylines, depot=depot)
 
     bucket = storage.bucket(name=BUCKET_NAME)
     data_viaggio = viaggio.get("data", "sconosciuta").replace("/", "-")
@@ -1394,8 +1405,9 @@ def core_ricalcola_percorso(viaggio_id, nuovi_punti, num_locked=0):
         try:
             from ortools.constraint_solver import routing_enums_pb2, pywrapcp
 
-            start_node = locked[-1] if locked else DEPOT_CLOUD
-            all_locs   = [start_node] + to_optim + [DEPOT_CLOUD]
+            depot = _get_depot_for_points_cloud(punti_norm)
+            start_node = locked[-1] if locked else depot
+            all_locs   = [start_node] + to_optim + [depot]
             n          = len(all_locs)
 
             dist_matrix = _crea_matrice_distanze_cloud(all_locs, [])
@@ -1410,7 +1422,7 @@ def core_ricalcola_percorso(viaggio_id, nuovi_punti, num_locked=0):
             routing.SetArcCostEvaluatorOfAllVehicles(cb_idx)
             params = pywrapcp.DefaultRoutingSearchParameters()
             params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
-            params.time_limit.seconds = 8
+            params.time_limit.seconds = 10
 
             sol = routing.SolveWithParameters(params)
             if sol:
@@ -1428,7 +1440,8 @@ def core_ricalcola_percorso(viaggio_id, nuovi_punti, num_locked=0):
             punti_finali.extend(to_optim)
 
     # Ricalcola KM e tempi con Directions API
-    km, sec_guida, polylines = _get_directions_data(punti_finali)
+    depot = _get_depot_for_points_cloud(punti_finali)
+    km, sec_guida, polylines = _get_directions_data(punti_finali, depot=depot)
 
     # Aggiorna Firestore
     doc_ref.update({
@@ -1443,7 +1456,7 @@ def core_ricalcola_percorso(viaggio_id, nuovi_punti, num_locked=0):
 
     # Rigenera mappa autista aggiornata
     viaggio = doc_viaggio.to_dict()
-    html = _genera_html_mappa(viaggio_id, punti_finali, km, sec_guida, polylines)
+    html = _genera_html_mappa(viaggio_id, punti_finali, km, sec_guida, polylines, depot=depot)
     bucket = storage.bucket(name=BUCKET_NAME)
     data_v = viaggio.get("data", "sconosciuta").replace("/", "-")
     html_path = f"CONSEGNE/CONSEGNE_{data_v}/MAPPE_AUTISTI/{viaggio_id}.html"
@@ -1690,7 +1703,7 @@ def _genera_pdf_placeholder_grand_chef_io(codice: str, nome: str, ind: str, cit:
     out_stream.seek(0)
     return out_stream
 
-def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_consegna: str) -> dict:
+def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_consegna: str, job_id: str) -> dict:
     import pandas as pd
     
     nuovi_dati = {}
@@ -1710,6 +1723,10 @@ def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_c
             
     if header_row_idx is not None:
         df_data = df_clean.loc[header_row_idx + 1:]
+        
+        def _cell(row_data, col_idx):
+            return str(row_data.iloc[col_idx]).strip() if len(row_data) > col_idx and pd.notna(row_data.iloc[col_idx]) and str(row_data.iloc[col_idx]).strip() not in ("", "nan") else ""
+            
         for _, row in df_data.iterrows():
             if str(row.iloc[0]).lower().strip() == 'totale':
                 continue
@@ -1731,6 +1748,10 @@ def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_c
                 
             if not orario_max:
                 orario_max = "14:00"
+                
+            colli = _cell(row, 9)
+            peso_kg = _cell(row, 10)
+            num_cartone = _cell(row, 13)
                 
             codice_l = codice.lower()
             if codice_l not in db_mappati:
@@ -1758,7 +1779,13 @@ def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_c
                     "num_ddt": f"GC_{codice}",
                     "pdf_name": fname,
                     "tipo": "GRAND_CHEF",
-                    "zona": "0000"
+                    "zona": f"GC_{job_id}",
+                    "gc_colli": colli,
+                    "gc_peso_kg": peso_kg,
+                    "gc_num_cartone": num_cartone,
+                    "orario_min": orario_min,
+                    "orario_max": orario_max,
+                    "note": note
                 })
                 
     return {
@@ -1783,7 +1810,7 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
     job_ref.update({"status": "processing", "updated_at": firestore.SERVER_TIMESTAMP})
     
     try:
-        bucket = storage.bucket()
+        bucket = storage.bucket(name=BUCKET_NAME)
         path = data.get("storage_path")
         etichetta = data.get("type", "FRUTTA").upper()
         is_excel = data.get("is_excel", False) or etichetta == "GRAND_CHEF"
@@ -1809,7 +1836,7 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
         # 3. Processing
         if is_excel:
             data_elab = data_lavoro_forzata or datetime.now().strftime("%d-%m-%Y")
-            risultato = _processa_excel_chef_core_logic(file_bytes, db_mappati, data_elab)
+            risultato = _processa_excel_chef_core_logic(file_bytes, db_mappati, data_elab, job_id)
         else:
             risultato = _processa_pdf_core_logic(file_bytes, etichetta, db_mappati, db_articoli)
         
@@ -1831,14 +1858,8 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
             data_elab = deliveries[0]["data"]
             print(f"[INFO] Uso data estratta dal file: {data_elab}")
         
-        # --- PULIZIA PREVENTIVA (Sovrascrittura pulita) ---
-        print(f"[INFO] Pulizia preventiva per {data_elab} - {etichetta}")
-        
-        # Rimuovi vecchi file da Storage
-        cart_out_base = f"split_ddt/{data_elab}/{etichetta}/"
-        blobs_del = bucket.list_blobs(prefix=cart_out_base)
-        for b in blobs_del: b.delete()
-        print(f"[INFO] Pulizia Storage completata per {data_elab}.")
+        # --- PULIZIA PREVENTIVA RIMOSSA (Gestita centralmente al caricamento) ---
+        print(f"[INFO] Elaborazione file per {data_elab} - {etichetta}")
 
         # 4. Upload split e salvataggio DDT
         for fname, out_stream in split_files.items():
@@ -1865,7 +1886,7 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
             "tipo": etichetta,
             "deliveries": deliveries
         }
-        meta_path = f"split_ddt/{data_elab}/{etichetta}/ddt_estratti.json"
+        meta_path = f"split_ddt/{data_elab}/{etichetta}/ddt_estratti_{job_id}.json"
         bucket.blob(meta_path).upload_from_string(
             json.dumps(metadata_ddt, indent=2), 
             content_type='application/json'
@@ -1893,6 +1914,29 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
         job_ref.update({"status": "error", "error_message": str(e), "updated_at": firestore.SERVER_TIMESTAMP})
         return {"status": "errore", "message": str(e)}
 
+def _ordina_job_ids_gc(job_ids, tenant="GRAN CHEF"):
+    db = get_db()
+    jobs_info = []
+    for jid in job_ids:
+        try:
+            doc = db.collection('clienti').document(tenant).collection('processing_jobs').document(jid).get()
+            if doc.exists:
+                d = doc.to_dict()
+                created = d.get('created_at') or 0
+                if hasattr(created, 'timestamp'):
+                    created = created.timestamp()
+                elif isinstance(created, (int, float)):
+                    pass
+                else:
+                    created = 0
+                jobs_info.append((jid, created))
+            else:
+                jobs_info.append((jid, 0))
+        except Exception:
+            jobs_info.append((jid, 0))
+    jobs_info.sort(key=lambda x: x[1])
+    return [x[0] for x in jobs_info]
+
 def core_genera_report_giornaliero(uid, data_consegna):
     """
     Implementa gli step 2, 3 e 4 del workflow locale:
@@ -1907,6 +1951,22 @@ def core_genera_report_giornaliero(uid, data_consegna):
         return {"status": "errore", "message": "Data mancante"}
 
     print(f"[INFO] Generazione report per il {data_consegna}")
+    
+    # 0. Svuota le vecchie cartelle nello Storage per evitare doppioni
+    try:
+        data_f = data_consegna.replace('/', '-')
+        prefixes_to_clean = [
+            f"REPORTS/{data_consegna}/",
+            f"CONSEGNE/CONSEGNE_{data_f}/"
+        ]
+        for pref in prefixes_to_clean:
+            blobs_old = bucket.list_blobs(prefix=pref)
+            for b_old in blobs_old:
+                try: b_old.delete()
+                except: pass
+        print(f"[INFO] Pulizia cartelle completata per {data_consegna}")
+    except Exception as e_clean:
+        print(f"[WARN] Impossibile pulire cartelle storage: {e_clean}")
     
     # 1. Recupera i DDT scansionando la cartella dello Storage
     ddt_list = []
@@ -1927,7 +1987,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
 
         blobs = bucket.list_blobs(prefix=prefix_search)
         for blob in blobs:
-            if blob.name.endswith("ddt_estratti.json"):
+            if "ddt_estratti" in blob.name and blob.name.endswith(".json"):
                 print(f"[INFO] Leggo file: {blob.name}")
                 try:
                     meta_data = json.loads(blob.download_as_string())
@@ -1948,7 +2008,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
 
     if not ddt_list:
         # Debug Radar: vediamo cosa c'e' effettivamente nello Storage
-        cercati = [f"split_ddt/{data_consegna}/FRUTTA/ddt_estratti.json", f"split_ddt/{data_consegna}/LATTE/ddt_estratti.json"]
+        cercati = [f"split_ddt/{data_consegna}/**/ddt_estratti_*.json"]
         try:
             prefix_check = f"split_ddt/{data_consegna}/"
             blobs_esistenti = list(bucket.list_blobs(prefix=prefix_check))
@@ -1984,10 +2044,84 @@ def core_genera_report_giornaliero(uid, data_consegna):
         cf_val = (cliente_info.get('codice_frutta') or 'p00000') if cliente_info else (cod if tipo == 'FRUTTA' else 'p00000')
         cl_val = (cliente_info.get('codice_latte') or 'p00000') if cliente_info else (cod if tipo == 'LATTE' else 'p00000')
         
+        prov_code = ""
+        full_ind = ""
+        citta_val = ""
+        
+        if cliente_info:
+            prov_raw = str(cliente_info.get('provincia') or cliente_info.get('prov') or '').upper().strip()
+            prov_map = {
+                "BRESCIA": "BS", "VERONA": "VR", "MANTOVA": "MN", "PADOVA": "PD",
+                "VICENZA": "VI", "BELLUNO": "BL", "UDINE": "UD", "TREVISO": "TV",
+                "VENEZIA": "VE", "ROVIGO": "RO"
+            }
+            prov_code = prov_map.get(prov_raw, prov_raw)
+            if len(prov_code) > 2:
+                prov_code = prov_code[:2]
+                
+            citta_val = str(cliente_info.get('citta') or '').strip()
+            ind_val = str(cliente_info.get('indirizzo') or '').strip()
+            
+            ind_parts = [ind_val]
+            if citta_val:
+                ind_parts.append(citta_val)
+            full_ind = ", ".join([p for p in ind_parts if p])
+            if prov_code:
+                full_ind += f" ({prov_code})"
+        else:
+            full_ind = ddt.get('indirizzo', '')
+            
+        note_val = ""
+        tel_val = ""
+        om_frutta = ""
+        oM_frutta = ""
+        om_latte = ""
+        oM_latte = ""
+        om_val = ""
+        oM_val = ""
+        
+        if cliente_info:
+            note_val = str(cliente_info.get("note", cliente_info.get("nota_integrativa", cliente_info.get("Note", ""))) or "").strip()
+            tel_val = str(cliente_info.get("telefono", cliente_info.get("tel", cliente_info.get("phone", ""))) or "").strip()
+            om_frutta = str(cliente_info.get("orario_min_frutta") or "").strip()
+            oM_frutta = str(cliente_info.get("orario_max_frutta") or "").strip()
+            om_latte = str(cliente_info.get("orario_min_latte") or "").strip()
+            oM_latte = str(cliente_info.get("orario_max_latte") or "").strip()
+            
+            # Clean "nan"
+            if note_val.lower() == "nan": note_val = ""
+            if tel_val.lower() == "nan": tel_val = ""
+            if om_frutta.lower() == "nan": om_frutta = ""
+            if oM_frutta.lower() == "nan": oM_frutta = ""
+            if om_latte.lower() == "nan": om_latte = ""
+            if oM_latte.lower() == "nan": oM_latte = ""
+            
+            # Determina orario_min/max per il tipo
+            if tipo == "FRUTTA":
+                om_val = om_frutta if om_frutta else (str(cliente_info.get("orario_min") or "").strip())
+                oM_val = oM_frutta if oM_frutta else (str(cliente_info.get("orario_max") or "").strip())
+            else:
+                om_val = om_latte if om_latte else (str(cliente_info.get("orario_min") or "").strip())
+                oM_val = oM_latte if oM_latte else (str(cliente_info.get("orario_max") or "").strip())
+                
+            if om_val.lower() == "nan": om_val = ""
+            if oM_val.lower() == "nan": oM_val = ""
+            
+        # Sovrascrivi o imposta orari/note se presenti nel ddt
+        if ddt.get("orario_min"):
+            om_val = str(ddt["orario_min"]).strip()
+        if ddt.get("orario_max"):
+            oM_val = str(ddt["orario_max"]).strip()
+        if ddt.get("note"):
+            note_val = str(ddt["note"]).strip()
+
         if chiave not in punti_map:
             punti_map[chiave] = {
                 "nome": nome,
-                "indirizzo": cliente_info.get('indirizzo', '') if cliente_info else '',
+                "indirizzo": full_ind,
+                "provincia": prov_code,
+                "prov": prov_code,
+                "citta": citta_val,
                 "codice_frutta": cf_val,
                 "codice_latte": cl_val,
                 "codici_ddt_frutta": [],
@@ -1995,7 +2129,20 @@ def core_genera_report_giornaliero(uid, data_consegna):
                 "zona": ddt.get('zona') or ((cliente_info.get('codice_zona') or cliente_info.get('zona') or '0000') if cliente_info else '0000'),
                 "lat": float(cliente_info.get('lat', 0)) if cliente_info and cliente_info.get('lat') else 0,
                 "lon": float(cliente_info.get('lon', 0)) if cliente_info and cliente_info.get('lon') else 0,
-                "rientri_alert": []
+                "rientri_alert": [],
+                "tipologia_grado": cliente_info.get('tipologia_grado', '') if cliente_info else ('GRAND CHEF' if tipo == 'GRAND_CHEF' else ''),
+                "tipo": tipo,
+                "gc_colli": ddt.get("gc_colli", ""),
+                "gc_peso_kg": ddt.get("gc_peso_kg", ""),
+                "gc_num_cartone": ddt.get("gc_num_cartone", ""),
+                "orario_min_frutta": om_frutta,
+                "orario_max_frutta": oM_frutta,
+                "orario_min_latte": om_latte,
+                "orario_max_latte": oM_latte,
+                "orario_min": om_val,
+                "orario_max": oM_val,
+                "note": note_val,
+                "telefono": tel_val
             }
         else:
             # Se esiste già, aggiorna i codici reali se quello preesistente era fittizio/vuoto
@@ -2004,6 +2151,23 @@ def core_genera_report_giornaliero(uid, data_consegna):
                 esistente["codice_frutta"] = cf_val
             if cl_val != 'p00000' and esistente["codice_latte"] == 'p00000':
                 esistente["codice_latte"] = cl_val
+            if ddt.get("gc_colli"): esistente["gc_colli"] = ddt.get("gc_colli")
+            if ddt.get("gc_peso_kg"): esistente["gc_peso_kg"] = ddt.get("gc_peso_kg")
+            if ddt.get("gc_num_cartone"): esistente["gc_num_cartone"] = ddt.get("gc_num_cartone")
+            if tipo == 'GRAND_CHEF':
+                esistente["tipo"] = 'GRAND_CHEF'
+                if not esistente.get("tipologia_grado"):
+                    esistente["tipologia_grado"] = 'GRAND CHEF'
+            
+            # Aggiorna orari/note/telefono se mancanti
+            if not esistente.get("orario_min") and om_val:
+                esistente["orario_min"] = om_val
+            if not esistente.get("orario_max") and oM_val:
+                esistente["orario_max"] = oM_val
+            if not esistente.get("note") and note_val:
+                esistente["note"] = note_val
+            if not esistente.get("telefono") and tel_val:
+                esistente["telefono"] = tel_val
         
         if tipo == 'FRUTTA':
             punti_map[chiave]["codici_ddt_frutta"].append(ddt.get('num_ddt', 'UNK'))
@@ -2012,10 +2176,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
 
     # --- INTEGRAZIONE RIENTRI DDT ---
     try:
-        rientri_ref = db.collection('clienti').document('DNR').collection('gestione_rientri')
-        # Wait, the collection used in gestione.html is 'rientri ddt'!
-        # Let's check gestione.html line 465: if(currentTab === 'rientri') collPath = 'clienti/DNR/rientri ddt';
-        # OH WOW. In main.py I used 'gestione_rientri'. I need to use 'rientri ddt'!
+        # Interroga direttamente la collezione 'rientri ddt' per garantire consistenza con il frontend
         rientri_ref = db.collection('clienti').document('DNR').collection('rientri ddt')
         
         for r_doc in rientri_ref.stream():
@@ -2093,17 +2254,59 @@ def core_genera_report_giornaliero(uid, data_consegna):
     for p in punti_map.values():
         zone_dict[p['zona']].append(p)
         
-    # Colori per le zone (stessa palette dello script 4)
-    palette = ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#14b8a6", "#6366f1", "#a855f7", "#3b82f6", "#22c55e", "#d946ef", "#84cc16"]
+    # Colori per le zone (palette dello script 4, escludendo arancione per DDT_DA_INSERIRE)
+    palette = ["#4f46e5", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#14b8a6", "#6366f1", "#a855f7", "#3b82f6", "#22c55e", "#d946ef", "#84cc16"]
+    
+    # Dividiamo le zone in categorie
+    dnr_keys = sorted([k for k in zone_dict.keys() if k not in ("DDT_DA_INSERIRE", "0000", "SENZA_ZONA") and not k.startswith("GC_")])
+    gc_keys = [k for k in zone_dict.keys() if k.startswith("GC_")]
+    
+    # Ordina le zone GC per timestamp di creazione del job
+    gc_job_ids = [k[3:] for k in gc_keys]
+    sorted_job_ids = _ordina_job_ids_gc(gc_job_ids)
+    sorted_gc_keys = [f"GC_{jid}" for jid in sorted_job_ids]
     
     zone_finali = []
-    chiavi_zone = sorted(zone_dict.keys())
-    for i, zid in enumerate(chiavi_zone):
+    color_index = 0
+    
+    # Aggiungi zone DNR
+    for idx_dnr, zid in enumerate(dnr_keys, start=1):
         zone_finali.append({
             "id_zona": zid,
-            "nome_giro": f"V{i+1:02d}" if zid != "0000" else "SENZA ZONA",
-            "color": palette[i % len(palette)],
+            "nome_giro": f"V{idx_dnr:02d}",
+            "color": palette[color_index % len(palette)],
             "lista_punti": zone_dict[zid]
+        })
+        color_index += 1
+        
+    # Aggiungi zone Grand Chef
+    for idx_gc, zid in enumerate(sorted_gc_keys, start=1):
+        zone_finali.append({
+            "id_zona": zid,
+            "nome_giro": f"Viaggio {idx_gc} Grand Chef",
+            "color": palette[color_index % len(palette)],
+            "lista_punti": zone_dict[zid],
+            "is_gc": True
+        })
+        color_index += 1
+        
+    # Aggiungi SENZA_ZONA (0000 o SENZA_ZONA) alla fine
+    for zid in ["0000", "SENZA_ZONA"]:
+        if zid in zone_dict:
+            zone_finali.append({
+                "id_zona": zid,
+                "nome_giro": "SENZA ZONA",
+                "color": "#9ca3af",
+                "lista_punti": zone_dict[zid]
+            })
+            
+    # Aggiungi DDT_DA_INSERIRE alla fine
+    if "DDT_DA_INSERIRE" in zone_dict:
+        zone_finali.append({
+            "id_zona": "DDT_DA_INSERIRE",
+            "nome_giro": "⚠️ DDT DA INSERIRE",
+            "color": "#f59e0b",
+            "lista_punti": zone_dict["DDT_DA_INSERIRE"]
         })
 
     # 4. Salvataggio file JSON storici nello Storage (Standard Johnson)
@@ -2271,16 +2474,1214 @@ def _genera_html_mappa_generale(data, zone_list):
 </body>
 </html>"""
 
+
+# --- CODICE MIGRAZIONE MAPPE INTERATTIVE 3B E PIPELINE 5, 6, 7B SU WEB ---
+
+import hashlib
+import uuid
+from urllib.parse import quote
+from decimal import Decimal
+
+DEPOT_VEGGIANO = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"}
+DEPOT_CASTENEDOLO = {"lat": 45.471591, "lon": 10.298200, "nome": "DEPOSITO CASTENEDOLO", "indirizzo": "Castenedolo (BS)"}
+DEPOT_SOMMACAMPAGNA = {"lat": 45.405200, "lon": 10.846000, "nome": "DEPOSITO SOMMACAMPAGNA", "indirizzo": "Sommacampagna (VR)"}
+
+TRAFFIC_SLOTS_MIN = [600, 630, 660, 690, 720, 750, 780]
+CODICE_VUOTO = "p00000"
+
+CONSOLIDAMENTO = {
+    "LT-ES-04-LS":   ("Fardelli",  "Bottiglie", 10),
+    "LT-AQ-04-LB":   ("Fardelli",  "Bottiglie", 12),
+    "LT-AQ-04-LS":   ("Fardelli",  "Bottiglie", 10),
+    "LT-AQ-04-LV":   ("Fardelli",  "Bottiglie",  6),
+    "LT-ESL-IN-LB":  ("Fardelli",  "Bottiglie",  6),
+    "YO-BI-MN-04-LB":("Cartoni",   "Cluster",   10),
+    "YO-DL-02-LC":   ("Cartoni",   "Porzioni",   6),
+    "AP-SU-PC":      ("Cartoni",   "Porzioni",  24),
+    "FO-DI-GP-01-NI":("Colli",     "Buste",     16),
+    "FO-DI-PV-04-LB":("Colli",     "Fette",     20),
+    "AL-M-BI-L3-NI": ("Colli",     "Porzioni",  10),
+    "SUCCO-REC":     ("Cartoni",   "Porzioni",  24),
+    "PF-T-LI-L3-NA": ("Cartoni",   "Porzioni",   8),
+    "SU-M-BI-L3-NI": ("Cartoni",   "Porzioni",  18),
+    "YO-CN-MN-04-":  ("Cartoni",   "Cluster",   10),
+    "YO-CN-MN-04-LB":("Cartoni",   "Cluster",   10),
+    "AL-T-LI-NA":    ("Cartoni",   "Porzioni",  12),
+    "NE-M-BI-L3-NI": ("Colli",     "Porzioni",  10),
+}
+
+UNITA_QTY = r"(Confezioni|Confezione|confezioni|confezione|Colli|Collo|colli|collo|Brick|brick|Fardelli|Fardello|fardelli|fardello|Bottiglie|Bottiglia|bottiglie|bottiglia|Cartoni|Cartone|cartoni|cartone|Cluster|cluster|Porzioni|Porzione|porzioni|porzione|Fascette|Fascetta|fascette|fascetta|Manifesti|Manifesto|manifesti|manifesto|Fette|Fetta|fette|fetta|Buste|Busta|buste|busta|pz)"
+SCAD_RE = re.compile(r"Scad\.\s*min\.\s*(\d{2}/\d{2}/\d{4})", re.I)
+
+def _route_key(punti_pieni):
+    seq = "|".join(f"{round(p.get('lat',0.0),5)},{round(p.get('lon', p.get('lng',0.0)),5)}" for p in punti_pieni)
+    return hashlib.md5(seq.encode()).hexdigest()
+
+def _leggi_percorsi_cache(key):
+    cache = _load_storage_cache("directions_cache.json")
+    return cache.get(key)
+
+def _scrivi_percorsi_cache(key, data):
+    cache = _load_storage_cache("directions_cache.json")
+    cache[key] = data
+    _save_storage_cache("directions_cache.json")
+
+def _get_depot_for_points_cloud(punti):
+    conteggio = {
+        "BS": 0, "VR": 0, "MN": 0, "PD": 0,
+        "UD": 0, "BL": 0, "TV": 0, "VI": 0, "ALTRO": 0,
+    }
+    for p in punti:
+        prov_val = str(p.get("provincia") or p.get("prov") or "").upper().strip()
+        if prov_val in conteggio:
+            conteggio[prov_val] += 1
+            continue
+        ind = str(p.get("indirizzo") or "").upper()
+        m = re.search(r"\(([A-Z]{2})\)", ind)
+        if m:
+            prov = m.group(1)
+            if prov in conteggio:
+                conteggio[prov] += 1
+            else:
+                conteggio["ALTRO"] += 1
+        else:
+            conteggio["ALTRO"] += 1
+
+    castenedolo_tot   = conteggio["BS"]
+    sommacampagna_tot = conteggio["VR"] + conteggio["MN"]
+    veggiano_tot      = (conteggio["PD"] + conteggio["VI"] + conteggio["BL"] +
+                         conteggio["UD"] + conteggio["TV"] + conteggio["ALTRO"])
+
+    if castenedolo_tot > sommacampagna_tot and castenedolo_tot > veggiano_tot:
+        return DEPOT_CASTENEDOLO
+    elif sommacampagna_tot > castenedolo_tot and sommacampagna_tot > veggiano_tot:
+        return DEPOT_SOMMACAMPAGNA
+
+    return DEPOT_VEGGIANO
+
+def _ottimizza_singolo_viaggio_cloud(punti, depot, is_grand_chef):
+    try:
+        from ortools.constraint_solver import routing_enums_pb2
+        from ortools.constraint_solver import pywrapcp
+    except ImportError:
+        print("[OR-Tools] ortools non installato, ottimizzazione saltata.")
+        return punti
+
+    all_locs = [depot] + punti
+    n = len(all_locs)
+    
+    errori_lista = []
+    distance_matrix = _crea_matrice_distanze_cloud(all_locs, errori_lista)
+
+    manager = pywrapcp.RoutingIndexManager(n, 1, 0)
+    routing = pywrapcp.RoutingModel(manager)
+
+    def distance_callback(from_index, to_index):
+        return distance_matrix[manager.IndexToNode(from_index)][manager.IndexToNode(to_index)]
+
+    transit_callback_index = routing.RegisterTransitCallback(distance_callback)
+    routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
+
+    solution = None
+    if is_grand_chef:
+        try:
+            def time_callback(from_index, to_index):
+                from_node = manager.IndexToNode(from_index)
+                to_node = manager.IndexToNode(to_index)
+                dist = distance_matrix[from_node][to_node]
+                travel_time = (dist / 1000.0 / 35.0) * 60
+                service_time = 12 if from_node != 0 else 0
+                return int(travel_time + service_time)
+
+            time_callback_index = routing.RegisterTransitCallback(time_callback)
+            routing.AddDimension(
+                time_callback_index,
+                30,
+                1440,
+                False,
+                "Time"
+            )
+            time_dimension = routing.GetDimensionOrDie("Time")
+
+            def parse_time_to_minutes(time_str, default_val):
+                if not time_str: return default_val
+                m = re.match(r"(\d{2}):(\d{2})", str(time_str).strip())
+                if m:
+                    return int(m.group(1)) * 60 + int(m.group(2))
+                return default_val
+
+            for i, p in enumerate(punti):
+                _om = p.get("orario_min") or p.get("ora_min") or ""
+                _oM = p.get("orario_max") or p.get("ora_max") or ""
+                if not _om and not _oM:
+                    continue
+                min_min = parse_time_to_minutes(_om, 420)
+                max_min = parse_time_to_minutes(_oM, 1140)
+                if min_min > max_min:
+                    continue
+                node_index = manager.NodeToIndex(i + 1)
+                time_dimension.CumulVar(node_index).SetRange(min_min, max_min)
+
+            search_parameters = pywrapcp.DefaultRoutingSearchParameters()
+            search_parameters.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
+            search_parameters.time_limit.seconds = 10
+            solution = routing.SolveWithParameters(search_parameters)
+        except Exception as e:
+            print(f"[OR-Tools] Errore vincoli orari: {e}")
+            solution = None
+
+    if not is_grand_chef or solution is None:
+        search_parameters = pywrapcp.DefaultRoutingSearchParameters()
+        search_parameters.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
+        search_parameters.time_limit.seconds = 10
+        manager2 = pywrapcp.RoutingIndexManager(n, 1, 0)
+        routing2 = pywrapcp.RoutingModel(manager2)
+        def distance_callback_fallback(from_index, to_index):
+            return distance_matrix[manager2.IndexToNode(from_index)][manager2.IndexToNode(to_index)]
+        cb2 = routing2.RegisterTransitCallback(distance_callback_fallback)
+        routing2.SetArcCostEvaluatorOfAllVehicles(cb2)
+        solution = routing2.SolveWithParameters(search_parameters)
+        manager, routing = manager2, routing2
+
+    if solution:
+        percorso_ottimizzato = []
+        index = routing.Start(0)
+        while not routing.IsEnd(index):
+            node_index = manager.IndexToNode(index)
+            if node_index != 0:
+                percorso_ottimizzato.append(punti[node_index - 1])
+            index = solution.Value(routing.NextVar(index))
+        return percorso_ottimizzato
+
+    return punti
+
+def _leggi_cache_completa_firestore(p1, p2):
+    cache = _load_storage_cache("distanze_reali_cache.json")
+    key = _cache_key(p1, p2)
+    val = cache.get(key)
+    if val: return val
+    rev_key = _cache_key(p2, p1)
+    val_rev = cache.get(rev_key)
+    if val_rev: return val_rev
+    return None
+
+def _leggi_traffic_cache(p1, p2, slot_str):
+    cache = _load_storage_cache("distanze_traffico_cache.json")
+    key = _cache_key(p1, p2)
+    val = cache.get(key)
+    if val: return val.get(slot_str)
+    rev_key = _cache_key(p2, p1)
+    val_rev = cache.get(rev_key)
+    if val_rev: return val_rev.get(slot_str)
+    return None
+
+def _scrivi_traffic_cache(p1, p2, slot_str, dur_sec):
+    try:
+        cache = _load_storage_cache("distanze_traffico_cache.json")
+        key = _cache_key(p1, p2)
+        if key not in cache: cache[key] = {}
+        cache[key][slot_str] = int(dur_sec)
+        _save_storage_cache("distanze_traffico_cache.json")
+    except:
+        pass
+
+def nearest_slot(current_minutes):
+    slots = TRAFFIC_SLOTS_MIN
+    if current_minutes < slots[0] - 15 or current_minutes > slots[-1] + 15:
+        return None
+    nearest = min(slots, key=lambda s: abs(s - current_minutes))
+    return f"{nearest // 60:02d}{nearest % 60:02d}"
+
+def get_weekday_timestamp(hour, minute):
+    import datetime
+    now = datetime.datetime.now()
+    days_ahead = 0
+    while True:
+        candidate = now + datetime.timedelta(days=days_ahead)
+        if candidate.weekday() < 5:
+            ts = candidate.replace(hour=hour, minute=minute, second=0, microsecond=0)
+            if ts > now:
+                return int(ts.timestamp())
+        days_ahead += 1
+
+def get_traffic_duration(p1, p2, slot_str):
+    h = int(slot_str[:2])
+    m = int(slot_str[2:])
+    dep_ts = get_weekday_timestamp(h, m)
+    orig = f"{p1['lat']},{p1.get('lon', p1.get('lng', 0))}"
+    dest = f"{p2['lat']},{p2.get('lon', p2.get('lng', 0))}"
+    url = (f"https://maps.googleapis.com/maps/api/distancematrix/json"
+           f"?origins={orig}&destinations={dest}"
+           f"&departure_time={dep_ts}&traffic_model=best_guess"
+           f"&key={GOOGLE_MAPS_API_KEY}")
+    try:
+        resp = requests.get(url, timeout=10).json()
+        if resp.get('status') == 'OK':
+            el = resp['rows'][0]['elements'][0]
+            if el.get('status') == 'OK':
+                dur = el.get('duration_in_traffic', el.get('duration', {})).get('value')
+                return dur
+    except Exception as e:
+        print(f"[TRAFFIC] Errore API: {e}")
+    return None
+
+def _get_directions_and_simulate_cloud(percorso, depot, is_grand_chef, data_consegna, aggiorna_traffico):
+    punti_pieni = [depot] + percorso + [depot]
+    
+    _dir_key = _route_key(punti_pieni)
+    _dir_cached = _leggi_percorsi_cache(_dir_key)
+    
+    if _dir_cached:
+        km_tot = _dir_cached["km"]
+        sec_tot = _dir_cached["sec"]
+        polylines = _dir_cached["polylines"]
+    else:
+        km_tot, sec_tot, polylines = 0.0, 0, []
+        km_stima = sum(_haversine(punti_pieni[k], punti_pieni[k+1]) / 1000 * 1.3 for k in range(len(punti_pieni) - 1))
+        sec_stima = int((km_stima / 35.0) * 3600)
+        
+        if GOOGLE_MAPS_API_KEY and requests:
+            CHUNK = 20
+            try:
+                for i in range(0, len(punti_pieni) - 1, CHUNK):
+                    sub = punti_pieni[i:i + CHUNK + 1]
+                    origin = f"{sub[0]['lat']},{sub[0]['lon']}"
+                    dest = f"{sub[-1]['lat']},{sub[-1]['lon']}"
+                    waypts = "|".join([f"{p['lat']},{p['lon']}" for p in sub[1:-1]])
+                    url = (f"https://maps.googleapis.com/maps/api/directions/json"
+                           f"?origin={origin}&destination={dest}"
+                           f"&waypoints={waypts}&key={GOOGLE_MAPS_API_KEY}")
+                    r = requests.get(url, timeout=10).json()
+                    if r.get("status") == "OK":
+                        route = r["routes"][0]
+                        legs = route["legs"]
+                        km_tot += sum(l["distance"]["value"] for l in legs) / 1000.0
+                        sec_tot += sum(l["duration"]["value"] for l in legs)
+                        polylines.append(route["overview_polyline"]["points"])
+                        if len(legs) == len(sub) - 1:
+                            for idx_l, leg in enumerate(legs):
+                                key = _cache_key(sub[idx_l], sub[idx_l + 1])
+                                _scrivi_cache_firestore([(key, leg["distance"]["value"], leg["duration"]["value"])])
+            except Exception as e:
+                print(f"[DIRECTIONS] Errore: {e}")
+                
+        if km_tot > 0:
+            _scrivi_percorsi_cache(_dir_key, {"km": km_tot, "sec": sec_tot, "polylines": polylines})
+        else:
+            km_tot, sec_tot = km_stima, sec_stima
+
+    sosta = 12 if is_grand_chef else 8
+    current_time = 420
+    
+    def parse_time_to_minutes(time_str, default_val):
+        if not time_str: return default_val
+        m = re.match(r"(\d{2}):(\d{2})", str(time_str).strip())
+        if m:
+            return int(m.group(1)) * 60 + int(m.group(2))
+        return default_val
+
+    def format_minutes_to_time(minutes):
+        minutes = int(minutes) % 1440
+        return f"{minutes // 60:02d}:{minutes % 60:02d}"
+
+    for idx, p in enumerate(percorso):
+        p_precedente = percorso[idx - 1] if idx > 0 else depot
+        durata_guida_sec = 0
+        
+        if is_grand_chef and idx == 0:
+            arr_time_min = 420
+        else:
+            cached = _leggi_cache_completa_firestore(p_precedente, p)
+            if cached:
+                durata_guida_sec = cached['dur']
+                if aggiorna_traffico:
+                    slot = nearest_slot(current_time)
+                    if slot:
+                        traf = _leggi_traffic_cache(p_precedente, p, slot)
+                        if traf is None:
+                            traf = get_traffic_duration(p_precedente, p, slot)
+                            if traf:
+                                _scrivi_traffic_cache(p_precedente, p, slot, traf)
+                        if traf:
+                            durata_guida_sec = traf
+            else:
+                _api_ok = False
+                if GOOGLE_MAPS_API_KEY and requests:
+                    try:
+                        _orig = f"{p_precedente['lat']},{p_precedente['lon']}"
+                        _dest = f"{p['lat']},{p['lon']}"
+                        _url = (f"https://maps.googleapis.com/maps/api/distancematrix/json"
+                                f"?origins={_orig}&destinations={_dest}&key={GOOGLE_MAPS_API_KEY}")
+                        _resp = requests.get(_url, timeout=10).json()
+                        if _resp.get('status') == 'OK':
+                            _el = _resp['rows'][0]['elements'][0]
+                            if _el.get('status') == 'OK':
+                                _dist = _el['distance']['value']
+                                _dur = _el['duration']['value']
+                                _scrivi_cache_firestore([(_cache_key(p_precedente, p), _dist, _dur)])
+                                durata_guida_sec = _dur
+                                _api_ok = True
+                    except:
+                        pass
+                if not _api_ok:
+                    dist_m = _haversine(p_precedente, p) * 1.3
+                    durata_guida_sec = (dist_m / 1000.0 / 35.0) * 3600
+                    
+            durata_guida_min = durata_guida_sec / 60.0 + 4
+            arr_time_min = current_time + durata_guida_min
+            
+        dep_time_min = arr_time_min + sosta
+        p["ora_arrivo"] = format_minutes_to_time(arr_time_min)
+        p["ora_ripartenza"] = format_minutes_to_time(dep_time_min)
+        
+        oM = p.get("orario_max") or p.get("ora_max") or ""
+        if oM:
+            p["ritardo"] = arr_time_min > parse_time_to_minutes(oM, 840) + 1
+        else:
+            p["ritardo"] = False
+            
+        current_time = dep_time_min
+        
+    return km_tot, sec_tot, polylines, percorso
+
+def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=False, usa_or_tools=True):
+    start_time = time.time()
+    db = get_db()
+    bucket = storage.bucket(name=BUCKET_NAME)
+    
+    path_base = f"REPORTS/{data_consegna}"
+    blob_json = bucket.blob(f"{path_base}/viaggi_giornalieri_Johnson.json")
+    if not blob_json.exists():
+        return {"status": "errore", "message": f"Nessun file viaggi_giornalieri_Johnson.json trovato per il {data_consegna}."}
+        
+    try:
+        zone_list = json.loads(blob_json.download_as_string().decode('utf-8'))
+    except Exception as e:
+        return {"status": "errore", "message": f"Errore lettura JSON: {str(e)}"}
+        
+    calcolati = []
+    modificato = False
+    
+    for zone in zone_list:
+        zid = zone.get("id_zona")
+        if id_zona:
+            if isinstance(id_zona, list) and zid not in id_zona:
+                continue
+            elif isinstance(id_zona, str) and zid != id_zona:
+                continue
+        
+        if zid == "DDT_DA_INSERIRE":
+            continue
+            
+        # Esclude i percorsi bloccati
+        if zone.get("_bloccato") or zone.get("_stato") == "bloccato":
+            continue
+            
+        punti = zone.get("lista_punti", [])
+        if not punti:
+            continue
+            
+        is_grand_chef = any("GRAND" in str(p.get("tipologia_grado") or "").upper() or "CHEF" in str(p.get("tipologia_grado") or "").upper() or "GRANCHEF" in str(p.get("zona") or "").upper() for p in punti)
+        depot = _get_depot_for_points_cloud(punti)
+        
+        if usa_or_tools:
+            punti_ottimizzati = _ottimizza_singolo_viaggio_cloud(punti, depot, is_grand_chef)
+        else:
+            punti_ottimizzati = punti
+        
+        punti_pieni = []
+        for p in punti_ottimizzati:
+            try:
+                p_norm = {**p, "lat": float(p["lat"]), "lon": float(p.get("lon", p.get("lng", 0)))}
+                punti_pieni.append(p_norm)
+            except:
+                punti_pieni.append(p)
+                
+        km, sec_guida, polylines, punti_simulati = _get_directions_and_simulate_cloud(punti_pieni, depot, is_grand_chef, data_consegna, aggiorna_traffico)
+        
+        tot_ddt = 0
+        for p in punti_simulati:
+            tot_ddt += len([c for c in p.get("codici_ddt_frutta", []) if c and c != "p00000"])
+            tot_ddt += len([c for c in p.get("codici_ddt_latte", []) if c and c != "p00000"])
+            if not p.get("codici_ddt_frutta") and not p.get("codici_ddt_latte"):
+                if p.get("codice_frutta") and p.get("codice_frutta") != "p00000": tot_ddt += 1
+                if p.get("codice_latte") and p.get("codice_latte") != "p00000": tot_ddt += 1
+                
+        stats = {
+            "km": km,
+            "t_guida": sec_guida // 60,
+            "t_sosta": len(punti_simulati) * (12 if is_grand_chef else 8),
+            "t_tot": (sec_guida // 60) + len(punti_simulati) * (12 if is_grand_chef else 8),
+            "tot_ddt": tot_ddt,
+            "fatturato": f"{tot_ddt * 16.50:.2f}" if not is_grand_chef else "GranChef",
+            "depot": depot["nome"],
+            "is_gc": is_grand_chef
+        }
+        
+        zone["lista_punti"] = punti_simulati
+        zone["_polylines"] = polylines
+        zone["_stats"] = stats
+        zone["_stato"] = "calcolato"
+        
+        calcolati.append(zone["nome_giro"])
+        modificato = True
+
+    if modificato:
+        blob_json.upload_from_string(json.dumps(zone_list, indent=2), content_type='application/json')
+        
+    elapsed = time.time() - start_time
+    return {
+        "status": "ok",
+        "message": f"Calcolati percorsi per: {', '.join(calcolati)} in {elapsed:.2f}s",
+        "tempo_sec": elapsed,
+        "calcolati": calcolati
+    }
+
+def _normalizza_unita(u: str) -> str:
+    u = u.strip().lower()
+    mapping = {
+        "bottiglia": "Bottiglie", "bottiglie": "Bottiglie",
+        "fardello": "Fardelli",   "fardelli": "Fardelli",
+        "cartone": "Cartoni",     "cartoni": "Cartoni",
+        "cluster": "Cluster",
+        "porzione": "Porzioni",   "porzioni": "Porzioni",
+        "collo": "Colli",         "colli": "Colli",
+        "fetta": "Fette",         "fette": "Fette",
+        "brick": "Brick",
+        "confezione": "Confezioni", "confezioni": "Confezioni",
+        "manifesto": "Manifesti", "manifesti": "Manifesti",
+        "fascetta": "Fascette",
+        "busta": "Buste",         "buste": "Buste",
+        "pz": "pz"
+    }
+    return mapping.get(u, u.title() if u else u)
+
+def _parse_quantita_da_cella(cell) -> list:
+    if not cell or not str(cell).strip():
+        return []
+    text = str(cell).replace("\n", " ").replace("  ", " ")
+    quantita = []
+    for m in re.finditer(r"(?:^|e\s+)(\d+)\s+(" + UNITA_QTY + r")", text, re.I):
+        quantita.append((int(m.group(1)), _normalizza_unita(m.group(2))))
+    if not quantita and re.search(r"^(\d+)\s*$", text.strip()):
+        quantita.append((int(text.strip()), "pz"))
+    return quantita
+
+def _is_primary_code(text, articoli_noti):
+    if not text: return False
+    text = text.strip().upper()
+    if text in articoli_noti: return True
+    for prefix in articoli_noti:
+        if prefix.endswith('-') and text.startswith(prefix):
+            return True
+    return bool(re.match(r'^([A-Z0-9]{2,}-[A-Z0-9\-]+|--\d{6})', text))
+
+def _normalizza_cella_codice(raw, articoli_noti):
+    righe = [l.strip() for l in raw.split('\n')
+             if l.strip() and not l.strip().startswith("Codice:")]
+    if not righe:
+        return "", ""
+    codice_base = ""
+    idx_base = -1
+    for i, riga in enumerate(righe):
+        if _is_primary_code(riga, articoli_noti):
+            codice_base = riga.strip()
+            idx_base = i
+            break
+    if not codice_base:
+        codice_base = righe[0]
+        idx_base = 0
+    if codice_base.endswith('-') and len(righe) > idx_base + 1:
+        pezzi = righe[idx_base + 1].split()
+        if pezzi:
+            codice_base += pezzi[0]
+            righe[idx_base + 1] = " ".join(pezzi[1:]).strip()
+    righe_variante = [r for r in righe[idx_base + 1:] if r.strip()]
+    variante_raw = " ".join(righe_variante).strip()
+    variante_raw = re.sub(r'\s+', ' ', variante_raw)
+    variante_raw = re.sub(r'-{2,}', '-', variante_raw).strip('-').strip()
+    return codice_base, variante_raw
+
+def _estrai_articoli_da_tabella_cloud(pdf_bytes, articoli_noti):
+    import pdfplumber
+    import io
+    from decimal import Decimal
+    
+    risultato = []
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        for page in pdf.pages:
+            tables = page.extract_tables()
+            if not tables: continue
+            tab = next((t for t in tables if t and len(t) > 1
+                        and "Cod. Articolo" in " ".join(str(c or "") for c in t[0])), None)
+            if not tab: continue
+            
+            for row in tab[1:]:
+                if not row or len(row) < 4: continue
+                raw_codice = str(row[0] or "").strip()
+                if not raw_codice: continue
+                
+                codice_base, variante_raw = _normalizza_cella_codice(raw_codice, articoli_noti)
+                if not codice_base: continue
+                
+                descrizione = re.sub(r'\s+', ' ', str(row[1] or "").replace('\n', ' ')).strip()
+                try:
+                    kg = Decimal(str(row[2] or "0").replace(",", ".").strip() or "0")
+                except:
+                    kg = Decimal("0")
+                    
+                quantita_raw = str(row[3] or "").strip()
+                quantita = _parse_quantita_da_cella(quantita_raw)
+                
+                if not quantita and "10-GEL" in codice_base:
+                    porz = str(row[4] or "").strip() if len(row) > 4 else ""
+                    if porz.isdigit():
+                        quantita = [(int(porz), "pz")]
+                        
+                if not quantita: continue
+                
+                confezionamento = str(row[5] or "").strip() if len(row) > 5 else ""
+                
+                risultato.append({
+                    "codice_base": codice_base,
+                    "variante_raw": variante_raw,
+                    "descrizione": descrizione,
+                    "kg": kg,
+                    "quantita": quantita,
+                    "confezionamento": confezionamento
+                })
+    return risultato
+
+def _consolida_quantita_cloud(codice, lista_qty):
+    if codice not in CONSOLIDAMENTO:
+        by_unit = defaultdict(int)
+        for qty, unit in lista_qty:
+            by_unit[_normalizza_unita(unit)] += qty
+        result = [(v, k) for k, v in sorted(by_unit.items()) if v > 0]
+        return result, " e ".join(f"{q} {u}" for q, u in result)
+
+    unit_princ, unit_second, ratio = CONSOLIDAMENTO[codice]
+    tot_princ = tot_second = 0
+    for qty, unit in lista_qty:
+        ul = unit.lower()
+        if unit_princ.lower() in ul or ul in ("fardello", "fardelli", "cartoni", "cartone",
+                                               "brick", "colli", "confezioni", "manifesti", "fascette"):
+            tot_princ += qty
+        else:
+            tot_second += qty
+
+    extra_princ   = tot_second // ratio
+    resto_second  = tot_second % ratio
+    tot_princ    += extra_princ
+
+    result = []
+    if tot_princ > 0:
+        result.append((tot_princ, unit_princ))
+    if resto_second > 0:
+        result.append((resto_second, unit_second))
+    display = " e ".join(f"{q} {u}" for q, u in result)
+    return result, display
+
+def _genera_url_storage_token(blob):
+    import uuid
+    from urllib.parse import quote
+    token = str(uuid.uuid4())
+    blob.metadata = {"firebaseStorageDownloadTokens": token}
+    blob.patch()
+    return f"https://firebasestorage.googleapis.com/v0/b/{BUCKET_NAME}/o/{quote(blob.name, safe='')}?alt=media&token={token}"
+
+def _genera_pagina_riepilogo_zone_cloud(viaggi, data_ddt, pdf_non_trovati=None):
+    if pdf_non_trovati is None: pdf_non_trovati = []
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import mm
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+
+    def _zona_valida(z: str) -> bool:
+        return len(z.strip()) >= 2
+
+    def _zona_base(z: str) -> str:
+        z = z.strip()
+        z = re.sub(r'^[^0-9]+', '', z)
+        z = re.sub(r'[^0-9]+$', '', z)
+        return z
+
+    tutte_le_zone = set()
+    giri_con_zone = []
+    for v in viaggi:
+        zone_v = [z for z in v.get("zone", []) if _zona_valida(z)]
+        if not zone_v:
+            zid = v.get("id_zona", "")
+            if _zona_valida(zid):
+                zone_v = [zid]
+        nome_v = v.get("nome_giro", "?")
+        giri_con_zone.append((nome_v, zone_v))
+        tutte_le_zone.update(_zona_base(z) for z in zone_v if _zona_base(z))
+
+    out_stream = io.BytesIO()
+    try:
+        doc = SimpleDocTemplate(
+            out_stream, pagesize=A4,
+            leftMargin=20*mm, rightMargin=20*mm,
+            topMargin=20*mm, bottomMargin=20*mm
+        )
+        styles = getSampleStyleSheet()
+        st_titolo = ParagraphStyle("zt_c", parent=styles["Heading1"], fontSize=16, spaceAfter=6)
+        st_sub    = ParagraphStyle("zs_c", parent=styles["Normal"],   fontSize=10, spaceAfter=4,
+                                   textColor=colors.HexColor("#475569"))
+        st_zona   = ParagraphStyle("zz_c", parent=styles["Normal"],   fontSize=16,
+                                   spaceBefore=6, spaceAfter=6,
+                                   leading=22,
+                                   textColor=colors.HexColor("#1e293b"),
+                                   fontName="Helvetica-Bold")
+        st_err    = ParagraphStyle("zerr_c", parent=styles["Normal"], fontSize=12,
+                                   spaceBefore=2, spaceAfter=2, textColor=colors.red, fontName="Helvetica-Bold")
+
+        elementi = []
+        elementi.append(Paragraph(f"RIEPILOGO ZONE — {data_ddt}", st_titolo))
+        
+        if pdf_non_trovati:
+            elementi.append(Paragraph("ATTENZIONE - DDT MANCANTI:", ParagraphStyle("zerr_tit_c", parent=st_err, fontSize=14)))
+            for err in pdf_non_trovati:
+                elementi.append(Paragraph(f"&#x25cf; {err}", st_err))
+            elementi.append(Spacer(1, 8*mm))
+            
+        elementi.append(Paragraph("Zone coperte da tutti i giri di oggi:", st_sub))
+        elementi.append(Spacer(1, 8*mm))
+
+        for zona in sorted(tutte_le_zone):
+            elementi.append(Paragraph(f"&#x25cf;  {zona}", st_zona))
+
+        elementi.append(Spacer(1, 12*mm))
+        elementi.append(Paragraph("— Dettaglio per giro:", st_sub))
+        elementi.append(Spacer(1, 4*mm))
+
+        dati_tab = [["Giro", "Zone"]]
+        for nome_v, zone_v in giri_con_zone:
+            zone_display = ", ".join(sorted(zone_v)) if zone_v else "—"
+            dati_tab.append([nome_v, zone_display])
+
+        ts = TableStyle([
+            ("BACKGROUND",     (0, 0), (-1, 0),  colors.HexColor("#1e293b")),
+            ("TEXTCOLOR",      (0, 0), (-1, 0),  colors.white),
+            ("FONTSIZE",       (0, 0), (-1, -1), 10),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f1f5f9")]),
+            ("GRID",           (0, 0), (-1, -1), 0.4, colors.HexColor("#cbd5e1")),
+            ("LEFTPADDING",    (0, 0), (-1, -1), 6),
+            ("RIGHTPADDING",   (0, 0), (-1, -1), 6),
+            ("TOPPADDING",     (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING",  (0, 0), (-1, -1), 5),
+        ])
+        t = Table(dati_tab, colWidths=[70*mm, 100*mm])
+        t.setStyle(ts)
+        elementi.append(t)
+
+        doc.build(elementi)
+        out_stream.seek(0)
+        return out_stream.getvalue()
+    except Exception as e:
+        print(f"[RIEPILOGO] Errore: {e}")
+        return None
+
+def _blocco_distinta_cloud(viaggio, articoli_viaggio, data_ddt, copia, n_ddt_totali=0, rientri_giro=None, pdf_non_trovati_giro=None):
+    if rientri_giro is None: rientri_giro = []
+    if pdf_non_trovati_giro is None: pdf_non_trovati_giro = []
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.units import mm
+    from reportlab.lib.styles import getSampleStyleSheet
+    
+    styles = getSampleStyleSheet()
+    st_titolo = ParagraphStyle("titolo_c", parent=styles["Heading1"], fontSize=14, spaceAfter=3)
+    st_sub    = ParagraphStyle("sub_c",    parent=styles["Normal"],   fontSize=9,  spaceAfter=2)
+    st_body   = ParagraphStyle("body_c_l", parent=styles["Normal"],   fontSize=8,  leading=9)
+    st_warn   = ParagraphStyle("warn_c",   parent=styles["Normal"],   fontSize=8, textColor=colors.red)
+
+    nome_giro = viaggio.get("nome_giro", "?")
+    zone_list = viaggio.get("zone", [])
+    if not zone_list:
+        zone_list = [viaggio.get("id_zona", "?")]
+    zone = ", ".join(zone_list)
+    n_fermate = len(viaggio.get("lista_punti", []))
+    label = f"{'COPIA AUTISTA' if copia == 1 else 'COPIA UFFICIO'}"
+    elementi = []
+
+    elementi.append(Paragraph(f"DISTINTA DI CARICO — {nome_giro}  [{label}]", st_titolo))
+    elementi.append(Paragraph(f"Zone: {zone}  |  Fermate Totali: {n_fermate}  |  DDT Totali: {n_ddt_totali}  |  Data: {data_ddt}", st_sub))
+    
+    if rientri_giro:
+        visti = set()
+        normali = []
+        parziali = []
+        for r in rientri_giro:
+            k = f"{r['codice']} ({r['data_ddt']})"
+            if k not in visti:
+                visti.add(k)
+                if r.get("is_parziale"):
+                    parziali.append(r)
+                else:
+                    normali.append(k)
+        
+        if normali:
+            normali.sort()
+            riga2 = f"<font color='red'><b>DDT da Rientri:</b></font> {', '.join(normali)} <font color='gray'><i>(merce già in distinta di carico)</i></font>"
+            elementi.append(Paragraph(riga2, st_sub))
+            
+        if parziali:
+            for p in sorted(parziali, key=lambda x: x["codice"]):
+                r_parz = f"<font color='red'><b>DDT da rientri con merce:</b></font> {p['codice']} ({p['data_ddt']})"
+                elementi.append(Paragraph(r_parz, st_sub))
+                elementi.append(Paragraph("<i>Merce non presente nella distinta di carico, procedere con la presa manuale come da nota integrativa:</i>", st_sub))
+                if p.get("nota_integrativa"):
+                    elementi.append(Paragraph(f"<b>NOTA:</b> {p['nota_integrativa']}", st_sub))
+                elementi.append(Spacer(1, 2*mm))
+                
+    if pdf_non_trovati_giro:
+        elementi.append(Spacer(1, 2*mm))
+        for err in pdf_non_trovati_giro:
+            elementi.append(Paragraph(f"<b>ATTENZIONE: {err}</b>", st_warn))
+            
+    elementi.append(Spacer(1, 4*mm))
+
+    elementi.append(Paragraph("RIEPILOGO ARTICOLI DA CARICARE PER GIRO:", st_body))
+    dati_art = [["Codice Articolo", "Descrizione Natura Qualità", "Quantità Consolidata", "Confezionamento"]]
+    
+    for chiave, art in sorted(articoli_viaggio.items(), key=lambda x: (x[0][0], x[0][1])):
+        _, display = _consolida_quantita_cloud(art["codice_base"], art["quantita"])
+        variante = art.get("variante_raw", "")
+        codice_stampato = f"{art['codice_base']} {variante}".strip() if variante else art["codice_base"]
+
+        dati_art.append([
+            Paragraph(codice_stampato, st_body),
+            Paragraph(art.get("descrizione", ""), st_body),
+            Paragraph(display or "—", st_body),
+            Paragraph(art.get("confezionamento", "") or "—", st_body),
+        ])
+        
+    ts_art = TableStyle([
+        ("BACKGROUND",     (0, 0), (-1, 0),  colors.HexColor("#10b981")),
+        ("TEXTCOLOR",      (0, 0), (-1, 0),  colors.white),
+        ("FONTSIZE",       (0, 0), (-1, -1), 8),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f0fdf4")]),
+        ("GRID",           (0, 0), (-1, -1), 0.3, colors.HexColor("#e2e8f0")),
+        ("LEFTPADDING",    (0, 0), (-1, -1), 2*mm),
+        ("RIGHTPADDING",   (0, 0), (-1, -1), 5*mm),
+        ("VALIGN",         (0, 0), (-1, -1), "TOP"),
+    ])
+    t_art = Table(dati_art, colWidths=[35*mm, 75*mm, 35*mm, 35*mm])
+    t_art.setStyle(ts_art)
+    elementi.append(t_art)
+    elementi.append(Spacer(1, 10*mm))
+
+    elementi.append(Paragraph("ORDINE DI CONSEGNA (Fermata 1 = Prima consegna):", st_body))
+    fermate = viaggio.get("lista_punti", [])
+
+    st_body_c = ParagraphStyle("body_c_c", parent=styles["Normal"], fontSize=8, leading=9, alignment=1)
+    st_body_r = ParagraphStyle("body_r_c", parent=styles["Normal"], fontSize=8, leading=9, alignment=2)
+    st_bold   = ParagraphStyle("bold_c",   parent=styles["Normal"], fontSize=8, leading=9, fontName="Helvetica-Bold")
+
+    dati_fermate = [["#", "Cod. F", "Cod. L", "Nome", "Indirizzo", "Kg", "Colli", "N°Cart."]]
+    ts_gc_rows = []
+    tot_kg = 0.0
+    tot_colli = 0
+
+    for idx, f in enumerate(fermate, 1):
+        cf = f.get("codice_frutta", "") or ""
+        cl = f.get("codice_latte",  "") or ""
+        is_gc = ("GRAND CHEF" in str(f.get("tipologia_grado", "")).upper()
+                 or "GRAN CHEF" in str(f.get("tipologia_grado", "")).upper()
+                 or str(f.get("zona", "")).startswith("GranChef"))
+
+        if is_gc:
+            kg_raw = f.get("gc_peso_kg", "")
+            col_raw = f.get("gc_colli", "")
+            car_raw = f.get("gc_num_cartone", "")
+            kg_str = str(kg_raw).strip() if kg_raw not in (None, "", "None") else ""
+            col_str = str(int(float(col_raw))) if col_raw not in (None, "", "None") else ""
+            car_str = str(car_raw).strip() if car_raw not in (None, "", "None") else ""
+            try: tot_kg += float(kg_raw) if kg_raw not in (None, "", "None") else 0
+            except: pass
+            try: tot_colli += int(float(col_raw)) if col_raw not in (None, "", "None") else 0
+            except: pass
+            ts_gc_rows.append(("BACKGROUND", (5, idx), (7, idx), colors.HexColor("#fffbeb")))
+        else:
+            kg_str = col_str = car_str = ""
+
+        dati_fermate.append([
+            Paragraph(str(idx), st_body),
+            Paragraph(cf if cf != "p00000" else "—", st_body),
+            Paragraph(cl if cl != "p00000" else "—", st_body),
+            Paragraph(f.get("nome", ""), st_body),
+            Paragraph(f.get("indirizzo", ""), st_body),
+            Paragraph(kg_str,  st_body_r),
+            Paragraph(col_str, st_body_c),
+            Paragraph(car_str, st_body_c),
+        ])
+
+    if tot_kg > 0 or tot_colli > 0:
+        kg_tot_str  = f"{tot_kg:.2f}" if tot_kg  > 0 else ""
+        col_tot_str = str(tot_colli)  if tot_colli > 0 else ""
+        dati_fermate.append([
+            Paragraph("", st_body),
+            Paragraph("", st_body),
+            Paragraph("", st_body),
+            Paragraph("", st_body),
+            Paragraph("TOTALE GIRO", st_bold),
+            Paragraph(kg_tot_str,  st_bold),
+            Paragraph(col_tot_str, st_bold),
+            Paragraph("", st_body),
+        ])
+        ts_gc_rows.append(("BACKGROUND", (0, len(dati_fermate)-1), (-1, len(dati_fermate)-1), colors.HexColor("#fef3c7")))
+        ts_gc_rows.append(("FONTNAME",   (0, len(dati_fermate)-1), (-1, len(dati_fermate)-1), "Helvetica-Bold"))
+
+    ts_fermate = TableStyle([
+        ("BACKGROUND",     (0, 0), (-1, 0),  colors.HexColor("#1e293b")),
+        ("TEXTCOLOR",      (0, 0), (-1, 0),  colors.white),
+        ("FONTSIZE",       (0, 0), (-1, -1), 7),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
+        ("GRID",           (0, 0), (-1, -1), 0.3, colors.HexColor("#e2e8f0")),
+        ("LEFTPADDING",    (0, 0), (-1, -1), 2*mm),
+        ("RIGHTPADDING",   (0, 0), (-1, -1), 2*mm),
+        ("VALIGN",         (0, 0), (-1, -1), "TOP"),
+        ("ALIGN",          (5, 0), (7, -1),  "CENTER"),
+    ] + ts_gc_rows)
+    
+    t_fermate = Table(dati_fermate, colWidths=[10*mm, 18*mm, 18*mm, 45*mm, 56*mm, 16*mm, 14*mm, 14*mm])
+    t_fermate.setStyle(ts_fermate)
+    elementi.append(t_fermate)
+
+    return elementi
+
+def _genera_distinta_pdf_cloud(viaggio, articoli_viaggio, data_ddt, pdf_ddt_streams, rientri_giro=None, pdf_non_trovati_giro=None):
+    import tempfile, os
+    from reportlab.platypus import SimpleDocTemplate, PageBreak
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib import colors
+    from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.units import mm
+    from reportlab.lib.pagesizes import A4
+    from pypdf import PdfWriter, PdfReader
+
+    tmp_fd, tmp_path = tempfile.mkstemp(suffix=".pdf")
+    os.close(tmp_fd)
+
+    try:
+        doc = SimpleDocTemplate(
+            tmp_path, pagesize=A4,
+            leftMargin=15*mm, rightMargin=15*mm,
+            topMargin=15*mm, bottomMargin=15*mm
+        )
+        styles = getSampleStyleSheet()
+        elementi = []
+        
+        elementi += _blocco_distinta_cloud(viaggio, articoli_viaggio, data_ddt, 1, len(pdf_ddt_streams), rientri_giro, pdf_non_trovati_giro)
+        elementi.append(PageBreak())
+        elementi += _blocco_distinta_cloud(viaggio, articoli_viaggio, data_ddt, 2, len(pdf_ddt_streams), rientri_giro, pdf_non_trovati_giro)
+        
+        doc.build(elementi)
+
+        reader_tmp = PdfReader(tmp_path)
+        n_tot = len(reader_tmp.pages)
+        n_per_copia = n_tot // 2
+
+        writer_light = PdfWriter()
+        for i in range(n_per_copia):
+            writer_light.add_page(reader_tmp.pages[i])
+        
+        light_stream = io.BytesIO()
+        writer_light.write(light_stream)
+        light_stream.seek(0)
+
+        writer_full = PdfWriter()
+        for i in range(n_per_copia):
+            writer_full.add_page(reader_tmp.pages[i])
+        for i in range(n_per_copia, n_tot):
+            writer_full.add_page(reader_tmp.pages[i])
+
+        for pdf_name, pdf_bytes in pdf_ddt_streams:
+            is_gc_pdf = pdf_name.startswith("100") or any(x in pdf_name.lower() for x in ("chef", "grand", "gran"))
+            ddt_reader = PdfReader(io.BytesIO(pdf_bytes))
+            if is_gc_pdf:
+                for page in ddt_reader.pages:
+                    writer_full.add_page(page)
+            else:
+                for page in ddt_reader.pages:
+                    writer_full.add_page(page)
+                for page in ddt_reader.pages:
+                    writer_full.add_page(page)
+
+        full_stream = io.BytesIO()
+        writer_full.write(full_stream)
+        full_stream.seek(0)
+
+        return full_stream, light_stream
+    except Exception as e:
+        print(f"[DISTINTA] Errore assemblaggio: {e}")
+        # Fallback a un PDF minimo se fallisce
+        shutil_stream = io.BytesIO()
+        with open(tmp_path, "rb") as f_tmp:
+            shutil_stream.write(f_tmp.read())
+        shutil_stream.seek(0)
+        return shutil_stream, shutil_stream
+    finally:
+        try: os.unlink(tmp_path)
+        except: pass
+
+def core_genera_completo_giornata(data_consegna):
+    start_time = time.time()
+    db = get_db()
+    bucket = storage.bucket(name=BUCKET_NAME)
+    
+    path_base = f"REPORTS/{data_consegna}"
+    blob_json = bucket.blob(f"{path_base}/viaggi_giornalieri_Johnson.json")
+    if not blob_json.exists():
+        return {"status": "errore", "message": f"Nessun file viaggi_giornalieri_Johnson.json trovato per il {data_consegna}."}
+        
+    try:
+        zone_list = json.loads(blob_json.download_as_string().decode('utf-8'))
+    except Exception as e:
+        return {"status": "errore", "message": f"Errore lettura JSON: {str(e)}"}
+        
+    deliveries_all = []
+    prefix_search = f"split_ddt/{data_consegna}/"
+    try:
+        blobs = bucket.list_blobs(prefix=prefix_search)
+        for blob in blobs:
+            if "ddt_estratti" in blob.name and blob.name.endswith(".json"):
+                try:
+                    meta_data = json.loads(blob.download_as_string().decode('utf-8'))
+                    deliveries_all.extend(meta_data.get("deliveries", []))
+                except Exception as e_meta:
+                    print(f"[METADATA] Errore lettura {blob.name}: {e_meta}")
+    except Exception as e_list:
+        print(f"[METADATA] Errore scansione storage: {e_list}")
+
+    articoli_noti, config_cons = get_config_app()
+    
+    rientri_list = []
+    try:
+        for doc in db.collection('clienti').document('DNR').collection('rientri ddt').stream():
+            r_data = doc.to_dict() or {}
+            r_cod = str(r_data.get('codice_consegna') or r_data.get('Codice consegna') or '').strip()
+            r_data_ddt = r_data.get('data_ddt') or r_data.get('Data e Num DDT') or ''
+            stato = str(r_data.get('stato') or r_data.get('Stato') or '').strip().lower()
+            if data_consegna in stato or f"ddt {data_consegna}" in stato:
+                rientri_list.append({
+                    "codice": r_cod,
+                    "data_ddt": r_data_ddt,
+                    "is_parziale": bool(r_data.get('is_parziale') or False) or (str(r_data.get('Tipo') or r_data.get('tipo') or '').lower().strip() == 'parziale'),
+                    "nota_integrativa": str(r_data.get('note') or r_data.get('Note') or r_data.get('nota_integrativa') or '').strip()
+                })
+    except Exception as e_r:
+        print(f"[RIENTRI] Errore recupero: {e_r}")
+
+    links = []
+    pdf_non_trovati_giorno = []
+    
+    for zone in zone_list:
+        zid = zone.get("id_zona")
+        if zid == "DDT_DA_INSERIRE":
+            continue
+            
+        punti = zone.get("lista_punti", [])
+        if not punti:
+            continue
+            
+        nome_giro = zone.get("nome_giro", "?")
+        
+        pdf_ddt_streams = []
+        pdf_non_trovati_giro = []
+        articoli_viaggio = defaultdict(lambda: {"codice_base": "", "variante_raw": "", "descrizione": "", "quantita": [], "confezionamento": ""})
+        
+        for p in punti:
+            cf = str(p.get("codice_frutta", "")).strip().lower()
+            cd_frutta = p.get("codici_ddt_frutta", [])
+            
+            cl = str(p.get("codice_latte", "")).strip().lower()
+            cd_latte = p.get("codici_ddt_latte", [])
+            
+            ddt_trovati = []
+            if cf and cf != "p00000":
+                if cd_frutta:
+                    for num in cd_frutta:
+                        match = next((d for d in deliveries_all if str(d.get("codice_consegna")).strip().lower() == cf and str(d.get("num_ddt")).strip() == str(num)), None)
+                        if match: ddt_trovati.append(match)
+                else:
+                    match = next((d for d in deliveries_all if str(d.get("codice_consegna")).strip().lower() == cf and d.get("tipo") in ("FRUTTA", "GRAND_CHEF")), None)
+                    if match: ddt_trovati.append(match)
+                    
+            if cl and cl != "p00000":
+                if cd_latte:
+                    for num in cd_latte:
+                        match = next((d for d in deliveries_all if str(d.get("codice_consegna")).strip().lower() == cl and str(d.get("num_ddt")).strip() == str(num)), None)
+                        if match: ddt_trovati.append(match)
+                else:
+                    match = next((d for d in deliveries_all if str(d.get("codice_consegna")).strip().lower() == cl and d.get("tipo") in ("LATTE", "GRAND_CHEF")), None)
+                    if match: ddt_trovati.append(match)
+
+            for ddt in ddt_trovati:
+                tipo_ddt = ddt.get("tipo")
+                pdf_name = ddt.get("pdf_name")
+                storage_path = f"split_ddt/{data_consegna}/{tipo_ddt}/{pdf_name}"
+                blob_ddt = bucket.blob(storage_path)
+                if blob_ddt.exists():
+                    try:
+                        pdf_bytes = blob_ddt.download_as_bytes()
+                        pdf_ddt_streams.append((pdf_name, pdf_bytes))
+                        art_estrai = _estrai_articoli_da_tabella_cloud(pdf_bytes, articoli_noti)
+                        for art in art_estrai:
+                            key = (art["codice_base"], art["variante_raw"])
+                            articoli_viaggio[key]["codice_base"] = art["codice_base"]
+                            articoli_viaggio[key]["variante_raw"] = art["variante_raw"]
+                            articoli_viaggio[key]["descrizione"] = art["descrizione"]
+                            articoli_viaggio[key]["quantita"].extend(art["quantita"])
+                            if art["confezionamento"]:
+                                articoli_viaggio[key]["confezionamento"] = art["confezionamento"]
+                    except Exception as e_pdf:
+                        msg = f"Errore lettura {pdf_name}: {e_pdf}"
+                        pdf_non_trovati_giro.append(msg)
+                        pdf_non_trovati_giorno.append(f"{nome_giro}: {msg}")
+                else:
+                    msg = f"DDT PDF mancante nello Storage: {pdf_name}"
+                    pdf_non_trovati_giro.append(msg)
+                    pdf_non_trovati_giorno.append(f"{nome_giro}: {msg}")
+
+        punti_codici = {str(p.get("codice_frutta") or "").strip().lower(), str(p.get("codice_latte") or "").strip().lower()}
+        rientri_giro = [r for r in rientri_list if r["codice"].strip().lower() in punti_codici]
+
+        full_stream, light_stream = _genera_distinta_pdf_cloud(zone, articoli_viaggio, data_consegna, pdf_ddt_streams, rientri_giro, pdf_non_trovati_giro)
+        
+        full_blob = bucket.blob(f"REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_{nome_giro}.pdf")
+        full_blob.upload_from_file(full_stream, content_type="application/pdf")
+        distinta_completa_url = _genera_url_storage_token(full_blob)
+        
+        light_blob = bucket.blob(f"REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_LIGHT_{nome_giro}.pdf")
+        light_blob.upload_from_file(light_stream, content_type="application/pdf")
+        distinta_light_url = _genera_url_storage_token(light_blob)
+
+        km = zone.get("_stats", {}).get("km", 0.0)
+        sec_guida = zone.get("_stats", {}).get("t_guida", 0) * 60
+        polylines = zone.get("_polylines", [])
+        
+        punti_html = []
+        for p in punti:
+            try:
+                punti_html.append({**p, "lat": float(p["lat"]), "lon": float(p.get("lon", p.get("lng", 0)))})
+            except:
+                punti_html.append(p)
+                
+        depot = _get_depot_for_points_cloud(punti_html)
+        html_map_content = _genera_html_mappa(f"Giro {nome_giro}", punti_html, km, sec_guida, polylines, depot=depot, distinta_url=distinta_light_url)
+        
+        map_blob = bucket.blob(f"REPORTS/{data_consegna}/MAPPE_AUTISTI/{nome_giro}.html")
+        map_blob.upload_from_string(html_map_content.encode('utf-8'), content_type="text/html; charset=utf-8")
+        map_url = _genera_url_storage_token(map_blob)
+
+        links.append({
+            "v_id": nome_giro,
+            "date": data_consegna,
+            "url": map_url,
+            "zones": zone.get("zone", [zone.get("id_zona", "?")]),
+            "distinta_light": distinta_light_url,
+            "distinta_completa": distinta_completa_url
+        })
+
+    # Master PDF
+    master_distinte_url = None
+    try:
+        from pypdf import PdfWriter
+        riepilogo_zone_pdf = _genera_pagina_riepilogo_zone_cloud(zone_list, data_consegna, pdf_non_trovati_giorno)
+        
+        master_writer = PdfWriter()
+        if riepilogo_zone_pdf:
+            master_writer.append(io.BytesIO(riepilogo_zone_pdf))
+            
+        for zone in zone_list:
+            zid = zone.get("id_zona")
+            if zid == "DDT_DA_INSERIRE": continue
+            nome_giro = zone.get("nome_giro")
+            giro_blob = bucket.blob(f"REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_{nome_giro}.pdf")
+            if giro_blob.exists():
+                master_writer.append(io.BytesIO(giro_blob.download_as_bytes()))
+                
+        master_stream = io.BytesIO()
+        master_writer.write(master_stream)
+        master_stream.seek(0)
+        
+        master_blob = bucket.blob(f"REPORTS/{data_consegna}/MASTER_DISTINTE_{data_consegna}.pdf")
+        master_blob.upload_from_file(master_stream, content_type="application/pdf")
+        master_distinte_url = _genera_url_storage_token(master_blob)
+        print(f"[MASTER] Generato MASTER_DISTINTE_{data_consegna}.pdf con successo.")
+    except Exception as e_master:
+        print(f"[MASTER] Errore assemblaggio: {e_master}")
+
+    whatsapp_lines = [f"Giro {l['v_id']} - Mappa: {l['url']}" for l in links]
+    whatsapp_txt = "\n".join(whatsapp_lines)
+    bucket.blob(f"REPORTS/{data_consegna}/LINK_WHATSAPP_AUTISTI.txt").upload_from_string(whatsapp_txt.encode('utf-8'), content_type="text/plain; charset=utf-8")
+
+    manifest_data = {
+        "date": data_consegna,
+        "links": links
+    }
+    if master_distinte_url:
+        manifest_data["master_distinte_url"] = master_distinte_url
+    bucket.blob(f"REPORTS/{data_consegna}/manifest_link_viaggi.json").upload_from_string(json.dumps(manifest_data, indent=2), content_type='application/json')
+
+    punti_totali = sum(len(z.get("lista_punti", [])) for z in zone_list if z.get("id_zona") != "DDT_DA_INSERIRE")
+    zone_totali = len([z for z in zone_list if z.get("id_zona") != "DDT_DA_INSERIRE"])
+    
+    report_meta = {
+        "data_consegna": data_consegna,
+        "punti_totali": punti_totali,
+        "zone_totali": zone_totali,
+        "mappa_url": links[0]["url"] if links else "",
+        "created_at": firestore.SERVER_TIMESTAMP,
+        "tipo": "REPORT_GENERALE"
+    }
+    db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna).set(report_meta)
+
+    elapsed = time.time() - start_time
+    _registra_statistica("genera_completo_giornata", elapsed)
+
+    return {
+        "status": "ok",
+        "message": f"Pipeline completata in {elapsed:.2f}s per {zone_totali} giri.",
+        "tempo_sec": elapsed,
+        "giri": zone_totali
+    }
+
 # --- ENDPOINTS HTTP ---
+@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=540,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def web_calcola_percorsi(req: https_fn.CallableRequest):
+    try:
+        data_consegna = req.data.get("data_consegna")
+        id_zona = req.data.get("id_zona") or req.data.get("target_zones")
+        aggiorna_traffico = bool(req.data.get("aggiorna_traffico", False))
+        usa_or_tools = bool(req.data.get("usa_or_tools", True))
+        return core_web_calcola_percorsi(data_consegna, id_zona, aggiorna_traffico, usa_or_tools)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"status": "errore", "message": f"Global exception: {str(e)}"}
+
+@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_2, timeout_sec=540,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def genera_completo_giornata(req: https_fn.CallableRequest):
+    try:
+        data_consegna = req.data.get("data_consegna")
+        return core_genera_completo_giornata(data_consegna)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"status": "errore", "message": f"Global exception: {str(e)}"}
+
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=540,
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
 def processa_job_pdf(req: https_fn.CallableRequest):
     return core_processa_job_pdf(req.data.get("job_id"), req.data.get("tenant", "DNR"))
-
-@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
-def elabora_pdf_estrazione(req: https_fn.CallableRequest):
-    return core_elabora_pdf_estrazione(req.auth.uid if req.auth else None)
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
@@ -2314,6 +3715,41 @@ def riepilogo_fatturazione(req: https_fn.CallableRequest):
         req.data.get("anno", "2026")
     )
 
+@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=120,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def pulisci_cartelle_elaborazione(req: https_fn.CallableRequest):
+    """Pulisce le cartelle di storage e i job Firestore per la giornata selezionata prima di caricare i nuovi file."""
+    try:
+        data_consegna = req.data.get("data_consegna")
+        tipologie = req.data.get("tipologie", ["FRUTTA", "LATTE", "GRAND_CHEF"])
+        if not data_consegna:
+            return {"status": "errore", "message": "Data non fornita"}
+            
+        bucket = storage.bucket(name=BUCKET_NAME)
+        db = get_db()
+        
+        for t in tipologie:
+            cart_out_base = f"split_ddt/{data_consegna}/{t.upper()}/"
+            blobs = bucket.list_blobs(prefix=cart_out_base)
+            for b in blobs:
+                try:
+                    b.delete()
+                except Exception:
+                    pass
+                    
+            tenant = "GRAN CHEF" if t.upper() == "GRAND_CHEF" else "DNR"
+            jobs_ref = db.collection('clienti').document(tenant).collection('processing_jobs')
+            old_jobs = jobs_ref.where('data_lavoro', '==', data_consegna).stream()
+            for oj in old_jobs:
+                try:
+                    oj.reference.delete()
+                except Exception:
+                    pass
+                    
+        return {"status": "ok", "message": f"Pulizia completata per {data_consegna}"}
+    except Exception as e:
+        return {"status": "errore", "message": str(e)}
+
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=60,
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
 def check_giornaliero(req: https_fn.CallableRequest):
@@ -2342,3 +3778,48 @@ def genera_report_giornaliero(req: https_fn.CallableRequest):
         import traceback
         traceback.print_exc()
         return {"status": "errore", "message": f"Global exception: {str(e)}"}
+
+
+@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.MB_256, timeout_sec=120,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def elimina_giornata_logistica(req: https_fn.CallableRequest):
+    """
+    Funzione di Tabula Rasa: elimina completamente una giornata (split_ddt, REPORTS, CONSEGNE e record Firestore).
+    """
+    data_consegna = req.data.get("data_consegna")
+    if not data_consegna:
+        return {"status": "errore", "message": "data_consegna mancante"}
+
+    print(f"[INFO] Inizio eliminazione completa per la giornata {data_consegna}")
+    db = get_db()
+    bucket = storage.bucket(name=BUCKET_NAME)
+    
+    try:
+        # 1. Elimina cartelle su Storage
+        data_f = data_consegna.replace('/', '-')
+        prefixes_to_clean = [
+            f"split_ddt/{data_consegna}/",
+            f"REPORTS/{data_consegna}/",
+            f"CONSEGNE/CONSEGNE_{data_f}/"
+        ]
+        
+        for pref in prefixes_to_clean:
+            blobs = bucket.list_blobs(prefix=pref)
+            for b in blobs:
+                try:
+                    b.delete()
+                except Exception as ex:
+                    print(f"[WARN] Errore cancellazione {b.name}: {ex}")
+                    
+        # 2. Elimina record da Firestore
+        doc_ref = db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna)
+        doc_ref.delete()
+        
+        print(f"[INFO] Eliminazione completata con successo per {data_consegna}")
+        return {"status": "ok", "message": "Giornata eliminata con successo"}
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"status": "errore", "message": f"Errore interno: {str(e)}"}
+

@@ -1,11 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.42">
+    <link rel="stylesheet" href="styles.css?v=2.90">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -229,6 +229,11 @@
         .nav-tab .material-icons-round {
             font-size: 18px;
         }
+    
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 
@@ -273,21 +278,6 @@
         <div style="display: flex; gap: 8px; margin-bottom: 24px; overflow-x: auto; padding: 8px 0; scrollbar-width: none;">
             <button class="nav-tab active" title="1_2_3_4_estrai_ddt_consegne.py" onclick="location.reload()">
                 <span class="material-icons-round">upload_file</span> 1. CARICAMENTO PDF
-            </button>
-            <button class="nav-tab" title="2_apri_mappa.bat" onclick="window.apriMappaGenerale()">
-                <span class="material-icons-round">map</span> 2. MAPPA
-            </button>
-            <button class="nav-tab" title="3_genera_percorsi.bat" onclick="window.navigateWithState('gestione_viaggi.html')">
-                <span class="material-icons-round">auto_fix_high</span> 3. PERCORSI
-            </button>
-            <button class="nav-tab" title="4_H10.bat" onclick="window.navigateWithState('gestione_viaggi.html?mode=h10')">
-                <span class="material-icons-round">rule</span> 4. VERIFICA H10
-            </button>
-            <button class="nav-tab" title="5_invio_mobile_autisti.bat" onclick="window.navigateWithState('invio_mobile.html')">
-                <span class="material-icons-round">send_to_mobile</span> 5. INVIO MOBILE
-            </button>
-            <button class="nav-tab" title="6_genera_distinte.bat" onclick="window.navigateWithState('distinte_finali.html')">
-                <span class="material-icons-round">assignment</span> 6. DISTINTE
             </button>
         </div>
         <div class="glass-panel form-card">
@@ -385,16 +375,26 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.28"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.28"></script>
+    <script src="script.js?v=2.90"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.90"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
+
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, limit, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
         import { firebaseConfig } from "./firebase-config.js"; 
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
+
+try {
+    initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider('6Le8IjAtAAAAAIFW6c_ToaLJELGoygI27BW6d1jZ'),
+        isTokenAutoRefreshEnabled: true
+    });
+} catch (e) { console.warn("AppCheck init:", e); }
+
         const storage = getStorage(app);
         const db = getFirestore(app);
         const functions = getFunctions(app, "europe-west1");
@@ -598,6 +598,8 @@
         let activeJobsGC = [];
         let initialLoad = true;
         let notifiedJobs = new Set();
+        let loadedDNR = false;
+        let loadedGC = false;
 
         function renderMergedJobs() {
             const jobsList = document.getElementById('jobs-list');
@@ -623,43 +625,44 @@
                 if (data.status === 'error') { icon = 'error'; color = '#ef4444'; }
                 if (data.status === 'processing') { icon = 'autorenew'; color = '#3b82f6'; }
 
-                if (data.status === 'completed' && !initialLoad && !notifiedJobs.has(data.id)) {
-                    notifiedJobs.add(data.id);
-                    let n_c = data.nuovi_clienti || 0;
-                    let n_a = data.nuovi_articoli || 0;
-                    let n_o = data.nuovi_orari || 0;
-                    
-                    if (n_c > 0 || n_a > 0 || n_o > 0) {
-                        hasNewAnomalies = true;
-                        combinedMsg += `<div style='text-align:left; font-size:14px; margin-top:10px; padding:12px; background:#f8fafc; border-radius:8px; border: 1px solid #e2e8f0;'>`;
-                        combinedMsg += `<div style='color:#0f172a; font-size:15px; font-weight:800; text-transform:uppercase; margin-bottom:10px;'>📌 JOB ${data.type} <span style='font-size:10px; color:#94a3b8; font-weight:700;'>[${data.tenant || 'DNR'}]</span></div>`;
+                if (data.status === 'completed') {
+                    if (initialLoad) {
+                        notifiedJobs.add(data.id);
+                    } else if (!notifiedJobs.has(data.id)) {
+                        notifiedJobs.add(data.id);
+                        let n_c = data.nuovi_clienti || 0;
+                        let n_a = data.nuovi_articoli || 0;
+                        let n_o = data.nuovi_orari || 0;
                         
-                        if (n_c > 0) {
-                            let listC = data.nuovi_clienti_list ? data.nuovi_clienti_list.join(', ') : '';
-                            combinedMsg += `<div style='margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;'>
-                                <span style='background:#fee2e2; color:#ef4444; padding:3px 8px; border-radius:4px; font-weight:700; white-space:nowrap; font-size:11px;'>👥 ${n_c} Clienti</span>
-                                <span style='font-size:12px; color:#475569; line-height:1.4;'>${listC}</span>
-                            </div>`;
+                        if (n_c > 0 || n_a > 0 || n_o > 0) {
+                            hasNewAnomalies = true;
+                            combinedMsg += `<div style='text-align:left; font-size:14px; margin-top:10px; padding:12px; background:#f8fafc; border-radius:8px; border: 1px solid #e2e8f0;'>`;
+                            combinedMsg += `<div style='color:#0f172a; font-size:15px; font-weight:800; text-transform:uppercase; margin-bottom:10px;'>📌 JOB ${data.type} <span style='font-size:10px; color:#94a3b8; font-weight:700;'>[${data.tenant || 'DNR'}]</span></div>`;
+                            
+                            if (n_c > 0) {
+                                let listC = data.nuovi_clienti_list ? data.nuovi_clienti_list.join(', ') : '';
+                                combinedMsg += `<div style='margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;'>
+                                    <span style='background:#fee2e2; color:#ef4444; padding:3px 8px; border-radius:4px; font-weight:700; white-space:nowrap; font-size:11px;'>👥 ${n_c} Clienti</span>
+                                    <span style='font-size:12px; color:#475569; line-height:1.4;'>${listC}</span>
+                                </div>`;
+                            }
+                            if (n_a > 0) {
+                                let listA = data.nuovi_articoli_list ? data.nuovi_articoli_list.join(', ') : '';
+                                combinedMsg += `<div style='margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;'>
+                                    <span style='background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px; font-weight:700; white-space:nowrap; font-size:11px;'>📦 ${n_a} Articoli</span>
+                                    <span style='font-size:12px; color:#475569; line-height:1.4;'>${listA}</span>
+                                </div>`;
+                            }
+                            if (n_o > 0) {
+                                let listO = data.nuovi_orari_list ? data.nuovi_orari_list.join(', ') : '';
+                                combinedMsg += `<div style='margin-bottom:0px; display:flex; align-items:flex-start; gap:8px;'>
+                                    <span style='background:#e0e7ff; color:#4f46e5; padding:3px 8px; border-radius:4px; font-weight:700; white-space:nowrap; font-size:11px;'>🕒 ${n_o} Orari</span>
+                                    <span style='font-size:12px; color:#475569; line-height:1.4;'>${listO}</span>
+                                </div>`;
+                            }
+                            combinedMsg += `</div>`;
                         }
-                        if (n_a > 0) {
-                            let listA = data.nuovi_articoli_list ? data.nuovi_articoli_list.join(', ') : '';
-                            combinedMsg += `<div style='margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;'>
-                                <span style='background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px; font-weight:700; white-space:nowrap; font-size:11px;'>📦 ${n_a} Articoli</span>
-                                <span style='font-size:12px; color:#475569; line-height:1.4;'>${listA}</span>
-                            </div>`;
-                        }
-                        if (n_o > 0) {
-                            let listO = data.nuovi_orari_list ? data.nuovi_orari_list.join(', ') : '';
-                            combinedMsg += `<div style='margin-bottom:0px; display:flex; align-items:flex-start; gap:8px;'>
-                                <span style='background:#e0e7ff; color:#4f46e5; padding:3px 8px; border-radius:4px; font-weight:700; white-space:nowrap; font-size:11px;'>🕒 ${n_o} Orari</span>
-                                <span style='font-size:12px; color:#475569; line-height:1.4;'>${listO}</span>
-                            </div>`;
-                        }
-                        combinedMsg += `</div>`;
                     }
-                }
-                if (initialLoad && data.status === 'completed') {
-                    notifiedJobs.add(data.id);
                 }
 
                 html += `
@@ -671,6 +674,7 @@
                                 <span style="font-size: 10px; background: ${data.tenant === 'GRAN CHEF' ? '#fef3c7' : '#e0e7ff'}; color: ${data.tenant === 'GRAN CHEF' ? '#d97706' : '#4f46e5'}; padding: 2px 6px; border-radius: 4px; font-weight: 700;">${data.tenant || 'DNR'}</span>
                             </div>
                             <div style="color: var(--text-muted); font-size: 13px;">Stato: <b style="color: ${color}; text-transform: uppercase;">${data.status}</b></div>
+                            ${data.error_message ? `<div style="color: #ef4444; font-size: 12px; margin-top: 6px; background: #fef2f2; border: 1px dashed #fca5a5; padding: 6px 10px; border-radius: 6px; font-family: monospace; white-space: pre-wrap; word-break: break-word;">❌ Errore: ${data.error_message}</div>` : ''}
                             ${data.data_rilevata ? `<div style="font-size: 12px; color: #4f46e5; font-weight: 700; margin-top:2px;">📅 Data nel file: ${data.data_rilevata}</div>` : ''}
                             <div style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">
                                 ${data.nuovi_clienti ? `<span style="background:#fee2e2; color:#ef4444; padding:2px 6px; border-radius:4px; font-weight:700; font-size:10px;">${data.nuovi_clienti} Clienti Ignoti</span>` : ''}
@@ -708,6 +712,10 @@
             }
 
             jobsList.innerHTML = html;
+
+            if (loadedDNR && loadedGC) {
+                initialLoad = false;
+            }
         }
 
         // Ascolto in realtime della coda dei job (ultimi 10 per ciascun tenant)
@@ -720,8 +728,8 @@
             onSnapshot(qDNR, (snapshot) => {
                 activeJobsDNR = [];
                 snapshot.forEach(doc => activeJobsDNR.push({ id: doc.id, ...doc.data() }));
+                loadedDNR = true;
                 renderMergedJobs();
-                initialLoad = false;
             });
 
             // Sottoscrizione GRAND CHEF
@@ -730,8 +738,8 @@
             onSnapshot(qGC, (snapshot) => {
                 activeJobsGC = [];
                 snapshot.forEach(doc => activeJobsGC.push({ id: doc.id, ...doc.data() }));
+                loadedGC = true;
                 renderMergedJobs();
-                initialLoad = false;
             });
         }
 
@@ -741,6 +749,29 @@
             if (!dateInput) return alert("Seleziona una data nel calendario.");
             
             const formattedDate = dateInput.split('-').reverse().join('-');
+            
+            // CONTROLLO VIAGGI ESISTENTI
+            try {
+                const checkRef = doc(db, 'clienti', 'DNR', 'reports_logistici', formattedDate);
+                const checkSnap = await getDoc(checkRef);
+                if (checkSnap.exists()) {
+                    const sovraResult = await Swal.fire({
+                        title: 'Viaggi gia esistenti',
+                        html: `Sono gia presenti dei viaggi per il <b>${formattedDate}</b>.<br><br>Vuoi <b>sovrascrivere</b> e rigenerare la mappa e la lista punti?`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#f59e0b',
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: 'Si, sovrascrivi',
+                        cancelButtonText: 'No, annulla',
+                        reverseButtons: true
+                    });
+                    if (!sovraResult.isConfirmed) return;
+                }
+            } catch (err) {
+                console.log("Errore nel controllo viaggi esistenti:", err);
+            }
+
             const originalHtml = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<span class="material-icons-round">sync</span> GENERAZIONE IN CORSO...';
@@ -761,6 +792,51 @@
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalHtml;
+            }
+        };
+
+        
+                window.cancellaGiornata = async function(data_consegna) {
+            const result = await Swal.fire({
+                title: 'TABULA RASA',
+                html: `Stai per eliminare <b>completamente</b> la giornata del <b>${data_consegna}</b>.<br><br>Verranno cancellati tutti i file, le mappe e i giri generati.<br><span style="color:#10b981;font-weight:700;">Clienti e articoli NON verranno toccati.</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '&#x1F5D1; Si, cancella tutto',
+                cancelButtonText: 'Annulla',
+                reverseButtons: true
+            });
+            if (!result.isConfirmed) return;
+
+            // Mostra clessidra bloccante finché l'operazione non termina
+            Swal.fire({
+                title: 'Eliminazione in corso...',
+                html: `Sto cancellando tutti i dati del <b>${data_consegna}</b>.<br>Attendere prego.`,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                const eliminaGiornataFn = httpsCallable(functions, 'elimina_giornata_logistica');
+                const elimResult = await eliminaGiornataFn({ data_consegna: data_consegna });
+                if (elimResult.data && elimResult.data.status === 'ok') {
+                    Swal.fire({
+                        title: 'Eliminata!',
+                        text: `La giornata del ${data_consegna} è stata cancellata.`,
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire('Errore', elimResult.data ? elimResult.data.message : 'Errore sconosciuto', 'error');
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Errore', error.message, 'error');
             }
         };
 
@@ -785,6 +861,9 @@
                                 </button>
                                 <button onclick="window.navigateWithState('mappa_zone.html?data=${data.data_consegna}&cb=' + Date.now())" style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
                                     <span class="material-icons-round">edit</span> MODIFICA PERCORSI
+                                </button>
+                                <button onclick="window.cancellaGiornata('${data.data_consegna}')" style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                                    <span class="material-icons-round">delete_forever</span> CANCELLA GIORNATA
                                 </button>
                             </div>
                         </div>
@@ -849,6 +928,25 @@
         });
 
         document.getElementById('btn-avvia').addEventListener('click', async () => {
+            const dateInput = document.getElementById('master-date-selector').value;
+            if (!dateInput) {
+                alert("⚠️ Seleziona una data nel calendario in alto prima di caricare i file.");
+                return;
+            }
+            const dateFormatted = dateInput.split('-').reverse().join('-');
+            const uploadConfirm = await Swal.fire({
+                title: 'Conferma Data',
+                html: `Stai per caricare i file per la data:<br><b style="font-size:1.4em; color:#4f46e5;">${dateFormatted}</b><br><br><span style="color:#ef4444; font-weight:700;">⚠️ Tutti i dati esistenti per questa data verranno eliminati</span> (mappe, distinte, file caricati in precedenza) e sostituiti con i nuovi.<br><br>La data è corretta?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#4f46e5',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Sì, pulisci e carica',
+                cancelButtonText: 'No, annulla',
+                reverseButtons: true
+            });
+            if (!uploadConfirm.isConfirmed) return;
+
             document.getElementById('btn-avvia').style.display = 'none';
             document.getElementById('progress-area').style.display = 'block';
             
@@ -860,6 +958,33 @@
             const statText = document.getElementById('progress-status-text');
 
             try {
+                // Pulizia preventiva centralizzata per la data selezionata
+                statText.textContent = "Preparazione e pulizia cartelle in corso sul cloud...";
+                fillDiv.style.width = '0%';
+                percText.textContent = '0%';
+                
+                const dateInput = document.getElementById('master-date-selector').value;
+                const dateStr = dateInput.split('-').reverse().join('-');
+                
+                try {
+                    // Mostra clessidra bloccante durante la pulizia
+                    Swal.fire({
+                        title: 'Pulizia in corso...',
+                        html: `Sto eliminando i dati precedenti per il <b>${dateStr}</b>.<br>Attendere prego.`,
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+                    const eliminaFn = httpsCallable(functions, 'elimina_giornata_logistica');
+                    await eliminaFn({ data_consegna: dateStr });
+                    Swal.close();
+                    console.log('[Upload] Pulizia completa completata per', dateStr);
+                } catch (err_cleanup) {
+                    Swal.close();
+                    console.warn("Avviso durante la pulizia preventiva:", err_cleanup);
+                }
+
                 // Upload Frutta
                 for (let file of filesFrutta) {
                     statText.textContent = `Caricamento Frutta: ${file.name} (${currentUploaded + 1}/${totalFiles})...`;

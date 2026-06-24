@@ -45,3 +45,7 @@ venv/
 .env/
 __pycache__/
 *.pyc
+# env files con chiavi
+.env
+.env.local
+.env.*.local

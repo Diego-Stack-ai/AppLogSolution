@@ -113,6 +113,23 @@
             <label>Visualizzazione per Data (Giri)</label>
             <input type="date" id="sel-data" onchange="onDataChange()">
             <input type="text" id="search-box" placeholder="Cerca scuola o 'mancanti'..." onkeyup="updateListAndMap()">
+            <div style="display:flex; gap:8px; margin-bottom:12px;">
+                <div style="flex:1">
+                    <label>Stato Geoloc.</label>
+                    <select id="sel-stato" onchange="updateListAndMap()">
+                        <option value="tutti">Tutti</option>
+                        <option value="da_geolocalizzare">Da geolocalizzare</option>
+                    </select>
+                </div>
+                <div style="flex:1">
+                    <label>Canale</label>
+                    <select id="sel-canale" onchange="updateListAndMap()">
+                        <option value="tutti">Tutti</option>
+                        <option value="DNR">DNR</option>
+                        <option value="GRAN CHEF">GRAN CHEF</option>
+                    </select>
+                </div>
+            </div>
             <div style="display:flex; gap:8px;">
                 <div style="flex:1">
                     <label>Provincia</label>
@@ -189,10 +206,20 @@
 
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
+
         import { getFirestore, collection, onSnapshot, doc, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
+
+try {
+    initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider('6Le8IjAtAAAAAIFW6c_ToaLJELGoygI27BW6d1jZ'),
+        isTokenAutoRefreshEnabled: true
+    });
+} catch (e) { console.warn("AppCheck init:", e); }
+
         const db = getFirestore(app);
 
         let map;
@@ -252,22 +279,53 @@
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         console.log("[Map] Utente autenticato, avvio listener Firestore...");
+                        
+                        let dnrPoints = [];
+                        let gcPoints = [];
+                        let loadedDNR = false;
+                        let loadedGC = false;
+
+                        function mergeAndRender() {
+                            ALL_POINTS = [...dnrPoints, ...gcPoints];
+                            console.log(`[Map] Totale clienti caricati: ${ALL_POINTS.length} (DNR: ${dnrPoints.length}, GC: ${gcPoints.length})`);
+                            initFilters();
+                            updateListAndMap();
+                            if (loadedDNR && loadedGC) {
+                                clearTimeout(loadingTimeout);
+                                document.getElementById('loading-overlay').style.display = 'none';
+                            }
+                        }
+
                         onSnapshot(collection(db, "clienti/DNR/raccolta clienti"), (snapshot) => {
-                            console.log(`[Map] Ricevuti ${snapshot.size} punti da Firestore`);
-                            ALL_POINTS = snapshot.docs.map(doc => ({
+                            console.log(`[Map] Ricevuti ${snapshot.size} punti DNR`);
+                            dnrPoints = snapshot.docs.map(doc => ({
                                 id: doc.id,
+                                tenant: 'DNR',
                                 ...doc.data(),
                                 lat: parseFloat(doc.data().lat) || 0,
                                 lon: parseFloat(doc.data().lon) || 0
                             }));
-                            
-                            initFilters();
-                            updateListAndMap();
-                            clearTimeout(loadingTimeout);
-                            document.getElementById('loading-overlay').style.display = 'none';
+                            loadedDNR = true;
+                            mergeAndRender();
                         }, (error) => {
-                            console.error("[Map] Errore Firestore:", error);
-                            alert("Errore accesso dati: " + error.message);
+                            console.error("[Map] Errore Firestore DNR:", error);
+                            alert("Errore accesso dati DNR: " + error.message);
+                        });
+
+                        onSnapshot(collection(db, "clienti/GRAN CHEF/raccolta clienti"), (snapshot) => {
+                            console.log(`[Map] Ricevuti ${snapshot.size} punti GRAN CHEF`);
+                            gcPoints = snapshot.docs.map(doc => ({
+                                id: doc.id,
+                                tenant: 'GRAN CHEF',
+                                ...doc.data(),
+                                lat: parseFloat(doc.data().lat) || 0,
+                                lon: parseFloat(doc.data().lon) || 0
+                            }));
+                            loadedGC = true;
+                            mergeAndRender();
+                        }, (error) => {
+                            console.error("[Map] Errore Firestore GRAN CHEF:", error);
+                            alert("Errore accesso dati GRAN CHEF: " + error.message);
                         });
                     } else {
                         console.warn("[Map] Utente non autenticato, reindirizzamento...");
@@ -337,8 +395,22 @@
             const com = document.getElementById('sel-comune').value;
             const searchInput = document.getElementById('search-box').value.toLowerCase();
             
+            // Nuovi filtri
+            const filterStato = document.getElementById('sel-stato') ? document.getElementById('sel-stato').value : 'tutti';
+            const filterCanale = document.getElementById('sel-canale') ? document.getElementById('sel-canale').value : 'tutti';
+            
             // Se c'è una data, filtriamo solo chi ha un DDT
             const filtered = ALL_POINTS.filter(p => {
+                // Filtro Canale
+                if (filterCanale !== 'tutti' && p.tenant !== filterCanale) {
+                    return false;
+                }
+
+                // Filtro Stato Geoloc.
+                if (filterStato === 'da_geolocalizzare' && p.lat !== 0) {
+                    return false;
+                }
+
                 if(dateVal && DDT_POINTS.length > 0) {
                     const hasDDT = DDT_POINTS.some(d => 
                         (d.codice_frutta && d.codice_frutta === p.codice_frutta) || 
@@ -524,7 +596,11 @@
 
                 m.addListener('dragend', () => {
                     const pos = m.position;
-                    MODIFIED[p.id] = { lat: pos.lat.toFixed(6), lon: pos.lng.toFixed(6) };
+                    MODIFIED[p.id] = { 
+                        lat: parseFloat(pos.lat.toFixed(6)), 
+                        lon: parseFloat(pos.lng.toFixed(6)),
+                        tenant: p.tenant
+                    };
                     
                     // Aggiorna colore in blu (modificato)
                     el.style.background = 'linear-gradient(135deg, #4f46e5, #4f46e5)';
@@ -573,8 +649,14 @@
             try {
                 const batch = writeBatch(db);
                 for (const id in MODIFIED) {
-                    const ref = doc(db, "clienti/DNR/raccolta clienti", id);
-                    batch.update(ref, MODIFIED[id]);
+                    const data = MODIFIED[id];
+                    const tenant = data.tenant || 'DNR';
+                    const ref = doc(db, 'clienti', tenant, 'raccolta clienti', id);
+                    batch.update(ref, {
+                        lat: data.lat,
+                        lon: data.lon,
+                        stato: 'ok'
+                    });
                 }
                 await batch.commit();
                 alert("Posizioni salvate nel Cloud con successo!");

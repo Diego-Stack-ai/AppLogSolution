@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.37">
+    <link rel="stylesheet" href="styles.css?v=2.90">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
@@ -157,6 +157,26 @@
                 <div class="input-group">
                     <label for="driverCodiceFiscale">Codice Fiscale</label>
                     <input type="text" id="driverCodiceFiscale" placeholder="Es: RSSMRA80A01F205X" style="text-transform: uppercase;">
+                </div>
+                <div class="input-group">
+                    <label for="driverSesso">Sesso</label>
+                    <select id="driverSesso">
+                        <option value="">Non specificato</option>
+                        <option value="M">M</option>
+                        <option value="F">F</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="driverDataNascita">Data Nascita</label>
+                    <input type="date" id="driverDataNascita">
+                </div>
+                <div class="input-group">
+                    <label for="driverLuogoNascita">Luogo di Nascita</label>
+                    <input type="text" id="driverLuogoNascita" placeholder="Es: Piove di Sacco (PD)">
+                </div>
+                <div class="input-group" style="grid-column: 1 / -1;">
+                    <label for="driverResidenza">Residenza</label>
+                    <input type="text" id="driverResidenza" placeholder="Es: Via Roma 1, 35100 Padova (PD)">
                 </div>
                 <div class="input-group">
                     <label for="driverDataAssunzione">Data Assunzione</label>
@@ -447,6 +467,10 @@
 
         // Nuovi elementi anagrafici e patente
         const driverCodiceFiscale = document.getElementById('driverCodiceFiscale');
+        const driverSesso = document.getElementById('driverSesso');
+        const driverDataNascita = document.getElementById('driverDataNascita');
+        const driverLuogoNascita = document.getElementById('driverLuogoNascita');
+        const driverResidenza = document.getElementById('driverResidenza');
         const driverNumeroPatente = document.getElementById('driverNumeroPatente');
         const driverTipoPatente = document.getElementById('driverTipoPatente');
         const driverPatenteRilasciataDa = document.getElementById('driverPatenteRilasciataDa');
@@ -456,6 +480,27 @@
         const driverTrasformazione = document.getElementById('driverTrasformazione');
         const driverDataTrasformazione = document.getElementById('driverDataTrasformazione');
         const driverTipoTrasformazione = document.getElementById('driverTipoTrasformazione');
+
+        // Helper per la gestione delle date (DD/MM/YYYY <-> YYYY-MM-DD)
+        function dbToInputDate(dateStr) {
+            if (!dateStr) return '';
+            if (dateStr.includes('-')) return dateStr;
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+            }
+            return dateStr;
+        }
+
+        function inputToDbDate(dateStr) {
+            if (!dateStr) return '';
+            if (dateStr.includes('/')) return dateStr;
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return dateStr;
+        }
 
         let editIndexAutista = -1;
 
@@ -495,43 +540,104 @@
                 const r = document.createElement('div');
                 r.className = 'list-row';
                 r.style.marginBottom = '8px';
+                r.style.flexDirection = 'column';
+                r.style.alignItems = 'stretch';
+                r.style.cursor = 'pointer';
+                r.style.transition = 'all 0.3s ease';
                 
                 const elevationBadge = a.canElevate ? '<span style="font-size:10px; color:#10b981; margin-left:5px;">(Elevabile)</span>' : '';
                 const turnoBadge = `<span style="font-size:11px; font-weight:400; background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:10px; margin-left:8px;">${a.tipoTurno === 'notturno' ? 'NOTTURNO' : 'GIORNATA'}</span>`;
                 
-                const details = a.username ? `Username: <b style="color:var(--primary);">${a.username}</b>${a.password ? ` | Password: <b style="color:var(--primary);">${a.password}</b>` : ''}` : `Email: <b>${a.email || 'N.D.'}</b>`;
+                const details = a.username ? `Username: <b style="color:var(--primary);">${a.username}</b>` : `Email: <b>${a.email || 'N.D.'}</b>`;
                 
                 // Visualizzazione anagrafica e patente extra a colpo d'occhio
-                let extraDetails = '';
+                let extraDetailsCompact = '';
                 if (a.codice_fiscale || a.tipo_patente || a.data_assunzione) {
                     const cfStr = a.codice_fiscale ? `CF: <b>${a.codice_fiscale}</b>` : '';
-                    const patStr = a.tipo_patente ? `Patente: <b>${a.tipo_patente}</b>${a.patente_scadenza ? ` (Scad. ${a.patente_scadenza})` : ''}` : '';
+                    const patStr = a.tipo_patente ? `Patente: <b>${a.tipo_patente}</b>` : '';
                     const assStr = a.data_assunzione ? `Assunzione: <b>${a.data_assunzione}</b>` : '';
                     
                     const listDetails = [cfStr, patStr, assStr].filter(x => x !== '');
                     if (listDetails.length > 0) {
-                        extraDetails = `<div style="font-size:11px; color:#475569; margin-top: 5px; border-top: 1px dashed #e2e8f0; padding-top: 4px;">${listDetails.join(' | ')}</div>`;
+                        extraDetailsCompact = `<div class="compact-info" style="font-size:11px; color:#64748b; margin-top: 5px; border-top: 1px dashed #e2e8f0; padding-top: 4px;">${listDetails.join(' | ')}</div>`;
                     }
                 }
 
                 r.innerHTML = `
-                    <div style="flex: 1;">
-                        <div style="font-weight:600; color:#334155;">${a.nome} ${elevationBadge} ${turnoBadge} <span style="font-size:11px; font-weight:400; background:#e2e8f0; padding:2px 8px; border-radius:10px; margin-left:8px; text-transform:uppercase;">${a.ruolo}</span></div>
-                        <div style="font-size:12px; color:#64748b; margin-top: 4px;">${details}</div>
-                        ${extraDetails}
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div style="flex: 1;">
+                            <div style="font-weight:600; color:#334155; display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                                ${a.nome} ${elevationBadge} ${turnoBadge} <span style="font-size:11px; font-weight:400; background:#e2e8f0; padding:2px 8px; border-radius:10px; margin-left:8px; text-transform:uppercase;">${a.ruolo}</span>
+                            </div>
+                            <div style="font-size:12px; color:#64748b; margin-top: 4px;">${details}</div>
+                            ${extraDetailsCompact}
+                        </div>
+                        <div style="display:flex; gap:8px;" onclick="event.stopPropagation();">
+                            <button onclick="editAutista(${idx})" class="action-btn edit-btn" title="Modifica">
+                                <span class="material-icons-round" style="font-size:20px;">edit</span>
+                            </button>
+                            <button onclick="sendResetEmail('${a.email || a.username}')" class="action-btn" title="Invia Reset Password" style="color: var(--primary);">
+                                <span class="material-icons-round" style="font-size:20px;">lock_reset</span>
+                            </button>
+                            <button onclick="deleteAutista(${idx})" class="action-btn delete-btn" title="Elimina">
+                                <span class="material-icons-round" style="font-size:20px;">delete</span>
+                            </button>
+                            <button class="action-btn expand-indicator-btn" title="Espandi/Comprimi">
+                                <span class="material-icons-round expand-icon" style="font-size:20px; transition: transform 0.2s;">keyboard_arrow_down</span>
+                            </button>
+                        </div>
                     </div>
-                    <div style="display:flex; gap:8px;">
-                        <button onclick="editAutista(${idx})" class="action-btn edit-btn" title="Modifica">
-                            <span class="material-icons-round" style="font-size:20px;">edit</span>
-                        </button>
-                        <button onclick="sendResetEmail('${a.email || a.username}')" class="action-btn" title="Invia Reset Password" style="color: var(--primary);">
-                            <span class="material-icons-round" style="font-size:20px;">lock_reset</span>
-                        </button>
-                        <button onclick="deleteAutista(${idx})" class="action-btn delete-btn" title="Elimina">
-                            <span class="material-icons-round" style="font-size:20px;">delete</span>
-                        </button>
+                    
+                    <!-- Dettagli Espansi -->
+                    <div class="details-pane" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0; font-size: 13px; color: #475569;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+                            <div>
+                                <div style="color: var(--primary); font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">Dati Anagrafici</div>
+                                <div style="margin-bottom: 4px;">Sesso: <b>${a.sesso || 'N.D.'}</b></div>
+                                <div style="margin-bottom: 4px;">Codice Fiscale: <b>${a.codice_fiscale || 'N.D.'}</b></div>
+                                <div style="margin-bottom: 4px;">Data di Nascita: <b>${a.data_nascita || 'N.D.'}</b></div>
+                                <div style="margin-bottom: 4px;">Luogo di Nascita: <b>${a.luogo_nascita || 'N.D.'}</b></div>
+                                <div>Residenza: <b>${a.residenza || 'N.D.'}</b></div>
+                            </div>
+                            <div>
+                                <div style="color: var(--primary); font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">Rapporto di Lavoro</div>
+                                <div style="margin-bottom: 4px; text-transform: capitalize;">Ruolo: <b>${a.ruolo || 'N.D.'}</b></div>
+                                <div style="margin-bottom: 4px; text-transform: uppercase;">Turno: <b>${a.tipoTurno || 'giornata'}</b></div>
+                                <div style="margin-bottom: 4px;">Assunzione: <b>${a.data_assunzione || 'N.D.'}</b></div>
+                                <div style="margin-bottom: 4px;">Contratto: <b>${a.tipo_assunzione || 'N.D.'}</b></div>
+                                ${a.trasformazione ? `
+                                    <div style="margin-top:6px; border-top:1px dashed #e2e8f0; padding-top:6px; font-size:12px;">
+                                        Trasformazione: <b>${a.trasformazione}</b><br/>
+                                        Data: <b>${a.data_trasformazione || 'N.D.'}</b> | Tipo: <b>${a.tipo_trasformazione || 'N.D.'}</b>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div>
+                                <div style="color: var(--primary); font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">Patente e Credenziali</div>
+                                <div style="margin-bottom: 4px;">Patente N.: <b>${a.numero_patente || 'N.D.'}</b></div>
+                                <div style="margin-bottom: 4px;">Tipo Patente: <b>${a.tipo_patente || 'N.D.'}</b></div>
+                                <div style="margin-bottom: 4px;">Scadenza: <b>${a.patente_scadenza || 'N.D.'}</b></div>
+                                <div style="margin-bottom: 4px;">Rilasciata da: <b>${a.patente_rilasciata_da || 'N.D.'}</b></div>
+                                ${a.password ? `<div style="margin-top:6px; color:#10b981; font-weight:600;">Password: <span>${a.password}</span></div>` : ''}
+                            </div>
+                        </div>
                     </div>
                 `;
+
+                // Event listener per espandere/comprimere al click sulla card
+                r.addEventListener('click', () => {
+                    const pane = r.querySelector('.details-pane');
+                    const icon = r.querySelector('.expand-icon');
+                    const compact = r.querySelector('.compact-info');
+                    const isExpanded = pane.style.display === 'block';
+                    
+                    pane.style.display = isExpanded ? 'none' : 'block';
+                    icon.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+                    if (compact) {
+                        compact.style.display = isExpanded ? 'none' : 'block';
+                    }
+                });
+
                 listaAutistiDiv.appendChild(r);
             });
         }
@@ -558,14 +664,18 @@
 
             // Nuovi campi anagrafici e patente
             driverCodiceFiscale.value = targetUser.codice_fiscale || '';
+            driverSesso.value = targetUser.sesso || '';
+            driverDataNascita.value = dbToInputDate(targetUser.data_nascita || '');
+            driverLuogoNascita.value = targetUser.luogo_nascita || '';
+            driverResidenza.value = targetUser.residenza || '';
             driverNumeroPatente.value = targetUser.numero_patente || '';
             driverTipoPatente.value = targetUser.tipo_patente || '';
             driverPatenteRilasciataDa.value = targetUser.patente_rilasciata_da || '';
-            driverPatenteScadenza.value = targetUser.patente_scadenza || '';
-            driverDataAssunzione.value = targetUser.data_assunzione || '';
+            driverPatenteScadenza.value = dbToInputDate(targetUser.patente_scadenza || '');
+            driverDataAssunzione.value = dbToInputDate(targetUser.data_assunzione || '');
             driverTipoAssunzione.value = targetUser.tipo_assunzione || '';
             driverTrasformazione.value = targetUser.trasformazione || '';
-            driverDataTrasformazione.value = targetUser.data_trasformazione || '';
+            driverDataTrasformazione.value = dbToInputDate(targetUser.data_trasformazione || '');
             driverTipoTrasformazione.value = targetUser.tipo_trasformazione || '';
 
             // Nascondi la password in modifica
@@ -607,6 +717,10 @@
 
             // Resetta i nuovi campi
             driverCodiceFiscale.value = '';
+            driverSesso.value = '';
+            driverDataNascita.value = '';
+            driverLuogoNascita.value = '';
+            driverResidenza.value = '';
             driverNumeroPatente.value = '';
             driverTipoPatente.value = '';
             driverPatenteRilasciataDa.value = '';
@@ -631,14 +745,18 @@
             
             // Dati nuovi
             const cf = driverCodiceFiscale.value.trim().toUpperCase();
+            const sesso = driverSesso.value;
+            const dn = inputToDbDate(driverDataNascita.value);
+            const ln = driverLuogoNascita.value.trim();
+            const residenza = driverResidenza.value.trim();
             const np = driverNumeroPatente.value.trim().toUpperCase();
             const tp = driverTipoPatente.value;
             const pr = driverPatenteRilasciataDa.value.trim();
-            const ps = driverPatenteScadenza.value;
-            const da = driverDataAssunzione.value;
+            const ps = inputToDbDate(driverPatenteScadenza.value);
+            const da = inputToDbDate(driverDataAssunzione.value);
             const ta = driverTipoAssunzione.value.trim();
             const tr = driverTrasformazione.value.trim();
-            const dt = driverDataTrasformazione.value;
+            const dt = inputToDbDate(driverDataTrasformazione.value);
             const tt = driverTipoTrasformazione.value.trim();
 
             if (!n || !m) {
@@ -676,6 +794,10 @@
                         if (uid && window.updateUser) {
                             await window.updateUser(uid, {
                                 codice_fiscale: cf,
+                                sesso: sesso,
+                                data_nascita: dn,
+                                luogo_nascita: ln,
+                                residenza: residenza,
                                 numero_patente: np,
                                 tipo_patente: tp,
                                 patente_rilasciata_da: pr,
@@ -711,6 +833,10 @@
                         canElevate: e, 
                         email: email,
                         codice_fiscale: cf,
+                        sesso: sesso,
+                        data_nascita: dn,
+                        luogo_nascita: ln,
+                        residenza: residenza,
                         numero_patente: np,
                         tipo_patente: tp,
                         patente_rilasciata_da: pr,
@@ -736,17 +862,27 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=2.28"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.28"></script>
+    <script src="script.js?v=2.90"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.90"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
     import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot }
         from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
+
     import { firebaseConfig } from "./firebase-config.js";
 
     const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
+
+try {
+    initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider('6Le8IjAtAAAAAIFW6c_ToaLJELGoygI27BW6d1jZ'),
+        isTokenAutoRefreshEnabled: true
+    });
+} catch (e) { console.warn("AppCheck init:", e); }
+
     const db  = getFirestore(app);
 
     // ── CRUD locale (non dipende da window.saveProgetto) ──────────────────

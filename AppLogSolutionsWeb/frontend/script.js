@@ -1,10 +1,10 @@
-﻿/**
+/**
  * script.js - v1.95
  * Modulo principale per la gestione della UI, validazioni e wizard.
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "2.28";
+const APP_VERSION = "2.90";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -125,7 +125,9 @@ function calcolaTutto() {
 function diffMin(s, e) {
     const [h1, m1] = s.split(':').map(Number);
     const [h2, m2] = e.split(':').map(Number);
-    return Math.max(0, (h2 * 60 + m2) - (h1 * 60 + m1));
+    let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+    if (diff < 0) diff += 24 * 60; // Supporto scavalco mezzanotte
+    return diff;
 }
 
 function formatHHMM(min) {
@@ -232,7 +234,7 @@ window.updateNomeGiorno = function() {
     nomeGiornoEl.textContent = dayName;
 };
 
-window.updateViaggi = function() {
+window.updateViaggi = async function() {
     const clienteNome = document.getElementById("clienteSelect")?.value || "";
     const viaggioSelect = document.getElementById("viaggioSelect");
     if (!viaggioSelect) return;
@@ -240,42 +242,104 @@ window.updateViaggi = function() {
     viaggioSelect.innerHTML = '<option value="">Seleziona viaggio</option>';
     viaggioSelect.disabled = true;
 
-    // 1. Cerca il progetto su Firestore (lista_progetti)
-    const progetto = (window.appData.lista_progetti || []).find(
-        p => (p.nome || '').toUpperCase() === clienteNome.toUpperCase()
-    );
-    let options = progetto ? (progetto.viaggi || []) : [];
+    // Reset link mappa
+    const linkMappa = document.getElementById('linkMappaViaggio');
+    if (linkMappa) {
+        linkMappa.href = '#';
+        linkMappa.style.display = 'none';
+    }
+    window.viaggiLinksMap = {};
 
-    // 2. Fallback hardcoded se non trovato su Firestore
-    if (options.length === 0) {
-        const viaggiMap = {
-            "PROGETTO SCUOLE": ["VIAGGIO 01", "VIAGGIO 02", "VIAGGIO 03", "VIAGGIO 04", "VIAGGIO 05", "VIAGGIO 06", "VIAGGIO 07", "VIAGGIO 08", "VIAGGIO 09", "VIAGGIO 10"],
-            "CATTEL": ["BS * BRESCIA", "FBS * FUORI BRESCIA"],
-            "GRAN CHEF": ["BL 1 * BELLUNO", "BS * BRESCIA"],
-            "BAUER": [
-                "1 - LUNEDI - VI * VICENZA", 
-                "2 - MARTEDI - TV * TREVISO", 
-                "3 - MERCOLEDI - VI * VICENZA", 
-                "4 - GIOVEDI - TV * TREVISO", 
-                "5 - VENERDI - VI * VICENZA"
-            ]
-        };
-        options = viaggiMap[clienteNome.toUpperCase()] || [];
+    const selectedDate = document.getElementById("data")?.value;
+    
+    let options = [];
+    let loadedFromManifest = false;
+
+    let formattedDate = selectedDate || "";
+    if (selectedDate && selectedDate.includes('-')) {
+        const parts = selectedDate.split('-');
+        if (parts.length === 3 && parts[0].length === 4) {
+            // Converts YYYY-MM-DD to DD-MM-YYYY
+            formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
     }
 
-    // --- NUOVO FILTRO BAUER BASATO SULLA DATA ---
-    if (clienteNome.toUpperCase() === 'BAUER') {
-        const dataInput = document.getElementById('data');
-        if (dataInput && dataInput.value) {
-            const date = new Date(dataInput.value);
-            if (!isNaN(date.getTime())) {
-                const dayOfWeek = date.getDay(); // 0 = Dom, 1 = Lun, 2 = Mar, 3 = Mer, 4 = Gio, 5 = Ven, 6 = Sab
-                
-                // Mappa il giorno della settimana (1 = Lun, 2 = Mar, ..., 7 = Dom)
-                const dayDigit = dayOfWeek === 0 ? "7" : String(dayOfWeek);
-                
-                // Filtra solo i viaggi che iniziano con la cifra del giorno lavorativo
-                options = options.filter(v => v.trim().startsWith(dayDigit));
+    if (formattedDate && (clienteNome.toUpperCase() === 'GRAN CHEF' || clienteNome.toUpperCase() === 'GRAND CHEF' || clienteNome.toUpperCase() === 'PROGETTO SCUOLE')) {
+        try {
+            const storage = window.firebaseStorage || (typeof firebaseStorage !== 'undefined' ? firebaseStorage : null);
+            const sRef = window.sRef;
+            const getDownloadURL = window.getDownloadURL;
+
+            if (storage && sRef && getDownloadURL) {
+                const fileRef = sRef(storage, `REPORTS/${formattedDate}/manifest_link_viaggi.json`);
+                const downloadUrl = await getDownloadURL(fileRef);
+                const response = await fetch(downloadUrl);
+                if (response.ok) {
+                    const data = await response.json();
+                    const links = data.links || [];
+                    
+                    // Salva la mappa dei link
+                    links.forEach(l => {
+                        if (l.v_id && l.url) {
+                            window.viaggiLinksMap[l.v_id.toUpperCase()] = l.url;
+                        }
+                    });
+                    
+                    if (clienteNome.toUpperCase() === 'GRAN CHEF' || clienteNome.toUpperCase() === 'GRAND CHEF') {
+                        options = links
+                            .map(l => l.v_id)
+                            .filter(v_id => v_id && (v_id.toLowerCase().includes('chef') || v_id.toLowerCase().includes('grand')));
+                    } else if (clienteNome.toUpperCase() === 'PROGETTO SCUOLE') {
+                        options = links
+                            .map(l => l.v_id)
+                            .filter(v_id => v_id && !(v_id.toLowerCase().includes('chef') || v_id.toLowerCase().includes('grand')));
+                    }
+                    
+                    if (options.length > 0) {
+                        loadedFromManifest = true;
+                        console.log(`[updateViaggi] Caricati ${options.length} viaggi dal manifest di Storage per ${formattedDate}.`);
+                    }
+                }
+            }
+        } catch (err) {
+            console.warn("[updateViaggi] Manifest non trovato o errore nel recupero: ", err.message);
+        }
+    }
+
+    if (!loadedFromManifest) {
+        // 1. Cerca il progetto su Firestore (lista_progetti)
+        const progetto = (window.appData.lista_progetti || []).find(
+            p => (p.nome || '').toUpperCase() === clienteNome.toUpperCase()
+        );
+        options = progetto ? (progetto.viaggi || []) : [];
+
+        // 2. Fallback hardcoded se non trovato su Firestore
+        if (options.length === 0) {
+            const viaggiMap = {
+                "PROGETTO SCUOLE": ["VIAGGIO 01", "VIAGGIO 02", "VIAGGIO 03", "VIAGGIO 04", "VIAGGIO 05", "VIAGGIO 06", "VIAGGIO 07", "VIAGGIO 08", "VIAGGIO 09", "VIAGGIO 10"],
+                "CATTEL": ["BS * BRESCIA", "FBS * FUORI BRESCIA"],
+                "GRAN CHEF": ["BL 1 * BELLUNO", "BS * BRESCIA"],
+                "BAUER": [
+                    "1 - LUNEDI - VI * VICENZA", 
+                    "2 - MARTEDI - TV * TREVISO", 
+                    "3 - MERCOLEDI - VI * VICENZA", 
+                    "4 - GIOVEDI - TV * TREVISO", 
+                    "5 - VENERDI - VI * VICENZA"
+                ]
+            };
+            options = viaggiMap[clienteNome.toUpperCase()] || [];
+        }
+
+        // --- FILTRO BAUER BASATO SULLA DATA ---
+        if (clienteNome.toUpperCase() === 'BAUER') {
+            const dataInput = document.getElementById('data');
+            if (dataInput && dataInput.value) {
+                const date = new Date(dataInput.value);
+                if (!isNaN(date.getTime())) {
+                    const dayOfWeek = date.getDay();
+                    const dayDigit = dayOfWeek === 0 ? "7" : String(dayOfWeek);
+                    options = options.filter(v => v.trim().startsWith(dayDigit));
+                }
             }
         }
     }
@@ -283,7 +347,7 @@ window.updateViaggi = function() {
     if (options.length > 0) {
         options.forEach(v => {
             const opt = document.createElement('option');
-            opt.value = v; opt.textContent = v;
+            opt.value = v; opt.textContent = v.toUpperCase();
             viaggioSelect.appendChild(opt);
         });
         viaggioSelect.disabled = false;
@@ -303,10 +367,20 @@ document.addEventListener('DOMContentLoaded', () => {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             let email = document.getElementById('username')?.value.trim().toLowerCase();
-            if (email && !email.includes('@')) {
-                // Normalizza: trasforma gli spazi in punti (es. "ayoub berradia" -> "ayoub.berradia")
-                email = email.replace(/\s+/g, '.');
-                email += '@logsolution.app';
+            if (email) {
+                // Rimuove caratteri invisibili
+                email = email.replace(/[\u200B-\u200D\uFEFF]/g, '');
+                
+                if (!email.includes('@')) {
+                    // Trasforma gli spazi in punti (es. "ayoub berradia" -> "ayoub.berradia")
+                    email = email.replace(/\s+/g, '.');
+                    // Rimuove punti consecutivi o punti all'inizio/fine che causano invalid-email
+                    email = email.replace(/\.+/g, '.').replace(/^\.|\.$/g, '');
+                    email += '@logsolution.app';
+                } else {
+                    // Rimuovi eventuali spazi accidentali
+                    email = email.replace(/\s+/g, '');
+                }
             }
             const password = document.getElementById('password')?.value.trim();
             const btn = loginForm.querySelector('.btn-primary');
@@ -368,73 +442,75 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         dataInput.addEventListener('change', () => {
             if (typeof window.updateNomeGiorno === 'function') window.updateNomeGiorno();
-            if (document.getElementById('clienteSelect')?.value?.toUpperCase() === 'BAUER') {
+            const client = document.getElementById('clienteSelect')?.value?.toUpperCase();
+            if (client === 'BAUER' || client === 'GRAN CHEF' || client === 'GRAND CHEF' || client === 'PROGETTO SCUOLE') {
                 if (typeof window.updateViaggi === 'function') window.updateViaggi();
             }
         });
         dataInput.addEventListener('input', () => {
             if (typeof window.updateNomeGiorno === 'function') window.updateNomeGiorno();
-            if (document.getElementById('clienteSelect')?.value?.toUpperCase() === 'BAUER') {
+            const client = document.getElementById('clienteSelect')?.value?.toUpperCase();
+            if (client === 'BAUER' || client === 'GRAN CHEF' || client === 'GRAND CHEF' || client === 'PROGETTO SCUOLE') {
                 if (typeof window.updateViaggi === 'function') window.updateViaggi();
             }
         });
+    }
 
-        // PWA: Bonifica automatica vecchi Service Worker obsoleti e registrazione sw.js costante
-        if ('serviceWorker' in navigator) {
-            // 1. Rileva e disinstalla vecchi Service Worker con nomi specifici di versione (es. sw_v207.js)
-            navigator.serviceWorker.getRegistrations().then(registrations => {
-                let clearedOldSw = false;
-                for (let reg of registrations) {
-                    const scriptUrl = reg.active?.scriptURL || reg.installing?.scriptURL || reg.waiting?.scriptURL || '';
-                    if (scriptUrl && !scriptUrl.endsWith('/sw.js')) {
-                        console.warn('[SW Cleanup] Rilevato Service Worker obsoleto, rimozione in corso:', scriptUrl);
-                        reg.unregister();
-                        clearedOldSw = true;
-                    }
+    // PWA: Bonifica automatica vecchi Service Worker obsoleti e registrazione sw.js costante
+    if ('serviceWorker' in navigator) {
+        // 1. Rileva e disinstalla vecchi Service Worker con nomi specifici di versione (es. sw_v207.js)
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+            let clearedOldSw = false;
+            for (let reg of registrations) {
+                const scriptUrl = reg.active?.scriptURL || reg.installing?.scriptURL || reg.waiting?.scriptURL || '';
+                if (scriptUrl && !scriptUrl.endsWith('/sw.js')) {
+                    console.warn('[SW Cleanup] Rilevato Service Worker obsoleto, rimozione in corso:', scriptUrl);
+                    reg.unregister();
+                    clearedOldSw = true;
                 }
-                if (clearedOldSw) {
-                    console.log('[SW Cleanup] Bonifica completata. Svuoto la cache e ricarico...');
-                    caches.keys().then(names => Promise.all(names.map(name => caches.delete(name)))).then(() => {
-                        window.location.reload();
-                    });
-                }
-            });
-
-            // 2. Registrazione del Service Worker standard sw.js
-            navigator.serviceWorker.register('./sw.js').then(reg => {
-                console.log('[SW] Registrato correttamente sw.js con versione ' + APP_VERSION);
-
-                // Se c'è già un SW in attesa (tab rimasto aperto durante aggiornamento)
-                // - invia subito SKIP_WAITING per forzare l'attivazione
-                if (reg.waiting) {
-                    console.log('[SW] SW in attesa trovato — invio SKIP_WAITING.');
-                    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-                    showUpdateToast(reg);
-                }
-
-                reg.addEventListener('updatefound', () => {
-                    const newWorker = reg.installing;
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            console.log('[SW] Nuova versione installata, mostro banner aggiornamento.');
-                            showUpdateToast(reg);
-                        }
-                    });
+            }
+            if (clearedOldSw) {
+                console.log('[SW Cleanup] Bonifica completata. Svuoto la cache e ricarico...');
+                caches.keys().then(names => Promise.all(names.map(name => caches.delete(name)))).then(() => {
+                    window.location.reload();
                 });
-            }).catch(err => {
-                console.error('[SW] Errore registrazione:', err);
-            });
+            }
+        });
 
-            // ⚡ CRITICO: Quando il nuovo SW prende il controllo, ricarica la pagina automaticamente
-            // Questo garantisce che il telefono non rimanga su una versione vecchia.
-            let swRefreshing = false;
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (swRefreshing) return;
-                swRefreshing = true;
-                console.log('[SW] Nuova versione attiva — ricarico la pagina...');
-                window.location.reload();
+        // 2. Registrazione del Service Worker standard sw.js
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+            console.log('[SW] Registrato correttamente sw.js con versione ' + APP_VERSION);
+
+            // Se c'è già un SW in attesa (tab rimasto aperto durante aggiornamento)
+            // - invia subito SKIP_WAITING per forzare l'attivazione
+            if (reg.waiting) {
+                console.log('[SW] SW in attesa trovato — invio SKIP_WAITING.');
+                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                showUpdateToast(reg);
+            }
+
+            reg.addEventListener('updatefound', () => {
+                const newWorker = reg.installing;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        console.log('[SW] Nuova versione installata, mostro banner aggiornamento.');
+                        showUpdateToast(reg);
+                    }
+                });
             });
-        }
+        }).catch(err => {
+            console.error('[SW] Errore registrazione:', err);
+        });
+
+        // ⚡ CRITICO: Quando il nuovo SW prende il controllo, ricarica la pagina automaticamente
+        // Questo garantisce che il telefono non rimanga su una versione vecchia.
+        let swRefreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (swRefreshing) return;
+            swRefreshing = true;
+            console.log('[SW] Nuova versione attiva — ricarico la pagina...');
+            window.location.reload();
+        });
     }
 });
 

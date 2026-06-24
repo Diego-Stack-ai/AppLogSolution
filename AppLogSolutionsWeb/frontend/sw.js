@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'log-solution-v2.28';
+const CACHE_NAME = 'log-solution-v2.90';
 const ASSETS = [
     './',
     './index.html',
@@ -47,7 +47,7 @@ self.addEventListener('activate', (event) => {
 // 3. SKIP_WAITING via messaggio (forza aggiornamento immediato)
 self.addEventListener('message', (event) => {
     if (event.data === 'SKIP_WAITING' || event.data?.type === 'SKIP_WAITING') {
-        console.log(`[SW ${CACHE_NAME}] SKIP_WAITING ricevuto — attivazione forzata.`);
+        console.log(`[SW ${CACHE_NAME}] SKIP_WAITING ricevuto � attivazione forzata.`);
         self.skipWaiting();
     }
 });
@@ -60,13 +60,15 @@ self.addEventListener('fetch', (event) => {
     // Ignora richieste non http (es: chrome-extension://) per evitare errori
     if (!url.startsWith('http')) return;
 
-    // ⚡ Bypass totale: Firebase, Firestore, autenticazione ⚡
+    // ? Bypass totale: Firebase, Firestore, autenticazione, server locale ?
     if (
         url.includes('firebaseio.com') ||
         url.includes('firestore.googleapis.com') ||
         url.includes('identitytoolkit.googleapis.com') ||
         url.includes('securetoken.googleapis.com') ||
         url.includes('maps.googleapis.com') ||
+        url.includes('localhost') ||
+        url.includes('127.0.0.1') ||
         url.endsWith('.json')
     ) {
         return;
@@ -85,7 +87,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // ⚡ Network-First: JS e CSS (sempre freschi, fallback offline) ⚡
+    // ? Network-First: JS e CSS (sempre freschi, fallback offline) ?
     if (url.match(/\.(js|css)(\?|$)/)) {
         event.respondWith(
             fetch(event.request.url, { cache: 'no-store' })
@@ -103,7 +105,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // ⚡ Cache-First: immagini e altri asset statici (cambiano raramente) ⚡
+    // ? Cache-First: immagini e altri asset statici (cambiano raramente) ?
     event.respondWith(
         caches.match(event.request).then((cached) => {
             if (cached) return cached;

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anagrafiche - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.75">
+    <link rel="stylesheet" href="styles.css?v=2.90">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- Leaflet per Mappe -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -429,18 +429,33 @@
         </div>
     </div>
 
-    <script src="script.js?v=2.28"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.28"></script>
+    <script src="script.js?v=2.90"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.90"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
+
         import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
+
+try {
+    initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider('6Le8IjAtAAAAAIFW6c_ToaLJELGoygI27BW6d1jZ'),
+        isTokenAutoRefreshEnabled: true
+    });
+} catch (e) { console.warn("AppCheck init:", e); }
+
         const db = getFirestore(app);
 
         let currentTab = 'clienti';
-        let unsubscribe = null;
+        let unsubscribes = [];
+
+        function clearUnsubscribes() {
+            unsubscribes.forEach(unsub => { if(typeof unsub === 'function') unsub(); });
+            unsubscribes = [];
+        }
 
         window.switchTab = function(tab) {
             currentTab = tab;
@@ -458,22 +473,54 @@
         };
 
         function loadData() {
-            if(unsubscribe) unsubscribe();
+            clearUnsubscribes();
             document.getElementById('loading').style.display = 'block';
             document.getElementById('dataContainer').innerHTML = '';
             
-            let collPath = '';
-            if(currentTab === 'clienti') collPath = 'clienti/DNR/raccolta clienti';
-            if(currentTab === 'articoli') collPath = 'clienti/DNR/codici articoli';
-            if(currentTab === 'rientri') collPath = 'clienti/DNR/rientri ddt';
-
-            const q = query(collection(db, collPath));
-            
-            unsubscribe = onSnapshot(q, (snapshot) => {
-                document.getElementById('loading').style.display = 'none';
-                window.fullData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-                renderTable(window.fullData);
-            });
+            if(currentTab === 'clienti') {
+                let dnrData = [];
+                let gcData = [];
+                
+                const qDNR = query(collection(db, 'clienti/DNR/raccolta clienti'));
+                const qGC = query(collection(db, 'clienti/GRAN CHEF/raccolta clienti'));
+                
+                const unsubDNR = onSnapshot(qDNR, (snapshot) => {
+                    dnrData = snapshot.docs.map(doc => ({id: doc.id, tenant: 'DNR', ...doc.data()}));
+                    window.fullData = [...dnrData, ...gcData];
+                    document.getElementById('loading').style.display = 'none';
+                    renderTable(window.fullData);
+                }, (error) => {
+                    console.error("Errore caricamento clienti DNR:", error);
+                    document.getElementById('loading').style.display = 'none';
+                });
+                unsubscribes.push(unsubDNR);
+                
+                const unsubGC = onSnapshot(qGC, (snapshot) => {
+                    gcData = snapshot.docs.map(doc => ({id: doc.id, tenant: 'GRAN CHEF', ...doc.data()}));
+                    window.fullData = [...dnrData, ...gcData];
+                    document.getElementById('loading').style.display = 'none';
+                    renderTable(window.fullData);
+                }, (error) => {
+                    console.error("Errore caricamento clienti GRAN CHEF:", error);
+                    document.getElementById('loading').style.display = 'none';
+                });
+                unsubscribes.push(unsubGC);
+            } else {
+                let collPath = '';
+                if(currentTab === 'articoli') collPath = 'clienti/DNR/codici articoli';
+                if(currentTab === 'rientri') collPath = 'clienti/DNR/rientri ddt';
+                
+                const q = query(collection(db, collPath));
+                const unsub = onSnapshot(q, (snapshot) => {
+                    document.getElementById('loading').style.display = 'none';
+                    window.fullData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                    renderTable(window.fullData);
+                }, (error) => {
+                    console.error("Errore caricamento:", error);
+                    document.getElementById('loading').style.display = 'none';
+                });
+                unsubscribes.push(unsub);
+            }
         }
 
         function renderTable(data) {
@@ -486,10 +533,11 @@
                         <div class="card-header">
                             <div>
                                 <h4 class="card-title">${d.cliente || d.nome_consegna || 'N/A'}</h4>
-                                <div style="display:flex; gap:8px; margin-top:4px;">
+                                <div style="display:flex; gap:8px; margin-top:4px; flex-wrap:wrap;">
                                     <span class="badge badge-frutta">F: ${d.codice_frutta || '-'}</span>
                                     <span class="badge badge-latte">L: ${d.codice_latte || '-'}</span>
                                     <span class="badge" style="background:#f1f5f9; color:#64748b">ZONA: ${d.codice_zona || d.zona || '-'}</span>
+                                    <span class="badge" style="background:${d.tenant === 'GRAN CHEF' ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : '#1e293b'}; color:white">${d.tenant || 'DNR'}</span>
                                 </div>
                             </div>
                         </div>
@@ -625,6 +673,16 @@
                       if(currentTab === 'clienti') {
                 title.innerText = "Nuovo Cliente";
                 fields.innerHTML = `
+                    <!-- 0. CANALE -->
+                    <div class="input-group" style="grid-column: span 6">
+                        <label>Canale / Master</label>
+                        <select name="tenant">
+                            <option value="DNR">DNR</option>
+                            <option value="GRAN CHEF">GRAN CHEF</option>
+                        </select>
+                    </div>
+                    <div class="input-group" style="grid-column: span 6"></div>
+
                     <!-- 1. CODICI -->
                     <div class="input-group">
                         <label>Codice Frutta</label>
@@ -781,7 +839,16 @@
                 let docId = formId || null;
                 
                 if(currentTab === 'clienti') {
-                    collPath = 'clienti/DNR/raccolta clienti';
+                    let tenant = 'DNR';
+                    if (formId) {
+                        const item = (window.fullData || []).find(c => c.id === formId);
+                        if (item) tenant = item.tenant || 'DNR';
+                    } else {
+                        tenant = data.tenant || 'DNR';
+                    }
+                    data.tenant = tenant;
+
+                    collPath = `clienti/${tenant}/raccolta clienti`;
                     docId = docId || data.codice_frutta || data.codice_latte || null;
                 } else if(currentTab === 'articoli') {
                     collPath = 'clienti/DNR/codici articoli';
@@ -814,7 +881,11 @@
             if(!confirm("⚠️ ATTENZIONE: Sei sicuro di voler eliminare questo record definitivamente dal database?")) return;
             
             let collPath = '';
-            if(currentTab === 'clienti') collPath = 'clienti/DNR/raccolta clienti';
+            if(currentTab === 'clienti') {
+                const item = (window.fullData || []).find(c => c.id === id);
+                const tenant = item ? item.tenant : 'DNR';
+                collPath = `clienti/${tenant}/raccolta clienti`;
+            }
             if(currentTab === 'articoli') collPath = 'clienti/DNR/codici articoli';
             if(currentTab === 'rientri') collPath = 'clienti/DNR/rientri ddt';
             
@@ -896,6 +967,9 @@
             });
 
             if(currentTab === 'clienti') {
+                const tenantSelect = form.querySelector('[name="tenant"]');
+                if (tenantSelect) tenantSelect.disabled = true;
+
                 const lat = parseFloat(item.lat) || 45.4064;
                 const lon = parseFloat(item.lon) || 11.8768;
                 setTimeout(() => {

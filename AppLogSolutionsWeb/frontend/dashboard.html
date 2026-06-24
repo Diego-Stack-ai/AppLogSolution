@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=1.80">
+    <link rel="stylesheet" href="styles.css?v=2.90">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -101,7 +101,7 @@
     <nav class="glass-nav">
         <div class="nav-content">
             <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
-            <div class="nav-title" style="flex: 1; margin-left: 4px;">Pannello di Controllo <span class="app-version-badge" style="font-size: 11px; background: rgba(79, 70, 229, 0.1); color: var(--primary); padding: 2px 8px; border-radius: 20px; margin-left: 8px; font-weight: 600; vertical-align: middle;">v2.27</span></div>
+            <div class="nav-title" style="flex: 1; margin-left: 4px;">Pannello di Controllo <span class="app-version-badge" style="font-size: 11px; background: rgba(79, 70, 229, 0.1); color: var(--primary); padding: 2px 8px; border-radius: 20px; margin-left: 8px; font-weight: 600; vertical-align: middle;">v2.87</span></div>
             <a href="login.html" class="logout-link logout-btn" title="Esci">
                 <span class="material-icons-round">logout</span>
                 Logout
@@ -162,6 +162,15 @@
             </a>
 
 
+            <!-- Presenze Dipendenti -->
+            <a href="javascript:void(0)" onclick="window.navigateWithState('presenze.html')" class="nav-card">
+                <div class="icon-circle" style="background: #ecfdf5; color: #10b981;">
+                    <span class="material-icons-round" style="font-size: 32px;">calendar_month</span>
+                </div>
+                <h3>Presenze Dipendenti</h3>
+                <p>Gestisci le presenze, gli orari, le ore lavorate e gli straordinari.</p>
+            </a>
+
             <!-- Impostazioni -->
             <a href="javascript:void(0)" onclick="window.navigateWithState('impostazioni.html')" class="nav-card">
                 <div class="icon-circle">
@@ -174,8 +183,8 @@
     </main>
 
 
-    <script src="script.js?v=1.95"></script>
-    <script type="module" src="firebase-auth-sync.js?v=1.95"></script>
+    <script src="script.js?v=2.90"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.90"></script>
 </body>
 </html>
 

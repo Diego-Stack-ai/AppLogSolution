@@ -1,9 +1,19 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
+
 import { getFirestore, collection, doc, getDoc, updateDoc, setDoc, deleteDoc, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, browserLocalPersistence, setPersistence, updatePassword, sendEmailVerification, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 const app = initializeApp(firebaseConfig);
+
+try {
+    initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider('6Le8IjAtAAAAAIFW6c_ToaLJELGoygI27BW6d1jZ'),
+        isTokenAutoRefreshEnabled: true
+    });
+} catch (e) { console.warn("AppCheck init:", e); }
+
 const db = getFirestore(app);
 const auth = getAuth(app);
 
@@ -41,35 +51,7 @@ window.forcePasswordResetDebug = async (newPassword) => {
     }
 };
 
-// --- FUNZIONI DI SERVIZIO AUTH ---
-window.sendVerificationEmail = async () => {
-    const user = auth.currentUser;
-    if (!user) return alert("Nessun utente loggato.");
-    try {
-        await sendEmailVerification(user);
-        alert("Email di verifica inviata correttamente.");
-    } catch (e) {
-        alert("Errore invio: " + e.message);
-    }
-};
-
-// --- GESTIONE AUTENTICAZIONE ---
-window.sendResetEmail = async (email) => {
-    if (!email) return alert("Email non valida.");
-    let targetEmail = email.trim().toLowerCase();
-    if (!targetEmail.includes('@')) {
-        targetEmail += '@logsolution.app';
-    }
-    try {
-        await sendPasswordResetEmail(auth, targetEmail);
-        alert("Email di ripristino password inviata con successo a: " + targetEmail);
-    } catch (error) {
-        console.error("Errore invio email reset:", error);
-        alert("Errore nell'invio dell'email: " + error.message);
-    }
-};
-
-// --- GESTIONE LOGOUT GLOBALE ---
+// --- FUNZIONI DI SERVIZIO AUTH REMOSSE POICHE' GESTITE CENTRALMENTE ---// --- GESTIONE LOGOUT GLOBALE ---
 let isLoggingOut = false;
 window.logoutFirebase = async () => {
     console.log("Auth: Avvio procedura di logout...");
@@ -104,26 +86,29 @@ onAuthStateChanged(auth, async (user) => {
     
     // Classificazione Pagine
     const isPublicPage = page === 'login.html' || page === 'index.html' || page === '';
-    const isAdminOnlyPage = ['clienti.html', 'impostazioni.html', 'visualizzazione.html', 'mappa_consegne.html', 'dashboard.html', 'link_viaggi.html'].includes(page);
+    const isAdminOnlyPage = ['clienti.html', 'impostazioni.html', 'visualizzazione.html', 'mappa_consegne.html', 'dashboard.html', 'link_viaggi.html', 'presenze.html'].includes(page);
     const isAutistaOnlyPage = ['inserimento.html'].includes(page);
 
     console.log(`Auth Listener: Utente = ${user ? user.uid : 'NULL'}, Pagina Corrente = ${page}`);
 
     if (user) {
-        // --- 1. CONTROLLO EMAIL VERIFICATA ---
-        if (!user.emailVerified) {
-            console.warn("Auth: Email non verificata.");
-            if (!isPublicPage) {
-                await signOut(auth);
-                window.location.replace('login.html?status=verify_sent');
-            }
-            return;
-        }
-
         try {
-            const userDoc = await getDoc(doc(db, "dipendenti", user.uid));
+            // Implementiamo un semplice retry per connessioni mobili instabili
+            let userDoc = null;
+            let retries = 3;
+            while (retries > 0) {
+                try {
+                    userDoc = await getDoc(doc(db, "dipendenti", user.uid));
+                    break;
+                } catch (fetchErr) {
+                    retries--;
+                    if (retries === 0) throw fetchErr;
+                    console.warn(`Auth: getDoc fallito, ritento... tentativi rimasti: ${retries}`, fetchErr);
+                    await new Promise(r => setTimeout(r, 1000)); // aspetta 1 secondo
+                }
+            }
             
-            if (userDoc.exists()) {
+            if (userDoc && userDoc.exists()) {
                 const userData = userDoc.data();
 
                 // --- 2. CONTROLLO CAMBIO PASSWORD FORZATO ---
@@ -225,7 +210,11 @@ onAuthStateChanged(auth, async (user) => {
             }
         } catch (err) {
             console.error("Auth: Errore recupero profilo Firestore:", err);
-            alert("Errore di connessione al database durante il login: " + err.message);
+            let contextMsg = "";
+            if (err.message && err.message.includes('permission')) {
+                contextMsg = " (Controllo permessi su dipendenti/" + user.uid + ")";
+            }
+            alert("Errore di connessione al database durante il login: " + err.message + contextMsg);
             await window.logoutFirebase();
         }
     } else {

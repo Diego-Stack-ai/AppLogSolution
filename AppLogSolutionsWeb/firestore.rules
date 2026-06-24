@@ -26,6 +26,10 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
+    match /presenze/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
     // Regole per il nuovo sistema Tenant (DNR)
     match /customers/{tenant}/{collection=**} {
       allow read, write: if isAuthenticated();
@@ -35,11 +39,11 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
-    // Legacy (mantenute per compatibilità, da rimuovere in futuro)
+    // Legacy (mantenute per compatibilita, da rimuovere in futuro)
     match /mappatura/{docId} { allow read, write: if isAuthenticated(); }
     match /articoli/{docId} { allow read, write: if isAuthenticated(); }
     match /config/{docId} { allow read, write: if isAuthenticated(); }
-    match /viaggi/{docId} { allow read, write: if isAuthenticated(); }
+    match /viaggi/{document=**} { allow read, write: if isAuthenticated(); }
     match /ddt/{docId} { allow read, write: if isAuthenticated(); }
   }
 }

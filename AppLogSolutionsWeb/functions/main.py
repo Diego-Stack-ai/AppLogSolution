@@ -1952,6 +1952,22 @@ def core_genera_report_giornaliero(uid, data_consegna):
 
     print(f"[INFO] Generazione report per il {data_consegna}")
     
+    # 0. Svuota le vecchie cartelle nello Storage per evitare doppioni
+    try:
+        data_f = data_consegna.replace('/', '-')
+        prefixes_to_clean = [
+            f"REPORTS/{data_consegna}/",
+            f"CONSEGNE/CONSEGNE_{data_f}/"
+        ]
+        for pref in prefixes_to_clean:
+            blobs_old = bucket.list_blobs(prefix=pref)
+            for b_old in blobs_old:
+                try: b_old.delete()
+                except: pass
+        print(f"[INFO] Pulizia cartelle completata per {data_consegna}")
+    except Exception as e_clean:
+        print(f"[WARN] Impossibile pulire cartelle storage: {e_clean}")
+    
     # 1. Recupera i DDT scansionando la cartella dello Storage
     ddt_list = []
     prefix_search = f"split_ddt/{data_consegna}/"
@@ -3762,3 +3778,48 @@ def genera_report_giornaliero(req: https_fn.CallableRequest):
         import traceback
         traceback.print_exc()
         return {"status": "errore", "message": f"Global exception: {str(e)}"}
+
+
+@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.MB_256, timeout_sec=120,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def elimina_giornata_logistica(req: https_fn.CallableRequest):
+    """
+    Funzione di Tabula Rasa: elimina completamente una giornata (split_ddt, REPORTS, CONSEGNE e record Firestore).
+    """
+    data_consegna = req.data.get("data_consegna")
+    if not data_consegna:
+        return {"status": "errore", "message": "data_consegna mancante"}
+
+    print(f"[INFO] Inizio eliminazione completa per la giornata {data_consegna}")
+    db = get_db()
+    bucket = storage.bucket(name=BUCKET_NAME)
+    
+    try:
+        # 1. Elimina cartelle su Storage
+        data_f = data_consegna.replace('/', '-')
+        prefixes_to_clean = [
+            f"split_ddt/{data_consegna}/",
+            f"REPORTS/{data_consegna}/",
+            f"CONSEGNE/CONSEGNE_{data_f}/"
+        ]
+        
+        for pref in prefixes_to_clean:
+            blobs = bucket.list_blobs(prefix=pref)
+            for b in blobs:
+                try:
+                    b.delete()
+                except Exception as ex:
+                    print(f"[WARN] Errore cancellazione {b.name}: {ex}")
+                    
+        # 2. Elimina record da Firestore
+        doc_ref = db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna)
+        doc_ref.delete()
+        
+        print(f"[INFO] Eliminazione completata con successo per {data_consegna}")
+        return {"status": "ok", "message": "Giornata eliminata con successo"}
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"status": "errore", "message": f"Errore interno: {str(e)}"}
+

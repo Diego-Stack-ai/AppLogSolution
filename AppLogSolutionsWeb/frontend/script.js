@@ -1,10 +1,10 @@
-﻿/**
+/**
  * script.js - v1.95
  * Modulo principale per la gestione della UI, validazioni e wizard.
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "2.86";
+const APP_VERSION = "2.90";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;

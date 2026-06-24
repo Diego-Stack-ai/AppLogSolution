@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=2.92">
+    <link rel="stylesheet" href="styles.css?v=2.102">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .row-error td {
@@ -385,13 +385,16 @@
                     <label for="inputMonth">Mese di Riferimento</label>
                     <input type="month" id="inputMonth">
                 </div>
-                <div class="filter-item" style="justify-content: flex-end; gap: 10px;">
-                    <button class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;" onclick="generateMonthlyPDF()">
-                        <span class="material-icons-round" style="font-size: 1.1rem;">picture_as_pdf</span> Esporta Tabella
-                    </button>
-                    <button class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem; background-color: #f59e0b; color: white;" onclick="document.getElementById('fileCedolone').click()">
-                        <span class="material-icons-round" style="font-size: 1.1rem;">content_cut</span> Dividi Cedoloni e Archivia
-                    </button>
+                <div class="filter-item" style="flex: 1; min-width: 350px;">
+                    <label style="visibility: hidden;">Azioni</label>
+                    <div style="display: flex; gap: 10px; width: 100%;">
+                        <button class="btn-primary" style="flex: 1; justify-content: center; padding: 10px; font-size: 0.9rem;" onclick="generateMonthlyPDF()">
+                            <span class="material-icons-round" style="font-size: 1.1rem;">picture_as_pdf</span> Esporta Tabella
+                        </button>
+                        <button class="btn-primary" style="flex: 1; justify-content: center; padding: 10px; font-size: 0.9rem; background-color: #f59e0b; color: white;" onclick="document.getElementById('fileCedolone').click()">
+                            <span class="material-icons-round" style="font-size: 1.1rem;">content_cut</span> Dividi Cedoloni e Archivia
+                        </button>
+                    </div>
                     <input type="file" id="fileCedolone" accept="application/pdf" style="display:none" onchange="handleCedoloneUpload(event)">
                 </div>
             </div>
@@ -478,8 +481,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.92"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.92"></script>
+    <script src="script.js?v=2.102"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.102"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
@@ -1515,7 +1518,7 @@ try {
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=2.92"></script>
+    <script type="module" src="cedolini-splitter.js?v=2.102"></script>
 
 </body>
 </html>

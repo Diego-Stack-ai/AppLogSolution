@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.92">
+    <link rel="stylesheet" href="styles.css?v=2.102">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -213,7 +213,7 @@
                 style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
                 <span class="material-icons-round">dashboard</span>
             </button>
-            <div class="nav-title" style="flex: 1;">Workflow Logistico Cloud</div>
+            <div class="nav-title" style="flex: 1;">Workflow Logistico</div>
             <a href="#" onclick="window.logoutFirebase(); return false;" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
         </div>
     </nav>
@@ -225,28 +225,23 @@
         <div class="glass-panel" style="margin-bottom: 24px; padding: 20px; background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(255, 255, 255, 0.8));">
             <div style="margin-bottom: 16px;">
                 <h3 style="margin:0; color: var(--primary); font-size: 16px; text-transform: uppercase; letter-spacing: 1px;">Data di Lavoro Referenziale</h3>
-                <p style="margin:4px 0 0 0; font-size: 13px; color: #64748b;">Tutte le operazioni (1-6) faranno riferimento a questo giorno</p>
             </div>
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <input type="date" id="master-date-selector" style="padding: 10px 16px; border-radius: 12px; border: 2px solid var(--primary); font-family:'Outfit'; font-size: 16px; font-weight: 800; color: var(--primary); outline: none; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);">
-                <button id="lock-date-btn" class="glass-btn" style="padding: 8px; border-radius: 10px; color: var(--primary); border: 2px solid var(--primary);" title="Blocca/Sblocca Data">
-                    <span class="material-icons-round" id="lock-icon">lock_open</span>
+            <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <input type="date" id="master-date-selector" style="flex: 1; padding: 10px 16px; border-radius: 12px; border: 2px solid var(--primary); font-family:'Outfit'; font-size: 16px; font-weight: 800; color: var(--primary); outline: none; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);">
+                    <button id="lock-date-btn" class="glass-btn" style="padding: 8px; border-radius: 10px; color: var(--primary); border: 2px solid var(--primary);" title="Blocca/Sblocca Data">
+                        <span class="material-icons-round" id="lock-icon">lock_open</span>
+                    </button>
+                </div>
+                <button class="glass-btn" onclick="window.navigateWithState('gestione_anomalie.html')" style="width: 100%; justify-content: center; padding: 10px 16px; border-radius: 12px; font-weight: 700; color: #ef4444; border: 2px solid #ef4444; background: white; display: flex; align-items: center; gap: 8px;" title="Risolvi clienti, articoli e orari non riconosciuti">
+                    <span class="material-icons-round">fact_check</span> GESTISCI ANOMALIE
                 </button>
             </div>
         </div>
 
-        <div style="margin-bottom: 24px; display: flex;">
-            <button class="glass-btn" onclick="window.navigateWithState('gestione_anomalie.html')" style="padding: 10px 16px; border-radius: 12px; font-weight: 700; color: #ef4444; border: 2px solid #ef4444; background: white; display: flex; align-items: center; gap: 8px;" title="Risolvi clienti, articoli e orari non riconosciuti">
-                <span class="material-icons-round">fact_check</span> GESTISCI ANOMALIE
-            </button>
-        </div>
-
 
         <div class="glass-panel form-card">
-            <h2 style="margin-bottom: 8px;">Generazione Distinte per Autisti</h2>
-            <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 14px;">
-                Carica i file "lenzuolone" originali del fornitore per avviare il processo di smistamento automatico nella nuvola.
-            </p>
+            <h2 style="margin-bottom: 24px;">Carica dati da elaborare</h2>
 
             <div class="upload-section">
                 <!-- Zona FRUTTA -->
@@ -337,8 +332,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.92"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.92"></script>
+    <script src="script.js?v=2.102"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.102"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
@@ -818,15 +813,11 @@ try {
                                 <div style="font-size: 12px; color: #64748b;">${data.punti_totali} punti in ${data.zone_totali} zone</div>
                             </div>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button onclick="window.navigateWithState('mappa_complessiva.html?data=${data.data_consegna}&cb=' + Date.now())" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
-                                    <span class="material-icons-round">visibility</span> VISTA COMPLESSIVA
+
+                                <button onclick="window.navigateWithState('mappa_zone.html?data=${data.data_consegna}&cb=' + Date.now())" style="background: linear-gradient(135deg, var(--primary), #3730a3); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                                    <span class="material-icons-round">edit_location</span> GESTIONE VIAGGI
                                 </button>
-                                <button onclick="window.navigateWithState('mappa_zone.html?data=${data.data_consegna}&cb=' + Date.now())" style="background: #64748b; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
-                                    <span class="material-icons-round">edit_location</span> GESTIONE ZONE
-                                </button>
-                                <button onclick="window.navigateWithState('mappa_percorsi.html?data=${data.data_consegna}&cb=' + Date.now())" style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
-                                    <span class="material-icons-round">route</span> MAPPA PERCORSI
-                                </button>
+
                                 <button onclick="window.cancellaGiornata('${data.data_consegna}')" style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
                                     <span class="material-icons-round">delete_forever</span> CANCELLA GIORNATA
                                 </button>
@@ -838,13 +829,6 @@ try {
             });
         }
 
-        window.apriMappaGenerale = () => {
-            const dateInput = document.getElementById('master-date-selector').value;
-            if (!dateInput) return alert("Seleziona una data.");
-            
-            const formattedDate = dateInput.split('-').reverse().join('-');
-            window.navigateWithState(`mappa_percorsi.html?data=${formattedDate}`);
-        };
 
         const selector = document.getElementById('master-date-selector');
         const lockBtn = document.getElementById('lock-date-btn');

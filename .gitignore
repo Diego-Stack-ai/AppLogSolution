@@ -1,44 +1,42 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-venv/
-.venv/
-env/
+# Credenziali / segreti
+backend/config/log-solution-60007-firebase-adminsdk-fbsvc-2cf3d0c171.json
+backend/config/log-solution-60007-firebase-adminsdk-*.json
+webapp/config/ID_GESTIONE.txt
+webapp/config/ID_GESTIONE_IMPOSTAZIONI.txt
+docs/ID_GESTIONE.txt
+docs/ID_GESTIONE_IMPOSTAZIONI.txt
+Password.txt
 
-# Excel temporanei
+# Cartelle AI e Sistema
+brain/
+scratch/
+.agent/
+.firebase/
+
+# Dati generati e Logistica
+**/CONSEGNE/
+**/DDT-ORIGINALI-DIVISI/
+*.pdf
+*.xlsx
+*.txt
+!mappatura_destinazioni.xlsx
+!tabella_aggiornamento_articoli.xlsx
+!rientri_ddt.xlsx
+
+# File temporanei / di sistema
+*.log
 *.tmp
-~$*.xlsx
-~$*.xls
-
-# Cache e dati sensibili
-geocode_cache.json
-Programma/allinea_nomi_completati.txt
-
-# Cartelle output
-Giri lavorati/
-DDT frutta/
-DDT latte/
-Giri nuovi/
-
-# PDF DDT temporanei
-ddt frutta*.pdf
-ddt latte*.pdf
-
-# Report e file generati (in cartella Gestione DDT viaggi)
-report_orari_mancanti.xlsx
-report_rientri_non_integrabili.xlsx
-geocode_report_non_trovati.xlsx
-nuovi_codici_consegna.xlsx
-
-# IDE
-.idea/
-.vscode/
 *.swp
-*.swo
-
-# OS
 .DS_Store
 Thumbs.db
+
+# Ambiente/editor
+.vscode/
+.idea/
+*.code-workspace
+
+# Python
+venv/
+.env/
+__pycache__/
+*.pyc

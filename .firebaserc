@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "log-solution-60007"
+  },
+  "targets": {
+    "log-solution-60007": {
+      "hosting": {
+        "muletto": [
+          "log-solution-muletto"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

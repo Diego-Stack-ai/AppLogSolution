@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mappa Generale Percorsi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4&libraries=geometry,marker&callback=initMap" async defer></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-glow: rgba(79, 70, 229, 0.15);
+            --bg-dark: #0f172a;
+        }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: var(--bg-dark); overflow: hidden; }
+        #map { height: 100%; width: 100%; background: #dfe5eb; position: relative; }
+        
+        .floating-header {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 10px 16px;
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(15, 23, 42, 0.15);
+            transition: all 0.3s;
+        }
+
+        .header-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .header-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .header-subtitle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .date-badge {
+            font-size: 0.72rem;
+            font-weight: 800;
+            background: var(--primary-glow);
+            color: var(--primary);
+            padding: 1px 6px;
+            border-radius: 20px;
+            border: 1px solid rgba(79, 70, 229, 0.15);
+        }
+
+        .stats-badge {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .selector-container select {
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 2px solid var(--primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary);
+            background: white;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* Custom Marker shapes in Map */
+        .custom-marker {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 11px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            border: 2px solid white;
+            transition: 0.2s;
+            transform: translate(-50%, -100%);
+        }
+        .m-tonda { border-radius: 50%; }
+        .m-goccia { border-radius: 50% 50% 50% 0; transform: rotate(-45deg); }
+        .m-goccia span { transform: rotate(45deg); }
+        .m-quadrato { border-radius: 4px; }
+        .m-triangolo {
+            background: transparent !important;
+            border-left: 17px solid transparent;
+            border-right: 17px solid transparent;
+            border-bottom: 34px solid #ccc;
+            width: 0 !important;
+            height: 0 !important;
+            border-radius: 0;
+            box-shadow: none;
+            border-top: none;
+        }
+        .m-triangolo span { position: absolute; top: 15px; left: -8px; width: 16px; }
+
+        @media (max-width: 768px) {
+            .floating-header {
+                top: 0;
+                left: 0;
+                right: 0;
+                border-radius: 0;
+                border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+                padding: 8px 12px;
+                gap: 8px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .selector-container {
+                width: 100%;
+            }
+            .selector-container select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-header">
+        <div class="header-info">
+            <h1 class="header-title">Mappa Generale Percorsi</h1>
+            <div class="header-subtitle">
+                <span class="date-badge">25-06-2026</span>
+                <span class="stats-badge" id="stats-summary">0 Fermate</span>
+            </div>
+        </div>
+        <div class="selector-container">
+            <select id="giro-select" onchange="filterGiro(this.value)">
+                <option value="ALL">🔍 Tutti i Viaggi</option>
+            </select>
+        </div>
+    </div>
+    <div id="map"></div>
+
+    <script>
+        const viaggi = [{"v_id": "Lago Malcesine", "id_zona": "GranChef_V01", "color": "#4f46e5", "km": 116.0, "t_guida": "2h 35m", "t_sosta": "1h 12m", "t_tot": "3h 47m", "polylines": ["mectGmjeaAaFkCaNgNa@g@oKsEcCgHgLqDeBuAsDb@eZlEgSfIaQtMoOnD_W}CkIq@i\\kRi`@C}IO{iAj@u@|EdArWiJdh@{l@`eBiShj@eQlRwo@fo@_JfByDdHsFlZ{Dt]wN~Ms@bQbCjc@oBn}@cBxH?\\FCkExPqHp@}E|AaRqCioAfA_cAgKyoA}c@seB{`@gK}HoFhEpA`OoLuFaFhGqPnN[nBtAdJ_Lf^kQh\\y[lKab@dYcn@jRyl@rl@{EpFGnA^BnDrAxErHVfGM~Ir@xMp@hQeAdPxClEbA}@\\jGbFz`@xI`OhKdX_CzNuIv@qIIaDuHaD_Bf@dGc@oGrJxK~MDnC~CzApPtBhRxHxFdDzCPhGm@rB]xF{ClXqBza@kHv\\pEvXxJrQvFbVfLvNj@tUS~ER_FLoE[eF}@d@eH~DmGv@_RjBiQcD}N`@an@o_@mXuVgSqLcc@gCge@oHiJsVqQuJ_bAgc@om@wXae@e^}Qw[qOkN{K{R}_@oX{SmHmFyFcWiPab@mZom@eh@aVoPoGyMuh@{c@mm@ma@ad@}_@uYmQ}YkXGIE@wGuAuT}Mg^c`@_MmSaQwKkZPCCGB}F}C_H{WkRoWiVoTsGkLiWkN{P{MwKnCuNrEeQuCwEo_@uUgUwNmBqBaAvCQtNLoO@eKcAmPoIGMGTJ@nAZhF~NdNhFnHo@hH}ArKhHnLbL`A|ShBtInHvAhMbDo@gCvRcJzGzBbd@fYfRrSnVv[pG~H~GzW~FnDB@n[i@fQdM~LxSja@db@|[dNdUfUhVzNnb@p`@tg@n\\~e@~\\r^|d@~y@ro@x`@bZ`o@lb@`O`E~T~OrJzS|QvM~Pp\\~_@f\\hs@b]vb@~N~r@`_@nEhRvFpEhF`AjAaEd@{IGwChF}BxD`@~J`GbHfB{LaNoU_ReHgP|Fs@yAyH`J{@|BOmCyAn@W~LELMhH`CjWcBdOIjRfBrXfK|e@mQhRiHjPcPjMuC`CcIlDyGvDiE`GwBxHxAjL~D`Iq@xXw]~SmJ|d@sXzUoLvP}IzA_AhQk@jPyGhVaHnTc@vRrDrOiC`UkH`@O`q@cKbz@iWdI_BjK_ApBoOjAm]nEmKHSpMaS|HqKdCaUrDkIdOiCvJqMcBsV|Pya@bFyT@IvEob@mCgy@pAkb@zNiNrBoOjGy^j@}HvGwGrNqI`MePtSgP|SmSlSqg@re@qtAzSu{@pBwUgAE}AyHhWgBpoAtAfSxBf[pNx^dCjNqD`QuMfSgIzXeErHd@xKnC|C`I~JzF\\n@zUnQ"], "lista_punti": [{"nome": "LOCANDA PERBELLINI \"AI BEATI\" BOT SRL", "indirizzo": "VIA VAL MORA 57/59, 37016 GARDA (VR)", "lat": 45.58567801443358, "lon": 10.71695201586916, "codice_frutta": "100343854", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "RISTORANTE SAN VIGILIO", "indirizzo": "PUNTA SAN VIGILIO 1, 37016 GARDA (VR)", "lat": 45.57355880843796, "lon": 10.67224954110451, "codice_frutta": "100351840", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "HOTEL CAPRI", "indirizzo": "VIA PANORAMICA 26, 37018 MALCESINE (VR)", "lat": 45.758167171346, "lon": 10.80867621104506, "codice_frutta": "100348482", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "RISTORANTE VECCHIA MALCESINE", "indirizzo": "VIA PISORT 6, 37018 MALCESINE (VR)", "lat": 45.76242641020724, "lon": 10.80796858343239, "codice_frutta": "100307929", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "MAXIMILIAN HOTEL SAS DI GAGLIARDI ACHILLE & C.", "indirizzo": "VIA VAL DI SOGNO 6, 37018 MALCESINE (VR)", "lat": 45.74922125823066, "lon": 10.79749795522536, "codice_frutta": "100346355", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "RISTORANTE VISTA LAGO LONCRINO", "indirizzo": "VIA PIRANDELLO 10, 37010 TORRI DEL BENACO (VR)", "lat": 45.60902961640286, "lon": 10.69391735950719, "codice_frutta": "100349832", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}]}, {"v_id": "Lago Gardone", "id_zona": "GranChef_V02", "color": "#10b981", "km": 83.8, "t_guida": "1h 55m", "t_sosta": "2h 12m", "t_tot": "4h 7m", "polylines": ["kdptG{jz}@{FkKkAcA[z@c@bA[XuAbAmFx@oFkGiCiKcAw@oMq^qCuScGcWnNuXrQuk@Lu@_GoJ{IqIuHsHcD}GgL}JwUiQoQgJ}KoHoR}SkRqY_EoHaMa]N{NwHgWeVcr@gIoYX_AcAiXwDmuBcE}EcAwKScTcD_JHaLDgBlByD^iIP{N}DwIaJyEaEcFeAyN~@kQCmAhBc~@LwV|CyQhEeJfFeF~Yoy@jHwEVgBaFk|@?iKqAiX`C_YhAaSjByHnGuKv@gHmDwL{IsYv@gCbGwB~CyCGcJCoEzBDvMNhKqN`GPbAyDiIyL_CsD_@aA_H}IY_GjAiMdE{JhLsFvAyAe@k@_@QCyABxARZER?RNVXAdOeKhLaIJmCRsA_@`FiL`IgO|HyDXea@qPeOuSe_@{]yMgGeQkIcXmSaN{L_OqAg[cIig@{L{@E_ItFsSj@Ma@k@b@uEBeIiBgLgJsOWqTjAiOtAmXh@q@t@qY~AqBqAk`@ul@yAwHqF}EeQqJkSwCkFqLc@g[eAcB{DyAaF`CnBwEpJqOwDaI{@{ARmDyBaJsCqCqFlA}@f@iBmCqE{Kc@wIyMoYwJlTgIxGo@xEGpBkE[_Cb@gBxGiE|CCEICITkCpYqB|Go@lFqAy@}EwBsEF_Fz@\\`GDdCEeCWkD@iBnCYu@rWL`b@|@bRvBpHlDpd@zAbi@~CfQUxIDfNqBhEcMrDaBUcDFeBfFaCSq@@MQQ@sFpE}AE{GhKiM`FqB~PuDtAaE@oHc@jEib@`Iy\\~BiI[k\\uDaWL_JaGwWmJyd@uI}n@iW_y@qEq[{CqG}Yyo@oGcQuAqVp@uVa@v`@vCzUnHhQtEhIq@rAbAl@hAbCaAnFmCtMKtJcAxArCfBmJhNmA~FNfCtOkL@yJ|AzCtIaDnGnKbOz^jJjYzBnQrAlLbOjq@rElTFzLzCnNn@jd@l@hIqHlPqJts@SxCbCrHlD~Vi@dYlChGz@zFwAbQcMlc@h@tNhAjGdErD`N|IbOlL|DxR|@lL_Ajp@vCrJbPdUlHhEpOfBdZpDhRzMjUtPnJlItHtMnYbW|ZrUdEzCfIxAhL}Al[t@vTzR~e@t\\nZbNn^bZ|g@xp@jIfO`BnKfG`a@|j@zvBzLdk@`Nx`@bTlf@tJ|PbVjWrEnJpBnZnDlg@`H~a@pKzYhMrMlHvMsL`\\|OlAxVpLhInArRrW|FdFzHlAfE~BpFrH`MfNzKvKfPnKbGx@dAdClBPfEfQtCnQfNpe@hAQ|DtL~FlF`HmEb@cAZ{@jAbAzFjK"], "lista_punti": [{"nome": "RISTORANTE ACQUARIVA", "indirizzo": "VIA MARCONI, 57, 25080 PADENGHE SUL GARDA (BS)", "lat": 45.4981569200701, "lon": 10.5100244343586, "codice_frutta": "100326572", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "RISTORANTE IL RIVALE", "indirizzo": "VIA G. MARCONI 93, 25080 PADENGHE SUL GARDA (BS)", "lat": 45.49280194011276, "lon": 10.51281436441802, "codice_frutta": "100347575", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "B-BAY BISTROT", "indirizzo": "VIA G. MARCONI 99, 25080 PADENGHE SUL GARDA (BS)", "lat": 45.49273278649251, "lon": 10.51346558951455, "codice_frutta": "100347576", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "SOGNO SAS DI EMERENGILDO S. HOTEL", "indirizzo": "VIA PORTO, 41, 25010 SAN FELICE DEL BENACO (BS)", "lat": 45.5809407720598, "lon": 10.5588523875801, "codice_frutta": "100321288", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "BELLA HOTEL", "indirizzo": "PREONE LOC.PORTO DI PORTESE 6, 25010 SAN FELICE DEL BENACO (BS)", "lat": 45.60009968426506, "lon": 10.55235606158944, "codice_frutta": "100337607", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "HOTEL MONTE BALDO SRL", "indirizzo": "CORSO ZANARDELLI 110, 25083 GARDONE RIVIERA (BS)", "lat": 45.61900544142651, "lon": 10.56376859631253, "codice_frutta": "100341107", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "VILLA FIORDALISO", "indirizzo": "CORSO ZANARDELLI  NR. 73, 25083 GARDONE RIVIERA (BS)", "lat": 45.62132239999998, "lon": 10.5681593726303, "codice_frutta": "100306091", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "GRAND HOTEL FASANO SRL", "indirizzo": "CORSO ZANARDELLI 190, 25083 GARDONE RIVIERA (BS)", "lat": 45.62385569323995, "lon": 10.5731859, "codice_frutta": "100334429", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "BELLARIVA HOTELS SRL", "indirizzo": "VIA PODINI MARIO1/2, 25083 GARDONE RIVIERA (BS)", "lat": 45.62571653325726, "lon": 10.58392011904906, "codice_frutta": "100335380", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "LOCANDA AGLI ANGELI SRL", "indirizzo": "VIA CADUTI 1, 25083 GARDONE RIVIERA (BS)", "lat": 45.62272571108928, "lon": 10.56315096074792, "codice_frutta": "100331679", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "OSTERIA ANTICO BROLO", "indirizzo": "VIA CARERE, 10, 25083 GARDONE RIVIERA (BS)", "lat": 45.62217148918521, "lon": 10.56199487976225, "codice_frutta": "100331984", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}]}, {"v_id": "Mantova", "id_zona": "GranChef_V01_2", "color": "#f59e0b", "km": 164.2, "t_guida": "3h 14m", "t_sosta": "1h 24m", "t_tot": "4h 38m", "polylines": ["mectGmjeaAeV{SoKsEqSoPiGrNcOCrCbSqBrhAbE~sAvAhuAgGbkAaKzx@}`@feBwSjcEwDn~DyA|SyBiErOEsAzYaPyCwChEeHhCuh@nJgBK{@xHlFrIH~WsBhGZB`CyM[uVL`ZoCdJl@dWb@[jNlF`BdLlLx`@AjE`RrMtM~KxPp\\fHiBbGrLtGtd@j@pf@dSjg@hP`[z^~LpD_FhYxLdf@h`@pCkl@bDgHtSzCtQNxH}I|WjJ`HdJiJpQhJqQxKlA`MbM`QuO|x@wWxG|DpHcBjPgBzi@dCn{@oa@l_@_SvUqAfJz\\fUpMn[b@pJCzJyMjXzSlHi`@~HiQrIoUrF}LfP`AnJXpNhM`o@hEzo@{Ej|AqWfmBsVvUmGnAcG|A}PoCc\\z|@qyBp|AejDpP}n@ni@gyAz\\co@hm@m{@dEeGjk@cO`p@aRlEaFdSuj@nHed@pHa_An]mw@pSmg@lPm_ApWgt@|TqVjU}CfN{Lfd@}`@dt@_p@ta@yO`e@{xA~_@yu@bd@uaCpNq_AR}h@zN}i@jV}XxFgDnDzBoFqAoYtX_Ohg@cBxk@cEhm@g[jsAwJ|u@iZhp@c[tq@kRts@ca@`RkaAr{@_Z`XsRtMsTnD}SpXiWtu@sO~~@}Rjd@}]bz@wH|cA}Gz\\oWff@iPiKsS}Uag@ih@af@_MwT}PiB~EcVtTcWlCqSxIsHdLed@zm@g\\|c@{`@jWc^hZ}Mq@gt@jOsIG}FiIOeFqJnEiTuFaUcZyFmCaPcL_jAf`B{xCkJocBhJuq@dTsYrPcM`@b@dHuSlJwo@xOg@uDqDyEwAzFaDfK{CdX}DrDbQxCNfRzBmIiP{LkHTuQMi\\xN}Sdb@wLzj@m\\pu@w^rd@}P~KuGbJo@`IVj@tJvI_GnMy@|DkFrF}E@cCi@cIsCbArHmIhCsFpDmRjZuF|OyLlq@wKvb@aNtOyS`Q_O|QqM?eE`DOfW|@~g@vBrVbSbh@}TlMtC`o@uL`S_GhZmQbIu^tNyU`Syg@tR{We@iQfRsT|Yq@hC}M~NmKvGkLI{`@_\\ie@_IcL{Bu[}HsP{I}RyK`KiNTc@{TsIye@~IwVQqYfE{WhFjAkHlBnBhFbBxK{CbF}EnUjAvS_@xOsDjTaCfTnIzGbKlB`N@|@bKvJb\\dGzHbCn`@rDrY|R|YdOdKyDfRoVfToZtB{DxToNpRz@kDsXeCc|@tK_`F~F_{B~BodI`RkdEnG}gAfPks@v\\ivBtFkrAyCsiAaAgkCxJmWzD_L`QtA~NjPj@RlUvQ"], "lista_punti": [{"nome": "DISPENSA UFFICIALI BISTROT & COCKTAIL BAR", "indirizzo": "VIA PARCO CATULLO 5, 37019 PESCHIERA DEL GARDA (VR)", "lat": 45.43919538298165, "lon": 10.69509896693421, "codice_frutta": "100351316", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "BORGO LA CACCIA", "indirizzo": "LOCALITA  CACCIA 1, 25010 POZZOLENGO (BS)", "lat": 45.38641542369403, "lon": 10.63741299570082, "codice_frutta": "100351994", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "LOCANDA AL PONTE", "indirizzo": "STRADA STATALE GOITESE 258, 46044 GOITO (MN)", "lat": 45.2540595709231, "lon": 10.67521635581969, "codice_frutta": "100350000", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "VILLA CAVRIANI", "indirizzo": "STRADA PROVINCIALE OSTIGLIESE 160, 46037 RONCOFERRARO (MN)", "lat": 45.111443355396, "lon": 10.92082170616303, "codice_frutta": "100303931", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "LA CHIUSINA", "indirizzo": "VIA RAFFAELLO SANZIO 22, 37067 BORGHETTO DI VALEGGIO SUL MINCIO (VR)", "lat": 45.35371133945467, "lon": 10.72475147055226, "codice_frutta": "100343039", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "RISTORANTE IL GIRASOLE", "indirizzo": "VIA VITTORIO EMANUELE 72, 25019 SIRMIONE (BS)", "lat": 45.49330482890528, "lon": 10.60704725643139, "codice_frutta": "100334375", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "CASA DEI PESCATORI", "indirizzo": "VIA XXV APRILE 71, 25019 SIRMIONE (BS)", "lat": 45.47975500165271, "lon": 10.60949251656761, "codice_frutta": "100335831", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}]}, {"v_id": "Valpolicella", "id_zona": "GranChef_V01_3", "color": "#ef4444", "km": 127.1, "t_guida": "3h 10m", "t_sosta": "1h 48m", "t_tot": "4h 58m", "polylines": ["mectGmjeaAeV{SoKsEqSoPy_@pFie@|WoOnD_W}Cuf@}Sgk@S{yBvCsQHuDqYaN_B{KiJoCeHeItMsQkq@}EdC{BqO}@iNBsJ?SeEqb@eKc_AyDaMgJ}f@`@_EuFjA{JeUvCjAhG`VbEoBqBhMbIjRlHfVANYtIsUdw@hNjM`CxRbA|NtGvArEFjDrBrF~RlEoCxFvU~FvYh@hAJTbH~WGNeF~ZgBbc@cFzdAa@hq@wIpRoMzSgOzE{IhQlK~]bBtXeGhZEzOoK`QkHx\\bCbs@qEls@IV[pDqVfz@PnVeVlH{Ozd@wA|VdPnA`UN|LfFfGvMmOdJdAzLz]~MdIfLtQnYz^bKb`@zR`GnHxDvFlKpA_KmAiDuFUe@e_@aQyQcP_XmFaFyJm]k`@ag@gLwR~Bs\\zLaGd@oJz@uG{_@aEgYlFmN|Gy_@sDmTcJgBeC}LmDue@Vkf@_FoZ`MsQoEyv@p@aXtPsUaNoLo`@iJaEwF{NwJq\\wCtBySzRpDrF}BsBcKLqYcBm`@dQ}^pj@ko@hNohAj@aFvGmV|BkJwHqGgXsHyL}F|A_[lBeQaD}JcLcGtHa_@zC_P}IeKmKmIyTma@hCsEwCcG?aOfLsAH?bD_DtFoDCKqFwd@bd@ks@|Skn@~Ki[k@yKhLqIFom@cA_x@Sk@u@d@mb@nCcPmEm^cXge@wEeF}U{EiF`DfElG~Js@fK|s@`M`X~TzVjAbXCr@|aBiLpIj@xKkDzH{Rzp@ko@zdA{Wz`@eStbAAhu@pGdcAxBvoA}Ch_AzUx_@IblA\\z[aLh@a@j@}H[yFzDdHb^_D`Q?xApWxDrH{AnJpKj@z@HeAo@Z{Mn@_D~G_CpGhGvBwClAwRHyQrPUjHF}MfKuEvLiEhPiAwEqE|HwOfM`AeNiMm]yBjBmStQlCxGiBmBcJHyZsAa[Ncl@s@ok@gS_NvBq\\{BayBcImxA`Cea@~Kov@lOpClImALMpK}HAOkN{bBy@cz@gB_QdNkRwGeDoHUo[wDyN}HiWmWgIsSs\\aMuBgMaByDgHvBqIuC}Or@_d@}Jg^~BeU_A{OyUuPkOmD`Dj@CdBuC|PtMrBzM`WdLbTf@`]cEdSbHdPA`Np@tJJvDzHbArHxR`FbMrPfTnYh_@zUh[h@bKlCoHhFgDjReAf`@tHniAmBjb@uU~^kNf|@fi@xp@|}@p`@vg@tItSvQjh@rCpZkA||@qNnk@eW`CzDqDzNQXaBfi@pEb\\f_AcCfhBUjo@vQt^xChOgDrd@cXtb@uCh^pV|UnQ"], "lista_punti": [{"nome": "BYBLOS ART HOTEL VILLA AMISTA'", "indirizzo": "VIA CEDRARE BELVEDERE 78, 37029 CORRUBBIO (VR)", "lat": 45.48963253798616, "lon": 10.8993611777363, "codice_frutta": "100325476", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "DOME BISTROT", "indirizzo": "VIA NAZIONALE DEL BRENNERO 21, 37029 SAN PIETRO IN CARIANO (VR)", "lat": 45.48751953695402, "lon": 10.89519970893858, "codice_frutta": "100355212", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "CONTE FELISSE FMF", "indirizzo": "VIA PONTE 52, 37026 PESCANTINA (VR)", "lat": 45.48105673567868, "lon": 10.86632174907379, "codice_frutta": "100349930", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "QUELLENHOF LAZISE SRL", "indirizzo": "VIA DEL TERMINON 17, 37017 LAZISE (VR)", "lat": 45.4906532305215, "lon": 10.74118925899961, "codice_frutta": "100340975", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "PACENGOTO DI OLIVERI ENRICO", "indirizzo": "PIAZZA SEN. A. ALBERTI4, 37131 LAZISE (VR)", "lat": 45.46732323449718, "lon": 10.72098155999069, "codice_frutta": "100352022", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "LOCANDA BUGLIONI", "indirizzo": "VIA CARIANO 24/A, 37029 SAN PIETRO IN CARIANO (VR)", "lat": 45.51156722040117, "lon": 10.86250766501236, "codice_frutta": "100351946", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "RISTORANTE PIZZERIA ALLE VIGNE", "indirizzo": "VIA S.ANNA 2, 37024 NEGRAR (VR)", "lat": 45.52488030394159, "lon": 10.94502116441802, "codice_frutta": "100344481", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "VILLA CORDEVIGO SRL UNIPERSONALE", "indirizzo": "LOC. CORDEVIGO 1, 37010 CAVAION VERONESE (VR)", "lat": 45.52492504759441, "lon": 10.79143082153052, "codice_frutta": "100333479", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}, {"nome": "RISTORANTE CASALE SPIGHETTA", "indirizzo": "VIA SPIGHETTA 15, 37024 NEGRAR (VR)", "lat": 45.56259453795067, "lon": 10.94238111534422, "codice_frutta": "100332165", "codice_latte": "p00000", "tipologia_grado": "GRAND CHEF"}]}];
+        let map, infoWindow;
+        let allMarkers = [];
+        let allPolylines = [];
+        let voyageMap = {};
+
+        async function initMap() {
+            const centerPoint = { lat: 45.4428, lng: 11.7145 }; // DEPOT VEGGIANO
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 10,
+                center: centerPoint,
+                mapId: "LOG_SOLUTION_MASTER_MAP",
+                disableDefaultUI: true,
+                zoomControl: true,
+                streetViewControl: true
+            });
+            infoWindow = new google.maps.InfoWindow();
+
+            renderAll();
+        }
+
+        function renderAll() {
+            const selectEl = document.getElementById('giro-select');
+            let totalFermate = 0;
+            const coordCounts = {};
+
+            viaggi.forEach((v, idx) => {
+                const v_id = v.v_id;
+                const color = v.color;
+                const list = v.lista_punti || [];
+                totalFermate += list.length;
+
+                // Add option
+                const opt = document.createElement('option');
+                opt.value = v_id;
+                opt.textContent = `🏎️ Giro ${v_id} (${list.length} fermate)`;
+                selectEl.appendChild(opt);
+
+                voyageMap[v_id] = { markers: [], polylines: [] };
+
+                // Disegna polylines reali se presenti
+                if (v.polylines && v.polylines.length > 0) {
+                    v.polylines.forEach(encodedPath => {
+                        const decoded = google.maps.geometry.encoding.decodePath(encodedPath);
+                        const poly = new google.maps.Polyline({
+                            path: decoded,
+                            strokeColor: color,
+                            strokeOpacity: 0.75,
+                            strokeWeight: 5,
+                            map: map
+                        });
+                        allPolylines.push(poly);
+                        voyageMap[v_id].polylines.push(poly);
+                    });
+                }
+
+                // Disegna marker
+                list.forEach((p, pIdx) => {
+                    if (!p.lat || !p.lon) return;
+                    const lat = parseFloat(p.lat);
+                    const lon = parseFloat(p.lon);
+                    const position = { lat, lng: lon };
+
+                    const key = `${lat.toFixed(6)}_${lon.toFixed(6)}`;
+                    coordCounts[key] = (coordCounts[key] || 0) + 1;
+                    const layer = coordCounts[key];
+
+                    let shape = 'm-goccia';
+                    if (layer === 2) shape = 'm-quadrato';
+                    else if (layer === 3) shape = 'm-triangolo';
+                    else if (layer > 3) shape = 'm-tonda';
+
+                    const t_g = (p.tipologia_grado || '').toUpperCase();
+                    const isGrandChef = (p.codice_frutta && (p.codice_frutta.startsWith('100') || p.codice_frutta.length > 6)) || t_g.includes('GRAND CHEF') || t_g.includes('GRAN CHEF');
+                    const isCattell = t_g.includes('CATTELL') || t_g.includes('CATTEL') || (p.codice_frutta && p.codice_frutta.toUpperCase().includes('CATTELL'));
+                    const isBauer = t_g.includes('BAUER') || (p.codice_frutta && p.codice_frutta.toUpperCase().includes('BAUER'));
+
+                    const el = document.createElement("div");
+                    if (isGrandChef || isCattell || isBauer) {
+                        let emoji = '👨‍🍳';
+                        if (isCattell) emoji = '🍴';
+                        else if (isBauer) emoji = '🍳';
+
+                        el.className = `custom-marker m-chef`;
+                        el.style.backgroundColor = color;
+                        el.style.borderRadius = "50%";
+                        el.style.width = "34px";
+                        el.style.height = "34px";
+                        el.style.border = "2px solid white";
+                        el.style.display = "flex";
+                        el.style.flexDirection = "column";
+                        el.style.alignItems = "center";
+                        el.style.justifyContent = "center";
+                        el.style.transform = "translate(-50%, -100%)";
+                        el.innerHTML = `
+                            <span style="font-size: 13px; line-height: 1.1; margin-top: -1px; pointer-events: none; display: block;">${emoji}</span>
+                            <span style="font-size: 8px; font-weight: 900; pointer-events: none; margin-top: -2px; display: block;">${pIdx + 1}</span>
+                        `;
+                    } else {
+                        el.className = `custom-marker ${shape}`;
+                        if (shape === 'm-triangolo') {
+                            el.style.borderBottomColor = color;
+                        } else {
+                            el.style.backgroundColor = color;
+                        }
+                        el.innerHTML = `<span style="pointer-events: none;">${pIdx + 1}</span>`;
+                    }
+
+                      // Use new AdvancedMarkerElement if available
+                      let m;
+                      if (google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
+                          m = new google.maps.marker.AdvancedMarkerElement({
+                              position: position,
+                              map: map,
+                              title: p.nome,
+                              content: el
+                          });
+                      } else {
+                          m = new google.maps.Marker({
+                              position: position,
+                              map: map,
+                              title: p.nome,
+                              label: { text: (pIdx+1).toString(), color: "white", fontSize: "10px", fontWeight: "900" }
+                          });
+                      }
+
+                      m.addListener(m.content ? "gmp-click" : "click", () => {
+                          const ddtListText = [...(p.codici_ddt_frutta || []), ...(p.codici_ddt_latte || [])].join(', ');
+                          const contentHtml = `
+                              <div style="padding:10px; font-family:'Outfit', sans-serif; max-width:260px; line-height:1.4;">
+                                  <div style="font-size:9px; font-weight:800; color:${color}; text-transform:uppercase; margin-bottom:2px;">🏎️ Giro ${v_id} &bull; Fermata ${pIdx + 1}</div>
+                                  <div style="font-weight:800; font-size:13px; color:#0f172a; margin-bottom:4px;">${p.nome}</div>
+                                  <div style="font-size:11px; color:#64748b; margin-bottom:8px; display:flex; align-items:start; gap:4px;">
+                                      <span class="material-icons-round" style="font-size:14px; color:#94a3b8; margin-top:2px;">place</span>
+                                      <span>${p.indirizzo}</span>
+                                  </div>
+                                  <button onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=driving', '_blank')" style="width:100%; background:${color}; color:white; border:none; padding:8px 12px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
+                                      <span class="material-icons-round" style="font-size:13px;">navigation</span> NAVIGA SU GOOGLE MAPS
+                                  </button>
+                              </div>
+                          `;
+                          infoWindow.setContent(contentHtml);
+                          infoWindow.open(map, m);
+                      });
+
+                      allMarkers.push(m);
+                      voyageMap[v_id].markers.push(m);
+                  });
+              });
+
+              document.getElementById('stats-summary').textContent = `${totalFermate} Fermate | ${viaggi.length} Viaggi`;
+
+              if (allMarkers.length > 0) {
+                  fitAll();
+              }
+          }
+
+          function fitAll() {
+              let bounds = new google.maps.LatLngBounds();
+              allMarkers.forEach(m => bounds.extend(m.position || m.getPosition()));
+              map.fitBounds(bounds);
+          }
+
+          window.filterGiro = function(selectedVid) {
+              infoWindow.close();
+              if (selectedVid === "ALL") {
+                  allMarkers.forEach(m => m.setMap(map));
+                  allPolylines.forEach(p => p.setMap(map));
+                  fitAll();
+                  return;
+              }
+
+              Object.keys(voyageMap).forEach(vid => {
+                  const show = (vid === selectedVid);
+                  voyageMap[vid].markers.forEach(m => m.setMap(show ? map : null));
+                  voyageMap[vid].polylines.forEach(p => p.setMap(show ? map : null));
+              });
+
+              const active = voyageMap[selectedVid]?.markers || [];
+              if (active.length > 0) {
+                  let bounds = new google.maps.LatLngBounds();
+                  active.forEach(m => bounds.extend(m.position || m.getPosition()));
+                  map.fitBounds(bounds);
+              }
+          };
+      </script>
+  </body>
+  </html>

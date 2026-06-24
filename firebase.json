@@ -1,0 +1,11 @@
+{
+  "hosting": {
+    "target": "muletto",
+    "public": "frontend",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}

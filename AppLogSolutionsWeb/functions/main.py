@@ -3,6 +3,7 @@ import re
 import json
 import time
 import math
+import gc
 from datetime import datetime, date
 from collections import defaultdict
 import firebase_admin
@@ -56,7 +57,7 @@ def _load_storage_cache(filename):
         return _LOCAL_STORAGE_CACHES[filename]
         
     try:
-        bucket = storage.bucket()
+        bucket = storage.bucket(name=BUCKET_NAME)
         blob = bucket.blob(f"caches/{filename}")
         if blob.exists():
             data_str = blob.download_as_string().decode("utf-8")
@@ -78,7 +79,7 @@ def _load_storage_cache(filename):
 
 def _save_storage_cache(filename):
     try:
-        bucket = storage.bucket()
+        bucket = storage.bucket(name=BUCKET_NAME)
         blob = bucket.blob(f"caches/{filename}")
         blob.upload_from_string(json.dumps(_LOCAL_STORAGE_CACHES[filename], ensure_ascii=False), content_type="application/json")
     except Exception as e:
@@ -192,13 +193,6 @@ def _normalizza_cella_codice_base(raw: str) -> str:
         if pezzi: codice_base += pezzi[0]
     return codice_base
 
-def _is_primary_code(t, db_articoli):
-    t = str(t).strip().upper()
-    if t in db_articoli: return True
-    for key in db_articoli:
-        if key.endswith('-') and t.startswith(key.upper()): return True
-    return False
-
 def _processa_pdf_core_logic(pdf_bytes: bytes, etichetta: str, db_mappati: dict, db_articoli: dict) -> dict:
     nuovi_dati = {}
     nuovi_orari = {}
@@ -277,6 +271,12 @@ def _processa_pdf_core_logic(pdf_bytes: bytes, etichetta: str, db_mappati: dict,
             if chiave not in blocchi: blocchi[chiave] = []
             blocchi[chiave].append((text, reader.pages[i]))
             
+            # --- PROTEZIONE RAM (Chunking) ---
+            pg.flush_cache()
+            if i > 0 and i % 50 == 0:
+                gc.collect()
+            
+
     for chiave, lista_pagine in blocchi.items():
         writer = PdfWriter()
         l, d, num_ddt = chiave
@@ -552,156 +552,6 @@ def core_chiudi_giornata(uid):
         "data": {}
     }
 
-
-def core_elabora_pdf_estrazione(uid):
-    start_time = time.time()
-    print("[INFO] Start elabora_pdf_estrazione")
-    
-    if not uid:
-        return {"status": "errore", "message": "Non autenticato", "errori": ["Manca UID"], "data": {}}
-
-    bucket = storage.bucket(name=BUCKET_NAME)
-    blobs = list(bucket.list_blobs(prefix="input_pdf_fornitore/"))
-    pdf_blobs = [b for b in blobs if b.name.endswith(".pdf")]
-    
-    if not pdf_blobs:
-        return {"status": "ok", "message": "Nessun file PDF trovato.", "errori": [], "data": {"ddt_estratti": 0}}
-
-    visti = {}
-    creati = 0
-    errori_lista = []
-    date_pulite = set()
-
-    for blob in pdf_blobs:
-        print(f"[INFO] Elaborando blob {blob.name}")
-        is_frutta = "frutta" in blob.name.lower()
-        tipo_label = "FRUTTA" if is_frutta else "LATTE"
-        is_duplicata = is_frutta
-        
-        try:
-            pdf_bytes = blob.download_as_bytes()
-            reader = PdfReader(io.BytesIO(pdf_bytes))
-            with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-                step = 2 if is_duplicata else 1
-                for i in range(0, len(pdf.pages), step):
-                    try:
-                        text = pdf.pages[i].extract_text() or ""
-                        data_estratta, l, num_ddt, zona = _estrai_data_luogo(text)
-                        if not data_estratta or not l: continue
-                        
-                        # --- PULIZIA PREVENTIVA (Solo alla prima occorrenza di data/tipo nel job) ---
-                        chiave_pulizia = (data_estratta, tipo_label)
-                        if chiave_pulizia not in date_pulite:
-                            print(f"[INFO] Pulizia preventiva per {data_estratta} - {tipo_label}")
-                            cart_out_base = f"CONSEGNE/CONSEGNE_{data_estratta}/DDT-ORIGINALI-DIVISI/{tipo_label}/"
-                            
-                            # 1. Svuota Storage
-                            blobs_del = bucket.list_blobs(prefix=cart_out_base)
-                            for b in blobs_del:
-                                try:
-                                    b.delete()
-                                except Exception as e_b_del:
-                                    print(f"[WARN] Impossibile eliminare blob {b.name} (potrebbe essere gia stato eliminato): {e_b_del}")
-                            
-                            # 2. Svuota Firestore (deliveries)
-                            old_docs = db.collection('clienti').document('DNR').collection('deliveries')\
-                                         .where('data', '==', data_estratta).where('tipo', '==', tipo_label).stream()
-                            for od in old_docs: od.reference.delete()
-                            
-                            date_pulite.add(chiave_pulizia)
-
-                        d = data_estratta
-                        chiave = (d, l)
-                        cnt = visti.get(chiave, 0) + 1
-                        visti[chiave] = cnt
-                        
-                        fname = f"{l}_{d}_{cnt}.pdf" if cnt > 1 else f"{l}_{d}.pdf"
-                        cart_out = f"CONSEGNE/CONSEGNE_{d}/DDT-ORIGINALI-DIVISI/{tipo_label}"
-                        percorso_out = f"{cart_out}/{fname}"
-                        
-                        writer = PdfWriter()
-                        writer.add_page(reader.pages[i])
-                        out_io = io.BytesIO()
-                        writer.write(out_io)
-                        out_io.seek(0)
-                        
-                        out_blob = bucket.blob(percorso_out)
-                        out_blob.upload_from_file(out_io, content_type="application/pdf")
-                        creati += 1
-
-                        # ── PUNTO #4: Ricerca cliente con Tripla Chiave ──────────────
-                        cliente_nome = l
-                        cliente_trovato = False
-                        cliente_doc = None
-
-                        # Cerca il cliente per codice (rispettando la regola p00000)
-                        cliente_doc, _ = _cerca_cliente_cloud(l)
-
-                        if cliente_doc:
-                            cliente_nome = (cliente_doc.get('cliente')
-                                            or cliente_doc.get('nome_consegna')
-                                            or l)
-                            cliente_trovato = True
-
-                        # Determina i codici frutta/latte per costruire la chiave tripla
-                        cod_frutta = l if tipo_label == "FRUTTA" else "p00000"
-                        cod_latte  = l if tipo_label == "LATTE"  else "p00000"
-                        if cliente_doc:
-                            cod_frutta = cliente_doc.get('codice_frutta', cod_frutta)
-                            cod_latte  = cliente_doc.get('codice_latte',  cod_latte)
-
-                        stato_iniziale = "pronto" if cliente_trovato else "da_mappare"
-
-                        get_db().collection('clienti').document('DNR').collection('ddt').add({
-                            "codice_cliente": l,
-                            "codice_frutta":  cod_frutta,
-                            "codice_latte":   cod_latte,
-                            "tripla_chiave":  _build_tripla_chiave(cod_frutta, cod_latte, cliente_nome),
-                            "nome": cliente_nome,
-                            "data": d,
-                            "storage_path": percorso_out,
-                            "tipo": tipo_label,
-                            "stato": stato_iniziale,
-                            "zona": zona
-                        })
-
-                    except Exception as ex_page:
-                        err_msg = f"Errore pagina {i} in {blob.name}: {ex_page}"
-                        print(f"[ERROR] {err_msg}")
-                        errori_lista.append(err_msg)
-                        
-        except Exception as e:
-            err_msg = f"Errore apertura PDF {blob.name}: {e}"
-            print(f"[ERROR] {err_msg}")
-            errori_lista.append(err_msg)
-            
-    for blob in pdf_blobs:
-        try:
-            archived_name = blob.name.replace("input_pdf_fornitore/", "archivio_lenzuoloni_processati/")
-            bucket.copy_blob(blob, bucket, archived_name)
-            blob.delete()
-        except Exception as e_arch:
-            print(f"[ERROR] Errore archiviazione {blob.name}: {e_arch}")
-
-    end_time = time.time()
-    elapsed = end_time - start_time
-    print(f"[INFO] End elabora_pdf_estrazione. Tempo: {elapsed:.2f}s, Creati: {creati}, Errori: {len(errori_lista)}")
-    
-    _registra_statistica('elabora_pdf', elapsed, len(errori_lista))
-
-    status_code = "ok" if not errori_lista else "parziale"
-    if not creati and errori_lista: status_code = "errore"
-
-    return {
-        "status": status_code,
-        "message": f"Taglio completato in {elapsed:.2f}s",
-        "errori": errori_lista,
-        "data": {
-            "date_elaborate": list(date_valide),
-            "ddt_estratti": creati,
-            "tempo_sec": elapsed
-        }
-    }
 
 
 # ─── PUNTO #4: PROTEZIONE TRIPLA CHIAVE ────────────────────────────────────────
@@ -1960,7 +1810,7 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
     job_ref.update({"status": "processing", "updated_at": firestore.SERVER_TIMESTAMP})
     
     try:
-        bucket = storage.bucket()
+        bucket = storage.bucket(name=BUCKET_NAME)
         path = data.get("storage_path")
         etichetta = data.get("type", "FRUTTA").upper()
         is_excel = data.get("is_excel", False) or etichetta == "GRAND_CHEF"
@@ -3819,11 +3669,6 @@ def processa_job_pdf(req: https_fn.CallableRequest):
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
-def elabora_pdf_estrazione(req: https_fn.CallableRequest):
-    return core_elabora_pdf_estrazione(req.auth.uid if req.auth else None)
-
-@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
 def genera_distinta_viaggio(req: https_fn.CallableRequest):
     return core_genera_distinta_viaggio(req.data.get("viaggio_id"))
 
@@ -3864,7 +3709,7 @@ def pulisci_cartelle_elaborazione(req: https_fn.CallableRequest):
         if not data_consegna:
             return {"status": "errore", "message": "Data non fornita"}
             
-        bucket = storage.bucket()
+        bucket = storage.bucket(name=BUCKET_NAME)
         db = get_db()
         
         for t in tipologie:

@@ -6,12 +6,7 @@ import { firebaseConfig } from "./firebase-config.js";
 
 const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
-try {
-    initializeAppCheck(app, {
-        provider: new ReCaptchaV3Provider('6Le8IjAtAAAAAIFW6c_ToaLJELGoygI27BW6d1jZ'),
-        isTokenAutoRefreshEnabled: true
-    });
-} catch (e) { console.warn("AppCheck init:", e); }
+/* AppCheck Disabilitato temporaneamente */
 
 const storage = getStorage(app);
 

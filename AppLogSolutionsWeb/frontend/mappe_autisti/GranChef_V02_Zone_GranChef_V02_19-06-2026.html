@@ -256,12 +256,7 @@ import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com
         };
         const app = initializeApp(firebaseConfig);
 
-try {
-    initializeAppCheck(app, {
-        provider: new ReCaptchaV3Provider('6Le8IjAtAAAAAIFW6c_ToaLJELGoygI27BW6d1jZ'),
-        isTokenAutoRefreshEnabled: true
-    });
-} catch (e) { console.warn("AppCheck init:", e); }
+/* AppCheck HTML Disabilitato */
 
         const db = getFirestore(app);
 

@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=2.86">
+    <link rel="stylesheet" href="styles.css?v=2.88">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .row-error td {
@@ -478,8 +478,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.86"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.86"></script>
+    <script src="script.js?v=2.88"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.88"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
@@ -489,12 +489,7 @@ import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
-try {
-    initializeAppCheck(app, {
-        provider: new ReCaptchaV3Provider('6Le8IjAtAAAAAIFW6c_ToaLJELGoygI27BW6d1jZ'),
-        isTokenAutoRefreshEnabled: true
-    });
-} catch (e) { console.warn("AppCheck init:", e); }
+/* AppCheck HTML Disabilitato */
 
         const db = getFirestore(app);
 
@@ -1515,7 +1510,7 @@ try {
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=2.86"></script>
+    <script type="module" src="cedolini-splitter.js?v=2.88"></script>
 
 </body>
 </html>

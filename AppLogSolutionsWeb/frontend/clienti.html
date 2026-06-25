@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Clienti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.102">
+    <link rel="stylesheet" href="styles.css?v=2.170">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     
     <!-- PWA & Mobile Optimization -->
@@ -15,8 +15,8 @@
     <link rel="apple-touch-icon" href="img/logo.png">
     <meta name="theme-color" content="#4f46e5">
 
-    <script src="script.js?v=2.102" defer></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.102"></script>
+    <script src="script.js?v=2.170" defer></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.170"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDLnhP2Q4bz2ubYwcMLiD3-qq4c220eVKw&loading=async&callback=initAutocomplete&libraries=places&language=it"></script>
@@ -359,6 +359,30 @@
                     </div>
                 </div>
 
+                <!-- Sezione Tariffe Viaggio (Latte/DNR) -->
+                <div class="input-group" style="grid-column: 1 / -1; background: #f0fdf4; padding: 15px; border-radius: 12px; border: 1px dashed #10b981; margin-top: 5px;">
+                    <label style="color: #047857; font-weight: 700;">💶 Tariffe Viaggio (Latte / DNR)</label>
+                    <p style="font-size: 11px; color: #64748b; margin: 4px 0 12px;">Inserisci il prezzo in € per ogni tipo di viaggio verso questo cliente. Lascia vuoto se non applicabile.</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label style="font-size: 11px; color: #334155; font-weight: 700;">Patente B (Furgone) €</label>
+                            <input type="number" step="0.01" min="0" id="editPatenteB" placeholder="es. 15.00" style="width:100%;">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: #334155; font-weight: 700;">Patente C (Camion) €</label>
+                            <input type="number" step="0.01" min="0" id="editPatenteC" placeholder="es. 20.00" style="width:100%;">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: #334155; font-weight: 700;">Navetta Sommacampagna €</label>
+                            <input type="number" step="0.01" min="0" id="editNavettaSommacampagna" placeholder="es. 25.00" style="width:100%;">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: #334155; font-weight: 700;">Navetta Cerea €</label>
+                            <input type="number" step="0.01" min="0" id="editNavettaCerea" placeholder="es. 30.00" style="width:100%;">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="map-section" style="grid-column: 1 / -1; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; gap: 10px;">
                         <div style="flex: 1;">
@@ -540,6 +564,10 @@
                 document.getElementById('editLng').value = c.lng || '';
                 document.getElementById('editIsProgetto').checked = !!c.isProgetto;
                 document.getElementById('editViaggi').value = Array.isArray(c.viaggi) ? c.viaggi.join(', ') : (c.viaggi || '');
+                document.getElementById('editPatenteB').value = c.patente_b || '';
+                document.getElementById('editPatenteC').value = c.patente_c || '';
+                document.getElementById('editNavettaSommacampagna').value = c.navetta_sommacampagna || '';
+                document.getElementById('editNavettaCerea').value = c.navetta_cerea || '';
 
                 modal.classList.add('active');
                 setTimeout(() => initEditMap(c.lat, c.lng), 300);
@@ -609,7 +637,11 @@
                     lat: document.getElementById('editLat').value,
                     lng: document.getElementById('editLng').value,
                     isProgetto: document.getElementById('editIsProgetto').checked,
-                    viaggi: document.getElementById('editViaggi').value.split(',').map(s => s.trim()).filter(s => s !== '')
+                    viaggi: document.getElementById('editViaggi').value.split(',').map(s => s.trim()).filter(s => s !== ''),
+                    patente_b: document.getElementById('editPatenteB').value ? parseFloat(document.getElementById('editPatenteB').value) : null,
+                    patente_c: document.getElementById('editPatenteC').value ? parseFloat(document.getElementById('editPatenteC').value) : null,
+                    navetta_sommacampagna: document.getElementById('editNavettaSommacampagna').value ? parseFloat(document.getElementById('editNavettaSommacampagna').value) : null,
+                    navetta_cerea: document.getElementById('editNavettaCerea').value ? parseFloat(document.getElementById('editNavettaCerea').value) : null,
                 };
 
                 try {

@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fatturazione - Log Solution</title>
+    <link rel="stylesheet" href="styles.css?v=2.170">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <meta name="theme-color" content="#4f46e5">
+    <style>
+        .fatturazione-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .controls-card {
+            background: var(--surface);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-end;
+            border: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .input-group { margin: 0; flex: 1; min-width: 200px; }
+        
+        .export-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .export-actions button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Pivot Table Styles */
+        .pivot-wrapper {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+            overflow-x: auto;
+            margin-bottom: 24px;
+        }
+
+        .pivot-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .pivot-table th, .pivot-table td {
+            padding: 8px 12px;
+            border: 1px solid #e5e7eb;
+            text-align: right;
+        }
+
+        .pivot-table th:first-child, .pivot-table td:first-child {
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 2;
+            text-align: left;
+            font-weight: 600;
+            border-right: 2px solid #d1d5db;
+        }
+        
+        .pivot-table th:last-child, .pivot-table td:last-child {
+            font-weight: bold;
+            background: #f9fafb;
+            border-left: 2px solid #d1d5db;
+        }
+
+        .pivot-table thead th {
+            background: #f3f4f6;
+            color: #374151;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .pivot-table thead th:first-child {
+            background: #f3f4f6;
+        }
+
+        .pivot-table tfoot th, .pivot-table tfoot td {
+            background: #e5e7eb;
+            font-weight: bold;
+            color: #111827;
+        }
+        
+        .pivot-table tfoot th:first-child {
+            background: #e5e7eb;
+        }
+
+        /* Summary styles for TUTTI */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #fffbeb, #fef3c7);
+            padding: 24px;
+            border-radius: 16px;
+            text-align: center;
+            border: 1px solid #fde68a;
+            box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.1);
+        }
+
+        .summary-card.cattel {
+            background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+            border-color: #7dd3fc;
+            box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.1);
+        }
+
+        .summary-card.bauer {
+            background: linear-gradient(135deg, #fce7f3, #fbcfe8);
+            border-color: #f9a8d4;
+            box-shadow: 0 4px 6px -1px rgba(219, 39, 119, 0.1);
+        }
+
+        .summary-card h3 {
+            margin: 0;
+            color: var(--text-main);
+            font-size: 18px;
+        }
+
+        .summary-card .big-number {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin: 12px 0;
+        }
+
+        .summary-card .money {
+            font-size: 20px;
+            color: var(--primary);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+        <nav class="glass-nav">
+        <div class="nav-content">
+            <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
+            <button id="dashboardBtn" class="logout-btn" title="Dashboard"
+                onclick="window.navigateWithState('dashboard.html')"
+                style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
+                <span class="material-icons-round">dashboard</span>
+            </button>
+            <div class="nav-title" style="flex: 1;">Fatturazione Mensile</div>
+            <a href="#" onclick="window.logoutFirebase(); return false;" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
+        </div>
+    </nav>
+
+    <main class="fatturazione-container">
+        <div class="controls-card">
+            <div class="input-group">
+                <label>Mese di Riferimento</label>
+                <input type="month" id="month-selector" class="file-input">
+            </div>
+            <div class="input-group">
+                <label>Seleziona Cliente</label>
+                <select id="client-selector" class="file-input">
+                    <option value="TUTTI">Tutti i Clienti (Solo Riepilogo)</option>
+                    <option value="GRAN CHEF">Gran Chef Premium Food</option>
+                    <option value="CATTEL">Cattel SpA</option>
+                    <option value="BAUER">Bauer SpA</option>
+                    <option value="DNR">D.N.R. Srl</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" id="btn-calcola">
+                <span class="material-icons-round">calculate</span>
+                Elabora Dati
+            </button>
+            
+            <div class="export-actions" id="export-actions" style="display: none; margin-left: auto;">
+                <button class="btn btn-primary" onclick="esportaExcel()">
+                    <span class="material-icons-round" style="color: #16a34a;">table_view</span>
+                    Esporta Excel
+                </button>
+                <button class="btn btn-primary" onclick="esportaPDF()">
+                    <span class="material-icons-round" style="color: #dc2626;">picture_as_pdf</span>
+                    Esporta PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- RECAP CARDS FOR "TUTTI" -->
+        <div id="summary-container" style="display: none;">
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <h3>Gran Chef</h3>
+                    <div class="big-number" id="gc-count">0</div>
+                    <div class="money">Tot: €<span id="gc-money">0.00</span></div>
+                </div>
+                <div class="summary-card cattel">
+                    <h3>Cattel</h3>
+                    <div class="big-number" id="cat-count">0</div>
+                    <div class="money">Tot: €<span id="cat-money">0.00</span></div>
+                </div>
+                <div class="summary-card bauer">
+                    <h3>Bauer</h3>
+                    <div class="big-number" id="bau-count">0</div>
+                    <div class="money">Tot: €<span id="bau-money">0.00</span></div>
+                </div>
+                <div class="summary-card" style="border-left: 4px solid #10b981;">
+                    <h3>DNR</h3>
+                    <div class="big-number" id="dnr-count">0</div>
+                    <div class="money">Tot: €<span id="dnr-money">0.00</span></div>
+                </div>
+            </div>
+            <div style="text-align: right; margin-top: 16px;">
+                <h2 style="margin: 0; color: var(--primary);">FATTURATO TOTALE: €<span id="total-money">0.00</span></h2>
+            </div>
+        </div>
+
+        <!-- PIVOT TABLE FOR SPECIFIC CLIENT -->
+        <div id="pivot-container" style="display: none;">
+            <h3 id="pivot-title" style="margin-bottom: 16px; color: var(--text-main);"></h3>
+            <div class="pivot-wrapper">
+                <table class="pivot-table" id="pivot-table">
+                    <thead id="pivot-thead"></thead>
+                    <tbody id="pivot-tbody"></tbody>
+                    <tfoot id="pivot-tfoot"></tfoot>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js?v=2.170"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.170"></script>
+    <script type="module">
+        import { getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const app = getApps()[0];
+        const db = getFirestore(app);
+
+        // Utils for date parsing
+        function getDayFromDateString(dateStr) {
+            // matches DD-MM-YYYY or DD/MM/YYYY
+            let m = dateStr.match(/(\d{2})[-\/](\d{2})[-\/](\d{4})/);
+            if (m) return parseInt(m[1], 10);
+            // matches YYYY-MM-DD or YYYY/MM/DD
+            m = dateStr.match(/(\d{4})[-\/](\d{2})[-\/](\d{2})/);
+            if (m) return parseInt(m[3], 10);
+            return null;
+        }
+
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        document.getElementById('month-selector').value = `${y}-${m}`;
+
+        let currentClient = "TUTTI";
+        let currentMonthLabel = "";
+
+        document.getElementById('btn-calcola').addEventListener('click', async () => {
+            const monthVal = document.getElementById('month-selector').value;
+            const clientSel = document.getElementById('client-selector').value;
+            currentClient = clientSel;
+            
+            if (!monthVal) {
+                Swal.fire('Errore', 'Seleziona un mese', 'error');
+                return;
+            }
+
+            const [year, month] = monthVal.split('-');
+            const targetSuffix = `-${month}-${year}`; 
+            
+            const monthNames = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
+            currentMonthLabel = `${monthNames[parseInt(month)-1]} ${year}`;
+
+            Swal.fire({
+                title: 'Lettura Database...',
+                text: 'Elaborazione viaggi in corso...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            // Recupero Tariffe
+            let TARIFFA_GC = 350.0;
+            let TARIFFA_BAU = 390.0;
+            let CAT_B = 340.0;
+            let CAT_C = 380.0;
+            let CAT_NAV1 = 380.0;
+            let CAT_NAV2 = 480.0;
+            let DNR_DDT = 16.50;
+            let DNR_FORFAIT = 250.00;
+
+            try {
+                const gcDoc = await getDoc(doc(db, "clienti", "GRAN CHEF", "impostazioni", "listino"));
+                const catDoc = await getDoc(doc(db, "clienti", "CATTEL", "impostazioni", "listino"));
+                const bauDoc = await getDoc(doc(db, "clienti", "BAUER", "impostazioni", "listino"));
+                const dnrDoc = await getDoc(doc(db, "clienti", "DNR", "impostazioni", "listino"));
+                const scuoleDoc = await getDoc(doc(db, "clienti", "PROGETTO SCUOLE", "impostazioni", "listino"));
+
+                if(gcDoc.exists() && gcDoc.data().tariffa_viaggio) TARIFFA_GC = parseFloat(gcDoc.data().tariffa_viaggio);
+                if(bauDoc.exists() && bauDoc.data().tariffa_viaggio) TARIFFA_BAU = parseFloat(bauDoc.data().tariffa_viaggio);
+                if(catDoc.exists()) {
+                    const cd = catDoc.data();
+                    if (cd.patente_b) CAT_B = parseFloat(cd.patente_b);
+                    if (cd.patente_c) CAT_C = parseFloat(cd.patente_c);
+                    if (cd.navetta_sommacampagna) CAT_NAV1 = parseFloat(cd.navetta_sommacampagna);
+                    if (cd.navetta_cerea) CAT_NAV2 = parseFloat(cd.navetta_cerea);
+                }
+                if(dnrDoc.exists() && (dnrDoc.data().tariffa_ddt || dnrDoc.data().tariffa_forfait)) {
+                    const dd = dnrDoc.data();
+                    if (dd.tariffa_ddt) DNR_DDT = parseFloat(dd.tariffa_ddt);
+                    if (dd.tariffa_forfait) DNR_FORFAIT = parseFloat(dd.tariffa_forfait);
+                } else if (scuoleDoc.exists()) {
+                    const dd = scuoleDoc.data();
+                    if (dd.tariffa_ddt) DNR_DDT = parseFloat(dd.tariffa_ddt);
+                    if (dd.tariffa_forfait) DNR_FORFAIT = parseFloat(dd.tariffa_forfait);
+                }
+            } catch (errListini) {
+                console.warn("Errore lettura listini, uso i valori di default");
+            }
+
+            try {
+                // Mappa targhe -> patente
+                let mezziMap = {};
+                try {
+                    const mezziSnap = await getDocs(collection(db, "mezzi"));
+                    mezziSnap.forEach(doc => {
+                        const data = doc.data();
+                        if (data.targa) mezziMap[data.targa.toUpperCase()] = data.patente || 'B';
+                    });
+                } catch(e) {}
+
+                // Recuperiamo TUTTI i viaggi
+                const viaggiRef = collection(db, 'clienti', 'DNR', 'viaggi ddt');
+                const snap = await getDocs(viaggiRef);
+
+                let trips = [];
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const dataConsegna = d.data_lavoro || d.data || d.data_consegna || '';
+                    if (dataConsegna.includes(targetSuffix) || dataConsegna.startsWith(`${year}-${month}`)) {
+                        trips.push({ id: doc.id, ...d, rawDate: dataConsegna });
+                    }
+                });
+
+                // Per il Riepilogo Totale
+                let countGC = 0, totGC = 0;
+                let countCat = 0, totCat = 0;
+                let countBau = 0, totBau = 0;
+                let countDnr = 0, totDnr = 0;
+
+                // Per la matrice (Pivot)
+                // pivotData: { "NOME GIRO": { day1: importo, day2: importo... } }
+                let pivotData = {};
+
+                for (const t of trips) {
+                    const p = t.punti || t.punti_ottimizzati || [];
+                    const nomeStr = (t.nome_giro || t.id_zona || 'GENERICO').toUpperCase();
+                    
+                    let isGC = t.is_grand_chef === true || t.is_gc === true;
+                    let isCat = false;
+                    let isBau = false;
+
+                    if (!isGC) {
+                        isGC = p.some(pt => {
+                            const tg = (pt.tipologia_grado || pt.tipo || '').toUpperCase();
+                            const zn = (pt.zona || '').toUpperCase();
+                            return tg.includes("GRAND") || tg.includes("CHEF") || zn.includes("CHEF") || zn.includes("GRANCHEF");
+                        });
+                        if (!isGC && (nomeStr.includes("CHEF") || nomeStr.includes("GRAN"))) isGC = true;
+                    }
+
+                    isCat = p.some(pt => (pt.zona || '').toUpperCase().includes("CATTEL") || (pt.codice_frutta || '').toUpperCase().includes("CATTEL"));
+                    if (!isCat && nomeStr.includes("CATTEL")) isCat = true;
+
+                    isBau = p.some(pt => (pt.zona || '').toUpperCase().includes("BAUER") || (pt.codice_frutta || '').toUpperCase().includes("BAUER"));
+                    if (!isBau && nomeStr.includes("BAUER")) isBau = true;
+
+                    // Determiniamo il cliente per questo viaggio
+                    let tripClient = "DNR";
+                    if (isGC) tripClient = "GRAN CHEF";
+                    else if (isCat) tripClient = "CATTEL";
+                    else if (isBau) tripClient = "BAUER";
+
+                    // Calcolo importo
+                    let importo = 0;
+                    if (tripClient === "GRAN CHEF") {
+                        importo = TARIFFA_GC;
+                        countGC++; totGC += importo;
+                    } else if (tripClient === "CATTEL") {
+                        if (nomeStr.includes("NAVETTA")) {
+                            importo = nomeStr.includes("CEREA") ? CAT_NAV2 : CAT_NAV1;
+                        } else {
+                            const targaStr = (t.targa || t.targa_mezzo || '').toUpperCase();
+                            let patente = mezziMap[targaStr] || 'B';
+                            importo = (patente === 'C') ? CAT_C : CAT_B;
+                        }
+                        countCat++; totCat += importo;
+                    } else if (tripClient === "BAUER") {
+                        importo = TARIFFA_BAU;
+                        countBau++; totBau += importo;
+                    } else {
+                        // DNR
+                        if (t.is_forfait === true) {
+                            importo = DNR_FORFAIT;
+                        } else {
+                            let nDDT = p.length;
+                            let countValid = 0;
+                            p.forEach(pt => {
+                                if ((pt.zona || '').toUpperCase() !== 'RIENTRO' && (pt.zona || '').toUpperCase() !== 'PARTENZA') {
+                                    countValid++;
+                                }
+                            });
+                            if (countValid === 0 && nDDT === 0) countValid = 1;
+                            importo = DNR_DDT * countValid;
+                        }
+                        countDnr++; totDnr += importo;
+                    }
+
+                    // Se siamo in modalità singola e il cliente combacia, aggiungiamo alla pivot
+                    if (clientSel !== "TUTTI" && tripClient === clientSel) {
+                        let day = getDayFromDateString(t.rawDate);
+                        if (day) {
+                            if (!pivotData[nomeStr]) pivotData[nomeStr] = {};
+                            // Se ci sono più giri omonimi nello stesso giorno, sommiamo
+                            if (!pivotData[nomeStr][day]) pivotData[nomeStr][day] = 0;
+                            pivotData[nomeStr][day] += importo;
+                        }
+                    }
+                }
+
+                // UI UPDATE: TUTTI vs SINGOLO
+                document.getElementById('summary-container').style.display = (clientSel === "TUTTI") ? 'block' : 'none';
+                document.getElementById('pivot-container').style.display = (clientSel !== "TUTTI") ? 'block' : 'none';
+                document.getElementById('export-actions').style.display = (clientSel !== "TUTTI") ? 'flex' : 'none';
+
+                if (clientSel === "TUTTI") {
+                    document.getElementById('gc-count').textContent = countGC;
+                    document.getElementById('gc-money').textContent = totGC.toFixed(2);
+                    document.getElementById('cat-count').textContent = countCat;
+                    document.getElementById('cat-money').textContent = totCat.toFixed(2);
+                    document.getElementById('bau-count').textContent = countBau;
+                    document.getElementById('bau-money').textContent = totBau.toFixed(2);
+                    document.getElementById('dnr-count').textContent = countDnr;
+                    document.getElementById('dnr-money').textContent = totDnr.toFixed(2);
+                    document.getElementById('total-money').textContent = (totGC + totCat + totBau + totDnr).toFixed(2);
+                } else {
+                    // Generazione Matrice
+                    document.getElementById('pivot-title').textContent = `Fatturazione ${clientSel} - ${currentMonthLabel}`;
+                    buildPivotTable(pivotData, parseInt(year), parseInt(month));
+                }
+
+                Swal.close();
+
+            } catch (err) {
+                console.error("Errore lettura:", err);
+                Swal.fire('Errore', 'Impossibile leggere i dati: ' + err.message, 'error');
+            }
+        });
+
+        function buildPivotTable(pivotData, year, month) {
+            const thead = document.getElementById('pivot-thead');
+            const tbody = document.getElementById('pivot-tbody');
+            const tfoot = document.getElementById('pivot-tfoot');
+            
+            thead.innerHTML = ''; tbody.innerHTML = ''; tfoot.innerHTML = '';
+
+            const daysInMonth = new Date(year, month, 0).getDate();
+            
+            // Header
+            let trHead = '<tr><th>ZONA / GIRO</th>';
+            for(let d=1; d<=daysInMonth; d++) {
+                trHead += `<th>${d}</th>`;
+            }
+            trHead += '<th>TOTALE</th></tr>';
+            thead.innerHTML = trHead;
+
+            // Sort zone names alphabetically
+            const zoneNames = Object.keys(pivotData).sort();
+            
+            let columnTotals = Array(daysInMonth + 1).fill(0); // 1-indexed
+
+            if (zoneNames.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${daysInMonth+2}" style="text-align:center">Nessun viaggio fatturabile trovato.</td></tr>`;
+                return;
+            }
+
+            zoneNames.forEach(zona => {
+                let rowHtml = `<tr><td>${zona}</td>`;
+                let rowTotal = 0;
+                
+                for(let d=1; d<=daysInMonth; d++) {
+                    const val = pivotData[zona][d];
+                    if (val) {
+                        rowHtml += `<td>€ ${val.toFixed(2)}</td>`;
+                        rowTotal += val;
+                        columnTotals[d] += val;
+                    } else {
+                        rowHtml += `<td></td>`;
+                    }
+                }
+                
+                rowHtml += `<td>€ ${rowTotal.toFixed(2)}</td></tr>`;
+                tbody.insertAdjacentHTML('beforeend', rowHtml);
+            });
+
+            // Footer (Parziali)
+            let trFoot = '<tr><td>PARZIALE</td>';
+            let grandTotal = 0;
+            for(let d=1; d<=daysInMonth; d++) {
+                if (columnTotals[d] > 0) {
+                    trFoot += `<td>€ ${columnTotals[d].toFixed(2)}</td>`;
+                    grandTotal += columnTotals[d];
+                } else {
+                    trFoot += `<td>€ 0.00</td>`;
+                }
+            }
+            trFoot += `<td>€ ${grandTotal.toFixed(2)}</td></tr>`;
+            tfoot.innerHTML = trFoot;
+        }
+
+        // ESPORTAZIONE
+        window.esportaExcel = function() {
+            const table = document.getElementById('pivot-table');
+            if (!table) return;
+
+            // table_to_book extracts the HTML table
+            const wb = XLSX.utils.table_to_book(table, {sheet: "Fatturazione"});
+            const ws = wb.Sheets["Fatturazione"];
+
+            // Find the range of the worksheet
+            const range = XLSX.utils.decode_range(ws['!ref']);
+
+            // Column widths
+            ws['!cols'] = [{ wch: 25 }]; // First column wider
+            for (let c = 1; c < range.e.c; c++) {
+                ws['!cols'].push({ wch: 8 }); // Day columns
+            }
+            ws['!cols'].push({ wch: 12 }); // Total column
+
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                    const cell = ws[cellAddress];
+                    if (!cell) continue;
+
+                    // Initialize style object if not present
+                    if (!cell.s) cell.s = {};
+
+                    // Base style for all cells: borders and vertical center
+                    cell.s.border = {
+                        top: { style: "thin", color: { rgb: "FFD1D5DB" } },
+                        bottom: { style: "thin", color: { rgb: "FFD1D5DB" } },
+                        left: { style: "thin", color: { rgb: "FFD1D5DB" } },
+                        right: { style: "thin", color: { rgb: "FFD1D5DB" } }
+                    };
+                    cell.s.alignment = { vertical: "center" };
+
+                    // Header row (R = 0)
+                    if (R === 0) {
+                        cell.s.fill = { fgColor: { rgb: "FF4F46E5" } }; // Indigo background
+                        cell.s.font = { color: { rgb: "FFFFFFFF" }, bold: true };
+                        cell.s.alignment.horizontal = "center";
+                    }
+                    // Footer row (R = range.e.r)
+                    else if (R === range.e.r) {
+                        cell.s.fill = { fgColor: { rgb: "FFD1D5DB" } }; // Gray background
+                        cell.s.font = { bold: true };
+                        if (C === 0) cell.s.alignment.horizontal = "left";
+                        else cell.s.alignment.horizontal = "right";
+                    }
+                    // Data rows
+                    else {
+                        if (C === 0) {
+                            // First column
+                            cell.s.font = { bold: true };
+                            cell.s.alignment.horizontal = "left";
+                        } else {
+                            cell.s.alignment.horizontal = "right";
+                            // Try to parse number and set format to currency
+                            if (cell.v && typeof cell.v === 'string') {
+                                let numStr = cell.v.replace('€', '').trim();
+                                if (!isNaN(parseFloat(numStr))) {
+                                    cell.v = parseFloat(numStr);
+                                    cell.t = 'n';
+                                    cell.z = '"€"\ #,##0.00';
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            XLSX.writeFile(wb, `Fatturazione_${currentClient.replace(/ /g, '_')}_${currentMonthLabel.replace(/ /g, '_')}.xlsx`);
+        };
+
+        window.esportaPDF = function() {
+            const { jsPDF } = window.jspdf;
+            // Usiamo formato orizzontale 'l' (landscape) perchè ci sono 31 colonne
+            const doc = new jsPDF('l', 'pt', 'a4');
+            
+            doc.setFontSize(16);
+            doc.text(`Fatturazione ${currentClient} - ${currentMonthLabel}`, 40, 40);
+
+            doc.autoTable({
+                html: '#pivot-table',
+                startY: 60,
+                styles: { 
+                    fontSize: 7, 
+                    cellPadding: 2,
+                    halign: 'right'
+                },
+                columnStyles: {
+                    0: { halign: 'left', fontStyle: 'bold' } // colonna zona
+                },
+                headStyles: { 
+                    fillColor: [79, 70, 229],
+                    halign: 'center'
+                },
+                footStyles: {
+                    fillColor: [209, 213, 219],
+                    textColor: 20
+                },
+                theme: 'grid'
+            });
+
+            doc.save(`Fatturazione_${currentClient.replace(/ /g, '_')}_${currentMonthLabel.replace(/ /g, '_')}.pdf`);
+        };
+    </script>
+</body>
+</html>

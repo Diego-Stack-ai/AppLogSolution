@@ -20,6 +20,11 @@ service firebase.storage {
       allow write: if isAuthenticated();
     }
 
+    // Mappe degli autisti (accesso pubblico tramite link)
+    match /CONSEGNE/{cartellaData}/MAPPE_AUTISTI/{fileName} {
+      allow read: if true;
+    }
+
     // Cartella delle consegne (DDT tagliati e distinte PDF)
     match /CONSEGNE/{allPaths=**} {
       allow read: if isAuthenticated();

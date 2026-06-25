@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invio Mobile Autisti — Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.102">
+    <link rel="stylesheet" href="styles.css?v=2.170">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -16,9 +16,10 @@
 
         .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
             flex-wrap: wrap; animation: slideUp 0.5s 0.1s both; }
-        .date-badge { background: var(--surface); border: 1px solid var(--border);
-            border-radius: 12px; padding: 8px 16px; font-size: 14px; font-weight: 700;
-            color: var(--primary); display: flex; align-items: center; gap: 6px; }
+        .date-input { background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 8px 12px; font-size: 14px; font-weight: 700;
+            color: var(--primary); outline: none; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+        .date-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.15); }
         .btn-genera-tutte { background: linear-gradient(135deg, #4f46e5, #7c3aed);
             color: white; border: none; padding: 10px 20px; border-radius: 12px;
             font-weight: 700; font-size: 13px; cursor: pointer; display: flex;
@@ -116,11 +117,8 @@
             <p>Genera la mappa di percorso per ogni autista (BAT 5) e invia il link via WhatsApp</p>
         </div>
 
-        <div class="toolbar" id="toolbar" style="display:none;">
-            <div class="date-badge">
-                <span class="material-icons-round" style="font-size:16px;">calendar_today</span>
-                <span id="dataBadge">—</span>
-            </div>
+        <div class="toolbar" id="toolbar">
+            <input type="date" id="dateSelector" class="date-input" onchange="cambiaData(event)" title="Seleziona Data">
             <button class="btn-genera-tutte" id="btnGeneraTutte" onclick="generaTutteMappe()">
                 <span class="material-icons-round">auto_awesome</span>
                 GENERA TUTTE LE MAPPE
@@ -149,8 +147,8 @@
         <div class="viaggi-grid" id="viaggiGrid"></div>
     </main>
 
-    <script src="script.js?v=2.102"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.102"></script>
+    <script src="script.js?v=2.170"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.170"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -166,16 +164,55 @@
 
         // ── init ──────────────────────────────────────────────────────────────
         window.onUserProfileLoaded = async function() {
-            dataLavoro = localStorage.getItem('locked_date')
-                || new URLSearchParams(location.search).get('data')
+            dataLavoro = new URLSearchParams(location.search).get('data')
+                || localStorage.getItem('locked_date')
                 || "";
-            document.getElementById('dataBadge').textContent = dataLavoro || 'data non impostata';
-            if (!dataLavoro) {
-                showError("Data non impostata. Vai a Elaborazione e inserisci la data di lavoro.");
-                return;
+            if (dataLavoro) localStorage.setItem('locked_date', dataLavoro);
+            
+            const dateInput = document.getElementById('dateSelector');
+            if (dataLavoro) {
+                // Il database e localStorage usano DD-MM-YYYY
+                // L'input type="date" vuole YYYY-MM-DD
+                if (dataLavoro.includes('-') && dataLavoro.split('-')[0].length === 2) {
+                    dateInput.value = dataLavoro.split('-').reverse().join('-');
+                } else {
+                    dateInput.value = dataLavoro;
+                }
+                await caricaViaggi();
+            } else {
+                // Caso: accesso diretto senza data, mostriamo stato di attesa invece di errore
+                document.getElementById('loadingState').style.display = 'none';
+                const empty = document.getElementById('emptyState');
+                empty.style.display = 'block';
+                empty.innerHTML = `
+                    <span class="material-icons-round">calendar_today</span>
+                    <h3>Scegli una data</h3>
+                    <p>Usa il calendario qui in alto per caricare i viaggi autisti.</p>
+                `;
             }
-            await caricaViaggi();
         };
+
+        window.cambiaData = async function(e) {
+            const rawDate = e.target.value; // Arriva come YYYY-MM-DD
+            if (!rawDate) return;
+            
+            // Converte in DD-MM-YYYY per coerenza col resto dell'app
+            dataLavoro = rawDate.split('-').reverse().join('-');
+            
+            localStorage.setItem('locked_date', dataLavoro);
+            
+            // Update URL search params senza ricaricare la pagina
+            const url = new URL(window.location);
+            url.searchParams.set('data', dataLavoro);
+            window.history.pushState({}, '', url);
+
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'none';
+            document.getElementById('viaggiGrid').innerHTML = '';
+            
+            await caricaViaggi();
+        }
 
         async function caricaViaggi() {
             try {
@@ -192,11 +229,20 @@
                 document.getElementById('loadingState').style.display = 'none';
 
                 if (viaggi.length === 0) {
-                    document.getElementById('emptyState').style.display = 'block';
+                    const empty = document.getElementById('emptyState');
+                    empty.style.display = 'block';
+                    empty.innerHTML = `
+                        <span class="material-icons-round">route</span>
+                        <h3>Nessun viaggio trovato</h3>
+                        <p>Non ci sono viaggi per la data ${dataLavoro}. Prima esegui CALCOLA PERCORSI dalla pagina Mappa & Percorsi.</p>
+                        <button onclick="window.navigateWithState('elaborazione.html')"
+                            style="margin-top:16px;background:#4f46e5;color:white;border:none;padding:10px 20px;border-radius:10px;font-weight:700;cursor:pointer;">
+                            Torna all'elaborazione
+                        </button>
+                    `;
                     return;
                 }
 
-                document.getElementById('toolbar').style.display = 'flex';
                 document.getElementById('countBadge').textContent = viaggi.length;
                 renderViaggi();
             } catch (e) {

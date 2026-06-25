@@ -332,7 +332,21 @@ def gera_riepilogo(summary_data, output_path):
         </div>
     ''' for z in summary_data])
 
-    VALORE_DDT = 18.50
+    # Inizializza Firebase per leggere il listino
+    VALORE_DDT = 16.50
+    try:
+        import firebase_admin
+        from firebase_admin import credentials, firestore
+        if not firebase_admin._apps:
+            cred = credentials.Certificate(r"g:\Il mio Drive\App\AppLogSolutionsWeb\backend\config\log-solution-60007-firebase-adminsdk-fbsvc-2cf3d0c171.json")
+            firebase_admin.initialize_app(cred)
+        db = firestore.client()
+        doc_dnr = db.collection("clienti").document("DNR").collection("impostazioni").document("listino").get()
+        if doc_dnr.exists:
+            VALORE_DDT = float(doc_dnr.to_dict().get("tariffa_ddt", 16.50))
+    except Exception as e:
+        print(f"Errore lettura listino Firestore: {e}")
+
     tot_ddt_generale = sum(z['tot_ddt'] for z in summary_data)
     fatturato_generale = f"{sum(float(z['fatturato']) for z in summary_data):.2f}"
 
@@ -387,7 +401,7 @@ def main():
         km, t_guida, t_sosta, t_tot, polylines = get_google_trip_data(perc)
         
         
-        # Calcolo Fatturato DDT (18.50 Euro ciascuno)
+        # Calcolo Fatturato DDT in base al listino (es. 16.50 Euro ciascuno)
         tot_ddt = 0
         for p in punti:
             tot_ddt += len(p.get("codici_ddt_frutta") or [])
@@ -397,7 +411,7 @@ def main():
                 if p.get("codice_frutta") and p.get("codice_frutta") != "p00000": tot_ddt += 1
                 if p.get("codice_latte") and p.get("codice_latte") != "p00000": tot_ddt += 1
         
-        fatturato = f"{tot_ddt * 18.50:.2f}"
+        fatturato = f"{tot_ddt * VALORE_DDT:.2f}"
         
         fname = sanitize_filename(f"{v_id}_Zone_{'_'.join(zone_coinvolte[:3])}.html")
         info = {'v_id': v_id, 'zone_str': z_str, 'fname': fname, 'km': km, 't_guida': t_guida, 't_sosta': t_sosta, 't_tot': t_tot, 'punti': len(punti), 'tot_ddt': tot_ddt, 'fatturato': fatturato}

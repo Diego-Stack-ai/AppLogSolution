@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="utf-8">
@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2.102">
+    <link rel="stylesheet" href="styles.css?v=2.170">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
@@ -1210,10 +1210,8 @@
 
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
-
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, doc, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, doc, getDocs, setDoc, onSnapshot, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getStorage, ref, getDownloadURL, uploadString } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
         import { firebaseConfig } from "./firebase-config.js";
@@ -1221,17 +1219,20 @@ import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com
         // Initialize Firebase
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
-try {
-    initializeAppCheck(app, {
-        provider: new ReCaptchaV3Provider('6Le8IjAtAAAAAIFW6c_ToaLJELGoygI27BW6d1jZ'),
-        isTokenAutoRefreshEnabled: true
-    });
-} catch (e) { console.warn("AppCheck init:", e); }
-
-        const db = getFirestore(app);
+const db = getFirestore(app);
         const storage = getStorage(app);
         const auth = getAuth(app);
         const functions = getFunctions(app, "europe-west1");
+
+        // --- LISTENER REALTIME PROGETTI (per modal Rinomina Giro) ---
+        // Popola window.appData.lista_progetti non appena Firebase è pronto,
+        // in modo che getNomiViaggi() trovi sempre i dati aggiornati da Impostazioni.
+        window.appData = window.appData || {};
+        onSnapshot(collection(db, "progetti"), (snap) => {
+            window.appData.lista_progetti = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            console.log(`[Mappa] Progetti caricati: ${window.appData.lista_progetti.length} voci`);
+        });
+
 
         // State Variables
         const IS_POPUP = getQueryParam('popup') === 'true';
@@ -1486,22 +1487,53 @@ try {
 
         // --- GESTIONE MODAL RINOMINA GIRO (MATITA) ---
         let modalZid = null;
-        const NOMI_DNR = [
+
+        // Fallback statici (usati se Firestore non ha ancora caricato i progetti)
+        const NOMI_DNR_FALLBACK = [
             "BS", "FUORI BS", "LAGO BS 1", "LAGO BS 2", "LAGO BS 3",
             "VR", "FUORI VR", "MN", "VR MN",
             "LAGO VR 1", "LAGO VR 2", "LAGO VR 3"
         ];
-        const NOMI_GC = [
-            "GranChef BS", "GranChef FUORI BS", "GranChef LAGO BS 1", "GranChef LAGO BS 2", "GranChef LAGO BS 3",
-            "GranChef VR", "GranChef FUORI VR", "GranChef MN", "GranChef VR MN",
-            "GranChef LAGO VR 1", "GranChef LAGO VR 2", "GranChef LAGO VR 3"
-        ];
+        const NOMI_GC_FALLBACK = NOMI_DNR_FALLBACK.map(n => 'GranChef ' + n);
+
+        // Recupera la lista nomi viaggi dinamicamente da Firestore (lista_progetti).
+        // Usa _CLIENTE_PROGETTO (letto dal JSON dei viaggi) come prima scelta,
+        // poi il prefisso del giro (isGC) come fallback, e infine gli array statici.
+        function getNomiViaggi(isGC) {
+            const progetti = (window.appData && window.appData.lista_progetti) || [];
+            let progetto = null;
+
+            if (_CLIENTE_PROGETTO) {
+                // Metodo preciso: cerca per nome esatto del cliente dal JSON
+                const clienteUpper = _CLIENTE_PROGETTO.toUpperCase();
+                progetto = progetti.find(p => (p.nome || '').toUpperCase() === clienteUpper);
+                // Fallback: ricerca parziale
+                if (!progetto) {
+                    progetto = progetti.find(p => clienteUpper.includes((p.nome || '').toUpperCase()) || (p.nome || '').toUpperCase().includes(clienteUpper));
+                }
+            }
+
+            if (!progetto) {
+                // Fallback: usa il prefisso del giro (isGC) come indizio
+                if (isGC) {
+                    progetto = progetti.find(p => (p.nome || '').toUpperCase().includes('GRAN') || (p.nome || '').toUpperCase().includes('CHEF'));
+                } else {
+                    progetto = progetti.find(p => (p.nome || '').toUpperCase().includes('SCUOLE') || (p.nome || '').toUpperCase().includes('DNR'));
+                }
+            }
+
+            if (progetto && progetto.viaggi && progetto.viaggi.length > 0) {
+                return progetto.viaggi;
+            }
+            // Fallback statici finali
+            return isGC ? NOMI_GC_FALLBACK : NOMI_DNR_FALLBACK;
+        }
 
         window.apriModal = (zid) => {
             modalZid = zid;
             const z = DATA_ZONE.find(x => x.id_zona === zid);
-            const isGC = (zid || '').startsWith('GranChef') || (z && z.nome_giro && z.nome_giro.startsWith('GranChef'));
-            const nomi = isGC ? NOMI_GC : NOMI_DNR;
+            const isGC = (zid || '').startsWith('GranChef') || (z && z.nome_giro && z.nome_giro.startsWith('GranChef')) || (z && z._stats && z._stats.is_gc === true) || (z && z.id_zona && z.id_zona.includes('GranChef'));
+            const nomi = getNomiViaggi(isGC);
             
             document.getElementById('modal-title').textContent = isGC ? '🍽️ Rinomina giro GranChef' : '🚚 Rinomina giro';
             document.getElementById('modal-sub').textContent = `ID zona: ${zid}`;
@@ -1539,6 +1571,38 @@ try {
             const z = DATA_ZONE.find(x => x.id_zona === modalZid);
             if (z) z.nome_giro = v;
             
+            // --- NUOVA LOGICA AUTO-AGGIUNTA ---
+            const isCustomInput = !!document.getElementById('modal-input').value.trim();
+            if (isCustomInput && z) {
+                const isGC = (modalZid || '').startsWith('GranChef') || (z.nome_giro && z.nome_giro.startsWith('GranChef')) || (z._stats && z._stats.is_gc === true) || (modalZid && modalZid.includes('GranChef'));
+                const currentList = getNomiViaggi(isGC);
+                if (!currentList.includes(v)) {
+                    // Trova il progetto
+                    const progetti = (window.appData && window.appData.lista_progetti) || [];
+                    let progetto = null;
+                    if (_CLIENTE_PROGETTO) {
+                        const clienteUpper = _CLIENTE_PROGETTO.toUpperCase();
+                        progetto = progetti.find(p => (p.nome || '').toUpperCase() === clienteUpper);
+                        if (!progetto) progetto = progetti.find(p => clienteUpper.includes((p.nome || '').toUpperCase()) || (p.nome || '').toUpperCase().includes(clienteUpper));
+                    }
+                    if (!progetto) {
+                        const keyword = isGC ? 'GRAN' : 'DNR';
+                        progetto = progetti.find(p => (p.nome || '').toUpperCase().includes(keyword));
+                    }
+                    
+                    if (progetto) {
+                        try {
+                            const docRef = doc(db, 'progetti', progetto.id);
+                            await updateDoc(docRef, { viaggi: arrayUnion(v) });
+                            showSaveBanner("Nuovo nome aggiunto alle Impostazioni!", "var(--accent)");
+                        } catch (e) {
+                            console.error("Errore updateDoc progetti:", e);
+                        }
+                    }
+                }
+            }
+            // --- FINE LOGICA AUTO-AGGIUNTA ---
+            
             window.chiudiModal();
             _hasUnsavedChanges = true;
             
@@ -1560,6 +1624,10 @@ try {
             document.getElementById('modal-overlay').classList.remove('open');
         };
 
+        // cliente_progetto: memorizza il cliente del giorno (es. 'GRAN CHEF' o 'PROGETTO SCUOLE')
+        // viene letto dal campo 'cliente' nel JSON dei viaggi generato dalla Cloud Function
+        let _CLIENTE_PROGETTO = null;
+
         // Helper: Reload daily voyage data from storage
         async function reloadVoyageData() {
             setLoaderMsg("Aggiornamento dati viaggi...");
@@ -1574,7 +1642,18 @@ try {
             }
             
             const unparsedData = await response.json();
-            DATA_ZONE = unparsedData;
+            
+            // Nuovo formato: { cliente: '...', zone: [...] }
+            // Vecchio formato (retrocompatibilità): array diretto
+            if (Array.isArray(unparsedData)) {
+                DATA_ZONE = unparsedData;
+                _CLIENTE_PROGETTO = null; // formato vecchio, non sappiamo il cliente
+                console.log('[Mappa] JSON viaggi in formato legacy (array diretto).');
+            } else {
+                DATA_ZONE = unparsedData.zone || [];
+                _CLIENTE_PROGETTO = unparsedData.cliente || null;
+                console.log(`[Mappa] Cliente rilevato dal JSON: "${_CLIENTE_PROGETTO}"`);
+            }
             
             updateTotals();
             if (!IS_POPUP) {
@@ -2999,6 +3078,33 @@ try {
 
         // Cloud-based document generation trigger (BAT 5, 6, 7B Cloud Function)
         window.apriPopupGenerazione = async () => {
+            // --- CONTROLLO NOMI VALIDI ---
+            const nomiErrati = [];
+            DATA_ZONE.forEach(z => {
+                if (z.id_zona === 'DDT_DA_INSERIRE' || z.lista_punti.length === 0) return;
+                
+                const isGC = (z.id_zona || '').startsWith('GranChef') || (z.nome_giro || '').startsWith('GranChef') || (z._stats && z._stats.is_gc === true) || (z.id_zona && z.id_zona.includes('GranChef'));
+                const nomiAmmessi = getNomiViaggi(isGC);
+                const nomeAttuale = z.nome_giro || z.id_zona;
+                
+                if (!nomiAmmessi.includes(nomeAttuale)) {
+                    nomiErrati.push({ giro: nomeAttuale, cliente: isGC ? 'Gran Chef' : 'DNR' });
+                }
+            });
+
+            if (nomiErrati.length > 0) {
+                const listaHtml = nomiErrati.map(err => `<li><b>${err.giro}</b> <span style="color:#666;font-size:0.9em;">(${err.cliente})</span></li>`).join('');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Nomi Viaggio non validi!',
+                    html: `I seguenti viaggi hanno nomi non presenti nella lista ufficiale in Impostazioni:<br><br><ul style="text-align:left; color:#ef4444;">${listaHtml}</ul><br><b>Rinomina questi viaggi</b> scegliendo un nome dalla tendina, oppure inserendoli a mano per sbloccare il salvataggio.`,
+                    confirmButtonText: 'Ho capito',
+                    confirmButtonColor: '#ef4444'
+                });
+                return;
+            }
+            // --- FINE CONTROLLO ---
+
             const result = await Swal.fire({
                 title: 'Salva e Genera File',
                 text: 'Procedere con il salvataggio dei percorsi correnti e l\'elaborazione automatica di PDF, mappe mobile e link viaggi in cloud?',

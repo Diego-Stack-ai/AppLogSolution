@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.102">
+    <link rel="stylesheet" href="styles.css?v=2.170">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -236,6 +236,9 @@
                 <button class="glass-btn" onclick="window.navigateWithState('gestione_anomalie.html')" style="width: 100%; justify-content: center; padding: 10px 16px; border-radius: 12px; font-weight: 700; color: #ef4444; border: 2px solid #ef4444; background: white; display: flex; align-items: center; gap: 8px;" title="Risolvi clienti, articoli e orari non riconosciuti">
                     <span class="material-icons-round">fact_check</span> GESTISCI ANOMALIE
                 </button>
+                <button class="glass-btn" id="btn-gestione-mappa-data" style="width: 100%; justify-content: center; padding: 10px 16px; border-radius: 12px; font-weight: 700; color: white; border: none; background: linear-gradient(135deg, var(--primary), #3730a3); display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);" title="Apri la mappa interattiva per la data selezionata">
+                    <span class="material-icons-round">edit_location</span> GESTIONE MAPPA DATA SELEZIONATA
+                </button>
             </div>
         </div>
 
@@ -332,12 +335,10 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.102"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.102"></script>
+    <script src="script.js?v=2.170"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.170"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
-
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
         import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, limit, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
@@ -345,12 +346,8 @@ import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
-try {
-    initializeAppCheck(app, {
-        provider: new ReCaptchaV3Provider('6Le8IjAtAAAAAIFW6c_ToaLJELGoygI27BW6d1jZ'),
-        isTokenAutoRefreshEnabled: true
-    });
-} catch (e) { console.warn("AppCheck init:", e); }
+
+
 
         const storage = getStorage(app);
         const db = getFirestore(app);
@@ -739,7 +736,7 @@ try {
                 
                 if (result.data.status === 'ok') {
                     console.log("Report generato con successo!");
-                    window.apriMappaGenerale();
+                    window.navigateWithState('mappa_zone.html?data=' + formattedDate + '&cb=' + Date.now());
                 } else {
                     alert("Errore durante la generazione: " + result.data.message);
                 }
@@ -833,6 +830,13 @@ try {
         const selector = document.getElementById('master-date-selector');
         const lockBtn = document.getElementById('lock-date-btn');
         const lockIcon = document.getElementById('lock-icon');
+        
+        document.getElementById('btn-gestione-mappa-data').addEventListener('click', () => {
+            const dateInput = document.getElementById('master-date-selector').value;
+            if (!dateInput) return alert("Seleziona una data nel calendario in alto.");
+            const formattedDate = dateInput.split('-').reverse().join('-');
+            window.navigateWithState('mappa_zone.html?data=' + formattedDate + '&cb=' + Date.now());
+        });
         
         const savedDate = localStorage.getItem('master_date');
         const isLocked = localStorage.getItem('master_date_locked') === 'true';

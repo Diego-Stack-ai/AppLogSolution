@@ -12,10 +12,14 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Regole per i dipendenti (lettura profilo per Auth)
+    // Funzione helper per verificare se utente e' amministratore
+    function isAdmin() {
+      return get(/databases/$(database)/documents/dipendenti/$(request.auth.uid)).data.ruolo == 'amministratore';
+    }
+
+    // Regole per i dipendenti (lettura/scrittura profilo)
     match /dipendenti/{userId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow read, write: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
     }
 
     match /mezzi/{docId} {

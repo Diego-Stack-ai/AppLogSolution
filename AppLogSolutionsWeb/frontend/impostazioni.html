@@ -1,11 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.102">
+    <link rel="stylesheet" href="styles.css?v=2.170">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
@@ -95,6 +95,13 @@
                 <div class="input-group">
                     <label for="modelloInput">Nome / Modello Vettura (Opzionale)</label>
                     <input type="text" id="modelloInput" placeholder="es. Fiat Ducato">
+                </div>
+                <div class="input-group">
+                    <label for="patenteInput">Tipo Patente Richiesta</label>
+                    <select id="patenteInput" style="height:45px; border-radius:12px; border:1px solid var(--border); padding:0 12px; font-size:14px; font-family:inherit; color:var(--text);">
+                        <option value="B">Patente B (Furgone)</option>
+                        <option value="C">Patente C (Camion)</option>
+                    </select>
                 </div>
             </div>
 
@@ -273,6 +280,36 @@
                 </div>
             </div>
 
+            <!-- Tariffe Dinamiche per questo cliente -->
+            <div id="tariffeContainerCATTEL" style="display:none; background: #f0fdf4; border: 1px dashed #10b981; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                <label style="font-size: 13px; font-weight: 700; color: #047857; display: block; margin-bottom: 10px;">&#x1F4B6; Tariffe Viaggio (CATTEL)</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div><label style="font-size: 11px; font-weight: 700;">Patente B (Furgone) &euro;</label><input type="number" step="0.01" min="0" id="progettoPatB" style="width:100%; margin-top:4px;"></div>
+                    <div><label style="font-size: 11px; font-weight: 700;">Patente C (Camion) &euro;</label><input type="number" step="0.01" min="0" id="progettoPatC" style="width:100%; margin-top:4px;"></div>
+                    <div><label style="font-size: 11px; font-weight: 700;">Navetta Sommacampagna &euro;</label><input type="number" step="0.01" min="0" id="progettoNavS" style="width:100%; margin-top:4px;"></div>
+                    <div><label style="font-size: 11px; font-weight: 700;">Navetta Cerea &euro;</label><input type="number" step="0.01" min="0" id="progettoNavC" style="width:100%; margin-top:4px;"></div>
+                </div>
+            </div>
+
+            <div id="tariffeContainerGRANCHEF" style="display:none; background: #fffbeb; border: 1px dashed #f59e0b; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                <label style="font-size: 13px; font-weight: 700; color: #b45309; display: block; margin-bottom: 10px;">&#x1F4B6; Tariffe Viaggio (GRAN CHEF / BAUER)</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div><label style="font-size: 11px; font-weight: 700;">Viaggio A &euro;</label><input type="number" step="0.01" min="0" id="progettoViaggioA" style="width:100%; margin-top:4px;"></div>
+                    <div><label style="font-size: 11px; font-weight: 700;">Viaggio B &euro;</label><input type="number" step="0.01" min="0" id="progettoViaggioB" style="width:100%; margin-top:4px;"></div>
+                </div>
+            </div>
+
+            <div id="tariffeContainerDNR" style="display:none; background: #eff6ff; border: 1px dashed #3b82f6; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                <label style="font-size: 13px; font-weight: 700; color: #1d4ed8; display: block; margin-bottom: 10px;">&#x1F4B6; Tariffe Viaggio (DNR / SCUOLE)</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div><label style="font-size: 11px; font-weight: 700;">Costo a DDT &euro;</label><input type="number" step="0.01" min="0" id="progettoCostoDDT" style="width:100%; margin-top:4px;"></div>
+                    <div><label style="font-size: 11px; font-weight: 700;">Viaggi a Forfait &euro;</label><input type="number" step="0.01" min="0" id="progettoForfait" style="width:100%; margin-top:4px;"></div>
+                    <div><label style="font-size: 11px; font-weight: 700;">DDT (Zona 1) &euro;</label><input type="number" step="0.01" min="0" id="progettoDDTZona1" style="width:100%; margin-top:4px;"></div>
+                    <div><label style="font-size: 11px; font-weight: 700;">DDT (Zona 2) &euro;</label><input type="number" step="0.01" min="0" id="progettoDDTZona2" style="width:100%; margin-top:4px;"></div>
+                    <div style="grid-column: 1 / -1;"><label style="font-size: 11px; font-weight: 700;">DDT (Zona 3) &euro;</label><input type="number" step="0.01" min="0" id="progettoDDTZona3" style="width:100%; margin-top:4px;"></div>
+                </div>
+            </div>
+
             <div style="display: flex; gap: 12px; margin-bottom: 32px;">
                 <button type="button" id="btnSalvaProgetto" class="btn-primary" style="flex: 1;">Salva Cliente</button>
                 <button type="button" id="btnAnnullaProgetto" class="btn-primary" style="flex: 1; background:#f1f5f9; color:#334155; box-shadow:none; display:none;">Annulla</button>
@@ -349,6 +386,7 @@
 
         const targaInput = document.getElementById('targaInput');
         const modelloInput = document.getElementById('modelloInput');
+        const patenteInput = document.getElementById('patenteInput');
         const btnSalva = document.getElementById('btnSalvaMezzo');
         const btnAnnulla = document.getElementById('btnAnnullaMezzo');
         const listaDiv = document.getElementById('listaMezzi');
@@ -378,8 +416,9 @@
                 r.className = 'list-row';
                 r.style.marginBottom = '8px';
                 const title = m.modello ? `${m.targa} - <span style="font-weight:400; color:#64748b;">${m.modello}</span>` : m.targa;
+                const patenteLabel = m.patente === 'C' ? '<span style="background:#fef3c7;color:#d97706;padding:1px 7px;border-radius:6px;font-size:11px;font-weight:700;margin-left:6px;">CAT C</span>' : '<span style="background:#e0e7ff;color:#4f46e5;padding:1px 7px;border-radius:6px;font-size:11px;font-weight:700;margin-left:6px;">CAT B</span>';
                 r.innerHTML = `
-                    <div style="font-weight:600; color:#334155;">${title}</div>
+                    <div style="font-weight:600; color:#334155; display:flex; align-items:center;">${title}${patenteLabel}</div>
                     <div style="display:flex; gap:8px;">
                         <button onclick="editMezzo(${idx})" class="action-btn edit-btn" title="Modifica">
                             <span class="material-icons-round" style="font-size:20px;">edit</span>
@@ -397,6 +436,7 @@
             editIndex = idx;
             targaInput.value = mezzi[idx].targa;
             modelloInput.value = mezzi[idx].modello;
+            patenteInput.value = mezzi[idx].patente || 'B';
             btnSalva.textContent = "Aggiorna Mezzo";
             btnAnnulla.style.display = "block";
             targaInput.focus();
@@ -420,6 +460,7 @@
             editIndex = -1;
             targaInput.value = '';
             modelloInput.value = '';
+            patenteInput.value = 'B';
             btnSalvaMezzo.textContent = "Salva Mezzo";
             btnAnnulla.style.display = "none";
         };
@@ -427,12 +468,13 @@
         btnSalvaMezzo.onclick = async () => {
             const targa = targaInput.value.trim().toUpperCase();
             const modello = modelloInput.value.trim();
+            const patente = patenteInput.value || 'B';
             if (!targa) return alert("Inserire la targa");
 
             btnSalvaMezzo.disabled = true;
             btnSalvaMezzo.textContent = "Salvataggio Cloud...";
 
-            const mezzoData = { targa: targa, modello: modello };
+            const mezzoData = { targa: targa, modello: modello, patente: patente };
             const id = editIndex >= 0 ? mezzi[editIndex].id : null;
 
             try {
@@ -862,28 +904,19 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=2.102"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.102"></script>
+    <script src="script.js?v=2.170"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.170"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
     import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot }
         from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
-
-    import { firebaseConfig } from "./firebase-config.js";
+import { firebaseConfig } from "./firebase-config.js";
 
     const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
-try {
-    initializeAppCheck(app, {
-        provider: new ReCaptchaV3Provider('6Le8IjAtAAAAAIFW6c_ToaLJELGoygI27BW6d1jZ'),
-        isTokenAutoRefreshEnabled: true
-    });
-} catch (e) { console.warn("AppCheck init:", e); }
-
-    const db  = getFirestore(app);
+const db  = getFirestore(app);
 
     // ── CRUD locale (non dipende da window.saveProgetto) ──────────────────
     async function saveProgetto(id, data) {
@@ -926,6 +959,17 @@ try {
         const btnSalva    = document.getElementById('btnSalvaProgetto');
         const btnAnnulla  = document.getElementById('btnAnnullaProgetto');
 
+        nomeInput.addEventListener('input', (e) => {
+            const n = e.target.value.toUpperCase();
+            document.getElementById('tariffeContainerCATTEL').style.display = 'none';
+            document.getElementById('tariffeContainerGRANCHEF').style.display = 'none';
+            document.getElementById('tariffeContainerDNR').style.display = 'none';
+            
+            if (n.includes('CATTEL')) document.getElementById('tariffeContainerCATTEL').style.display = 'block';
+            else if (n.includes('GRAN CHEF') || n.includes('BAUER')) document.getElementById('tariffeContainerGRANCHEF').style.display = 'block';
+            else if (n.includes('DNR') || n.includes('SCUOLE') || n.includes('LATTE')) document.getElementById('tariffeContainerDNR').style.display = 'block';
+        });
+
         // Collassa/espandi
         toggleBtn.addEventListener('click', () => {
             const open = contentDiv.style.display !== 'none';
@@ -958,8 +1002,34 @@ try {
             const nome = nomeInput.value.trim().toUpperCase();
             if (!nome) return alert('Inserire il nome del cliente.');
             btnSalva.disabled = true; btnSalva.textContent = 'Salvataggio...';
+            const patB = document.getElementById('progettoPatB').value;
+            const patC = document.getElementById('progettoPatC').value;
+            const navS = document.getElementById('progettoNavS').value;
+            const navC = document.getElementById('progettoNavC').value;
+            const vA = document.getElementById('progettoViaggioA').value;
+            const vB = document.getElementById('progettoViaggioB').value;
+            const ddt = document.getElementById('progettoCostoDDT').value;
+            const forfait = document.getElementById('progettoForfait').value;
+            const ddt1 = document.getElementById('progettoDDTZona1').value;
+            const ddt2 = document.getElementById('progettoDDTZona2').value;
+            const ddt3 = document.getElementById('progettoDDTZona3').value;
+
             try {
-                await saveProgetto(editId, { nome, viaggi: currentViaggi });
+                const data = {
+                    nome, viaggi: currentViaggi,
+                    patente_b: patB ? parseFloat(patB) : null,
+                    patente_c: patC ? parseFloat(patC) : null,
+                    navetta_sommacampagna: navS ? parseFloat(navS) : null,
+                    navetta_cerea: navC ? parseFloat(navC) : null,
+                    viaggio_a: vA ? parseFloat(vA) : null,
+                    viaggio_b: vB ? parseFloat(vB) : null,
+                    costo_ddt_base: ddt ? parseFloat(ddt) : null,
+                    viaggio_forfait: forfait ? parseFloat(forfait) : null,
+                    costo_ddt_zona1: ddt1 ? parseFloat(ddt1) : null,
+                    costo_ddt_zona2: ddt2 ? parseFloat(ddt2) : null,
+                    costo_ddt_zona3: ddt3 ? parseFloat(ddt3) : null
+                };
+                await saveProgetto(editId, data);
                 resetForm();
             } catch(e) { alert('Errore: ' + e.message); }
             finally { btnSalva.disabled = false; btnSalva.textContent = editId ? 'Aggiorna Cliente' : 'Salva Cliente'; }
@@ -969,6 +1039,12 @@ try {
 
         function resetForm() {
             editId = null; currentViaggi = []; nomeInput.value = ''; renderTagList();
+            ['progettoPatB','progettoPatC','progettoNavS','progettoNavC',
+             'progettoViaggioA','progettoViaggioB','progettoCostoDDT','progettoForfait',
+             'progettoDDTZona1','progettoDDTZona2','progettoDDTZona3'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('tariffeContainerCATTEL').style.display = 'none';
+            document.getElementById('tariffeContainerGRANCHEF').style.display = 'none';
+            document.getElementById('tariffeContainerDNR').style.display = 'none';
             btnSalva.textContent = 'Salva Cliente'; btnAnnulla.style.display = 'none';
         }
 
@@ -977,6 +1053,28 @@ try {
             const p = progettiCache.find(x => x.id === id);
             if (!p) return;
             editId = id; nomeInput.value = p.nome || ''; currentViaggi = [...(p.viaggi || [])];
+            
+            document.getElementById('progettoPatB').value = p.patente_b ?? '';
+            document.getElementById('progettoPatC').value = p.patente_c ?? '';
+            document.getElementById('progettoNavS').value = p.navetta_sommacampagna ?? '';
+            document.getElementById('progettoNavC').value = p.navetta_cerea ?? '';
+            document.getElementById('progettoViaggioA').value = p.viaggio_a ?? '';
+            document.getElementById('progettoViaggioB').value = p.viaggio_b ?? '';
+            document.getElementById('progettoCostoDDT').value = p.costo_ddt_base ?? '';
+            document.getElementById('progettoForfait').value = p.viaggio_forfait ?? '';
+            document.getElementById('progettoDDTZona1').value = p.costo_ddt_zona1 ?? '';
+            document.getElementById('progettoDDTZona2').value = p.costo_ddt_zona2 ?? '';
+            document.getElementById('progettoDDTZona3').value = p.costo_ddt_zona3 ?? '';
+
+            document.getElementById('tariffeContainerCATTEL').style.display = 'none';
+            document.getElementById('tariffeContainerGRANCHEF').style.display = 'none';
+            document.getElementById('tariffeContainerDNR').style.display = 'none';
+            
+            const n = (p.nome || '').toUpperCase();
+            if (n.includes('CATTEL')) document.getElementById('tariffeContainerCATTEL').style.display = 'block';
+            else if (n.includes('GRAN CHEF') || n.includes('BAUER')) document.getElementById('tariffeContainerGRANCHEF').style.display = 'block';
+            else if (n.includes('DNR') || n.includes('SCUOLE') || n.includes('LATTE')) document.getElementById('tariffeContainerDNR').style.display = 'block';
+
             renderTagList(); btnSalva.textContent = 'Aggiorna Cliente'; btnAnnulla.style.display = 'block';
             contentDiv.scrollIntoView({ behavior: 'smooth' });
         };
@@ -1021,7 +1119,20 @@ try {
             row.innerHTML = `
                 <div style="flex:1;">
                     <div style="font-weight:700;color:#334155;margin-bottom:6px;">${p.nome}</div>
-                    <div style="display:flex;flex-wrap:wrap;gap:5px;">${tags||'<span style="font-size:12px;color:#94a3b8;">Nessun viaggio</span>'}</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;">${tags||'<span style="font-size:12px;color:#94a3b8;">Nessun viaggio</span>'}</div>
+                    ${(p.patente_b||p.patente_c||p.navetta_sommacampagna||p.navetta_cerea||p.viaggio_a||p.viaggio_b||p.costo_ddt_base||p.viaggio_forfait||p.costo_ddt_zona1||p.costo_ddt_zona2||p.costo_ddt_zona3) ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">' +
+                        (p.patente_b ? '<span style="background:#dbeafe;color:#1d4ed8;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">B: \u20ac'+p.patente_b+'</span>' : '') +
+                        (p.patente_c ? '<span style="background:#fef3c7;color:#b45309;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">C: \u20ac'+p.patente_c+'</span>' : '') +
+                        (p.navetta_sommacampagna ? '<span style="background:#f0fdf4;color:#15803d;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">Nav.S: \u20ac'+p.navetta_sommacampagna+'</span>' : '') +
+                        (p.navetta_cerea ? '<span style="background:#fdf4ff;color:#7e22ce;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">Nav.C: \u20ac'+p.navetta_cerea+'</span>' : '') +
+                        (p.viaggio_a ? '<span style="background:#fef3c7;color:#b45309;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">Viaggio A: \u20ac'+p.viaggio_a+'</span>' : '') +
+                        (p.viaggio_b ? '<span style="background:#fef3c7;color:#b45309;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">Viaggio B: \u20ac'+p.viaggio_b+'</span>' : '') +
+                        (p.costo_ddt_base ? '<span style="background:#eff6ff;color:#1d4ed8;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">DDT: \u20ac'+p.costo_ddt_base+'</span>' : '') +
+                        (p.viaggio_forfait ? '<span style="background:#eff6ff;color:#1d4ed8;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">Forfait: \u20ac'+p.viaggio_forfait+'</span>' : '') +
+                        (p.costo_ddt_zona1 ? '<span style="background:#eff6ff;color:#1d4ed8;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">DDT(Z1): \u20ac'+p.costo_ddt_zona1+'</span>' : '') +
+                        (p.costo_ddt_zona2 ? '<span style="background:#eff6ff;color:#1d4ed8;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">DDT(Z2): \u20ac'+p.costo_ddt_zona2+'</span>' : '') +
+                        (p.costo_ddt_zona3 ? '<span style="background:#eff6ff;color:#1d4ed8;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">DDT(Z3): \u20ac'+p.costo_ddt_zona3+'</span>' : '') +
+                    '</div>' : ''}
                 </div>
                 <div style="display:flex;gap:8px;flex-shrink:0;">
                     <button onclick="editProgetto('${p.id}')" class="action-btn edit-btn" title="Modifica">

@@ -245,8 +245,6 @@
     <!-- FIREBASE SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
-
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -259,14 +257,7 @@ import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com
         };
         const app = initializeApp(firebaseConfig);
 
-try {
-    initializeAppCheck(app, {
-        provider: new ReCaptchaV3Provider('6Le8IjAtAAAAAIFW6c_ToaLJELGoygI27BW6d1jZ'),
-        isTokenAutoRefreshEnabled: true
-    });
-} catch (e) { console.warn("AppCheck init:", e); }
-
-        const db = getFirestore(app);
+const db = getFirestore(app);
 
         window.saveRealCoords = async function(i) {
             if (!window.currentPos) {

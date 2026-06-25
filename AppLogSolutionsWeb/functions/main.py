@@ -1341,7 +1341,7 @@ def core_genera_mappa_autista(viaggio_id):
     html_path = f"CONSEGNE/CONSEGNE_{data_viaggio}/MAPPE_AUTISTI/{viaggio_id}.html"
     blob = bucket.blob(html_path)
     blob.upload_from_string(html.encode("utf-8"), content_type="text/html; charset=utf-8")
-    url_pubblica = f"https://storage.googleapis.com/{BUCKET_NAME}/{html_path}"
+    url_pubblica = _genera_url_storage_token(blob)
 
     doc_ref.update({
         "mappa_url": url_pubblica,
@@ -1462,7 +1462,7 @@ def core_ricalcola_percorso(viaggio_id, nuovi_punti, num_locked=0):
     html_path = f"CONSEGNE/CONSEGNE_{data_v}/MAPPE_AUTISTI/{viaggio_id}.html"
     blob = bucket.blob(html_path)
     blob.upload_from_string(html.encode("utf-8"), content_type="text/html; charset=utf-8")
-    url_pubblica = f"https://storage.googleapis.com/{BUCKET_NAME}/{html_path}"
+    url_pubblica = _genera_url_storage_token(blob)
 
     elapsed = time.time() - start_time
     _registra_statistica("ricalcola_percorso", elapsed)
@@ -1585,6 +1585,16 @@ def core_riepilogo_fatturazione(mese: str, anno: str = "2026"):
     tot_frutta  = stats["FRUTTA"]["standard"] + stats["FRUTTA"]["speciali"]
     tot_latte   = stats["LATTE"]["standard"]  + stats["LATTE"]["speciali"]
     tot_generale = tot_frutta + tot_latte
+
+    # Fetch listino from Firestore
+    try:
+        dnr_doc = db.collection("clienti").document("DNR").collection("impostazioni").document("listino").get()
+        if dnr_doc.exists:
+            listino_dnr = dnr_doc.to_dict()
+            VALORE_DDT_STANDARD = float(listino_dnr.get("tariffa_ddt", 16.50))
+            VALORE_DDT_SPECIALE = VALORE_DDT_STANDARD
+    except Exception as e:
+        print(f"Errore lettura listino DNR: {e}")
 
     fatturato_frutta_std  = round(stats["FRUTTA"]["standard"] * VALORE_DDT_STANDARD, 2)
     fatturato_frutta_spec = round(stats["FRUTTA"]["speciali"] * VALORE_DDT_SPECIALE, 2)
@@ -2323,8 +2333,20 @@ def core_genera_report_giornaliero(uid, data_consegna):
     )
     
     # viaggi_giornalieri_Johnson.json
+    # Determina il cliente in base alle zone elaborate:
+    # - Se ci sono zone GC_ (Gran Chef) → cliente = "GRAN CHEF"
+    # - Altrimenti → cliente = "PROGETTO SCUOLE" (DNR)
+    has_gc_zones = any(z.get("id_zona", "").startswith("GC_") for z in zone_finali)
+    cliente_progetto = "GRAN CHEF" if has_gc_zones else "PROGETTO SCUOLE"
+    
+    # Wrapper con metadato cliente per la mappa (compatibile retroattivamente:
+    # la mappa legge .zone se presente, oppure tratta il JSON come array diretto)
+    viaggi_payload = {
+        "cliente": cliente_progetto,
+        "zone": zone_finali
+    }
     bucket.blob(f"{path_base}/viaggi_giornalieri_Johnson.json").upload_from_string(
-        json.dumps(zone_finali, indent=2), content_type='application/json'
+        json.dumps(viaggi_payload, indent=2), content_type='application/json'
     )
 
     # 5. Genera KML (zona_google_{data}.kml)
@@ -2862,6 +2884,15 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
     calcolati = []
     modificato = False
     
+    listini = {}
+    try:
+        for cli in ["DNR", "GRAN CHEF", "CATTEL", "BAUER"]:
+            doc = db.collection("clienti").document(cli).collection("impostazioni").document("listino").get()
+            if doc.exists:
+                listini[cli] = doc.to_dict()
+    except Exception as e:
+        print(f"Errore lettura listini: {e}")
+    
     for zone in zone_list:
         zid = zone.get("id_zona")
         if id_zona:
@@ -2882,6 +2913,9 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
             continue
             
         is_grand_chef = any("GRAND" in str(p.get("tipologia_grado") or "").upper() or "CHEF" in str(p.get("tipologia_grado") or "").upper() or "GRANCHEF" in str(p.get("zona") or "").upper() for p in punti)
+        is_cattel = any("CATTEL" in str(p.get("zona") or "").upper() or "CATTEL" in str(p.get("codice_frutta") or "").upper() for p in punti)
+        is_bauer = any("BAUER" in str(p.get("zona") or "").upper() or "BAUER" in str(p.get("codice_frutta") or "").upper() for p in punti)
+        
         depot = _get_depot_for_points_cloud(punti)
         
         if usa_or_tools:
@@ -2907,13 +2941,30 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
                 if p.get("codice_frutta") and p.get("codice_frutta") != "p00000": tot_ddt += 1
                 if p.get("codice_latte") and p.get("codice_latte") != "p00000": tot_ddt += 1
                 
+        # Calcolo fatturato in base ai listini
+        if is_grand_chef:
+            fatturato_val = float(listini.get("GRAN CHEF", {}).get("tariffa_viaggio", 350.00))
+            fatturato_str = f"{fatturato_val:.2f}"
+        elif is_cattel:
+            # Cattel: non avendo la patente al momento del calcolo, mettiamo la tariffa base o lasciamo un placeholder?
+            # Mettiamo un valore base o stringa "Da calcolare (Patente)"
+            fatturato_val = float(listini.get("CATTEL", {}).get("tariffa_patente_b", 340.00))
+            fatturato_str = f"{fatturato_val:.2f}"
+        elif is_bauer:
+            fatturato_val = float(listini.get("BAUER", {}).get("tariffa_viaggio", 390.00))
+            fatturato_str = f"{fatturato_val:.2f}"
+        else:
+            # DNR / Progetto Scuole (Default)
+            tariffa_ddt = float(listini.get("DNR", {}).get("tariffa_ddt", 16.50))
+            fatturato_str = f"{tot_ddt * tariffa_ddt:.2f}"
+            
         stats = {
             "km": km,
             "t_guida": sec_guida // 60,
             "t_sosta": len(punti_simulati) * (12 if is_grand_chef else 8),
             "t_tot": (sec_guida // 60) + len(punti_simulati) * (12 if is_grand_chef else 8),
             "tot_ddt": tot_ddt,
-            "fatturato": f"{tot_ddt * 16.50:.2f}" if not is_grand_chef else "GranChef",
+            "fatturato": fatturato_str,
             "depot": depot["nome"],
             "is_gc": is_grand_chef
         }
@@ -2943,15 +2994,28 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
             current_status = "ottimizzato"
             mappa_url = ""
             distinta_url = ""
+            
+            # Nome dal payload frontend (che è la "fonte di verità" se modificato)
+            frontend_nome = zone.get("nome_giro")
+            nome_giro_da_salvare = frontend_nome if frontend_nome else zid
+            
             if existing_doc.exists:
                 existing_data = existing_doc.to_dict()
                 current_status = existing_data.get("status", "ottimizzato")
                 mappa_url = existing_data.get("mappa_url", "")
                 distinta_url = existing_data.get("distinta_url", "")
+                
+                # Se il frontend non ha inviato un nome custom (cioè ha inviato solo zid o vuoto),
+                # ma su Firestore avevamo già un nome custom, PRESERVIAMO il nome di Firestore.
+                # Altrimenti vince sempre il frontend!
+                existing_nome = existing_data.get("nome_giro", "")
+                if existing_nome and existing_nome != zid:
+                    if not frontend_nome or frontend_nome == zid:
+                        nome_giro_da_salvare = existing_nome
             
             doc_ref.set({
                 "id_zona": zid,
-                "nome_giro": zone.get("nome_giro", zid),
+                "nome_giro": nome_giro_da_salvare,
                 "color": zone.get("color", "#4f46e5"),
                 "data_lavoro": data_consegna,
                 "data": data_consegna,
@@ -2975,6 +3039,18 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
 
     if modificato:
         blob_json.upload_from_string(json.dumps(zone_list, indent=2), content_type='application/json')
+        
+    # === GHOST TRIP CLEANUP ===
+    try:
+        active_viaggio_ids = {f"{data_consegna}_{z.get('id_zona')}" for z in zone_list if z.get('id_zona')}
+        viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
+        query_viaggi = viaggi_ref.where('data_lavoro', '==', data_consegna).stream()
+        for doc in query_viaggi:
+            if doc.id not in active_viaggio_ids:
+                print(f"[Ghost Cleanup] Eliminazione viaggio fantasma: {doc.id}")
+                doc.reference.delete()
+    except Exception as cleanup_err:
+        print(f"[Ghost Cleanup] Errore durante la pulizia dei viaggi fantasma: {cleanup_err}")
         
     elapsed = time.time() - start_time
     return {

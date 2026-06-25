@@ -37,6 +37,20 @@ TARGET_FILE_VIAGGI = None
 ZONE_LIST_CACHE = []
 DATA_GIORNO = ""
 
+VALORE_DDT_GLOBALE = 16.50
+try:
+    import firebase_admin
+    from firebase_admin import credentials, firestore
+    if not firebase_admin._apps:
+        cred = credentials.Certificate(r"g:\Il mio Drive\App\AppLogSolutionsWeb\backend\config\log-solution-60007-firebase-adminsdk-fbsvc-2cf3d0c171.json")
+        firebase_admin.initialize_app(cred)
+    db = firestore.client()
+    doc_dnr = db.collection("clienti").document("DNR").collection("impostazioni").document("listino").get()
+    if doc_dnr.exists:
+        VALORE_DDT_GLOBALE = float(doc_dnr.to_dict().get("tariffa_ddt", 16.50))
+except Exception as e:
+    logger.error(f"Errore lettura listino Firestore: {e}")
+
 def _get_color(idx):
     palette = ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#14b8a6", "#6366f1", "#a855f7", "#3b82f6", "#22c55e", "#d946ef", "#84cc16"]
     return palette[idx % len(palette)]
@@ -129,7 +143,7 @@ if HAS_FLASK:
                 unif = json.loads(TARGET_FILE_UNIFICATO.read_text(encoding="utf-8"))
                 is_locked_val = unif.get("is_locked", True)
             except: pass
-        return render_template_string(HTML_TEMPLATE, DATA_GIORNO=DATA_GIORNO, JSON_ZONE=json.dumps(ZONE_LIST_CACHE, ensure_ascii=False), GOOGLE_MAPS_API_KEY=GOOGLE_MAPS_API_KEY, IS_LOCKED_JS="true" if is_locked_val else "false")
+        return render_template_string(HTML_TEMPLATE, DATA_GIORNO=DATA_GIORNO, JSON_ZONE=json.dumps(ZONE_LIST_CACHE, ensure_ascii=False), GOOGLE_MAPS_API_KEY=GOOGLE_MAPS_API_KEY, IS_LOCKED_JS="true" if is_locked_val else "false", VALORE_DDT_GLOBALE=VALORE_DDT_GLOBALE)
 
     @app.route('/save', methods=['POST'])
     def save():
@@ -369,9 +383,9 @@ def _salva_kml(punti, path, data):
     if hasattr(ET, "indent"): ET.indent(tree, space="  ")
     tree.write(path, encoding="utf-8", xml_declaration=True, method="xml")
 
-def _salva_html_fisico(output_base, template_html, data, zone_json, api_key, is_locked):
+def _salva_html_fisico(output_base, template_html, data, zone_json, api_key, is_locked, valore_ddt=16.50):
     is_locked_js = 'true' if is_locked else 'false'
-    html_content = template_html.replace("{{DATA_GIORNO}}", data).replace("{{JSON_ZONE | safe}}", zone_json).replace("{{GOOGLE_MAPS_API_KEY}}", api_key).replace("{{IS_LOCKED_JS}}", is_locked_js)
+    html_content = template_html.replace("{{DATA_GIORNO}}", data).replace("{{JSON_ZONE | safe}}", zone_json).replace("{{GOOGLE_MAPS_API_KEY}}", api_key).replace("{{IS_LOCKED_JS}}", is_locked_js).replace("{{ VALORE_DDT_GLOBALE }}", str(valore_ddt))
     file_path = output_base / "4_mappa_zone_google.html"
     file_path.write_text(html_content, encoding="utf-8")
 
@@ -712,7 +726,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             document.getElementById('tot-points').textContent = `${totalPunti} Punti - ${totalDdt} DDT`;
         }
 
-        const VALORE_DDT = 16.50;
+        const VALORE_DDT = {{ VALORE_DDT_GLOBALE }};
         function calcolaValoreZona(z) {
             let totDdt = 0;
             z.lista_punti.forEach(p => {
@@ -803,7 +817,7 @@ def _carica_e_genera(data_giorno):
         if not TARGET_FILE_VIAGGI.exists():
             TARGET_FILE_VIAGGI.write_text(json.dumps(ZONE_LIST_CACHE, indent=2, ensure_ascii=False), encoding="utf-8")
         
-        _salva_html_fisico(output_base, HTML_TEMPLATE, DATA_GIORNO, json.dumps(ZONE_LIST_CACHE, ensure_ascii=False), GOOGLE_MAPS_API_KEY, unif_data.get("is_locked", True))
+        _salva_html_fisico(output_base, HTML_TEMPLATE, DATA_GIORNO, json.dumps(ZONE_LIST_CACHE, ensure_ascii=False), GOOGLE_MAPS_API_KEY, unif_data.get("is_locked", True), VALORE_DDT_GLOBALE)
         _salva_kml(punti, output_base / f"zone_google_{DATA_GIORNO.replace('-', '_')}.kml", DATA_GIORNO)
         return True
     except: return False

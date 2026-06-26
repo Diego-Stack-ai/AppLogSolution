@@ -155,60 +155,14 @@ export async function saveTrip(tripData) {
                 clientePresenza += ` - ${tripData.viaggio}`;
             }
 
-            // Recupera la presenza esistente per consolidare i dati (evitando sovrascritture in viaggi multipli)
-            const existingSnap = await getDoc(presenzeRef);
-            let finalCliente = clientePresenza;
-            let finalKmPartenza = Number(tripData.kmPartenza) || 0;
-            let finalKmArrivo = Number(tripData.kmArrivo) || 0;
-            let finalNote = tripData.nota || "";
-
-            let finalInizioM = tripData.mattinaInizio || "";
-            let finalFineM = tripData.mattinaFine || "";
-            let finalInizioP = tripData.pomeriggioInizio || "";
-            let finalFineP = tripData.pomeriggioFine || "";
-
-            if (existingSnap.exists()) {
-                const existingData = existingSnap.data();
-                
-                // Consolidamento clienti/viaggi
-                if (existingData.cliente && existingData.cliente.trim() !== "") {
-                    const listClienti = existingData.cliente.split(" / ").map(c => c.trim());
-                    if (!listClienti.includes(clientePresenza) && clientePresenza.trim() !== "") {
-                        finalCliente = existingData.cliente + " / " + clientePresenza;
-                    } else {
-                        finalCliente = existingData.cliente;
-                    }
-                }
-
-                // Consolidamento km (minimo kmPartenza, massimo kmArrivo)
-                if (existingData.kmPartenza && existingData.kmPartenza > 0) {
-                    if (finalKmPartenza > 0) {
-                        finalKmPartenza = Math.min(existingData.kmPartenza, finalKmPartenza);
-                    } else {
-                        finalKmPartenza = existingData.kmPartenza;
-                    }
-                }
-                if (existingData.kmArrivo && existingData.kmArrivo > 0) {
-                    finalKmArrivo = Math.max(existingData.kmArrivo, finalKmArrivo);
-                }
-
-                // Consolidamento note
-                if (existingData.note && existingData.note.trim() !== "") {
-                    if (tripData.nota && tripData.nota.trim() !== "" && !existingData.note.includes(tripData.nota)) {
-                        finalNote = existingData.note + " | " + tripData.nota;
-                    } else {
-                        finalNote = existingData.note;
-                    }
-                }
-
-                // Consolidamento tempi per viaggi multipli nello stesso giorno
-                finalInizioM = existingData.oraInizioM || finalInizioM;
-                finalFineM = existingData.oraFineM || finalFineM;
-                finalInizioP = existingData.oraInizioP || finalInizioP;
-                finalFineP = existingData.oraFineP || finalFineP;
-            }
-
+            const finalKmPartenza = Number(tripData.kmPartenza) || 0;
+            const finalKmArrivo = Number(tripData.kmArrivo) || 0;
             const finalKmDelta = Math.max(0, finalKmArrivo - finalKmPartenza);
+
+            const finalInizioM = tripData.mattinaInizio || "";
+            const finalFineM = tripData.mattinaFine || "";
+            const finalInizioP = tripData.pomeriggioInizio || "";
+            const finalFineP = tripData.pomeriggioFine || "";
 
             const calcolo = calculateHours(
                 finalInizioM,
@@ -217,11 +171,25 @@ export async function saveTrip(tripData) {
                 finalFineP
             );
 
+            // Calcolo del giorno della settimana e del mese in locale per evitare bug di fuso orario
+            const dateVal = tripData.data; // Formato "YYYY-MM-DD"
+            const parts = dateVal.split('-');
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const day = parseInt(parts[2]);
+            const dt = new Date(year, month - 1, day);
+            
+            const giorniSettimana = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+            const giornoSettimana = giorniSettimana[dt.getDay()];
+            const mese = `${year}-${month.toString().padStart(2, '0')}`;
+
             const presenzaPayload = {
                 autistaId: user.uid,
                 nomeAutista: tripData.autista,
                 data: tripData.data,
-                cliente: finalCliente,
+                mese: mese,
+                giornoSettimana: giornoSettimana,
+                cliente: clientePresenza,
                 kmPartenza: finalKmPartenza,
                 kmArrivo: finalKmArrivo,
                 kmDelta: finalKmDelta,
@@ -232,7 +200,7 @@ export async function saveTrip(tripData) {
                 oreOrdinarie: calcolo.oreOrdinarie,
                 oreStraordinarie: calcolo.oreStraordinarie,
                 oreTotali: calcolo.oreTotali,
-                note: finalNote,
+                note: tripData.nota || "",
                 importo: Number(tripData.importo) || 0,
                 isMagazzino: tripData.isMagazzino || false,
                 // Campi "congelati" originari del viaggio per il confronto discrepanze
@@ -244,8 +212,10 @@ export async function saveTrip(tripData) {
                 viaggioKmArrivo: finalKmArrivo
             };
             
+            // Usiamo merge: true per non rischiare di cancellare eventuali campi specifici di amministrazione
+            // ma tutti i campi logistici, orari e calcolo ore sono completamente sovrascritti dai dati aggiornati del viaggio.
             await setDoc(presenzeRef, presenzaPayload, { merge: true });
-            console.log(`[Firestore] Sincronizzato con presenze (consolidato) [ID: ${presenzeDocId}]`);
+            console.log(`[Firestore] Sincronizzato con presenze (sovrascrittura) [ID: ${presenzeDocId}]`);
         }
     } catch (err) {
         console.error("Errore sincro presenze:", err);

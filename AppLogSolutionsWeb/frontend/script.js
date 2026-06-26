@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "2.69";
+const APP_VERSION = "2.70";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -228,7 +228,8 @@ window.updateNomeGiorno = function() {
         return;
     }
     
-    const date = new Date(dateVal);
+    const parts = dateVal.split('-');
+    const date = new Date(parts[0], parts[1] - 1, parts[2]);
     if (isNaN(date.getTime())) {
         nomeGiornoEl.textContent = "";
         return;

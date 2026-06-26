@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.68">
+    <link rel="stylesheet" href="styles.css?v=2.69">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -444,12 +444,12 @@
         </div>
     </div>
 
-    <script src="script.js?v=2.68"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.68"></script>
+    <script src="script.js?v=2.69"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.69"></script>
     <script type="module">
-        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=2.68";
-        import { auth } from "./firestore-service.js?v=2.68";
-        import "./gps-tracker.js?v=2.68";
+        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=2.69";
+        import { auth } from "./firestore-service.js?v=2.69";
+        import "./gps-tracker.js?v=2.69";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -656,10 +656,28 @@
 
         // Logic for Starting Trip
         btnStartTrip.onclick = async () => {
-            // Check HTML5 validity for required fields
-            if (!presenzeForm.reportValidity()) return;
-
             const tipo = document.getElementById('tipoTurno').value;
+            
+            // Check HTML5 validity for Step 1 required fields only
+            let step1Fields = [];
+            if (tipo === 'magazziniere') {
+                step1Fields = ['mattinaInizioHH', 'mattinaInizioMM', 'mattinaFineHH', 'mattinaFineMM'];
+            } else {
+                step1Fields = ['automezzo', 'clienteSelect', 'viaggioSelect', 'kmPartenza', 'mattinaInizioHH', 'mattinaInizioMM'];
+            }
+
+            let isStep1Valid = true;
+            for (const id of step1Fields) {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (!el.reportValidity()) {
+                        isStep1Valid = false;
+                        break;
+                    }
+                }
+            }
+            if (!isStep1Valid) return;
+
             if (tipo === 'magazziniere') {
                 window.nextStep(2);
                 return;

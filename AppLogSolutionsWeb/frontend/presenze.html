@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=2.63">
+    <link rel="stylesheet" href="styles.css?v=2.67">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .row-error td {
@@ -362,99 +362,6 @@
             text-transform: uppercase;
             font-size: 14px;
         }
-
-
-        /* SCALE DOWN FOR MOBILE SCREEN SIZES */
-        @media (max-width: 768px) {
-            .main-container {
-                padding: 10px 6px !important;
-            }
-            .glass-panel {
-                padding: 10px !important;
-                border-radius: 12px !important;
-            }
-            .filters-container {
-                gap: 8px !important;
-                margin-bottom: 12px !important;
-            }
-            .filter-item {
-                min-width: 130px !important;
-                gap: 4px !important;
-                flex: 1;
-            }
-            .filter-item label {
-                font-size: 11px !important;
-            }
-            .filter-item select, .filter-item input {
-                padding: 6px 8px !important;
-                font-size: 12px !important;
-                height: auto !important;
-            }
-            #adminActionsContainer {
-                min-width: 250px !important;
-                margin-top: 8px;
-            }
-            #adminActionsContainer button {
-                padding: 8px !important;
-                font-size: 11px !important;
-            }
-            .summary-grid {
-                gap: 6px !important;
-                margin-bottom: 12px !important;
-            }
-            .summary-card {
-                padding: 4px 8px !important;
-                border-radius: 6px !important;
-                gap: 4px !important;
-                flex: 1;
-                min-width: 80px;
-            }
-            .summary-card h4 {
-                font-size: 9px !important;
-            }
-            .summary-card p {
-                font-size: 11px !important;
-            }
-            table {
-                font-size: 10.5px !important;
-            }
-            th {
-                padding: 6px 3px !important;
-                font-size: 10.5px !important;
-            }
-            td {
-                padding: 4px 3px !important;
-            }
-            .edit-input {
-                padding: 2px 4px !important;
-                font-size: 10.5px !important;
-            }
-            .num-input, .time-input {
-                width: 44px !important;
-            }
-            .btn-edit, .btn-dettagli {
-                padding: 4px 6px !important;
-                font-size: 10px !important;
-                border-radius: 5px !important;
-                gap: 2px !important;
-            }
-            .glass-nav {
-                padding: 6px 10px !important;
-            }
-            .nav-content {
-                gap: 4px !important;
-            }
-            .nav-title {
-                font-size: 13px !important;
-            }
-            .logout-btn {
-                padding: 4px !important;
-            }
-            .logout-btn span {
-                font-size: 18px !important;
-            }
-        }
-        
 </style>
 </head>
 <body>
@@ -579,13 +486,13 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.63"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.63"></script>
+    <script src="script.js?v=2.67"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.67"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=2.63";
+        import { calculateHours } from "./firestore-service.js?v=2.67";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -685,6 +592,7 @@ const db = getFirestore(app);
         document.getElementById('inputMonth').addEventListener('change', onFilterChange);
 
         function onFilterChange() {
+            currentSubFilter = null; // Reset sub-filter on main filter change to prevent out-of-bounds day/week bugs
             const empId = document.getElementById('selectEmployee').value;
             let month = document.getElementById('inputMonth').value;
 
@@ -931,7 +839,14 @@ const db = getFirestore(app);
                     resetSummary();
                     return;
                 }
-                startDay = parseInt(currentSubFilter);
+                const dayVal = parseInt(currentSubFilter);
+                if (dayVal > numDays) {
+                    tbody.innerHTML = `<tr><td colspan="17" style="text-align:center; padding: 32px; color: var(--text-muted);">Giorno non valido per questo mese. Seleziona un altro giorno dai filtri.</td></tr>`;
+                    document.getElementById('tableFoot').style.display = 'none';
+                    resetSummary();
+                    return;
+                }
+                startDay = dayVal;
                 endDay = startDay;
             } else if (currentViewMode === 'settimana') {
                 if (!currentSubFilter) {
@@ -944,6 +859,11 @@ const db = getFirestore(app);
                 if (activeBtn) {
                     startDay = parseInt(activeBtn.dataset.start);
                     endDay = parseInt(activeBtn.dataset.end);
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="17" style="text-align:center; padding: 32px; color: var(--text-muted);">Settimana non valida per questo mese. Seleziona un'altra settimana dai filtri.</td></tr>`;
+                    document.getElementById('tableFoot').style.display = 'none';
+                    resetSummary();
+                    return;
                 }
             }
 
@@ -1757,7 +1677,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=2.63"></script>
+    <script type="module" src="cedolini-splitter.js?v=2.67"></script>
 
 </body>
 </html>

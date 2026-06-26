@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.63">
+    <link rel="stylesheet" href="styles.css?v=2.67">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -151,7 +151,7 @@
                 <span class="material-icons-round">calendar_month</span>
             </button>
             <div class="nav-title" style="flex: 1;">Registrazione Turno</div>
-            <a href="login.html" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
+            <a href="#" onclick="window.logoutFirebase(); return false;" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
         </div>
     </nav>
 
@@ -265,7 +265,7 @@
                         </div>
                     </div>
                     <div style="display: flex; gap: 12px; margin-top: 15px;">
-                        <button type="button" onclick="window.navigateWithState('dashboard.html')" class="btn-wizard btn-back" style="flex: 1; margin-top: 0;">
+                        <button type="button" onclick="window.annullaInserimento()" class="btn-wizard btn-back" style="flex: 1; margin-top: 0;">
                             <span class="material-icons-round">close</span> Annulla
                         </button>
                         <button type="button" id="btnStartTrip" class="btn-wizard btn-start" style="display:none; flex: 2; margin-top: 0;">
@@ -444,12 +444,12 @@
         </div>
     </div>
 
-    <script src="script.js?v=2.63"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.63"></script>
+    <script src="script.js?v=2.67"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.67"></script>
     <script type="module">
-        import { saveTrip, checkPendingTrip, closeTripWithAnomaly } from "./firestore-service.js?v=2.63";
-        import { auth } from "./firestore-service.js?v=2.63";
-        import "./gps-tracker.js?v=2.63";
+        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=2.67";
+        import { auth } from "./firestore-service.js?v=2.67";
+        import "./gps-tracker.js?v=2.67";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -760,6 +760,23 @@
                 btn.disabled = false;
                 btn.innerHTML = 'Salva e Invia Turno';
             }
+        };
+
+        window.annullaInserimento = async () => {
+            if (!confirm("Sei sicuro di voler annullare e azzerare tutti i dati inseriti?")) return;
+
+            const tripId = sessionStorage.getItem('currentTripId');
+            if (tripId) {
+                try {
+                    if (window.stopGPSTracking) window.stopGPSTracking();
+                    await deleteTrip(tripId);
+                    sessionStorage.removeItem('currentTripId');
+                    sessionStorage.removeItem('currentDraft');
+                } catch (e) {
+                    console.error("Errore durante l'eliminazione del viaggio provvisorio:", e);
+                }
+            }
+            window.location.reload();
         };
     </script>
 </body>

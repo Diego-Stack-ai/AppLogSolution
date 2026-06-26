@@ -1,1 +1,0 @@
-﻿import firebase_admin; from firebase_admin import credentials, storage; firebase_admin.initialize_app(options={"storageBucket": "log-solution-60007.firebasestorage.app"}); bucket = storage.bucket(); print("Bucket:", bucket.name)

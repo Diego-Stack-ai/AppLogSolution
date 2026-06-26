@@ -534,3 +534,169 @@ select option {
   cursor: pointer;
   white-space: nowrap;
 }
+
+/* ==========================================
+   GLOBAL MOBILE RESPONSIVE OPTIMIZATIONS (<= 768px)
+   ========================================== */
+@media (max-width: 768px) {
+  /* Containers and Panels */
+  .main-container {
+    padding: 10px 6px !important;
+    margin-top: 10px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .glass-panel {
+    padding: 12px 10px !important;
+    border-radius: 12px !important;
+  }
+
+  .form-card {
+    padding: 16px 10px !important;
+  }
+
+  .form-card h2 {
+    font-size: 18px !important;
+    margin-bottom: 16px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .section-title {
+    margin: 16px 0 10px 0 !important;
+    font-size: 11px !important;
+    letter-spacing: 1px !important;
+  }
+
+  .form-grid {
+    gap: 12px !important;
+  }
+
+  /* Form Elements */
+  .input-group {
+    margin-bottom: 12px !important;
+    gap: 4px !important;
+  }
+
+  label {
+    font-size: 11px !important;
+  }
+
+  input,
+  select,
+  textarea {
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+    border-radius: 8px !important;
+    height: auto !important;
+  }
+
+  select {
+    background-position: right 10px center !important;
+    background-size: 12px !important;
+    padding-right: 28px !important;
+  }
+
+  .btn-primary {
+    padding: 12px !important;
+    font-size: 14px !important;
+    border-radius: 8px !important;
+  }
+
+  /* Global Navbar */
+  .glass-nav {
+    padding: 6px 10px !important;
+  }
+
+  .nav-content {
+    gap: 4px !important;
+  }
+
+  .nav-title {
+    font-size: 14px !important;
+  }
+
+  .logout-btn {
+    padding: 4px !important;
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .logout-btn span {
+    font-size: 18px !important;
+  }
+
+  /* Global Tables */
+  table {
+    font-size: 10.5px !important;
+  }
+
+  th {
+    padding: 6px 3px !important;
+    font-size: 10.5px !important;
+  }
+
+  td {
+    padding: 4px 3px !important;
+  }
+
+  .edit-input {
+    padding: 2px 4px !important;
+    font-size: 10.5px !important;
+  }
+
+  .num-input,
+  .time-input {
+    width: 44px !important;
+  }
+
+  .btn-edit,
+  .btn-dettagli {
+    padding: 4px 6px !important;
+    font-size: 10px !important;
+    border-radius: 5px !important;
+    gap: 2px !important;
+  }
+
+  /* Filters & Summary Components (Dashboard & Admin pages) */
+  .filters-container {
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .filter-item {
+    min-width: 120px !important;
+    gap: 4px !important;
+    flex: 1;
+  }
+
+  .filter-item label {
+    font-size: 11px !important;
+  }
+
+  .filter-item select,
+  .filter-item input {
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+  }
+
+  .summary-grid {
+    gap: 6px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .summary-card {
+    padding: 4px 8px !important;
+    border-radius: 6px !important;
+    gap: 4px !important;
+    flex: 1;
+    min-width: 80px;
+  }
+
+  .summary-card h4 {
+    font-size: 9px !important;
+  }
+
+  .summary-card p {
+    font-size: 11px !important;
+  }
+}

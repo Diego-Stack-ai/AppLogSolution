@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.170">
+    <link rel="stylesheet" href="styles.css?v=2.63">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -31,17 +31,31 @@
             flex-wrap: wrap;
         }
 
+        .controls-card .btn-primary {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 20px;
+            white-space: nowrap;
+            margin: 0;
+            width: auto;
+            flex-shrink: 0;
+        }
+
         .input-group { margin: 0; flex: 1; min-width: 200px; }
+        
+        .action-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
         
         .export-actions {
             display: flex;
             gap: 12px;
-        }
-        
-        .export-actions button {
-            display: flex;
             align-items: center;
-            gap: 8px;
+            margin-left: auto;
         }
 
         /* Pivot Table Styles */
@@ -59,6 +73,63 @@
             border-collapse: collapse;
             font-size: 13px;
             white-space: nowrap;
+        }
+
+        .excel-note {
+            position: relative;
+            cursor: help;
+        }
+        .excel-note::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            border-width: 0 8px 8px 0;
+            border-style: solid;
+            border-color: transparent #dc2626 transparent transparent;
+        }
+        .custom-tooltip {
+            display: none;
+            position: absolute;
+            z-index: 99999;
+            bottom: calc(100% + 5px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: pre;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3), 0 4px 6px -4px rgba(0,0,0,0.2);
+            text-align: left;
+            pointer-events: none;
+            border: 1px solid #334155;
+            line-height: 1.4;
+        }
+        .custom-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 5px;
+            border-style: solid;
+            border-color: #1e293b transparent transparent transparent;
+        }
+        .excel-note:hover .custom-tooltip {
+            display: block;
+        }
+        /* Primo-terzo livello di righe tbody: orientamento verso il basso */
+        .pivot-table tbody tr:nth-child(-n+3) .custom-tooltip {
+            bottom: auto;
+            top: calc(100% + 5px);
+        }
+        .pivot-table tbody tr:nth-child(-n+3) .custom-tooltip::after {
+            top: auto;
+            bottom: 100%;
+            border-color: transparent transparent #1e293b transparent;
         }
 
         .pivot-table th, .pivot-table td {
@@ -183,18 +254,32 @@
                     <option value="DNR">D.N.R. Srl</option>
                 </select>
             </div>
-            <button class="btn btn-primary" id="btn-calcola">
-                <span class="material-icons-round">calculate</span>
+            <button class="btn btn-primary" id="btn-calcola" onclick="if(window.elaboraDati) window.elaboraDati(); else alert('Attendere il caricamento...');">
+                <span class="material-icons-round" style="margin-right: 8px;">calculate</span>
                 Elabora Dati
             </button>
             
-            <div class="export-actions" id="export-actions" style="display: none; margin-left: auto;">
+            <div style="flex-basis: 100%; height: 0; margin: 0; padding: 0;"></div>
+            
+            <div class="action-group" id="cattel-upload-group" style="display: none; margin-top: 10px;">
+                <button class="btn btn-primary" id="btn-download-cattel" style="background-color: #f59e0b; border-color: #f59e0b;">
+                    <span class="material-icons-round" style="margin-right: 8px;">cloud_download</span>
+                    Scarica Dati InTime
+                </button>
+                <input type="file" id="cattel-file-upload" accept=".xlsx" style="display: none;">
+                <button class="btn btn-primary" id="btn-import-cattel" style="background-color: #0ea5e9; border-color: #0ea5e9;">
+                    <span class="material-icons-round" style="margin-right: 8px;">upload_file</span>
+                    Carica KPI Cattel
+                </button>
+            </div>
+            
+            <div class="export-actions" id="export-actions" style="display: none; margin-top: 10px;">
                 <button class="btn btn-primary" onclick="esportaExcel()">
-                    <span class="material-icons-round" style="color: #16a34a;">table_view</span>
+                    <span class="material-icons-round" style="color: #16a34a; margin-right: 8px;">table_view</span>
                     Esporta Excel
                 </button>
                 <button class="btn btn-primary" onclick="esportaPDF()">
-                    <span class="material-icons-round" style="color: #dc2626;">picture_as_pdf</span>
+                    <span class="material-icons-round" style="color: #dc2626; margin-right: 8px;">picture_as_pdf</span>
                     Esporta PDF
                 </button>
             </div>
@@ -242,35 +327,231 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.170"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.170"></script>
-    <script type="module">
-        import { getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <script src="script.js?v=2.63"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.63"></script>
 
-        const app = getApps()[0];
+    <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
+    <script>
+        (function() {
+            // Imposta mese corrente
+            var now = new Date();
+            var y = now.getFullYear();
+            var mo = String(now.getMonth() + 1).padStart(2, '0');
+            document.getElementById('month-selector').value = y + '-' + mo;
+
+            // Gestisce visibilità bottoni Cattel - esposta globalmente per uso dal modulo
+            window.updateExtraButtons = function() {
+                var val = document.getElementById('client-selector').value;
+                var cattelGroup = document.getElementById('cattel-upload-group');
+                if (cattelGroup) {
+                    cattelGroup.style.display = (val === 'CATTEL') ? 'flex' : 'none';
+                }
+            };
+            document.getElementById('client-selector').addEventListener('change', window.updateExtraButtons);
+            // Chiamata immediata (ripristino browser)
+            window.updateExtraButtons();
+
+            // Scarica Dati InTime - popup con credenziali
+            document.getElementById('btn-download-cattel').addEventListener('click', function() {
+                Swal.fire({
+                    title: 'Dati CATTEL (KPI Report)',
+                    html: `
+                        <p>Per elaborare i dati di CATTEL è necessario caricare il file Excel aggiornato.</p>
+                        <p>Puoi scaricarlo tramite l'estrazione automatica sul tuo PC, oppure manualmente dal portale logistico.</p>
+                        <hr>
+                        <div style="text-align: left; background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                            <b>Utente:</b>
+                            <div style="display: flex; margin-bottom: 10px; margin-top: 5px;">
+                                <input type="text" value="cattel.somma" readonly style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px 0 0 4px; font-family: monospace;">
+                                <button onclick="navigator.clipboard.writeText('cattel.somma'); Swal.showValidationMessage('Utente copiato!'); setTimeout(()=>Swal.resetValidationMessage(), 2000);" style="background: #0ea5e9; color: white; border: none; padding: 8px 12px; border-radius: 0 4px 4px 0; cursor: pointer;"><span class="material-icons-round" style="font-size: 18px; vertical-align: middle;">content_copy</span></button>
+                            </div>
+                            <b>Password:</b>
+                            <div style="display: flex; margin-top: 5px;">
+                                <input type="text" value="HuhN28ci" readonly style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px 0 0 4px; font-family: monospace;">
+                                <button onclick="navigator.clipboard.writeText('HuhN28ci'); Swal.showValidationMessage('Password copiata!'); setTimeout(()=>Swal.resetValidationMessage(), 2000);" style="background: #0ea5e9; color: white; border: none; padding: 8px 12px; border-radius: 0 4px 4px 0; cursor: pointer;"><span class="material-icons-round" style="font-size: 18px; vertical-align: middle;">content_copy</span></button>
+                            </div>
+                        </div>
+                    `,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="material-icons-round" style="vertical-align: middle;">open_in_new</i> Vai al sito Cattel',
+                    cancelButtonText: 'Chiudi',
+                    confirmButtonColor: '#0ea5e9'
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        window.open('https://intime.lac-consulting.eu/webClient/login', '_blank');
+                    }
+                });
+            });
+
+            // Carica KPI - apre dialog file
+            document.getElementById('btn-import-cattel').addEventListener('click', function() {
+                document.getElementById('cattel-file-upload').click();
+            });
+            // Btn Elabora: delegato a window.elaboraDati che viene registrata dal modulo
+            document.getElementById('btn-calcola').addEventListener('click', function() {
+                if (window.elaboraDati) {
+                    window.elaboraDati();
+                } else {
+                    Swal.fire('Attendere', 'Il database non è ancora pronto. Riprovare tra qualche secondo.', 'warning');
+                }
+            });
+        })();
+    </script>
+
+    <script type="module">
+        import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, addDoc, writeBatch, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { firebaseConfig } from "./firebase-config.js";
+
+        const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
         const db = getFirestore(app);
 
         // Utils for date parsing
         function getDayFromDateString(dateStr) {
-            // matches DD-MM-YYYY or DD/MM/YYYY
-            let m = dateStr.match(/(\d{2})[-\/](\d{2})[-\/](\d{4})/);
-            if (m) return parseInt(m[1], 10);
-            // matches YYYY-MM-DD or YYYY/MM/DD
-            m = dateStr.match(/(\d{4})[-\/](\d{2})[-\/](\d{2})/);
-            if (m) return parseInt(m[3], 10);
+            let mm = dateStr.match(/(\d{2})[-\/](\d{2})[-\/](\d{4})/);
+            if (mm) return parseInt(mm[1], 10);
+            mm = dateStr.match(/(\d{4})[-\/](\d{2})[-\/](\d{2})/);
+            if (mm) return parseInt(mm[3], 10);
             return null;
         }
 
-        const now = new Date();
-        const y = now.getFullYear();
-        const m = String(now.getMonth() + 1).padStart(2, '0');
-        document.getElementById('month-selector').value = `${y}-${m}`;
+
+
+        document.getElementById('cattel-file-upload').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const monthVal = document.getElementById('month-selector').value;
+            if (!monthVal) {
+                Swal.fire('Errore', 'Seleziona un mese di riferimento prima di caricare il KPI.', 'error');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Elaborazione KPI Cattel...',
+                text: 'Lettura file Excel in corso...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                const data = await file.arrayBuffer();
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+                const batch = writeBatch(db);
+                const viaggiRef = collection(db, 'clienti', 'DNR', 'viaggi ddt');
+                
+                // --- PULIZIA VECCHI DATI KPI DEL MESE ---
+                const targetSuffix = `-${monthVal.split('-')[1]}-${monthVal.split('-')[0]}`; // es. "-06-2026"
+                const qClean = query(viaggiRef, where("importato_da_kpi", "==", true));
+                const snapClean = await getDocs(qClean);
+                snapClean.forEach(docSnap => {
+                    const d = docSnap.data();
+                    const dDate = d.data_lavoro || d.data || d.data_consegna || '';
+                    if (dDate.includes(targetSuffix) || dDate.startsWith(monthVal)) {
+                        batch.delete(docSnap.ref);
+                    }
+                });
+                
+                let docsAdded = 0;
+
+                jsonData.forEach((row, idx) => {
+                    let rawDate = row['Data'] || row['DATA'] || row['data'];
+                    if (!rawDate) return;
+                    
+                    let dateObj;
+                    if (rawDate instanceof Date) {
+                        dateObj = rawDate;
+                    } else if (typeof rawDate === 'string') {
+                        let parts = rawDate.split('/');
+                        if (parts.length === 3) {
+                            dateObj = new Date(parts[2], parseInt(parts[1])-1, parts[0]);
+                        } else {
+                            dateObj = new Date(rawDate);
+                        }
+                    } else if (typeof rawDate === 'number') {
+                        dateObj = new Date(Math.round((rawDate - 25569)*86400*1000));
+                    }
+                    if (!dateObj || isNaN(dateObj.getTime())) return;
+                    
+                    const yy = dateObj.getFullYear();
+                    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    if (`${yy}-${mm}` !== monthVal) return; 
+
+                    let dStr = String(dateObj.getDate()).padStart(2, '0') + '-' + mm + '-' + yy;
+                    
+                    let autista = String(row['Autista'] || row['AUTISTA'] || '').trim();
+                    let targa = String(row['Codice mezzo'] || row['CODICE MEZZO'] || row['Targa'] || '').trim().toUpperCase();
+                    let zonaRaw = String(row['Zona'] || row['ZONA'] || 'GENERICO').trim();
+                    let quantita = parseFloat(row['Quantità'] || row['QUANTITÀ'] || row['Colli'] || row['COLLI'] || row['colli'] || 0) || 0;
+                    let peso = parseFloat(row['Peso'] || row['PESO'] || row['peso'] || 0) || 0;
+                    let destinazioni = parseInt(row['Destinazioni'] || row['DESTINAZIONI'] || 0) || 0;
+                    let km = parseFloat(row['Km'] || row['KM'] || row['km'] || 0) || 0;
+                    
+                    if (!zonaRaw) zonaRaw = "GENERICO";
+
+                    let noteText = `Importato da KPI`;
+                    if (peso > 0 || km > 0) noteText += ` - Peso: ${peso}kg, Km: ${km}`;
+
+                    const pt = {
+                        zona: zonaRaw,
+                        quantita: quantita,
+                        peso: peso,
+                        km: km,
+                        destinazioni: destinazioni,
+                        note: noteText
+                    };
+
+                    const docRef = doc(viaggiRef);
+                    batch.set(docRef, {
+                        data_lavoro: dStr,
+                        nome_giro: "CATTEL " + zonaRaw,
+                        id_zona: "CATTEL_" + zonaRaw.replace(/[^a-zA-Z0-9]/g, "_").toUpperCase(),
+                        autista: autista,
+                        targa: targa,
+                        targa_mezzo: targa, 
+                        punti: [pt],
+                        is_cattel: true,
+                        importato_da_kpi: true,
+                        timestamp: new Date().toISOString()
+                    });
+                    docsAdded++;
+                });
+
+                if (docsAdded === 0) {
+                    Swal.fire('Attenzione', 'Nessun viaggio CATTEL trovato per il mese selezionato nel file Excel.', 'warning');
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'Salvataggio in corso...',
+                    text: `Trovati ${docsAdded} viaggi. Salvataggio su Firestore...`,
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                await batch.commit();
+                e.target.value = "";
+
+                Swal.fire('Successo', 'Dati KPI importati nello storico correttamente!', 'success').then(() => {
+                    document.getElementById('btn-calcola').click();
+                });
+
+            } catch(err) {
+                console.error(err);
+                Swal.fire('Errore', 'Errore durante l\'importazione: ' + err.message, 'error');
+            }
+        });
 
         let currentClient = "TUTTI";
         let currentMonthLabel = "";
 
-        document.getElementById('btn-calcola').addEventListener('click', async () => {
+        // Registra la funzione come globale così il listener sincrono può chiamarla
+        window.elaboraDati = async function() {
             const monthVal = document.getElementById('month-selector').value;
             const clientSel = document.getElementById('client-selector').value;
             currentClient = clientSel;
@@ -302,34 +583,54 @@
             let CAT_NAV2 = 480.0;
             let DNR_DDT = 16.50;
             let DNR_FORFAIT = 250.00;
+            let CAT_COLLO = 0.0;
+            
+            let CAT_LIMITE_KM_B = 100;
+            let CAT_LIMITE_KM_C = 100;
+            let CAT_LIMITE_PESO_B = 1200;
+            let CAT_LIMITE_PESO_C = 0;
+
+            let configCattel = {
+                limPesoB: CAT_LIMITE_PESO_B,
+                limPesoC: CAT_LIMITE_PESO_C,
+                limKmB: CAT_LIMITE_KM_B,
+                limKmC: CAT_LIMITE_KM_C
+            };
 
             try {
-                const gcDoc = await getDoc(doc(db, "clienti", "GRAN CHEF", "impostazioni", "listino"));
-                const catDoc = await getDoc(doc(db, "clienti", "CATTEL", "impostazioni", "listino"));
-                const bauDoc = await getDoc(doc(db, "clienti", "BAUER", "impostazioni", "listino"));
-                const dnrDoc = await getDoc(doc(db, "clienti", "DNR", "impostazioni", "listino"));
-                const scuoleDoc = await getDoc(doc(db, "clienti", "PROGETTO SCUOLE", "impostazioni", "listino"));
-
-                if(gcDoc.exists() && gcDoc.data().tariffa_viaggio) TARIFFA_GC = parseFloat(gcDoc.data().tariffa_viaggio);
-                if(bauDoc.exists() && bauDoc.data().tariffa_viaggio) TARIFFA_BAU = parseFloat(bauDoc.data().tariffa_viaggio);
-                if(catDoc.exists()) {
-                    const cd = catDoc.data();
-                    if (cd.patente_b) CAT_B = parseFloat(cd.patente_b);
-                    if (cd.patente_c) CAT_C = parseFloat(cd.patente_c);
-                    if (cd.navetta_sommacampagna) CAT_NAV1 = parseFloat(cd.navetta_sommacampagna);
-                    if (cd.navetta_cerea) CAT_NAV2 = parseFloat(cd.navetta_cerea);
-                }
-                if(dnrDoc.exists() && (dnrDoc.data().tariffa_ddt || dnrDoc.data().tariffa_forfait)) {
-                    const dd = dnrDoc.data();
-                    if (dd.tariffa_ddt) DNR_DDT = parseFloat(dd.tariffa_ddt);
-                    if (dd.tariffa_forfait) DNR_FORFAIT = parseFloat(dd.tariffa_forfait);
-                } else if (scuoleDoc.exists()) {
-                    const dd = scuoleDoc.data();
-                    if (dd.tariffa_ddt) DNR_DDT = parseFloat(dd.tariffa_ddt);
-                    if (dd.tariffa_forfait) DNR_FORFAIT = parseFloat(dd.tariffa_forfait);
-                }
+                // Leggiamo tutto dalla nuova collection "progetti" gestita in impostazioni.html
+                const progSnap = await getDocs(collection(db, "progetti"));
+                progSnap.forEach(docSnap => {
+                    const d = docSnap.data();
+                    const nome = (d.nome || "").toUpperCase();
+                    
+                    if (nome === "CATTEL") {
+                        if (d.patente_b) CAT_B = parseFloat(d.patente_b);
+                        if (d.patente_c) CAT_C = parseFloat(d.patente_c);
+                        if (d.navetta_sommacampagna) CAT_NAV1 = parseFloat(d.navetta_sommacampagna);
+                        if (d.navetta_cerea) CAT_NAV2 = parseFloat(d.navetta_cerea);
+                        if (d.cattel_collo) CAT_COLLO = parseFloat(d.cattel_collo);
+                        
+                        if (d.cattel_lim_km_b !== undefined && d.cattel_lim_km_b !== null) configCattel.limKmB = parseFloat(d.cattel_lim_km_b);
+                        if (d.cattel_lim_km_c !== undefined && d.cattel_lim_km_c !== null) configCattel.limKmC = parseFloat(d.cattel_lim_km_c);
+                        if (d.cattel_lim_peso_b !== undefined && d.cattel_lim_peso_b !== null) configCattel.limPesoB = parseFloat(d.cattel_lim_peso_b);
+                        if (d.cattel_lim_peso_c !== undefined && d.cattel_lim_peso_c !== null) configCattel.limPesoC = parseFloat(d.cattel_lim_peso_c);
+                    } else if (nome === "GRAN CHEF") {
+                        if (d.viaggio_a) TARIFFA_GC = parseFloat(d.viaggio_a);
+                        else if (d.tariffa_viaggio) TARIFFA_GC = parseFloat(d.tariffa_viaggio);
+                    } else if (nome === "BAUER") {
+                        if (d.viaggio_a) TARIFFA_BAU = parseFloat(d.viaggio_a);
+                        else if (d.tariffa_viaggio) TARIFFA_BAU = parseFloat(d.tariffa_viaggio);
+                    } else if (nome === "DNR" || nome === "PROGETTO SCUOLE") {
+                        if (d.costo_ddt_base) DNR_DDT = parseFloat(d.costo_ddt_base);
+                        else if (d.tariffa_ddt) DNR_DDT = parseFloat(d.tariffa_ddt);
+                        
+                        if (d.viaggio_forfait) DNR_FORFAIT = parseFloat(d.viaggio_forfait);
+                        else if (d.tariffa_forfait) DNR_FORFAIT = parseFloat(d.tariffa_forfait);
+                    }
+                });
             } catch (errListini) {
-                console.warn("Errore lettura listini, uso i valori di default");
+                console.warn("Errore lettura progetti, uso i valori di default");
             }
 
             try {
@@ -395,8 +696,21 @@
                     else if (isCat) tripClient = "CATTEL";
                     else if (isBau) tripClient = "BAUER";
 
+                    let finalNomeStr = nomeStr;
+                    if (tripClient === "CATTEL" && !nomeStr.includes("NAVETTA")) {
+                        let parts = finalNomeStr.split(' ');
+                        let cleaned = parts.map(p => {
+                            let s = p.trim();
+                            if (s.startsWith("SOA")) s = s.substring(3);
+                            s = s.replace(/[0-9]+$/, '');
+                            return s;
+                        }).filter(Boolean).join(' ');
+                        if (cleaned) finalNomeStr = cleaned;
+                    }
+
                     // Calcolo importo
                     let importo = 0;
+                    let importo_colli = 0;
                     if (tripClient === "GRAN CHEF") {
                         importo = TARIFFA_GC;
                         countGC++; totGC += importo;
@@ -407,8 +721,17 @@
                             const targaStr = (t.targa || t.targa_mezzo || '').toUpperCase();
                             let patente = mezziMap[targaStr] || 'B';
                             importo = (patente === 'C') ? CAT_C : CAT_B;
+                            
+                            // Aggiungiamo il calcolo colli solo se non è navetta
+                            let tQ = 0;
+                            p.forEach(pt => {
+                                let pq = parseFloat(pt.quantita);
+                                tQ += isNaN(pq) ? 0 : pq;
+                            });
+                            importo_colli = tQ * CAT_COLLO;
                         }
-                        countCat++; totCat += importo;
+                        let importo_totale = importo + importo_colli;
+                        countCat++; totCat += importo_totale;
                     } else if (tripClient === "BAUER") {
                         importo = TARIFFA_BAU;
                         countBau++; totBau += importo;
@@ -434,10 +757,88 @@
                     if (clientSel !== "TUTTI" && tripClient === clientSel) {
                         let day = getDayFromDateString(t.rawDate);
                         if (day) {
-                            if (!pivotData[nomeStr]) pivotData[nomeStr] = {};
-                            // Se ci sono più giri omonimi nello stesso giorno, sommiamo
-                            if (!pivotData[nomeStr][day]) pivotData[nomeStr][day] = 0;
-                            pivotData[nomeStr][day] += importo;
+                            let rowKey = finalNomeStr;
+                            
+                            if (tripClient === "CATTEL") {
+                                let attempt = 1;
+                                let currentKey = rowKey;
+                                while (pivotData[currentKey] && pivotData[currentKey][day] !== undefined) {
+                                    attempt++;
+                                    currentKey = `${rowKey} (${attempt})`;
+                                }
+                                
+                                let targaStrVal = (t.targa || t.targa_mezzo || '').toUpperCase();
+                                let nomeStrVal = (t.nome_dipendente || t.dipendente || t.autista || t.padroncino || '').toUpperCase();
+                                let patenteVal = mezziMap[targaStrVal] || 'B';
+                                
+                                if (!pivotData[currentKey]) pivotData[currentKey] = {};
+                                
+                                pivotData[currentKey][day] = {
+                                    importo: importo + importo_colli,
+                                    importo_viaggio: importo,
+                                    importo_colli: importo_colli,
+                                    count: 1,
+                                    quantita: 0,
+                                    peso: 0,
+                                    km: 0,
+                                    targa: targaStrVal,
+                                    nome: nomeStrVal,
+                                    patente: patenteVal
+                                };
+                                
+                                p.forEach(pt => {
+                                    let pq = parseFloat(pt.quantita);
+                                    let pp = parseFloat(pt.peso);
+                                    let pk = parseFloat(pt.km);
+                                    pivotData[currentKey][day].quantita += isNaN(pq) ? 0 : pq;
+                                    pivotData[currentKey][day].peso += isNaN(pp) ? 0 : pp;
+                                    pivotData[currentKey][day].km += isNaN(pk) ? 0 : pk;
+                                });
+                            } else if (tripClient === "GRAN CHEF") {
+                                if (!pivotData[rowKey]) pivotData[rowKey] = {};
+                                
+                                let targaStrVal = (t.targa || t.targa_mezzo || '').toUpperCase();
+                                let nomeStrVal = (t.nome_dipendente || t.dipendente || t.autista || t.padroncino || '').toUpperCase();
+                                let patenteVal = mezziMap[targaStrVal] || 'B';
+                                
+                                if (pivotData[rowKey][day] === undefined) {
+                                    pivotData[rowKey][day] = {
+                                        importo: importo,
+                                        importo_viaggio: importo,
+                                        importo_colli: 0,
+                                        count: 1,
+                                        quantita: 0,
+                                        peso: 0,
+                                        km: parseFloat(t.km_reali) || 0,
+                                        consegne: p.length,
+                                        tempo_min: parseInt(t.t_tot_min) || 0,
+                                        targa: targaStrVal,
+                                        nome: nomeStrVal,
+                                        patente: patenteVal,
+                                        isGC: true
+                                    };
+                                } else {
+                                    let obj = pivotData[rowKey][day];
+                                    obj.importo += importo;
+                                    obj.importo_viaggio += importo;
+                                    obj.count += 1;
+                                    obj.km += parseFloat(t.km_reali) || 0;
+                                    obj.consegne += p.length;
+                                    obj.tempo_min += parseInt(t.t_tot_min) || 0;
+                                    
+                                    if (targaStrVal && !obj.targa.includes(targaStrVal)) {
+                                        obj.targa += obj.targa ? `, ${targaStrVal}` : targaStrVal;
+                                    }
+                                    if (nomeStrVal && !obj.nome.includes(nomeStrVal)) {
+                                        obj.nome += obj.nome ? `, ${nomeStrVal}` : nomeStrVal;
+                                    }
+                                }
+                            } else {
+                                // Se ci sono più giri omonimi nello stesso giorno, sommiamo
+                                if (!pivotData[rowKey]) pivotData[rowKey] = {};
+                                if (!pivotData[rowKey][day]) pivotData[rowKey][day] = 0;
+                                pivotData[rowKey][day] += importo;
+                            }
                         }
                     }
                 }
@@ -446,6 +847,7 @@
                 document.getElementById('summary-container').style.display = (clientSel === "TUTTI") ? 'block' : 'none';
                 document.getElementById('pivot-container').style.display = (clientSel !== "TUTTI") ? 'block' : 'none';
                 document.getElementById('export-actions').style.display = (clientSel !== "TUTTI") ? 'flex' : 'none';
+                updateExtraButtons();
 
                 if (clientSel === "TUTTI") {
                     document.getElementById('gc-count').textContent = countGC;
@@ -460,7 +862,7 @@
                 } else {
                     // Generazione Matrice
                     document.getElementById('pivot-title').textContent = `Fatturazione ${clientSel} - ${currentMonthLabel}`;
-                    buildPivotTable(pivotData, parseInt(year), parseInt(month));
+                    buildPivotTable(pivotData, parseInt(year), parseInt(month), configCattel);
                 }
 
                 Swal.close();
@@ -469,9 +871,9 @@
                 console.error("Errore lettura:", err);
                 Swal.fire('Errore', 'Impossibile leggere i dati: ' + err.message, 'error');
             }
-        });
+        };
 
-        function buildPivotTable(pivotData, year, month) {
+        function buildPivotTable(pivotData, year, month, configCattel = {}) {
             const thead = document.getElementById('pivot-thead');
             const tbody = document.getElementById('pivot-tbody');
             const tfoot = document.getElementById('pivot-tfoot');
@@ -481,9 +883,12 @@
             const daysInMonth = new Date(year, month, 0).getDate();
             
             // Header
+            const weekdays = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
             let trHead = '<tr><th>ZONA / GIRO</th>';
             for(let d=1; d<=daysInMonth; d++) {
-                trHead += `<th>${d}</th>`;
+                const date = new Date(year, month - 1, d);
+                const dayName = weekdays[date.getDay()];
+                trHead += `<th>${dayName} ${d}</th>`;
             }
             trHead += '<th>TOTALE</th></tr>';
             thead.innerHTML = trHead;
@@ -492,6 +897,10 @@
             const zoneNames = Object.keys(pivotData).sort();
             
             let columnTotals = Array(daysInMonth + 1).fill(0); // 1-indexed
+            let columnViaggioTotals = Array(daysInMonth + 1).fill(0);
+            let columnColliTotals = Array(daysInMonth + 1).fill(0);
+            let columnQuantitaTotals = Array(daysInMonth + 1).fill(0); // 1-indexed
+            let isCattelMode = false;
 
             if (zoneNames.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="${daysInMonth+2}" style="text-align:center">Nessun viaggio fatturabile trovato.</td></tr>`;
@@ -505,9 +914,70 @@
                 for(let d=1; d<=daysInMonth; d++) {
                     const val = pivotData[zona][d];
                     if (val) {
-                        rowHtml += `<td>€ ${val.toFixed(2)}</td>`;
-                        rowTotal += val;
-                        columnTotals[d] += val;
+                        let isObj = (typeof val === 'object');
+                        if (isObj && !val.isGC) isCattelMode = true;
+                        
+                        // Per il singolo giro Cattel, visualizziamo solo la tariffa fissa del viaggio (es. 340€ o 380€)
+                        // come da aspettative dell'utente (costo fisso).
+                        let importoRiga = isObj ? val.importo_viaggio : val; 
+                        let importoColonna = isObj ? val.importo : val; // Il lordo comprensivo di colli va nei totali di fine colonna
+                        
+                        let text = isObj && val.count > 1 ? `(${val.count}v) € ${importoRiga.toFixed(2)}` : `€ ${importoRiga.toFixed(2)}`;
+                        
+                        let cellStyle = "vertical-align: top;";
+                        let titleText = "";
+                        
+                        if (isObj) {
+                            let hasPesoAnomaly = false;
+                            let hasKmAnomaly = false;
+                            
+                            if (val.isGC) {
+                                titleText = `Viaggi: ${val.count} | Consegne: ${val.consegne}\n` +
+                                            `Km: ${val.km.toFixed(1)} | Tempo: ${val.tempo_min} min\n` +
+                                            `Targa: ${val.targa || 'N/D'}\n` +
+                                            `Autista: ${val.nome || 'N/D'}`;
+                            } else {
+                                titleText = `Viaggi: ${val.count} | Colli: ${val.quantita} | Peso: ${val.peso}kg | Km: ${val.km}\n` +
+                                            `Targa: ${val.targa || 'N/D'} (Pat. ${val.patente})\n` +
+                                            `Autista: ${val.nome || 'N/D'}`;
+                                            
+                                let limP = val.patente === 'C' ? configCattel.limPesoC : configCattel.limPesoB;
+                                let limK = val.patente === 'C' ? configCattel.limKmC : configCattel.limKmB;
+                                
+                                hasPesoAnomaly = limP > 0 && val.peso > limP;
+                                hasKmAnomaly = limK > 0 && val.km > limK;
+
+                                if (hasPesoAnomaly || hasKmAnomaly) {
+                                    cellStyle += " background-color: #fef08a; color: #854d0e; font-weight: bold;";
+                                }
+                            }
+                            
+                            columnQuantitaTotals[d] += val.quantita;
+
+                            // Usiamo data-attributes per Excel e inseriamo il custom-tooltip con classe extra-info-cell (così SheetJS/PDF lo ignorano)
+                            // Aggiungiamo un div con position: relative interno al td in modo che il tooltip absolute si posizioni correttamente
+                            rowHtml += `<td class="excel-note" 
+                                style="${cellStyle}" 
+                                data-anomaly="${hasPesoAnomaly || hasKmAnomaly ? '1' : '0'}"
+                                data-note="${titleText.replace(/"/g, '&quot;').replace(/\n/g, ' | ')}"
+                                data-targa="${val.targa || ''}"
+                                data-autista="${(val.nome || '').replace(/"/g, '&quot;')}"
+                                data-colli="${val.quantita}"
+                                data-peso="${val.peso}"
+                                data-km="${val.km}"
+                                data-importo-viaggio="${val.importo_viaggio.toFixed(2)}"
+                                data-importo-colli="${val.importo_colli.toFixed(2)}"
+                            ><div style="position: relative; width: 100%; height: 100%; display: block;">${text}<div class="extra-info-cell custom-tooltip">${titleText.replace(/"/g, '&quot;')}</div></div></td>`;
+                        } else {
+                            // Non Cattel (GC, Bauer, DNR)
+                            rowHtml += `<td style="${cellStyle}" title="${titleText}">${text}</td>`;
+                        }
+                        rowTotal += importoRiga;
+                        columnTotals[d] += importoColonna;
+                        if (isObj) {
+                            columnViaggioTotals[d] += val.importo_viaggio;
+                            columnColliTotals[d] += val.importo_colli;
+                        }
                     } else {
                         rowHtml += `<td></td>`;
                     }
@@ -518,17 +988,55 @@
             });
 
             // Footer (Parziali)
-            let trFoot = '<tr><td>PARZIALE</td>';
-            let grandTotal = 0;
-            for(let d=1; d<=daysInMonth; d++) {
-                if (columnTotals[d] > 0) {
-                    trFoot += `<td>€ ${columnTotals[d].toFixed(2)}</td>`;
-                    grandTotal += columnTotals[d];
-                } else {
-                    trFoot += `<td>€ 0.00</td>`;
+            let trFoot = '';
+            
+            if (isCattelMode) {
+                let trViaggio = '<tr><td style="font-weight:600; color:#475569;">TOTALE GIORNALIERO VIAGGI</td>';
+                let grandViaggio = 0;
+                let trColliEuro = '<tr><td style="font-weight:600; color:#475569;">TOTALE COSTO COLLI</td>';
+                let grandColliEuro = 0;
+                let trLordo = '<tr><td style="font-weight:bold; background:#e5e7eb;">TOTALE LORDO GIORNALIERO</td>';
+                let grandLordo = 0;
+                let trColliCount = '<tr><td style="font-weight:bold; background:#e0e7ff;">SOMMA COLLI GIORNALIERA</td>';
+                let totalColliMese = 0;
+                
+                for(let d=1; d<=daysInMonth; d++) {
+                    trViaggio += `<td style="color:#475569;">€ ${columnViaggioTotals[d].toFixed(2)}</td>`;
+                    grandViaggio += columnViaggioTotals[d];
+                    
+                    trColliCount += `<td style="font-weight:bold; background:#e0e7ff;">${columnQuantitaTotals[d] > 0 ? columnQuantitaTotals[d] : ''}</td>`;
+                    totalColliMese += columnQuantitaTotals[d];
+
+                    trColliEuro += `<td style="color:#475569;">€ ${columnColliTotals[d].toFixed(2)}</td>`;
+                    grandColliEuro += columnColliTotals[d];
+                    
+                    if (columnTotals[d] > 0) {
+                        trLordo += `<td style="font-weight:bold; background:#e5e7eb;">€ ${columnTotals[d].toFixed(2)}</td>`;
+                        grandLordo += columnTotals[d];
+                    } else {
+                        trLordo += `<td style="font-weight:bold; background:#e5e7eb;">€ 0.00</td>`;
+                    }
                 }
+                trViaggio += `<td style="font-weight:bold; color:#475569;">€ ${grandViaggio.toFixed(2)}</td></tr>`;
+                trColliCount += `<td style="font-weight:bold; background:#e0e7ff;">${totalColliMese}</td></tr>`;
+                trColliEuro += `<td style="font-weight:bold; color:#475569;">€ ${grandColliEuro.toFixed(2)}</td></tr>`;
+                trLordo += `<td style="font-weight:bold; background:#e5e7eb;">€ ${grandLordo.toFixed(2)}</td></tr>`;
+                
+                trFoot += trViaggio + trColliCount + trColliEuro + trLordo;
+            } else {
+                trFoot = '<tr><td>PARZIALE</td>';
+                let grandTotal = 0;
+                for(let d=1; d<=daysInMonth; d++) {
+                    if (columnTotals[d] > 0) {
+                        trFoot += `<td>€ ${columnTotals[d].toFixed(2)}</td>`;
+                        grandTotal += columnTotals[d];
+                    } else {
+                        trFoot += `<td>€ 0.00</td>`;
+                    }
+                }
+                trFoot += `<td>€ ${grandTotal.toFixed(2)}</td></tr>`;
             }
-            trFoot += `<td>€ ${grandTotal.toFixed(2)}</td></tr>`;
+
             tfoot.innerHTML = trFoot;
         }
 
@@ -537,75 +1045,131 @@
             const table = document.getElementById('pivot-table');
             if (!table) return;
 
-            // table_to_book extracts the HTML table
+            // --- 1. Raccolgo meta-dati dalle celle PRIMA di convertire la tabella ---
+            // Mappo posizione [row][col] -> {note, anomaly}
+            const cellMeta = {};
+            const allRows = table.querySelectorAll('tr');
+            allRows.forEach((tr, rIdx) => {
+                tr.querySelectorAll('td, th').forEach((td, cIdx) => {
+                    const note = td.getAttribute('data-note');
+                    const anomaly = td.getAttribute('data-anomaly');
+                    if (note || anomaly === '1') {
+                        if (!cellMeta[rIdx]) cellMeta[rIdx] = {};
+                        cellMeta[rIdx][cIdx] = {
+                            note: note ? note.replace(/&quot;/g, '"') : '',
+                            anomaly: anomaly === '1'
+                        };
+                    }
+                });
+            });
+
+            // --- 2. Converto la tabella ---
             const wb = XLSX.utils.table_to_book(table, {sheet: "Fatturazione"});
             const ws = wb.Sheets["Fatturazione"];
-
-            // Find the range of the worksheet
             const range = XLSX.utils.decode_range(ws['!ref']);
 
-            // Column widths
-            ws['!cols'] = [{ wch: 25 }]; // First column wider
-            for (let c = 1; c < range.e.c; c++) {
-                ws['!cols'].push({ wch: 8 }); // Day columns
-            }
-            ws['!cols'].push({ wch: 12 }); // Total column
+            // --- 3. Larghezze colonne ---
+            ws['!cols'] = [{ wch: 28 }];
+            for (let c = 1; c <= range.e.c - 1; c++) ws['!cols'].push({ wch: 9 });
+            ws['!cols'].push({ wch: 14 });
 
+            // --- 4. Conto le righe footer (ultima riga e le righe sopra con totali) ---
+            const totalRows = range.e.r + 1;
+            // Le ultime 4 righe sono: TOTALE GIORNALIERO VIAGGI, SOMMA COLLI, TOTALE COSTO COLLI, TOTALE LORDO
+            // (solo in modalità Cattel). Le identifichiamo leggendo il testo della prima cella.
+            const footerStartKeywords = ['TOTALE GIORNALIERO', 'SOMMA COLLI', 'TOTALE COSTO', 'TOTALE LORDO', 'PARZIALE'];
+
+            // --- 5. Stilo tutte le celle ---
             for (let R = range.s.r; R <= range.e.r; ++R) {
+                const firstCellAddr = XLSX.utils.encode_cell({r: R, c: 0});
+                const firstCellVal = (ws[firstCellAddr] && ws[firstCellAddr].v) ? String(ws[firstCellAddr].v).toUpperCase() : '';
+                const isFooter = footerStartKeywords.some(k => firstCellVal.includes(k));
+                const isLordo = firstCellVal.includes('TOTALE LORDO');
+
                 for (let C = range.s.c; C <= range.e.c; ++C) {
                     const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!ws[cellAddress]) ws[cellAddress] = { v: '', t: 's' };
                     const cell = ws[cellAddress];
-                    if (!cell) continue;
-
-                    // Initialize style object if not present
                     if (!cell.s) cell.s = {};
 
-                    // Base style for all cells: borders and vertical center
+                    // Bordi base
                     cell.s.border = {
-                        top: { style: "thin", color: { rgb: "FFD1D5DB" } },
-                        bottom: { style: "thin", color: { rgb: "FFD1D5DB" } },
-                        left: { style: "thin", color: { rgb: "FFD1D5DB" } },
-                        right: { style: "thin", color: { rgb: "FFD1D5DB" } }
+                        top:    { style: 'thin', color: { rgb: 'FFD1D5DB' } },
+                        bottom: { style: 'thin', color: { rgb: 'FFD1D5DB' } },
+                        left:   { style: 'thin', color: { rgb: 'FFD1D5DB' } },
+                        right:  { style: 'thin', color: { rgb: 'FFD1D5DB' } }
                     };
-                    cell.s.alignment = { vertical: "center" };
+                    cell.s.alignment = { vertical: 'center', wrapText: false };
 
-                    // Header row (R = 0)
                     if (R === 0) {
-                        cell.s.fill = { fgColor: { rgb: "FF4F46E5" } }; // Indigo background
-                        cell.s.font = { color: { rgb: "FFFFFFFF" }, bold: true };
-                        cell.s.alignment.horizontal = "center";
-                    }
-                    // Footer row (R = range.e.r)
-                    else if (R === range.e.r) {
-                        cell.s.fill = { fgColor: { rgb: "FFD1D5DB" } }; // Gray background
+                        // Header
+                        cell.s.fill = { fgColor: { rgb: 'FF4F46E5' } };
+                        cell.s.font = { color: { rgb: 'FFFFFFFF' }, bold: true };
+                        cell.s.alignment.horizontal = 'center';
+                    } else if (isLordo) {
+                        // Riga totale lordo: grigio scuro bold
+                        cell.s.fill = { fgColor: { rgb: 'FFE5E7EB' } };
                         cell.s.font = { bold: true };
-                        if (C === 0) cell.s.alignment.horizontal = "left";
-                        else cell.s.alignment.horizontal = "right";
-                    }
-                    // Data rows
-                    else {
+                        cell.s.alignment.horizontal = C === 0 ? 'left' : 'right';
+                    } else if (isFooter && firstCellVal.includes('SOMMA COLLI')) {
+                        // Riga somma colli: indigo chiaro bold
+                        cell.s.fill = { fgColor: { rgb: 'FFE0E7FF' } };
+                        cell.s.font = { bold: true };
+                        cell.s.alignment.horizontal = C === 0 ? 'left' : 'right';
+                    } else if (isFooter) {
+                        // Altre righe footer
+                        cell.s.fill = { fgColor: { rgb: 'FFF8FAFC' } };
+                        cell.s.font = { bold: false, color: { rgb: 'FF475569' } };
+                        cell.s.alignment.horizontal = C === 0 ? 'left' : 'right';
+                    } else {
+                        // Righe dati
                         if (C === 0) {
-                            // First column
                             cell.s.font = { bold: true };
-                            cell.s.alignment.horizontal = "left";
+                            cell.s.alignment.horizontal = 'left';
                         } else {
-                            cell.s.alignment.horizontal = "right";
-                            // Try to parse number and set format to currency
-                            if (cell.v && typeof cell.v === 'string') {
-                                let numStr = cell.v.replace('€', '').trim();
-                                if (!isNaN(parseFloat(numStr))) {
-                                    cell.v = parseFloat(numStr);
-                                    cell.t = 'n';
-                                    cell.z = '"€"\ #,##0.00';
-                                }
-                            }
+                            cell.s.alignment.horizontal = 'right';
+                        }
+
+                        // Colore giallo anomalia (leggo dal meta)
+                        if (cellMeta[R] && cellMeta[R][C] && cellMeta[R][C].anomaly) {
+                            cell.s.fill = { fgColor: { rgb: 'FFFEF08A' } };
+                            cell.s.font = { bold: true, color: { rgb: 'FF854D0E' } };
+                        }
+                    }
+
+                    // Conversione valori € -> numero
+                    if (C > 0 && cell.v && typeof cell.v === 'string') {
+                        let numStr = cell.v.replace('€', '').trim();
+                        if (!isNaN(parseFloat(numStr)) && numStr !== '') {
+                            cell.v = parseFloat(numStr);
+                            cell.t = 'n';
+                            cell.z = '"€"\\ #,##0.00';
                         }
                     }
                 }
             }
 
-            XLSX.writeFile(wb, `Fatturazione_${currentClient.replace(/ /g, '_')}_${currentMonthLabel.replace(/ /g, '_')}.xlsx`);
+            // --- 6. Aggiungo commenti Excel nativi alle celle Cattel ---
+            if (!ws['!comments']) ws['!comments'] = [];
+            Object.keys(cellMeta).forEach(rStr => {
+                const R = parseInt(rStr);
+                Object.keys(cellMeta[R]).forEach(cStr => {
+                    const C = parseInt(cStr);
+                    const meta = cellMeta[R][C];
+                    if (!meta.note) return;
+                    const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                    // Formato commento xlsx-js-style
+                    ws[cellAddress].c = [{
+                        a: 'LogSolution',
+                        t: meta.note
+                    }];
+                    ws[cellAddress].c.hidden = true;
+                });
+            });
+
+            XLSX.writeFile(wb, `Fatturazione_${currentClient.replace(/ /g,'_')}_${currentMonthLabel.replace(/ /g,'_')}.xlsx`);
         };
+
 
         window.esportaPDF = function() {
             const { jsPDF } = window.jspdf;
@@ -615,19 +1179,21 @@
             doc.setFontSize(16);
             doc.text(`Fatturazione ${currentClient} - ${currentMonthLabel}`, 40, 40);
 
+            // Nascondiamo le note extra per l'export
+            document.querySelectorAll('.extra-info-cell').forEach(el => el.style.display = 'none');
+
             doc.autoTable({
                 html: '#pivot-table',
                 startY: 60,
                 styles: { 
                     fontSize: 7, 
-                    cellPadding: 2,
-                    halign: 'right'
-                },
-                columnStyles: {
-                    0: { halign: 'left', fontStyle: 'bold' } // colonna zona
+                    cellPadding: 2, 
+                    lineWidth: 0.5, 
+                    lineColor: [209, 213, 219] 
                 },
                 headStyles: { 
                     fillColor: [79, 70, 229],
+                    textColor: [255, 255, 255],
                     halign: 'center'
                 },
                 footStyles: {
@@ -636,6 +1202,9 @@
                 },
                 theme: 'grid'
             });
+
+            // Ripristiniamo le note
+            document.querySelectorAll('.extra-info-cell').forEach(el => el.style.display = 'inline-block');
 
             doc.save(`Fatturazione_${currentClient.replace(/ /g, '_')}_${currentMonthLabel.replace(/ /g, '_')}.pdf`);
         };

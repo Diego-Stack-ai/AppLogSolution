@@ -16,11 +16,17 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=2.170">
+    <link rel="stylesheet" href="styles.css?v=2.63">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .row-error td {
             background-color: #ffcccc !important; /* rosso più acceso */
+        }
+
+        .row-discrepancy td {
+            background-color: #fffbeb !important; /* Giallo/arancione molto chiaro */
+            color: #b45309 !important;
+            border-bottom: 2px dashed #f59e0b !important;
         }
 
         .filters-container {
@@ -357,6 +363,98 @@
             font-size: 14px;
         }
 
+
+        /* SCALE DOWN FOR MOBILE SCREEN SIZES */
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 10px 6px !important;
+            }
+            .glass-panel {
+                padding: 10px !important;
+                border-radius: 12px !important;
+            }
+            .filters-container {
+                gap: 8px !important;
+                margin-bottom: 12px !important;
+            }
+            .filter-item {
+                min-width: 130px !important;
+                gap: 4px !important;
+                flex: 1;
+            }
+            .filter-item label {
+                font-size: 11px !important;
+            }
+            .filter-item select, .filter-item input {
+                padding: 6px 8px !important;
+                font-size: 12px !important;
+                height: auto !important;
+            }
+            #adminActionsContainer {
+                min-width: 250px !important;
+                margin-top: 8px;
+            }
+            #adminActionsContainer button {
+                padding: 8px !important;
+                font-size: 11px !important;
+            }
+            .summary-grid {
+                gap: 6px !important;
+                margin-bottom: 12px !important;
+            }
+            .summary-card {
+                padding: 4px 8px !important;
+                border-radius: 6px !important;
+                gap: 4px !important;
+                flex: 1;
+                min-width: 80px;
+            }
+            .summary-card h4 {
+                font-size: 9px !important;
+            }
+            .summary-card p {
+                font-size: 11px !important;
+            }
+            table {
+                font-size: 10.5px !important;
+            }
+            th {
+                padding: 6px 3px !important;
+                font-size: 10.5px !important;
+            }
+            td {
+                padding: 4px 3px !important;
+            }
+            .edit-input {
+                padding: 2px 4px !important;
+                font-size: 10.5px !important;
+            }
+            .num-input, .time-input {
+                width: 44px !important;
+            }
+            .btn-edit, .btn-dettagli {
+                padding: 4px 6px !important;
+                font-size: 10px !important;
+                border-radius: 5px !important;
+                gap: 2px !important;
+            }
+            .glass-nav {
+                padding: 6px 10px !important;
+            }
+            .nav-content {
+                gap: 4px !important;
+            }
+            .nav-title {
+                font-size: 13px !important;
+            }
+            .logout-btn {
+                padding: 4px !important;
+            }
+            .logout-btn span {
+                font-size: 18px !important;
+            }
+        }
+        
 </style>
 </head>
 <body>
@@ -365,7 +463,7 @@
             <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
             <button id="dashboardBtn" class="logout-btn" title="Dashboard"
                 onclick="window.navigateWithState('dashboard.html')"
-                style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
+                style="border:none; background:none; cursor:pointer; margin-right:8px; display:none;">
                 <span class="material-icons-round">dashboard</span>
             </button>
             <div class="nav-title" style="flex: 1;">Ore Presenze Dipendenti</div>
@@ -385,7 +483,7 @@
                     <label for="inputMonth">Mese di Riferimento</label>
                     <input type="month" id="inputMonth">
                 </div>
-                <div class="filter-item" style="flex: 1; min-width: 350px;">
+                <div id="adminActionsContainer" class="filter-item" style="flex: 1; min-width: 350px;">
                     <label style="visibility: hidden;">Azioni</label>
                     <div style="display: flex; gap: 10px; width: 100%;">
                         <button class="btn-primary" style="flex: 1; justify-content: center; padding: 10px; font-size: 0.9rem;" onclick="generateMonthlyPDF()">
@@ -481,12 +579,13 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.170"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.170"></script>
+    <script src="script.js?v=2.63"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.63"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
+        import { calculateHours } from "./firestore-service.js?v=2.63";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -505,34 +604,79 @@ const db = getFirestore(app);
         // Inizializza mese corrente
         document.getElementById('inputMonth').value = new Date().toISOString().substring(0, 7);
 
+        // Hook caricamento profilo utente loggato
+        window.onUserProfileLoaded = function(user) {
+            // Configura il pulsante Dashboard / Home per autisti
+            const role = (user.ruolo || 'autista').toLowerCase().trim();
+            const dashBtn = document.getElementById('dashboardBtn');
+            if (dashBtn) {
+                if (role === 'amministratore' || role === 'impiegata') {
+                    dashBtn.style.display = 'flex';
+                    dashBtn.title = "Dashboard";
+                    dashBtn.onclick = () => window.navigateWithState('dashboard.html');
+                    const icon = dashBtn.querySelector('.material-icons-round');
+                    if (icon) icon.textContent = 'dashboard';
+                } else {
+                    dashBtn.style.display = 'flex';
+                    dashBtn.title = "Inserimento Turno";
+                    dashBtn.onclick = () => window.navigateWithState('inserimento.html');
+                    const icon = dashBtn.querySelector('.material-icons-round');
+                    if (icon) icon.textContent = 'home';
+                }
+            }
+
+            window.renderAutistiDropdown();
+        };
+
         // Popola dropdown dipendenti da window.appData.lista_autisti caricata da firebase-auth-sync.js
         window.renderAutistiDropdown = function() {
             const select = document.getElementById("selectEmployee");
             if (!select) return;
-            const previousValue = select.value;
-            select.innerHTML = '<option value="">-- Seleziona Dipendente --</option>\n<option value="tutti">-- Tutti i dipendenti --</option>';
             
-            const selectedMonthStr = document.getElementById('inputMonth').value; // YYYY-MM
+            const currentUser = window.appData.currentUser || {};
+            const role = (currentUser.ruolo || "").toLowerCase().trim();
+            const isDriver = role === 'autista';
             
-            // Ordina alfabeticamente e filtra i licenziati
-            const sorted = [...(window.appData.lista_autisti || [])].filter(emp => {
-                if (emp.data_licenziamento && selectedMonthStr) {
-                    return selectedMonthStr <= emp.data_licenziamento.substring(0, 7);
+            const actionsContainer = document.getElementById('adminActionsContainer');
+            if (isDriver) {
+                // Se è autista, può selezionare solo se stesso
+                select.innerHTML = `<option value="${currentUser.id}">${currentUser.nome}</option>`;
+                select.value = currentUser.id;
+                select.disabled = true; // Impedisce modifiche
+                
+                // Nasconde la sezione esportazioni/cedoloni per gli autisti
+                if (actionsContainer) actionsContainer.style.display = 'none';
+
+                // Forza il caricamento automatico delle sue presenze
+                onFilterChange();
+            } else {
+                select.disabled = false;
+                if (actionsContainer) actionsContainer.style.display = 'block';
+                const previousValue = select.value;
+                select.innerHTML = '<option value="">-- Seleziona Dipendente --</option>\n<option value="tutti">-- Tutti i dipendenti --</option>';
+                
+                const selectedMonthStr = document.getElementById('inputMonth').value; // YYYY-MM
+                
+                // Ordina alfabeticamente e filtra i licenziati
+                const sorted = [...(window.appData.lista_autisti || [])].filter(emp => {
+                    if (emp.data_licenziamento && selectedMonthStr) {
+                        return selectedMonthStr <= emp.data_licenziamento.substring(0, 7);
+                    }
+                    return true;
+                }).sort((a, b) => 
+                    (a.nome || '').localeCompare(b.nome || '')
+                );
+                
+                sorted.forEach(emp => {
+                    const opt = document.createElement("option");
+                    opt.value = emp.id;
+                    opt.textContent = emp.nome + (emp.ruolo ? ` (${emp.ruolo})` : '');
+                    select.appendChild(opt);
+                });
+                
+                if (previousValue && sorted.some(e => e.id === previousValue)) {
+                    select.value = previousValue;
                 }
-                return true;
-            }).sort((a, b) => 
-                (a.nome || '').localeCompare(b.nome || '')
-            );
-            
-            sorted.forEach(emp => {
-                const opt = document.createElement("option");
-                opt.value = emp.id;
-                opt.textContent = emp.nome + (emp.ruolo ? ` (${emp.ruolo})` : '');
-                select.appendChild(opt);
-            });
-            
-            if (previousValue && sorted.some(e => e.id === previousValue)) {
-                select.value = previousValue;
             }
         };
 
@@ -542,7 +686,24 @@ const db = getFirestore(app);
 
         function onFilterChange() {
             const empId = document.getElementById('selectEmployee').value;
-            const month = document.getElementById('inputMonth').value;
+            let month = document.getElementById('inputMonth').value;
+
+            const currentUser = window.appData.currentUser || {};
+            const role = (currentUser.ruolo || "").toLowerCase().trim();
+            const isDriver = role === 'autista';
+
+            if (isDriver && month) {
+                const now = new Date();
+                const currentMonthStr = now.toISOString().substring(0, 7); // "YYYY-MM"
+                now.setMonth(now.getMonth() - 1);
+                const pastMonthStr = now.toISOString().substring(0, 7);
+                
+                if (month !== currentMonthStr && month !== pastMonthStr) {
+                    alert("Come autista, puoi visualizzare e modificare solo il mese corrente e il mese scorso!");
+                    document.getElementById('inputMonth').value = currentMonthStr;
+                    month = currentMonthStr;
+                }
+            }
 
             if (currentUnsub) {
                 currentUnsub();
@@ -567,8 +728,11 @@ const db = getFirestore(app);
                 selectedEmployee = { id: 'tutti', nome: 'Tutti i dipendenti', ruolo: 'tutti' };
                 document.getElementById('viewModeSection').style.display = 'block';
             } else {
-                selectedEmployee = window.appData.lista_autisti.find(e => e.id === empId);
-                // Can still show view mode if we want, or hide it. Let's show it so they can filter.
+                if (isDriver) {
+                    selectedEmployee = { id: currentUser.id, nome: currentUser.nome, ruolo: role };
+                } else {
+                    selectedEmployee = window.appData.lista_autisti.find(e => e.id === empId);
+                }
                 document.getElementById('viewModeSection').style.display = 'block';
             }
             selectedMonth = month;
@@ -811,13 +975,47 @@ const db = getFirestore(app);
                     const docId = `${autista.id}_${dateStr}`;
                     const record = presenzeMap[docId] || {};
 
+                    // Se oreTotali non è presente o è 0, ma ci sono orari inseriti, eseguiamo ricalcolo dinamico
+                    const hasOreTot = (parseFloat(record.oreTotali) || 0.0) !== 0.0;
+                    const valInizioM = (record.oraInizioM || '').trim();
+                    const valFineM = (record.oraFineM || '').trim();
+                    const valInizioP = (record.oraInizioP || '').trim();
+                    const valFineP = (record.oraFineP || '').trim();
+                    const hasTimeValues = valInizioM || valFineM || valInizioP || valFineP;
+
+                    if (!hasOreTot && hasTimeValues) {
+                        const calcolo = calculateHours(valInizioM, valFineM, valInizioP, valFineP);
+                        record.oreTotali = calcolo.oreTotali;
+                        record.oreOrdinarie = calcolo.oreOrdinarie;
+                        record.oreStraordinarie = calcolo.oreStraordinarie;
+                    }
+
                     // Determina se abilitare l'orario sdoppiato
                     const isMagazzino = record.isMagazzino !== undefined ? record.isMagazzino : false;
                     const isDoubleShift = defaultDoubleShift || isMagazzino;
 
+                    // Controllo editabilità temporale per autisti (solo oggi e ieri)
+                    const currentUser = window.appData.currentUser || {};
+                    const isDriver = (currentUser.ruolo || "").toLowerCase().trim() === 'autista';
+                    let canEdit = true;
+                    
+                    if (isDriver) {
+                        const today = new Date();
+                        today.setHours(0,0,0,0);
+                        const yesterday = new Date(today);
+                        yesterday.setDate(yesterday.getDate() - 1);
+                        
+                        const rowDate = new Date(dateStr);
+                        rowDate.setHours(0,0,0,0);
+                        
+                        // È modificabile solo se la data della riga è maggiore o uguale a ieri
+                        canEdit = (rowDate.getTime() >= yesterday.getTime());
+                    }
+
                     const tr = document.createElement('tr');
                     if (isWeekend) tr.classList.add('weekend');
                     if (record.hasError) tr.classList.add('row-error');
+                    if (record.discrepanzaAutista) tr.classList.add('row-discrepancy');
                     tr.dataset.date = dateStr;
                     tr.dataset.docId = docId;
                     tr.dataset.autistaId = autista.id; // NEEDED FOR SAVE LATER!
@@ -832,8 +1030,8 @@ const db = getFirestore(app);
                         <td><input type="number" class="edit-input num-input" data-field="kmDelta" value="${record.kmDelta || 0}" disabled readonly></td>
                         ${forceFourCols ? `
                             <td><input type="text" class="edit-input time-input" data-field="oraInizioM" value="${record.oraInizioM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" ></td>
-                            <td><input type="text" class="edit-input time-input" data-field="oraFineM" value="${record.oraFineM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" ></td>
-                            <td><input type="text" class="edit-input time-input" data-field="oraInizioP" value="${record.oraInizioP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" ></td>
+                            <td><input type="text" class="edit-input time-input" data-field="oraFineM" value="${record.oraFineM || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" style="${!isMagazzino ? 'background-color: #f1f5f9; border-color: transparent;' : ''}"></td>
+                            <td><input type="text" class="edit-input time-input" data-field="oraInizioP" value="${record.oraInizioP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" style="${!isMagazzino ? 'background-color: #f1f5f9; border-color: transparent;' : ''}"></td>
                             <td><input type="text" class="edit-input time-input" data-field="oraFineP" value="${record.oraFineP || ''}" disabled placeholder="00:00" onchange="onTimeChange(this)" ></td>
                         ` : `
                             <td>
@@ -855,7 +1053,7 @@ const db = getFirestore(app);
                             <input type="checkbox" data-field="isMagazzino" ${isMagazzino ? 'checked' : ''} style="display:none;" onchange="onDoubleShiftToggle(this)">
                             
                             <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
-                                <button class="btn-edit" onclick="toggleRowEdit(this)">✏️ Mod.</button>
+                                ${canEdit ? `<button class="btn-edit" onclick="toggleRowEdit(this)">✏️ Mod.</button>` : ''}
                                 <button class="btn-dettagli" 
                                     style="${(isMagazzino || parseFloat(record.importo || 0) > 0 || parseFloat(record.litri || 0) > 0 || (record.note && record.note.trim() !== '')) ? 'background-color: #dcfce3; color: #166534; border-color: #86efac;' : ''}" 
                                     onclick="openDettagli(this)">🔍 Dati</button>
@@ -898,23 +1096,44 @@ const db = getFirestore(app);
         window.onDoubleShiftToggle = function(chk) {
             const tr = chk.closest('tr');
             const isChecked = chk.checked;
+            const oraFineM = tr.querySelector('[data-field="oraFineM"]');
             const oraInizioP = tr.querySelector('[data-field="oraInizioP"]');
-            const oraFineP = tr.querySelector('[data-field="oraFineP"]');
+            
+            const btnEdit = tr.querySelector('.btn-edit');
+            const isEditing = btnEdit ? btnEdit.innerText.includes('Salva') : false;
 
-            const isAdmin = selectedEmployee.ruolo === 'amministratore' || selectedEmployee.ruolo === 'impiegata';
-
-            if (isAdmin) {
-                oraInizioP.style.opacity = isChecked ? "1" : "0.3";
-                oraFineP.style.opacity = isChecked ? "1" : "0.3";
-            } else {
+            if (isEditing) {
                 if (isChecked) {
-                    oraInizioP.style.display = "block";
-                    oraFineP.style.display = "block";
+                    if (oraFineM) {
+                        oraFineM.disabled = false;
+                        oraFineM.style.border = "1px solid var(--primary)";
+                        oraFineM.style.background = "white";
+                    }
+                    if (oraInizioP) {
+                        oraInizioP.disabled = false;
+                        oraInizioP.style.border = "1px solid var(--primary)";
+                        oraInizioP.style.background = "white";
+                    }
                 } else {
-                    oraInizioP.value = "";
-                    oraFineP.value = "";
-                    oraInizioP.style.display = "none";
-                    oraFineP.style.display = "none";
+                    if (oraFineM) {
+                        oraFineM.value = "";
+                        oraFineM.disabled = true;
+                        oraFineM.style.border = "1px solid transparent";
+                        oraFineM.style.background = "#f1f5f9";
+                    }
+                    if (oraInizioP) {
+                        oraInizioP.value = "";
+                        oraInizioP.disabled = true;
+                        oraInizioP.style.border = "1px solid transparent";
+                        oraInizioP.style.background = "#f1f5f9";
+                    }
+                }
+            } else {
+                if (oraFineM) {
+                    oraFineM.style.background = isChecked ? "transparent" : "#f1f5f9";
+                }
+                if (oraInizioP) {
+                    oraInizioP.style.background = isChecked ? "transparent" : "#f1f5f9";
                 }
             }
             recalculateRowHours(tr);
@@ -961,55 +1180,16 @@ const db = getFirestore(app);
         };
 
         function recalculateRowHours(tr) {
-            let rowAutista = selectedEmployee;
-            if (selectedEmployee && selectedEmployee.id === 'tutti') {
-                const aId = tr.dataset.autistaId;
-                rowAutista = window.appData.lista_autisti.find(a => a.id === aId) || {};
-            }
-
             const valInizioM = tr.querySelector('[data-field="oraInizioM"]').value.trim();
             const valFineM = tr.querySelector('[data-field="oraFineM"]').value.trim();
             const valInizioP = tr.querySelector('[data-field="oraInizioP"]').value.trim();
             const valFineP = tr.querySelector('[data-field="oraFineP"]').value.trim();
 
-            const decInizioM = parseTime(valInizioM);
-            const decFineM = parseTime(valFineM);
-            const decInizioP = parseTime(valInizioP);
-            const decFineP = parseTime(valFineP);
+            const calcolo = calculateHours(valInizioM, valFineM, valInizioP, valFineP);
 
-            let totalHours = 0.0;
-
-            // Turno unico lungo da InizioM a FineP
-            if (valInizioM && !valFineM && !valInizioP && valFineP) {
-                let diff = decFineP >= decInizioM ? decFineP - decInizioM : (24 - decInizioM) + decFineP;
-                if (decFineP === 0 && decInizioM === 0) diff = 0;
-                totalHours = diff;
-            } else {
-                // Turni separati
-                let mornHours = 0.0;
-                if (valInizioM && valFineM) {
-                    mornHours = decFineM >= decInizioM ? decFineM - decInizioM : (24 - decInizioM) + decFineM;
-                    if (decFineM === 0 && decInizioM === 0) mornHours = 0;
-                }
-                
-                let aftHours = 0.0;
-                if (valInizioP && valFineP) {
-                    aftHours = decFineP >= decInizioP ? decFineP - decInizioP : (24 - decInizioP) + decFineP;
-                    if (decFineP === 0 && decInizioP === 0) aftHours = 0;
-                }
-                
-                totalHours = mornHours + aftHours;
-            }
-
-            // Determina ore standard (Diego Boschetto: 8 ore, altri: 8.5 ore)
-            const isDiego = rowAutista && rowAutista.nome ? (rowAutista.nome.toLowerCase().includes('diego boschetto') || rowAutista.nome.toLowerCase().includes('boschetto diego')) : false;
-            const standardHours = isDiego ? 8.0 : 8.5;
-            const ordinarie = Math.min(totalHours, standardHours);
-            const straordinarie = Math.max(0.0, totalHours - standardHours);
-
-            tr.querySelector('[data-field="oreTotali"]').value = totalHours.toFixed(2);
-            tr.querySelector('[data-field="oreOrdinarie"]').value = ordinarie.toFixed(2);
-            tr.querySelector('[data-field="oreStraordinarie"]').value = straordinarie.toFixed(2);
+            tr.querySelector('[data-field="oreTotali"]').value = calcolo.oreTotali.toFixed(2);
+            tr.querySelector('[data-field="oreOrdinarie"]').value = calcolo.oreOrdinarie.toFixed(2);
+            tr.querySelector('[data-field="oreStraordinarie"]').value = calcolo.oreStraordinarie.toFixed(2);
         }
 
         
@@ -1147,10 +1327,28 @@ const db = getFirestore(app);
         // Toggle edit della riga
         window.toggleRowEdit = async function(btn) {
             const tr = btn.closest('tr');
+            const currentUser = window.appData.currentUser || {};
+            const userRole = (currentUser.ruolo || "").toLowerCase().trim();
+            const isDriver = userRole === 'autista';
+
+            if (isDriver) {
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                const rowDate = new Date(tr.dataset.date);
+                rowDate.setHours(0,0,0,0);
+                
+                if (rowDate.getTime() < yesterday.getTime()) {
+                    alert("Non puoi modificare presenze antecedenti a ieri.");
+                    return;
+                }
+            }
+
             const inputs = tr.querySelectorAll('.edit-input');
             const chkMagazzino = tr.querySelector('[data-field="isMagazzino"]');
 
-            
             let rowAutista = selectedEmployee;
             if (selectedEmployee && selectedEmployee.id === 'tutti') {
                 const aId = tr.dataset.autistaId;
@@ -1160,16 +1358,20 @@ const db = getFirestore(app);
 
             const defaultDoubleShift = isAdmin;
 
-
-
-
             if (btn.innerText.includes('Mod')) {
                 // Attiva modalità modifica
+                const isMag = chkMagazzino.checked;
                 inputs.forEach(input => {
                     if (input.dataset.field !== 'oreTotali' && input.dataset.field !== 'oreOrdinarie' && input.dataset.field !== 'oreStraordinarie' && input.dataset.field !== 'kmDelta') {
-                        input.disabled = false;
-                        input.style.border = "1px solid var(--primary)";
-                        input.style.background = "white";
+                        if ((input.dataset.field === 'oraFineM' || input.dataset.field === 'oraInizioP') && !isMag) {
+                            input.disabled = true;
+                            input.style.border = "1px solid transparent";
+                            input.style.background = "#f1f5f9";
+                        } else {
+                            input.disabled = false;
+                            input.style.border = "1px solid var(--primary)";
+                            input.style.background = "white";
+                        }
                     }
                 });
 
@@ -1213,9 +1415,49 @@ const db = getFirestore(app);
                 tr.querySelector('[data-field="oraInizioP"]').value = oraInizioP;
                 tr.querySelector('[data-field="oraFineP"]').value = oraFineP;
 
+                // Calcola la discrepanza autista
+                const record = currentPresenzeData[docId] || {};
+                let discrepanzaAutista = record.discrepanzaAutista || false;
+
+                if (isDriver) {
+                    const hasTripData = (
+                        record.viaggioOraInizioM !== undefined || 
+                        record.viaggioOraFineM !== undefined || 
+                        record.viaggioOraInizioP !== undefined || 
+                        record.viaggioOraFineP !== undefined ||
+                        record.viaggioKmPartenza !== undefined ||
+                        record.viaggioKmArrivo !== undefined
+                    );
+
+                    if (hasTripData) {
+                        const vInizioM = record.viaggioOraInizioM || "";
+                        const vFineM = record.viaggioOraFineM || "";
+                        const vInizioP = record.viaggioOraInizioP || "";
+                        const vFineP = record.viaggioOraFineP || "";
+                        const vKmPartenza = Number(record.viaggioKmPartenza) || 0;
+                        const vKmArrivo = Number(record.viaggioKmArrivo) || 0;
+
+                        if (
+                            oraInizioM !== vInizioM ||
+                            oraFineM !== vFineM ||
+                            oraInizioP !== vInizioP ||
+                            oraFineP !== vFineP ||
+                            kmPartenza !== vKmPartenza ||
+                            kmArrivo !== vKmArrivo
+                        ) {
+                            discrepanzaAutista = true;
+                        } else {
+                            discrepanzaAutista = false;
+                        }
+                    }
+                } else {
+                    // Resetta la discrepanza se modifica un admin/impiegata
+                    discrepanzaAutista = false;
+                }
+
                 const updatedData = {
-                    autistaId: selectedEmployee.id,
-                    autistaNome: selectedEmployee.nome,
+                    autistaId: rowAutista.id || selectedEmployee.id,
+                    autistaNome: rowAutista.nome || selectedEmployee.nome,
                     data: dateStr,
                     mese: selectedMonth,
                     giornoSettimana: tr.querySelector('strong').innerText,
@@ -1233,17 +1475,23 @@ const db = getFirestore(app);
                     importo: importo,
                     litri: litri,
                     note: tr.querySelector('[data-field="note"]').value,
-                    isMagazzino: chkMagazzino.checked
+                    isMagazzino: chkMagazzino.checked,
+                    discrepanzaAutista: discrepanzaAutista
                 };
 
                 try {
-                    await setDoc(doc(db, "presenze", docId), updatedData);
+                    await setDoc(doc(db, "presenze", docId), updatedData, { merge: true });
 
                     // Disattiva input
+                    const isMag = chkMagazzino.checked;
                     inputs.forEach(input => {
                         input.disabled = true;
                         input.style.border = "1px solid transparent";
-                        input.style.background = "transparent";
+                        if ((input.dataset.field === 'oraFineM' || input.dataset.field === 'oraInizioP') && !isMag) {
+                            input.style.background = "#f1f5f9";
+                        } else {
+                            input.style.background = "transparent";
+                        }
                     });
                     chkMagazzino.disabled = true;
 
@@ -1509,7 +1757,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=2.170"></script>
+    <script type="module" src="cedolini-splitter.js?v=2.63"></script>
 
 </body>
 </html>

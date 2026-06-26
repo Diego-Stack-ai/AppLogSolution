@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "2.170";
+const APP_VERSION = "2.63";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -56,7 +56,7 @@ window.navigateWithState = (page) => window.location.href = page;
 
 // --- GESTIONE TURNI (WIZARD) ---
 let currentStep = 1;
-const totalSteps = 4;
+const totalSteps = 2;
 
 window.nextStep = (step) => {
     currentStep = step;
@@ -180,7 +180,11 @@ window.renderMezziInserimento = function() {
     mezzi.sort((a,b) => a.targa.localeCompare(b.targa)).forEach(m => {
         const opt = document.createElement('option');
         opt.value = m.targa;
-        opt.textContent = m.modello ? `${m.targa} (${m.modello})` : m.targa;
+        let label = m.targa;
+        const modelloPulito = m.modello && m.modello !== 'undefined' && m.modello !== 'null' ? m.modello.trim() : '';
+        if (modelloPulito) label += ` (${modelloPulito})`;
+        if (m.patente) label += ` [${m.patente}]`;
+        opt.textContent = label;
         select.appendChild(opt);
     });
     if (currentVal) select.value = currentVal;
@@ -252,6 +256,12 @@ window.updateViaggi = async function() {
 
     const selectedDate = document.getElementById("data")?.value;
     
+    // Trova il progetto su Firestore (lista_progetti) per ottenere i viaggi configurati
+    const progetto = (window.appData.lista_progetti || []).find(
+        p => (p.nome || '').toUpperCase() === clienteNome.toUpperCase()
+    );
+    const viaggiConfigurati = progetto ? (progetto.viaggi || []).map(v => v.toUpperCase()) : [];
+
     let options = [];
     let loadedFromManifest = false;
 
@@ -285,15 +295,10 @@ window.updateViaggi = async function() {
                         }
                     });
                     
-                    if (clienteNome.toUpperCase() === 'GRAN CHEF' || clienteNome.toUpperCase() === 'GRAND CHEF') {
-                        options = links
-                            .map(l => l.v_id)
-                            .filter(v_id => v_id && (v_id.toLowerCase().includes('chef') || v_id.toLowerCase().includes('grand')));
-                    } else if (clienteNome.toUpperCase() === 'PROGETTO SCUOLE') {
-                        options = links
-                            .map(l => l.v_id)
-                            .filter(v_id => v_id && !(v_id.toLowerCase().includes('chef') || v_id.toLowerCase().includes('grand')));
-                    }
+                    // Filtra dal manifest solo i viaggi configurati nelle impostazioni per questo cliente
+                    options = links
+                        .map(l => l.v_id)
+                        .filter(v_id => v_id && viaggiConfigurati.includes(v_id.toUpperCase()));
                     
                     if (options.length > 0) {
                         loadedFromManifest = true;
@@ -307,13 +312,9 @@ window.updateViaggi = async function() {
     }
 
     if (!loadedFromManifest) {
-        // 1. Cerca il progetto su Firestore (lista_progetti)
-        const progetto = (window.appData.lista_progetti || []).find(
-            p => (p.nome || '').toUpperCase() === clienteNome.toUpperCase()
-        );
-        options = progetto ? (progetto.viaggi || []) : [];
+        options = viaggiConfigurati;
 
-        // 2. Fallback hardcoded se non trovato su Firestore
+        // Fallback hardcoded se non trovato su Firestore
         if (options.length === 0) {
             const viaggiMap = {
                 "PROGETTO SCUOLE": ["VIAGGIO 01", "VIAGGIO 02", "VIAGGIO 03", "VIAGGIO 04", "VIAGGIO 05", "VIAGGIO 06", "VIAGGIO 07", "VIAGGIO 08", "VIAGGIO 09", "VIAGGIO 10"],
@@ -328,19 +329,6 @@ window.updateViaggi = async function() {
                 ]
             };
             options = viaggiMap[clienteNome.toUpperCase()] || [];
-        }
-
-        // --- FILTRO BAUER BASATO SULLA DATA ---
-        if (clienteNome.toUpperCase() === 'BAUER') {
-            const dataInput = document.getElementById('data');
-            if (dataInput && dataInput.value) {
-                const date = new Date(dataInput.value);
-                if (!isNaN(date.getTime())) {
-                    const dayOfWeek = date.getDay();
-                    const dayDigit = dayOfWeek === 0 ? "7" : String(dayOfWeek);
-                    options = options.filter(v => v.trim().startsWith(dayDigit));
-                }
-            }
         }
     }
 
@@ -362,10 +350,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 1. Gestione Login
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+        const handleLoginSubmit = async () => {
             let email = document.getElementById('username')?.value.trim().toLowerCase();
             if (email) {
                 // Rimuove caratteri invisibili
@@ -383,13 +370,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             const password = document.getElementById('password')?.value.trim();
-            const btn = loginForm.querySelector('.btn-primary');
             const alertEl = document.getElementById('authAlert');
 
-            if (!email || !password) return;
+            if (!email || !password) {
+                if (alertEl) {
+                    alertEl.style.display = 'block';
+                    alertEl.style.background = '#fef2f2';
+                    alertEl.style.color = '#991b1b';
+                    alertEl.style.borderColor = '#fee2e2';
+                    alertEl.textContent = "Inserisci nome utente e password.";
+                }
+                return;
+            }
 
-            btn.disabled = true;
-            btn.innerHTML = 'Accesso in corso...';
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = 'Accesso in corso...';
             if (alertEl) { alertEl.style.display = 'none'; }
 
             try {
@@ -410,9 +405,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     alert("Errore Accesso: " + err.message);
                 }
-                btn.disabled = false;
-                btn.innerHTML = 'Accedi ora';
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = 'Accedi ora';
             }
+        };
+
+        loginBtn.addEventListener('click', handleLoginSubmit);
+
+        // Permetti l'invio con il tasto Invio negli input
+        const loginInputs = document.querySelectorAll('#username, #password');
+        loginInputs.forEach(input => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    handleLoginSubmit();
+                }
+            });
         });
     }
 
@@ -544,9 +551,38 @@ window.onUserProfileLoaded = (user) => {
     const autistaEl = document.getElementById('autistaNome');
     if (autistaEl) autistaEl.value = user.nome || '';
     
-    const dashBtn = document.getElementById('dashboardBtn');
     const role = (user.ruolo || 'autista').toLowerCase();
-    if (dashBtn) dashBtn.style.display = (role === 'amministratore' || role === 'impiegata') ? 'flex' : 'none';
+    
+    // Gestione pulsante Dashboard / Home
+    const dashBtn = document.getElementById('dashboardBtn');
+    if (dashBtn) {
+        if (role === 'amministratore' || role === 'impiegata') {
+            dashBtn.style.display = 'flex';
+            dashBtn.title = "Dashboard";
+            dashBtn.onclick = () => window.navigateWithState('dashboard.html');
+            const icon = dashBtn.querySelector('.material-icons-round');
+            if (icon) icon.textContent = 'dashboard';
+        } else {
+            // Se autista
+            const isInserimentoPage = window.location.pathname.includes('inserimento.html');
+            if (isInserimentoPage) {
+                // Non serve il tasto Home se siamo già in inserimento.html
+                dashBtn.style.display = 'none';
+            } else {
+                dashBtn.style.display = 'flex';
+                dashBtn.title = "Inserimento Turno";
+                dashBtn.onclick = () => window.navigateWithState('inserimento.html');
+                const icon = dashBtn.querySelector('.material-icons-round');
+                if (icon) icon.textContent = 'home';
+            }
+        }
+    }
+
+    // Gestione pulsante Le Mie Presenze per autisti
+    const presenzeBtn = document.getElementById('presenzeBtn');
+    if (presenzeBtn) {
+        presenzeBtn.style.display = (role === 'autista') ? 'flex' : 'none';
+    }
 
     // Inizializza i menu a tendina dinamici se i dati sono già pronti
     if (typeof window.renderMezziInserimento === 'function') window.renderMezziInserimento();

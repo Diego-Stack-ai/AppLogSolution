@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.170">
+    <link rel="stylesheet" href="styles.css?v=2.63">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
@@ -288,6 +288,12 @@
                     <div><label style="font-size: 11px; font-weight: 700;">Patente C (Camion) &euro;</label><input type="number" step="0.01" min="0" id="progettoPatC" style="width:100%; margin-top:4px;"></div>
                     <div><label style="font-size: 11px; font-weight: 700;">Navetta Sommacampagna &euro;</label><input type="number" step="0.01" min="0" id="progettoNavS" style="width:100%; margin-top:4px;"></div>
                     <div><label style="font-size: 11px; font-weight: 700;">Navetta Cerea &euro;</label><input type="number" step="0.01" min="0" id="progettoNavC" style="width:100%; margin-top:4px;"></div>
+                    <div style="grid-column: 1 / -1;"><label style="font-size: 11px; font-weight: 700; color:#047857;">Tariffa a Collo &euro;</label><input type="number" step="0.001" min="0" id="progettoCollo" style="width:100%; margin-top:4px;"></div>
+                    <div style="grid-column: 1 / -1; margin-top: 8px; border-top: 1px solid #d1fae5; padding-top: 8px;"><label style="font-size: 12px; font-weight: bold; color: #b45309;">&#9888; Limiti Anomalie (Celle Gialle)</label></div>
+                    <div><label style="font-size: 11px; font-weight: 700;">Limite Km (Pat. B)</label><input type="number" step="1" min="0" id="cattelLimKmB" style="width:100%; margin-top:4px;" placeholder="Es: 100"></div>
+                    <div><label style="font-size: 11px; font-weight: 700;">Limite Km (Pat. C)</label><input type="number" step="1" min="0" id="cattelLimKmC" style="width:100%; margin-top:4px;" placeholder="Es: 100"></div>
+                    <div><label style="font-size: 11px; font-weight: 700;">Limite Peso (Pat. B) kg</label><input type="number" step="1" min="0" id="cattelLimPesoB" style="width:100%; margin-top:4px;" placeholder="Es: 1200"></div>
+                    <div><label style="font-size: 11px; font-weight: 700;">Limite Peso (Pat. C) kg</label><input type="number" step="1" min="0" id="cattelLimPesoC" style="width:100%; margin-top:4px;" placeholder="0 = nessun limite"></div>
                 </div>
             </div>
 
@@ -904,8 +910,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=2.170"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.170"></script>
+    <script src="script.js?v=2.63"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.63"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1006,6 +1012,11 @@ const db  = getFirestore(app);
             const patC = document.getElementById('progettoPatC').value;
             const navS = document.getElementById('progettoNavS').value;
             const navC = document.getElementById('progettoNavC').value;
+            const collo = document.getElementById('progettoCollo').value;
+            const limKmB = document.getElementById('cattelLimKmB').value;
+            const limKmC = document.getElementById('cattelLimKmC').value;
+            const limPesoB = document.getElementById('cattelLimPesoB').value;
+            const limPesoC = document.getElementById('cattelLimPesoC').value;
             const vA = document.getElementById('progettoViaggioA').value;
             const vB = document.getElementById('progettoViaggioB').value;
             const ddt = document.getElementById('progettoCostoDDT').value;
@@ -1021,6 +1032,11 @@ const db  = getFirestore(app);
                     patente_c: patC ? parseFloat(patC) : null,
                     navetta_sommacampagna: navS ? parseFloat(navS) : null,
                     navetta_cerea: navC ? parseFloat(navC) : null,
+                    cattel_collo: collo ? parseFloat(collo) : null,
+                    cattel_lim_km_b: limKmB ? parseFloat(limKmB) : null,
+                    cattel_lim_km_c: limKmC ? parseFloat(limKmC) : null,
+                    cattel_lim_peso_b: limPesoB ? parseFloat(limPesoB) : null,
+                    cattel_lim_peso_c: limPesoC ? parseFloat(limPesoC) : null,
                     viaggio_a: vA ? parseFloat(vA) : null,
                     viaggio_b: vB ? parseFloat(vB) : null,
                     costo_ddt_base: ddt ? parseFloat(ddt) : null,
@@ -1039,7 +1055,8 @@ const db  = getFirestore(app);
 
         function resetForm() {
             editId = null; currentViaggi = []; nomeInput.value = ''; renderTagList();
-            ['progettoPatB','progettoPatC','progettoNavS','progettoNavC',
+            ['progettoPatB','progettoPatC','progettoNavS','progettoNavC','progettoCollo',
+             'cattelLimKmB','cattelLimKmC','cattelLimPesoB','cattelLimPesoC',
              'progettoViaggioA','progettoViaggioB','progettoCostoDDT','progettoForfait',
              'progettoDDTZona1','progettoDDTZona2','progettoDDTZona3'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('tariffeContainerCATTEL').style.display = 'none';
@@ -1058,6 +1075,11 @@ const db  = getFirestore(app);
             document.getElementById('progettoPatC').value = p.patente_c ?? '';
             document.getElementById('progettoNavS').value = p.navetta_sommacampagna ?? '';
             document.getElementById('progettoNavC').value = p.navetta_cerea ?? '';
+            document.getElementById('progettoCollo').value = p.cattel_collo ?? '';
+            document.getElementById('cattelLimKmB').value = p.cattel_lim_km_b ?? '';
+            document.getElementById('cattelLimKmC').value = p.cattel_lim_km_c ?? '';
+            document.getElementById('cattelLimPesoB').value = p.cattel_lim_peso_b ?? '';
+            document.getElementById('cattelLimPesoC').value = p.cattel_lim_peso_c ?? '';
             document.getElementById('progettoViaggioA').value = p.viaggio_a ?? '';
             document.getElementById('progettoViaggioB').value = p.viaggio_b ?? '';
             document.getElementById('progettoCostoDDT').value = p.costo_ddt_base ?? '';

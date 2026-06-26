@@ -79,8 +79,8 @@ onAuthStateChanged(auth, async (user) => {
     
     // Classificazione Pagine
     const isPublicPage = page === 'login.html' || page === 'index.html' || page === '';
-    const isAdminOnlyPage = ['clienti.html', 'impostazioni.html', 'visualizzazione.html', 'mappa_consegne.html', 'dashboard.html', 'link_viaggi.html', 'presenze.html'].includes(page);
-    const isAutistaOnlyPage = ['inserimento.html'].includes(page);
+    const isAdminOnlyPage = ['clienti.html', 'impostazioni.html', 'visualizzazione.html', 'mappa_consegne.html', 'dashboard.html', 'link_viaggi.html'].includes(page);
+    const isAutistaOnlyPage = ['inserimento.html', 'presenze.html'].includes(page);
 
     console.log(`Auth Listener: Utente = ${user ? user.uid : 'NULL'}, Pagina Corrente = ${page}`);
 
@@ -164,9 +164,9 @@ onAuthStateChanged(auth, async (user) => {
                     return;
                 }
 
-                // 2. Protezione assoluta: se l'utente NON è amministratore/impiegata, può accedere SOLO a inserimento.html
+                // 2. Protezione assoluta: se l'utente NON è amministratore/impiegata, può accedere SOLO a inserimento.html e presenze.html
                 if (!isAdmin) {
-                    if (page !== 'inserimento.html') {
+                    if (page !== 'inserimento.html' && page !== 'presenze.html') {
                         console.error(`REDIRECT DEBUG: Accesso negato a [${page}] per utente non amministratore. Reindirizzamento a inserimento.html.`);
                         window.location.replace('inserimento.html');
                         return;

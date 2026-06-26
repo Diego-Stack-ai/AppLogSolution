@@ -41,6 +41,72 @@ try {
 
 const auth = getAuth(app);
 
+/**
+ * Helper to parse time string (HH:MM or decimal) into decimal hours.
+ */
+export function parseTimeToDecimal(val) {
+    if (!val || val.trim() === "") return 0.0;
+    const cleanVal = val.trim().replace(',', '.');
+    if (cleanVal.includes(':')) {
+        const parts = cleanVal.split(':');
+        const h = parseInt(parts[0]) || 0;
+        const m = parseInt(parts[1]) || 0;
+        return h + m / 60.0;
+    }
+    const f = parseFloat(cleanVal);
+    return isNaN(f) ? 0.0 : f;
+}
+
+/**
+ * Centralized calculation of hours based on the four time points.
+ * Standard contract limit is always 8.0 hours.
+ */
+export function calculateHours(oraInizioM, oraFineM, oraInizioP, oraFineP) {
+    const valInizioM = (oraInizioM || "").trim();
+    const valFineM = (oraFineM || "").trim();
+    const valInizioP = (oraInizioP || "").trim();
+    const valFineP = (oraFineP || "").trim();
+
+    const decInizioM = parseTimeToDecimal(valInizioM);
+    const decFineM = parseTimeToDecimal(valFineM);
+    const decInizioP = parseTimeToDecimal(valInizioP);
+    const decFineP = parseTimeToDecimal(valFineP);
+
+    let totalHours = 0.0;
+
+    // Turno unico lungo da InizioM a FineP
+    if (valInizioM && !valFineM && !valInizioP && valFineP) {
+        let diff = decFineP >= decInizioM ? decFineP - decInizioM : (24 - decInizioM) + decFineP;
+        if (decFineP === 0 && decInizioM === 0) diff = 0;
+        totalHours = diff;
+    } else {
+        // Turni separati
+        let mornHours = 0.0;
+        if (valInizioM && valFineM) {
+            mornHours = decFineM >= decInizioM ? decFineM - decInizioM : (24 - decInizioM) + decFineM;
+            if (decFineM === 0 && decInizioM === 0) mornHours = 0;
+        }
+        
+        let aftHours = 0.0;
+        if (valInizioP && valFineP) {
+            aftHours = decFineP >= decInizioP ? decFineP - decInizioP : (24 - decInizioP) + decFineP;
+            if (decFineP === 0 && decInizioP === 0) aftHours = 0;
+        }
+        
+        totalHours = mornHours + aftHours;
+    }
+
+    const standardHours = 8.0; // Ore ordinarie sempre a 8.0 per tutti
+    const ordinarie = Math.min(totalHours, standardHours);
+    const straordinarie = Math.max(0.0, totalHours - standardHours);
+
+    return {
+        oreTotali: Number(totalHours.toFixed(2)),
+        oreOrdinarie: Number(ordinarie.toFixed(2)),
+        oreStraordinarie: Number(straordinarie.toFixed(2))
+    };
+}
+
 // ─── SALVA VIAGGIO ────────────────────────────────────────────────────────────
 /**
  * Crea o aggiorna un viaggio nella collezione "viaggi".
@@ -89,27 +155,97 @@ export async function saveTrip(tripData) {
                 clientePresenza += ` - ${tripData.viaggio}`;
             }
 
+            // Recupera la presenza esistente per consolidare i dati (evitando sovrascritture in viaggi multipli)
+            const existingSnap = await getDoc(presenzeRef);
+            let finalCliente = clientePresenza;
+            let finalKmPartenza = Number(tripData.kmPartenza) || 0;
+            let finalKmArrivo = Number(tripData.kmArrivo) || 0;
+            let finalNote = tripData.nota || "";
+
+            let finalInizioM = tripData.mattinaInizio || "";
+            let finalFineM = tripData.mattinaFine || "";
+            let finalInizioP = tripData.pomeriggioInizio || "";
+            let finalFineP = tripData.pomeriggioFine || "";
+
+            if (existingSnap.exists()) {
+                const existingData = existingSnap.data();
+                
+                // Consolidamento clienti/viaggi
+                if (existingData.cliente && existingData.cliente.trim() !== "") {
+                    const listClienti = existingData.cliente.split(" / ").map(c => c.trim());
+                    if (!listClienti.includes(clientePresenza) && clientePresenza.trim() !== "") {
+                        finalCliente = existingData.cliente + " / " + clientePresenza;
+                    } else {
+                        finalCliente = existingData.cliente;
+                    }
+                }
+
+                // Consolidamento km (minimo kmPartenza, massimo kmArrivo)
+                if (existingData.kmPartenza && existingData.kmPartenza > 0) {
+                    if (finalKmPartenza > 0) {
+                        finalKmPartenza = Math.min(existingData.kmPartenza, finalKmPartenza);
+                    } else {
+                        finalKmPartenza = existingData.kmPartenza;
+                    }
+                }
+                if (existingData.kmArrivo && existingData.kmArrivo > 0) {
+                    finalKmArrivo = Math.max(existingData.kmArrivo, finalKmArrivo);
+                }
+
+                // Consolidamento note
+                if (existingData.note && existingData.note.trim() !== "") {
+                    if (tripData.nota && tripData.nota.trim() !== "" && !existingData.note.includes(tripData.nota)) {
+                        finalNote = existingData.note + " | " + tripData.nota;
+                    } else {
+                        finalNote = existingData.note;
+                    }
+                }
+
+                // Consolidamento tempi per viaggi multipli nello stesso giorno
+                finalInizioM = existingData.oraInizioM || finalInizioM;
+                finalFineM = existingData.oraFineM || finalFineM;
+                finalInizioP = existingData.oraInizioP || finalInizioP;
+                finalFineP = existingData.oraFineP || finalFineP;
+            }
+
+            const finalKmDelta = Math.max(0, finalKmArrivo - finalKmPartenza);
+
+            const calcolo = calculateHours(
+                finalInizioM,
+                finalFineM,
+                finalInizioP,
+                finalFineP
+            );
+
             const presenzaPayload = {
                 autistaId: user.uid,
                 nomeAutista: tripData.autista,
                 data: tripData.data,
-                cliente: clientePresenza,
-                kmPartenza: Number(tripData.kmPartenza) || 0,
-                kmArrivo: Number(tripData.kmArrivo) || 0,
-                kmDelta: Number(tripData.delta_km) || 0,
-                oraInizioM: tripData.mattinaInizio || "",
-                oraFineM: tripData.mattinaFine || "",
-                oraInizioP: tripData.pomeriggioInizio || "",
-                oraFineP: tripData.pomeriggioFine || "",
-                oreOrdinarie: Number(tripData.ore_ordinarie) || 0,
-                oreStraordinarie: Number(tripData.ore_straordinarie) || 0,
-                oreTotali: Number(tripData.ore_totali) || 0,
-                note: tripData.nota || "",
-                importo: Number(tripData.importo) || 0
+                cliente: finalCliente,
+                kmPartenza: finalKmPartenza,
+                kmArrivo: finalKmArrivo,
+                kmDelta: finalKmDelta,
+                oraInizioM: finalInizioM,
+                oraFineM: finalFineM,
+                oraInizioP: finalInizioP,
+                oraFineP: finalFineP,
+                oreOrdinarie: calcolo.oreOrdinarie,
+                oreStraordinarie: calcolo.oreStraordinarie,
+                oreTotali: calcolo.oreTotali,
+                note: finalNote,
+                importo: Number(tripData.importo) || 0,
+                isMagazzino: tripData.isMagazzino || false,
+                // Campi "congelati" originari del viaggio per il confronto discrepanze
+                viaggioOraInizioM: finalInizioM,
+                viaggioOraFineM: finalFineM,
+                viaggioOraInizioP: finalInizioP,
+                viaggioOraFineP: finalFineP,
+                viaggioKmPartenza: finalKmPartenza,
+                viaggioKmArrivo: finalKmArrivo
             };
             
             await setDoc(presenzeRef, presenzaPayload, { merge: true });
-            console.log(`[Firestore] Sincronizzato con presenze [ID: ${presenzeDocId}]`);
+            console.log(`[Firestore] Sincronizzato con presenze (consolidato) [ID: ${presenzeDocId}]`);
         }
     } catch (err) {
         console.error("Errore sincro presenze:", err);

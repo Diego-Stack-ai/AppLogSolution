@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2.170">
+    <link rel="stylesheet" href="styles.css?v=2.63">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
@@ -1570,6 +1570,18 @@ const db = getFirestore(app);
             
             const z = DATA_ZONE.find(x => x.id_zona === modalZid);
             if (z) z.nome_giro = v;
+            
+            // --- SYNC FIRESTORE ---
+            if (targetFileDate && modalZid) {
+                const viaggio_id = `${targetFileDate}_${modalZid}`;
+                try {
+                    const docRef = doc(db, 'clienti/DNR/viaggi ddt', viaggio_id);
+                    await updateDoc(docRef, { nome_giro: v });
+                    console.log(`[Firestore] Updated nome_giro in viaggi ddt for ${viaggio_id}`);
+                } catch (e) {
+                    console.log(`[Firestore] Document ${viaggio_id} not updated:`, e);
+                }
+            }
             
             // --- NUOVA LOGICA AUTO-AGGIUNTA ---
             const isCustomInput = !!document.getElementById('modal-input').value.trim();

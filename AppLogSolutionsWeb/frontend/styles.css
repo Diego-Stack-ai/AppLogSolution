@@ -585,7 +585,7 @@ select option {
   select,
   textarea {
     padding: 8px 10px !important;
-    font-size: 13px !important;
+    font-size: 16px !important; /* Impedisce lo zoom automatico nei browser mobile */
     border-radius: 8px !important;
     height: auto !important;
   }

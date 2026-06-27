@@ -1778,8 +1778,10 @@ def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data
     xl = pd.ExcelFile(f_io)
     
     def _cell_val(row_data, col_name, fallback_idx=None):
-        if col_name in row_data.index:
-            val = row_data[col_name]
+        lower_col = str(col_name).lower()
+        matched_key = next((k for k in row_data.index if str(k).lower() == lower_col), None)
+        if matched_key is not None:
+            val = row_data[matched_key]
         elif fallback_idx is not None and len(row_data) > fallback_idx:
             val = row_data.iloc[fallback_idx]
         else:

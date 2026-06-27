@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.70">
+    <link rel="stylesheet" href="styles.css?v=2.82">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -327,8 +327,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.70"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.70"></script>
+    <script src="script.js?v=2.82"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.82"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -351,38 +351,7 @@
             // Chiamata immediata (ripristino browser)
             window.updateExtraButtons();
 
-            // Scarica Dati InTime - popup con credenziali
-            document.getElementById('btn-download-cattel').addEventListener('click', function() {
-                Swal.fire({
-                    title: 'Dati CATTEL (KPI Report)',
-                    html: `
-                        <p>Per elaborare i dati di CATTEL è necessario caricare il file Excel aggiornato.</p>
-                        <p>Puoi scaricarlo tramite l'estrazione automatica sul tuo PC, oppure manualmente dal portale logistico.</p>
-                        <hr>
-                        <div style="text-align: left; background: #f8f9fa; padding: 10px; border-radius: 5px;">
-                            <b>Utente:</b>
-                            <div style="display: flex; margin-bottom: 10px; margin-top: 5px;">
-                                <input type="text" value="cattel.somma" readonly style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px 0 0 4px; font-family: monospace;">
-                                <button onclick="navigator.clipboard.writeText('cattel.somma'); Swal.showValidationMessage('Utente copiato!'); setTimeout(()=>Swal.resetValidationMessage(), 2000);" style="background: #0ea5e9; color: white; border: none; padding: 8px 12px; border-radius: 0 4px 4px 0; cursor: pointer;"><span class="material-icons-round" style="font-size: 18px; vertical-align: middle;">content_copy</span></button>
-                            </div>
-                            <b>Password:</b>
-                            <div style="display: flex; margin-top: 5px;">
-                                <input type="text" value="HuhN28ci" readonly style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px 0 0 4px; font-family: monospace;">
-                                <button onclick="navigator.clipboard.writeText('HuhN28ci'); Swal.showValidationMessage('Password copiata!'); setTimeout(()=>Swal.resetValidationMessage(), 2000);" style="background: #0ea5e9; color: white; border: none; padding: 8px 12px; border-radius: 0 4px 4px 0; cursor: pointer;"><span class="material-icons-round" style="font-size: 18px; vertical-align: middle;">content_copy</span></button>
-                            </div>
-                        </div>
-                    `,
-                    icon: 'info',
-                    showCancelButton: true,
-                    confirmButtonText: '<i class="material-icons-round" style="vertical-align: middle;">open_in_new</i> Vai al sito Cattel',
-                    cancelButtonText: 'Chiudi',
-                    confirmButtonColor: '#0ea5e9'
-                }).then(function(result) {
-                    if (result.isConfirmed) {
-                        window.open('https://intime.lac-consulting.eu/webClient/login', '_blank');
-                    }
-                });
-            });
+            // Il gestore per btn-download-cattel è stato spostato nel blocco modulo Firestore per poter usare il db.
 
             // Carica KPI - apre dialog file
             document.getElementById('btn-import-cattel').addEventListener('click', function() {
@@ -401,11 +370,70 @@
 
     <script type="module">
         import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, addDoc, writeBatch, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, writeBatch, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
 
         const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
         const db = getFirestore(app);
+
+        window.mostraPopupCattel = async () => {
+            let username = "cattel.somma";
+            let password = "HuhN28ci";
+            let loginUrl = "https://intime.lac-consulting.eu/webClient/login.xhtml";
+            
+            try {
+                const { getDocs, collection, query, where } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                const q = query(collection(db, "progetti"), where("nome", "==", "CATTEL"));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    const d = snap.docs[0].data();
+                    if (d.cattel_username) username = d.cattel_username;
+                    if (d.cattel_password) password = d.cattel_password;
+                    if (d.cattel_url) loginUrl = d.cattel_url;
+                }
+            } catch (err) {
+                console.warn("Impossibile caricare credenziali da progetti Firestore:", err);
+            }
+
+            Swal.fire({
+                title: 'Credenziali Portale CATTEL',
+                html: `
+                    <div style="text-align: left; background: #f8f9fa; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; font-family: 'Outfit', sans-serif;">
+                        <div style="margin-bottom: 12px;">
+                            <label style="font-weight: 700; font-size: 13px; color: #475569; display: block; margin-bottom: 4px;">USERNAME</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input id="swal-username" type="text" class="swal2-input" value="${username}" readonly style="margin: 0; flex: 1; height: 38px; font-size: 14px; font-family: monospace; background-color: #e2e8f0; cursor: not-allowed;">
+                                <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('swal-username').value); Swal.showValidationMessage('Username copiato!'); setTimeout(()=>Swal.resetValidationMessage(), 1500);" style="background: #10b981; color: white; border: none; padding: 0 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center;"><span class="material-icons-round" style="font-size: 18px; color: white !important;">content_copy</span></button>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="font-weight: 700; font-size: 13px; color: #475569; display: block; margin-bottom: 4px;">PASSWORD</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input id="swal-password" type="text" class="swal2-input" value="${password}" readonly style="margin: 0; flex: 1; height: 38px; font-size: 14px; font-family: monospace; background-color: #e2e8f0; cursor: not-allowed;">
+                                <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('swal-password').value); Swal.showValidationMessage('Password copiata!'); setTimeout(()=>Swal.resetValidationMessage(), 1500);" style="background: #10b981; color: white; border: none; padding: 0 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center;"><span class="material-icons-round" style="font-size: 18px; color: white !important;">content_copy</span></button>
+                            </div>
+                        </div>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 8px; line-height: 1.4;">
+                            💡 Per modificare queste credenziali, vai in <b>Impostazioni Sistema ➔ Gestione Clienti & Viaggi ➔ CATTEL</b>.
+                        </div>
+                    </div>
+                `,
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: '<span class="material-icons-round" style="vertical-align: middle; font-size:18px; margin-right:4px; color: white !important;">open_in_new</span> Vai al Portale',
+                cancelButtonText: 'Chiudi',
+                confirmButtonColor: '#0ea5e9',
+                cancelButtonColor: '#64748b'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.open(loginUrl, '_blank');
+                }
+            });
+        };
+
+        document.getElementById('btn-download-cattel').addEventListener('click', () => {
+            window.mostraPopupCattel();
+        });
 
         // Utils for date parsing
         function getDayFromDateString(dateStr) {

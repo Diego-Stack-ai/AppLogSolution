@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.70">
+    <link rel="stylesheet" href="styles.css?v=2.82">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
@@ -294,6 +294,10 @@
                     <div><label style="font-size: 11px; font-weight: 700;">Limite Km (Pat. C)</label><input type="number" step="1" min="0" id="cattelLimKmC" style="width:100%; margin-top:4px;" placeholder="Es: 100"></div>
                     <div><label style="font-size: 11px; font-weight: 700;">Limite Peso (Pat. B) kg</label><input type="number" step="1" min="0" id="cattelLimPesoB" style="width:100%; margin-top:4px;" placeholder="Es: 1200"></div>
                     <div><label style="font-size: 11px; font-weight: 700;">Limite Peso (Pat. C) kg</label><input type="number" step="1" min="0" id="cattelLimPesoC" style="width:100%; margin-top:4px;" placeholder="0 = nessun limite"></div>
+                    <div style="grid-column: 1 / -1; margin-top: 8px; border-top: 1px solid #d1fae5; padding-top: 8px;"><label style="font-size: 12px; font-weight: bold; color: #047857;">🔑 Credenziali Portale InTime</label></div>
+                    <div><label style="font-size: 11px; font-weight: 700;">Username Portale</label><input type="text" id="cattelUsername" style="width:100%; margin-top:4px;" placeholder="cattel.somma"></div>
+                    <div><label style="font-size: 11px; font-weight: 700;">Password Portale</label><input type="text" id="cattelPassword" style="width:100%; margin-top:4px;" placeholder="Password"></div>
+                    <div style="grid-column: 1 / -1; margin-top: 8px;"><label style="font-size: 11px; font-weight: 700;">URL Portale Login</label><input type="text" id="cattelUrl" style="width:100%; margin-top:4px;" placeholder="https://intime.lac-consulting.eu/webClient/login.xhtml"></div>
                 </div>
             </div>
 
@@ -910,8 +914,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=2.70"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.70"></script>
+    <script src="script.js?v=2.82"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.82"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1037,6 +1041,9 @@ const db  = getFirestore(app);
                     cattel_lim_km_c: limKmC ? parseFloat(limKmC) : null,
                     cattel_lim_peso_b: limPesoB ? parseFloat(limPesoB) : null,
                     cattel_lim_peso_c: limPesoC ? parseFloat(limPesoC) : null,
+                    cattel_username: document.getElementById('cattelUsername').value.trim(),
+                    cattel_password: document.getElementById('cattelPassword').value.trim(),
+                    cattel_url: document.getElementById('cattelUrl').value.trim(),
                     viaggio_a: vA ? parseFloat(vA) : null,
                     viaggio_b: vB ? parseFloat(vB) : null,
                     costo_ddt_base: ddt ? parseFloat(ddt) : null,
@@ -1057,6 +1064,7 @@ const db  = getFirestore(app);
             editId = null; currentViaggi = []; nomeInput.value = ''; renderTagList();
             ['progettoPatB','progettoPatC','progettoNavS','progettoNavC','progettoCollo',
              'cattelLimKmB','cattelLimKmC','cattelLimPesoB','cattelLimPesoC',
+             'cattelUsername','cattelPassword','cattelUrl',
              'progettoViaggioA','progettoViaggioB','progettoCostoDDT','progettoForfait',
              'progettoDDTZona1','progettoDDTZona2','progettoDDTZona3'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('tariffeContainerCATTEL').style.display = 'none';
@@ -1080,6 +1088,9 @@ const db  = getFirestore(app);
             document.getElementById('cattelLimKmC').value = p.cattel_lim_km_c ?? '';
             document.getElementById('cattelLimPesoB').value = p.cattel_lim_peso_b ?? '';
             document.getElementById('cattelLimPesoC').value = p.cattel_lim_peso_c ?? '';
+            document.getElementById('cattelUsername').value = p.cattel_username ?? '';
+            document.getElementById('cattelPassword').value = p.cattel_password ?? '';
+            document.getElementById('cattelUrl').value = p.cattel_url ?? '';
             document.getElementById('progettoViaggioA').value = p.viaggio_a ?? '';
             document.getElementById('progettoViaggioB').value = p.viaggio_b ?? '';
             document.getElementById('progettoCostoDDT').value = p.costo_ddt_base ?? '';

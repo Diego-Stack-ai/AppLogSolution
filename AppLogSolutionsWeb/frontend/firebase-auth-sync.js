@@ -253,7 +253,8 @@ function startRealtimeSync(isAdmin) {
                 provincia: data.prov || data.provincia || '',
                 lng: data.lon || data.lng || '',
                 orarioMin: data.orariomin || data.orarioMin || '',
-                orarioMax: data.orariomax || data.orarioMax || ''
+                orarioMax: data.orariomax || data.orarioMax || '',
+                tipologiaGrado: data.tipologia_grado || data.tipologiaGrado || ''
             });
         });
         window.appData.lista_clienti = clienti; // Popola correttamente clienti.html

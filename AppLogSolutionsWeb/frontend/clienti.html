@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Clienti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.70">
+    <link rel="stylesheet" href="styles.css?v=2.82">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     
     <!-- PWA & Mobile Optimization -->
@@ -15,8 +15,8 @@
     <link rel="apple-touch-icon" href="img/logo.png">
     <meta name="theme-color" content="#4f46e5">
 
-    <script src="script.js?v=2.70" defer></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.70"></script>
+    <script src="script.js?v=2.82" defer></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.82"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDLnhP2Q4bz2ubYwcMLiD3-qq4c220eVKw&loading=async&callback=initAutocomplete&libraries=places&language=it"></script>
@@ -279,12 +279,17 @@
     </nav>
 
     <main class="main-container">
-        <div class="search-bar-container" style="display: flex; gap: 10px; align-items: center;">
-            <div class="search-input-wrapper" style="flex: 1;">
+        <div class="search-bar-container" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <div class="search-input-wrapper" style="flex: 2; min-width: 250px;">
                 <span class="material-icons-round">search</span>
                 <input type="text" id="custSearch" placeholder="Cerca per nome, codice, città o indirizzo..." autocomplete="off">
             </div>
-            <button onclick="window.openAddModal()" class="btn-primary" style="width: auto; height: 50px; padding: 0 20px; border-radius: 15px; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+            <div style="flex: 1; min-width: 180px;">
+                <select id="brandFilter" style="width: 100%; height: 54px; padding: 0 16px; border: 1px solid var(--border); border-radius: 16px; font-family: 'Outfit'; font-size: 16px; outline: none; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.03); cursor: pointer; transition: border-color 0.2s;">
+                    <option value="">Tutti i Fornitori</option>
+                </select>
+            </div>
+            <button onclick="window.openAddModal()" class="btn-primary" style="width: auto; height: 54px; padding: 0 20px; border-radius: 16px; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
                 <span class="material-icons-round">person_add</span>
                 Nuovo Cliente
             </button>
@@ -433,19 +438,67 @@
             const container = document.getElementById('custContainer');
             const countEl = document.getElementById('resultsCount');
 
+            let brandsListCached = [];
+            function aggiornaFiltroBrand() {
+                const select = document.getElementById('brandFilter');
+                if (!select) return;
+                
+                const clienti = window.appData.lista_clienti || [];
+                const currentBrands = new Set();
+                clienti.forEach(c => {
+                    let b = (c.tipologiaGrado || c.tipologia_grado || '').trim().toUpperCase();
+                    if (b) {
+                        currentBrands.add(b);
+                    } else {
+                        currentBrands.add("DNR");
+                    }
+                });
+                
+                const sortedBrands = Array.from(currentBrands).sort();
+                
+                // Aggiorna la select solo se la lista dei brand unici è cambiata (evita loop e reset di selezione)
+                const listStr = sortedBrands.join('|');
+                if (listStr !== brandsListCached.join('|')) {
+                    const currentSelection = select.value;
+                    select.innerHTML = '<option value="">Tutti i Fornitori</option>';
+                    sortedBrands.forEach(b => {
+                        const opt = document.createElement('option');
+                        opt.value = b;
+                        opt.textContent = b;
+                        select.appendChild(opt);
+                    });
+                    if (currentBrands.has(currentSelection)) {
+                        select.value = currentSelection;
+                    }
+                    brandsListCached = sortedBrands;
+                }
+            }
+
             window.renderClienti = function(query = '') {
+                aggiornaFiltroBrand();
+                
                 const q = query || (searchInput ? searchInput.value.trim().toLowerCase() : '');
                 const clienti = window.appData.lista_clienti || [];
                 let filtered = clienti;
 
                 if (q.length >= 2) {
-                    filtered = clienti.filter(c => 
+                    filtered = filtered.filter(c => 
                         (c.nome || '').toLowerCase().includes(q) || 
                         (c.citta || '').toLowerCase().includes(q) ||
                         (c.indirizzo || '').toLowerCase().includes(q) ||
                         (c.codiceLatte || '').toLowerCase().includes(q) ||
                         (c.codiceFrutta || '').toLowerCase().includes(q)
                     );
+                }
+                
+                const brandFilter = document.getElementById('brandFilter');
+                if (brandFilter && brandFilter.value) {
+                    const selected = brandFilter.value;
+                    filtered = filtered.filter(c => {
+                        let b = (c.tipologiaGrado || c.tipologia_grado || '').trim().toUpperCase();
+                        if (!b) b = "DNR";
+                        return b === selected;
+                    });
                 }
 
                 if (countEl) {
@@ -526,6 +579,12 @@
                 searchInput.addEventListener('input', () => {
                     const query = searchInput.value.trim().toLowerCase();
                     renderClienti(query);
+                });
+            }
+            const brandFilter = document.getElementById('brandFilter');
+            if (brandFilter) {
+                brandFilter.addEventListener('change', () => {
+                    renderClienti();
                 });
             }
 

@@ -1713,6 +1713,394 @@ def _genera_pdf_placeholder_grand_chef_io(codice: str, nome: str, ind: str, cit:
     out_stream.seek(0)
     return out_stream
 
+def _genera_pdf_placeholder_cattel_io(codice: str, nome: str, ind: str, cit: str, prov: str, note: str, om: str, oM: str, data: str) -> io.BytesIO:
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    
+    out_stream = io.BytesIO()
+    doc = SimpleDocTemplate(out_stream, pagesize=A4, leftMargin=30, rightMargin=30, topMargin=30, bottomMargin=30)
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle('cattel_title', parent=styles['Heading1'], fontSize=16, leading=20, textColor=colors.HexColor('#0f172a'), spaceAfter=15)
+    body_style = ParagraphStyle('cattel_body', parent=styles['Normal'], fontSize=10, leading=14, textColor=colors.HexColor('#334155'))
+    label_style = ParagraphStyle('cattel_label', parent=styles['Normal'], fontSize=10, leading=14, fontName='Helvetica-Bold', textColor=colors.HexColor('#0f172a'))
+    
+    elements = []
+    elements.append(Paragraph(f"SCHEDA DI CONSEGNA - CANALE CATTEL", title_style))
+    elements.append(Spacer(1, 10))
+    
+    data_table = [
+        [Paragraph("Codice Cliente:", label_style), Paragraph(codice, body_style)],
+        [Paragraph("Destinatario:", label_style), Paragraph(nome, body_style)],
+        [Paragraph("Indirizzo:", label_style), Paragraph(ind, body_style)],
+        [Paragraph("Città:", label_style), Paragraph(f"{cit} ({prov})", body_style)],
+        [Paragraph("Data Consegna:", label_style), Paragraph(data, body_style)],
+        [Paragraph("Fascia Oraria:", label_style), Paragraph(f"Da {om or '—'} A {oM or '14:00'}", body_style)],
+        [Paragraph("Note Consegna:", label_style), Paragraph(note or "Nessuna nota", body_style)]
+    ]
+    
+    t = Table(data_table, colWidths=[120, 380])
+    t.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cbd5e1')),
+        ('BACKGROUND', (0,0), (0,-1), colors.HexColor('#f8fafc')),
+        ('PADDING', (0,0), (-1,-1), 8),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+    ]))
+    elements.append(t)
+    elements.append(Spacer(1, 40))
+    
+    elements.append(Paragraph("<b>FIRMA PER RICEVUTA</b>", label_style))
+    elements.append(Spacer(1, 15))
+    sig_table = [
+        [Paragraph("Data: ____________________", body_style), Paragraph("Firma Leggibile: ___________________________", body_style)]
+    ]
+    t_sig = Table(sig_table, colWidths=[200, 300])
+    t_sig.setStyle(TableStyle([
+        ('PADDING', (0,0), (-1,-1), 10),
+    ]))
+    elements.append(t_sig)
+    
+    doc.build(elements)
+    out_stream.seek(0)
+    return out_stream
+
+def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data_consegna: str, job_id: str) -> dict:
+    import pandas as pd
+    import re
+    
+    nuovi_dati = {}
+    split_files = {}
+    deliveries_list = []
+    
+    f_io = io.BytesIO(excel_bytes)
+    xl = pd.ExcelFile(f_io)
+    
+    def _cell_val(row_data, col_name, fallback_idx=None):
+        if col_name in row_data.index:
+            val = row_data[col_name]
+        elif fallback_idx is not None and len(row_data) > fallback_idx:
+            val = row_data.iloc[fallback_idx]
+        else:
+            return ""
+        return str(val).strip() if pd.notna(val) and str(val).strip() not in ("", "nan") else ""
+
+    def normalize_address(addr):
+        if not addr:
+            return ""
+        addr = str(addr).lower().strip()
+        addr = re.sub(r'\(\s*[a-zA-Z]{2}\s*\)', '', addr)
+        addr = re.sub(r'\b\d{5}\b', '', addr)
+        addr = re.sub(r'[^\w\s]', '', addr)
+        addr = re.sub(r'\b(via|viale|piazza|corso|localita|loc|strada|vicolo|lato|piaz)\b', '', addr)
+        return " ".join(addr.split())
+
+    # Indicizziamo l'anagrafica esistente per l'abbinamento incrociato
+    indirizzi_master = {}
+    for code_db, cust in db_mappati.items():
+        addr_raw = cust.get("ind") or cust.get("indirizzo") or ""
+        norm_addr = normalize_address(addr_raw)
+        if norm_addr and cust.get("lat") and cust.get("lon"):
+            indirizzi_master[norm_addr] = cust
+
+    # Rileva se è presente il foglio Riepilogo
+    has_riepilogo = any(s.lower() == "riepilogo" for s in xl.sheet_names)
+    
+    if has_riepilogo:
+        print("[Parser Cattel] Rilevato formato Riepilogo + Fogli.")
+        # 1. Estrarre anagrafiche dai fogli dei singoli giri
+        clienti_info_excel = {}
+        for s_name in xl.sheet_names:
+            if s_name.lower() in ("riepilogo", "summary"):
+                continue
+                
+            df = xl.parse(s_name)
+            df_clean = df.dropna(how='all')
+            
+            header_row_idx = None
+            for idx, row in df_clean.iterrows():
+                row_vals = [str(val).strip().lower() for val in row.values if pd.notna(val)]
+                if any('committente' in rv for rv in row_vals) or any('codice' in rv for rv in row_vals):
+                    header_row_idx = idx
+                    break
+                    
+            if header_row_idx is not None:
+                df_cols = [str(val).strip() for val in df_clean.loc[header_row_idx].values]
+                df_data = df_clean.loc[header_row_idx + 1:].copy()
+                df_data.columns = df_cols
+            else:
+                df_data = df_clean
+                
+            has_codice_cliente = any('codice cliente' in str(col).lower() for col in df_data.columns)
+            
+            for _, row in df_data.iterrows():
+                if has_codice_cliente:
+                    codice = clean_client_code(_cell_val(row, "Codice cliente", 0))
+                    if not codice or codice.lower() in ('codice cliente', 'codicecliente', 'sommacampagna'):
+                        continue
+                    ragione_sociale = _cell_val(row, "Nome cliente", 1)
+                    indirizzo = _cell_val(row, "Indirizzo", 2)
+                else:
+                    codice = clean_client_code(_cell_val(row, "Zona 2", 7))
+                    if not codice or codice.lower() in ('zona 2', 'zona2'):
+                        continue
+                    ragione_sociale = _cell_val(row, "Nome Cliente", 8)
+                    indirizzo = _cell_val(row, "Indirizzo", 9)
+                    
+                if codice not in clienti_info_excel:
+                    clienti_info_excel[codice] = {
+                        "dest": ragione_sociale,
+                        "ind": indirizzo
+                    }
+
+        # 2. Leggere la sequenza ed i dati reali dal foglio Riepilogo
+        # Cerca il nome esatto del foglio Riepilogo (case-insensitive)
+        riepilogo_name = next(s for s in xl.sheet_names if s.lower() == "riepilogo")
+        df_riep = xl.parse(riepilogo_name)
+        df_riep_clean = df_riep.dropna(how='all')
+        
+        header_row_idx = None
+        for idx, row in df_riep_clean.iterrows():
+            row_vals = [str(val).strip().lower() for val in row.values if pd.notna(val)]
+            if any('codice partenza' in rv for rv in row_vals) or any('targa' in rv for rv in row_vals):
+                header_row_idx = idx
+                break
+                
+        if header_row_idx is not None:
+            df_cols = [str(val).strip() for val in df_riep_clean.loc[header_row_idx].values]
+            df_data_riep = df_riep_clean.loc[header_row_idx + 1:].copy()
+            df_data_riep.columns = df_cols
+        else:
+            df_data_riep = df_riep_clean
+            
+        for _, row in df_data_riep.iterrows():
+            targa = _cell_val(row, "Targa", 2)
+            codice = clean_client_code(_cell_val(row, "Codice arrivo", 8))
+            
+            if not codice or codice.lower() in ('codice arrivo', 'codicearrivo', 'sommacampagna'):
+                continue
+                
+            info_ex = clienti_info_excel.get(codice, {})
+            ragione_sociale = info_ex.get("dest") or _cell_val(row, "Nome cliente") or _cell_val(row, "Nome Cliente") or codice
+            indirizzo = info_ex.get("ind") or _cell_val(row, "Indirizzo")
+            
+            colli = _cell_val(row, "N. PD. CONSEGNATE", 18)
+            if not colli or colli == "0" or colli == "0.0":
+                colli = _cell_val(row, "Quantità") or _cell_val(row, "Quantita")
+                
+            localita = ""
+            provincia = ""
+            if indirizzo:
+                m_prov = re.search(r'\(([^)]+)\)', indirizzo)
+                if m_prov:
+                    provincia = m_prov.group(1).strip().upper()
+                parts = indirizzo.split(',')
+                if len(parts) > 1:
+                    cit_part = parts[-1].strip()
+                    cit_part = re.sub(r'\(.*?\)', '', cit_part).strip()
+                    cit_part = re.sub(r'\d{5}', '', cit_part).strip()
+                    localita = cit_part
+                    
+            orario_min = "08:00"
+            orario_max = "14:00"
+            note = ""
+            
+            codice_l = codice.lower()
+            if codice_l not in db_mappati:
+                if codice not in nuovi_dati:
+                    norm_new_addr = normalize_address(indirizzo)
+                    match_found = False
+                    matched_cust = None
+                    if norm_new_addr and norm_new_addr in indirizzi_master:
+                        matched_cust = indirizzi_master[norm_new_addr]
+                        match_found = True
+                        
+                    if match_found and matched_cust:
+                        nuovi_dati[codice] = {
+                            "dest": ragione_sociale,
+                            "ind": indirizzo,
+                            "cap": matched_cust.get("cap") or "",
+                            "cit": matched_cust.get("cit") or matched_cust.get("citta") or localita,
+                            "prov": matched_cust.get("prov") or matched_cust.get("provincia") or provincia,
+                            "om": matched_cust.get("om") or orario_min,
+                            "oM": matched_cust.get("oM") or orario_max,
+                            "tipo": "CATTEL",
+                            "lat": matched_cust.get("lat"),
+                            "lon": matched_cust.get("lon"),
+                            "stato_suggerito": "giallo",
+                            "matched_name": matched_cust.get("cliente") or matched_cust.get("nome_consegna") or "",
+                            "matched_brand": matched_cust.get("tipologia_grado") or "MASTER"
+                        }
+                    else:
+                        nuovi_dati[codice] = {
+                            "dest": ragione_sociale,
+                            "ind": indirizzo,
+                            "cap": "",
+                            "cit": localita,
+                            "prov": provincia,
+                            "om": orario_min,
+                            "oM": orario_max,
+                            "tipo": "CATTEL",
+                            "stato_suggerito": "rosso"
+                        }
+            else:
+                cust_d = db_mappati[codice_l]
+                fname = f"{codice}_{data_consegna}.pdf"
+                pdf_io = _genera_pdf_placeholder_cattel_io(
+                    codice,
+                    cust_d.get("cliente") or cust_d.get("nome_consegna") or ragione_sociale,
+                    cust_d.get("ind") or cust_d.get("indirizzo") or indirizzo,
+                    cust_d.get("cit") or cust_d.get("citta") or localita,
+                    cust_d.get("prov") or cust_d.get("provincia") or provincia,
+                    cust_d.get("note") or note,
+                    cust_d.get("om") or orario_min,
+                    cust_d.get("oM") or orario_max,
+                    data_consegna
+                )
+                split_files[fname] = pdf_io
+                
+                # La zona logistica mantiene la targa del giro
+                zona_cod = f"CATTEL_{targa}_{job_id}" if targa else f"CATTEL_{job_id}"
+                
+                deliveries_list.append({
+                    "codice_consegna": codice,
+                    "data": data_consegna,
+                    "num_ddt": f"CATTEL_{codice}",
+                    "pdf_name": fname,
+                    "tipo": "CATTEL",
+                    "zona": zona_cod,
+                    "gc_colli": colli,
+                    "gc_peso_kg": "",
+                    "gc_num_cartone": "",
+                    "cattel_zona_viaggio": targa
+                })
+    else:
+        # Formato Grezzo Standalone (retrocompatibilità: ogni foglio è un giro completo)
+        print("[Parser Cattel] Nessun foglio Riepilogo trovato. Eseguo fallback su formato esteso.")
+        for s_name in xl.sheet_names:
+            df = xl.parse(s_name)
+            df_clean = df.dropna(how='all')
+            
+            header_row_idx = None
+            for idx, row in df_clean.iterrows():
+                row_vals = [str(val).strip().lower() for val in row.values if pd.notna(val)]
+                if any('committente' in rv for rv in row_vals) or any('targa viaggio' in rv for rv in row_vals) or any('codice cliente' in rv for rv in row_vals) or any('nome cliente' in rv for rv in row_vals):
+                    header_row_idx = idx
+                    break
+                    
+            if header_row_idx is not None:
+                df_cols = [str(val).strip() for val in df_clean.loc[header_row_idx].values]
+                df_data = df_clean.loc[header_row_idx + 1:].copy()
+                df_data.columns = df_cols
+            else:
+                df_data = df_clean
+                
+            for _, row in df_data.iterrows():
+                codice = clean_client_code(_cell_val(row, "Zona 2", 7))
+                if not codice or codice.lower() in ('zona 2', 'zona2'):
+                    continue
+                zona_viaggio = _cell_val(row, "Zona Viaggio", 1)
+                ordine = _cell_val(row, "Ordine", 4)
+                ragione_sociale = _cell_val(row, "Nome Cliente", 8)
+                indirizzo = _cell_val(row, "Indirizzo", 9)
+                colli = _cell_val(row, "Quantità", 10)
+                peso_kg = _cell_val(row, "Peso", 12)
+                
+                localita = ""
+                provincia = ""
+                if indirizzo:
+                    m_prov = re.search(r'\(([^)]+)\)', indirizzo)
+                    if m_prov:
+                        provincia = m_prov.group(1).strip().upper()
+                    parts = indirizzo.split(',')
+                    if len(parts) > 1:
+                        cit_part = parts[-1].strip()
+                        cit_part = re.sub(r'\(.*?\)', '', cit_part).strip()
+                        cit_part = re.sub(r'\d{5}', '', cit_part).strip()
+                        localita = cit_part
+                        
+                orario_min = "08:00"
+                orario_max = "14:00"
+                note = ""
+                
+                codice_l = codice.lower()
+                if codice_l not in db_mappati:
+                    if codice not in nuovi_dati:
+                        norm_new_addr = normalize_address(indirizzo)
+                        match_found = False
+                        matched_cust = None
+                        if norm_new_addr and norm_new_addr in indirizzi_master:
+                            matched_cust = indirizzi_master[norm_new_addr]
+                            match_found = True
+                            
+                        if match_found and matched_cust:
+                            nuovi_dati[codice] = {
+                                "dest": ragione_sociale,
+                                "ind": indirizzo,
+                                "cap": matched_cust.get("cap") or "",
+                                "cit": matched_cust.get("cit") or matched_cust.get("citta") or localita,
+                                "prov": matched_cust.get("prov") or matched_cust.get("provincia") or provincia,
+                                "om": matched_cust.get("om") or orario_min,
+                                "oM": matched_cust.get("oM") or orario_max,
+                                "tipo": "CATTEL",
+                                "lat": matched_cust.get("lat"),
+                                "lon": matched_cust.get("lon"),
+                                "stato_suggerito": "giallo",
+                                "matched_name": matched_cust.get("cliente") or matched_cust.get("nome_consegna") or "",
+                                "matched_brand": matched_cust.get("tipologia_grado") or "MASTER"
+                            }
+                        else:
+                            nuovi_dati[codice] = {
+                                "dest": ragione_sociale,
+                                "ind": indirizzo,
+                                "cap": "",
+                                "cit": localita,
+                                "prov": provincia,
+                                "om": orario_min,
+                                "oM": orario_max,
+                                "tipo": "CATTEL",
+                                "stato_suggerito": "rosso"
+                            }
+                else:
+                    cust_d = db_mappati[codice_l]
+                    fname = f"{codice}_{data_consegna}.pdf"
+                    pdf_io = _genera_pdf_placeholder_cattel_io(
+                        codice,
+                        cust_d.get("cliente") or cust_d.get("nome_consegna") or ragione_sociale,
+                        cust_d.get("ind") or cust_d.get("indirizzo") or indirizzo,
+                        cust_d.get("cit") or cust_d.get("citta") or localita,
+                        cust_d.get("prov") or cust_d.get("provincia") or provincia,
+                        cust_d.get("note") or note,
+                        cust_d.get("om") or orario_min,
+                        cust_d.get("oM") or orario_max,
+                        data_consegna
+                    )
+                    split_files[fname] = pdf_io
+                    
+                    zona_cod = f"CATTEL_{zona_viaggio}_{job_id}" if zona_viaggio else f"CATTEL_{job_id}"
+                    
+                    deliveries_list.append({
+                        "codice_consegna": codice,
+                        "data": data_consegna,
+                        "num_ddt": ordine if ordine else f"CATTEL_{codice}",
+                        "pdf_name": fname,
+                        "tipo": "CATTEL",
+                        "zona": zona_cod,
+                        "gc_colli": colli,
+                        "gc_peso_kg": peso_kg,
+                        "gc_num_cartone": "",
+                        "cattel_zona_viaggio": zona_viaggio
+                    })
+                    
+    return {
+        "split_files": split_files,
+        "nuovi_dati": nuovi_dati,
+        "nuovi_orari": {},
+        "nuovi_articoli": {},
+        "deliveries": deliveries_list
+    }
+
 def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_consegna: str, job_id: str) -> dict:
     import pandas as pd
     
@@ -1819,6 +2207,11 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
     
     job_ref.update({"status": "processing", "updated_at": firestore.SERVER_TIMESTAMP})
     
+    competenza = data.get("competenza") or data.get("type", "FRUTTA").upper()
+    if competenza in ("GRAND_CHEF", "GRAND CHEF", "GRAN CHEF"):
+        competenza = "GRAN_CHEF"
+    print(f"[INFO] Elaborazione job {job_id} con competenza {competenza}")
+    
     try:
         bucket = storage.bucket(name=BUCKET_NAME)
         path = data.get("storage_path")
@@ -1846,7 +2239,10 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
         # 3. Processing
         if is_excel:
             data_elab = data_lavoro_forzata or datetime.now().strftime("%d-%m-%Y")
-            risultato = _processa_excel_chef_core_logic(file_bytes, db_mappati, data_elab, job_id)
+            if competenza == "CATTEL":
+                risultato = _processa_excel_cattel_core_logic(file_bytes, db_mappati, data_elab, job_id)
+            else:
+                risultato = _processa_excel_chef_core_logic(file_bytes, db_mappati, data_elab, job_id)
         else:
             risultato = _processa_pdf_core_logic(file_bytes, etichetta, db_mappati, db_articoli)
         
@@ -1859,6 +2255,10 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
         if not deliveries:
             job_ref.update({"status": "completed", "message": "Nessun DDT trovato"})
             return {"status": "ok", "pdf_generati": 0}
+            
+        # Applica il campo competenza a ciascun DDT
+        for ddt in deliveries:
+            ddt["competenza"] = competenza
 
         # Se l'utente ha scelto una data nel calendario, ha la precedenza
         if data_lavoro_forzata:
@@ -1894,6 +2294,7 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
         metadata_ddt = {
             "data_elab": data_elab,
             "tipo": etichetta,
+            "competenza": competenza,
             "deliveries": deliveries
         }
         meta_path = f"split_ddt/{data_elab}/{etichetta}/ddt_estratti_{job_id}.json"
@@ -2001,6 +2402,9 @@ def core_genera_report_giornaliero(uid, data_consegna):
                 print(f"[INFO] Leggo file: {blob.name}")
                 try:
                     meta_data = json.loads(blob.download_as_string())
+                    job_competenza = meta_data.get("competenza") or meta_data.get("tipo", "FRUTTA").upper()
+                    if job_competenza in ("GRAND_CHEF", "GRAND CHEF", "GRAN CHEF"):
+                        job_competenza = "GRAN_CHEF"
                     for ddt in meta_data.get("deliveries", []):
                         cod = ddt.get("codice_consegna")
                         cod_l = str(cod).strip().lower()
@@ -2010,6 +2414,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
                             ddt["nome"] = cliente_info.get('cliente') or cliente_info.get('nome_consegna') or cod
                         else:
                             ddt["nome"] = cod
+                        ddt["competenza"] = ddt.get("competenza") or job_competenza
                         ddt_list.append(ddt)
                 except Exception as e_read:
                     print(f"[ERROR] Impossibile leggere {blob.name}: {e_read}")
@@ -2036,6 +2441,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
         cod = ddt.get('codice_consegna')
         cod_l = str(cod).strip().lower()
         tipo = ddt.get('tipo', 'FRUTTA')
+        competenza = ddt.get('competenza') or tipo
         
         # Cerchiamo il cliente nel dizionario pre-caricato
         cliente_info = db_mappati.get(cod_l)
@@ -2142,6 +2548,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
                 "rientri_alert": [],
                 "tipologia_grado": cliente_info.get('tipologia_grado', '') if cliente_info else ('GRAND CHEF' if tipo == 'GRAND_CHEF' else ''),
                 "tipo": tipo,
+                "competenze": [],
                 "gc_colli": ddt.get("gc_colli", ""),
                 "gc_peso_kg": ddt.get("gc_peso_kg", ""),
                 "gc_num_cartone": ddt.get("gc_num_cartone", ""),
@@ -2183,6 +2590,12 @@ def core_genera_report_giornaliero(uid, data_consegna):
             punti_map[chiave]["codici_ddt_frutta"].append(ddt.get('num_ddt', 'UNK'))
         else:
             punti_map[chiave]["codici_ddt_latte"].append(ddt.get('num_ddt', 'UNK'))
+            
+        # Registra la competenza del DDT nel punto consolidato
+        if "competenze" not in punti_map[chiave]:
+            punti_map[chiave]["competenze"] = []
+        if competenza not in punti_map[chiave]["competenze"]:
+            punti_map[chiave]["competenze"].append(competenza)
 
     # --- INTEGRAZIONE RIENTRI DDT ---
     try:
@@ -2268,7 +2681,8 @@ def core_genera_report_giornaliero(uid, data_consegna):
     palette = ["#4f46e5", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#14b8a6", "#6366f1", "#a855f7", "#3b82f6", "#22c55e", "#d946ef", "#84cc16"]
     
     # Dividiamo le zone in categorie
-    dnr_keys = sorted([k for k in zone_dict.keys() if k not in ("DDT_DA_INSERIRE", "0000", "SENZA_ZONA") and not k.startswith("GC_")])
+    dnr_keys = sorted([k for k in zone_dict.keys() if k not in ("DDT_DA_INSERIRE", "0000", "SENZA_ZONA") and not k.startswith("GC_") and not k.startswith("CATTEL_")])
+    cattel_keys = sorted([k for k in zone_dict.keys() if k.startswith("CATTEL_")])
     gc_keys = [k for k in zone_dict.keys() if k.startswith("GC_")]
     
     # Ordina le zone GC per timestamp di creazione del job
@@ -2286,6 +2700,19 @@ def core_genera_report_giornaliero(uid, data_consegna):
             "nome_giro": f"V{idx_dnr:02d}",
             "color": palette[color_index % len(palette)],
             "lista_punti": zone_dict[zid]
+        })
+        color_index += 1
+        
+    # Aggiungi zone Cattel
+    for idx_cattel, zid in enumerate(cattel_keys, start=1):
+        parts = zid.split('_')
+        targa_label = parts[1] if len(parts) > 2 else f"Viaggio {idx_cattel}"
+        zone_finali.append({
+            "id_zona": zid,
+            "nome_giro": f"Cattel {targa_label}",
+            "color": palette[color_index % len(palette)],
+            "lista_punti": zone_dict[zid],
+            "is_cattel": True
         })
         color_index += 1
         
@@ -2506,7 +2933,7 @@ from decimal import Decimal
 
 DEPOT_VEGGIANO = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"}
 DEPOT_CASTENEDOLO = {"lat": 45.471591, "lon": 10.298200, "nome": "DEPOSITO CASTENEDOLO", "indirizzo": "Castenedolo (BS)"}
-DEPOT_SOMMACAMPAGNA = {"lat": 45.405200, "lon": 10.846000, "nome": "DEPOSITO SOMMACAMPAGNA", "indirizzo": "Sommacampagna (VR)"}
+DEPOT_SOMMACAMPAGNA = {"lat": 45.414500, "lon": 10.898500, "nome": "DEPOSITO SOMMACAMPAGNA", "indirizzo": "Via Caselle 90, 37066 Sommacampagna (VR)"}
 
 TRAFFIC_SLOTS_MIN = [600, 630, 660, 690, 720, 750, 780]
 CODICE_VUOTO = "p00000"
@@ -2549,6 +2976,10 @@ def _scrivi_percorsi_cache(key, data):
     _save_storage_cache("directions_cache.json")
 
 def _get_depot_for_points_cloud(punti):
+    # Se c'è anche una sola consegna Cattel, forziamo il deposito a Sommacampagna
+    if any(p.get("tipo") == "CATTEL" or p.get("competenza") == "CATTEL" for p in punti):
+        return DEPOT_SOMMACAMPAGNA
+
     conteggio = {
         "BS": 0, "VR": 0, "MN": 0, "PD": 0,
         "UD": 0, "BL": 0, "TV": 0, "VI": 0, "ALTRO": 0,

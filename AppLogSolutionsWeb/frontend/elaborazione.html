@@ -5,15 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.70">
+    <link rel="stylesheet" href="styles.css?v=2.82">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
     <style>
         .upload-section {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
             margin-top: 20px;
             margin-bottom: 30px;
         }
@@ -22,12 +22,23 @@
             background: rgba(255, 255, 255, 0.5);
             border: 2px dashed var(--primary);
             border-radius: 16px;
-            padding: 40px 20px;
+            padding: 24px 16px;
             text-align: center;
             transition: all 0.3s ease;
             cursor: pointer;
             position: relative;
             overflow: hidden;
+        }
+
+        @media (max-width: 900px) {
+            .upload-section {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 480px) {
+            .upload-section {
+                grid-template-columns: 1fr;
+            }
         }
 
         .drop-zone:hover, .drop-zone.dragover {
@@ -62,6 +73,17 @@
         .drop-zone.chef-zone:hover {
             background: rgba(245, 158, 11, 0.1);
             box-shadow: 0 10px 20px -10px rgba(245, 158, 11, 0.4);
+        }
+
+        .drop-zone.cattel-zone {
+            border-color: #10b981;
+        }
+        .drop-zone.cattel-zone .material-icons-round {
+            color: #10b981;
+        }
+        .drop-zone.cattel-zone:hover {
+            background: rgba(16, 185, 129, 0.1);
+            box-shadow: 0 10px 20px -10px rgba(16, 185, 129, 0.4);
         }
 
         .drop-zone h3 {
@@ -268,10 +290,22 @@
                 <!-- Zona GRAND CHEF -->
                 <div class="drop-zone chef-zone" id="zone-chef">
                     <span class="material-icons-round">restaurant</span>
-                    <h3>Excel Grand Chef</h3>
+                    <h3>Excel Gran Chef</h3>
                     <p>Trascina qui l'Excel o clicca per sfogliare</p>
                     <input type="file" id="file-chef" class="file-input" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, .xlsx" multiple>
                     <div class="files-container" id="container-chef"></div>
+                </div>
+
+                <!-- Zona CATTEL -->
+                <div class="drop-zone cattel-zone" id="zone-cattel" style="position: relative;">
+                    <span class="material-icons-round">local_shipping</span>
+                    <h3>Excel Cattel</h3>
+                    <p>Trascina qui l'Excel o clicca per sfogliare</p>
+                    <input type="file" id="file-cattel" class="file-input" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, .xlsx" multiple>
+                    <div class="files-container" id="container-cattel"></div>
+                    <button type="button" class="glass-btn" id="btn-credenziali-cattel" style="margin-top: 10px; padding: 6px 12px; font-size: 12px; border-radius: 8px; color: #10b981; border: 1.5px solid #10b981; position: relative; z-index: 10; font-weight: 700; width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px; background: white;">
+                        <span class="material-icons-round" style="font-size: 16px !important; margin: 0 !important; color: #10b981 !important; margin-bottom: 0px !important; vertical-align: middle;">vpn_key</span> CREDENZIALI PORTALE
+                    </button>
                 </div>
             </div>
 
@@ -335,12 +369,12 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.70"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.70"></script>
+    <script src="script.js?v=2.82"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.82"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, limit, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, limit, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
         import { firebaseConfig } from "./firebase-config.js"; 
 
@@ -356,6 +390,7 @@
         let filesFrutta = [];
         let filesLatte = [];
         let filesChef = [];
+        let filesCattel = [];
 
         function setupMultiFileSelect(inputId, zoneId, containerId, filesArray, typeName) {
             const input = document.getElementById(inputId);
@@ -411,7 +446,7 @@
 
         function checkReadyState() {
             const btn = document.getElementById('btn-avvia');
-            const total = filesFrutta.length + filesLatte.length + filesChef.length;
+            const total = filesFrutta.length + filesLatte.length + filesChef.length + filesCattel.length;
             if (total > 0) {
                 btn.disabled = false;
                 btn.innerHTML = `<span class="material-icons-round">cloud_upload</span> Carica ${total} file`;
@@ -424,6 +459,67 @@
         setupMultiFileSelect('file-frutta', 'zone-frutta', 'container-frutta', filesFrutta, 'Frutta');
         setupMultiFileSelect('file-latte', 'zone-latte', 'container-latte', filesLatte, 'Latte');
         setupMultiFileSelect('file-chef', 'zone-chef', 'container-chef', filesChef, 'GRAND_CHEF');
+        setupMultiFileSelect('file-cattel', 'zone-cattel', 'container-cattel', filesCattel, 'CATTEL');
+
+        document.getElementById('btn-credenziali-cattel').addEventListener('click', (e) => {
+            e.stopPropagation();
+            window.mostraPopupCattel();
+        });
+
+        window.mostraPopupCattel = async () => {
+            let username = "cattel.somma";
+            let password = "HuhN28ci";
+            let loginUrl = "https://intime.lac-consulting.eu/webClient/login.xhtml";
+            
+            try {
+                const { getDocs, collection, query, where } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                const q = query(collection(db, "progetti"), where("nome", "==", "CATTEL"));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    const d = snap.docs[0].data();
+                    if (d.cattel_username) username = d.cattel_username;
+                    if (d.cattel_password) password = d.cattel_password;
+                    if (d.cattel_url) loginUrl = d.cattel_url;
+                }
+            } catch (err) {
+                console.warn("Impossibile caricare credenziali da progetti Firestore:", err);
+            }
+
+            Swal.fire({
+                title: 'Credenziali Portale CATTEL',
+                html: `
+                    <div style="text-align: left; background: #f8f9fa; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; font-family: 'Outfit', sans-serif;">
+                        <div style="margin-bottom: 12px;">
+                            <label style="font-weight: 700; font-size: 13px; color: #475569; display: block; margin-bottom: 4px;">USERNAME</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input id="swal-username" type="text" class="swal2-input" value="${username}" readonly style="margin: 0; flex: 1; height: 38px; font-size: 14px; font-family: monospace; background-color: #e2e8f0; cursor: not-allowed;">
+                                <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('swal-username').value); Swal.showValidationMessage('Username copiato!'); setTimeout(()=>Swal.resetValidationMessage(), 1500);" style="background: #10b981; color: white; border: none; padding: 0 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center;"><span class="material-icons-round" style="font-size: 18px; color: white !important;">content_copy</span></button>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="font-weight: 700; font-size: 13px; color: #475569; display: block; margin-bottom: 4px;">PASSWORD</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input id="swal-password" type="text" class="swal2-input" value="${password}" readonly style="margin: 0; flex: 1; height: 38px; font-size: 14px; font-family: monospace; background-color: #e2e8f0; cursor: not-allowed;">
+                                <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('swal-password').value); Swal.showValidationMessage('Password copiata!'); setTimeout(()=>Swal.resetValidationMessage(), 1500);" style="background: #10b981; color: white; border: none; padding: 0 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center;"><span class="material-icons-round" style="font-size: 18px; color: white !important;">content_copy</span></button>
+                            </div>
+                        </div>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 8px; line-height: 1.4;">
+                            💡 Per modificare queste credenziali, vai in <b>Impostazioni Sistema ➔ Gestione Clienti & Viaggi ➔ CATTEL</b>.
+                        </div>
+                    </div>
+                `,
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: '<span class="material-icons-round" style="vertical-align: middle; font-size:18px; margin-right:4px; color: white !important;">open_in_new</span> Vai al Portale',
+                cancelButtonText: 'Chiudi',
+                confirmButtonColor: '#0ea5e9',
+                cancelButtonColor: '#64748b'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.open(loginUrl, '_blank');
+                }
+            });
+        };
 
         function getTenantDbPath(typeName) {
             const t = typeName.toUpperCase();
@@ -461,9 +557,23 @@
                         try {
                             const tenantPath = getTenantDbPath(typeName);
                             const jobsRef = collection(db, ...tenantPath, 'processing_jobs');
+                            
+                            let competenzaVal = typeName.toUpperCase();
+                            const tnUpper = typeName.toUpperCase();
+                            if (tnUpper === "FRUTTA") {
+                                competenzaVal = "DNR_FRUTTA";
+                            } else if (tnUpper === "LATTE") {
+                                competenzaVal = "DNR_LATTE";
+                            } else if (tnUpper === "GRAND_CHEF" || tnUpper === "GRAND CHEF" || tnUpper === "GRAN CHEF") {
+                                competenzaVal = "GRAN_CHEF";
+                            } else if (tnUpper === "CATTEL") {
+                                competenzaVal = "CATTEL";
+                            }
+                            
                             const jobDoc = await addDoc(jobsRef, {
                                 status: "uploaded",
                                 type: typeName.toUpperCase(),
+                                competenza: competenzaVal,
                                 data_lavoro: dateStr, // Forziamo la data scelta nel calendario
                                 storage_path: path,
                                 is_excel: isExcel,
@@ -903,7 +1013,7 @@
             document.getElementById('btn-avvia').style.display = 'none';
             document.getElementById('progress-area').style.display = 'block';
             
-            const totalFiles = filesFrutta.length + filesLatte.length + filesChef.length;
+            const totalFiles = filesFrutta.length + filesLatte.length + filesChef.length + filesCattel.length;
             let currentUploaded = 0;
             
             const fillDiv = document.getElementById('progress-fill');
@@ -960,8 +1070,18 @@
 
                 // Upload Chef
                 for (let file of filesChef) {
-                    statText.textContent = `Caricamento Grand Chef: ${file.name} (${currentUploaded + 1}/${totalFiles})...`;
+                    statText.textContent = `Caricamento Gran Chef: ${file.name} (${currentUploaded + 1}/${totalFiles})...`;
                     await uploadFileToStorage(file, "GRAND_CHEF");
+                    currentUploaded++;
+                    let progress = (currentUploaded / totalFiles) * 100;
+                    fillDiv.style.width = progress + '%';
+                    percText.textContent = Math.round(progress) + '%';
+                }
+
+                // Upload Cattel
+                for (let file of filesCattel) {
+                    statText.textContent = `Caricamento Cattel: ${file.name} (${currentUploaded + 1}/${totalFiles})...`;
+                    await uploadFileToStorage(file, "CATTEL");
                     currentUploaded++;
                     let progress = (currentUploaded / totalFiles) * 100;
                     fillDiv.style.width = progress + '%';
@@ -974,11 +1094,13 @@
                 filesFrutta.length = 0;
                 filesLatte.length = 0;
                 filesChef.length = 0;
+                filesCattel.length = 0;
                 
                 // Forza l'aggiornamento grafico dei contenitori a vuoto
                 document.getElementById('container-frutta').innerHTML = '';
                 document.getElementById('container-latte').innerHTML = '';
                 document.getElementById('container-chef').innerHTML = '';
+                document.getElementById('container-cattel').innerHTML = '';
                 
                 // Ripristina lo stile originario delle drop zones
                 document.getElementById('zone-frutta').style.background = 'rgba(255, 255, 255, 0.5)';
@@ -987,6 +1109,8 @@
                 document.getElementById('zone-latte').style.borderColor = '';
                 document.getElementById('zone-chef').style.background = 'rgba(255, 255, 255, 0.5)';
                 document.getElementById('zone-chef').style.borderColor = '';
+                document.getElementById('zone-cattel').style.background = 'rgba(255, 255, 255, 0.5)';
+                document.getElementById('zone-cattel').style.borderColor = '';
 
                 checkReadyState();
 

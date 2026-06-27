@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anomalie - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.70">
+    <link rel="stylesheet" href="styles.css?v=2.82">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -18,6 +18,8 @@
         .tab-content.active { display: block; }
         
         .anomaly-card { background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .anomaly-card.suggested-giallo { border: 2px solid #eab308; background: #fefce8; }
+        .anomaly-card.suggested-rosso { border: 2px solid #ef4444; background: #fef2f2; }
         .anomaly-card h3 { margin: 0 0 16px 0; color: #0f172a; display: flex; align-items: center; justify-content: space-between;}
         
         .grid-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px; }
@@ -98,8 +100,8 @@
 
     </div>
 
-    <script src="script.js?v=2.70"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.70"></script>
+    <script src="script.js?v=2.82"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.82"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -174,14 +176,23 @@ const db = getFirestore(app);
                 };
 
                 const badgeColor = tenant === 'GRAN CHEF' ? '#f59e0b' : '#4f46e5';
+                const suggestedClass = d.stato_suggerito === 'giallo' ? 'suggested-giallo' : (d.stato_suggerito === 'rosso' ? 'suggested-rosso' : '');
+                
+                let matchBadge = '';
+                if (d.stato_suggerito === 'giallo') {
+                    matchBadge = `<span style="font-size:11px; background:#eab308; color:#854d0e; padding:4px 8px; border-radius:6px; margin-left:8px; font-weight:bold; display:inline-flex; align-items:center; gap:4px;"><span class="material-icons-round" style="font-size:14px;">check_circle</span> Trovata corrispondenza: ${d.matched_name || 'cliente esistente'} (${d.matched_brand || 'Master'})</span>`;
+                } else if (d.stato_suggerito === 'rosso') {
+                    matchBadge = `<span style="font-size:11px; background:#ef4444; color:white; padding:4px 8px; border-radius:6px; margin-left:8px; font-weight:bold; display:inline-flex; align-items:center; gap:4px;"><span class="material-icons-round" style="font-size:14px;">report_problem</span> Nuovo indirizzo</span>`;
+                }
 
                 html += `
-                    <div class="anomaly-card" id="card-cli-${id}">
+                    <div class="anomaly-card ${suggestedClass}" id="card-cli-${id}">
                         <h3>
-                            <span style="display:flex; align-items:center; gap:8px;">
+                            <span style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
                                 <span class="material-icons-round" style="color:#ef4444;">storefront</span> 
                                 Codice Rilevato: <span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-family:monospace; color:#475569;">${id}</span>
                                 <span style="font-size:12px; background:${badgeColor}; color:white; padding:4px 8px; border-radius:6px; margin-left:8px;">Fonte: ${d.tipo || 'Sconosciuto'} (${tenant})</span>
+                                ${matchBadge}
                             </span>
                             <button class="delete-btn" onclick="eliminaAnomalia('nuovi codici consegna', '${id}', '${tenant}')" title="Scarta Segnalazione">
                                 <span class="material-icons-round">delete</span>
@@ -196,8 +207,8 @@ const db = getFirestore(app);
                             <div class="input-group"><label>Provincia</label><input type="text" id="cli-${id}-prov" value="${d.prov || ''}"></div>
                             
                             <div class="section-title">Coordinate</div>
-                            <div class="input-group"><label>Latitudine</label><input type="number" step="0.000001" id="cli-${id}-lat" value=""></div>
-                            <div class="input-group"><label>Longitudine</label><input type="number" step="0.000001" id="cli-${id}-lon" value=""></div>
+                            <div class="input-group"><label>Latitudine</label><input type="number" step="0.000001" id="cli-${id}-lat" value="${d.lat || ''}"></div>
+                            <div class="input-group"><label>Longitudine</label><input type="number" step="0.000001" id="cli-${id}-lon" value="${d.lon || ''}"></div>
                             <div class="input-group" style="grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 4px; margin-bottom: 12px;">
                                 <button type="button" class="action-btn" onclick="apriGeolocalizzatoreMappa('${id}', 'cli')" style="background: #0ea5e9; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 8px; border: none; color: white; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#0284c7';" onmouseout="this.style.background='#0ea5e9';">
                                     <span class="material-icons-round" style="font-size: 18px;">map</span>📍 Geolocalizza con Google Maps
@@ -738,8 +749,8 @@ const db = getFirestore(app);
             
             document.getElementById('geoloc-title').textContent = `Geolocalizza: ${ragSoc || 'Nuovo Cliente'}`;
             
-            // Precompila l'input di ricerca con l'indirizzo attuale
-            const fullAddress = `${ind}, ${cit} ${cap} (${prov})`;
+            // Precompila l'input di ricerca con l'indirizzo attuale (se manca la città usa la ragione sociale per aiutare Google Places)
+            const fullAddress = (ind && !cit) ? `${ragSoc}, ${ind}` : `${ind}, ${cit} ${cap} (${prov})`;
             document.getElementById('geoloc-search-input').value = ind ? fullAddress : '';
             
             // Inizializza i valori visualizzati delle coordinate

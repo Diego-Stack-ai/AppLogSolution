@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Giro {{ v_id }} - Autisti</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&libraries=geometry,marker&v=weekly"></script>
+    <style>
+        :root { --p: #4f46e5; --accent: #10b981; --bg: #f8fafc; --card: #ffffff; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; background: var(--bg); color: #0f172a; overflow: hidden; }
+
+        /* Split Screen 50/50 */
+        #map { height: 50vh; width: 100%; border-bottom: 2px solid #e2e8f0; }
+        #delivery-list { height: 50vh; width: 100%; overflow-y: auto; padding: 15px; padding-bottom: 80px; }
+
+        /* Header */
+        .info-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+        .trip-title { margin: 0; font-size: 1.5rem; font-weight: 800; }
+
+        /* Card Consegna */
+        .stop-card { 
+            background: var(--card); border-radius: 20px; padding: 16px; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 15px; border: 2.5px solid #e2e8f0; 
+            cursor: pointer; position: relative; transition: 0.2s;
+        }
+        .stop-card:active { transform: scale(0.98); background: #f1f5f9; }
+        
+        .stop-num { 
+            width: 32px; height: 32px; background: var(--p); color: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0;
+        }
+
+        .stop-info { flex: 1; min-width: 0; }
+        .client-name { display: block; font-size: 0.95rem; font-weight: 800; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .client-addr { font-size: 0.78rem; color: #64748b; font-weight: 600; line-height: 1.3; }
+
+        /* Pulsante NAVIGA */
+        .btn-nav { 
+            background: var(--accent); color: white; width: 45px; height: 45px;
+            border-radius: 14px; display: flex; align-items: center; justify-content: center;
+            text-decoration: none; flex-shrink: 0; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+        }
+
+        /* Selettore Viaggi Bottom Bar */
+        .bottom-bar { 
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 65px;
+            background: #1e293b; display: flex; align-items: center; gap: 8px; 
+            padding: 0 15px; overflow-x: auto; white-space: nowrap; z-index: 1000;
+        }
+        .v-link { 
+            padding: 8px 18px; border-radius: 12px; background: #334155; 
+            text-decoration: none; color: white; font-weight: 700; font-size: 0.85rem;
+        }
+        .v-link.active { background: var(--accent); }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <div id="delivery-list">
+        <div class="info-header">
+            <h1 class="trip-title">Giro {{ v_id }}</h1>
+            <span style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">{{ deliveries|length }} tappe</span>
+        </div>
+
+        {% for d in deliveries %}
+        <div class="stop-card" onclick="focusOn({{ loop.index0 }})">
+            <div class="stop-num">{{ d.numero_consegna }}</div>
+            <div class="stop-info">
+                <b class="client-name">{{ d.cliente }}</b>
+                <span class="client-addr">{{ d.indirizzo }}</span>
+            </div>
+            <a href="https://www.google.com/maps/dir/?api=1&destination={{ d.lat }},{{ d.lng }}&travelmode=driving" class="btn-nav" onclick="event.stopPropagation()">
+                <span class="material-icons-round">navigation</span>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="bottom-bar">
+        {% for info in all_trips_info %}
+        <a href="/viaggio/{{ info.id }}" class="v-link {{ 'active' if info.id == v_id else '' }}">Giro {{ info.id }}</a>
+        {% endfor %}
+    </div>
+
+    <script>
+        const deliveries = {{ deliveries_js|safe }};
+        let map, markers = [];
+
+        async function initMap() {
+            const { Map } = await google.maps.importLibrary("maps");
+            const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker");
+            
+            map = new Map(document.getElementById("map"), {
+                zoom: 12, border:0, center: { lat: deliveries[0].lat, lng: deliveries[0].lng },
+                mapId: 'DEMO_MAP_ID', disableDefaultUI: true, zoomControl: true
+            });
+
+            // Direzioni (Tracciato Stradale)
+            const directionsService = new google.maps.DirectionsService();
+            const directionsRenderer = new google.maps.DirectionsRenderer({
+                map: map, suppressMarkers: true, polylineOptions: { strokeColor: "#4f46e5", strokeOpacity: 0.8, strokeWeight: 6 }
+            });
+
+            // Calcolo percorso strade reali
+            const waypoints = deliveries.slice(1, -1).map(d => ({ location: { lat: d.lat, lng: d.lng }, stopover: true }));
+            directionsService.route({
+                origin: { lat: deliveries[0].lat, lng: deliveries[0].lng },
+                destination: { lat: deliveries[deliveries.length-1].lat, lng: deliveries[deliveries.length-1].lng },
+                waypoints: waypoints,
+                travelMode: google.maps.TravelMode.DRIVING
+            }, (response, status) => {
+                if (status === "OK") directionsRenderer.setDirections(response);
+            });
+
+            // Markers
+            const infoWindow = new google.maps.InfoWindow();
+            deliveries.forEach((d, i) => {
+                const pin = new PinElement({ glyph: (i+1).toString(), background: i === 0 ? '#10b981' : '#4f46e5', borderColor: 'white', glyphColor: 'white', scale: 0.9 });
+                const marker = new AdvancedMarkerElement({ position: { lat: d.lat, lng: d.lng }, map, content: pin.element, title: d.cliente });
+                marker.addListener("click", () => {
+                   infoWindow.setContent(`<div style="padding:10px;"><b>${d.numero_consegna}. ${d.cliente}</b><br><small>${d.indirizzo}</small></div>`);
+                   infoWindow.open(map, marker);
+                });
+                markers.push(marker);
+            });
+
+            const b = new google.maps.LatLngBounds(); deliveries.forEach(d => b.extend({ lat: d.lat, lng: d.lng }));
+            map.fitBounds(b);
+        }
+
+        function focusOn(i) {
+            map.panTo(markers[i].position); map.setZoom(17);
+            google.maps.event.trigger(markers[i], 'click');
+            document.getElementById('map').scrollIntoView({behavior: 'smooth'});
+        }
+
+        window.onload = initMap;
+    </script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "esito": "errore",
+  "differenze": [
+    {
+      "codice": "10-gel ",
+      "tipo": "missing_cloud",
+      "locale": "presente",
+      "cloud": "mancante"
+    },
+    {
+      "codice": "fo-di-gp-01-ni ",
+      "tipo": "quantita",
+      "locale": "22 Colli e 7 Buste",
+      "cloud": "14 Colli"
+    },
+    {
+      "codice": "fo-di-pv-04-lb ",
+      "tipo": "quantita",
+      "locale": "1 Colli e 2 Fette",
+      "cloud": "1 Colli e 10 Fette"
+    }
+  ],
+  "totale_articoli_locale": 15,
+  "totale_articoli_cloud": 14
+}

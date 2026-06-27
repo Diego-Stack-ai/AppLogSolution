@@ -1,0 +1,156 @@
+<!DOCTYPE html><html lang="it" xmlns="http://www.w3.org/1999/xhtml"><head id="j_idt2"><link type="text/css" rel="stylesheet" href="/webClient/javax.faces.resource/theme.css.xhtml?ln=primefaces-bootstrap&amp;v=13.0.10"><link type="text/css" rel="stylesheet" href="/webClient/javax.faces.resource/primeicons/primeicons.css.xhtml?ln=primefaces&amp;v=13.0.10"><script type="text/javascript" src="/webClient/javax.faces.resource/jquery/jquery.js.xhtml?ln=primefaces&amp;v=13.0.10"></script><script type="text/javascript" src="/webClient/javax.faces.resource/jquery/jquery-plugins.js.xhtml?ln=primefaces&amp;v=13.0.10"></script><script type="text/javascript" src="/webClient/javax.faces.resource/core.js.xhtml?ln=primefaces&amp;v=13.0.10"></script><link type="text/css" rel="stylesheet" href="/webClient/javax.faces.resource/components.css.xhtml?ln=primefaces&amp;v=13.0.10"><script type="text/javascript" src="/webClient/javax.faces.resource/components.js.xhtml?ln=primefaces&amp;v=13.0.10"></script><script type="text/javascript" src="/webClient/javax.faces.resource/idlemonitor/idlemonitor.js.xhtml?ln=primefaces&amp;v=13.0.10"></script><script type="text/javascript">if(window.PrimeFaces){PrimeFaces.settings.locale='it';PrimeFaces.settings.viewId='/home.xhtml';PrimeFaces.settings.contextPath='/webClient';PrimeFaces.settings.cookiesSecure=false;}</script>
+		<meta http-equiv="Cache-Control" content="no-store">
+		<meta http-equiv="Pragma" content="no-cache">
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="icon" href="/webClient/images/favicon.png">
+		<title>Menu principale |
+			InTime</title>
+		<link rel="stylesheet" type="text/css" href="/webClient/assets/v/57728/main.css">
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+		<link rel="stylesheet" type="text/css" href="/webClient/scripts/Leaflet/leaflet-routing-machine.css">
+		<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.2.1/dist/maplibre-gl.css">
+		<link rel="stylesheet" type="text/css" href="/webClient/styles/style.css?v=2">
+		<link rel="stylesheet" href="https:/cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
+		<link rel="stylesheet" href="https:/cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
+		<script type="text/javascript" src="scripts/localization.js"></script>
+		<script src="scripts/OpenLayers/OpenLayers.txt" type="text/javascript"></script>
+		<script src="scripts/open-layers-scripts.js" type="text/javascript"></script>
+		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" type="text/javascript"></script>
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+		<script src="scripts/leaflet-scripts.js?v=8" type="text/javascript"></script>
+		<script src="scripts/polyline-decoration.js" type="text/javascript"></script>
+		<script src="scripts/Leaflet/leaflet-routing-machine.js" type="text/javascript"></script>
+		<script src="scripts/sub-trips-map-controller.js" type="text/javascript"></script>
+		<script src="scripts/notification-scripts.js" type="text/javascript"></script>
+		<script src="scripts/primefaces-overrides.js" type="text/javascript"></script>
+		<script type="text/javascript" src="scripts/LeafletBrowserPrint/dist/leaflet.browser.print.js"></script>
+		<script src="https://unpkg.com/maplibre-gl@3.2.1/dist/maplibre-gl.js"></script>
+		<script type="text/javascript" src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.15/leaflet-maplibre-gl.js"></script></head><body id="enMonBdy" style="overflow: hidden; position: relative;" onload="bodyOnloadFunction();" aria-busy="false">
+		
+		
+		<div id="menu">
+<form id="mnuForm" name="mnuForm" method="post" action="/webClient/home" enctype="application/x-www-form-urlencoded">
+<input type="hidden" name="mnuForm" value="mnuForm" style="">
+<div id="mnuForm:j_idt8" style="display: none;"></div><div id="mnuForm:idleDialog" class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-shadow ui-hidden-container" style="text-align: center; display: none; width: 400px; height: auto;" role="dialog" aria-describedby="mnuForm:idleDialog_content" aria-hidden="true" aria-modal="true" aria-labelledby="mnuForm:idleDialog_title"><div class="ui-dialog-titlebar ui-widget-header ui-helper-clearfix ui-corner-top"><span id="mnuForm:idleDialog_title" class="ui-dialog-title">La tua sessione è scaduta</span></div><div class="ui-dialog-content ui-widget-content" id="mnuForm:idleDialog_content" style="height: auto;"><button id="mnuForm:j_idt11" name="mnuForm:j_idt11" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only lac-btn secondary-btn white-btn" onclick="" style=" width: 200px;text-align:center;" type="submit"><span class="ui-button-text ui-c">Accedi nuovamente</span></button></div></div>
+		<div class="navbar navbar-default navbar-fixed-top"><span id="mnuForm:j_idt13" class="ui-idlemonitor"></span>
+			<div class="navbar-header"><a id="mnuForm:j_idt15" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;mnuForm:j_idt15&quot;,f:&quot;mnuForm&quot;});return false;"><img src="/webClient/images/lac.png" height="42px" style="margin:4px;"></a>
+			</div>
+			<div id="navbar" class="collapse navbar-collapse">
+				<ul class="nav navbar-nav">
+					<li class="dropdown"><a id="mnuForm:j_idt18" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;mnuForm:j_idt18&quot;,f:&quot;mnuForm&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();}});return false;">Ordini</a></li>
+					<li class="dropdown"></li>
+					<li class="dropdown"><a id="mnuForm:j_idt22" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;mnuForm:j_idt22&quot;,f:&quot;mnuForm&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();},pa:[{name:&quot;history&quot;,value:&quot;false&quot;},{name:&quot;completedOnly&quot;,value:&quot;false&quot;}]});return false;">Pianificazioni</a></li>
+					<li class="dropdown"><a id="mnuForm:j_idt26" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;mnuForm:j_idt26&quot;,f:&quot;mnuForm&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();}});return false;">Monitoraggio</a></li>
+					<li class="dropdown"><a id="mnuForm:j_idt28" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;mnuForm:j_idt28&quot;,f:&quot;mnuForm&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();}});return false;">Statistiche</a></li>
+					<li class="dropdown"><a id="mnuForm:j_idt30" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;mnuForm:j_idt30&quot;,f:&quot;mnuForm&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();}});return false;">Documenti</a></li>
+					<li class="dropdown"><a id="mnuForm:j_idt32" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;mnuForm:j_idt32&quot;,f:&quot;mnuForm&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();}});return false;">Anagrafiche</a></li>
+					<li class="dropdown"><a id="mnuForm:j_idt34" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;mnuForm:j_idt34&quot;,f:&quot;mnuForm&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();}});return false;">Configurazione</a></li>
+				</ul>
+				<ul class="nav navbar-nav" style="float: right;">
+					<li><span id="mnuForm:notification-panel-group"><div id="mnuForm:j_idt46" style="display: none;"></div></span></li>
+					<li class="dropdown"><a id="mnuForm:j_idt48" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;mnuForm:j_idt48&quot;,f:&quot;mnuForm&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();}});return false;">Track &amp; Trace</a></li>
+					<li class="dropdown"><a id="mnuForm:j_idt50" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;mnuForm:j_idt50&quot;,f:&quot;mnuForm&quot;});return false;"><img src="/webClient/images/eng.png" height="20" style="margin-right:-20px; margin-bottom:20px"></a></li>
+					<li class="dropdown"><a id="mnuForm:j_idt53" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;mnuForm:j_idt53&quot;,f:&quot;mnuForm&quot;});return false;"><img src="/webClient/images/ita.png" height="20" style="margin-bottom:20px"></a></li>
+					<li class="dropdown"><a id="mnuForm:j_idt56" href="#" class="ui-commandlink ui-widget" onclick=";PrimeFaces.ab({s:&quot;mnuForm:j_idt56&quot;,f:&quot;mnuForm&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();},pa:[{name:&quot;id&quot;,value:&quot;88226147&quot;},{name:&quot;from&quot;,value:&quot;home&quot;}]});return false;">Cattel Sommacampagna</a></li>
+					<li class="dropdown"><a id="mnuForm:j_idt60" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;mnuForm:j_idt60&quot;,f:&quot;mnuForm&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();}});return false;">Logout</a></li>
+				</ul>
+			</div>
+		</div><input type="hidden" name="javax.faces.ViewState" id="j_id1:javax.faces.ViewState:0" value="5023141597858285437:2800788533425459756" autocomplete="off" style="">
+</form>
+		</div><span id="growl"></span>
+		
+		<div id="content" style="padding-right: 5px; padding-left: 5px; overflow: auto;">
+		<div style="padding: 5px; width: 100%; height: 100%;"><table style="margin: 10px auto 10px auto;">
+<tbody>
+<tr>
+<td><a href="https://www.lac-consulting.it/intime/"><img src="images/logo.png" height="180px" style="margin:4px;"></a></td>
+</tr>
+</tbody>
+</table>
+
+			<div class="ui-g" style="margin-bottom: 50px;">
+					<div class="ui-g-12 ui-md-6 ui-lg-4">
+						<div class="home-pnl">
+							<div><a id="j_idt72" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;j_idt72&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();},pa:[{name:&quot;brokerId&quot;,value:&quot;87320680&quot;}]});return false;"><img src="images/orders.png" height="100px" width="100px"></a>
+							</div>
+							<div class="home-pnl-label-container"><label id="j_idt76" class="ui-outputlabel ui-widget home-pnl-label"><span class="ui-outputlabel-label">Ordini</span></label>
+							</div>
+						</div>
+					</div>
+					<div class="ui-g-12 ui-md-6 ui-lg-4">
+						<div class="home-pnl">
+							<div><a id="j_idt87" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;j_idt87&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();},pa:[{name:&quot;history&quot;,value:&quot;false&quot;},{name:&quot;completedOnly&quot;,value:&quot;false&quot;}]});return false;"><img src="images/richieste.png" height="100px" width="100px"></a>
+							</div>
+							<div class="home-pnl-label-container"><label id="j_idt92" class="ui-outputlabel ui-widget home-pnl-label"><span class="ui-outputlabel-label">Pianificazioni</span></label>
+							</div>
+						</div>
+					</div>
+					<div class="ui-g-12 ui-md-6 ui-lg-4">
+						<div class="home-pnl">
+							<div><a id="j_idt96" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;j_idt96&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();}});return false;"><img src="images/monitoraggio.png" height="100px" width="100px"></a>
+							</div>
+							<div class="home-pnl-label-container"><label id="j_idt99" class="ui-outputlabel ui-widget home-pnl-label"><span class="ui-outputlabel-label">Monitoraggio</span></label>
+							</div>
+						</div>
+					</div>
+					<div class="ui-g-12 ui-md-6 ui-lg-4">
+						<div class="home-pnl">
+							<div><a id="j_idt103" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;j_idt103&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();}});return false;"><img src="images/statistiche.png" height="100px" width="100px"></a>
+							</div>
+							<div class="home-pnl-label-container"><label id="j_idt106" class="ui-outputlabel ui-widget home-pnl-label"><span class="ui-outputlabel-label">Statistiche</span></label>
+							</div>
+						</div>
+					</div>
+					<div class="ui-g-12 ui-md-6 ui-lg-4">
+						<div class="home-pnl">
+							<div><a id="j_idt110" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;j_idt110&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();}});return false;"><img src="images/documents.png" height="100px" width="100px"></a>
+							</div>
+							<div class="home-pnl-label-container"><label id="j_idt113" class="ui-outputlabel ui-widget home-pnl-label"><span class="ui-outputlabel-label">Documenti</span></label>
+							</div>
+						</div>
+					</div>
+					<div class="ui-g-12 ui-md-6 ui-lg-4">
+						<div class="home-pnl">
+							<div><a id="j_idt117" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;j_idt117&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();}});return false;"><img src="images/config.png" height="100px" width="100px"></a>
+							</div>
+							<div class="home-pnl-label-container"><label id="j_idt120" class="ui-outputlabel ui-widget home-pnl-label"><span class="ui-outputlabel-label">Anagrafiche</span></label>
+							</div>
+						</div>
+					</div>
+					<div class="ui-g-12 ui-md-6 ui-lg-4">
+						<div class="home-pnl">
+							<div><a id="j_idt124" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;j_idt124&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();}});return false;"><img src="images/settings.png" height="100px" width="100px"></a>
+							</div>
+							<div class="home-pnl-label-container"><label id="j_idt127" class="ui-outputlabel ui-widget home-pnl-label"><span class="ui-outputlabel-label">Configurazione</span></label>
+							</div>
+						</div>
+					</div>
+					<div class="ui-g-12 ui-md-6 ui-lg-4">
+						<div class="home-pnl">
+							<div><a id="j_idt131" href="#" class="ui-commandlink ui-widget" onclick="PrimeFaces.ab({s:&quot;j_idt131&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();},pa:[{name:&quot;brokerId&quot;,value:&quot;87320680&quot;}]});return false;"><img src="images/rotte.png" height="100px" width="100px"></a>
+							</div>
+							<div class="home-pnl-label-container"><label id="j_idt135" class="ui-outputlabel ui-widget home-pnl-label"><span class="ui-outputlabel-label">Track &amp; Trace</span></label>
+							</div>
+						</div>
+					</div>
+			</div>
+			<div class="ui-g-12" style="text-align: center;"><img id="j_idt138" src="/webClient/javax.faces.resource/dynamiccontent.properties.xhtml?ln=primefaces&amp;v=13.0.10&amp;pfdrid=32d5b9f46c56cf56a5784aedc2228584&amp;pfdrt=sc&amp;pfdrid_c=true" alt="" height="180px">
+			</div>
+		</div>
+		</div>
+<div id="textarea_simulator" style="position: absolute; top: 0px; left: 0px; visibility: hidden;"></div><div class="ui-dialog-docking-zone"></div><div id="growl_container" class="ui-growl ui-widget" aria-live="polite" style="z-index: 1001;"></div><div id="privacyDialog" class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-shadow ui-hidden-container privacy-modal" style="display: none; width: auto; height: auto;" role="dialog" aria-describedby="privacyDialog_content" aria-hidden="true" aria-modal="true" aria-labelledby="privacyDialog_title"><div class="ui-dialog-titlebar ui-widget-header ui-helper-clearfix ui-corner-top"><span id="privacyDialog_title" class="ui-dialog-title">Attenzione</span></div><div class="ui-dialog-content ui-widget-content" id="privacyDialog_content" style="height: auto;">
+<form id="privacyForm" name="privacyForm" method="post" action="/webClient/home" enctype="application/x-www-form-urlencoded">
+<input type="hidden" name="privacyForm" value="privacyForm" style="">
+
+					<div class="privacy-modal-content">
+						<p>
+							Questa applicazione utilizza dati personali. Cliccando su "Accetto" acconsenti al loro utilizzo in conformità alla nostra
+							<a href="/webClient/resources/privacy/Informativa%20Privacy%20Cattel.pdf" target="_blank">Informativa sulla privacy.</a>
+						</p>
+						<div class="privacy-actions"><button id="privacyForm:j_idt144" name="privacyForm:j_idt144" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only lac-btn secondary-btn" onclick="PrimeFaces.ab({s:&quot;privacyForm:j_idt144&quot;,f:&quot;privacyForm&quot;,onst:function(cfg){PF('blockBodyUIWidget').show();},onco:function(xhr,status,args,data){PF('blockBodyUIWidget').hide();}});return false;" type="submit"><span class="ui-button-text ui-c">Chiudi</span></button><button id="privacyForm:j_idt145" name="privacyForm:j_idt145" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only lac-btn confirm-btn" onclick="PrimeFaces.ab({s:&quot;privacyForm:j_idt145&quot;,f:&quot;privacyForm&quot;,onco:function(xhr,status,args,data){PF('privacyDialog').hide();}});return false;" type="submit"><span class="ui-button-text ui-c">Accetta</span></button>
+						</div>
+					</div><input type="hidden" name="javax.faces.ViewState" id="j_id1:javax.faces.ViewState:1" value="5023141597858285437:2800788533425459756" autocomplete="off" style="">
+</form></div></div><div id="blockUI_enMonBdy_blocker" class="ui-blockui ui-widget-overlay ui-helper-hidden" data-bui-overlay="blockUI" style="z-index: 1040 !important; height: 1080px; width: 1920px; left: 0px; top: 0px;"><div id="blockUI" class="ui-blockui-content ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow" data-bui-content="blockUI" style="left: 903.414px; top: 505px; z-index: 1003;">
+		<span>Caricamento</span>
+		<br><img id="j_idt150" src="/webClient/images/ajaxloadingbar.gif?pfdrid_c=true" alt=""></div></div></body></html>

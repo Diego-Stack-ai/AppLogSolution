@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Nuovi Clienti (Anomalie) - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.82">
+    <link rel="stylesheet" href="styles.css?v=3.83">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <style>
@@ -80,25 +80,36 @@
     <script type="module">
         import { getFirestore, collection, doc, addDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { firebaseConfig } from "./firebase-config.js";
         const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
         const COLL_PATH = ['customers', 'DNR', 'gestione_nuovi_clienti'];
         const FIELDS = ['Codice Frutta', 'Codice Latte', 'A chi va consegnato', 'Indirizzo', 'CAP', 'Città', 'Provincia', 'Orario min', 'Orario max', 'Tipologia consegna'];
         let items = [];
 
-        onSnapshot(collection(db, ...COLL_PATH), (snapshot) => {
-            items = [];
-            snapshot.forEach(d => items.push({ id: d.id, ...d.data() }));
-            document.getElementById('loadingIndicator').style.display = 'none';
-            renderTable();
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                onSnapshot(collection(db, ...COLL_PATH), (snapshot) => {
+                    items = [];
+                    snapshot.forEach(d => items.push({ id: d.id, ...d.data() }));
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                    renderTable();
+                }, (error) => {
+                    console.error("Errore snapshot contatti clienti:", error);
+                    document.getElementById('loadingIndicator').textContent = "Errore permessi di lettura Firestore.";
+                });
+            } else {
+                window.location.href = 'login.html';
+            }
         });
 
         document.getElementById('searchInput').addEventListener('input', renderTable);
 
-        window.renderTable = function() {
+        function renderTable() {
             const q = document.getElementById('searchInput').value.toLowerCase();
             const filtered = items.filter(i => JSON.stringify(i).toLowerCase().includes(q));
             

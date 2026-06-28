@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.98">
+    <link rel="stylesheet" href="styles.css?v=3.99">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -1165,8 +1165,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=3.98"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.98"></script>
+    <script src="script.js?v=3.99"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.99"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1319,13 +1319,30 @@ const functions = getFunctions(app, "europe-west1");
 
                 row.innerHTML = `
                     <div style="flex:1;">${details}</div>
-                    <button type="button" onclick="rimuoviContatto(${i})" style="background:none; border:none; color:#ef4444; font-weight:bold; cursor:pointer; font-size:16px; padding:0 8px;" title="Rimuovi Referente">×</button>
+                    <div style="display:flex; gap: 8px;">
+                        <button type="button" onclick="modificaContatto(${i})" style="background:none; border:none; color:#3b82f6; cursor:pointer; font-size:18px; padding:0 4px;" title="Modifica Referente">✎</button>
+                        <button type="button" onclick="rimuoviContatto(${i})" style="background:none; border:none; color:#ef4444; font-weight:bold; cursor:pointer; font-size:18px; padding:0 4px;" title="Rimuovi Referente">×</button>
+                    </div>
                 `;
                 contattiTagList.appendChild(row);
             });
         }
 
         window.rimuoviContatto = i => { currentContatti.splice(i, 1); renderContattiTagList(); };
+
+        window.modificaContatto = i => {
+            const c = currentContatti[i];
+            nuovoContattoNome.value = c.nome || '';
+            nuovoContattoRuolo.value = c.ruolo || '';
+            nuovoContattoEmail.value = c.email || '';
+            nuovoContattoFisso.value = c.fisso || '';
+            nuovoContattoCellulare.value = c.cellulare || '';
+            nuovoContattoReport.checked = c.isReport || false;
+            
+            // Rimuoviamo temporaneamente il contatto dalla lista finchè non lo "salva" di nuovo
+            currentContatti.splice(i, 1);
+            renderContattiTagList();
+        };
 
         // Salva
         btnSalva.onclick = async () => {

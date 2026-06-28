@@ -601,8 +601,9 @@ const db = getFirestore(app);
                 
                 const selectedMonthStr = document.getElementById('inputMonth').value; // YYYY-MM
                 
-                // Ordina alfabeticamente e filtra i licenziati
+                // Ordina alfabeticamente e filtra i licenziati e i non attivi
                 const sorted = [...(window.appData.lista_autisti || [])].filter(emp => {
+                    if (emp.attivo === false) return false;
                     if (emp.data_licenziamento && selectedMonthStr) {
                         return selectedMonthStr <= emp.data_licenziamento.substring(0, 7);
                     }

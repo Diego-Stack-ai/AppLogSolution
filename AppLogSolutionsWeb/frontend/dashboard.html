@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.99">
+    <link rel="stylesheet" href="styles.css?v=4.00">
     <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"></noscript>
     <!-- PWA & Mobile Optimization -->
@@ -144,7 +144,14 @@
                 <p>Modifica Clienti, Articoli e Rientri DDT (Source of Truth).</p>
             </a>
 
-
+            <!-- Pianificazione Viaggi -->
+            <a href="javascript:void(0)" onclick="window.navigateWithState('pianificazione.html')" class="nav-card" style="border: 2px solid #8b5cf6; background: linear-gradient(145deg, #ffffff, #f5f3ff);">
+                <div class="icon-circle" style="background: #8b5cf6; color: white;">
+                    <span class="material-icons-round" style="font-size: 32px;">route</span>
+                </div>
+                <h3>Pianificazione Viaggi</h3>
+                <p>Assegna in anticipo furgoni e clienti agli autisti tramite il nuovo filtro intelligente.</p>
+            </a>
 
             <!-- Visualizzazione Turni -->
             <a href="javascript:void(0)" onclick="window.navigateWithState('visualizzazione.html')" class="nav-card">
@@ -195,8 +202,8 @@
     </main>
 
 
-    <script src="script.js?v=3.99"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.99"></script>
+    <script src="script.js?v=4.00"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.00"></script>
 </body>
 </html>
 

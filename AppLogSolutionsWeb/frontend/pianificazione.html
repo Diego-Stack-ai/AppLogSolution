@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pianificazione Viaggi - Log Solution</title>
+    <link rel="stylesheet" href="styles.css?v=4.00">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .planning-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .planning-table th, .planning-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .planning-table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            font-size: 13px;
+        }
+
+        .planning-table tr:hover {
+            background-color: #f1f5f9;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .check-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .check-container input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .date-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .driver-name {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 15px;
+        }
+
+        .btn-salva {
+            background-color: var(--primary);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-salva:hover {
+            background-color: #4338ca;
+            transform: translateY(-1px);
+        }
+        
+        .suggestion-badge {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #3730a3;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+            vertical-align: middle;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <nav class="glass-nav">
+        <div class="nav-content">
+            <a href="javascript:void(0)" onclick="window.navigateWithState('dashboard.html')" class="back-btn" title="Torna alla Dashboard">
+                <span class="material-icons-round">arrow_back</span>
+            </a>
+            <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
+            <div class="nav-title" style="flex: 1; margin-left: 4px;">Pianificazione Viaggi</div>
+            <a href="#" onclick="window.logoutFirebase(); return false;" class="logout-link logout-btn" title="Esci">
+                <span class="material-icons-round">logout</span>
+                Logout
+            </a>
+        </div>
+    </nav>
+
+    <main class="main-container" style="max-width: 1200px; margin: 0 auto; padding-top: 80px;">
+        
+        <div class="date-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <label for="dataPianificazione" style="font-weight: 600; color: #475569;">Data Pianificazione:</label>
+                <input type="date" id="dataPianificazione" class="input-field" style="width: auto; font-weight: bold;">
+            </div>
+            <button id="btnSalva" class="btn-salva">
+                <span class="material-icons-round">save</span>
+                Salva Pianificazione
+            </button>
+        </div>
+
+        <div id="loadingIndicator" style="text-align: center; padding: 40px; color: #64748b;">
+            <span class="material-icons-round" style="font-size: 48px; animation: spin 1s linear infinite;">autorenew</span>
+            <p style="margin-top: 16px; font-weight: 500;">Inizializzazione Intelligenza Logistica in corso...<br><small>Analisi dello storico presenze e calcolo affinità...</small></p>
+        </div>
+
+        <div style="overflow-x: auto; display: none;" id="tableContainer">
+            <table class="planning-table" id="planningTable">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Nome Autista</th>
+                        <th style="width: 35%;">Viaggio (Destinazione/Cliente)</th>
+                        <th style="width: 25%;">Targa Mezzo</th>
+                        <th style="width: 10%; text-align: center;">Confermato</th>
+                        <th style="width: 5%;"></th>
+                    </tr>
+                </thead>
+                <tbody id="planningTbody">
+                    <!-- Righe generate da JS -->
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <!-- Template per le datalist dei suggerimenti -->
+    <div id="datalistsContainer" style="display:none;"></div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, getDocs, doc, getDoc, setDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Variabili globali per l'intelligenza logistica
+        let dipendenti = [];
+        let affinityData = {}; // { idDipendente: { viaggi: {nome: conteggio}, targhe: {targa: conteggio} } }
+
+        // Elementi DOM
+        const dataInput = document.getElementById('dataPianificazione');
+        const btnSalva = document.getElementById('btnSalva');
+        const tbody = document.getElementById('planningTbody');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const tableContainer = document.getElementById('tableContainer');
+        const datalistsContainer = document.getElementById('datalistsContainer');
+
+        // Inizializza data a domani di default
+        const domani = new Date();
+        domani.setDate(domani.getDate() + 1);
+        dataInput.value = domani.toISOString().split('T')[0];
+
+        // 1. Caricamento Dati e Calcolo Affinità
+        async function inizializza() {
+            try {
+                // Leggi dipendenti
+                const dipendentiSnap = await getDocs(collection(db, "clienti", "DNR", "dipendenti"));
+                dipendenti = [];
+                dipendentiSnap.forEach(d => {
+                    const data = d.data();
+                    if (data.attivo !== false) {
+                        dipendenti.push({ id: d.id, ...data });
+                    }
+                });
+                // Ordina alfabetico
+                dipendenti.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+
+                // Inizializza mappa affinità
+                dipendenti.forEach(d => {
+                    affinityData[d.id] = { viaggi: {}, targhe: {} };
+                });
+
+                // Leggi storico presenze (ultimi N record o semplice aggregazione)
+                // Per non appesantire, prendiamo solo i documenti presenze degli ultimi 2 mesi.
+                // In un caso reale con moltissimi record, si limiterebbe la query.
+                const presenzeSnap = await getDocs(collection(db, "clienti", "DNR", "presenze"));
+                
+                presenzeSnap.forEach(p => {
+                    const pd = p.data();
+                    const autistaId = pd.dipendenteId;
+                    
+                    if (autistaId && affinityData[autistaId]) {
+                        // Estrai viaggio
+                        const vInizioM = pd.viaggioOraInizioM || "";
+                        const vInizioP = pd.viaggioOraInizioP || "";
+                        // A volte in "viaggioOraInizioM" viene salvato il nome del viaggio nel vecchio sistema,
+                        // o forse l'app salva il nome in altri campi. Adatteremo se necessario,
+                        // ma per ora supportiamo i campi custom.
+                        // Solitamente si usa pd.cliente o pd.viaggio. Vediamo cosa troviamo:
+                        const nomeViaggio = pd.viaggio || pd.cliente || vInizioM || pd.note;
+                        if (nomeViaggio && typeof nomeViaggio === 'string' && nomeViaggio.trim().length > 2 && isNaN(nomeViaggio)) {
+                            const cleanViaggio = nomeViaggio.trim().toUpperCase();
+                            affinityData[autistaId].viaggi[cleanViaggio] = (affinityData[autistaId].viaggi[cleanViaggio] || 0) + 1;
+                        }
+
+                        // Estrai targa
+                        const targa = (pd.targa_mezzo || pd.targa || pd.mezzo || "").trim().toUpperCase();
+                        if (targa && targa.length >= 5) {
+                            affinityData[autistaId].targhe[targa] = (affinityData[autistaId].targhe[targa] || 0) + 1;
+                        }
+                    }
+                });
+
+                // Genera le Datalist
+                generaDatalists();
+
+                // Costruisci la tabella
+                costruisciTabella();
+
+                // Carica i dati per la data selezionata
+                await caricaPianificazione(dataInput.value);
+
+                // Mostra UI
+                loadingIndicator.style.display = 'none';
+                tableContainer.style.display = 'block';
+
+            } catch (err) {
+                console.error("Errore inizializzazione:", err);
+                Swal.fire('Errore', 'Impossibile caricare il database: ' + err.message, 'error');
+            }
+        }
+
+        function generaDatalists() {
+            let html = '';
+            dipendenti.forEach(d => {
+                // Ordina i viaggi per frequenza decrescente
+                const viaggiSortati = Object.entries(affinityData[d.id].viaggi).sort((a,b) => b[1] - a[1]);
+                const targheSortate = Object.entries(affinityData[d.id].targhe).sort((a,b) => b[1] - a[1]);
+
+                html += `<datalist id="viaggi_${d.id}">`;
+                viaggiSortati.forEach(v => {
+                    html += `<option value="${v[0]}">Affinità: ${v[1]} viaggi</option>`;
+                });
+                html += `</datalist>`;
+
+                html += `<datalist id="targhe_${d.id}">`;
+                targheSortate.forEach(t => {
+                    html += `<option value="${t[0]}">Affinità: ${t[1]} volte</option>`;
+                });
+                html += `</datalist>`;
+            });
+            datalistsContainer.innerHTML = html;
+        }
+
+        function costruisciTabella() {
+            tbody.innerHTML = '';
+            dipendenti.forEach(d => {
+                // Calcola il viaggio e targa più probabile per un placeholder intelligente
+                const topViaggio = Object.entries(affinityData[d.id].viaggi).sort((a,b) => b[1] - a[1])[0];
+                const topTarga = Object.entries(affinityData[d.id].targhe).sort((a,b) => b[1] - a[1])[0];
+                
+                let suggestViaggioHtml = topViaggio ? `<span class="suggestion-badge" title="Assegnato ${topViaggio[1]} volte">★ ${topViaggio[0]}</span>` : '';
+                let suggestTargaHtml = topTarga ? `<span class="suggestion-badge" title="Usato ${topTarga[1]} volte">★ ${topTarga[0]}</span>` : '';
+
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-id', d.id);
+                tr.innerHTML = `
+                    <td>
+                        <div class="driver-name">${d.nome} ${d.cognome || ''}</div>
+                    </td>
+                    <td>
+                        <input type="text" class="input-field in-viaggio" list="viaggi_${d.id}" placeholder="Es. GRAN CHEF LAGO">
+                        <div style="margin-top: 4px;">${suggestViaggioHtml}</div>
+                    </td>
+                    <td>
+                        <input type="text" class="input-field in-targa" list="targhe_${d.id}" placeholder="Es. EN 201 DB">
+                        <div style="margin-top: 4px;">${suggestTargaHtml}</div>
+                    </td>
+                    <td class="check-container">
+                        <input type="checkbox" class="in-confermato" title="Spunta per segnare come confermato">
+                    </td>
+                    <td style="text-align:center;">
+                        <button class="icon-btn" onclick="pulisciRiga('${d.id}')" title="Svuota riga" style="background:none; border:none; color:#94a3b8; cursor:pointer;">
+                            <span class="material-icons-round">clear</span>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.pulisciRiga = (id) => {
+            const tr = document.querySelector(`tr[data-id="${id}"]`);
+            if(tr) {
+                tr.querySelector('.in-viaggio').value = '';
+                tr.querySelector('.in-targa').value = '';
+                tr.querySelector('.in-confermato').checked = false;
+            }
+        };
+
+        // 2. Caricamento Pianificazione per data
+        async function caricaPianificazione(dataIso) {
+            if (!dataIso) return;
+            
+            // Svuotiamo prima la UI
+            document.querySelectorAll('#planningTable tbody tr').forEach(tr => {
+                tr.querySelector('.in-viaggio').value = '';
+                tr.querySelector('.in-targa').value = '';
+                tr.querySelector('.in-confermato').checked = false;
+            });
+
+            try {
+                const docRef = doc(db, "clienti", "DNR", "pianificazione_viaggi", dataIso);
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.assegnazioni) {
+                        data.assegnazioni.forEach(ass => {
+                            const tr = document.querySelector(`tr[data-id="${ass.dipendenteId}"]`);
+                            if (tr) {
+                                tr.querySelector('.in-viaggio').value = ass.viaggio || '';
+                                tr.querySelector('.in-targa').value = ass.targa || '';
+                                tr.querySelector('.in-confermato').checked = ass.confermato || false;
+                            }
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error("Errore caricamento pianificazione:", err);
+            }
+        }
+
+        dataInput.addEventListener('change', () => {
+            caricaPianificazione(dataInput.value);
+        });
+
+        // 3. Salvataggio
+        btnSalva.addEventListener('click', async () => {
+            const dataIso = dataInput.value;
+            if (!dataIso) return Swal.fire('Attenzione', 'Seleziona una data per la pianificazione.', 'warning');
+
+            btnSalva.disabled = true;
+            btnSalva.innerHTML = '<span class="material-icons-round" style="animation: spin 1s linear infinite;">autorenew</span> Salvataggio...';
+
+            try {
+                const assegnazioni = [];
+                document.querySelectorAll('#planningTable tbody tr').forEach(tr => {
+                    const id = tr.getAttribute('data-id');
+                    const nome = tr.querySelector('.driver-name').innerText;
+                    const viaggio = tr.querySelector('.in-viaggio').value.trim();
+                    const targa = tr.querySelector('.in-targa').value.trim();
+                    const confermato = tr.querySelector('.in-confermato').checked;
+
+                    // Salviamo tutti, oppure solo quelli che hanno qualcosa compilato
+                    // Optiamo per salvare tutti, così se qualcuno viene cancellato si riflette nel DB
+                    assegnazioni.push({
+                        dipendenteId: id,
+                        nome: nome,
+                        viaggio: viaggio,
+                        targa: targa,
+                        confermato: confermato
+                    });
+                });
+
+                const docRef = doc(db, "clienti", "DNR", "pianificazione_viaggi", dataIso);
+                await setDoc(docRef, {
+                    dataPianificazione: dataIso,
+                    ultimaModifica: new Date().toISOString(),
+                    assegnazioni: assegnazioni
+                });
+
+                Swal.fire({
+                    title: 'Salvato!',
+                    text: 'Pianificazione salvata con successo.',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+
+            } catch (err) {
+                console.error("Errore salvataggio:", err);
+                Swal.fire('Errore', 'Impossibile salvare la pianificazione: ' + err.message, 'error');
+            } finally {
+                btnSalva.disabled = false;
+                btnSalva.innerHTML = '<span class="material-icons-round">save</span> Salva Pianificazione';
+            }
+        });
+
+        // Avvio
+        document.addEventListener("DOMContentLoaded", () => {
+            // Controlliamo che l'auth sia ok. L'import di firebase-auth-sync provvede.
+            inizializza();
+        });
+
+    </script>
+    <script type="module" src="firebase-auth-sync.js?v=4.00"></script>
+    <script src="script.js?v=4.00"></script>
+</body>
+</html>

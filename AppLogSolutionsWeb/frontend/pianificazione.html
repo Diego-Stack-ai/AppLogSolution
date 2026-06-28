@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.12">
+    <link rel="stylesheet" href="styles.css?v=4.13">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -452,7 +452,7 @@
                 destContainer.innerHTML = `<span class="suggestion-badge ${colorClass}" style="opacity: 0.6;">Nessuno storico destinazioni</span>`;
             } else {
                 destContainer.innerHTML = topViaggi.map(v => 
-                    `<span class="suggestion-badge ${colorClass}" style="cursor:pointer;" onclick="impostaDaSuggerimento(this, '.in-viaggio', '${v[0].replace(/'/g, "\\'")}')" title="Usato ${v[1]} volte">★ ${v[0]}</span>`
+                    `<span class="suggestion-badge ${colorClass}" style="cursor:pointer;" onclick="impostaDaSuggerimento(this, '.in-viaggio', '${v[0].replace(/'/g, "\\'")}')" title="Usato ${v[1]} volte">★ ${v[0]} (${v[1]})</span>`
                 ).join(' ');
             }
         };
@@ -528,10 +528,10 @@
                 const topTarghe = Object.entries(affinityData[d.id].targhe).sort((a,b) => b[1] - a[1]).slice(0, 2);
                 
                 let suggestClienteHtml = topClienti.length > 0 
-                    ? topClienti.map(c => `<span class="suggestion-badge ${window.getClienteColorClass(c[0])}" style="cursor:pointer;" onclick="impostaCliente(this, '${c[0].replace(/'/g, "\\'")}')" title="Assegnato ${c[1]} volte">★ ${c[0]}</span>`).join(' ') 
+                    ? topClienti.map(c => `<span class="suggestion-badge ${window.getClienteColorClass(c[0])}" style="cursor:pointer;" onclick="impostaCliente(this, '${c[0].replace(/'/g, "\\'")}')" title="Assegnato ${c[1]} volte">★ ${c[0]} (${c[1]})</span>`).join(' ') 
                     : '';
                 let suggestTargaHtml = topTarghe.length > 0 
-                    ? topTarghe.map(t => `<span class="suggestion-badge" style="cursor:pointer;" onclick="impostaDaSuggerimento(this, '.in-targa', '${t[0].replace(/'/g, "\\'")}')" title="Usato ${t[1]} volte">★ ${t[0]}</span>`).join(' ') 
+                    ? topTarghe.map(t => `<span class="suggestion-badge" style="cursor:pointer;" onclick="impostaDaSuggerimento(this, '.in-targa', '${t[0].replace(/'/g, "\\'")}')" title="Usato ${t[1]} volte">★ ${t[0]} (${t[1]})</span>`).join(' ') 
                     : '';
 
                 const tr = document.createElement('tr');
@@ -696,7 +696,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.12"></script>
-    <script src="script.js?v=4.12"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.13"></script>
+    <script src="script.js?v=4.13"></script>
 </body>
 </html>

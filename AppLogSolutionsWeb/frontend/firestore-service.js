@@ -186,6 +186,7 @@ export async function saveTrip(tripData) {
                 giornoSettimana: giornoSettimana,
                 cliente: tripData.cliente || "",
                 viaggio: tripData.viaggio || "",
+                targa: tripData.automezzo || "",
                 kmPartenza: finalKmPartenza,
                 kmArrivo: finalKmArrivo,
                 kmDelta: finalKmDelta,

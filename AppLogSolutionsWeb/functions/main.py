@@ -19,10 +19,17 @@ except ImportError:
 # --- CHIAVE API GOOGLE (da impostare nelle variabili d'ambiente della Cloud Function) ---
 import os
 import logging
+import sentry_sdk
 
-# Configurazione logging strutturato nativo GCP
+# Configurazione logging strutturato nativo GCP e Sentry SDK
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 logger = logging.getLogger("AppLogSolutions")
+
+sentry_sdk.init(
+    dsn="https://8e3e071e1609300da167c7815f0c76bd@o4511642916618240.ingest.de.sentry.io/4511642970357840",
+    traces_sample_rate=1.0,
+    environment="production"
+)
 
 GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "")
 

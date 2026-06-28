@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.18">
+    <link rel="stylesheet" href="styles.css?v=4.19">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -285,7 +285,7 @@
 
                 // Inizializza mappa affinità
                 dipendenti.forEach(d => {
-                    affinityData[d.id] = { clienti: {}, viaggiPerCliente: {}, viaggi: {}, targhe: {} };
+                    affinityData[d.id] = { clienti: {}, viaggiPerCliente: {}, viaggi: {}, targhe: {}, clientiPerTarga: {} };
                 });
 
                 // Su richiesta, peschiamo i dati per le statistiche solo dalle presenze
@@ -338,6 +338,15 @@
                         const targa = (pd.targa || pd.targa_mezzo || pd.mezzo || "").trim().toUpperCase();
                         if (targa && targa.length >= 4) {
                             affinityData[autistaId].targhe[targa] = (affinityData[autistaId].targhe[targa] || 0) + 1;
+                            if (cliente) {
+                                if (!affinityData[autistaId].clientiPerTarga) {
+                                    affinityData[autistaId].clientiPerTarga = {};
+                                }
+                                if (!affinityData[autistaId].clientiPerTarga[targa]) {
+                                    affinityData[autistaId].clientiPerTarga[targa] = {};
+                                }
+                                affinityData[autistaId].clientiPerTarga[targa][cliente] = (affinityData[autistaId].clientiPerTarga[targa][cliente] || 0) + 1;
+                            }
                         }
                     }
                 };
@@ -398,6 +407,31 @@
             }
             if (foundOpt) {
                 selectViaggio.value = foundOpt.value;
+            }
+        };
+
+        window.impostaTargaGrezza = function(btn, clientVal, targaVal) {
+            const tr = btn.closest('tr');
+            if (clientVal && !tr.querySelector('.in-cliente').value) {
+                const selectCliente = tr.querySelector('.in-cliente');
+                selectCliente.value = clientVal;
+                window.aggiornaDestinazioni(tr, tr.getAttribute('data-id'));
+            }
+            const selectTarga = tr.querySelector('.in-targa');
+            if (selectTarga.disabled) {
+                return Swal.fire('Attenzione', 'Seleziona prima il cliente per impostare la targa.', 'warning');
+            }
+            // Imposta valore targa
+            const valUpper = targaVal.trim().toUpperCase();
+            let foundOpt = Array.from(selectTarga.options).find(opt => opt.value.toUpperCase() === valUpper);
+            if (!foundOpt) {
+                foundOpt = Array.from(selectTarga.options).find(opt => {
+                    const optVal = opt.value.toUpperCase();
+                    return optVal.includes(valUpper) || valUpper.includes(optVal);
+                });
+            }
+            if (foundOpt) {
+                selectTarga.value = foundOpt.value;
             }
         };
 
@@ -488,6 +522,7 @@
             const clienteSelezionato = selectCliente.value.trim().toUpperCase();
             const destContainer = tr.querySelector('.dest-container');
             const selectViaggio = tr.querySelector('.in-viaggio');
+            const selectTarga = tr.querySelector('.in-targa');
             
             // Salva valore viaggio corrente o recupera quello in caricamento
             const currentViaggio = selectViaggio.value || tr.dataset.pendingViaggio || "";
@@ -514,11 +549,14 @@
             if (!clienteSelezionato) {
                 selectViaggio.value = '';
                 selectViaggio.disabled = true;
-                destContainer.innerHTML = '<span class="suggestion-badge badge-disabled">Seleziona prima il cliente</span>';
+                selectTarga.value = '';
+                selectTarga.disabled = true;
+                destContainer.innerHTML = tr.dataset.generalViaggi || '<span class="suggestion-badge badge-disabled">Seleziona prima il cliente</span>';
                 return;
             }
  
             selectViaggio.disabled = false;
+            selectTarga.disabled = false;
             const colorClass = window.getClienteColorClass(clienteSelezionato);
             const viaggiCliente = affinityData[idAutista].viaggiPerCliente[clienteSelezionato] || {};
             const topViaggi = Object.entries(viaggiCliente).sort((a,b) => b[1] - a[1]).slice(0, 3);
@@ -614,7 +652,15 @@
                     ? topClienti.map(c => `<span class="suggestion-badge ${window.getClienteColorClass(c[0])}" style="cursor:pointer;" onclick="impostaCliente(this, '${c[0].replace(/'/g, "\\'")}')" title="Assegnato ${c[1]} volte">★ ${c[0]} (${c[1]})</span>`).join(' ') 
                     : '';
                 let suggestTargaHtml = topTarghe.length > 0 
-                    ? topTarghe.map(t => `<span class="suggestion-badge" style="cursor:pointer;" onclick="impostaDaSuggerimento(this, '.in-targa', '${t[0].replace(/'/g, "\\'")}')" title="Usato ${t[1]} volte">★ ${t[0]} (${t[1]})</span>`).join(' ') 
+                    ? topTarghe.map(t => {
+                        let clientAssociato = "";
+                        const clientiTarga = affinityData[d.id].clientiPerTarga?.[t[0]] || {};
+                        const topClientiTarga = Object.entries(clientiTarga).sort((a,b) => b[1] - a[1]);
+                        if (topClientiTarga.length > 0) {
+                            clientAssociato = topClientiTarga[0][0];
+                        }
+                        return `<span class="suggestion-badge" style="cursor:pointer;" onclick="window.impostaTargaGrezza(this, '${clientAssociato.replace(/'/g, "\\'")}', '${t[0].replace(/'/g, "\\'")}')" title="Usato ${t[1]} volte">★ ${t[0]} (${t[1]})</span>`;
+                    }).join(' ') 
                     : '';
                 let suggestViaggioHtml = topViaggi.length > 0 
                     ? topViaggi.map(v => {
@@ -632,6 +678,7 @@
 
                 const tr = document.createElement('tr');
                 tr.setAttribute('data-id', d.id);
+                tr.dataset.generalViaggi = suggestViaggioHtml;
                 tr.innerHTML = `
                     <td>
                         <div class="driver-name">${d.nome} ${d.cognome || ''}</div>
@@ -652,7 +699,7 @@
                         </div>
                     </td>
                     <td>
-                        <select class="input-field in-targa">
+                        <select class="input-field in-targa" disabled>
                             <option value="">-- Seleziona --</option>
                             ${opzioniTargheHtml}
                         </select>
@@ -805,7 +852,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.18"></script>
-    <script src="script.js?v=4.18"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.19"></script>
+    <script src="script.js?v=4.19"></script>
 </body>
 </html>

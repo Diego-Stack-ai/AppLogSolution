@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.16">
+    <link rel="stylesheet" href="styles.css?v=4.17">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -262,8 +262,8 @@
                 return { cliente: clienteTrovato, viaggio: destinazioneUfficiale };
             }
 
-            // Altrimenti scartiamo la destinazione non valida per tenere pulito il badge
-            return { cliente: clienteTrovato, viaggio: "" };
+            // Altrimenti, se non troviamo riscontro ufficiale, lo teniamo comunque come viaggio grezzo
+            return { cliente: clienteTrovato, viaggio: resto || "" };
         }
 
         // 1. Caricamento Dati e Calcolo Affinità
@@ -384,7 +384,26 @@
             const tr = btn.closest('tr');
             const targetEl = tr.querySelector(selector);
             if (targetEl) {
-                targetEl.value = valore;
+                const valUpper = valore.trim().toUpperCase();
+                
+                // Se il target è un select, proviamo a trovare l'opzione che corrisponde meglio
+                if (targetEl.tagName === 'SELECT') {
+                    // Cerca prima una corrispondenza esatta
+                    let foundOpt = Array.from(targetEl.options).find(opt => opt.value.toUpperCase() === valUpper);
+                    if (!foundOpt) {
+                        // Cerca una corrispondenza parziale (es. "SIRMIONE" corrisponde a "LAGO SIRMIONE")
+                        foundOpt = Array.from(targetEl.options).find(opt => {
+                            const optVal = opt.value.toUpperCase();
+                            return optVal.includes(valUpper) || valUpper.includes(optVal);
+                        });
+                    }
+                    if (foundOpt) {
+                        targetEl.value = foundOpt.value;
+                    }
+                } else {
+                    targetEl.value = valore;
+                }
+                
                 // Se abbiamo impostato il cliente da suggerimento, aggiorniamo anche le destinazioni
                 if (selector === '.in-cliente') {
                     window.aggiornaDestinazioni(tr, tr.getAttribute('data-id'));
@@ -751,7 +770,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.16"></script>
-    <script src="script.js?v=4.16"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.17"></script>
+    <script src="script.js?v=4.17"></script>
 </body>
 </html>

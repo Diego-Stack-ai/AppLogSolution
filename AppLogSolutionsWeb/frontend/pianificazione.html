@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.10">
+    <link rel="stylesheet" href="styles.css?v=4.11">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -286,8 +286,23 @@
                             return; // Salta storico sporco precedente
                         }
 
-                        // Estrai ed esegui il parsing del campo unico "cliente" di presenze
-                        const { cliente, viaggio } = parseClienteDestinazione(pd.cliente);
+                        // Estrazione pulita di cliente e viaggio con retrocompatibilità per il vecchio formato accorpato
+                        let cliente = (pd.cliente || "").toString().trim().toUpperCase();
+                        let viaggio = (pd.viaggio || "").toString().trim().toUpperCase();
+                        
+                        if (!viaggio && cliente) {
+                            if (cliente.includes(" - ")) {
+                                const parti = cliente.split(" - ");
+                                cliente = parti[0].trim().toUpperCase();
+                                viaggio = parti[1].trim().toUpperCase();
+                            } else {
+                                const parsed = parseClienteDestinazione(cliente);
+                                if (parsed.cliente) {
+                                    cliente = parsed.cliente.toUpperCase();
+                                    viaggio = parsed.viaggio.toUpperCase();
+                                }
+                            }
+                        }
 
                         if (cliente) {
                             affinityData[autistaId].clienti[cliente] = (affinityData[autistaId].clienti[cliente] || 0) + 1;
@@ -621,7 +636,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.10"></script>
-    <script src="script.js?v=4.10"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.11"></script>
+    <script src="script.js?v=4.11"></script>
 </body>
 </html>

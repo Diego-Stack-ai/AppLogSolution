@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.02">
+    <link rel="stylesheet" href="styles.css?v=4.03">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -203,7 +203,8 @@
                 dipendenti = [];
                 dipendentiSnap.forEach(d => {
                     const data = d.data();
-                    if (data.attivo !== false) {
+                    // Mostriamo solo gli autisti attivi (escludiamo amministratori e disattivati)
+                    if (data.attivo !== false && data.ruolo === "autista") {
                         dipendenti.push({ id: d.id, ...data });
                     }
                 });
@@ -216,8 +217,6 @@
                 });
 
                 // Leggi storico presenze (ultimi N record o semplice aggregazione)
-                // Per non appesantire, prendiamo solo i documenti presenze degli ultimi 2 mesi.
-                // In un caso reale con moltissimi record, si limiterebbe la query.
                 const presenzeSnap = await getDocs(collection(db, "clienti", "DNR", "presenze"));
                 
                 presenzeSnap.forEach(p => {
@@ -227,11 +226,6 @@
                     if (autistaId && affinityData[autistaId]) {
                         // Estrai viaggio
                         const vInizioM = pd.viaggioOraInizioM || "";
-                        const vInizioP = pd.viaggioOraInizioP || "";
-                        // A volte in "viaggioOraInizioM" viene salvato il nome del viaggio nel vecchio sistema,
-                        // o forse l'app salva il nome in altri campi. Adatteremo se necessario,
-                        // ma per ora supportiamo i campi custom.
-                        // Solitamente si usa pd.cliente o pd.viaggio. Vediamo cosa troviamo:
                         const nomeViaggio = pd.viaggio || pd.cliente || vInizioM || pd.note;
                         if (nomeViaggio && typeof nomeViaggio === 'string' && nomeViaggio.trim().length > 2 && isNaN(nomeViaggio)) {
                             const cleanViaggio = nomeViaggio.trim().toUpperCase();
@@ -252,16 +246,15 @@
                 // Costruisci la tabella
                 costruisciTabella();
 
-                // Carica i dati per la data selezionata
+                // Carica la pianificazione del giorno di default (domani)
                 await caricaPianificazione(dataInput.value);
-
-                // Mostra UI
-                loadingIndicator.style.display = 'none';
-                tableContainer.style.display = 'block';
 
             } catch (err) {
                 console.error("Errore inizializzazione:", err);
-                Swal.fire('Errore', 'Impossibile caricare il database: ' + err.message, 'error');
+                Swal.fire('Errore', 'Impossibile caricare i dati: ' + err.message, 'error');
+            } finally {
+                loadingIndicator.style.display = 'none';
+                tableContainer.style.display = 'block';
             }
         }
 
@@ -287,15 +280,24 @@
             datalistsContainer.innerHTML = html;
         }
 
+        window.impostaDaSuggerimento = function(btn, selector, valore) {
+            const tr = btn.closest('tr');
+            tr.querySelector(selector).value = valore;
+        };
+
         function costruisciTabella() {
             tbody.innerHTML = '';
             dipendenti.forEach(d => {
-                // Calcola il viaggio e targa più probabile per un placeholder intelligente
-                const topViaggio = Object.entries(affinityData[d.id].viaggi).sort((a,b) => b[1] - a[1])[0];
-                const topTarga = Object.entries(affinityData[d.id].targhe).sort((a,b) => b[1] - a[1])[0];
+                // Calcola le prime 2 affinità
+                const topViaggi = Object.entries(affinityData[d.id].viaggi).sort((a,b) => b[1] - a[1]).slice(0, 2);
+                const topTarghe = Object.entries(affinityData[d.id].targhe).sort((a,b) => b[1] - a[1]).slice(0, 2);
                 
-                let suggestViaggioHtml = topViaggio ? `<span class="suggestion-badge" title="Assegnato ${topViaggio[1]} volte">★ ${topViaggio[0]}</span>` : '';
-                let suggestTargaHtml = topTarga ? `<span class="suggestion-badge" title="Usato ${topTarga[1]} volte">★ ${topTarga[0]}</span>` : '';
+                let suggestViaggioHtml = topViaggi.length > 0 
+                    ? topViaggi.map(v => `<span class="suggestion-badge" style="cursor:pointer;" onclick="impostaDaSuggerimento(this, '.in-viaggio', '${v[0].replace(/'/g, "\\'")}')" title="Assegnato ${v[1]} volte">★ ${v[0]}</span>`).join(' ') 
+                    : '';
+                let suggestTargaHtml = topTarghe.length > 0 
+                    ? topTarghe.map(t => `<span class="suggestion-badge" style="cursor:pointer;" onclick="impostaDaSuggerimento(this, '.in-targa', '${t[0].replace(/'/g, "\\'")}')" title="Usato ${t[1]} volte">★ ${t[0]}</span>`).join(' ') 
+                    : '';
 
                 const tr = document.createElement('tr');
                 tr.setAttribute('data-id', d.id);
@@ -305,11 +307,11 @@
                     </td>
                     <td>
                         <input type="text" class="input-field in-viaggio" list="viaggi_${d.id}" placeholder="Es. GRAN CHEF LAGO">
-                        <div style="margin-top: 4px;">${suggestViaggioHtml}</div>
+                        <div style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">${suggestViaggioHtml}</div>
                     </td>
                     <td>
                         <input type="text" class="input-field in-targa" list="targhe_${d.id}" placeholder="Es. EN 201 DB">
-                        <div style="margin-top: 4px;">${suggestTargaHtml}</div>
+                        <div style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">${suggestTargaHtml}</div>
                     </td>
                     <td class="check-container">
                         <input type="checkbox" class="in-confermato" title="Spunta per segnare come confermato">
@@ -429,7 +431,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.02"></script>
-    <script src="script.js?v=4.02"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.03"></script>
+    <script src="script.js?v=4.03"></script>
 </body>
 </html>

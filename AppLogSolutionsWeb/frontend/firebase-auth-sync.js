@@ -10,7 +10,7 @@ const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
 const auth = getAuth(app);
-const perf = getPerformance(app);
+// const perf = getPerformance(app); // Disabilitato per evitare errore 403 su Installations API
 
 // ABILITAZIONE PERSISTENZA SESSIONE (localStorage)
 setPersistence(auth, browserLocalPersistence)

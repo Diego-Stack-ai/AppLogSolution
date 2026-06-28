@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.85">
+    <link rel="stylesheet" href="styles.css?v=3.86">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
@@ -430,37 +430,39 @@
             <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
                 💡 <b>Servizio Email Aziendale:</b> Configura qui i dati SMTP e IMAP per l'invio delle fatture e il salvataggio automatico dello storico nella posta inviata.
             </p>
-            <div class="form-grid">
-                <div class="input-group">
-                    <label for="emailSmtpHost">Server SMTP (Invio) *</label>
-                    <input type="text" id="emailSmtpHost" placeholder="es. smtp.tuoprovider.it">
+            <form onsubmit="return false;" autocomplete="off">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label for="emailSmtpHost">Server SMTP (Invio) *</label>
+                        <input type="text" id="emailSmtpHost" placeholder="es. smtp.tuoprovider.it">
+                    </div>
+                    <div class="input-group">
+                        <label for="emailSmtpPort">Porta SMTP *</label>
+                        <input type="number" id="emailSmtpPort" placeholder="es. 465 o 587">
+                    </div>
+                    <div class="input-group">
+                        <label for="emailImapHost">Server IMAP (Salvataggio) *</label>
+                        <input type="text" id="emailImapHost" placeholder="es. imap.tuoprovider.it">
+                    </div>
+                    <div class="input-group">
+                        <label for="emailImapPort">Porta IMAP *</label>
+                        <input type="number" id="emailImapPort" placeholder="es. 993">
+                    </div>
+                    <div class="input-group" style="grid-column: 1 / -1;">
+                        <label for="emailUser">E-mail Mittente (Ufficio) *</label>
+                        <input type="email" id="emailUser" placeholder="es. amministrazione@azienda.it">
+                    </div>
+                    <div class="input-group" style="grid-column: 1 / -1;">
+                        <label for="emailPassword">Password Email *</label>
+                        <input type="password" id="emailPassword" placeholder="Password della casella email" autocomplete="new-password">
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label for="emailSmtpPort">Porta SMTP *</label>
-                    <input type="number" id="emailSmtpPort" placeholder="es. 465 o 587">
+                
+                <div style="display: flex; gap: 12px; margin-top: 24px; margin-bottom: 32px;">
+                    <button type="button" id="btnSalvaEmailSettings" class="btn-primary" style="flex: 2;">Salva Impostazioni Email</button>
+                    <button type="button" id="btnTestEmailSettings" class="btn-primary" style="flex: 1; background: #64748b; color: white;">Testa Connessione</button>
                 </div>
-                <div class="input-group">
-                    <label for="emailImapHost">Server IMAP (Salvataggio) *</label>
-                    <input type="text" id="emailImapHost" placeholder="es. imap.tuoprovider.it">
-                </div>
-                <div class="input-group">
-                    <label for="emailImapPort">Porta IMAP *</label>
-                    <input type="number" id="emailImapPort" placeholder="es. 993">
-                </div>
-                <div class="input-group" style="grid-column: 1 / -1;">
-                    <label for="emailUser">E-mail Mittente (Ufficio) *</label>
-                    <input type="email" id="emailUser" placeholder="es. amministrazione@azienda.it">
-                </div>
-                <div class="input-group" style="grid-column: 1 / -1;">
-                    <label for="emailPassword">Password Email *</label>
-                    <input type="password" id="emailPassword" placeholder="Password della casella email">
-                </div>
-            </div>
-            
-            <div style="display: flex; gap: 12px; margin-top: 24px; margin-bottom: 32px;">
-                <button type="button" id="btnSalvaEmailSettings" class="btn-primary" style="flex: 2;">Salva Impostazioni Email</button>
-                <button type="button" id="btnTestEmailSettings" class="btn-primary" style="flex: 1; background: #64748b; color: white;">Testa Connessione</button>
-            </div>
+            </form>
         </div>
 
     </div>
@@ -1011,7 +1013,6 @@
             btnSalvaAutista.disabled = true;
             btnSalvaAutista.textContent = "Salvataggio Cloud...";
 
-            const autisti = window.appData.lista_autisti || [];
             const id = editIndexAutista >= 0 ? autisti[editIndexAutista].id : null;
 
             if (!id) {
@@ -1096,8 +1097,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=3.85"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.85"></script>
+    <script src="script.js?v=3.86"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.86"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────

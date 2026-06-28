@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.14">
+    <link rel="stylesheet" href="styles.css?v=4.15">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -398,7 +398,10 @@
             
             const selects = document.querySelectorAll('.in-cliente');
             selects.forEach(select => {
-                const currentVal = select.value;
+                const tr = select.closest('tr');
+                const autistaId = tr.getAttribute('data-id');
+                const currentVal = select.value || tr.dataset.pendingCliente || "";
+                
                 select.innerHTML = '<option value="">-- Seleziona --</option>';
                 progetti.forEach(p => {
                     const nome = (p.nome || "").trim().toUpperCase();
@@ -408,6 +411,11 @@
                     select.appendChild(opt);
                 });
                 select.value = currentVal;
+                if (select.value === currentVal) {
+                    delete tr.dataset.pendingCliente;
+                }
+                
+                window.aggiornaDestinazioni(tr, autistaId);
             });
         };
 
@@ -417,7 +425,9 @@
             
             const selects = document.querySelectorAll('.in-targa');
             selects.forEach(select => {
-                const currentVal = select.value;
+                const tr = select.closest('tr');
+                const currentVal = select.value || tr.dataset.pendingTarga || "";
+                
                 select.innerHTML = '<option value="">-- Seleziona --</option>';
                 mezzi.sort((a,b) => a.targa.localeCompare(b.targa)).forEach(m => {
                     const targa = (m.targa || "").trim().toUpperCase();
@@ -427,6 +437,9 @@
                     select.appendChild(opt);
                 });
                 select.value = currentVal;
+                if (select.value === currentVal) {
+                    delete tr.dataset.pendingTarga;
+                }
             });
         };
 
@@ -436,9 +449,9 @@
             const destContainer = tr.querySelector('.dest-container');
             const selectViaggio = tr.querySelector('.in-viaggio');
             
-            // Salva valore viaggio corrente
-            const currentViaggio = selectViaggio.value;
-
+            // Salva valore viaggio corrente o recupera quello in caricamento
+            const currentViaggio = selectViaggio.value || tr.dataset.pendingViaggio || "";
+ 
             // Aggiorna opzioni select viaggio per questa riga
             selectViaggio.innerHTML = '<option value="">-- Seleziona --</option>';
             const progetti = window.appData?.lista_progetti || [];
@@ -451,22 +464,25 @@
                 opt.textContent = vUpper;
                 selectViaggio.appendChild(opt);
             });
-
+ 
             // Ripristina valore viaggio se valido
             selectViaggio.value = currentViaggio;
-
+            if (selectViaggio.value === currentViaggio) {
+                delete tr.dataset.pendingViaggio;
+            }
+ 
             if (!clienteSelezionato) {
                 selectViaggio.value = '';
                 selectViaggio.disabled = true;
                 destContainer.innerHTML = '<span class="suggestion-badge badge-disabled">Seleziona prima il cliente</span>';
                 return;
             }
-
+ 
             selectViaggio.disabled = false;
             const colorClass = window.getClienteColorClass(clienteSelezionato);
             const viaggiCliente = affinityData[idAutista].viaggiPerCliente[clienteSelezionato] || {};
             const topViaggi = Object.entries(viaggiCliente).sort((a,b) => b[1] - a[1]).slice(0, 3);
-
+ 
             if (topViaggi.length === 0) {
                 destContainer.innerHTML = `<span class="suggestion-badge ${colorClass}" style="opacity: 0.6;">Nessuno storico destinazioni</span>`;
             } else {
@@ -617,8 +633,12 @@
         async function caricaPianificazione(dataIso) {
             if (!dataIso) return;
             
-            // Svuotiamo prima la UI
+            // Svuotiamo prima la UI e puliamo i dataset pendenti
             document.querySelectorAll('#planningTable tbody tr').forEach(tr => {
+                delete tr.dataset.pendingCliente;
+                delete tr.dataset.pendingViaggio;
+                delete tr.dataset.pendingTarga;
+                
                 tr.querySelector('.in-cliente').value = '';
                 tr.querySelector('.in-viaggio').value = '';
                 tr.querySelector('.in-targa').value = '';
@@ -648,6 +668,12 @@
                                     destVal = parsed.viaggio || destVal; // tieni destVal se scartato
                                 }
 
+                                // Salva in dataset per evitare race conditions se i progetti/mezzi caricano dopo
+                                tr.dataset.pendingCliente = clientVal;
+                                tr.dataset.pendingViaggio = destVal;
+                                tr.dataset.pendingTarga = ass.targa || '';
+
+                                // Prova a impostarli subito
                                 tr.querySelector('.in-cliente').value = clientVal;
                                 window.aggiornaDestinazioni(tr, ass.dipendenteId);
                                 tr.querySelector('.in-viaggio').value = destVal;
@@ -725,7 +751,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.14"></script>
-    <script src="script.js?v=4.14"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.15"></script>
+    <script src="script.js?v=4.15"></script>
 </body>
 </html>

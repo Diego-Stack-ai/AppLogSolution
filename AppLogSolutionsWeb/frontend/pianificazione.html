@@ -32,8 +32,12 @@
             font-size: 13px;
         }
 
+        .planning-table tr {
+            transition: background-color 0.2s, opacity 0.2s;
+        }
+
         .planning-table tr:hover {
-            background-color: #f1f5f9;
+            background-color: #f8fafc;
         }
 
         .input-field {
@@ -43,6 +47,7 @@
             border-radius: 6px;
             font-size: 14px;
             font-family: inherit;
+            transition: all 0.2s;
         }
 
         .input-field:focus {
@@ -102,26 +107,24 @@
             transform: translateY(-1px);
         }
         
-        
+        .suggestion-badge {
+            display: inline-block;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        /* Classi colore Clienti */
         .badge-cattel { background: #e0f2fe !important; color: #0284c7 !important; border: 1px solid #bae6fd; }
         .badge-bauer { background: #fee2e2 !important; color: #dc2626 !important; border: 1px solid #fecaca; }
         .badge-granchef { background: #dcfce7 !important; color: #16a34a !important; border: 1px solid #bbf7d0; }
         .badge-dnr { background: #ffedd5 !important; color: #ea580c !important; border: 1px solid #fed7aa; }
         .badge-default { background: #f3f4f6 !important; color: #4b5563 !important; border: 1px solid #e5e7eb; }
-        .badge-disabled { background: #f1f5f9 !important; color: #94a3b8 !important; cursor: not-allowed !important; border: 1px solid #cbd5e1; opacity: 0.7; }
+        .badge-disabled { background: #f1f5f9 !important; color: #94a3b8 !important; cursor: not-allowed !important; border: 1px solid #cbd5e1; opacity: 0.6; }
         .badge-disabled:hover { background: #f1f5f9 !important; }
-
-        .suggestion-badge {
-            display: inline-block;
-            background: #e0e7ff;
-            color: #3730a3;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-left: 6px;
-            vertical-align: middle;
-            font-weight: 600;
-        }
     </style>
 </head>
 <body>
@@ -191,6 +194,7 @@
         // Variabili globali per l'intelligenza logistica
         let dipendenti = [];
         let affinityData = {}; // { idDipendente: { clienti: {}, viaggiPerCliente: {}, viaggi: {}, targhe: {} } }
+        const CLIENTI_CARDINE = ["CATTEL", "GRAN CHEF", "BAUER", "DNR"];
 
         // Elementi DOM
         const dataInput = document.getElementById('dataPianificazione');
@@ -205,6 +209,48 @@
         domani.setDate(domani.getDate() + 1);
         dataInput.value = domani.toISOString().split('T')[0];
 
+        // Helper per estrarre Cliente e Destinazione valida da una stringa
+        function parseClienteDestinazione(stringaUnica) {
+            if (!stringaUnica) return { cliente: "", viaggio: "" };
+            const cleanStr = stringaUnica.trim().toUpperCase();
+            
+            // Trova se contiene uno dei clienti cardine
+            let clienteTrovato = "";
+            for (const c of CLIENTI_CARDINE) {
+                if (cleanStr.startsWith(c) || cleanStr.includes(" " + c) || cleanStr.includes(c + " ")) {
+                    clienteTrovato = c;
+                    break;
+                }
+            }
+
+            if (!clienteTrovato) {
+                return { cliente: "", viaggio: cleanStr }; // Fallback
+            }
+
+            // Isola la destinazione togliendo il nome del cliente
+            let resto = cleanStr.replace(clienteTrovato, "").replace(/[^A-Z0-9 ]/g, " ").trim();
+            // Pulisce spazi multipli
+            resto = resto.replace(/\s+/g, " ");
+
+            // Valida la destinazione confrontandola con le impostazioni del cliente
+            const progetti = window.appData?.lista_progetti || [];
+            const proj = progetti.find(p => p.nome.toUpperCase() === clienteTrovato);
+            const viaggiConfigurati = proj ? (proj.viaggi || []).map(v => v.toUpperCase()) : [];
+
+            if (viaggiConfigurati.includes(resto)) {
+                return { cliente: clienteTrovato, viaggio: resto };
+            }
+
+            // Se la destinazione estratta non è ufficiale, proviamo a vedere se una delle destinazioni ufficiali è contenuta nel resto
+            const destinazioneUfficiale = viaggiConfigurati.find(v => resto.includes(v) || v.includes(resto));
+            if (destinazioneUfficiale) {
+                return { cliente: clienteTrovato, viaggio: destinazioneUfficiale };
+            }
+
+            // Altrimenti scartiamo la destinazione non valida per tenere pulito il badge
+            return { cliente: clienteTrovato, viaggio: "" };
+        }
+
         // 1. Caricamento Dati e Calcolo Affinità
         async function inizializza() {
             try {
@@ -213,12 +259,10 @@
                 dipendenti = [];
                 dipendentiSnap.forEach(d => {
                     const data = d.data();
-                    // Mostriamo solo gli autisti attivi (escludiamo amministratori e disattivati)
                     if (data.attivo !== false && data.ruolo === "autista") {
                         dipendenti.push({ id: d.id, ...data });
                     }
                 });
-                // Ordina alfabetico
                 dipendenti.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
                 // Inizializza mappa affinità
@@ -233,15 +277,19 @@
                     const autistaId = pd.autistaId || pd.dipendenteId;
                     if (autistaId && affinityData[autistaId]) {
                         
-                        const cliente = (pd.cliente || "").trim().toUpperCase();
-                        let nomeViaggio = pd.viaggio || "";
-                        if (!nomeViaggio && !cliente) nomeViaggio = pd.viaggioOraInizioM || pd.note || "";
-                        const viaggio = nomeViaggio.trim().toUpperCase();
-                        
-                        if (cliente && cliente.length > 2 && isNaN(cliente)) {
+                        // FILTRO DATA: Consideriamo solo dati a partire dal 24 Giugno 2026 (settimana del 28 Giugno)
+                        const dataDoc = pd.data; // Formato YYYY-MM-DD
+                        if (!dataDoc || dataDoc < "2026-06-24") {
+                            return; // Salta storico sporco precedente
+                        }
+
+                        // Estrai ed esegui il parsing del campo unico "cliente" di presenze
+                        const { cliente, viaggio } = parseClienteDestinazione(pd.cliente);
+
+                        if (cliente) {
                             affinityData[autistaId].clienti[cliente] = (affinityData[autistaId].clienti[cliente] || 0) + 1;
                             
-                            if (viaggio && viaggio.length > 2 && isNaN(viaggio)) {
+                            if (viaggio) {
                                 if (!affinityData[autistaId].viaggiPerCliente[cliente]) {
                                     affinityData[autistaId].viaggiPerCliente[cliente] = {};
                                 }
@@ -249,10 +297,11 @@
                             }
                         }
 
-                        if (viaggio && viaggio.length > 2 && isNaN(viaggio)) {
+                        if (viaggio) {
                             affinityData[autistaId].viaggi[viaggio] = (affinityData[autistaId].viaggi[viaggio] || 0) + 1;
                         }
 
+                        // Estrai targa
                         const targa = (pd.targa || pd.targa_mezzo || pd.mezzo || "").trim().toUpperCase();
                         if (targa && targa.length >= 4) {
                             affinityData[autistaId].targhe[targa] = (affinityData[autistaId].targhe[targa] || 0) + 1;
@@ -294,7 +343,13 @@
             const tr = btn.closest('tr');
             const inputCliente = tr.querySelector('.in-cliente');
             inputCliente.value = valore;
-            inputCliente.dispatchEvent(new Event('input')); // Trigger update
+            // Esegui trigger dell'input a cascata
+            window.aggiornaDestinazioni(tr, tr.getAttribute('data-id'));
+        };
+
+        window.impostaDaSuggerimento = function(btn, selector, valore) {
+            const tr = btn.closest('tr');
+            tr.querySelector(selector).value = valore;
         };
 
         window.aggiornaDestinazioni = function(tr, idAutista) {
@@ -302,12 +357,28 @@
             const destContainer = tr.querySelector('.dest-container');
             const inViaggio = tr.querySelector('.in-viaggio');
             
+            // Aggiorna datalist dinamico per questa riga
+            const datalistViaggi = document.getElementById(`viaggi_dinamici_${idAutista}`);
+            if (datalistViaggi) {
+                datalistViaggi.innerHTML = '';
+                const progetti = window.appData?.lista_progetti || [];
+                const proj = progetti.find(p => p.nome.toUpperCase() === clienteSelezionato);
+                const viaggiConfigurati = proj ? (proj.viaggi || []) : [];
+                viaggiConfigurati.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v.toUpperCase();
+                    datalistViaggi.appendChild(opt);
+                });
+            }
+
             if (!clienteSelezionato) {
                 inViaggio.value = '';
+                inViaggio.disabled = true;
                 destContainer.innerHTML = '<span class="suggestion-badge badge-disabled">Seleziona prima il cliente</span>';
                 return;
             }
 
+            inViaggio.disabled = false;
             const colorClass = window.getClienteColorClass(clienteSelezionato);
             const viaggiCliente = affinityData[idAutista].viaggiPerCliente[clienteSelezionato] || {};
             const topViaggi = Object.entries(viaggiCliente).sort((a,b) => b[1] - a[1]).slice(0, 3);
@@ -316,7 +387,7 @@
                 destContainer.innerHTML = `<span class="suggestion-badge ${colorClass}" style="opacity: 0.6;">Nessuno storico destinazioni</span>`;
             } else {
                 destContainer.innerHTML = topViaggi.map(v => 
-                    `<span class="suggestion-badge ${colorClass}" style="cursor:pointer;" onclick="impostaDaSuggerimento(this, '.in-viaggio', '${v[0].replace(/'/g, "\\'")}')" title="Assegnato ${v[1]} volte">★ ${v[0]}</span>`
+                    `<span class="suggestion-badge ${colorClass}" style="cursor:pointer;" onclick="impostaDaSuggerimento(this, '.in-viaggio', '${v[0].replace(/'/g, "\\'")}')" title="Usato ${v[1]} volte">★ ${v[0]}</span>`
                 ).join(' ');
             }
         };
@@ -353,18 +424,20 @@
 
         function generaDatalists() {
             let html = '';
+            
+            // Datalist Globale Clienti censiti nelle impostazioni
+            html += `<datalist id="clienti_globali">`;
+            const progetti = window.appData?.lista_progetti || [];
+            progetti.forEach(p => {
+                html += `<option value="${p.nome.toUpperCase()}">${p.nome}</option>`;
+            });
+            html += `</datalist>`;
+
             dipendenti.forEach(d => {
-                const clientiSortati = Object.entries(affinityData[d.id].clienti).sort((a,b) => b[1] - a[1]);
-                const viaggiSortati = Object.entries(affinityData[d.id].viaggi).sort((a,b) => b[1] - a[1]);
                 const targheSortate = Object.entries(affinityData[d.id].targhe).sort((a,b) => b[1] - a[1]);
 
-                html += `<datalist id="clienti_${d.id}">`;
-                clientiSortati.forEach(c => { html += `<option value="${c[0]}">Affinità: ${c[1]} volte</option>`; });
-                html += `</datalist>`;
-
-                html += `<datalist id="viaggi_${d.id}">`;
-                viaggiSortati.forEach(v => { html += `<option value="${v[0]}">Affinità: ${v[1]} viaggi</option>`; });
-                html += `</datalist>`;
+                // Datalist dinamico per viaggi di questa riga (inizialmente vuoto)
+                html += `<datalist id="viaggi_dinamici_${d.id}"></datalist>`;
 
                 html += `<datalist id="targhe_${d.id}">`;
                 targheSortate.forEach(t => {
@@ -374,11 +447,6 @@
             });
             datalistsContainer.innerHTML = html;
         }
-
-        window.impostaDaSuggerimento = function(btn, selector, valore) {
-            const tr = btn.closest('tr');
-            tr.querySelector(selector).value = valore;
-        };
 
         function costruisciTabella() {
             tbody.innerHTML = '';
@@ -400,11 +468,11 @@
                         <div class="driver-name">${d.nome} ${d.cognome || ''}</div>
                     </td>
                     <td>
-                        <input type="text" class="input-field in-cliente" list="clienti_${d.id}" placeholder="Es. CATTEL" oninput="window.aggiornaDestinazioni(this.closest('tr'), '${d.id}')">
+                        <input type="text" class="input-field in-cliente" list="clienti_globali" placeholder="Es. CATTEL" oninput="window.aggiornaDestinazioni(this.closest('tr'), '${d.id}')">
                         <div style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">${suggestClienteHtml}</div>
                     </td>
                     <td>
-                        <input type="text" class="input-field in-viaggio" list="viaggi_${d.id}" placeholder="Es. CORTINA">
+                        <input type="text" class="input-field in-viaggio" list="viaggi_dinamici_${d.id}" placeholder="Es. CORTINA" disabled>
                         <div class="dest-container" style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">
                              <span class="suggestion-badge badge-disabled">Seleziona prima il cliente</span>
                         </div>
@@ -434,6 +502,7 @@
                 tr.querySelector('.in-targa').value = '';
                 tr.querySelector('.in-confermato').checked = false;
                 window.aggiornaDestinazioni(tr, id);
+                window.toggleLockRow(tr);
             }
         };
 
@@ -461,9 +530,20 @@
                         data.assegnazioni.forEach(ass => {
                             const tr = document.querySelector(`tr[data-id="${ass.dipendenteId}"]`);
                             if (tr) {
-                                tr.querySelector('.in-cliente').value = ass.cliente || '';
+                                // Retrocompatibilità: se nel vecchio db c'era solo ass.viaggio (senza ass.cliente)
+                                let clientVal = ass.cliente || "";
+                                let destVal = ass.viaggio || "";
+
+                                if (!clientVal && destVal) {
+                                    // Fai il parsing al volo per metterli nei rispettivi campi UI
+                                    const parsed = parseClienteDestinazione(destVal);
+                                    clientVal = parsed.cliente;
+                                    destVal = parsed.viaggio || destVal; // tieni destVal se scartato
+                                }
+
+                                tr.querySelector('.in-cliente').value = clientVal;
                                 window.aggiornaDestinazioni(tr, ass.dipendenteId);
-                                tr.querySelector('.in-viaggio').value = ass.viaggio || '';
+                                tr.querySelector('.in-viaggio').value = destVal;
                                 tr.querySelector('.in-targa').value = ass.targa || '';
                                 tr.querySelector('.in-confermato').checked = ass.confermato || false;
                                 window.toggleLockRow(tr);
@@ -534,7 +614,6 @@
 
         // Avvio
         document.addEventListener("DOMContentLoaded", () => {
-            // Controlliamo che l'auth sia ok. L'import di firebase-auth-sync provvede.
             inizializza();
         });
 

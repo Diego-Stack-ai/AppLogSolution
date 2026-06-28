@@ -150,11 +150,6 @@ export async function saveTrip(tripData) {
             const presenzeDocId = `${user.uid}_${tripData.data}`;
             const presenzeRef = doc(db, "presenze", presenzeDocId);
             
-            let clientePresenza = tripData.cliente || "";
-            if (tripData.viaggio && tripData.viaggio.trim() !== "") {
-                clientePresenza += ` - ${tripData.viaggio}`;
-            }
-
             const finalKmPartenza = Number(tripData.kmPartenza) || 0;
             const finalKmArrivo = Number(tripData.kmArrivo) || 0;
             const finalKmDelta = Math.max(0, finalKmArrivo - finalKmPartenza);
@@ -189,7 +184,8 @@ export async function saveTrip(tripData) {
                 data: tripData.data,
                 mese: mese,
                 giornoSettimana: giornoSettimana,
-                cliente: clientePresenza,
+                cliente: tripData.cliente || "",
+                viaggio: tripData.viaggio || "",
                 kmPartenza: finalKmPartenza,
                 kmArrivo: finalKmArrivo,
                 kmDelta: finalKmDelta,

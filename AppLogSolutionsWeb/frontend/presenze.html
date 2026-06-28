@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=4.07">
+    <link rel="stylesheet" href="styles.css?v=4.08">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .row-error td {
@@ -486,13 +486,13 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.07"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.07"></script>
+    <script src="script.js?v=4.08"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.08"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=4.07";
+        import { calculateHours } from "./firestore-service.js?v=4.08";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -803,6 +803,7 @@ const db = getFirestore(app);
             let headerHtml = `
                 <th>Data</th>
                 <th>Cliente</th>
+                <th>Viaggio / Zona</th>
                 <th style="text-align:right;">Km<br>Part.</th>
                 <th style="text-align:right;">Km<br>Arr.</th>
                 <th style="text-align:right;">Delta<br>Km</th>
@@ -942,9 +943,27 @@ const db = getFirestore(app);
 
                     const displayDate = dt.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
 
+                    // Retrocompatibilità: sdoppiamo il campo cliente se non c'è viaggio
+                    let rCliente = record.cliente || "";
+                    let rViaggio = record.viaggio || "";
+                    if (!rViaggio && rCliente) {
+                        if (rCliente.includes(" - ")) {
+                            const parti = rCliente.split(" - ");
+                            rCliente = parti[0].trim();
+                            rViaggio = parti[1].trim();
+                        } else {
+                            const parsed = parseClienteDestinazione(rCliente);
+                            if (parsed.cliente) {
+                                rCliente = parsed.cliente;
+                                rViaggio = parsed.viaggio;
+                            }
+                        }
+                    }
+
                     tr.innerHTML = `
     <td><strong>${dayName}</strong><br><span style="font-size: 0.8em; color: #6b7280;">${displayDate}</span></td>
-                        <td><input type="text" class="edit-input" data-field="cliente" value="${record.cliente || ''}" disabled></td>
+                        <td><input type="text" class="edit-input" data-field="cliente" value="${rCliente}" disabled></td>
+                        <td><input type="text" class="edit-input" data-field="viaggio" value="${rViaggio}" disabled></td>
                         <td><input type="number" class="edit-input num-input" data-field="kmPartenza" value="${record.kmPartenza || 0}" disabled onchange="onKmChange(this)"></td>
                         <td><input type="number" class="edit-input num-input" data-field="kmArrivo" value="${record.kmArrivo || 0}" disabled onchange="onKmChange(this)"></td>
                         <td><input type="number" class="edit-input num-input" data-field="kmDelta" value="${record.kmDelta || 0}" disabled readonly></td>
@@ -1381,7 +1400,8 @@ const db = getFirestore(app);
                     data: dateStr,
                     mese: selectedMonth,
                     giornoSettimana: tr.querySelector('strong').innerText,
-                    cliente: tr.querySelector('[data-field="cliente"]').value,
+                    cliente: tr.querySelector('[data-field="cliente"]').value.trim(),
+                    viaggio: tr.querySelector('[data-field="viaggio"]').value.trim(),
                     kmPartenza: kmPartenza,
                     kmArrivo: kmArrivo,
                     kmDelta: kmDelta,
@@ -1677,7 +1697,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=4.07"></script>
+    <script type="module" src="cedolini-splitter.js?v=4.08"></script>
 
 </body>
 </html>

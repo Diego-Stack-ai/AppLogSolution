@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.03">
+    <link rel="stylesheet" href="styles.css?v=4.04">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -216,8 +216,8 @@
                     affinityData[d.id] = { viaggi: {}, targhe: {} };
                 });
 
-                // Leggi storico presenze (ultimi N record o semplice aggregazione)
-                const presenzeSnap = await getDocs(collection(db, "clienti", "DNR", "presenze"));
+                // Leggi storico presenze
+                const presenzeSnap = await getDocs(collection(db, "presenze"));
                 
                 presenzeSnap.forEach(p => {
                     const pd = p.data();
@@ -431,7 +431,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.03"></script>
-    <script src="script.js?v=4.03"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.04"></script>
+    <script src="script.js?v=4.04"></script>
 </body>
 </html>

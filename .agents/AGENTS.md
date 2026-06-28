@@ -23,7 +23,7 @@ Ogni volta che vengono apportate modifiche significative al frontend (nuove funz
 - NON usare grep per finalità di sostituzione/modifica del numero di versione (rischio di rompere SVG o coordinate GPS). L'uso di grep è consentito in sola lettura per le verifiche.
 - NON inventare la versione corrente. Controllare SEMPRE script.js riga 7 prima di procedere.
 - I query string ?v=X.XX nei tag <link> e <script> di TUTTI i file HTML DEVONO essere aggiornati alla nuova versione. Farlo tramite script Python (NON grep/PowerShell). Questo serve al browser per scaricare i file JS/CSS aggiornati.
-- Dopo la modifica, eseguire: firebase deploy --only hosting dalla cartella G:\Il mio Drive\App\AppLogSolutionsWeb
+- **TASSATIVO — DEPLOY CI/CD:** Dopo la modifica, NON lanciare `firebase deploy --only hosting` manualmente dal terminale locale. L'Hosting viene deployato in automatico tramite GitHub Actions dal branch `main`.
 
 ### Sequenza Deploy Versione:
   1. Leggi APP_VERSION attuale da script.js riga 7
@@ -32,7 +32,7 @@ Ogni volta che vengono apportate modifiche significative al frontend (nuove funz
   4. Aggiorna script.js riga 7 con il nuovo APP_VERSION
   5. Allinea tutti i ?v= nei file HTML: esegui uno script Python che sostituisce la vecchia versione con la nuova in tutti i *.html del frontend (es. ?v=2.87 -> ?v=2.88). Usare sempre script Python, mai grep/PowerShell.
   6. Verifica con grep che non rimangano riferimenti alla versione precedente nei file HTML.
-  7. Esegui: firebase deploy --only hosting
+  7. Fai il `git commit` su `sviluppo`, uniscilo a `main` e fai `git push origin main`. GitHub Actions eseguirà automaticamente il deploy di Hosting in produzione.
 
 ---
 
@@ -57,14 +57,13 @@ Ogni volta che vengono apportate modifiche significative al frontend (nuove funz
 
 ---
 
-## Regole sul Deploy
+## Regole sul Deploy (CI/CD Obbligatorio)
 
 - TASSATIVO — DIVIETO SUL MULETTO: Il progetto e ambiente muletto (`log-solution-muletto`) NON DEVE MAI ESSERE TOCCATO. Qualsiasi operazione di deploy (sia Hosting che Functions) deve essere sempre e solo indirizzata alla produzione attiva (`log-solution-60007`), salvo che l'utente non impartisca l'ordine esplicito di collaudo sul muletto.
-- Solo functions: firebase deploy --only functions
-- Solo hosting: firebase deploy --only hosting
-- Una sola funzione: firebase deploy --only functions:nome_funzione
-- Eseguire sempre dalla cartella G:\Il mio Drive\App\AppLogSolutionsWeb
-- NON eseguire firebase deploy senza --only (deploy totale inutilmente lento).
+- **HOSTING (FRONTEND):** Tassativamente VIETATO fare `firebase deploy --only hosting` manualmente dal terminale locale. Il deploy in produzione avviene IN AUTOMATICO tramite GitHub Actions quando si effettua il `git push origin main`. L'agente deve limitarsi a unire le modifiche su `main` e fare il push.
+- **FUNCTIONS (BACKEND):** Il deploy delle Cloud Functions (`firebase deploy --only functions`) si esegue dal terminale locale, ma **TASSATIVAMENTE** solo dopo aver committato e pushato ogni singola modifica su Git (`main` e `sviluppo`).
+- Una sola funzione: `firebase deploy --only functions:nome_funzione` (eseguire sempre dalla cartella G:\Il mio Drive\App\AppLogSolutionsWeb dopo il git push).
+- NON eseguire mai `firebase deploy` senza `--only` (deploy totale inutilmente lento e a rischio di scavalcare la CI/CD).
 
 ---
 

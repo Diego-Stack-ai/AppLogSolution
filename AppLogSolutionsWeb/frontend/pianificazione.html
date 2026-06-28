@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.06">
+    <link rel="stylesheet" href="styles.css?v=4.07">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -102,6 +102,15 @@
             transform: translateY(-1px);
         }
         
+        
+        .badge-cattel { background: #e0f2fe !important; color: #0284c7 !important; border: 1px solid #bae6fd; }
+        .badge-bauer { background: #fee2e2 !important; color: #dc2626 !important; border: 1px solid #fecaca; }
+        .badge-granchef { background: #dcfce7 !important; color: #16a34a !important; border: 1px solid #bbf7d0; }
+        .badge-dnr { background: #ffedd5 !important; color: #ea580c !important; border: 1px solid #fed7aa; }
+        .badge-default { background: #f3f4f6 !important; color: #4b5563 !important; border: 1px solid #e5e7eb; }
+        .badge-disabled { background: #f1f5f9 !important; color: #94a3b8 !important; cursor: not-allowed !important; border: 1px solid #cbd5e1; opacity: 0.7; }
+        .badge-disabled:hover { background: #f1f5f9 !important; }
+
         .suggestion-badge {
             display: inline-block;
             background: #e0e7ff;
@@ -152,10 +161,11 @@
             <table class="planning-table" id="planningTable">
                 <thead>
                     <tr>
-                        <th style="width: 25%;">Nome Autista</th>
-                        <th style="width: 35%;">Viaggio (Destinazione/Cliente)</th>
-                        <th style="width: 25%;">Targa Mezzo</th>
-                        <th style="width: 10%; text-align: center;">Confermato</th>
+                        <th style="width: 20%;">Nome Autista</th>
+                        <th style="width: 25%;">Cliente</th>
+                        <th style="width: 25%;">Zona / Viaggio</th>
+                        <th style="width: 20%;">Targa Mezzo</th>
+                        <th style="width: 5%; text-align: center;">Conf.</th>
                         <th style="width: 5%;"></th>
                     </tr>
                 </thead>
@@ -180,7 +190,7 @@
 
         // Variabili globali per l'intelligenza logistica
         let dipendenti = [];
-        let affinityData = {}; // { idDipendente: { viaggi: {nome: conteggio}, targhe: {targa: conteggio} } }
+        let affinityData = {}; // { idDipendente: { clienti: {}, viaggiPerCliente: {}, viaggi: {}, targhe: {} } }
 
         // Elementi DOM
         const dataInput = document.getElementById('dataPianificazione');
@@ -213,25 +223,36 @@
 
                 // Inizializza mappa affinità
                 dipendenti.forEach(d => {
-                    affinityData[d.id] = { viaggi: {}, targhe: {} };
+                    affinityData[d.id] = { clienti: {}, viaggiPerCliente: {}, viaggi: {}, targhe: {} };
                 });
 
-                // Per non perdere nessun dato, uniamo sia i dati storici delle "presenze" sia i nuovi dati "viaggi"
-                const viaggiSnap = await getDocs(collection(db, "viaggi"));
+                // Su richiesta, peschiamo i dati per le statistiche solo dalle presenze
                 const presenzeSnap = await getDocs(collection(db, "presenze"));
                 
                 const processStatDoc = (pd) => {
                     const autistaId = pd.autistaId || pd.dipendenteId;
                     if (autistaId && affinityData[autistaId]) {
-                        // Estrai viaggio
-                        const vInizioM = pd.viaggioOraInizioM || "";
-                        const nomeViaggio = pd.viaggio || pd.cliente || vInizioM || pd.note;
-                        if (nomeViaggio && typeof nomeViaggio === 'string' && nomeViaggio.trim().length > 2 && isNaN(nomeViaggio)) {
-                            const cleanViaggio = nomeViaggio.trim().toUpperCase();
-                            affinityData[autistaId].viaggi[cleanViaggio] = (affinityData[autistaId].viaggi[cleanViaggio] || 0) + 1;
+                        
+                        const cliente = (pd.cliente || "").trim().toUpperCase();
+                        let nomeViaggio = pd.viaggio || "";
+                        if (!nomeViaggio && !cliente) nomeViaggio = pd.viaggioOraInizioM || pd.note || "";
+                        const viaggio = nomeViaggio.trim().toUpperCase();
+                        
+                        if (cliente && cliente.length > 2 && isNaN(cliente)) {
+                            affinityData[autistaId].clienti[cliente] = (affinityData[autistaId].clienti[cliente] || 0) + 1;
+                            
+                            if (viaggio && viaggio.length > 2 && isNaN(viaggio)) {
+                                if (!affinityData[autistaId].viaggiPerCliente[cliente]) {
+                                    affinityData[autistaId].viaggiPerCliente[cliente] = {};
+                                }
+                                affinityData[autistaId].viaggiPerCliente[cliente][viaggio] = (affinityData[autistaId].viaggiPerCliente[cliente][viaggio] || 0) + 1;
+                            }
                         }
 
-                        // Estrai targa
+                        if (viaggio && viaggio.length > 2 && isNaN(viaggio)) {
+                            affinityData[autistaId].viaggi[viaggio] = (affinityData[autistaId].viaggi[viaggio] || 0) + 1;
+                        }
+
                         const targa = (pd.targa || pd.targa_mezzo || pd.mezzo || "").trim().toUpperCase();
                         if (targa && targa.length >= 4) {
                             affinityData[autistaId].targhe[targa] = (affinityData[autistaId].targhe[targa] || 0) + 1;
@@ -239,7 +260,6 @@
                     }
                 };
 
-                viaggiSnap.forEach(p => processStatDoc(p.data()));
                 presenzeSnap.forEach(p => processStatDoc(p.data()));
 
                 // Genera le Datalist
@@ -260,17 +280,90 @@
             }
         }
 
+        window.getClienteColorClass = (nome) => {
+            if (!nome) return 'badge-default';
+            const n = nome.toUpperCase();
+            if (n.includes('CATTEL')) return 'badge-cattel';
+            if (n.includes('BAUER')) return 'badge-bauer';
+            if (n.includes('GRAN CHEF')) return 'badge-granchef';
+            if (n.includes('DNR')) return 'badge-dnr';
+            return 'badge-default';
+        };
+
+        window.impostaCliente = function(btn, valore) {
+            const tr = btn.closest('tr');
+            const inputCliente = tr.querySelector('.in-cliente');
+            inputCliente.value = valore;
+            inputCliente.dispatchEvent(new Event('input')); // Trigger update
+        };
+
+        window.aggiornaDestinazioni = function(tr, idAutista) {
+            const clienteSelezionato = tr.querySelector('.in-cliente').value.trim().toUpperCase();
+            const destContainer = tr.querySelector('.dest-container');
+            const inViaggio = tr.querySelector('.in-viaggio');
+            
+            if (!clienteSelezionato) {
+                inViaggio.value = '';
+                destContainer.innerHTML = '<span class="suggestion-badge badge-disabled">Seleziona prima il cliente</span>';
+                return;
+            }
+
+            const colorClass = window.getClienteColorClass(clienteSelezionato);
+            const viaggiCliente = affinityData[idAutista].viaggiPerCliente[clienteSelezionato] || {};
+            const topViaggi = Object.entries(viaggiCliente).sort((a,b) => b[1] - a[1]).slice(0, 3);
+
+            if (topViaggi.length === 0) {
+                destContainer.innerHTML = `<span class="suggestion-badge ${colorClass}" style="opacity: 0.6;">Nessuno storico destinazioni</span>`;
+            } else {
+                destContainer.innerHTML = topViaggi.map(v => 
+                    `<span class="suggestion-badge ${colorClass}" style="cursor:pointer;" onclick="impostaDaSuggerimento(this, '.in-viaggio', '${v[0].replace(/'/g, "\\'")}')" title="Assegnato ${v[1]} volte">★ ${v[0]}</span>`
+                ).join(' ');
+            }
+        };
+
+        window.toggleLockRow = (tr) => {
+            const isConfirmed = tr.querySelector('.in-confermato').checked;
+            const inputs = tr.querySelectorAll('.input-field');
+            const badges = tr.querySelectorAll('.suggestion-badge');
+            const pulisciBtn = tr.querySelector('.btn-pulisci');
+            
+            inputs.forEach(inp => {
+                inp.disabled = isConfirmed;
+                if(isConfirmed) inp.style.backgroundColor = '#f1f5f9';
+                else inp.style.backgroundColor = '';
+            });
+            
+            pulisciBtn.disabled = isConfirmed;
+            
+            if(isConfirmed) {
+                tr.style.backgroundColor = '#f0fdf4';
+                badges.forEach(b => {
+                    b.dataset.oldEvents = b.style.pointerEvents;
+                    b.style.pointerEvents = 'none';
+                    b.style.opacity = '0.5';
+                });
+            } else {
+                tr.style.backgroundColor = '';
+                badges.forEach(b => {
+                    b.style.pointerEvents = b.dataset.oldEvents || '';
+                    b.style.opacity = '1';
+                });
+            }
+        };
+
         function generaDatalists() {
             let html = '';
             dipendenti.forEach(d => {
-                // Ordina i viaggi per frequenza decrescente
+                const clientiSortati = Object.entries(affinityData[d.id].clienti).sort((a,b) => b[1] - a[1]);
                 const viaggiSortati = Object.entries(affinityData[d.id].viaggi).sort((a,b) => b[1] - a[1]);
                 const targheSortate = Object.entries(affinityData[d.id].targhe).sort((a,b) => b[1] - a[1]);
 
+                html += `<datalist id="clienti_${d.id}">`;
+                clientiSortati.forEach(c => { html += `<option value="${c[0]}">Affinità: ${c[1]} volte</option>`; });
+                html += `</datalist>`;
+
                 html += `<datalist id="viaggi_${d.id}">`;
-                viaggiSortati.forEach(v => {
-                    html += `<option value="${v[0]}">Affinità: ${v[1]} viaggi</option>`;
-                });
+                viaggiSortati.forEach(v => { html += `<option value="${v[0]}">Affinità: ${v[1]} viaggi</option>`; });
                 html += `</datalist>`;
 
                 html += `<datalist id="targhe_${d.id}">`;
@@ -290,12 +383,11 @@
         function costruisciTabella() {
             tbody.innerHTML = '';
             dipendenti.forEach(d => {
-                // Calcola le prime 2 affinità
-                const topViaggi = Object.entries(affinityData[d.id].viaggi).sort((a,b) => b[1] - a[1]).slice(0, 2);
+                const topClienti = Object.entries(affinityData[d.id].clienti).sort((a,b) => b[1] - a[1]).slice(0, 3);
                 const topTarghe = Object.entries(affinityData[d.id].targhe).sort((a,b) => b[1] - a[1]).slice(0, 2);
                 
-                let suggestViaggioHtml = topViaggi.length > 0 
-                    ? topViaggi.map(v => `<span class="suggestion-badge" style="cursor:pointer;" onclick="impostaDaSuggerimento(this, '.in-viaggio', '${v[0].replace(/'/g, "\\'")}')" title="Assegnato ${v[1]} volte">★ ${v[0]}</span>`).join(' ') 
+                let suggestClienteHtml = topClienti.length > 0 
+                    ? topClienti.map(c => `<span class="suggestion-badge ${window.getClienteColorClass(c[0])}" style="cursor:pointer;" onclick="impostaCliente(this, '${c[0].replace(/'/g, "\\'")}')" title="Assegnato ${c[1]} volte">★ ${c[0]}</span>`).join(' ') 
                     : '';
                 let suggestTargaHtml = topTarghe.length > 0 
                     ? topTarghe.map(t => `<span class="suggestion-badge" style="cursor:pointer;" onclick="impostaDaSuggerimento(this, '.in-targa', '${t[0].replace(/'/g, "\\'")}')" title="Usato ${t[1]} volte">★ ${t[0]}</span>`).join(' ') 
@@ -308,18 +400,24 @@
                         <div class="driver-name">${d.nome} ${d.cognome || ''}</div>
                     </td>
                     <td>
-                        <input type="text" class="input-field in-viaggio" list="viaggi_${d.id}" placeholder="Es. GRAN CHEF LAGO">
-                        <div style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">${suggestViaggioHtml}</div>
+                        <input type="text" class="input-field in-cliente" list="clienti_${d.id}" placeholder="Es. CATTEL" oninput="window.aggiornaDestinazioni(this.closest('tr'), '${d.id}')">
+                        <div style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">${suggestClienteHtml}</div>
+                    </td>
+                    <td>
+                        <input type="text" class="input-field in-viaggio" list="viaggi_${d.id}" placeholder="Es. CORTINA">
+                        <div class="dest-container" style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">
+                             <span class="suggestion-badge badge-disabled">Seleziona prima il cliente</span>
+                        </div>
                     </td>
                     <td>
                         <input type="text" class="input-field in-targa" list="targhe_${d.id}" placeholder="Es. EN 201 DB">
                         <div style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">${suggestTargaHtml}</div>
                     </td>
                     <td class="check-container">
-                        <input type="checkbox" class="in-confermato" title="Spunta per segnare come confermato">
+                        <input type="checkbox" class="in-confermato" title="Spunta per segnare come confermato" onchange="window.toggleLockRow(this.closest('tr'))">
                     </td>
                     <td style="text-align:center;">
-                        <button class="icon-btn" onclick="pulisciRiga('${d.id}')" title="Svuota riga" style="background:none; border:none; color:#94a3b8; cursor:pointer;">
+                        <button class="icon-btn btn-pulisci" onclick="pulisciRiga('${d.id}')" title="Svuota riga" style="background:none; border:none; color:#94a3b8; cursor:pointer;">
                             <span class="material-icons-round">clear</span>
                         </button>
                     </td>
@@ -331,9 +429,11 @@
         window.pulisciRiga = (id) => {
             const tr = document.querySelector(`tr[data-id="${id}"]`);
             if(tr) {
+                tr.querySelector('.in-cliente').value = '';
                 tr.querySelector('.in-viaggio').value = '';
                 tr.querySelector('.in-targa').value = '';
                 tr.querySelector('.in-confermato').checked = false;
+                window.aggiornaDestinazioni(tr, id);
             }
         };
 
@@ -343,9 +443,12 @@
             
             // Svuotiamo prima la UI
             document.querySelectorAll('#planningTable tbody tr').forEach(tr => {
+                tr.querySelector('.in-cliente').value = '';
                 tr.querySelector('.in-viaggio').value = '';
                 tr.querySelector('.in-targa').value = '';
                 tr.querySelector('.in-confermato').checked = false;
+                window.aggiornaDestinazioni(tr, tr.getAttribute('data-id'));
+                window.toggleLockRow(tr);
             });
 
             try {
@@ -358,9 +461,12 @@
                         data.assegnazioni.forEach(ass => {
                             const tr = document.querySelector(`tr[data-id="${ass.dipendenteId}"]`);
                             if (tr) {
+                                tr.querySelector('.in-cliente').value = ass.cliente || '';
+                                window.aggiornaDestinazioni(tr, ass.dipendenteId);
                                 tr.querySelector('.in-viaggio').value = ass.viaggio || '';
                                 tr.querySelector('.in-targa').value = ass.targa || '';
                                 tr.querySelector('.in-confermato').checked = ass.confermato || false;
+                                window.toggleLockRow(tr);
                             }
                         });
                     }
@@ -387,15 +493,15 @@
                 document.querySelectorAll('#planningTable tbody tr').forEach(tr => {
                     const id = tr.getAttribute('data-id');
                     const nome = tr.querySelector('.driver-name').innerText;
+                    const cliente = tr.querySelector('.in-cliente').value.trim();
                     const viaggio = tr.querySelector('.in-viaggio').value.trim();
                     const targa = tr.querySelector('.in-targa').value.trim();
                     const confermato = tr.querySelector('.in-confermato').checked;
 
-                    // Salviamo tutti, oppure solo quelli che hanno qualcosa compilato
-                    // Optiamo per salvare tutti, così se qualcuno viene cancellato si riflette nel DB
                     assegnazioni.push({
                         dipendenteId: id,
                         nome: nome,
+                        cliente: cliente,
                         viaggio: viaggio,
                         targa: targa,
                         confermato: confermato
@@ -433,7 +539,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.06"></script>
-    <script src="script.js?v=4.06"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.07"></script>
+    <script src="script.js?v=4.07"></script>
 </body>
 </html>

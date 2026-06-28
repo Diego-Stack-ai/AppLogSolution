@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.13">
+    <link rel="stylesheet" href="styles.css?v=4.14">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -411,6 +411,25 @@
             });
         };
 
+        window.renderMezzi = function() {
+            console.log("Pianificazione: renderMezzi() chiamato, aggiornamento menu targhe...");
+            const mezzi = window.appData?.lista_mezzi || [];
+            
+            const selects = document.querySelectorAll('.in-targa');
+            selects.forEach(select => {
+                const currentVal = select.value;
+                select.innerHTML = '<option value="">-- Seleziona --</option>';
+                mezzi.sort((a,b) => a.targa.localeCompare(b.targa)).forEach(m => {
+                    const targa = (m.targa || "").trim().toUpperCase();
+                    const opt = document.createElement('option');
+                    opt.value = targa;
+                    opt.textContent = targa;
+                    select.appendChild(opt);
+                });
+                select.value = currentVal;
+            });
+        };
+
         window.aggiornaDestinazioni = function(tr, idAutista) {
             const selectCliente = tr.querySelector('.in-cliente');
             const clienteSelezionato = selectCliente.value.trim().toUpperCase();
@@ -523,6 +542,13 @@
                 return `<option value="${nome}">${nome}</option>`;
             }).join('');
 
+            // Carica la lista mezzi corrente per popolare il select targa
+            const mezzi = window.appData?.lista_mezzi || [];
+            const opzioniTargheHtml = [...mezzi].sort((a,b) => a.targa.localeCompare(b.targa)).map(m => {
+                const targa = (m.targa || "").trim().toUpperCase();
+                return `<option value="${targa}">${targa}</option>`;
+            }).join('');
+
             dipendenti.forEach(d => {
                 const topClienti = Object.entries(affinityData[d.id].clienti).sort((a,b) => b[1] - a[1]).slice(0, 3);
                 const topTarghe = Object.entries(affinityData[d.id].targhe).sort((a,b) => b[1] - a[1]).slice(0, 2);
@@ -556,7 +582,10 @@
                         </div>
                     </td>
                     <td>
-                        <input type="text" class="input-field in-targa" list="targhe_${d.id}" placeholder="Es. EN 201 DB">
+                        <select class="input-field in-targa">
+                            <option value="">-- Seleziona --</option>
+                            ${opzioniTargheHtml}
+                        </select>
                         <div style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">${suggestTargaHtml}</div>
                     </td>
                     <td class="check-container">
@@ -696,7 +725,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.13"></script>
-    <script src="script.js?v=4.13"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.14"></script>
+    <script src="script.js?v=4.14"></script>
 </body>
 </html>

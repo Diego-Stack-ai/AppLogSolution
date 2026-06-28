@@ -300,6 +300,7 @@ function startRealtimeSync(isAdmin) {
         window.appData.lista_mezzi = mezzi;
         if (typeof window.renderLista === 'function') window.renderLista();
         if (typeof window.renderMezziInserimento === 'function') window.renderMezziInserimento();
+        if (typeof window.renderMezzi === 'function') window.renderMezzi();
     });
     activeListeners.push(unsubMezzi);
 

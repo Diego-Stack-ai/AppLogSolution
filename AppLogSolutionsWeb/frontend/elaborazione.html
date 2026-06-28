@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.00">
+    <link rel="stylesheet" href="styles.css?v=3.01">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -369,8 +369,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=3.00"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.00"></script>
+    <script src="script.js?v=3.01"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.01"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
@@ -948,10 +948,28 @@
             
             onSnapshot(q, (snapshot) => {
                 const reportsList = document.getElementById('reports-list');
-                let html = '';
+                let docsData = [];
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     if (data.archiviato_ui) return; // Soft Delete visivo!
+                    docsData.push(data);
+                });
+                
+                // ORDINAMENTO AUTOMATICO PER DATA DI CONSEGNA (data_consegna: DD-MM-YYYY)
+                docsData.sort((a, b) => {
+                    const parseDate = (dStr) => {
+                        if (!dStr || !dStr.includes('-')) return 0;
+                        const parts = dStr.split('-');
+                        if (parts[0].length === 2) {
+                            return parseInt(`${parts[2]}${parts[1]}${parts[0]}`, 10);
+                        }
+                        return parseInt(`${parts[0]}${parts[1]}${parts[2]}`, 10);
+                    };
+                    return parseDate(b.data_consegna) - parseDate(a.data_consegna); // Ordine decrescente (più recenti in alto)
+                });
+
+                let html = '';
+                docsData.forEach(data => {
                     html += `
                         <div style="background: #f1f5f9; border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
                             <div>

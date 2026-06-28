@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anagrafiche - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.81">
+    <link rel="stylesheet" href="styles.css?v=3.82">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- Leaflet per Mappe -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -390,6 +390,15 @@
         </div>
 
         <div class="glass-panel" style="padding: 24px;">
+            <!-- Alert Rubrica Contatti Clienti -->
+            <div id="rubricaClientiAlert" style="background:#f0f9ff; border:1px solid #0284c7; padding:16px 20px; border-radius:16px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div style="font-size:13px; color:#0369a1; line-height:1.5;">
+                    <b style="display:flex; align-items:center; gap:6px;"><span class="material-icons-round" style="font-size:18px;">contact_phone</span> Nuova Rubrica Contatti Clienti</b>
+                    <span style="display:block; margin-top:2px; font-weight:400; color:#0284c7;">Per gestire contatti multipli, telefoni, cellulari e abilitare l'invio delle email di fatturazione, usa la rubrica dedicata.</span>
+                </div>
+                <button type="button" onclick="window.navigateWithState('gestione_nuovi_clienti.html')" class="btn-primary" style="background:#0284c7; box-shadow:none; padding:8px 16px; font-size:12px; width:auto; height:auto;">Apri Rubrica</button>
+            </div>
+
             <div class="search-bar">
                 <input type="text" id="searchInput" placeholder="Cerca cliente, codice o città..." onkeyup="filterTable()">
                 <select id="brandFilter" onchange="filterTable()" style="flex: 0 1 160px; height: 45px; padding: 0 16px; border: 1px solid #e2e8f0; border-radius: 12px; font-family: inherit; font-size: 14px; background: white; outline: none; cursor: pointer; box-sizing: border-box;">
@@ -442,8 +451,8 @@
         </div>
     </div>
 
-    <script src="script.js?v=3.81"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.81"></script>
+    <script src="script.js?v=3.82"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.82"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -475,6 +484,10 @@ const db = getFirestore(app);
             const brandSelect = document.getElementById('brandFilter');
             if(brandSelect) {
                 brandSelect.style.display = (tab === 'clienti') ? 'inline-block' : 'none';
+            }
+            const rubricaAlert = document.getElementById('rubricaClientiAlert');
+            if(rubricaAlert) {
+                rubricaAlert.style.display = (tab === 'clienti') ? 'flex' : 'none';
             }
 
             loadData();

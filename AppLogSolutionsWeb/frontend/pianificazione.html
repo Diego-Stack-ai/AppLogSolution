@@ -259,7 +259,10 @@
                 dipendenti = [];
                 dipendentiSnap.forEach(d => {
                     const data = d.data();
-                    if (data.attivo !== false && data.ruolo === "autista") {
+                    const ruolo = (data.ruolo || "").toLowerCase().trim();
+                    const isStaff = ruolo === 'amministratore' || ruolo === 'impiegata';
+                    // Mostriamo tutti i dipendenti attivi che non sono amministratori o impiegati (stesso filtro di presenze)
+                    if (data.attivo !== false && !isStaff) {
                         dipendenti.push({ id: d.id, ...data });
                     }
                 });

@@ -212,7 +212,7 @@
         // Helper per estrarre Cliente e Destinazione valida da una stringa
         function parseClienteDestinazione(stringaUnica) {
             if (!stringaUnica) return { cliente: "", viaggio: "" };
-            const cleanStr = stringaUnica.trim().toUpperCase();
+            const cleanStr = String(stringaUnica).trim().toUpperCase();
             
             // Trova se contiene uno dei clienti cardine
             let clienteTrovato = "";
@@ -234,7 +234,7 @@
 
             // Valida la destinazione confrontandola con le impostazioni del cliente
             const progetti = window.appData?.lista_progetti || [];
-            const proj = progetti.find(p => p.nome.toUpperCase() === clienteTrovato);
+            const proj = progetti.find(p => (p.nome || "").toUpperCase() === clienteTrovato);
             const viaggiConfigurati = proj ? (proj.viaggi || []).map(v => v.toUpperCase()) : [];
 
             if (viaggiConfigurati.includes(resto)) {

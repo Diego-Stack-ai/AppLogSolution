@@ -498,6 +498,43 @@
 
 const db = getFirestore(app);
 
+        // Helper per estrarre Cliente e Destinazione valida da una stringa
+        function parseClienteDestinazione(stringaUnica) {
+            if (!stringaUnica) return { cliente: "", viaggio: "" };
+            const cleanStr = String(stringaUnica).trim().toUpperCase();
+            const CLIENTI_CARDINE = ["CATTEL", "GRAN CHEF", "BAUER", "DNR"];
+            
+            let clienteTrovato = "";
+            for (const c of CLIENTI_CARDINE) {
+                if (cleanStr.startsWith(c) || cleanStr.includes(" " + c) || cleanStr.includes(c + " ")) {
+                    clienteTrovato = c;
+                    break;
+                }
+            }
+
+            if (!clienteTrovato) {
+                return { cliente: "", viaggio: cleanStr };
+            }
+
+            let resto = cleanStr.replace(clienteTrovato, "").replace(/[^A-Z0-9 ]/g, " ").trim();
+            resto = resto.replace(/\s+/g, " ");
+
+            const progetti = window.appData?.lista_progetti || [];
+            const proj = progetti.find(p => (p.nome || "").toUpperCase() === clienteTrovato);
+            const viaggiConfigurati = proj ? (proj.viaggi || []).map(v => v.toUpperCase()) : [];
+
+            if (viaggiConfigurati.includes(resto)) {
+                return { cliente: clienteTrovato, viaggio: resto };
+            }
+
+            const destinazioneUfficiale = viaggiConfigurati.find(v => resto.includes(v) || v.includes(resto));
+            if (destinazioneUfficiale) {
+                return { cliente: clienteTrovato, viaggio: destinazioneUfficiale };
+            }
+
+            return { cliente: clienteTrovato, viaggio: "" };
+        }
+
         
         let currentUnsub = null;
         let selectedEmployee = null;

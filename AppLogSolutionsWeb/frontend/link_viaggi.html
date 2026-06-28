@@ -160,7 +160,12 @@
                     <span class="material-icons-round" style="font-size: 18px;">restore</span> RECUPERA VIAGGIO
                 </button>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <button class="btn-genera-tutte" id="btnGeneraTutteRecupero" onclick="generaTutteMappe()" style="background: linear-gradient(135deg, #b45309, #d97706);">
+                    <span class="material-icons-round">auto_awesome</span>
+                    GENERA TUTTE LE MAPPE
+                    <span class="badge-count" id="countBadgeRecupero">0</span>
+                </button>
                 <button type="button" id="btnRilasciaRecupero" onclick="window.rilasciaRecuperoStorico()" style="display: none; background: #ef4444; color: white; border: none; height: 42px; padding: 0 20px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(239,68,68,0.2);">
                     <span class="material-icons-round" style="font-size: 18px;">verified_user</span> RILASCIA VIAGGIO / CONCLUDI STUDIO
                 </button>
@@ -293,6 +298,9 @@
                 }
 
                 document.getElementById('countBadge').textContent = viaggi.length;
+                if (document.getElementById('countBadgeRecupero')) {
+                    document.getElementById('countBadgeRecupero').textContent = viaggi.length;
+                }
                 renderViaggi();
             } catch (e) {
                 showError("Errore Firestore: " + e.message);
@@ -388,7 +396,7 @@
                 tabOrd.style.background = 'transparent';
                 tabOrd.style.color = '#64748b';
                 tabOrd.style.boxShadow = 'none';
-                toolOrd.style.display = 'flex'; // Mantieni visibile per abilitare Genera Tutte le Mappe
+                toolOrd.style.display = 'none'; // Spegnimento totale della barra ordinaria in R&D
                 toolRec.style.display = 'flex';
                 caricaMesiRecupero();
             }
@@ -564,8 +572,10 @@
 
         // ── GENERA TUTTE ──────────────────────────────────────────────────────
         window.generaTutteMappe = async function() {
-            const btn = document.getElementById('btnGeneraTutte');
-            btn.disabled = true;
+            const btn1 = document.getElementById('btnGeneraTutte');
+            const btn2 = document.getElementById('btnGeneraTutteRecupero');
+            if (btn1) btn1.disabled = true;
+            if (btn2) btn2.disabled = true;
             const tot = viaggi.length;
             let done = 0, errors = 0;
 
@@ -589,7 +599,8 @@
             }
 
             renderViaggi();
-            btn.disabled = false;
+            if (btn1) btn1.disabled = false;
+            if (btn2) btn2.disabled = false;
 
             const msg = errors
                 ? `${done} ok, ${errors} errori — vedi console`

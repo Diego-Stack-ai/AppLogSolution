@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.97">
+    <link rel="stylesheet" href="styles.css?v=3.98">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -369,8 +369,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=3.97"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.97"></script>
+    <script src="script.js?v=3.98"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.98"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -1387,17 +1387,17 @@
             }
 
             Swal.fire({
-                title: 'Generazione allegati...',
-                text: 'Conversione dei documenti in corso...',
-                allowOutsideClick: false,
-                didOpen: () => { Swal.showLoading(); }
+                title: 'Generazione dati in corso...',
+                text: 'Apertura client di posta e download allegati...',
+                timer: 2000,
+                showConfirmButton: false
             });
 
-            let pdfBase64 = null;
-            let excelBase64 = null;
-
             try {
-                // 1. Generazione PDF in Base64
+                const safeClientName = (window.currentClient || "Cliente").replace(/[^a-zA-Z0-9_-]/g, "_");
+                const safeMonthLabel = (window.currentMonthLabel || "Mese").replace(/[^a-zA-Z0-9_-]/g, "_");
+
+                // 1. Download PDF locale
                 if (attPdf) {
                     const { jsPDF } = window.jspdf;
                     const docPdf = new jsPDF('l', 'pt', 'a4');
@@ -1415,10 +1415,10 @@
                     });
                     document.querySelectorAll('.extra-info-cell').forEach(el => el.style.display = 'inline-block');
                     
-                    pdfBase64 = docPdf.output('datauristring').split(',')[1];
+                    docPdf.save(`Riepilogo_${safeClientName}_${safeMonthLabel}.pdf`);
                 }
 
-                // 2. Generazione Excel in Base64
+                // 2. Download Excel locale
                 if (attExcel) {
                     const table = document.getElementById('pivot-table');
                     const cellMeta = {};
@@ -1521,39 +1521,18 @@
                         });
                     });
 
-                    excelBase64 = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+                    XLSX.writeFile(wb, `Riepilogo_${safeClientName}_${safeMonthLabel}.xlsx`);
                 }
 
-                // 3. Invio tramite Cloud Function
-                Swal.fire({
-                    title: 'Spedizione email...',
-                    text: 'Connessione al server mail in corso...',
-                    allowOutsideClick: false,
-                    didOpen: () => { Swal.showLoading(); }
-                });
-
-                const inviaEmailFn = httpsCallable(functions, 'invia_email_fattura');
-                const res = await inviaEmailFn({
-                    azione: 'invia_fattura',
-                    destinatario: dest,
-                    oggetto: ogger,
-                    corpo: corpo,
-                    cliente: window.currentClient,
-                    periodo: window.currentMonthLabel,
-                    allegato_pdf: pdfBase64,
-                    allegato_excel: excelBase64
-                });
-
-                if (res.data && res.data.status === 'ok') {
-                    Swal.fire({ title: 'Spedito!', text: 'Email inviata e registrata negli inviati del server con successo!', icon: 'success', confirmButtonColor: '#4f46e5' });
-                    closeEmailModal();
-                } else {
-                    Swal.fire({ title: 'Spedizione fallita', text: res.data?.message || 'Errore sconosciuto', icon: 'error', confirmButtonColor: '#4f46e5' });
-                }
+                // 3. Apertura client Mail (es. Outlook)
+                const mailtoLink = `mailto:${dest}?subject=${encodeURIComponent(ogger)}&body=${encodeURIComponent(corpo)}`;
+                window.location.href = mailtoLink;
+                
+                closeEmailModal();
 
             } catch (err) {
-                console.error("Errore spedizione email:", err);
-                Swal.fire({ title: 'Errore', text: 'Impossibile completare la spedizione: ' + err.message, icon: 'error', confirmButtonColor: '#4f46e5' });
+                console.error("Errore generazione fattura locale:", err);
+                Swal.fire({ title: 'Errore', text: 'Si è verificato un errore durante la generazione: ' + err.message, icon: 'error', confirmButtonColor: '#4f46e5' });
             }
         });
     </script>

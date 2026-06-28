@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.84">
+    <link rel="stylesheet" href="styles.css?v=3.85">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
@@ -272,6 +272,14 @@
                     <label for="progettoNomeInput">Nome Cliente / Progetto *</label>
                     <input type="text" id="progettoNomeInput" placeholder="es. PROGETTO SCUOLE" style="text-transform: uppercase;">
                 </div>
+                <div class="input-group">
+                    <label for="progettoEmailInput">E-mail Cliente</label>
+                    <input type="email" id="progettoEmailInput" placeholder="es. info@cliente.it">
+                </div>
+                <div class="input-group">
+                    <label for="progettoCellulareInput">Telefono / Cellulare</label>
+                    <input type="tel" id="progettoCellulareInput" placeholder="es. 3401234567">
+                </div>
             </div>
 
             <!-- Gestione viaggi del cliente -->
@@ -473,7 +481,7 @@
             { targa: 'HB713NN', modello: '' }
         ];
 
-        let mezzi = window.appData.lista_mezzi.length > 0 ? window.appData.lista_mezzi : DEFAULT_MEZZI;
+        let mezzi = (window.appData && window.appData.lista_mezzi && window.appData.lista_mezzi.length > 0) ? window.appData.lista_mezzi : DEFAULT_MEZZI;
 
         const targaInput = document.getElementById('targaInput');
         const modelloInput = document.getElementById('modelloInput');
@@ -498,7 +506,7 @@
         let editIndex = -1;
 
         window.renderLista = function () {
-            const currentMezzi = window.appData.lista_mezzi.length > 0 ? window.appData.lista_mezzi : DEFAULT_MEZZI;
+            const currentMezzi = (window.appData && window.appData.lista_mezzi && window.appData.lista_mezzi.length > 0) ? window.appData.lista_mezzi : DEFAULT_MEZZI;
             mezzi = currentMezzi; // Update local reference
 
             listaDiv.innerHTML = '';
@@ -1088,8 +1096,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=3.84"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.84"></script>
+    <script src="script.js?v=3.85"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.85"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1140,6 +1148,8 @@ const functions = getFunctions(app, "europe-west1");
         const contentDiv  = document.getElementById('progettiContent');
         const iconSpan    = document.getElementById('toggleProgettiIcon');
         const nomeInput   = document.getElementById('progettoNomeInput');
+        const emailInput  = document.getElementById('progettoEmailInput');
+        const cellInput   = document.getElementById('progettoCellulareInput');
         const tagList     = document.getElementById('viaggiTagList');
         const nuovoVInput = document.getElementById('nuovoViaggio');
         const btnSalva    = document.getElementById('btnSalvaProgetto');
@@ -1208,6 +1218,8 @@ const functions = getFunctions(app, "europe-west1");
             try {
                 const data = {
                     nome, viaggi: currentViaggi,
+                    email: emailInput.value.trim(),
+                    cellulare: cellInput.value.trim(),
                     patente_b: patB ? parseFloat(patB) : null,
                     patente_c: patC ? parseFloat(patC) : null,
                     navetta_sommacampagna: navS ? parseFloat(navS) : null,
@@ -1237,7 +1249,7 @@ const functions = getFunctions(app, "europe-west1");
         btnAnnulla.onclick = resetForm;
 
         function resetForm() {
-            editId = null; currentViaggi = []; nomeInput.value = ''; renderTagList();
+            editId = null; currentViaggi = []; nomeInput.value = ''; emailInput.value = ''; cellInput.value = ''; renderTagList();
             ['progettoPatB','progettoPatC','progettoNavS','progettoNavC','progettoCollo',
              'cattelLimKmB','cattelLimKmC','cattelLimPesoB','cattelLimPesoC',
              'cattelUsername','cattelPassword','cattelUrl',
@@ -1253,7 +1265,7 @@ const functions = getFunctions(app, "europe-west1");
         window.editProgetto = id => {
             const p = progettiCache.find(x => x.id === id);
             if (!p) return;
-            editId = id; nomeInput.value = p.nome || ''; currentViaggi = [...(p.viaggi || [])];
+            editId = id; nomeInput.value = p.nome || ''; emailInput.value = p.email || ''; cellInput.value = p.cellulare || ''; currentViaggi = [...(p.viaggi || [])];
             
             document.getElementById('progettoPatB').value = p.patente_b ?? '';
             document.getElementById('progettoPatC').value = p.patente_c ?? '';
@@ -1325,9 +1337,19 @@ const functions = getFunctions(app, "europe-west1");
             const tags = (p.viaggi||[]).map(v =>
                 `<span style="background:#e0e7ff;color:#3730a3;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:600;">${v}</span>`
             ).join('');
+            
+            let contattiDetails = '';
+            if (p.email || p.cellulare) {
+                let parts = [];
+                if (p.email) parts.push(`Email: <b>${p.email}</b> <a href="mailto:${p.email}" style="color:var(--primary); margin-left:4px; vertical-align:middle;" title="Invia Email"><span class="material-icons-round" style="font-size:16px; vertical-align:middle;">email</span></a>`);
+                if (p.cellulare) parts.push(`Tel: <b>${p.cellulare}</b> <a href="tel:${p.cellulare}" style="color:#16a34a; margin-left:4px; vertical-align:middle;" title="Chiama"><span class="material-icons-round" style="font-size:16px; vertical-align:middle;">call</span></a>`);
+                contattiDetails = `<div style="font-size:12px; color:#64748b; margin-bottom: 6px;">${parts.join(' | ')}</div>`;
+            }
+
             row.innerHTML = `
                 <div style="flex:1;">
                     <div style="font-weight:700;color:#334155;margin-bottom:6px;">${p.nome}</div>
+                    ${contattiDetails}
                     <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;">${tags||'<span style="font-size:12px;color:#94a3b8;">Nessun viaggio</span>'}</div>
                     ${(p.patente_b||p.patente_c||p.navetta_sommacampagna||p.navetta_cerea||p.viaggio_a||p.viaggio_b||p.costo_ddt_base||p.viaggio_forfait||p.costo_ddt_zona1||p.costo_ddt_zona2||p.costo_ddt_zona3) ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">' +
                         (p.patente_b ? '<span style="background:#dbeafe;color:#1d4ed8;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">B: \u20ac'+p.patente_b+'</span>' : '') +

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.8">
+    <link rel="stylesheet" href="styles.css?v=3.81">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
@@ -141,6 +141,10 @@
                 <div class="input-group">
                     <label for="driverEmailInput">E-mail *</label>
                     <input type="email" id="driverEmailInput" placeholder="Es: mario.rossi@email.com">
+                </div>
+                <div class="input-group">
+                    <label for="driverCellulareInput">Cellulare</label>
+                    <input type="tel" id="driverCellulareInput" placeholder="Es: 3401234567">
                 </div>
                 <div class="input-group">
                     <label for="driverRuoloInput">Ruolo Sistema</label>
@@ -584,6 +588,7 @@
         const driverRuoloInput = document.getElementById('driverRuoloInput');
         const driverTurnoInput = document.getElementById('driverTurnoInput');
         const driverEmailInput = document.getElementById('driverEmailInput');
+        const driverCellulareInput = document.getElementById('driverCellulareInput');
         const adminExtraFields = document.getElementById('adminExtraFields');
         const btnSalvaAutista = document.getElementById('btnSalvaAutista');
         const btnAnnullaAutista = document.getElementById('btnAnnullaAutista');
@@ -677,7 +682,13 @@
                 const elevationBadge = a.canElevate ? '<span style="font-size:10px; color:#10b981; margin-left:5px;">(Elevabile)</span>' : '';
                 const turnoBadge = `<span style="font-size:11px; font-weight:400; background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:10px; margin-left:8px;">${a.tipoTurno === 'notturno' ? 'NOTTURNO' : 'GIORNATA'}</span>`;
                 
-                const details = `Email: <b>${a.email || 'N.D.'}</b>`;
+                let details = `Email: <b>${a.email || 'N.D.'}</b>`;
+                if (a.email) {
+                    details += ` <a href="mailto:${a.email}" style="color:var(--primary); margin-left:4px; vertical-align:middle;" title="Invia Email"><span class="material-icons-round" style="font-size:16px; vertical-align:middle;">email</span></a>`;
+                }
+                if (a.cellulare) {
+                    details += ` | Cell: <b>${a.cellulare}</b> <a href="tel:${a.cellulare}" style="color:#16a34a; margin-left:4px; vertical-align:middle;" title="Chiama"><span class="material-icons-round" style="font-size:16px; vertical-align:middle;">call</span></a>`;
+                }
                 
                 // Visualizzazione anagrafica e patente extra a colpo d'occhio
                 let extraDetailsCompact = '';
@@ -787,6 +798,7 @@
             driverNomeInput.value = targetUser.nome || '';
             driverCognomeInput.value = targetUser.cognome || '';
             driverEmailInput.value = targetUser.email || '';
+            driverCellulareInput.value = targetUser.cellulare || '';
             driverRuoloInput.value = (targetUser.ruolo || 'autista').toLowerCase();
             driverTurnoInput.value = targetUser.tipoTurno || 'giornata';
             driverElevazione.checked = targetUser.canElevate || false;
@@ -835,6 +847,7 @@
             driverNomeInput.value = '';
             driverCognomeInput.value = '';
             driverEmailInput.value = '';
+            driverCellulareInput.value = '';
 
             // Resetta i nuovi campi
             driverCodiceFiscale.value = '';
@@ -861,6 +874,7 @@
             const n = driverNomeInput.value.trim();
             const cognome = driverCognomeInput.value.trim();
             const email = driverEmailInput.value.trim();
+            const cellulare = driverCellulareInput.value.trim();
             const r = driverRuoloInput.value.toLowerCase();
             const t = driverTurnoInput.value;
             const e = driverElevazione.checked;
@@ -902,6 +916,7 @@
                         // Per i nuovi utenti registrati dal pannello, salviamo subito anche i campi extra
                         if (uid && window.updateUser) {
                             await window.updateUser(uid, {
+                                cellulare: cellulare,
                                 codice_fiscale: cf,
                                 sesso: sesso,
                                 data_nascita: dn,
@@ -939,6 +954,7 @@
                         nome: n, 
                         cognome: cognome,
                         email: email,
+                        cellulare: cellulare,
                         ruolo: r, 
                         tipoTurno: t, 
                         canElevate: e, 
@@ -972,8 +988,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=3.8"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.8"></script>
+    <script src="script.js?v=3.81"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.81"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────

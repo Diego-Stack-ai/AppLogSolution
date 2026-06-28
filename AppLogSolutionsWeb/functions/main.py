@@ -50,38 +50,91 @@ _LOCAL_STORAGE_CACHES = {
     "directions_cache.json": None,
     "distanze_traffico_cache.json": None
 }
+_INITIAL_CACHE_COUNTS = {}
 
 def _load_storage_cache(filename):
-    global _LOCAL_STORAGE_CACHES
+    global _LOCAL_STORAGE_CACHES, _INITIAL_CACHE_COUNTS
     if _LOCAL_STORAGE_CACHES[filename] is not None:
         return _LOCAL_STORAGE_CACHES[filename]
         
     try:
         bucket = storage.bucket(name=BUCKET_NAME)
         blob = bucket.blob(f"caches/{filename}")
+        loaded_data = None
         if blob.exists():
-            data_str = blob.download_as_string().decode("utf-8")
-            _LOCAL_STORAGE_CACHES[filename] = json.loads(data_str)
-        else:
+            try:
+                data_str = blob.download_as_string().decode("utf-8")
+                loaded_data = json.loads(data_str)
+                if not isinstance(loaded_data, dict):
+                    loaded_data = None
+            except Exception as e_parse:
+                print(f"[CACHE-GUARD] Errore parsing JSON su {filename}: {e_parse}. Tentativo di recupero da backup...")
+                loaded_data = None
+        
+        # Fallback 1: Recupero dal backup cloud più recente se il primario è corrotto o mancante
+        if loaded_data is None:
+            backup_latest = bucket.blob(f"caches_backup/{filename.replace('.json', '')}_latest.json")
+            if backup_latest.exists():
+                try:
+                    b_str = backup_latest.download_as_string().decode("utf-8")
+                    loaded_data = json.loads(b_str)
+                    print(f"[CACHE-GUARD] Ripristino automatico da backup riuscito per {filename} ({len(loaded_data)} chiavi).")
+                except Exception as e_bkp:
+                    print(f"[CACHE-GUARD] Errore caricamento backup latest per {filename}: {e_bkp}")
+                    loaded_data = None
+        
+        # Fallback 2: Recupero dal file locale di seeding
+        if loaded_data is None:
             import os
             local_path = os.path.join(os.path.dirname(__file__), "caches", filename)
             if os.path.exists(local_path):
                 with open(local_path, "r", encoding="utf-8") as f:
-                    _LOCAL_STORAGE_CACHES[filename] = json.load(f)
+                    loaded_data = json.load(f)
                 blob.upload_from_filename(local_path, content_type="application/json")
+                print(f"[CACHE-GUARD] Seeding iniziale da file locale per {filename} ({len(loaded_data)} chiavi).")
             else:
-                _LOCAL_STORAGE_CACHES[filename] = {}
+                loaded_data = {}
+                
+        _LOCAL_STORAGE_CACHES[filename] = loaded_data
+        _INITIAL_CACHE_COUNTS[filename] = len(loaded_data)
     except Exception as e:
         print(f"[CACHE] Errore load {filename}: {e}")
         _LOCAL_STORAGE_CACHES[filename] = {}
+        _INITIAL_CACHE_COUNTS[filename] = 0
         
     return _LOCAL_STORAGE_CACHES[filename]
 
 def _save_storage_cache(filename):
+    global _LOCAL_STORAGE_CACHES, _INITIAL_CACHE_COUNTS
     try:
+        current_count = len(_LOCAL_STORAGE_CACHES[filename])
+        initial_count = _INITIAL_CACHE_COUNTS.get(filename, 0)
+        
+        # GUARDIA ANTI-REGRESSIONE E CORRUZIONE
+        if current_count < initial_count:
+            err_msg = f"[CACHE-GUARD] ANOMALIA GRAVE: regressione chiavi per {filename} ({current_count} < {initial_count}). Sincronizzazione bloccata per proteggere la cache cloud."
+            print(err_msg)
+            raise RuntimeError(err_msg)
+            
         bucket = storage.bucket(name=BUCKET_NAME)
+        json_str = json.dumps(_LOCAL_STORAGE_CACHES[filename], ensure_ascii=False)
         blob = bucket.blob(f"caches/{filename}")
-        blob.upload_from_string(json.dumps(_LOCAL_STORAGE_CACHES[filename], ensure_ascii=False), content_type="application/json")
+        blob.upload_from_string(json_str, content_type="application/json")
+        
+        # Aggiornamento iniziale chiavi al nuovo valore di successo
+        _INITIAL_CACHE_COUNTS[filename] = current_count
+        
+        # SALVATAGGIO BACKUP SNAPSHOT GIORNALIERO E LATEST
+        import datetime
+        today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+        base_name = filename.replace('.json', '')
+        backup_daily = bucket.blob(f"caches_backup/{base_name}_{today_str}.json")
+        if not backup_daily.exists():
+            backup_daily.upload_from_string(json_str, content_type="application/json")
+            backup_latest = bucket.blob(f"caches_backup/{base_name}_latest.json")
+            backup_latest.upload_from_string(json_str, content_type="application/json")
+            print(f"[CACHE-GUARD] Creato snapshot di backup giornaliero per {filename} ({today_str}).")
+            
     except Exception as e:
         print(f"[CACHE] Errore save {filename}: {e}")
 
@@ -4367,14 +4420,39 @@ def genera_report_giornaliero(req: https_fn.CallableRequest):
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
 def elimina_giornata_logistica(req: https_fn.CallableRequest):
     """
-    Funzione di Tabula Rasa: elimina completamente una giornata (split_ddt, REPORTS, CONSEGNE e record Firestore).
+    Funzione di Tabula Rasa o Soft Delete:
+    - Se soft_delete == True: imposta solo archiviato_ui: True (mantenendo intatti i dati nel Cloud per i primi 2 mesi).
+    - Altrimenti: elimina completamente una giornata (split_ddt, REPORTS, CONSEGNE e record Firestore).
     """
     data_consegna = req.data.get("data_consegna")
+    soft_delete = req.data.get("soft_delete", False)
+    
     if not data_consegna:
         return {"status": "errore", "message": "data_consegna mancante"}
 
-    print(f"[INFO] Inizio eliminazione completa per la giornata {data_consegna}")
     db = get_db()
+    
+    if soft_delete:
+        print(f"[INFO] Richiesta Soft Delete (pulizia UI) per la giornata {data_consegna}")
+        try:
+            doc_ref = db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna)
+            if doc_ref.get().exists:
+                doc_ref.update({"archiviato_ui": True, "archiviato_at": datetime.now().isoformat()})
+            
+            # Aggiorna anche i viaggi ddt per coerenza
+            viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
+            viaggi = viaggi_ref.where("data_lavoro", "==", data_consegna).stream()
+            for v in viaggi:
+                viaggi_ref.document(v.id).update({"archiviato_ui": True})
+                
+            print(f"[INFO] Soft Delete completato con successo per {data_consegna}")
+            return {"status": "ok", "message": "Giornata rimossa dalla schermata attiva (dati conservati su Cloud)"}
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return {"status": "errore", "message": f"Errore Soft Delete: {str(e)}"}
+
+    print(f"[INFO] Inizio eliminazione completa per la giornata {data_consegna}")
     bucket = storage.bucket(name=BUCKET_NAME)
     
     try:
@@ -4539,3 +4617,303 @@ def aggiorna_traffico_serale(req: https_fn.CallableRequest):
         traceback.print_exc()
         return {"status": "errore", "message": f"Global exception: {str(e)}"}
 
+
+# ─── GESTIONE E RIPRISTINO BACKUP CACHE DISTANZE (R&D / SICUREZZA) ─────────────
+
+@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.MB_256, timeout_sec=60,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def ripristina_cache_backup(req: https_fn.CallableRequest):
+    """
+    Gestione backup cache:
+    - azione == 'lista': restituisce l'elenco dei backup disponibili in caches_backup/
+    - azione == 'ripristina': copia il backup selezionato in caches/distanze_reali_cache.json
+    """
+    azione = req.data.get("azione", "lista")
+    target_backup = req.data.get("target_backup")
+    
+    bucket = storage.bucket(name=BUCKET_NAME)
+    global _LOCAL_STORAGE_CACHES, _INITIAL_CACHE_COUNTS
+    
+    if azione == "lista":
+        blobs = bucket.list_blobs(prefix="caches_backup/")
+        backup_list = []
+        for b in blobs:
+            if b.name.endswith(".json"):
+                backup_list.append({
+                    "name": b.name.replace("caches_backup/", ""),
+                    "path": b.name,
+                    "size": b.size,
+                    "updated": b.updated.strftime("%Y-%m-%d %H:%M:%S") if b.updated else ""
+                })
+        # Ordina per nome/data decrescente
+        backup_list.sort(key=lambda x: x["name"], reverse=True)
+        return {"status": "ok", "backups": backup_list}
+        
+    elif azione == "ripristina":
+        if not target_backup:
+            return {"status": "errore", "message": "Nessun backup specificato per il ripristino"}
+            
+        print(f"[CACHE-GUARD] Richiesta ripristino manuale da {target_backup}")
+        try:
+            source_blob = bucket.blob(f"caches_backup/{target_backup}")
+            if not source_blob.exists():
+                return {"status": "errore", "message": f"Il backup {target_backup} non esiste su Storage"}
+                
+            dest_blob = bucket.blob("caches/distanze_reali_cache.json")
+            
+            # Effettua la copia lato storage
+            bucket.copy_blob(source_blob, bucket, dest_blob.name)
+            
+            # Ricarica in memoria il backup ripristinato
+            data_str = dest_blob.download_as_string().decode("utf-8")
+            loaded_data = json.loads(data_str)
+            _LOCAL_STORAGE_CACHES["distanze_reali_cache.json"] = loaded_data
+            _INITIAL_CACHE_COUNTS["distanze_reali_cache.json"] = len(loaded_data)
+            
+            print(f"[CACHE-GUARD] Ripristino completato con successo da {target_backup} ({len(loaded_data)} chiavi)")
+            return {"status": "ok", "message": f"Backup {target_backup} ripristinato con successo ({len(loaded_data)} distanze attive)"}
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return {"status": "errore", "message": f"Errore durante il ripristino: {str(e)}"}
+            
+    return {"status": "errore", "message": "Azione non riconosciuta"}
+
+
+# ─── ARCHIVIAZIONE A FREDDO E RECUPERO R&D (PUNTO 2) ───────────────────────────
+
+@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=540,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def gestisci_archiviazione_mensile(req: https_fn.CallableRequest):
+    """
+    Esegue il backup automatico a inizio del 3° mese.
+    Sposta i dati operativi in ARCHIVIO_STORICO_RD/[YYYY-MM]/[data_consegna]/
+    eseguendo un controllo ferreo di residenza prima di cancellare l'originale.
+    """
+    print("[ARCHIVIO-RD] Avvio procedura di archiviazione mensile automatica (3° mese)...")
+    db = get_db()
+    bucket = storage.bucket(name=BUCKET_NAME)
+    
+    giornate_archiviate = []
+    errori = []
+    
+    try:
+        now = datetime.now()
+        reports_ref = db.collection('clienti').document('DNR').collection('reports_logistici')
+        viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
+        
+        reports = list(reports_ref.stream())
+        
+        for rep in reports:
+            data_consegna = rep.id
+            rep_data = rep.to_dict()
+            
+            # Calcola l'età della giornata
+            try:
+                # data_consegna è nel formato DD-MM-YYYY
+                dt_obj = datetime.strptime(data_consegna, "%d-%m-%Y")
+                giorni_trascorsi = (now - dt_obj).days
+            except Exception as e_dt:
+                print(f"[WARN] Impossibile calcolare data per {data_consegna}: {e_dt}")
+                continue
+                
+            # Verifica se appartiene al 3° mese (più di 60 giorni fa) e non è già archiviato a freddo
+            if giorni_trascorsi > 60 and not rep_data.get("archiviato_storico_rd", False):
+                print(f"[ARCHIVIO-RD] Giornata {data_consegna} idonea per archiviazione a freddo ({giorni_trascorsi} giorni fa).")
+                mese_anno = dt_obj.strftime("%Y-%m")
+                pref_dest = f"ARCHIVIO_STORICO_RD/{mese_anno}/{data_consegna}"
+                
+                # 1. Salvataggio record Firestore su Storage
+                blob_rep = bucket.blob(f"{pref_dest}/firestore_report.json")
+                blob_rep.upload_from_string(json.dumps(rep_data, default=str), content_type="application/json")
+                
+                # Salvataggio di tutti i viaggi ddt associati
+                viaggi_snap = list(viaggi_ref.where("data_lavoro", "==", data_consegna).stream())
+                viaggi_count = 0
+                for v in viaggi_snap:
+                    v_blob = bucket.blob(f"{pref_dest}/viaggi_ddt/{v.id}.json")
+                    v_blob.upload_from_string(json.dumps(v.to_dict(), default=str), content_type="application/json")
+                    viaggi_count += 1
+                    
+                # 2. Copia cartelle Storage
+                data_f = data_consegna.replace('/', '-')
+                prefixes_to_copy = [
+                    f"split_ddt/{data_consegna}/",
+                    f"REPORTS/{data_consegna}/",
+                    f"CONSEGNE/CONSEGNE_{data_f}/"
+                ]
+                
+                file_copiati_verificati = True
+                for pref in prefixes_to_copy:
+                    blobs = bucket.list_blobs(prefix=pref)
+                    for b in blobs:
+                        dest_name = f"{pref_dest}/{b.name}"
+                        try:
+                            new_blob = bucket.copy_blob(b, bucket, dest_name)
+                            # Controllo ferreo di Residenza e Integrità
+                            if not new_blob.exists():
+                                print(f"[FATAL] Fallita verifica residenza per {dest_name}")
+                                file_copiati_verificati = False
+                        except Exception as ex_copy:
+                            print(f"[WARN] Errore copia {b.name}: {ex_copy}")
+                            file_copiati_verificati = False
+                            
+                # 3. Filiera di controllo pre-cancellazione
+                if file_copiati_verificati and blob_rep.exists():
+                    print(f"[ARCHIVIO-RD] ✓ Verifica di residenza superata per {data_consegna}. Pulizia dati originali...")
+                    # Elimina blob originali
+                    for pref in prefixes_to_copy:
+                        blobs = bucket.list_blobs(prefix=pref)
+                        for b in blobs:
+                            try:
+                                b.delete()
+                            except Exception as ex_del:
+                                print(f"[WARN] Errore pulizia {b.name}: {ex_del}")
+                                
+                    # Aggiorna report logistico con il marcatore di archiviazione a freddo
+                    reports_ref.document(data_consegna).update({
+                        "archiviato_storico_rd": True,
+                        "archiviato_storico_at": datetime.now().isoformat(),
+                        "archiviato_ui": True
+                    })
+                    
+                    # Rimuovi record attivi di viaggi ddt per liberare spazio
+                    for v in viaggi_snap:
+                        viaggi_ref.document(v.id).delete()
+                        
+                    giornate_archiviate.append(data_consegna)
+                else:
+                    errori.append(f"Fallita verifica residenza per {data_consegna}")
+                    print(f"[ARCHIVIO-RD] ⚠️ Verifica fallita per {data_consegna}. Dati attivi preservati.")
+                    
+        return {
+            "status": "ok",
+            "message": f"Archiviazione completata. {len(giornate_archiviate)} giornate trasferite in R&D.",
+            "giornate_archiviate": giornate_archiviate,
+            "errori": errori
+        }
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"status": "errore", "message": f"Errore procedura di archiviazione: {str(e)}"}
+
+
+@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.MB_512, timeout_sec=120,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def recupera_viaggio_storico(req: https_fn.CallableRequest):
+    """
+    Gestisce il pannello R&D in Link Viaggi:
+    - azione == 'lista_mesi': elenca le directory mensili in ARCHIVIO_STORICO_RD/
+    - azione == 'lista_giornate': elenca le date in ARCHIVIO_STORICO_RD/[mese]/
+    - azione == 'recupera': ripristina i dati in viaggi ddt con flag is_recupero_rd: True
+    """
+    azione = req.data.get("azione", "lista_mesi")
+    mese = req.data.get("mese")
+    data_consegna = req.data.get("data_consegna")
+    
+    db = get_db()
+    bucket = storage.bucket(name=BUCKET_NAME)
+    
+    if azione == "lista_mesi":
+        # Trova i mesi disponibili analizzando i prefissi
+        blobs = bucket.list_blobs(prefix="ARCHIVIO_STORICO_RD/")
+        mesi_set = set()
+        for b in blobs:
+            parts = b.name.split('/')
+            if len(parts) > 1 and parts[1]:
+                mesi_set.add(parts[1])
+        mesi_list = sorted(list(mesi_set), reverse=True)
+        return {"status": "ok", "mesi": mesi_list}
+        
+    elif azione == "lista_giornate":
+        if not mese:
+            return {"status": "errore", "message": "Mese non specificato"}
+        blobs = bucket.list_blobs(prefix=f"ARCHIVIO_STORICO_RD/{mese}/")
+        date_set = set()
+        for b in blobs:
+            parts = b.name.split('/')
+            if len(parts) > 2 and parts[2]:
+                date_set.add(parts[2])
+        date_list = sorted(list(date_set), reverse=True)
+        return {"status": "ok", "giornate": date_list}
+        
+    elif azione == "recupera":
+        if not mese or not data_consegna:
+            return {"status": "errore", "message": "Mese o data mancante per il ripristino"}
+            
+        print(f"[R&D RECUPERO] Avvio ripristino sandbox per {data_consegna} ({mese})...")
+        pref_base = f"ARCHIVIO_STORICO_RD/{mese}/{data_consegna}"
+        
+        try:
+            # 1. Ripristina report logistico (se necessario)
+            rep_blob = bucket.blob(f"{pref_base}/firestore_report.json")
+            if rep_blob.exists():
+                rep_data = json.loads(rep_blob.download_as_string().decode('utf-8'))
+                rep_data["is_recupero_rd"] = True
+                rep_data["archiviato_ui"] = False
+                db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna).set(rep_data)
+                
+            # 2. Ripristina tutti i viaggi ddt associati
+            viaggi_pref = f"{pref_base}/viaggi_ddt/"
+            blobs = bucket.list_blobs(prefix=viaggi_pref)
+            viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
+            
+            count = 0
+            for b in blobs:
+                if b.name.endswith(".json"):
+                    v_data = json.loads(b.download_as_string().decode('utf-8'))
+                    v_data["is_recupero_rd"] = True
+                    v_data["archiviato_ui"] = False
+                    # Ricava l'id del documento dal nome file
+                    doc_id = b.name.split('/')[-1].replace('.json', '')
+                    viaggi_ref.document(doc_id).set(v_data)
+                    count += 1
+                    
+            print(f"[R&D RECUPERO] ✓ Ripristino completato per {data_consegna}. {count} viaggi ddt ripristinati in sandbox.")
+            return {"status": "ok", "message": f"Viaggio {data_consegna} ripristinato in Sandbox R&D ({count} zone attive).", "viaggi_ripristinati": count}
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return {"status": "errore", "message": f"Errore ripristino sandbox: {str(e)}"}
+            
+    return {"status": "errore", "message": "Azione non riconosciuta"}
+
+
+@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.MB_256, timeout_sec=60,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def rilascia_recupero_storico(req: https_fn.CallableRequest):
+    """
+    Elimina i record temporanei creati per l'R&D in viaggi ddt e reports_logistici.
+    """
+    data_consegna = req.data.get("data_consegna")
+    if not data_consegna:
+        return {"status": "errore", "message": "data_consegna mancante"}
+        
+    print(f"[R&D RILASCIO] Pulizia record sandbox per {data_consegna}...")
+    db = get_db()
+    
+    try:
+        # Elimina da reports_logistici se is_recupero_rd == True
+        rep_ref = db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna)
+        doc = rep_ref.get()
+        if doc.exists and doc.to_dict().get("is_recupero_rd", False):
+            rep_ref.delete()
+            
+        # Elimina da viaggi ddt
+        viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
+        viaggi = viaggi_ref.where("data_lavoro", "==", data_consegna).where("is_recupero_rd", "==", True).stream()
+        count = 0
+        for v in viaggi:
+            viaggi_ref.document(v.id).delete()
+            count += 1
+            
+        print(f"[R&D RILASCIO] ✓ Pulizia completata per {data_consegna}. {count} record eliminati.")
+        return {"status": "ok", "message": f"Sessione di studio per il {data_consegna} conclusa e ripulita con successo."}
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"status": "errore", "message": f"Errore rilascio sandbox: {str(e)}"}

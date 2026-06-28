@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.98">
+    <link rel="stylesheet" href="styles.css?v=3.00">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -369,8 +369,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=2.98"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.98"></script>
+    <script src="script.js?v=3.00"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.00"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
@@ -908,13 +908,13 @@
 
             try {
                 const eliminaGiornataFn = httpsCallable(functions, 'elimina_giornata_logistica');
-                const elimResult = await eliminaGiornataFn({ data_consegna: data_consegna });
+                const elimResult = await eliminaGiornataFn({ data_consegna: data_consegna, soft_delete: true });
                 if (elimResult.data && elimResult.data.status === 'ok') {
                     Swal.fire({
-                        title: 'Eliminata!',
-                        text: `La giornata del ${data_consegna} è stata cancellata.`,
+                        title: 'Archiviata!',
+                        text: `La giornata del ${data_consegna} è stata rimossa dall'elenco attivo. I dati sono conservati intatti su Cloud per i primi 2 mesi.`,
                         icon: 'success',
-                        timer: 2000,
+                        timer: 3000,
                         showConfirmButton: false
                     });
                 } else {
@@ -927,14 +927,31 @@
         };
 
         function listenToReports() {
+            // Esegui in background il controllo mensile di archiviazione R&D (3° mese)
+            setTimeout(async () => {
+                try {
+                    const archiviaFn = httpsCallable(functions, 'gestisci_archiviazione_mensile');
+                    const res = await archiviaFn({});
+                    if (res.data && res.data.status === 'ok' && res.data.giornate_archiviate?.length > 0) {
+                        Swal.fire({
+                            title: 'Backup R&D Completato',
+                            html: `È stato generato e verificato con successo il backup storico per <b>${res.data.giornate_archiviate.length}</b> giornate operative (inizio 3° mese) in <b>ARCHIVIO_STORICO_RD/</b>.`,
+                            icon: 'info',
+                            confirmButtonColor: '#4f46e5'
+                        });
+                    }
+                } catch (e) { console.warn("Archiviazione mensile automatica check:", e); }
+            }, 3000);
+
             const reportsRef = collection(db, 'clienti', 'DNR', 'reports_logistici');
-            const q = query(reportsRef, orderBy('created_at', 'desc'), limit(5));
+            const q = query(reportsRef, orderBy('created_at', 'desc'), limit(15));
             
             onSnapshot(q, (snapshot) => {
                 const reportsList = document.getElementById('reports-list');
                 let html = '';
                 snapshot.forEach(doc => {
                     const data = doc.data();
+                    if (data.archiviato_ui) return; // Soft Delete visivo!
                     html += `
                         <div style="background: #f1f5f9; border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
                             <div>
@@ -954,6 +971,7 @@
                         </div>
                     `;
                 });
+                if (!html) html = '<div style="padding:20px;text-align:center;color:#64748b;">Nessuna giornata logistica attiva presente.</div>';
                 reportsList.innerHTML = html;
             });
         }

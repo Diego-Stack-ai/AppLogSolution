@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.98">
+    <link rel="stylesheet" href="styles.css?v=3.00">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
@@ -371,6 +371,38 @@
                         un Amministratore tramite un pulsante speciale nelle sue impostazioni personali.
                     </p>
                 </div>
+            </div>
+        </div>
+
+        <!-- Sezione Gestione e Ripristino Cache Distanze -->
+        <div id="toggleCacheBtn"
+            style="display: flex; justify-content: space-between; align-items: center; margin: 32px 0 0 0; cursor: pointer; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <h3 class="section-title" style="margin: 0;">Gestione e Ripristino Cache Distanze</h3>
+            <span class="material-icons-round" id="toggleCacheIcon"
+                style="color: var(--primary); transition: transform 0.3s ease;">expand_more</span>
+        </div>
+
+        <div id="cacheContent" style="display: none; padding-top: 20px;">
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
+                💡 <b>Backup e Sicurezza:</b> Qui puoi ispezionare i backup giornalieri automatizzati delle cache distanze e ripristinare all'istante una copia precedente in caso di corruzione o per esigenze di Ricerca e Sviluppo.
+            </p>
+            <div class="form-grid" style="grid-template-columns: 1fr;">
+                <div class="input-group">
+                    <label for="selectCacheBackup">Seleziona Backup Disponibile</label>
+                    <div style="display: flex; gap: 12px;">
+                        <select id="selectCacheBackup" style="flex: 1; height: 45px; border-radius: 12px; border: 1px solid var(--border); padding: 0 12px; font-size: 14px; font-family: inherit; color: var(--text);">
+                            <option value="">Caricamento backup disponibili in corso...</option>
+                        </select>
+                        <button type="button" id="btnRefreshCache" class="action-btn" title="Aggiorna Lista" style="height: 45px; width: 45px; border-radius: 12px;">
+                            <span class="material-icons-round">refresh</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button type="button" id="btnRipristinaCache" class="btn-primary" style="flex: 1; background: #ef4444; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
+                    <span class="material-icons-round" style="margin-right: 8px; vertical-align: middle;">restore</span> Ripristina Backup Selezionato
+                </button>
             </div>
         </div>
 
@@ -914,19 +946,21 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=2.98"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.98"></script>
+    <script src="script.js?v=3.00"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.00"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
     import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot }
         from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
 import { firebaseConfig } from "./firebase-config.js";
 
     const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
 const db  = getFirestore(app);
+const functions = getFunctions(app, "europe-west1");
 
     // ── CRUD locale (non dipende da window.saveProgetto) ──────────────────
     async function saveProgetto(id, data) {
@@ -1176,6 +1210,98 @@ const db  = getFirestore(app);
                     </button>
                 </div>`;
             lista.appendChild(row);
+        });
+    }
+
+    // ── GESTIONE E RIPRISTINO CACHE DISTANZE (UI & LOGIC) ─────────────────
+    const toggleCacheBtn = document.getElementById('toggleCacheBtn');
+    const toggleCacheIcon = document.getElementById('toggleCacheIcon');
+    const cacheContent = document.getElementById('cacheContent');
+    const selectCacheBackup = document.getElementById('selectCacheBackup');
+    const btnRefreshCache = document.getElementById('btnRefreshCache');
+    const btnRipristinaCache = document.getElementById('btnRipristinaCache');
+
+    if (toggleCacheBtn && cacheContent) {
+        toggleCacheBtn.addEventListener('click', () => {
+            const isVisible = cacheContent.style.display === 'block';
+            cacheContent.style.display = isVisible ? 'none' : 'block';
+            toggleCacheIcon.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
+            if (!isVisible && selectCacheBackup.options.length <= 1) {
+                caricaListaBackupCache();
+            }
+        });
+    }
+
+    if (btnRefreshCache) {
+        btnRefreshCache.addEventListener('click', caricaListaBackupCache);
+    }
+
+    async function caricaListaBackupCache() {
+        if (!selectCacheBackup) return;
+        selectCacheBackup.innerHTML = '<option value="">Caricamento backup disponibili in corso...</option>';
+        try {
+            const listFn = httpsCallable(functions, 'ripristina_cache_backup');
+            const res = await listFn({ azione: 'lista' });
+            if (res.data && res.data.status === 'ok') {
+                const backups = res.data.backups || [];
+                selectCacheBackup.innerHTML = '<option value="">-- Seleziona un backup storico --</option>';
+                backups.forEach(b => {
+                    const opt = document.createElement('option');
+                    opt.value = b.name;
+                    opt.textContent = `${b.name} (${Math.round(b.size / 1024)} KB) - ${b.updated}`;
+                    selectCacheBackup.appendChild(opt);
+                });
+                if (backups.length === 0) {
+                    selectCacheBackup.innerHTML = '<option value="">Nessun backup trovato su Storage (caches_backup/)</option>';
+                }
+            } else {
+                selectCacheBackup.innerHTML = `<option value="">Errore: ${res.data?.message || 'sconosciuto'}</option>`;
+            }
+        } catch (e) {
+            console.error("Errore caricamento backup cache:", e);
+            selectCacheBackup.innerHTML = '<option value="">Errore di rete o Cloud Function non raggiungibile</option>';
+        }
+    }
+
+    if (btnRipristinaCache) {
+        btnRipristinaCache.addEventListener('click', async () => {
+            const target = selectCacheBackup.value;
+            if (!target) {
+                Swal.fire({ title: 'Attenzione', text: 'Seleziona un backup dalla lista prima di procedere.', icon: 'warning', confirmButtonColor: '#4f46e5' });
+                return;
+            }
+            const conf = await Swal.fire({
+                title: 'Conferma Ripristino',
+                html: `Stai per ripristinare il backup storico:<br><b style="color:#ef4444;">${target}</b><br><br>Questo file andrà a sostituire la cache delle distanze attualmente attiva su Storage. Procedere?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Sì, ripristina backup',
+                cancelButtonText: 'Annulla',
+                reverseButtons: true
+            });
+            if (!conf.isConfirmed) return;
+
+            Swal.fire({
+                title: 'Ripristino in corso...',
+                text: `Copia di ${target} in corso sul Cloud...`,
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                const restoreFn = httpsCallable(functions, 'ripristina_cache_backup');
+                const res = await restoreFn({ azione: 'ripristina', target_backup: target });
+                if (res.data && res.data.status === 'ok') {
+                    Swal.fire({ title: 'Ripristinato!', text: res.data.message, icon: 'success', confirmButtonColor: '#4f46e5' });
+                } else {
+                    Swal.fire({ title: 'Errore', text: res.data?.message || 'Errore sconosciuto', icon: 'error', confirmButtonColor: '#4f46e5' });
+                }
+            } catch (err) {
+                console.error("Errore ripristino:", err);
+                Swal.fire({ title: 'Errore', text: `Errore di rete: ${err.message}`, icon: 'error', confirmButtonColor: '#4f46e5' });
+            }
         });
     }
     </script>

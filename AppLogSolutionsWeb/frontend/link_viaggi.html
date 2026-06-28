@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invio Mobile Autisti — Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.98">
+    <link rel="stylesheet" href="styles.css?v=3.00">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -112,18 +112,59 @@
     </nav>
 
     <main class="main-container">
-        <div class="page-header">
-            <h1><span style="-webkit-text-fill-color:unset;font-size:28px;">📱</span> Invio Mobile Autisti</h1>
-            <p>Genera la mappa di percorso per ogni autista (BAT 5) e invia il link via WhatsApp</p>
+        <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+            <div>
+                <h1><span style="-webkit-text-fill-color:unset;font-size:28px;">📱</span> Invio Mobile Autisti</h1>
+                <p>Centrale Operativa — Gestione ordinaria autisti e consultazione/recupero backup R&D</p>
+            </div>
+            <!-- Dual Mode Toggle Tab -->
+            <div style="background: #f1f5f9; padding: 4px; border-radius: 14px; display: flex; gap: 4px; border: 1px solid #e2e8f0;">
+                <button id="tabOrdinaria" onclick="window.switchTab('ordinaria')" style="padding: 10px 20px; border-radius: 10px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s; background: var(--primary); color: white; box-shadow: 0 2px 8px rgba(79,70,229,0.2);">
+                    <span class="material-icons-round" style="font-size: 16px; vertical-align: middle; margin-right: 6px;">today</span> Gestione Ordinaria (2 Mesi)
+                </button>
+                <button id="tabRecupero" onclick="window.switchTab('recupero')" style="padding: 10px 20px; border-radius: 10px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s; background: transparent; color: #64748b;">
+                    <span class="material-icons-round" style="font-size: 16px; vertical-align: middle; margin-right: 6px;">cloud_download</span> Modalità Recupero Backup
+                </button>
+            </div>
         </div>
 
-        <div class="toolbar" id="toolbar">
-            <input type="date" id="dateSelector" class="date-input" onchange="cambiaData(event)" title="Seleziona Data">
+        <!-- Barra Strumenti Modalità Ordinaria -->
+        <div class="toolbar" id="toolbarOrdinaria">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1; flex-wrap: wrap;">
+                <label style="font-size: 13px; font-weight: 700; color: #64748b;"><span class="material-icons-round" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">filter_alt</span> Mese Attivo:</label>
+                <!-- Menu a tendina intelligente per i 2 mesi in vigore -->
+                <select id="selectMeseOrdinario" onchange="window.onMeseOrdinarioChange(event)" style="height: 42px; border-radius: 12px; border: 1px solid var(--border); padding: 0 16px; font-size: 14px; font-weight: 700; color: var(--primary); outline: none; cursor: pointer; background: var(--surface); font-family: inherit;">
+                    <option value="">Caricamento mesi attivi...</option>
+                </select>
+                <input type="date" id="dateSelector" class="date-input" onchange="cambiaData(event)" title="Seleziona Data Specifica">
+            </div>
             <button class="btn-genera-tutte" id="btnGeneraTutte" onclick="generaTutteMappe()">
                 <span class="material-icons-round">auto_awesome</span>
                 GENERA TUTTE LE MAPPE
                 <span class="badge-count" id="countBadge">0</span>
             </button>
+        </div>
+
+        <!-- Barra Strumenti Modalità Recupero Backup (R&D) -->
+        <div class="toolbar" id="toolbarRecupero" style="display: none; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 16px; padding: 16px; margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1; flex-wrap: wrap;">
+                <label style="font-size: 13px; font-weight: 700; color: #b45309;"><span class="material-icons-round" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">inventory_2</span> Mese Storico:</label>
+                <select id="selectMeseRecupero" onchange="window.onMeseRecuperoChange(event)" style="height: 42px; border-radius: 12px; border: 1px solid #fde68a; padding: 0 16px; font-size: 14px; font-weight: 700; color: #b45309; outline: none; cursor: pointer; background: white; font-family: inherit;">
+                    <option value="">Caricamento archivio R&D...</option>
+                </select>
+                <label style="font-size: 13px; font-weight: 700; color: #b45309; margin-left: 8px;">Data Viaggio:</label>
+                <select id="selectDataRecupero" style="height: 42px; border-radius: 12px; border: 1px solid #fde68a; padding: 0 16px; font-size: 14px; font-weight: 700; color: #b45309; outline: none; cursor: pointer; background: white; font-family: inherit;">
+                    <option value="">Seleziona prima il mese...</option>
+                </select>
+                <button type="button" onclick="window.eseguiRecuperoStorico()" style="background: #b45309; color: white; border: none; height: 42px; padding: 0 20px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(180,83,9,0.2);">
+                    <span class="material-icons-round" style="font-size: 18px;">restore</span> RECUPERA VIAGGIO
+                </button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button type="button" id="btnRilasciaRecupero" onclick="window.rilasciaRecuperoStorico()" style="display: none; background: #ef4444; color: white; border: none; height: 42px; padding: 0 20px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(239,68,68,0.2);">
+                    <span class="material-icons-round" style="font-size: 18px;">verified_user</span> RILASCIA VIAGGIO / CONCLUDI STUDIO
+                </button>
+            </div>
         </div>
 
         <div id="loadingState" class="empty-state">
@@ -147,8 +188,8 @@
         <div class="viaggi-grid" id="viaggiGrid"></div>
     </main>
 
-    <script src="script.js?v=2.98"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.98"></script>
+    <script src="script.js?v=3.00"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.00"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -164,6 +205,7 @@
 
         // ── init ──────────────────────────────────────────────────────────────
         window.onUserProfileLoaded = async function() {
+            initMenuOrdinario(); // Avvia il filtro intelligente dei 2 mesi
             dataLavoro = new URLSearchParams(location.search).get('data')
                 || localStorage.getItem('locked_date')
                 || "";
@@ -228,6 +270,13 @@
 
                 document.getElementById('loadingState').style.display = 'none';
 
+                // Verifica se sono viaggi recuperati per R&D
+                const isRecupero = viaggi.some(v => v.is_recupero_rd);
+                const btnRilascia = document.getElementById('btnRilasciaRecupero');
+                if (btnRilascia) {
+                    btnRilascia.style.display = isRecupero ? 'flex' : 'none';
+                }
+
                 if (viaggi.length === 0) {
                     const empty = document.getElementById('emptyState');
                     empty.style.display = 'block';
@@ -281,6 +330,7 @@
                     <div class="zona-pill" style="background:${v.color||'#4f46e5'};"></div>
                     <div class="card-title">${v.nome_giro || v.id_zona}</div>
                     <div class="card-badges">
+                        ${v.is_recupero_rd ? '<span class="badge" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;">⚠️ VIAGGIO STORICO RECUPERATO</span>' : ''}
                         <span class="badge badge-info">${nPunti} fermate</span>
                         ${km ? `<span class="badge badge-km">${km}</span>` : ''}
                         ${min ? `<span class="badge badge-min">${min}</span>` : ''}
@@ -312,6 +362,169 @@
                 </div>`;
             return div;
         }
+
+        let activeTab = 'ordinaria';
+
+        window.switchTab = function(tab) {
+            activeTab = tab;
+            const tabOrd = document.getElementById('tabOrdinaria');
+            const tabRec = document.getElementById('tabRecupero');
+            const toolOrd = document.getElementById('toolbarOrdinaria');
+            const toolRec = document.getElementById('toolbarRecupero');
+
+            if (tab === 'ordinaria') {
+                tabOrd.style.background = 'var(--primary)';
+                tabOrd.style.color = 'white';
+                tabOrd.style.boxShadow = '0 2px 8px rgba(79,70,229,0.2)';
+                tabRec.style.background = 'transparent';
+                tabRec.style.color = '#64748b';
+                toolOrd.style.display = 'flex';
+                toolRec.style.display = 'none';
+                if (dataLavoro) caricaViaggi();
+            } else {
+                tabRec.style.background = '#b45309';
+                tabRec.style.color = 'white';
+                tabRec.style.boxShadow = '0 2px 8px rgba(180,83,9,0.2)';
+                tabOrd.style.background = 'transparent';
+                tabOrd.style.color = '#64748b';
+                tabOrd.style.boxShadow = 'none';
+                toolOrd.style.display = 'flex'; // Mantieni visibile per abilitare Genera Tutte le Mappe
+                toolRec.style.display = 'flex';
+                caricaMesiRecupero();
+            }
+        };
+
+        // ── FILTRO INTELLIGENTE GESTIONE ORDINARIA (2 MESI) ───────────────────
+        async function initMenuOrdinario() {
+            const selectMese = document.getElementById('selectMeseOrdinario');
+            if (!selectMese) return;
+            try {
+                const qRep = query(collection(db, 'clienti', 'DNR', 'reports_logistici'));
+                const snap = await getDocs(qRep);
+                const mesiSet = new Set();
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    if (data.archiviato_ui || data.archiviato_storico_rd) return;
+                    if (data.data_consegna && data.data_consegna.includes('-')) {
+                        const parts = data.data_consegna.split('-');
+                        if (parts.length === 3) {
+                            mesiSet.add(`${parts[2]}-${parts[1]}`); // YYYY-MM
+                        }
+                    }
+                });
+                const mesiList = Array.from(mesiSet).sort().reverse();
+                selectMese.innerHTML = '<option value="">-- Seleziona Mese Attivo --</option>';
+                mesiList.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.textContent = m;
+                    selectMese.appendChild(opt);
+                });
+                if (mesiList.length === 0) {
+                    selectMese.innerHTML = '<option value="">Nessun mese ordinario attivo</option>';
+                }
+            } catch (e) { console.warn("Errore initMenuOrdinario:", e); }
+        }
+
+        window.onMeseOrdinarioChange = function(e) {
+            const val = e.target.value;
+            if (!val) return;
+            Swal.fire({ title: `Mese ${val} selezionato`, text: 'Seleziona ora una data specifica di questo mese dal calendario accanto.', icon: 'info', timer: 3000 });
+        };
+
+        // ── FUNZIONI MODALITÀ RECUPERO BACKUP (R&D) ───────────────────────────
+        async function caricaMesiRecupero() {
+            const selectMese = document.getElementById('selectMeseRecupero');
+            if (!selectMese) return;
+            selectMese.innerHTML = '<option value="">Caricamento archivio R&D...</option>';
+            try {
+                const fn = httpsCallable(functions, 'recupera_viaggio_storico');
+                const res = await fn({ azione: 'lista_mesi' });
+                if (res.data && res.data.status === 'ok') {
+                    const mesi = res.data.mesi || [];
+                    selectMese.innerHTML = '<option value="">-- Seleziona Mese Storico --</option>';
+                    mesi.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m;
+                        opt.textContent = m;
+                        selectMese.appendChild(opt);
+                    });
+                    if (mesi.length === 0) selectMese.innerHTML = '<option value="">Nessun backup trovato in ARCHIVIO_STORICO_RD/</option>';
+                } else {
+                    selectMese.innerHTML = `<option value="">Errore: ${res.data?.message}</option>`;
+                }
+            } catch (e) { selectMese.innerHTML = '<option value="">Errore di rete</option>'; }
+        }
+
+        window.onMeseRecuperoChange = async function(e) {
+            const mese = e.target.value;
+            const selectData = document.getElementById('selectDataRecupero');
+            if (!mese || !selectData) return;
+            selectData.innerHTML = '<option value="">Caricamento giornate...</option>';
+            try {
+                const fn = httpsCallable(functions, 'recupera_viaggio_storico');
+                const res = await fn({ azione: 'lista_giornate', mese: mese });
+                if (res.data && res.data.status === 'ok') {
+                    const date = res.data.giornate || [];
+                    selectData.innerHTML = '<option value="">-- Seleziona Giornata --</option>';
+                    date.forEach(d => {
+                        const opt = document.createElement('option');
+                        opt.value = d;
+                        opt.textContent = d;
+                        selectData.appendChild(opt);
+                    });
+                    if (date.length === 0) selectData.innerHTML = '<option value="">Nessuna giornata trovata</option>';
+                } else { selectData.innerHTML = `<option value="">Errore: ${res.data?.message}</option>`; }
+            } catch (e) { selectData.innerHTML = '<option value="">Errore di rete</option>'; }
+        };
+
+        window.eseguiRecuperoStorico = async function() {
+            const mese = document.getElementById('selectMeseRecupero')?.value;
+            const dataTarget = document.getElementById('selectDataRecupero')?.value;
+            if (!mese || !dataTarget) {
+                Swal.fire('Attenzione', 'Seleziona prima un mese e una data d\'interesse.', 'warning');
+                return;
+            }
+            Swal.fire({ title: 'Ripristino Sandbox R&D...', html: `Ripristino del viaggio <b>${dataTarget}</b> in corso...<br>Questo viaggio riceverà il badge ⚠️ VIAGGIO STORICO RECUPERATO e sarà pronto per Genera Tutte le Mappe.`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const fn = httpsCallable(functions, 'recupera_viaggio_storico');
+                const res = await fn({ azione: 'recupera', mese: mese, data_consegna: dataTarget });
+                if (res.data && res.data.status === 'ok') {
+                    dataLavoro = dataTarget;
+                    localStorage.setItem('locked_date', dataLavoro);
+                    const url = new URL(window.location);
+                    url.searchParams.set('data', dataLavoro);
+                    window.history.pushState({}, '', url);
+                    
+                    if (dataLavoro.includes('-') && dataLavoro.split('-')[0].length === 2) {
+                        document.getElementById('dateSelector').value = dataLavoro.split('-').reverse().join('-');
+                    } else { document.getElementById('dateSelector').value = dataLavoro; }
+
+                    Swal.fire('Viaggio Recuperato!', res.data.message, 'success');
+                    await caricaViaggi();
+                } else { Swal.fire('Errore', res.data?.message || 'Errore sconosciuto', 'error'); }
+            } catch (e) { Swal.fire('Errore di rete', e.message, 'error'); }
+        };
+
+        window.rilasciaRecuperoStorico = async function() {
+            if (!dataLavoro) return;
+            const conf = await Swal.fire({ title: 'Conferma Rilascio', text: `Vuoi concludere lo studio per il ${dataLavoro} ed eliminare istantaneamente i record provvisori di R&D per mantenere pulito il database? (Il backup originale rimarrà intatto in ARCHIVIO_STORICO_RD/)`, icon: 'question', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#64748b', confirmButtonText: 'Sì, rilascia e pulisci', cancelButtonText: 'Annulla', reverseButtons: true });
+            if (!conf.isConfirmed) return;
+
+            Swal.fire({ title: 'Pulizia in corso...', text: `Rilascio e cancellazione dei record provvisori di ${dataLavoro}...`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const fn = httpsCallable(functions, 'rilascia_recupero_storico');
+                const res = await fn({ data_consegna: dataLavoro });
+                if (res.data && res.data.status === 'ok') {
+                    Swal.fire('Rilasciato!', res.data.message, 'success');
+                    document.getElementById('btnRilasciaRecupero').style.display = 'none';
+                    viaggi = [];
+                    renderViaggi();
+                    document.getElementById('emptyState').style.display = 'block';
+                    document.getElementById('emptyState').innerHTML = `<span class="material-icons-round">verified_user</span><h3>Studio concluso</h3><p>Sessione di studio per il ${dataLavoro} conclusa e database ripulito con successo.</p>`;
+                } else { Swal.fire('Errore', res.data?.message || 'Errore sconosciuto', 'error'); }
+            } catch (e) { Swal.fire('Errore di rete', e.message, 'error'); }
+        };
 
         // ── GENERA MAPPA (singola) ─────────────────────────────────────────────
         window.generaMappa = async function(viaggioId) {

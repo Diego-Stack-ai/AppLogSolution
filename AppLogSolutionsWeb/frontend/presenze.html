@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=4.08">
+    <link rel="stylesheet" href="styles.css?v=4.09">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .row-error td {
@@ -149,6 +149,7 @@
         .edit-input:disabled {
             appearance: none;
             -webkit-appearance: none;
+            -moz-appearance: none;
             color: inherit;
             opacity: 1;
             background: transparent;
@@ -486,13 +487,13 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.08"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.08"></script>
+    <script src="script.js?v=4.09"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.09"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=4.08";
+        import { calculateHours } from "./firestore-service.js?v=4.09";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -535,20 +536,21 @@ const db = getFirestore(app);
             return { cliente: clienteTrovato, viaggio: "" };
         }
 
-        // Aggiorna dinamicamente il datalist dei viaggi per una specifica riga di presenze
-        window.aggiornaViaggiPresenza = function(tr) {
+        // Aggiorna dinamicamente il select dei viaggi per una specifica riga di presenze
+        window.aggiornaViaggiPresenza = function(tr, initialViaggioValue = null) {
             if (!tr) return;
-            const autistaId = tr.dataset.autistaId;
-            const dateStr = tr.dataset.date;
             
             const inCliente = tr.querySelector('[data-field="cliente"]');
             const inViaggio = tr.querySelector('[data-field="viaggio"]');
-            const datalistViaggi = tr.querySelector(`#viaggi_dinamici_${autistaId}_${dateStr.replace(/-/g, '_')}`);
             
-            if (!inCliente || !inViaggio || !datalistViaggi) return;
+            if (!inCliente || !inViaggio) return;
             
             const clienteSelezionato = inCliente.value.trim().toUpperCase();
-            datalistViaggi.innerHTML = '';
+            
+            // Conserva il valore attuale del viaggio prima di svuotare
+            const currentVal = initialViaggioValue !== null ? initialViaggioValue : inViaggio.value;
+            
+            inViaggio.innerHTML = '<option value="">-- Seleziona Viaggio/Zona --</option>';
             
             if (!clienteSelezionato) {
                 return;
@@ -558,11 +560,27 @@ const db = getFirestore(app);
             const proj = progetti.find(p => (p.nome || "").toUpperCase() === clienteSelezionato);
             const viaggiConfigurati = proj ? (proj.viaggi || []) : [];
             
+            let foundSelected = false;
             viaggiConfigurati.forEach(v => {
                 const opt = document.createElement('option');
-                opt.value = v.toUpperCase();
-                datalistViaggi.appendChild(opt);
+                const vUpper = v.trim().toUpperCase();
+                opt.value = vUpper;
+                opt.textContent = vUpper;
+                if (vUpper === currentVal.trim().toUpperCase()) {
+                    opt.selected = true;
+                    foundSelected = true;
+                }
+                inViaggio.appendChild(opt);
             });
+            
+            // Se c'è un valore preesistente di viaggio che non fa parte di quelli configurati, lo aggiungiamo temporaneamente
+            if (currentVal && !foundSelected) {
+                const opt = document.createElement('option');
+                opt.value = currentVal.trim().toUpperCase();
+                opt.textContent = currentVal.trim().toUpperCase();
+                opt.selected = true;
+                inViaggio.appendChild(opt);
+            }
         };
 
         
@@ -605,8 +623,32 @@ const db = getFirestore(app);
         // Popola dropdown dipendenti da window.appData.lista_autisti caricata da firebase-auth-sync.js
         window.renderProgetti = function() {
             window.generaDatalistClientiGlobali();
-            // Aggiorna anche tutti i datalist delle righe visualizzate
+            // Aggiorna tutti i select cliente e viaggio nelle righe della tabella
             document.querySelectorAll("#presenzeTable tbody tr").forEach(tr => {
+                const selectCliente = tr.querySelector('select[data-field="cliente"]');
+                if (selectCliente) {
+                    const currentVal = selectCliente.value;
+                    selectCliente.innerHTML = '<option value="">-- Seleziona Cliente --</option>';
+                    const progetti = window.appData?.lista_progetti || [];
+                    progetti.forEach(p => {
+                        if (p.nome) {
+                            const opt = document.createElement("option");
+                            opt.value = p.nome.toUpperCase();
+                            opt.textContent = p.nome.toUpperCase();
+                            if (p.nome.toUpperCase() === currentVal.toUpperCase()) {
+                                opt.selected = true;
+                            }
+                            selectCliente.appendChild(opt);
+                        }
+                    });
+                    if (currentVal && !progetti.some(p => (p.nome || "").toUpperCase() === currentVal.toUpperCase())) {
+                        const opt = document.createElement("option");
+                        opt.value = currentVal.toUpperCase();
+                        opt.textContent = currentVal.toUpperCase();
+                        opt.selected = true;
+                        selectCliente.appendChild(opt);
+                    }
+                }
                 window.aggiornaViaggiPresenza(tr);
             });
         };
@@ -1060,11 +1102,20 @@ const db = getFirestore(app);
                     tr.innerHTML = `
     <td><strong>${dayName}</strong><br><span style="font-size: 0.8em; color: #6b7280;">${displayDate}</span></td>
                         <td>
-                            <input type="text" class="edit-input" data-field="cliente" value="${rCliente}" list="clienti_globali" disabled oninput="window.aggiornaViaggiPresenza(this.closest('tr'))">
+                            <select class="edit-input" data-field="cliente" disabled onchange="window.aggiornaViaggiPresenza(this.closest('tr'))">
+                                <option value="">-- Seleziona Cliente --</option>
+                                ${(window.appData?.lista_progetti || []).map(p => {
+                                    const pNome = (p.nome || "").toUpperCase();
+                                    return `<option value="${pNome}" ${pNome === rCliente.toUpperCase() ? 'selected' : ''}>${p.nome.toUpperCase()}</option>`;
+                                }).join('')}
+                                ${rCliente && !(window.appData?.lista_progetti || []).some(p => (p.nome || "").toUpperCase() === rCliente.toUpperCase()) ? 
+                                  `<option value="${rCliente.toUpperCase()}" selected>${rCliente.toUpperCase()}</option>` : ''}
+                            </select>
                         </td>
                         <td>
-                            <input type="text" class="edit-input" data-field="viaggio" value="${rViaggio}" list="viaggi_dinamici_${autista.id}_${dateStr.replace(/-/g, '_')}" disabled>
-                            <datalist id="viaggi_dinamici_${autista.id}_${dateStr.replace(/-/g, '_')}"></datalist>
+                            <select class="edit-input" data-field="viaggio" disabled>
+                                <option value="">-- Seleziona Viaggio/Zona --</option>
+                            </select>
                         </td>
                         <td><input type="number" class="edit-input num-input" data-field="kmPartenza" value="${record.kmPartenza || 0}" disabled onchange="onKmChange(this)"></td>
                         <td><input type="number" class="edit-input num-input" data-field="kmArrivo" value="${record.kmArrivo || 0}" disabled onchange="onKmChange(this)"></td>
@@ -1103,6 +1154,7 @@ const db = getFirestore(app);
                     `;
 
                     tbody.appendChild(tr);
+                    window.aggiornaViaggiPresenza(tr, rViaggio);
 
                     // Accumula totali
                     totalOre += parseFloat(record.oreTotali) || 0.0;
@@ -1799,7 +1851,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=4.08"></script>
+    <script type="module" src="cedolini-splitter.js?v=4.09"></script>
 
 </body>
 </html>

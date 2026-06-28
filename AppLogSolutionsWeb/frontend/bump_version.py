@@ -18,7 +18,7 @@ if not version_match:
 old_version = version_match.group(1)
 # Calcola la nuova versione (incremento decimale, es. 2.90 -> 2.91)
 major, minor = old_version.split(".")
-new_version = f"{major}.{int(minor) + 1}"
+new_version = f"{major}.{int(minor) + 1:02d}"
 print(f"Versione corrente: {old_version} -> Nuova versione: {new_version}")
 
 # 2. Aggiorna script.js

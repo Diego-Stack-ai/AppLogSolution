@@ -312,6 +312,7 @@ function startRealtimeSync(isAdmin) {
         window.appData.lista_progetti = progetti;
         if (typeof window.renderProgettiInserimento === 'function') window.renderProgettiInserimento();
         if (typeof window.renderProgettiImpostazioni === 'function') window.renderProgettiImpostazioni();
+        if (typeof window.renderProgetti === 'function') window.renderProgetti();
     });
     activeListeners.push(unsubProgetti);
 }

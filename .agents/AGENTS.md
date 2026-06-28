@@ -1,0 +1,86 @@
+# AGENTS.md — Regole Obbligatorie per questo Progetto
+# AppLogSolutions Web — G:\Il mio Drive\App
+
+Queste istruzioni sono VINCOLANTI per ogni agente che lavora su questo progetto.
+NON devono essere ignorate, aggirate o modificate senza esplicita approvazione dell'utente.
+
+---
+
+## PROCEDURA OBBLIGATORIA: Aggiornamento Versione
+
+Ogni volta che vengono apportate modifiche significative al frontend (nuove funzionalita, bugfix importanti, nuovi pulsanti, modifiche al comportamento), l'agente DEVE aggiornare la versione dell'applicazione seguendo QUESTA e SOLO questa procedura.
+
+### File da modificare (ENTRAMBI, sempre insieme):
+
+1. `G:\Il mio Drive\App\AppLogSolutionsWeb\frontend\sw.js` RIGA 1
+   const CACHE_NAME = 'log-solution-vX.XX';
+
+2. `G:\Il mio Drive\App\AppLogSolutionsWeb\frontend\script.js` RIGA 7
+   const APP_VERSION = "X.XX";
+
+### Regole TASSATIVE:
+- NON modificare mai il badge di versione hardcoded in dashboard.html o in qualsiasi altro file HTML. Il badge viene aggiornato automaticamente da script.js tramite document.querySelectorAll('.app-version-badge').
+- NON usare grep per finalità di sostituzione/modifica del numero di versione (rischio di rompere SVG o coordinate GPS). L'uso di grep è consentito in sola lettura per le verifiche.
+- NON inventare la versione corrente. Controllare SEMPRE script.js riga 7 prima di procedere.
+- I query string ?v=X.XX nei tag <link> e <script> di TUTTI i file HTML DEVONO essere aggiornati alla nuova versione. Farlo tramite script Python (NON grep/PowerShell). Questo serve al browser per scaricare i file JS/CSS aggiornati.
+- Dopo la modifica, eseguire: firebase deploy --only hosting dalla cartella G:\Il mio Drive\App\AppLogSolutionsWeb
+
+### Sequenza Deploy Versione:
+  1. Leggi APP_VERSION attuale da script.js riga 7
+  2. Calcola la nuova versione (incremento decimale, es. 2.87 -> 2.88)
+  3. Aggiorna sw.js riga 1 con il nuovo CACHE_NAME
+  4. Aggiorna script.js riga 7 con il nuovo APP_VERSION
+  5. Allinea tutti i ?v= nei file HTML: esegui uno script Python che sostituisce la vecchia versione con la nuova in tutti i *.html del frontend (es. ?v=2.87 -> ?v=2.88). Usare sempre script Python, mai grep/PowerShell.
+  6. Verifica con grep che non rimangano riferimenti alla versione precedente nei file HTML.
+  7. Esegui: firebase deploy --only hosting
+
+---
+
+## Struttura del Progetto
+
+- App Web (Frontend + Cloud Functions): G:\Il mio Drive\App\AppLogSolutionsWeb\
+  - Frontend: frontend/
+  - Cloud Functions (Python): functions/main.py
+- App Locale (script Python standalone): G:\Il mio Drive\AppLogSolutionLocale\dati\PROGRAMMA\
+  - **NOTA SINCRO:** L'App Web è al 100% svincolata a livello di codice dall'App Locale. Database (Firestore) e Storage Firebase vengono utilizzati in comune come sorgente di verità, ma senza alcun automatismo in background. Il travaso dati tra i file Excel locali e Firestore avviene solo tramite script manuali dell'operatore.
+- Firebase Project principale: log-solution-60007
+- Firebase Project muletto (test): log-solution-muletto (TASSATIVO: NON DEVE MAI ESSERE TOCCATO, MODIFICATO O UTILIZZATO PER I DEPLOY SENZA ESPLICITO ORDINE DELL'UTENTE)
+- Firestore tenant principale: clienti/DNR/
+
+---
+
+## Regole sul Database (Firestore)
+
+- Le collezioni anagrafiche (raccolta clienti, articoli, orari, rientri) NON vanno mai toccate da operazioni logistiche o di pulizia.
+- I dati logistici giornalieri vivono sotto clienti/DNR/reports_logistici/[data_consegna].
+- Lo Storage Firebase usa i prefissi: split_ddt/[data]/, REPORTS/[data]/, CONSEGNE/CONSEGNE_[data]/.
+
+---
+
+## Regole sul Deploy
+
+- TASSATIVO — DIVIETO SUL MULETTO: Il progetto e ambiente muletto (`log-solution-muletto`) NON DEVE MAI ESSERE TOCCATO. Qualsiasi operazione di deploy (sia Hosting che Functions) deve essere sempre e solo indirizzata alla produzione attiva (`log-solution-60007`), salvo che l'utente non impartisca l'ordine esplicito di collaudo sul muletto.
+- Solo functions: firebase deploy --only functions
+- Solo hosting: firebase deploy --only hosting
+- Una sola funzione: firebase deploy --only functions:nome_funzione
+- Eseguire sempre dalla cartella G:\Il mio Drive\App\AppLogSolutionsWeb
+- NON eseguire firebase deploy senza --only (deploy totale inutilmente lento).
+
+---
+
+## Filiera di Controllo Prima di Modificare
+
+Prima di modificare qualsiasi file, l'agente DEVE:
+1. Verificare quale file e la sorgente di verita per quella funzionalita.
+2. NON usare Set-Content con PowerShell per iniettare codice JS/HTML con backtick o caratteri speciali. Usare SEMPRE script Python scritti con write_to_file ed eseguiti con python.
+3. Dopo ogni modifica a elaborazione.html o a qualsiasi pagina con JS, verificare che le stringhe confirm() e i template literal JS siano sintatticamente corretti prima di fare il deploy.
+
+---
+
+## CODICE DI CONDOTTA COMPORTAMENTALE DELL'AGENTE (AI GOVERNANCE)
+
+Ogni agente che opera su questo progetto deve tassativamente rispettare i seguenti principi di lucidità e trasparenza:
+
+1. RIGORE E COERENZA CRITICA: L'agente non deve mai generare spiegazioni accomodanti o inventare pattern di sincronizzazione per compiacere l'utente. Deve analizzare il sistema con occhio critico, basandosi esclusivamente sui fatti riscontrabili nel codice.
+2. TRASPARENZA SULLE IPOTESI (AVVISO UMANO): Qualora l'agente sia costretto a teorizzare o immaginare il funzionamento di un componente non ispezionato direttamente, DEVE dichiararlo esplicitamente anteponendo l'etichetta `[⚠️ TEORIA AI / DA VERIFICARE]`.
+3. AUTOMONITORAGGIO DERIVA LOGICA: Nelle sessioni di lavoro lunghe o complesse, l'agente deve autovalutare la qualità del proprio contesto. Se rileva il rischio di allucinazioni o di assunzioni non verificate, deve fermare l'esecuzione e richiedere un reset o un allineamento esplicito all'operatore umano.

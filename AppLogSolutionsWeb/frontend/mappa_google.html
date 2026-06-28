@@ -89,6 +89,12 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
+        /* Rimuove i bordi blu di focus e selezione sugli elementi draggabili della mappa */
+        .gm-style div, .gm-style-iw {
+            outline: none !important;
+            -webkit-tap-highlight-color: transparent !important;
+        }
+
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
@@ -127,6 +133,7 @@
                         <option value="tutti">Tutti</option>
                         <option value="DNR">DNR</option>
                         <option value="GRAN CHEF">GRAN CHEF</option>
+                        <option value="CATTEL">CATTEL</option>
                     </select>
                 </div>
             </div>
@@ -273,15 +280,17 @@ const db = getFirestore(app);
                         
                         let dnrPoints = [];
                         let gcPoints = [];
+                        let cattelPoints = [];
                         let loadedDNR = false;
                         let loadedGC = false;
+                        let loadedCattel = false;
 
                         function mergeAndRender() {
-                            ALL_POINTS = [...dnrPoints, ...gcPoints];
-                            console.log(`[Map] Totale clienti caricati: ${ALL_POINTS.length} (DNR: ${dnrPoints.length}, GC: ${gcPoints.length})`);
+                            ALL_POINTS = [...dnrPoints, ...gcPoints, ...cattelPoints];
+                            console.log(`[Map] Totale clienti caricati: ${ALL_POINTS.length} (DNR: ${dnrPoints.length}, GC: ${gcPoints.length}, CATTEL: ${cattelPoints.length})`);
                             initFilters();
                             updateListAndMap();
-                            if (loadedDNR && loadedGC) {
+                            if (loadedDNR && loadedGC && loadedCattel) {
                                 clearTimeout(loadingTimeout);
                                 document.getElementById('loading-overlay').style.display = 'none';
                             }
@@ -289,13 +298,16 @@ const db = getFirestore(app);
 
                         onSnapshot(collection(db, "clienti/DNR/raccolta clienti"), (snapshot) => {
                             console.log(`[Map] Ricevuti ${snapshot.size} punti DNR`);
-                            dnrPoints = snapshot.docs.map(doc => ({
-                                id: doc.id,
-                                tenant: 'DNR',
-                                ...doc.data(),
-                                lat: parseFloat(doc.data().lat) || 0,
-                                lon: parseFloat(doc.data().lon) || 0
-                            }));
+                            dnrPoints = snapshot.docs.map(doc => {
+                                const d = doc.data();
+                                return {
+                                    ...d,
+                                    id: doc.id,
+                                    tenant: 'DNR',
+                                    lat: parseFloat(d.lat) || 0,
+                                    lon: parseFloat(d.lon) || 0
+                                };
+                            });
                             loadedDNR = true;
                             mergeAndRender();
                         }, (error) => {
@@ -306,9 +318,9 @@ const db = getFirestore(app);
                         onSnapshot(collection(db, "clienti/GRAN CHEF/raccolta clienti"), (snapshot) => {
                             console.log(`[Map] Ricevuti ${snapshot.size} punti GRAN CHEF`);
                             gcPoints = snapshot.docs.map(doc => ({
+                                ...doc.data(),
                                 id: doc.id,
                                 tenant: 'GRAN CHEF',
-                                ...doc.data(),
                                 lat: parseFloat(doc.data().lat) || 0,
                                 lon: parseFloat(doc.data().lon) || 0
                             }));
@@ -317,6 +329,22 @@ const db = getFirestore(app);
                         }, (error) => {
                             console.error("[Map] Errore Firestore GRAN CHEF:", error);
                             alert("Errore accesso dati GRAN CHEF: " + error.message);
+                        });
+
+                        onSnapshot(collection(db, "clienti/CATTEL/raccolta clienti"), (snapshot) => {
+                            console.log(`[Map] Ricevuti ${snapshot.size} punti CATTEL`);
+                            cattelPoints = snapshot.docs.map(doc => ({
+                                ...doc.data(),
+                                id: doc.id,
+                                tenant: 'CATTEL',
+                                lat: parseFloat(doc.data().lat) || 0,
+                                lon: parseFloat(doc.data().lon) || 0
+                            }));
+                            loadedCattel = true;
+                            mergeAndRender();
+                        }, (error) => {
+                            console.error("[Map] Errore Firestore CATTEL:", error);
+                            alert("Errore accesso dati CATTEL: " + error.message);
                         });
                     } else {
                         console.warn("[Map] Utente non autenticato, reindirizzamento...");
@@ -462,9 +490,9 @@ const db = getFirestore(app);
                 const codLLower = (p.codice_latte || '').toLowerCase();
                 
                 let channel = 'DNR';
-                if (nomeLower.includes('grand chef') || nomeLower.includes('gran chef') || p.tipo === 'GRAND_CHEF') {
+                if (nomeLower.includes('grand chef') || nomeLower.includes('gran chef') || p.tipo === 'GRAND_CHEF' || p.tenant === 'GRAN CHEF') {
                     channel = 'GRAND_CHEF';
-                } else if (nomeLower.includes('cattell') || nomeLower.includes('cattel') || nomeLower.includes('catel') || codFLower.includes('cattell') || codLLower.includes('cattell')) {
+                } else if (nomeLower.includes('cattell') || nomeLower.includes('cattel') || nomeLower.includes('catel') || codFLower.includes('cattell') || codLLower.includes('cattell') || p.tipo === 'CATTEL' || p.tenant === 'CATTEL') {
                     channel = 'CATTEL';
                 } else if (nomeLower.includes('bauer') || codFLower.includes('bauer') || codLLower.includes('bauer')) {
                     channel = 'BAUER';
@@ -478,6 +506,9 @@ const db = getFirestore(app);
                 el.style.boxShadow = '0 6px 16px rgba(0,0,0,0.3)';
                 el.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
                 el.style.transform = 'translate(-50%, -100%)';
+                el.style.outline = 'none';
+                el.style.userSelect = 'none';
+                el.style.webkitUserSelect = 'none';
 
                 // Hover animations
                 el.addEventListener('mouseenter', () => {
@@ -519,8 +550,18 @@ const db = getFirestore(app);
                         el.style.filter = 'drop-shadow(0 0 10px #ef4444)';
                     }
 
-                    // Carica l'immagine originale del marker di default Leaflet
-                    el.innerHTML = `<img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png" style="width: 25px; height: 41px; display: block;">`;
+                    // Applica i filtri di colore corretti in base allo stato (Legenda: Verde=OK, Rosso=Mancante, Blu=Modificato)
+                    let filterStyle = '';
+                    if (isMissing) {
+                        filterStyle = 'filter: hue-rotate(150deg) drop-shadow(0 0 6px #ef4444);'; // Rosso
+                    } else if (isModified) {
+                        filterStyle = 'filter: hue-rotate(20deg) drop-shadow(0 0 6px #4f46e5);'; // Blu/Viola scuro
+                    } else {
+                        filterStyle = 'filter: hue-rotate(270deg);'; // Verde (OK)
+                    }
+
+                    // Carica l'immagine originale del marker di default Leaflet con il filtro colore
+                    el.innerHTML = `<img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png" style="width: 25px; height: 41px; display: block; ${filterStyle}">`;
                     
                 } else {
                     // --- SISTEMA ICONE SPECIFICHE PER I CANALI COMMERCIALI ---
@@ -528,8 +569,11 @@ const db = getFirestore(app);
                     el.style.height = '36px';
                     el.style.borderRadius = '50%';
                     
-                    // Bordo basato su layer
-                    if (layer === 1) {
+                    // Bordo basato su layer e stato Mancante
+                    if (isMissing) {
+                        el.style.border = '3px solid #ef4444';
+                        el.style.animation = 'markerPulse 2s infinite';
+                    } else if (layer === 1) {
                         el.style.border = '2px solid white';
                     } else if (layer === 2) {
                         el.style.border = '5px double white';
@@ -544,20 +588,20 @@ const db = getFirestore(app);
                     let bgStyle = '';
 
                     if (channel === 'GRAND_CHEF') {
-                        bgStyle = 'linear-gradient(135deg, #8b5cf6, #7c3aed)'; // Sfondo viola premium
-                        // Icona omino (busto) con cappello da chef bianca
-                        svgIcon = `<svg viewBox="0 0 24 24" width="18" height="18" fill="white" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));"><path d="M12 2a5 5 0 0 0-4.8 3.6 4 4 0 0 0-3.2 3.9 4 4 0 0 0 3.2 3.9A5 5 0 0 0 12 17a5 5 0 0 0 4.8-3.6 4 4 0 0 0 3.2-3.9 4 4 0 0 0-3.2-3.9A5 5 0 0 0 12 2m0 16c-2.2 0-4 1.8-4 4h8c0-2.2-1.8-4-4-4z"/></svg>`;
+                        bgStyle = 'linear-gradient(135deg, #047857, #065f46)'; // Sfondo verde scuro Gran Chef
+                        svgIcon = `<span style="font-size:18px;">👨‍🍳</span>`;
                     } else if (channel === 'CATTEL') {
-                        bgStyle = 'linear-gradient(135deg, #0ea5e9, #0284c7)'; // Sfondo azzurro Cattel
-                        // Icona forchetta e coltello incrociati
-                        svgIcon = `<svg viewBox="0 0 24 24" width="18" height="18" fill="white" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));"><path d="M3.4 20.6c-.4-.4-.4-1 0-1.4L15.6 7c1-1 2.5-1.2 3.5-.2s.8 2.5-.2 3.5L6.8 22.6c-.4.4-1 .4-1.4 0L3.4 20.6zm17.2 0c.4-.4.4-1 0-1.4L9.8 8.4l-.7.7 2.1 2.1-1.4 1.4-2.1-2.1-.7.7L19.2 22.6c.4.4 1 .4 1.4 0l0 0zm-11.5-12.9L7 5.6c-.8-.8-.8-2 0-2.8s2-.8 2.8 0l2.1 2.1-2.8 2.8z"/></svg>`;
+                        bgStyle = 'linear-gradient(135deg, #1e3a8a, #172554)'; // Sfondo blu scuro Cattel
+                        svgIcon = `<span style="font-size:18px;">🚚</span>`;
                     } else if (channel === 'BAUER') {
-                        bgStyle = 'linear-gradient(135deg, #10b981, #059669)'; // Sfondo verde Bauer
-                        // Icona testa di mucca
-                        svgIcon = `<svg viewBox="0 0 24 24" width="18" height="18" fill="white" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));"><path d="M19 8c-.6 0-1.1.2-1.5.6C16.8 5.7 14.6 4 12 4s-4.8 1.7-5.5 4.6c-.4-.4-.9-.6-1.5-.6-1.1 0-2 .9-2 2 0 .7.4 1.4 1 1.7v4.3c0 2.2 1.8 4 4 4h8c2.2 0 4-1.8 4-4v-4.3c.6-.3 1-.9 1-1.7 0-1.1-.9-2-2-2zm-12 8c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm10 0c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1z"/></svg>`;
+                        bgStyle = 'linear-gradient(135deg, #b45309, #78350f)'; // Sfondo ambra scuro Bauer
+                        svgIcon = `<span style="font-size:18px;">🐮</span>`;
                     }
 
                     el.style.background = bgStyle;
+                    el.style.display = 'flex';
+                    el.style.alignItems = 'center';
+                    el.style.justifyContent = 'center';
                     el.innerHTML = svgIcon;
                 }
 
@@ -569,11 +613,20 @@ const db = getFirestore(app);
                     gmpDraggable: !IS_LOCKED
                 });
 
+                let badgeBg = '#64748b';
+                let badgeText = 'DNR';
+                if (channel === 'GRAND_CHEF') { badgeBg = '#8b5cf6'; badgeText = 'GRAN CHEF'; }
+                else if (channel === 'CATTEL') { badgeBg = '#0ea5e9'; badgeText = 'CATTEL'; }
+                else if (channel === 'BAUER') { badgeBg = '#10b981'; badgeText = 'BAUER'; }
+
                 m.addListener('gmp-click', () => {
                     infoWindow.close();
                     infoWindow.setContent(`
                         <div class="popup-info" style="padding:12px; font-family:'Inter', sans-serif; max-width:260px;">
-                            <div style="font-weight:800; font-size:0.95rem; margin-bottom:4px; color:var(--text-main);">${p.cliente || p.nome_consegna}</div>
+                            <div style="font-weight:800; font-size:0.95rem; margin-bottom:4px; color:var(--text-main); display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                                <span>${p.cliente || p.nome_consegna}</span>
+                                <span style="background:${badgeBg}; color:white; font-size:9px; font-weight:800; padding:2px 6px; border-radius:4px; white-space:nowrap;">${badgeText}</span>
+                            </div>
                             <div style="color:var(--text-muted); margin-bottom:5px; font-size:0.8rem;">${p.indirizzo}</div>
                             <div style="font-weight:700; font-size:0.85rem;">${p.citta || ''} (${p.provincia || p.prov || ''})</div>
                             <hr style="margin:8px 0; border:0; border-top:1px solid #eee">
@@ -593,19 +646,27 @@ const db = getFirestore(app);
                         tenant: p.tenant
                     };
                     
-                    // Aggiorna colore in blu (modificato)
-                    el.style.background = 'linear-gradient(135deg, #4f46e5, #4f46e5)';
+                    // Evita l'effetto rettangolo blu su DNR (goccia PNG)
+                    if (channel === 'DNR') {
+                        const img = el.querySelector('img');
+                        if (img) img.style.filter = 'hue-rotate(160deg) drop-shadow(0 0 6px #4f46e5)';
+                    } else {
+                        el.style.background = 'linear-gradient(135deg, #4f46e5, #4f46e5)';
+                    }
                     
                     document.getElementById('btn-save').disabled = false;
                     document.getElementById('save-counter').innerText = `(${Object.keys(MODIFIED).length})`;
-                });;
+                });
 
                 gMarkers.push(m);
 
                 const item = document.createElement('div');
                 item.className = 'point-item' + (isMissing ? ' missing':'') + (isModified ? ' modified':'');
                 item.innerHTML = `
-                    <b>${p.cliente || p.nome_consegna}</b>
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                        <b>${p.cliente || p.nome_consegna}</b>
+                        <span style="background:${badgeBg}; color:white; font-size:9px; font-weight:800; padding:2px 6px; border-radius:4px; margin:0; white-space:nowrap;">${badgeText}</span>
+                    </div>
                     <span>${p.indirizzo} - ${p.citta || ''} (${p.provincia || p.prov || ''})</span>
                     <span style="color:var(--primary); font-weight:700; font-size:0.65rem; margin-top:4px">
                         F: ${p.codice_frutta || '-'} | L: ${p.codice_latte || '-'}

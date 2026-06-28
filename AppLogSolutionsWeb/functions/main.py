@@ -1900,9 +1900,11 @@ def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data
                 parts = indirizzo.split(',')
                 if len(parts) > 1:
                     cit_part = parts[-1].strip()
-                    cit_part = re.sub(r'\(.*?\)', '', cit_part).strip()
-                    cit_part = re.sub(r'\d{5}', '', cit_part).strip()
-                    localita = cit_part
+                    # Verifica che contenga almeno qualche lettera per essere una città (esclude i civici puri come "51")
+                    if re.search(r'[a-zA-Z]{2,}', cit_part):
+                        cit_part = re.sub(r'\(.*?\)', '', cit_part).strip()
+                        cit_part = re.sub(r'\d{5}', '', cit_part).strip()
+                        localita = cit_part
                     
             orario_min = "08:00"
             orario_max = "14:00"
@@ -2220,9 +2222,9 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
         etichetta = data.get("type", "FRUTTA").upper()
         is_excel = data.get("is_excel", False) or etichetta == "GRAND_CHEF"
         
-        # 1. Carica Mappatura da DNR e GRAN CHEF per supportare viaggi misti
+        # 1. Carica Mappatura da DNR, GRAN CHEF e CATTEL per supportare viaggi misti
         db_mappati = {}
-        for current_tenant in ['DNR', 'GRAN CHEF']:
+        for current_tenant in ['DNR', 'GRAN CHEF', 'CATTEL']:
             clienti_ref = db.collection('clienti').document(current_tenant).collection('raccolta clienti')
             for doc in clienti_ref.stream():
                 d = doc.to_dict()
@@ -2254,8 +2256,29 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
         nuovi_orari = risultato.get("nuovi_orari", {})
         nuovi_articoli = risultato.get("nuovi_articoli", {})
         
+        # 5. Salvataggio nuovi dati dinamici nel tenant corretto
+        for l, info in nuovi_dati.items():
+            db.collection('clienti').document(tenant).collection('nuovi codici consegna').document(l).set(info, merge=True)
+            
+        for l, info in nuovi_orari.items():
+            db.collection('clienti').document(tenant).collection('nuovi orari mancanti').document(l).set(info, merge=True)
+            
+        for c, info in nuovi_articoli.items():
+            doc_id = str(c).replace('/', '-').replace(' ', '_')
+            db.collection('clienti').document(tenant).collection('nuovi articoli rilevati').document(doc_id).set(info, merge=True)
+            
         if not deliveries:
-            job_ref.update({"status": "completed", "message": "Nessun DDT trovato"})
+            job_ref.update({
+                "status": "completed", 
+                "message": "Nessun DDT trovato (Clienti da mappare?)",
+                "nuovi_clienti": len(nuovi_dati),
+                "nuovi_articoli": len(nuovi_articoli),
+                "nuovi_orari": len(nuovi_orari),
+                "nuovi_clienti_list": list(nuovi_dati.keys()),
+                "nuovi_articoli_list": list(nuovi_articoli.keys()),
+                "nuovi_orari_list": list(nuovi_orari.keys()),
+                "updated_at": firestore.SERVER_TIMESTAMP
+            })
             return {"status": "ok", "pdf_generati": 0}
             
         # Applica il campo competenza a ciascun DDT
@@ -2280,17 +2303,7 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
             if hasattr(out_stream, "seek"):
                 out_stream.seek(0)
             split_blob.upload_from_file(out_stream, content_type='application/pdf')
-            
-        # 5. Salvataggio nuovi dati dinamici nel tenant corretto
-        for l, info in nuovi_dati.items():
-            db.collection('clienti').document(tenant).collection('nuovi codici consegna').document(l).set(info, merge=True)
-            
-        for l, info in nuovi_orari.items():
-            db.collection('clienti').document(tenant).collection('nuovi orari mancanti').document(l).set(info, merge=True)
-            
-        for c, info in nuovi_articoli.items():
-            doc_id = str(c).replace('/', '-').replace(' ', '_')
-            db.collection('clienti').document(tenant).collection('nuovi articoli rilevati').document(doc_id).set(info, merge=True)
+
             
         # 6. Salvataggio Metadati Temporanei (per Step 2)
         metadata_ddt = {
@@ -2387,9 +2400,9 @@ def core_genera_report_giornaliero(uid, data_consegna):
     print(f"[INFO] Scansione Storage per data {data_consegna}...")
     
     try:
-        # Caricamento bulk clienti da DNR e GRAN CHEF per evitare timeout (Deadline Exceeded)
+        # Caricamento bulk clienti da DNR, GRAN CHEF e CATTEL per evitare timeout (Deadline Exceeded)
         db_mappati = {}
-        for current_tenant in ['DNR', 'GRAN CHEF']:
+        for current_tenant in ['DNR', 'GRAN CHEF', 'CATTEL']:
             clienti_ref = db.collection('clienti').document(current_tenant).collection('raccolta clienti')
             for doc in clienti_ref.stream():
                 d = doc.to_dict()
@@ -2683,8 +2696,9 @@ def core_genera_report_giornaliero(uid, data_consegna):
     palette = ["#4f46e5", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#14b8a6", "#6366f1", "#a855f7", "#3b82f6", "#22c55e", "#d946ef", "#84cc16"]
     
     # Dividiamo le zone in categorie
-    dnr_keys = sorted([k for k in zone_dict.keys() if k not in ("DDT_DA_INSERIRE", "0000", "SENZA_ZONA") and not k.startswith("GC_") and not k.startswith("CATTEL_")])
+    dnr_keys = sorted([k for k in zone_dict.keys() if k not in ("DDT_DA_INSERIRE", "0000", "SENZA_ZONA") and not k.startswith("GC_") and not k.startswith("CATTEL_") and not k.startswith("BAUER_")])
     cattel_keys = sorted([k for k in zone_dict.keys() if k.startswith("CATTEL_")])
+    bauer_keys = sorted([k for k in zone_dict.keys() if k.startswith("BAUER_")])
     gc_keys = [k for k in zone_dict.keys() if k.startswith("GC_")]
     
     # Ordina le zone GC per timestamp di creazione del job
@@ -2715,6 +2729,19 @@ def core_genera_report_giornaliero(uid, data_consegna):
             "color": palette[color_index % len(palette)],
             "lista_punti": zone_dict[zid],
             "is_cattel": True
+        })
+        color_index += 1
+        
+    # Aggiungi zone Bauer
+    for idx_bauer, zid in enumerate(bauer_keys, start=1):
+        parts = zid.split('_')
+        targa_label = parts[1] if len(parts) > 2 else f"Viaggio {idx_bauer}"
+        zone_finali.append({
+            "id_zona": zid,
+            "nome_giro": f"Bauer {targa_label}",
+            "color": palette[color_index % len(palette)],
+            "lista_punti": zone_dict[zid],
+            "is_bauer": True
         })
         color_index += 1
         
@@ -4293,7 +4320,7 @@ def pulisci_cartelle_elaborazione(req: https_fn.CallableRequest):
                 except Exception:
                     pass
                     
-            tenant = "GRAN CHEF" if t.upper() == "GRAND_CHEF" else "DNR"
+            tenant = "GRAN CHEF" if t.upper() == "GRAND_CHEF" else ("CATTEL" if t.upper() == "CATTEL" else "DNR")
             jobs_ref = db.collection('clienti').document(tenant).collection('processing_jobs')
             old_jobs = jobs_ref.where('data_lavoro', '==', data_consegna).stream()
             for oj in old_jobs:

@@ -1,11 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anomalie - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=2.82">
+    <link rel="stylesheet" href="styles.css?v=2.98">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -100,8 +100,8 @@
 
     </div>
 
-    <script src="script.js?v=2.82"></script>
-    <script type="module" src="firebase-auth-sync.js?v=2.82"></script>
+    <script src="script.js?v=2.98"></script>
+    <script type="module" src="firebase-auth-sync.js?v=2.98"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -114,14 +114,16 @@ const db = getFirestore(app);
         let masterClientiList = [];
         async function caricaMasterClienti() {
             try {
-                const [snapDNR, snapGC] = await Promise.all([
+                const [snapDNR, snapGC, snapCattel] = await Promise.all([
                     getDocs(collection(db, 'clienti', 'DNR', 'raccolta clienti')),
-                    getDocs(collection(db, 'clienti', 'GRAN CHEF', 'raccolta clienti'))
+                    getDocs(collection(db, 'clienti', 'GRAN CHEF', 'raccolta clienti')),
+                    getDocs(collection(db, 'clienti', 'CATTEL', 'raccolta clienti'))
                 ]);
                 const listDNR = snapDNR.docs.map(doc => ({ id: doc.id, tenant: 'DNR', ...doc.data() }));
                 const listGC = snapGC.docs.map(doc => ({ id: doc.id, tenant: 'GRAN CHEF', ...doc.data() }));
-                masterClientiList = [...listDNR, ...listGC];
-                console.log("Database Master Clienti caricato (DNR + GRAN CHEF):", masterClientiList.length);
+                const listCattel = snapCattel.docs.map(doc => ({ id: doc.id, tenant: 'CATTEL', ...doc.data() }));
+                masterClientiList = [...listDNR, ...listGC, ...listCattel];
+                console.log("Database Master Clienti caricato (DNR + GRAN CHEF + CATTEL):", masterClientiList.length);
             } catch (error) {
                 console.error("Errore durante il caricamento dei clienti master:", error);
             }
@@ -138,6 +140,7 @@ const db = getFirestore(app);
         // --- GESTIONE CLIENTI ---
         let nuoviCodiciDNR = [];
         let nuoviCodiciGC = [];
+        let nuoviCodiciCattel = [];
 
         function renderMergedNuoviCodici() {
             const list = document.getElementById('list-clienti');
@@ -146,6 +149,7 @@ const db = getFirestore(app);
             const merged = [];
             nuoviCodiciDNR.forEach(item => merged.push({ ...item, tenant: 'DNR' }));
             nuoviCodiciGC.forEach(item => merged.push({ ...item, tenant: 'GRAN CHEF' }));
+            nuoviCodiciCattel.forEach(item => merged.push({ ...item, tenant: 'CATTEL' }));
             
             if (merged.length === 0) {
                 list.innerHTML = `<div style="text-align:center; padding:40px; color:#10b981;"><span class="material-icons-round" style="font-size:48px;">check_circle</span><br>Nessun nuovo cliente in attesa!</div>`;
@@ -175,7 +179,7 @@ const db = getFirestore(app);
                     tenant: tenant
                 };
 
-                const badgeColor = tenant === 'GRAN CHEF' ? '#f59e0b' : '#4f46e5';
+                const badgeColor = tenant === 'GRAN CHEF' ? '#f59e0b' : (tenant === 'CATTEL' ? '#0284c7' : '#4f46e5');
                 const suggestedClass = d.stato_suggerito === 'giallo' ? 'suggested-giallo' : (d.stato_suggerito === 'rosso' ? 'suggested-rosso' : '');
                 
                 let matchBadge = '';
@@ -210,7 +214,7 @@ const db = getFirestore(app);
                             <div class="input-group"><label>Latitudine</label><input type="number" step="0.000001" id="cli-${id}-lat" value="${d.lat || ''}"></div>
                             <div class="input-group"><label>Longitudine</label><input type="number" step="0.000001" id="cli-${id}-lon" value="${d.lon || ''}"></div>
                             <div class="input-group" style="grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 4px; margin-bottom: 12px;">
-                                <button type="button" class="action-btn" onclick="apriGeolocalizzatoreMappa('${id}', 'cli')" style="background: #0ea5e9; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 8px; border: none; color: white; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#0284c7';" onmouseout="this.style.background='#0ea5e9';">
+                                <button type="button" class="action-btn" onclick="apriGeolocalizzatoreMappa('${id}', 'cli', '${tenant}')" style="background: #0ea5e9; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 8px; border: none; color: white; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#0284c7';" onmouseout="this.style.background='#0ea5e9';">
                                     <span class="material-icons-round" style="font-size: 18px;">map</span>📍 Geolocalizza con Google Maps
                                 </button>
                             </div>
@@ -266,6 +270,14 @@ const db = getFirestore(app);
             nuoviCodiciGC = [];
             snapshot.forEach(docSnap => {
                 nuoviCodiciGC.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            renderMergedNuoviCodici();
+        });
+
+        onSnapshot(collection(db, 'clienti', 'CATTEL', 'nuovi codici consegna'), (snapshot) => {
+            nuoviCodiciCattel = [];
+            snapshot.forEach(docSnap => {
+                nuoviCodiciCattel.push({ id: docSnap.id, ...docSnap.data() });
             });
             renderMergedNuoviCodici();
         });
@@ -417,6 +429,7 @@ const db = getFirestore(app);
                 provincia: document.getElementById(`cli-${id}-prov`).value,
                 lat: parseFloat(document.getElementById(`cli-${id}-lat`).value) || null,
                 lon: parseFloat(document.getElementById(`cli-${id}-lon`).value) || null,
+                tipologia_grado: (window.defaultAnomalyData && window.defaultAnomalyData[id]) ? window.defaultAnomalyData[id].tipo : 'DNR',
                 codice_frutta: document.getElementById(`cli-${id}-codF`).value,
                 codice_latte: document.getElementById(`cli-${id}-codL`).value,
                 orario_min_frutta: document.getElementById(`cli-${id}-omF`).value,
@@ -732,9 +745,64 @@ const db = getFirestore(app);
             mapsLoadedPromise.then(callback);
         }
 
-        window.apriGeolocalizzatoreMappa = (id, prefix = 'cli') => {
+        const PROVINCE_MAP_JS = {
+            'VR': 'VERONA', 'VI': 'VICENZA', 'PD': 'PADOVA', 'VE': 'VENEZIA', 'TV': 'TREVISO', 'BL': 'BELLUNO', 'RO': 'ROVIGO',
+            'BS': 'BRESCIA', 'BG': 'BERGAMO', 'MN': 'MANTOVA', 'CR': 'CREMONA', 'MI': 'MILANO', 'MB': 'MONZA E BRIANZA', 
+            'CO': 'COMO', 'LC': 'LECCO', 'VA': 'VARESE', 'SO': 'SONDRIO', 'LO': 'LODI', 'PV': 'PAVIA',
+            'TN': 'TRENTO', 'BZ': 'BOLZANO',
+            'UD': 'UDINE', 'PN': 'PORDENONE', 'GO': 'GORIZIA', 'TS': 'TRIESTE',
+            'BO': 'BOLOGNA', 'MO': 'MODENA', 'RE': 'REGGIO EMILIA', 'PR': 'PARMA', 'PC': 'PIACENZA', 
+            'FE': 'FERRARA', 'RA': 'RAVENNA', 'FC': 'FORLI-CESENA', 'RN': 'RIMINI',
+            'TO': 'TORINO', 'NO': 'NOVARA', 'CN': 'CUNEO', 'AT': 'ASTI', 'AL': 'ALESSANDRIA', 'BI': 'BIELLA', 
+            'VB': 'VERBANO-CUSIO-OSSOLA', 'VC': 'VERCELLI', 'AO': 'AOSTA', 'GE': 'GENOVA', 'SV': 'SAVONA', 'IM': 'IMPERIA', 'SP': 'LA SPEZIA',
+            'FI': 'FIRENZE', 'PO': 'PRATO', 'PT': 'PISTOIA', 'LU': 'LUCCA', 'PI': 'PISA', 'LI': 'LIVORNO', 'SI': 'SIENA', 
+            'AR': 'AREZZO', 'GR': 'GROSSETO', 'MS': 'MASSA-CARRARA', 'PG': 'PERUGIA', 'TR': 'TERNI', 'AN': 'ANCONA', 
+            'PU': 'PESARO E URBINO', 'MC': 'MACERATA', 'FM': 'FERMO', 'AP': 'ASCOLI PICENO', 'RM': 'ROMA', 'LT': 'LATINA', 
+            'FR': 'FROSINONE', 'VT': 'VITERBO', 'RI': 'RIETI', 'NA': 'NAPOLI', 'SA': 'SALERNO', 'CE': 'CASERTA', 
+            'AV': 'AVELLINO', 'BN': 'BENEVENTO', 'BA': 'BARI', 'LE': 'LECCE', 'FG': 'FOGGIA', 'TA': 'TARANTO', 'BR': 'BRINDISI',
+            'PA': 'PALERMO', 'CT': 'CATANIA', 'ME': 'MESSINA', 'CA': 'CAGLIARI', 'SS': 'SASSARI'
+        };
+
+        let currentGeolocData = { cit: '', cap: '', prov: '' };
+
+        function parseGoogleAddressComponents(components) {
+            let cit = '';
+            let cap = '';
+            let prov = '';
+            
+            for (const comp of components) {
+                const types = comp.types;
+                if (types.includes('postal_code')) {
+                    cap = comp.long_name;
+                }
+                if (types.includes('locality')) {
+                    cit = comp.long_name;
+                }
+                if (!cit && types.includes('administrative_area_level_3')) {
+                    cit = comp.long_name;
+                }
+                if (types.includes('administrative_area_level_2')) {
+                    const shortName = comp.short_name?.toUpperCase() || '';
+                    const longName = comp.long_name?.toUpperCase() || '';
+                    if (PROVINCE_MAP_JS[shortName]) {
+                        prov = PROVINCE_MAP_JS[shortName];
+                    } else if (longName) {
+                        prov = longName;
+                    } else {
+                        prov = shortName;
+                    }
+                }
+            }
+            
+            if (cit) currentGeolocData.cit = cit.toUpperCase();
+            if (cap) currentGeolocData.cap = cap;
+            if (prov) currentGeolocData.prov = prov;
+        }
+
+        window.apriGeolocalizzatoreMappa = (id, prefix = 'cli', tenant = 'DNR') => {
             currentAnomalyId = id;
             currentPrefix = prefix;
+            currentGeolocData = { cit: '', cap: '', prov: '' };
             
             // Mostra il modal
             const modal = document.getElementById('geoloc-modal');
@@ -747,7 +815,7 @@ const db = getFirestore(app);
             const cap = document.getElementById(`${prefix}-${id}-cap`)?.value || '';
             const prov = document.getElementById(`${prefix}-${id}-prov`)?.value || '';
             
-            document.getElementById('geoloc-title').textContent = `Geolocalizza: ${ragSoc || 'Nuovo Cliente'}`;
+            document.getElementById('geoloc-title').textContent = `Geolocalizza: ${ragSoc || 'Nuovo Cliente'} (${tenant})`;
             
             // Precompila l'input di ricerca con l'indirizzo attuale (se manca la città usa la ragione sociale per aiutare Google Places)
             const fullAddress = (ind && !cit) ? `${ragSoc}, ${ind}` : `${ind}, ${cit} ${cap} (${prov})`;
@@ -762,11 +830,11 @@ const db = getFirestore(app);
 
             // Carica Google Maps se non è già caricato ed esegue l'init
             caricaGoogleMaps(() => {
-                initGeolocMap(ind, cit, cap, prov, currentLat, currentLon);
+                initGeolocMap(ind, cit, cap, prov, currentLat, currentLon, tenant);
             });
         };
 
-        function initGeolocMap(ind, cit, cap, prov, currentLat, currentLon) {
+        function initGeolocMap(ind, cit, cap, prov, currentLat, currentLon, tenant = 'DNR') {
             let initialPos = { lat: 45.4383, lng: 10.9916 }; // Centro di default (Verona)
             let hasCoords = false;
             
@@ -776,14 +844,53 @@ const db = getFirestore(app);
             }
             
             geolocMap = new google.maps.Map(document.getElementById('geoloc-map'), {
-                zoom: hasCoords ? 17 : 12,
-                center: initialPos
+                zoom: hasCoords ? 18 : 13,
+                center: initialPos,
+                mapTypeId: 'hybrid'
             });
+            
+            let markerIcon = null; // Default pin rosso di Google Maps
+            
+            if (tenant === 'CATTEL') {
+                // Icona Camion Express (🚚) in un cerchio blu scuro
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+                    <circle cx="20" cy="20" r="18" fill="#1e3a8a" stroke="white" stroke-width="2"/>
+                    <text x="20" y="26" font-size="18" text-anchor="middle">🚚</text>
+                </svg>`;
+                markerIcon = {
+                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+                    scaledSize: new google.maps.Size(40, 40),
+                    anchor: new google.maps.Point(20, 20)
+                };
+            } else if (tenant === 'GRAN CHEF') {
+                // Icona Cuoco (👨‍🍳) in un cerchio verde scuro
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+                    <circle cx="20" cy="20" r="18" fill="#047857" stroke="white" stroke-width="2"/>
+                    <text x="20" y="26" font-size="18" text-anchor="middle">👨‍🍳</text>
+                </svg>`;
+                markerIcon = {
+                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+                    scaledSize: new google.maps.Size(40, 40),
+                    anchor: new google.maps.Point(20, 20)
+                };
+            } else if (tenant === 'BAUER') {
+                // Icona Mucca (🐮) in un cerchio ambra/marrone - Predisposta per future importazioni Bauer
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+                    <circle cx="20" cy="20" r="18" fill="#b45309" stroke="white" stroke-width="2"/>
+                    <text x="20" y="26" font-size="18" text-anchor="middle">🐮</text>
+                </svg>`;
+                markerIcon = {
+                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+                    scaledSize: new google.maps.Size(40, 40),
+                    anchor: new google.maps.Point(20, 20)
+                };
+            }
             
             geolocMarker = new google.maps.Marker({
                 position: initialPos,
                 map: geolocMap,
                 draggable: true,
+                icon: markerIcon,
                 title: "Trascina per posizionare"
             });
             
@@ -792,6 +899,13 @@ const db = getFirestore(app);
                 const pos = geolocMarker.getPosition();
                 document.getElementById('geoloc-val-lat').textContent = pos.lat().toFixed(6);
                 document.getElementById('geoloc-val-lon').textContent = pos.lng().toFixed(6);
+                
+                const geocoder = new google.maps.Geocoder();
+                geocoder.geocode({ location: pos }, (results, status) => {
+                    if (status === 'OK' && results[0] && results[0].address_components) {
+                        parseGoogleAddressComponents(results[0].address_components);
+                    }
+                });
             });
             
             // Se non abbiamo coordinate pre-esistenti ma c'è un indirizzo, eseguiamo subito la geolocalizzazione automatica
@@ -814,8 +928,12 @@ const db = getFirestore(app);
                     
                     document.getElementById('geoloc-val-lat').textContent = loc.lat().toFixed(6);
                     document.getElementById('geoloc-val-lon').textContent = loc.lng().toFixed(6);
+                    
+                    if (results[0].address_components) {
+                        parseGoogleAddressComponents(results[0].address_components);
+                    }
                 } else {
-                    Swal.fire('Attenzione', 'Impossibile trovare l\'indirizzo cercato su Google Maps.', 'warning');
+                    Swal.fire("Attenzione", "Impossibile trovare l'indirizzo cercato su Google Maps.", "warning");
                 }
             });
         };
@@ -835,25 +953,46 @@ const db = getFirestore(app);
             
             const latInput = document.getElementById(`${currentPrefix}-${currentAnomalyId}-lat`);
             const lonInput = document.getElementById(`${currentPrefix}-${currentAnomalyId}-lon`);
+            const citInput = document.getElementById(`${currentPrefix}-${currentAnomalyId}-cit`);
+            const capInput = document.getElementById(`${currentPrefix}-${currentAnomalyId}-cap`);
+            const provInput = document.getElementById(`${currentPrefix}-${currentAnomalyId}-prov`);
             
             if (latInput && lonInput) {
                 latInput.value = latStr;
                 lonInput.value = lonStr;
-                
-                // Coloriamo i campi per dare feedback visivo
                 latInput.style.backgroundColor = '#ecfdf5';
                 latInput.style.borderColor = '#10b981';
                 lonInput.style.backgroundColor = '#ecfdf5';
                 lonInput.style.borderColor = '#10b981';
                 
+                let extraMsg = '';
+                if (citInput && currentGeolocData.cit) {
+                    citInput.value = currentGeolocData.cit;
+                    citInput.style.backgroundColor = '#ecfdf5';
+                    citInput.style.borderColor = '#10b981';
+                    extraMsg += `, Città: ${currentGeolocData.cit}`;
+                }
+                if (capInput && currentGeolocData.cap) {
+                    capInput.value = currentGeolocData.cap;
+                    capInput.style.backgroundColor = '#ecfdf5';
+                    capInput.style.borderColor = '#10b981';
+                    extraMsg += `, CAP: ${currentGeolocData.cap}`;
+                }
+                if (provInput && currentGeolocData.prov) {
+                    provInput.value = currentGeolocData.prov;
+                    provInput.style.backgroundColor = '#ecfdf5';
+                    provInput.style.borderColor = '#10b981';
+                    extraMsg += `, Prov: ${currentGeolocData.prov}`;
+                }
+                
                 Swal.fire({
                     icon: 'success',
-                    title: 'Coordinate Applicate!',
-                    text: `Lat: ${latStr}, Lon: ${lonStr}`,
+                    title: 'Dati e Coordinate Applicati!',
+                    text: `Lat: ${latStr}, Lon: ${lonStr}${extraMsg}`,
                     toast: true,
                     position: 'top-end',
                     showConfirmButton: false,
-                    timer: 2000
+                    timer: 3500
                 });
             }
             

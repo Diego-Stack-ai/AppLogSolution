@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.86">
+    <link rel="stylesheet" href="styles.css?v=3.87">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
@@ -271,6 +271,10 @@
                 <div class="input-group">
                     <label for="progettoNomeInput">Nome Cliente / Progetto *</label>
                     <input type="text" id="progettoNomeInput" placeholder="es. PROGETTO SCUOLE" style="text-transform: uppercase;">
+                </div>
+                <div class="input-group">
+                    <label for="progettoReferenteInput">Nome e Cognome (Referente)</label>
+                    <input type="text" id="progettoReferenteInput" placeholder="es. Mario Rossi">
                 </div>
                 <div class="input-group">
                     <label for="progettoEmailInput">E-mail Cliente</label>
@@ -1097,8 +1101,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=3.86"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.86"></script>
+    <script src="script.js?v=3.87"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.87"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1149,6 +1153,7 @@ const functions = getFunctions(app, "europe-west1");
         const contentDiv  = document.getElementById('progettiContent');
         const iconSpan    = document.getElementById('toggleProgettiIcon');
         const nomeInput   = document.getElementById('progettoNomeInput');
+        const referenteInput = document.getElementById('progettoReferenteInput');
         const emailInput  = document.getElementById('progettoEmailInput');
         const cellInput   = document.getElementById('progettoCellulareInput');
         const tagList     = document.getElementById('viaggiTagList');
@@ -1219,6 +1224,7 @@ const functions = getFunctions(app, "europe-west1");
             try {
                 const data = {
                     nome, viaggi: currentViaggi,
+                    referente: referenteInput.value.trim(),
                     email: emailInput.value.trim(),
                     cellulare: cellInput.value.trim(),
                     patente_b: patB ? parseFloat(patB) : null,
@@ -1250,7 +1256,7 @@ const functions = getFunctions(app, "europe-west1");
         btnAnnulla.onclick = resetForm;
 
         function resetForm() {
-            editId = null; currentViaggi = []; nomeInput.value = ''; emailInput.value = ''; cellInput.value = ''; renderTagList();
+            editId = null; currentViaggi = []; nomeInput.value = ''; referenteInput.value = ''; emailInput.value = ''; cellInput.value = ''; renderTagList();
             ['progettoPatB','progettoPatC','progettoNavS','progettoNavC','progettoCollo',
              'cattelLimKmB','cattelLimKmC','cattelLimPesoB','cattelLimPesoC',
              'cattelUsername','cattelPassword','cattelUrl',
@@ -1266,7 +1272,7 @@ const functions = getFunctions(app, "europe-west1");
         window.editProgetto = id => {
             const p = progettiCache.find(x => x.id === id);
             if (!p) return;
-            editId = id; nomeInput.value = p.nome || ''; emailInput.value = p.email || ''; cellInput.value = p.cellulare || ''; currentViaggi = [...(p.viaggi || [])];
+            editId = id; nomeInput.value = p.nome || ''; referenteInput.value = p.referente || ''; emailInput.value = p.email || ''; cellInput.value = p.cellulare || ''; currentViaggi = [...(p.viaggi || [])];
             
             document.getElementById('progettoPatB').value = p.patente_b ?? '';
             document.getElementById('progettoPatC').value = p.patente_c ?? '';
@@ -1340,8 +1346,9 @@ const functions = getFunctions(app, "europe-west1");
             ).join('');
             
             let contattiDetails = '';
-            if (p.email || p.cellulare) {
+            if (p.referente || p.email || p.cellulare) {
                 let parts = [];
+                if (p.referente) parts.push(`Referente: <b>${p.referente}</b>`);
                 if (p.email) parts.push(`Email: <b>${p.email}</b> <a href="mailto:${p.email}" style="color:var(--primary); margin-left:4px; vertical-align:middle;" title="Invia Email"><span class="material-icons-round" style="font-size:16px; vertical-align:middle;">email</span></a>`);
                 if (p.cellulare) parts.push(`Tel: <b>${p.cellulare}</b> <a href="tel:${p.cellulare}" style="color:#16a34a; margin-left:4px; vertical-align:middle;" title="Chiama"><span class="material-icons-round" style="font-size:16px; vertical-align:middle;">call</span></a>`);
                 contattiDetails = `<div style="font-size:12px; color:#64748b; margin-bottom: 6px;">${parts.join(' | ')}</div>`;

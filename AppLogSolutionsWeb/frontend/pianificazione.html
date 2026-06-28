@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.15">
+    <link rel="stylesheet" href="styles.css?v=4.16">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -295,9 +295,9 @@
                     const autistaId = pd.autistaId || pd.dipendenteId;
                     if (autistaId && affinityData[autistaId]) {
                         
-                        // FILTRO DATA: Consideriamo solo dati a partire dal 24 Giugno 2026 (settimana del 28 Giugno)
+                        // FILTRO DATA: Consideriamo solo dati a partire dal 22 Giugno 2026 (settimana del 28 Giugno)
                         const dataDoc = pd.data; // Formato YYYY-MM-DD
-                        if (!dataDoc || dataDoc < "2026-06-24") {
+                        if (!dataDoc || dataDoc < "2026-06-22") {
                             return; // Salta storico sporco precedente
                         }
 
@@ -751,7 +751,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.15"></script>
-    <script src="script.js?v=4.15"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.16"></script>
+    <script src="script.js?v=4.16"></script>
 </body>
 </html>

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.88">
+    <link rel="stylesheet" href="styles.css?v=3.89">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
@@ -283,8 +283,12 @@
                     <label style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 8px; display: block;">+ Aggiungi Nuovo Referente</label>
                     <div class="form-grid" style="margin-bottom: 10px;">
                         <div class="input-group">
-                            <label>Nome / Reparto *</label>
-                            <input type="text" id="nuovoContattoNome" placeholder="es. Mario Rossi o Amministrazione">
+                            <label>Nome Referente *</label>
+                            <input type="text" id="nuovoContattoNome" placeholder="es. Mario Rossi">
+                        </div>
+                        <div class="input-group">
+                            <label>Ruolo / Reparto</label>
+                            <input type="text" id="nuovoContattoRuolo" placeholder="es. Amministrazione o Logistica">
                         </div>
                         <div class="input-group">
                             <label>E-mail</label>
@@ -298,6 +302,10 @@
                             <label>Cellulare</label>
                             <input type="tel" id="nuovoContattoCellulare" placeholder="es. 3401234567">
                         </div>
+                    </div>
+                    <div style="margin-top:2px; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" id="nuovoContattoReport" style="width:16px; height:16px; cursor:pointer;">
+                        <label for="nuovoContattoReport" style="font-size:12px; font-weight:600; color:#334155; cursor:pointer; user-select:none;">Usa questa E-mail per invio automatico dei Report/Fatture</label>
                     </div>
                     <button type="button" onclick="aggiungiContatto()" class="btn-primary" style="width: auto; padding: 8px 14px; font-size: 12px; background: #10b981; border: none;">Aggiungi in Rubrica</button>
                 </div>
@@ -1118,8 +1126,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=3.88"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.88"></script>
+    <script src="script.js?v=3.89"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.89"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1173,9 +1181,11 @@ const functions = getFunctions(app, "europe-west1");
         
         const contattiTagList = document.getElementById('contattiTagList');
         const nuovoContattoNome = document.getElementById('nuovoContattoNome');
+        const nuovoContattoRuolo = document.getElementById('nuovoContattoRuolo');
         const nuovoContattoEmail = document.getElementById('nuovoContattoEmail');
         const nuovoContattoFisso = document.getElementById('nuovoContattoFisso');
         const nuovoContattoCellulare = document.getElementById('nuovoContattoCellulare');
+        const nuovoContattoReport = document.getElementById('nuovoContattoReport');
         
         const tagList     = document.getElementById('viaggiTagList');
         const nuovoVInput = document.getElementById('nuovoViaggio');
@@ -1224,14 +1234,22 @@ const functions = getFunctions(app, "europe-west1");
 
         window.aggiungiContatto = () => {
             const nome = nuovoContattoNome.value.trim();
-            if (!nome) { alert('Il campo Nome / Reparto è obbligatorio.'); return; }
+            if (!nome) { alert('Il campo Nome Referente è obbligatorio.'); return; }
+            
+            const isReport = nuovoContattoReport.checked;
+            if (isReport) {
+                currentContatti.forEach(c => c.isReport = false);
+            }
+
             currentContatti.push({
                 nome: nome,
+                ruolo: nuovoContattoRuolo.value.trim(),
                 email: nuovoContattoEmail.value.trim(),
                 fisso: nuovoContattoFisso.value.trim(),
-                cellulare: nuovoContattoCellulare.value.trim()
+                cellulare: nuovoContattoCellulare.value.trim(),
+                isReport: isReport
             });
-            nuovoContattoNome.value = ''; nuovoContattoEmail.value = ''; nuovoContattoFisso.value = ''; nuovoContattoCellulare.value = '';
+            nuovoContattoNome.value = ''; nuovoContattoRuolo.value = ''; nuovoContattoEmail.value = ''; nuovoContattoFisso.value = ''; nuovoContattoCellulare.value = ''; nuovoContattoReport.checked = false;
             renderContattiTagList();
         };
 
@@ -1245,7 +1263,11 @@ const functions = getFunctions(app, "europe-west1");
                 const row = document.createElement('div');
                 row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#f1f5f9; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0;';
                 
-                let details = `<div style="font-weight:600; color:#334155; font-size:13px;">${c.nome}</div>`;
+                let nomeHtml = c.nome;
+                if (c.ruolo) nomeHtml += ` <span style="font-weight:400; font-size:12px; color:#64748b;">(${c.ruolo})</span>`;
+                if (c.isReport) nomeHtml += ` <span style="background:#dcfce7; color:#166534; font-size:10px; padding:2px 6px; border-radius:12px; margin-left:6px; font-weight:700;">📨 REPORT</span>`;
+
+                let details = `<div style="font-weight:700; color:#334155; font-size:13px;">${nomeHtml}</div>`;
                 let info = [];
                 if (c.fisso) info.push(`Fisso: <b>${c.fisso}</b>`);
                 if (c.cellulare) info.push(`Cellulare: <b>${c.cellulare}</b>`);
@@ -1319,7 +1341,7 @@ const functions = getFunctions(app, "europe-west1");
 
         function resetForm() {
             editId = null; currentViaggi = []; currentContatti = []; nomeInput.value = ''; 
-            nuovoContattoNome.value = ''; nuovoContattoEmail.value = ''; nuovoContattoFisso.value = ''; nuovoContattoCellulare.value = '';
+            nuovoContattoNome.value = ''; nuovoContattoRuolo.value = ''; nuovoContattoEmail.value = ''; nuovoContattoFisso.value = ''; nuovoContattoCellulare.value = ''; nuovoContattoReport.checked = false;
             renderTagList(); renderContattiTagList();
             ['progettoPatB','progettoPatC','progettoNavS','progettoNavC','progettoCollo',
              'cattelLimKmB','cattelLimKmC','cattelLimPesoB','cattelLimPesoC',
@@ -1345,10 +1367,12 @@ const functions = getFunctions(app, "europe-west1");
                 currentContatti = [...p.contatti];
             } else if (p.referente || p.email || p.cellulare) {
                 currentContatti = [{
-                    nome: p.referente || 'Referente / Contatto',
+                    nome: p.referente || 'Referente Aziendale',
+                    ruolo: '',
                     email: p.email || '',
                     fisso: '',
-                    cellulare: p.cellulare || ''
+                    cellulare: p.cellulare || '',
+                    isReport: p.email ? true : false
                 }];
             } else {
                 currentContatti = [];
@@ -1425,26 +1449,42 @@ const functions = getFunctions(app, "europe-west1");
                 `<span style="background:#e0e7ff;color:#3730a3;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:600;">${v}</span>`
             ).join('');
             
-            // Generazione UI per i Referenti (Contatti Multipli)
+            // Generazione UI per i Referenti (Contatti Multipli) con Bottoni
             let contattiHtml = '';
             const cList = (p.contatti && Array.isArray(p.contatti)) ? p.contatti : 
-                          ((p.referente || p.email || p.cellulare) ? [{nome: p.referente || 'Referente', email: p.email, cellulare: p.cellulare, fisso: ''}] : []);
+                          ((p.referente || p.email || p.cellulare) ? [{nome: p.referente || 'Referente', email: p.email, cellulare: p.cellulare, fisso: '', isReport: true}] : []);
             
             if (cList.length > 0) {
                 const cHtmlArr = cList.map(c => {
-                    let parts = [];
-                    if (c.email) parts.push(`Email: <b>${c.email}</b> <a href="mailto:${c.email}" style="color:var(--primary); margin-left:2px; vertical-align:middle;" title="Invia Email"><span class="material-icons-round" style="font-size:14px; vertical-align:middle;">email</span></a>`);
-                    if (c.fisso) parts.push(`Fisso: <b>${c.fisso}</b> <a href="tel:${c.fisso}" style="color:#16a34a; margin-left:2px; vertical-align:middle;" title="Chiama Fisso"><span class="material-icons-round" style="font-size:14px; vertical-align:middle;">phone</span></a>`);
-                    if (c.cellulare) parts.push(`Cell: <b>${c.cellulare}</b> <a href="tel:${c.cellulare}" style="color:#16a34a; margin-left:2px; vertical-align:middle;" title="Chiama Cellulare"><span class="material-icons-round" style="font-size:14px; vertical-align:middle;">smartphone</span></a>`);
+                    let actions = [];
+                    if (c.email) {
+                        actions.push(`<a href="mailto:${c.email}" style="display:inline-flex; align-items:center; gap:4px; background:#e0e7ff; color:#3730a3; padding:4px 8px; border-radius:6px; text-decoration:none; font-size:11px; font-weight:600; border:1px solid #c7d2fe;" title="Invia Email">
+                                        <span class="material-icons-round" style="font-size:14px;">email</span> ${c.email}
+                                      </a>`);
+                    }
+                    if (c.fisso) {
+                        actions.push(`<a href="tel:${c.fisso}" style="display:inline-flex; align-items:center; gap:4px; background:#dcfce7; color:#166534; padding:4px 8px; border-radius:6px; text-decoration:none; font-size:11px; font-weight:600; border:1px solid #bbf7d0;" title="Chiama Fisso">
+                                        <span class="material-icons-round" style="font-size:14px;">phone</span> ${c.fisso}
+                                      </a>`);
+                    }
+                    if (c.cellulare) {
+                        actions.push(`<a href="tel:${c.cellulare}" style="display:inline-flex; align-items:center; gap:4px; background:#dcfce7; color:#166534; padding:4px 8px; border-radius:6px; text-decoration:none; font-size:11px; font-weight:600; border:1px solid #bbf7d0;" title="Chiama Cellulare">
+                                        <span class="material-icons-round" style="font-size:14px;">smartphone</span> ${c.cellulare}
+                                      </a>`);
+                    }
+                    
+                    let nomeHtml = `👤 ${c.nome}`;
+                    if (c.ruolo) nomeHtml += ` <span style="font-weight:400; font-size:11px; color:#64748b; margin-left:4px;">(${c.ruolo})</span>`;
+                    if (c.isReport) nomeHtml += ` <span style="background:#22c55e; color:white; font-size:9px; padding:2px 5px; border-radius:10px; margin-left:6px; font-weight:700;" title="Email per Reportistica">REPORT</span>`;
                     
                     return `
-                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px 8px; margin-bottom:6px;">
-                            <div style="font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">👤 ${c.nome}</div>
-                            ${parts.length > 0 ? `<div style="font-size:11px; color:#64748b; display:flex; flex-wrap:wrap; gap:8px;">${parts.join(' | ')}</div>` : ''}
+                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; margin-bottom:8px;">
+                            <div style="font-size:13px; font-weight:700; color:#334155; margin-bottom:8px; display:flex; align-items:center;">${nomeHtml}</div>
+                            ${actions.length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:6px;">${actions.join('')}</div>` : ''}
                         </div>
                     `;
                 });
-                contattiHtml = `<div style="margin-bottom:8px;">${cHtmlArr.join('')}</div>`;
+                contattiHtml = `<div style="margin-bottom:12px;">${cHtmlArr.join('')}</div>`;
             }
 
             row.innerHTML = `

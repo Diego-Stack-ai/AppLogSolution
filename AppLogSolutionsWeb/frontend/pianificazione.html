@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.11">
+    <link rel="stylesheet" href="styles.css?v=4.12">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -54,6 +54,21 @@
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        select.input-field {
+            background-color: #fff;
+            cursor: pointer;
+            height: 38px;
+        }
+
+        select.input-field:disabled {
+            background-color: #f1f5f9;
+            color: #94a3b8;
+            cursor: not-allowed;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
         }
 
         .check-container {
@@ -359,44 +374,76 @@
 
         window.impostaCliente = function(btn, valore) {
             const tr = btn.closest('tr');
-            const inputCliente = tr.querySelector('.in-cliente');
-            inputCliente.value = valore;
+            const selectCliente = tr.querySelector('.in-cliente');
+            selectCliente.value = valore;
             // Esegui trigger dell'input a cascata
             window.aggiornaDestinazioni(tr, tr.getAttribute('data-id'));
         };
 
         window.impostaDaSuggerimento = function(btn, selector, valore) {
             const tr = btn.closest('tr');
-            tr.querySelector(selector).value = valore;
+            const targetEl = tr.querySelector(selector);
+            if (targetEl) {
+                targetEl.value = valore;
+                // Se abbiamo impostato il cliente da suggerimento, aggiorniamo anche le destinazioni
+                if (selector === '.in-cliente') {
+                    window.aggiornaDestinazioni(tr, tr.getAttribute('data-id'));
+                }
+            }
+        };
+
+        window.renderProgetti = function() {
+            console.log("Pianificazione: renderProgetti() chiamato, aggiornamento menu clienti...");
+            const progetti = window.appData?.lista_progetti || [];
+            
+            const selects = document.querySelectorAll('.in-cliente');
+            selects.forEach(select => {
+                const currentVal = select.value;
+                select.innerHTML = '<option value="">-- Seleziona --</option>';
+                progetti.forEach(p => {
+                    const nome = (p.nome || "").trim().toUpperCase();
+                    const opt = document.createElement('option');
+                    opt.value = nome;
+                    opt.textContent = nome;
+                    select.appendChild(opt);
+                });
+                select.value = currentVal;
+            });
         };
 
         window.aggiornaDestinazioni = function(tr, idAutista) {
-            const clienteSelezionato = tr.querySelector('.in-cliente').value.trim().toUpperCase();
+            const selectCliente = tr.querySelector('.in-cliente');
+            const clienteSelezionato = selectCliente.value.trim().toUpperCase();
             const destContainer = tr.querySelector('.dest-container');
-            const inViaggio = tr.querySelector('.in-viaggio');
+            const selectViaggio = tr.querySelector('.in-viaggio');
             
-            // Aggiorna datalist dinamico per questa riga
-            const datalistViaggi = document.getElementById(`viaggi_dinamici_${idAutista}`);
-            if (datalistViaggi) {
-                datalistViaggi.innerHTML = '';
-                const progetti = window.appData?.lista_progetti || [];
-                const proj = progetti.find(p => p.nome.toUpperCase() === clienteSelezionato);
-                const viaggiConfigurati = proj ? (proj.viaggi || []) : [];
-                viaggiConfigurati.forEach(v => {
-                    const opt = document.createElement('option');
-                    opt.value = v.toUpperCase();
-                    datalistViaggi.appendChild(opt);
-                });
-            }
+            // Salva valore viaggio corrente
+            const currentViaggio = selectViaggio.value;
+
+            // Aggiorna opzioni select viaggio per questa riga
+            selectViaggio.innerHTML = '<option value="">-- Seleziona --</option>';
+            const progetti = window.appData?.lista_progetti || [];
+            const proj = progetti.find(p => p.nome.toUpperCase() === clienteSelezionato);
+            const viaggiConfigurati = proj ? (proj.viaggi || []) : [];
+            viaggiConfigurati.forEach(v => {
+                const opt = document.createElement('option');
+                const vUpper = v.toUpperCase();
+                opt.value = vUpper;
+                opt.textContent = vUpper;
+                selectViaggio.appendChild(opt);
+            });
+
+            // Ripristina valore viaggio se valido
+            selectViaggio.value = currentViaggio;
 
             if (!clienteSelezionato) {
-                inViaggio.value = '';
-                inViaggio.disabled = true;
+                selectViaggio.value = '';
+                selectViaggio.disabled = true;
                 destContainer.innerHTML = '<span class="suggestion-badge badge-disabled">Seleziona prima il cliente</span>';
                 return;
             }
 
-            inViaggio.disabled = false;
+            selectViaggio.disabled = false;
             const colorClass = window.getClienteColorClass(clienteSelezionato);
             const viaggiCliente = affinityData[idAutista].viaggiPerCliente[clienteSelezionato] || {};
             const topViaggi = Object.entries(viaggiCliente).sort((a,b) => b[1] - a[1]).slice(0, 3);
@@ -468,6 +515,14 @@
 
         function costruisciTabella() {
             tbody.innerHTML = '';
+            
+            // Carica la lista progetti corrente per popolare il select cliente
+            const progetti = window.appData?.lista_progetti || [];
+            const opzioniClientiHtml = progetti.map(p => {
+                const nome = (p.nome || "").trim().toUpperCase();
+                return `<option value="${nome}">${nome}</option>`;
+            }).join('');
+
             dipendenti.forEach(d => {
                 const topClienti = Object.entries(affinityData[d.id].clienti).sort((a,b) => b[1] - a[1]).slice(0, 3);
                 const topTarghe = Object.entries(affinityData[d.id].targhe).sort((a,b) => b[1] - a[1]).slice(0, 2);
@@ -486,11 +541,16 @@
                         <div class="driver-name">${d.nome} ${d.cognome || ''}</div>
                     </td>
                     <td>
-                        <input type="text" class="input-field in-cliente" list="clienti_globali" placeholder="Es. CATTEL" oninput="window.aggiornaDestinazioni(this.closest('tr'), '${d.id}')">
+                        <select class="input-field in-cliente" onchange="window.aggiornaDestinazioni(this.closest('tr'), '${d.id}')">
+                            <option value="">-- Seleziona --</option>
+                            ${opzioniClientiHtml}
+                        </select>
                         <div style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">${suggestClienteHtml}</div>
                     </td>
                     <td>
-                        <input type="text" class="input-field in-viaggio" list="viaggi_dinamici_${d.id}" placeholder="Es. CORTINA" disabled>
+                        <select class="input-field in-viaggio" disabled>
+                            <option value="">-- Seleziona --</option>
+                        </select>
                         <div class="dest-container" style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">
                              <span class="suggestion-badge badge-disabled">Seleziona prima il cliente</span>
                         </div>
@@ -636,7 +696,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.11"></script>
-    <script src="script.js?v=4.11"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.12"></script>
+    <script src="script.js?v=4.12"></script>
 </body>
 </html>

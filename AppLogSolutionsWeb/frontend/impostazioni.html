@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.83">
+    <link rel="stylesheet" href="styles.css?v=3.84">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
@@ -781,6 +781,60 @@
             });
         }
 
+        function gestisciAbilitazioneForm(targetUser) {
+            const currentUser = window.appData.currentUser || {};
+            const logRuolo = (currentUser.ruolo || '').toLowerCase();
+            const isImpiegata = logRuolo === 'impiegata';
+            const targetRuolo = targetUser ? (targetUser.ruolo || '').toLowerCase() : '';
+            const isSelf = targetUser && targetUser.id === currentUser.uid;
+
+            // Elenco di tutti i controlli del form
+            const inputs = [
+                driverNomeInput, driverCognomeInput, driverEmailInput, driverCellulareInput,
+                driverRuoloInput, driverTurnoInput, driverElevazione,
+                driverCodiceFiscale, driverSesso, driverDataNascita, driverLuogoNascita,
+                driverResidenza, driverNumeroPatente, driverTipoPatente,
+                driverPatenteRilasciataDa, driverPatenteScadenza, driverDataAssunzione,
+                driverTipoAssunzione, driverTrasformazione, driverDataTrasformazione,
+                driverTipoTrasformazione
+            ];
+            
+            // Ripristina abilitato
+            inputs.forEach(inp => { if(inp) inp.disabled = false; });
+            btnSalvaAutista.style.display = 'block';
+
+            if (isImpiegata) {
+                // Impiegata può operare solo su autisti
+                if (targetUser && (targetRuolo === 'amministratore' || targetRuolo === 'impiegata')) {
+                    if (!isSelf) {
+                        // Profilo protetto: disabilita tutto e nasconde pulsante salva
+                        inputs.forEach(inp => { if(inp) inp.disabled = true; });
+                        btnSalvaAutista.style.display = 'none';
+                    } else {
+                        // Se stessa: può modificare anagrafica ma non ruolo/elevazione
+                        driverRuoloInput.value = 'impiegata';
+                        driverRuoloInput.disabled = true;
+                        driverElevazione.disabled = true;
+                    }
+                } else {
+                    // Nuovo utente o utente autista: ruolo bloccato fisso su autista
+                    driverRuoloInput.value = 'autista';
+                    driverRuoloInput.disabled = true;
+                    driverElevazione.disabled = true;
+                }
+            } else {
+                // Amministratore
+                if (isSelf) {
+                    // Non può cambiarsi ruolo se è l'unico amministratore configurato
+                    const autisti = window.appData.lista_autisti || [];
+                    const adminCount = autisti.filter(a => (a.ruolo || '').toLowerCase() === 'amministratore').length;
+                    if (adminCount <= 1) {
+                        driverRuoloInput.disabled = true;
+                    }
+                }
+            }
+        }
+
         driverRuoloInput.addEventListener('change', () => {
             const role = driverRuoloInput.value;
             const currentUser = window.appData.currentUser;
@@ -794,6 +848,8 @@
             editIndexAutista = idx;
             const autisti = window.appData.lista_autisti || [];
             const targetUser = autisti[idx];
+            
+            gestisciAbilitazioneForm(targetUser);
             
             driverNomeInput.value = targetUser.nome || '';
             driverCognomeInput.value = targetUser.cognome || '';
@@ -868,6 +924,7 @@
             btnSalvaAutista.textContent = "Salva";
             btnAnnullaAutista.style.display = "none";
             adminExtraFields.style.display = 'none';
+            gestisciAbilitazioneForm(null);
         };
 
         btnSalvaAutista.onclick = async () => {
@@ -897,6 +954,49 @@
 
             if (!n || !cognome || !email) {
                 alert("Nome, Cognome ed E-mail sono obbligatori.");
+                return;
+            }
+
+            // ── CONTROLLI DI SICUREZZA GESTIONE RUOLI ──────────────────────
+            const currentUser = window.appData.currentUser || {};
+            const logRuolo = (currentUser.ruolo || '').toLowerCase();
+            const isImpiegata = logRuolo === 'impiegata';
+            const isAdmin = logRuolo === 'amministratore';
+
+            const autisti = window.appData.lista_autisti || [];
+            const targetOriginale = editIndexAutista >= 0 ? autisti[editIndexAutista] : null;
+            const originalRuolo = targetOriginale ? (targetOriginale.ruolo || '').toLowerCase() : '';
+            const isSelf = targetOriginale && targetOriginale.id === currentUser.uid;
+
+            if (isImpiegata) {
+                // 1. Impiegata non può creare/salvare utenti con ruoli diversi da "autista"
+                if (r !== 'autista') {
+                    alert("Errore di Sicurezza: Non hai i permessi per assegnare un ruolo diverso da Autista.");
+                    return;
+                }
+                
+                // 2. Impiegata non può modificare profili protetti (admin o impiegate) diversi da se stessa
+                if (targetOriginale && (originalRuolo === 'amministratore' || originalRuolo === 'impiegata') && !isSelf) {
+                    alert("Errore di Sicurezza: Non puoi modificare o declassare profili Amministrativi o Amministratori.");
+                    return;
+                }
+                
+                // 3. Impiegata non può cambiarsi il proprio ruolo
+                if (isSelf && r !== originalRuolo) {
+                    alert("Errore di Sicurezza: Non puoi modificare il tuo stesso ruolo.");
+                    return;
+                }
+            } else if (isAdmin) {
+                // 4. Prevenzione Amministratore Unico
+                if (isSelf && r !== 'amministratore') {
+                    const adminCount = autisti.filter(a => (a.ruolo || '').toLowerCase() === 'amministratore').length;
+                    if (adminCount <= 1) {
+                        alert("Errore di Sicurezza: Non puoi rimuovere il tuo ruolo di Amministratore perché sei l'unico Amministratore configurato nel sistema. Nomina prima un altro Amministratore.");
+                        return;
+                    }
+                }
+            } else {
+                alert("Errore di Sicurezza: Non hai i permessi per eseguire questa operazione.");
                 return;
             }
 
@@ -988,8 +1088,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=3.83"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.83"></script>
+    <script src="script.js?v=3.84"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.84"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────

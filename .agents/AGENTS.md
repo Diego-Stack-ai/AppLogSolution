@@ -32,7 +32,8 @@ Ogni volta che vengono apportate modifiche significative al frontend (nuove funz
   4. Aggiorna script.js riga 7 con il nuovo APP_VERSION
   5. Allinea tutti i ?v= nei file HTML: esegui uno script Python che sostituisce la vecchia versione con la nuova in tutti i *.html del frontend (es. ?v=2.87 -> ?v=2.88). Usare sempre script Python, mai grep/PowerShell.
   6. Verifica con grep che non rimangano riferimenti alla versione precedente nei file HTML.
-  7. Fai il `git commit` su `sviluppo`, uniscilo a `main` e fai `git push origin main`. GitHub Actions eseguirà automaticamente il deploy di Hosting in produzione.
+  7. Fai il `git commit` su `sviluppo` e FERMATI TASSATIVAMENTE per attendere il collaudo umano (vedi sezione Regole sul Deploy).
+  8. Solo dopo l'approvazione dell'utente, uniscilo a `main` e fai `git push origin main`. GitHub Actions eseguirà automaticamente il deploy di Hosting in produzione.
 
 ---
 
@@ -60,7 +61,8 @@ Ogni volta che vengono apportate modifiche significative al frontend (nuove funz
 ## Regole sul Deploy (CI/CD Obbligatorio)
 
 - TASSATIVO — DIVIETO SUL MULETTO: Il progetto e ambiente muletto (`log-solution-muletto`) NON DEVE MAI ESSERE TOCCATO. Qualsiasi operazione di deploy (sia Hosting che Functions) deve essere sempre e solo indirizzata alla produzione attiva (`log-solution-60007`), salvo che l'utente non impartisca l'ordine esplicito di collaudo sul muletto.
-- **HOSTING (FRONTEND):** Tassativamente VIETATO fare `firebase deploy --only hosting` manualmente dal terminale locale. Il deploy in produzione avviene IN AUTOMATICO tramite GitHub Actions quando si effettua il `git push origin main`. L'agente deve limitarsi a unire le modifiche su `main` e fare il push.
+- **TASSATIVO — STOP PER COLLAUDO UTENTE SULL'APP:** Dopo aver completato la scrittura del codice sul branch `sviluppo` e aver fatto il commit, l'agente DEVE TASSATIVAMENTE FERMARSI e invitare l'operatore umano a testare l'applicazione dal vivo nel proprio ambiente locale/browser. È severamente vietato eseguire il merge su `main` e il push per la CI/CD fino a quando l'utente non rilascerà l'esplicita autorizzazione: "Collaudo superato, procedi al deploy sul main".
+- **HOSTING (FRONTEND):** Tassativamente VIETATO fare `firebase deploy --only hosting` manualmente dal terminale locale. Il deploy in produzione avviene IN AUTOMATICO tramite GitHub Actions quando si effettua il `git push origin main`. L'agente deve limitarsi a unire le modifiche su `main` e fare il push (esclusivamente dopo l'autorizzazione di collaudo superato).
 - **FUNCTIONS (BACKEND):** Il deploy delle Cloud Functions (`firebase deploy --only functions`) si esegue dal terminale locale, ma **TASSATIVAMENTE** solo dopo aver committato e pushato ogni singola modifica su Git (`main` e `sviluppo`).
 - Una sola funzione: `firebase deploy --only functions:nome_funzione` (eseguire sempre dalla cartella G:\Il mio Drive\App\AppLogSolutionsWeb dopo il git push).
 - NON eseguire mai `firebase deploy` senza `--only` (deploy totale inutilmente lento e a rischio di scavalcare la CI/CD).

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.89">
+    <link rel="stylesheet" href="styles.css?v=3.90">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
@@ -721,13 +721,10 @@
                 const elevationBadge = a.canElevate ? '<span style="font-size:10px; color:#10b981; margin-left:5px;">(Elevabile)</span>' : '';
                 const turnoBadge = `<span style="font-size:11px; font-weight:400; background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:10px; margin-left:8px;">${a.tipoTurno === 'notturno' ? 'NOTTURNO' : 'GIORNATA'}</span>`;
                 
-                let details = `Email: <b>${a.email || 'N.D.'}</b>`;
-                if (a.email) {
-                    details += ` <a href="mailto:${a.email}" style="color:var(--primary); margin-left:4px; vertical-align:middle;" title="Invia Email"><span class="material-icons-round" style="font-size:16px; vertical-align:middle;">email</span></a>`;
-                }
-                if (a.cellulare) {
-                    details += ` | Cell: <b>${a.cellulare}</b> <a href="tel:${a.cellulare}" style="color:#16a34a; margin-left:4px; vertical-align:middle;" title="Chiama"><span class="material-icons-round" style="font-size:16px; vertical-align:middle;">call</span></a>`;
-                }
+                let details = [];
+                if (a.email) details.push(`Email: <b>${a.email}</b>`);
+                if (a.cellulare) details.push(`Cellulare: <b>${a.cellulare}</b>`);
+                let detailsStr = details.length > 0 ? details.join(' | ') : 'Nessun contatto rapido inserito';
                 
                 // Visualizzazione anagrafica e patente extra a colpo d'occhio
                 let extraDetailsCompact = '';
@@ -748,7 +745,7 @@
                             <div style="font-weight:600; color:#334155; display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
                                 ${a.nome} ${a.cognome || ''} ${elevationBadge} ${turnoBadge} <span style="font-size:11px; font-weight:400; background:#e2e8f0; padding:2px 8px; border-radius:10px; margin-left:8px; text-transform:uppercase;">${a.ruolo}</span>
                             </div>
-                            <div style="font-size:12px; color:#64748b; margin-top: 4px;">${details}</div>
+                            <div style="font-size:12px; color:#64748b; margin-top: 4px;">${detailsStr}</div>
                             ${extraDetailsCompact}
                         </div>
                         <div style="display:flex; gap:8px;" onclick="event.stopPropagation();">
@@ -777,6 +774,10 @@
                                 <div style="margin-bottom: 4px;">Data di Nascita: <b>${a.data_nascita || 'N.D.'}</b></div>
                                 <div style="margin-bottom: 4px;">Luogo di Nascita: <b>${a.luogo_nascita || 'N.D.'}</b></div>
                                 <div>Residenza: <b>${a.residenza || 'N.D.'}</b></div>
+                                <div style="margin-top:12px; display:flex; gap:8px;">
+                                    ${a.email ? `<a href="mailto:${a.email}" class="btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:#e0e7ff; color:#3730a3; padding:6px 12px; border-radius:8px; font-size:12px; box-shadow:none;"><span class="material-icons-round" style="font-size:16px;">email</span> Invia E-mail</a>` : ''}
+                                    ${a.cellulare ? `<a href="tel:${a.cellulare}" class="btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:#dcfce7; color:#166534; padding:6px 12px; border-radius:8px; font-size:12px; box-shadow:none;"><span class="material-icons-round" style="font-size:16px;">call</span> Chiama</a>` : ''}
+                                </div>
                             </div>
                             <div>
                                 <div style="color: var(--primary); font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">Rapporto di Lavoro</div>
@@ -1126,8 +1127,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=3.89"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.89"></script>
+    <script src="script.js?v=3.90"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.90"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1445,6 +1446,7 @@ const functions = getFunctions(app, "europe-west1");
         [...progettiCache].sort((a,b) => (a.nome||'').localeCompare(b.nome||'')).forEach(p => {
             const row = document.createElement('div');
             row.className = 'list-row'; row.style.marginBottom = '8px';
+            row.style.flexDirection = 'column'; row.style.alignItems = 'stretch'; row.style.cursor = 'pointer'; row.style.transition = 'all 0.3s ease';
             const tags = (p.viaggi||[]).map(v =>
                 `<span style="background:#e0e7ff;color:#3730a3;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:600;">${v}</span>`
             ).join('');
@@ -1458,18 +1460,18 @@ const functions = getFunctions(app, "europe-west1");
                 const cHtmlArr = cList.map(c => {
                     let actions = [];
                     if (c.email) {
-                        actions.push(`<a href="mailto:${c.email}" style="display:inline-flex; align-items:center; gap:4px; background:#e0e7ff; color:#3730a3; padding:4px 8px; border-radius:6px; text-decoration:none; font-size:11px; font-weight:600; border:1px solid #c7d2fe;" title="Invia Email">
-                                        <span class="material-icons-round" style="font-size:14px;">email</span> ${c.email}
+                        actions.push(`<a href="mailto:${c.email}" style="display:inline-flex; align-items:center; gap:4px; background:#e0e7ff; color:#3730a3; padding:6px 12px; border-radius:8px; text-decoration:none; font-size:12px; font-weight:600; border:1px solid #c7d2fe;" title="Invia Email">
+                                        <span class="material-icons-round" style="font-size:16px;">email</span> Invia Email a ${c.email}
                                       </a>`);
                     }
                     if (c.fisso) {
-                        actions.push(`<a href="tel:${c.fisso}" style="display:inline-flex; align-items:center; gap:4px; background:#dcfce7; color:#166534; padding:4px 8px; border-radius:6px; text-decoration:none; font-size:11px; font-weight:600; border:1px solid #bbf7d0;" title="Chiama Fisso">
-                                        <span class="material-icons-round" style="font-size:14px;">phone</span> ${c.fisso}
+                        actions.push(`<a href="tel:${c.fisso}" style="display:inline-flex; align-items:center; gap:4px; background:#dcfce7; color:#166534; padding:6px 12px; border-radius:8px; text-decoration:none; font-size:12px; font-weight:600; border:1px solid #bbf7d0;" title="Chiama Fisso">
+                                        <span class="material-icons-round" style="font-size:16px;">phone</span> Fisso: ${c.fisso}
                                       </a>`);
                     }
                     if (c.cellulare) {
-                        actions.push(`<a href="tel:${c.cellulare}" style="display:inline-flex; align-items:center; gap:4px; background:#dcfce7; color:#166534; padding:4px 8px; border-radius:6px; text-decoration:none; font-size:11px; font-weight:600; border:1px solid #bbf7d0;" title="Chiama Cellulare">
-                                        <span class="material-icons-round" style="font-size:14px;">smartphone</span> ${c.cellulare}
+                        actions.push(`<a href="tel:${c.cellulare}" style="display:inline-flex; align-items:center; gap:4px; background:#dcfce7; color:#166534; padding:6px 12px; border-radius:8px; text-decoration:none; font-size:12px; font-weight:600; border:1px solid #bbf7d0;" title="Chiama Cellulare">
+                                        <span class="material-icons-round" style="font-size:16px;">smartphone</span> Cellulare: ${c.cellulare}
                                       </a>`);
                     }
                     
@@ -1487,33 +1489,53 @@ const functions = getFunctions(app, "europe-west1");
                 contattiHtml = `<div style="margin-bottom:12px;">${cHtmlArr.join('')}</div>`;
             }
 
+            const tariffeExtraHtml = ${(p.patente_b||p.patente_c||p.navetta_sommacampagna||p.navetta_cerea||p.viaggio_a||p.viaggio_b||p.costo_ddt_base||p.viaggio_forfait||p.costo_ddt_zona1||p.costo_ddt_zona2||p.costo_ddt_zona3) ? `'<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">' +
+                        (p.patente_b ? '<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">B: &euro;'+p.patente_b+'</span>' : '') +
+                        (p.patente_c ? '<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">C: &euro;'+p.patente_c+'</span>' : '') +
+                        (p.navetta_sommacampagna ? '<span style="background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Nav.S: &euro;'+p.navetta_sommacampagna+'</span>' : '') +
+                        (p.navetta_cerea ? '<span style="background:#fdf4ff;color:#7e22ce;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Nav.C: &euro;'+p.navetta_cerea+'</span>' : '') +
+                        (p.viaggio_a ? '<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Viaggio A: &euro;'+p.viaggio_a+'</span>' : '') +
+                        (p.viaggio_b ? '<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Viaggio B: &euro;'+p.viaggio_b+'</span>' : '') +
+                        (p.costo_ddt_base ? '<span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">DDT: &euro;'+p.costo_ddt_base+'</span>' : '') +
+                        (p.viaggio_forfait ? '<span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Forfait: &euro;'+p.viaggio_forfait+'</span>' : '') +
+                        (p.costo_ddt_zona1 ? '<span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">DDT(Z1): &euro;'+p.costo_ddt_zona1+'</span>' : '') +
+                        (p.costo_ddt_zona2 ? '<span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">DDT(Z2): &euro;'+p.costo_ddt_zona2+'</span>' : '') +
+                        (p.costo_ddt_zona3 ? '<span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">DDT(Z3): &euro;'+p.costo_ddt_zona3+'</span>' : '') +
+                    '</div>'` : "''"};
+
             row.innerHTML = `
-                <div style="flex:1;">
-                    <div style="font-weight:800;color:#1e293b;font-size:14px;margin-bottom:8px;">${p.nome}</div>
-                    ${contattiHtml}
-                    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;">${tags||'<span style="font-size:12px;color:#94a3b8;">Nessun viaggio</span>'}</div>
-                    ${(p.patente_b||p.patente_c||p.navetta_sommacampagna||p.navetta_cerea||p.viaggio_a||p.viaggio_b||p.costo_ddt_base||p.viaggio_forfait||p.costo_ddt_zona1||p.costo_ddt_zona2||p.costo_ddt_zona3) ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">' +
-                        (p.patente_b ? '<span style="background:#dbeafe;color:#1d4ed8;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">B: \u20ac'+p.patente_b+'</span>' : '') +
-                        (p.patente_c ? '<span style="background:#fef3c7;color:#b45309;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">C: \u20ac'+p.patente_c+'</span>' : '') +
-                        (p.navetta_sommacampagna ? '<span style="background:#f0fdf4;color:#15803d;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">Nav.S: \u20ac'+p.navetta_sommacampagna+'</span>' : '') +
-                        (p.navetta_cerea ? '<span style="background:#fdf4ff;color:#7e22ce;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">Nav.C: \u20ac'+p.navetta_cerea+'</span>' : '') +
-                        (p.viaggio_a ? '<span style="background:#fef3c7;color:#b45309;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">Viaggio A: \u20ac'+p.viaggio_a+'</span>' : '') +
-                        (p.viaggio_b ? '<span style="background:#fef3c7;color:#b45309;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">Viaggio B: \u20ac'+p.viaggio_b+'</span>' : '') +
-                        (p.costo_ddt_base ? '<span style="background:#eff6ff;color:#1d4ed8;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">DDT: \u20ac'+p.costo_ddt_base+'</span>' : '') +
-                        (p.viaggio_forfait ? '<span style="background:#eff6ff;color:#1d4ed8;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">Forfait: \u20ac'+p.viaggio_forfait+'</span>' : '') +
-                        (p.costo_ddt_zona1 ? '<span style="background:#eff6ff;color:#1d4ed8;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">DDT(Z1): \u20ac'+p.costo_ddt_zona1+'</span>' : '') +
-                        (p.costo_ddt_zona2 ? '<span style="background:#eff6ff;color:#1d4ed8;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">DDT(Z2): \u20ac'+p.costo_ddt_zona2+'</span>' : '') +
-                        (p.costo_ddt_zona3 ? '<span style="background:#eff6ff;color:#1d4ed8;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">DDT(Z3): \u20ac'+p.costo_ddt_zona3+'</span>' : '') +
-                    '</div>' : ''}
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div style="flex:1;">
+                        <div style="font-weight:800;color:#1e293b;font-size:14px;margin-bottom:8px;">${p.nome}</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;">${tags||'<span style="font-size:12px;color:#94a3b8;">Nessun viaggio</span>'}</div>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-shrink:0;" onclick="event.stopPropagation();">
+                        <button onclick="editProgetto('${p.id}')" class="action-btn edit-btn" title="Modifica">
+                            <span class="material-icons-round" style="font-size:20px;">edit</span>
+                        </button>
+                        <button onclick="deleteProgetto_ui('${p.id}','${p.nome}')" class="action-btn delete-btn" title="Elimina">
+                            <span class="material-icons-round" style="font-size:20px;">delete</span>
+                        </button>
+                        <button class="action-btn expand-indicator-btn" title="Espandi/Comprimi">
+                            <span class="material-icons-round expand-icon" style="font-size:20px; transition: transform 0.2s;">keyboard_arrow_down</span>
+                        </button>
+                    </div>
                 </div>
-                <div style="display:flex;gap:8px;flex-shrink:0;">
-                    <button onclick="editProgetto('${p.id}')" class="action-btn edit-btn" title="Modifica">
-                        <span class="material-icons-round" style="font-size:20px;">edit</span>
-                    </button>
-                    <button onclick="deleteProgetto_ui('${p.id}','${p.nome}')" class="action-btn delete-btn" title="Elimina">
-                        <span class="material-icons-round" style="font-size:20px;">delete</span>
-                    </button>
-                </div>`;
+                
+                <!-- Dettagli Espansi -->
+                <div class="details-pane" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+                    ${contattiHtml}
+                    ${tariffeExtraHtml}
+                </div>
+            `;
+            
+            row.addEventListener('click', () => {
+                const pane = row.querySelector('.details-pane');
+                const icon = row.querySelector('.expand-icon');
+                const isExpanded = pane.style.display === 'block';
+                pane.style.display = isExpanded ? 'none' : 'block';
+                icon.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+            });
             lista.appendChild(row);
         });
     }

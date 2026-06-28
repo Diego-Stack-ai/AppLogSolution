@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invio Mobile Autisti — Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.01">
+    <link rel="stylesheet" href="styles.css?v=3.02">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -193,8 +193,8 @@
         <div class="viaggi-grid" id="viaggiGrid"></div>
     </main>
 
-    <script src="script.js?v=3.01"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.01"></script>
+    <script src="script.js?v=3.02"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.02"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -388,7 +388,24 @@
                 tabRec.style.color = '#64748b';
                 toolOrd.style.display = 'flex';
                 toolRec.style.display = 'none';
-                if (dataLavoro) caricaViaggi();
+                
+                // Svuota lo stato di R&D e ricarica i viaggi ordinari
+                document.getElementById('viaggiGrid').innerHTML = '';
+                document.getElementById('emptyState').style.display = 'none';
+                
+                if (dataLavoro) {
+                    document.getElementById('loadingState').style.display = 'block';
+                    caricaViaggi();
+                } else {
+                    document.getElementById('loadingState').style.display = 'none';
+                    const empty = document.getElementById('emptyState');
+                    empty.style.display = 'block';
+                    empty.innerHTML = `
+                        <span class="material-icons-round">calendar_today</span>
+                        <h3>Scegli una data</h3>
+                        <p>Usa il calendario qui in alto per caricare i viaggi autisti.</p>
+                    `;
+                }
             } else {
                 tabRec.style.background = '#b45309';
                 tabRec.style.color = 'white';
@@ -398,6 +415,19 @@
                 tabOrd.style.boxShadow = 'none';
                 toolOrd.style.display = 'none'; // Spegnimento totale della barra ordinaria in R&D
                 toolRec.style.display = 'flex';
+                
+                // Svuotamento istantaneo della griglia ordinaria per non creare confusione!
+                document.getElementById('viaggiGrid').innerHTML = '';
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('errorState').style.display = 'none';
+                const empty = document.getElementById('emptyState');
+                empty.style.display = 'block';
+                empty.innerHTML = `
+                    <span class="material-icons-round" style="color:#b45309;font-size:48px;">cloud_download</span>
+                    <h3 style="color:#b45309;margin-top:10px;">Modalità Recupero Backup R&D</h3>
+                    <p style="color:#b45309;">Archivio ordinario nascosto. Seleziona il mese e la data storica qui in alto per ripristinare i viaggi dal Caveau di Rinascita.</p>
+                `;
+
                 caricaMesiRecupero();
             }
         };

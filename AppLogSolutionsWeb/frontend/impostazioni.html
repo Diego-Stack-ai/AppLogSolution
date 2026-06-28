@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.92">
+    <link rel="stylesheet" href="styles.css?v=3.93">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
@@ -534,6 +534,10 @@
         const iconSpan = document.getElementById('toggleMezziIcon');
 
         toggleBtn.addEventListener('click', () => {
+            if (contentDiv.style.display !== 'none' && editIndex !== -1) {
+                if (!confirm("Hai una targa in modifica. Sicuro di voler chiudere senza salvare?")) return;
+                btnAnnulla.onclick();
+            }
             if (contentDiv.style.display === 'none') {
                 contentDiv.style.display = 'block';
                 iconSpan.style.transform = 'rotate(180deg)';
@@ -572,6 +576,9 @@
         }
 
         window.editMezzo = function (idx) {
+            if (editIndex !== -1 && editIndex !== idx) {
+                if (!confirm("Hai una targa in modifica. Vuoi abbandonarla per modificare questa?")) return;
+            }
             document.getElementById('formMezziContainer').style.display = 'block';
             editIndex = idx;
             targaInput.value = mezzi[idx].targa;
@@ -688,6 +695,10 @@
         let editIndexAutista = -1;
 
         toggleAutistiBtn.addEventListener('click', () => {
+            if (autistiContent.style.display !== 'none' && editIndexAutista !== -1) {
+                if (!confirm("Hai un dipendente in modifica. Sicuro di voler chiudere senza salvare?")) return;
+                document.getElementById('btnAnnullaAutista').onclick();
+            }
             if (autistiContent.style.display === 'none') {
                 autistiContent.style.display = 'block';
                 toggleAutistiIcon.style.transform = 'rotate(180deg)';
@@ -895,6 +906,9 @@
         });
 
         window.editAutista = function (idx) {
+            if (editIndexAutista !== -1 && editIndexAutista !== idx) {
+                if (!confirm("Hai un dipendente in modifica. Vuoi abbandonarlo per modificare questo?")) return;
+            }
             document.getElementById('formAutistiContainer').style.display = 'block';
             editIndexAutista = idx;
             const autisti = window.appData.lista_autisti || [];
@@ -1138,8 +1152,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=3.92"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.92"></script>
+    <script src="script.js?v=3.93"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.93"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1217,6 +1231,10 @@ const functions = getFunctions(app, "europe-west1");
 
         // Collassa/espandi
         toggleBtn.addEventListener('click', () => {
+            if (contentDiv.style.display !== 'none' && typeof editId !== 'undefined' && editId) {
+                if (!confirm("Hai un cliente in modifica. Sicuro di voler chiudere senza salvare?")) return;
+                btnAnnulla.onclick();
+            }
             const open = contentDiv.style.display !== 'none';
             contentDiv.style.display = open ? 'none' : 'block';
             iconSpan.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
@@ -1369,6 +1387,9 @@ const functions = getFunctions(app, "europe-west1");
 
         // Modifica
         window.editProgetto = id => {
+            if (typeof editId !== 'undefined' && editId && editId !== id) {
+                if (!confirm("Hai un cliente in modifica. Vuoi abbandonarlo per modificare questo?")) return;
+            }
             document.getElementById('formProgettiContainer').style.display = 'block';
             const p = progettiCache.find(x => x.id === id);
             if (!p) return;

@@ -371,16 +371,6 @@ window.updateUser = async function(id, data) {
         const { id: _, ...updateData } = data;
         if (id) {
             const docRef = doc(db, "dipendenti", id);
-            
-            // Se l'email passata è virtuale, non la salviamo nel profilo Firestore
-            if (updateData.email && updateData.email.includes('@logsolution.app')) {
-                // Impostiamo l'username estratto se non esiste già
-                if (!updateData.username) {
-                    updateData.username = updateData.email.split('@')[0];
-                }
-                updateData.email = "";
-            }
-            
             await updateDoc(docRef, updateData);
         } else {
             console.warn("La creazione di nuovi account richiede l'uso della console Firebase Auth o Cloud Functions.");
@@ -393,7 +383,7 @@ window.updateUser = async function(id, data) {
 }
 
 // Funzione per creare un nuovo utente tramite istanza Auth temporanea
-window.registerNewUserCloud = async function(email, password, nomeCompleto, ruolo, turno, canElevate) {
+window.registerNewUserCloud = async function(email, password, nome, cognome, ruolo, turno, canElevate) {
     const tempApp = getApps().find(a => a.name === "UserCreationApp") || initializeApp(firebaseConfig, "UserCreationApp");
     const tempAuth = getAuth(tempApp);
 
@@ -402,20 +392,16 @@ window.registerNewUserCloud = async function(email, password, nomeCompleto, ruol
         const userCredential = await createUserWithEmailAndPassword(tempAuth, email, password);
         const uid = userCredential.user.uid;
 
-        // Estrae lo username pulito (es. "ayoub.berradia")
-        const username = email.split('@')[0];
-
         // Salva il documento profilo in Firestore nella collezione "dipendenti"
         await setDoc(doc(db, "dipendenti", uid), {
             uid: uid,
-            nome: nomeCompleto,
-            username: username,
-            password: password, // Salvata in chiaro ad uso consultativo admin
-            email: "",          // Email vuota come richiesto dall'utente
+            nome: nome,
+            cognome: cognome,
+            email: email,          // Salvata email reale per busta paga
             ruolo: ruolo,
             tipoTurno: turno,
             canElevate: canElevate,
-            needsPasswordChange: false, // Non forza il cambio
+            needsPasswordChange: false,
             createdAt: new Date()
         });
 

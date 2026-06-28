@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.7">
+    <link rel="stylesheet" href="styles.css?v=3.8">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
@@ -131,16 +131,16 @@
             </p>
             <div class="form-grid">
                 <div class="input-group">
-                    <label for="driverNomeInput">Nome Completo</label>
-                    <input type="text" id="driverNomeInput" placeholder="Es: Mario Rossi">
+                    <label for="driverNomeInput">Nome *</label>
+                    <input type="text" id="driverNomeInput" placeholder="Es: Mario">
                 </div>
                 <div class="input-group">
-                    <label for="driverEmailInput">Nome Utente o Email</label>
-                    <input type="text" id="driverEmailInput" placeholder="Es: mario.rossi o email completa">
+                    <label for="driverCognomeInput">Cognome *</label>
+                    <input type="text" id="driverCognomeInput" placeholder="Es: Rossi">
                 </div>
-                <div class="input-group" id="driverPasswordGroup">
-                    <label for="driverPasswordInput">Password</label>
-                    <input type="password" id="driverPasswordInput" placeholder="Password temporanea (min. 6 caratteri)">
+                <div class="input-group">
+                    <label for="driverEmailInput">E-mail *</label>
+                    <input type="email" id="driverEmailInput" placeholder="Es: mario.rossi@email.com">
                 </div>
                 <div class="input-group">
                     <label for="driverRuoloInput">Ruolo Sistema</label>
@@ -406,6 +406,51 @@
             </div>
         </div>
 
+        <!-- Sezione Configurazione Servizio Email -->
+        <div id="toggleEmailBtn"
+            style="display: flex; justify-content: space-between; align-items: center; margin: 32px 0 0 0; cursor: pointer; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <h3 class="section-title" style="margin: 0;">✉️ Configurazione Servizio Email</h3>
+            <span class="material-icons-round" id="toggleEmailIcon"
+                style="color: var(--primary); transition: transform 0.3s ease;">expand_more</span>
+        </div>
+
+        <div id="emailContent" style="display: none; padding-top: 20px;">
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
+                💡 <b>Servizio Email Aziendale:</b> Configura qui i dati SMTP e IMAP per l'invio delle fatture e il salvataggio automatico dello storico nella posta inviata.
+            </p>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label for="emailSmtpHost">Server SMTP (Invio) *</label>
+                    <input type="text" id="emailSmtpHost" placeholder="es. smtp.tuoprovider.it">
+                </div>
+                <div class="input-group">
+                    <label for="emailSmtpPort">Porta SMTP *</label>
+                    <input type="number" id="emailSmtpPort" placeholder="es. 465 o 587">
+                </div>
+                <div class="input-group">
+                    <label for="emailImapHost">Server IMAP (Salvataggio) *</label>
+                    <input type="text" id="emailImapHost" placeholder="es. imap.tuoprovider.it">
+                </div>
+                <div class="input-group">
+                    <label for="emailImapPort">Porta IMAP *</label>
+                    <input type="number" id="emailImapPort" placeholder="es. 993">
+                </div>
+                <div class="input-group" style="grid-column: 1 / -1;">
+                    <label for="emailUser">E-mail Mittente (Ufficio) *</label>
+                    <input type="email" id="emailUser" placeholder="es. amministrazione@azienda.it">
+                </div>
+                <div class="input-group" style="grid-column: 1 / -1;">
+                    <label for="emailPassword">Password Email *</label>
+                    <input type="password" id="emailPassword" placeholder="Password della casella email">
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 12px; margin-top: 24px; margin-bottom: 32px;">
+                <button type="button" id="btnSalvaEmailSettings" class="btn-primary" style="flex: 2;">Salva Impostazioni Email</button>
+                <button type="button" id="btnTestEmailSettings" class="btn-primary" style="flex: 1; background: #64748b; color: white;">Testa Connessione</button>
+            </div>
+        </div>
+
     </div>
 </main>
 
@@ -632,7 +677,7 @@
                 const elevationBadge = a.canElevate ? '<span style="font-size:10px; color:#10b981; margin-left:5px;">(Elevabile)</span>' : '';
                 const turnoBadge = `<span style="font-size:11px; font-weight:400; background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:10px; margin-left:8px;">${a.tipoTurno === 'notturno' ? 'NOTTURNO' : 'GIORNATA'}</span>`;
                 
-                const details = a.username ? `Username: <b style="color:var(--primary);">${a.username}</b>` : `Email: <b>${a.email || 'N.D.'}</b>`;
+                const details = `Email: <b>${a.email || 'N.D.'}</b>`;
                 
                 // Visualizzazione anagrafica e patente extra a colpo d'occhio
                 let extraDetailsCompact = '';
@@ -651,7 +696,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                         <div style="flex: 1;">
                             <div style="font-weight:600; color:#334155; display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
-                                ${a.nome} ${elevationBadge} ${turnoBadge} <span style="font-size:11px; font-weight:400; background:#e2e8f0; padding:2px 8px; border-radius:10px; margin-left:8px; text-transform:uppercase;">${a.ruolo}</span>
+                                ${a.nome} ${a.cognome || ''} ${elevationBadge} ${turnoBadge} <span style="font-size:11px; font-weight:400; background:#e2e8f0; padding:2px 8px; border-radius:10px; margin-left:8px; text-transform:uppercase;">${a.ruolo}</span>
                             </div>
                             <div style="font-size:12px; color:#64748b; margin-top: 4px;">${details}</div>
                             ${extraDetailsCompact}
@@ -660,7 +705,7 @@
                             <button onclick="editAutista(${idx})" class="action-btn edit-btn" title="Modifica">
                                 <span class="material-icons-round" style="font-size:20px;">edit</span>
                             </button>
-                            <button onclick="sendResetEmail('${a.email || a.username}')" class="action-btn" title="Invia Reset Password" style="color: var(--primary);">
+                            <button onclick="sendResetEmail('${a.email}')" class="action-btn" title="Invia Reset Password" style="color: var(--primary);">
                                 <span class="material-icons-round" style="font-size:20px;">lock_reset</span>
                             </button>
                             <button onclick="deleteAutista(${idx})" class="action-btn delete-btn" title="Elimina">
@@ -702,7 +747,6 @@
                                 <div style="margin-bottom: 4px;">Tipo Patente: <b>${a.tipo_patente || 'N.D.'}</b></div>
                                 <div style="margin-bottom: 4px;">Scadenza: <b>${a.patente_scadenza || 'N.D.'}</b></div>
                                 <div style="margin-bottom: 4px;">Rilasciata da: <b>${a.patente_rilasciata_da || 'N.D.'}</b></div>
-                                ${a.password ? `<div style="margin-top:6px; color:#10b981; font-weight:600;">Password: <span>${a.password}</span></div>` : ''}
                             </div>
                         </div>
                     </div>
@@ -741,7 +785,8 @@
             const targetUser = autisti[idx];
             
             driverNomeInput.value = targetUser.nome || '';
-            driverEmailInput.value = targetUser.email || targetUser.username || '';
+            driverCognomeInput.value = targetUser.cognome || '';
+            driverEmailInput.value = targetUser.email || '';
             driverRuoloInput.value = (targetUser.ruolo || 'autista').toLowerCase();
             driverTurnoInput.value = targetUser.tipoTurno || 'giornata';
             driverElevazione.checked = targetUser.canElevate || false;
@@ -761,10 +806,6 @@
             driverTrasformazione.value = targetUser.trasformazione || '';
             driverDataTrasformazione.value = dbToInputDate(targetUser.data_trasformazione || '');
             driverTipoTrasformazione.value = targetUser.tipo_trasformazione || '';
-
-            // Nascondi la password in modifica
-            const pwdGroup = document.getElementById('driverPasswordGroup');
-            if (pwdGroup) pwdGroup.style.display = 'none';
 
             // Trigger visualizzazione campi extra
             driverRuoloInput.dispatchEvent(new Event('change'));
@@ -792,12 +833,8 @@
         btnAnnullaAutista.onclick = () => {
             editIndexAutista = -1;
             driverNomeInput.value = '';
+            driverCognomeInput.value = '';
             driverEmailInput.value = '';
-            
-            const pwdInput = document.getElementById('driverPasswordInput');
-            if (pwdInput) pwdInput.value = '';
-            const pwdGroup = document.getElementById('driverPasswordGroup');
-            if (pwdGroup) pwdGroup.style.display = 'block';
 
             // Resetta i nuovi campi
             driverCodiceFiscale.value = '';
@@ -822,10 +859,11 @@
 
         btnSalvaAutista.onclick = async () => {
             const n = driverNomeInput.value.trim();
+            const cognome = driverCognomeInput.value.trim();
+            const email = driverEmailInput.value.trim();
             const r = driverRuoloInput.value.toLowerCase();
             const t = driverTurnoInput.value;
             const e = driverElevazione.checked;
-            const m = driverEmailInput.value.trim();
             
             // Dati nuovi
             const cf = driverCodiceFiscale.value.trim().toUpperCase();
@@ -843,8 +881,8 @@
             const dt = inputToDbDate(driverDataTrasformazione.value);
             const tt = driverTipoTrasformazione.value.trim();
 
-            if (!n || !m) {
-                alert("Nome e Nome Utente / Email sono obbligatori.");
+            if (!n || !cognome || !email) {
+                alert("Nome, Cognome ed E-mail sono obbligatori.");
                 return;
             }
 
@@ -854,25 +892,12 @@
             const autisti = window.appData.lista_autisti || [];
             const id = editIndexAutista >= 0 ? autisti[editIndexAutista].id : null;
 
-            let email = m;
-            if (!email.includes('@')) {
-                email = `${email}@logsolution.app`;
-            }
-
             if (!id) {
-                // Creazione di un nuovo utente
-                const pwdInput = document.getElementById('driverPasswordInput');
-                const pwd = pwdInput ? pwdInput.value.trim() : "";
-                if (!pwd || pwd.length < 6) {
-                    alert("Per creare un nuovo utente è necessaria una password di almeno 6 caratteri.");
-                    btnSalvaAutista.disabled = false;
-                    btnSalvaAutista.textContent = "Salva";
-                    return;
-                }
-
+                // Creazione di un nuovo utente con password di default
+                const pwd = "LogSolution2026!";
                 try {
                     if (window.registerNewUserCloud) {
-                        const uid = await window.registerNewUserCloud(email, pwd, n, r, t, e);
+                        const uid = await window.registerNewUserCloud(email, pwd, n, cognome, r, t, e);
                         
                         // Per i nuovi utenti registrati dal pannello, salviamo subito anche i campi extra
                         if (uid && window.updateUser) {
@@ -912,10 +937,11 @@
                 if (window.updateUser) {
                     await window.updateUser(id, { 
                         nome: n, 
+                        cognome: cognome,
+                        email: email,
                         ruolo: r, 
                         tipoTurno: t, 
                         canElevate: e, 
-                        email: email,
                         codice_fiscale: cf,
                         sesso: sesso,
                         data_nascita: dn,
@@ -946,12 +972,12 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=3.7"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.7"></script>
+    <script src="script.js?v=3.8"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.8"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
-    import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot }
+    import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot }
         from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
@@ -1301,6 +1327,113 @@ const functions = getFunctions(app, "europe-west1");
             } catch (err) {
                 console.error("Errore ripristino:", err);
                 Swal.fire({ title: 'Errore', text: `Errore di rete: ${err.message}`, icon: 'error', confirmButtonColor: '#4f46e5' });
+            }
+        });
+    }
+
+    // ── GESTIONE IMPOSTAZIONI EMAIL ───────────────────────────────────────
+    const toggleEmailBtn = document.getElementById('toggleEmailBtn');
+    const emailContent = document.getElementById('emailContent');
+    const toggleEmailIcon = document.getElementById('toggleEmailIcon');
+    const btnSalvaEmailSettings = document.getElementById('btnSalvaEmailSettings');
+    const btnTestEmailSettings = document.getElementById('btnTestEmailSettings');
+
+    if (toggleEmailBtn && emailContent) {
+        toggleEmailBtn.addEventListener('click', () => {
+            const isVisible = emailContent.style.display === 'block';
+            emailContent.style.display = isVisible ? 'none' : 'block';
+            toggleEmailIcon.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
+        });
+    }
+
+    // Caricamento dei dati email realtime da Firestore
+    onSnapshot(doc(db, "config", "email_settings"), (docSnap) => {
+        if (docSnap.exists()) {
+            const d = docSnap.data();
+            document.getElementById('emailSmtpHost').value = d.smtp_host || '';
+            document.getElementById('emailSmtpPort').value = d.smtp_port || '';
+            document.getElementById('emailImapHost').value = d.imap_host || '';
+            document.getElementById('emailImapPort').value = d.imap_port || '';
+            document.getElementById('emailUser').value = d.email_user || '';
+            document.getElementById('emailPassword').value = d.email_password || '';
+        }
+    });
+
+    // Salvataggio impostazioni email
+    if (btnSalvaEmailSettings) {
+        btnSalvaEmailSettings.addEventListener('click', async () => {
+            const smtp_host = document.getElementById('emailSmtpHost').value.trim();
+            const smtp_port = parseInt(document.getElementById('emailSmtpPort').value.trim(), 10);
+            const imap_host = document.getElementById('emailImapHost').value.trim();
+            const imap_port = parseInt(document.getElementById('emailImapPort').value.trim(), 10);
+            const email_user = document.getElementById('emailUser').value.trim();
+            const email_password = document.getElementById('emailPassword').value.trim();
+
+            if (!smtp_host || !smtp_port || !imap_host || !imap_port || !email_user || !email_password) {
+                Swal.fire({ title: 'Errore', text: 'Tutti i campi contrassegnati con * sono obbligatori.', icon: 'error', confirmButtonColor: '#4f46e5' });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Salvataggio in corso...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                await setDoc(doc(db, "config", "email_settings"), {
+                    smtp_host,
+                    smtp_port,
+                    imap_host,
+                    imap_port,
+                    email_user,
+                    email_password,
+                    updatedAt: new Date()
+                }, { merge: true });
+                Swal.fire({ title: 'Salvato!', text: 'Impostazioni email salvate correttamente.', icon: 'success', confirmButtonColor: '#4f46e5' });
+            } catch (err) {
+                console.error("Errore salvataggio impostazioni email:", err);
+                Swal.fire({ title: 'Errore', text: 'Impossibile salvare i dati: ' + err.message, icon: 'error', confirmButtonColor: '#4f46e5' });
+            }
+        });
+    }
+
+    // Test di invio email SMTP & IMAP
+    if (btnTestEmailSettings) {
+        btnTestEmailSettings.addEventListener('click', async () => {
+            const smtp_host = document.getElementById('emailSmtpHost').value.trim();
+            const smtp_port = parseInt(document.getElementById('emailSmtpPort').value.trim(), 10);
+            const imap_host = document.getElementById('emailImapHost').value.trim();
+            const imap_port = parseInt(document.getElementById('emailImapPort').value.trim(), 10);
+            const email_user = document.getElementById('emailUser').value.trim();
+            const email_password = document.getElementById('emailPassword').value.trim();
+
+            if (!smtp_host || !smtp_port || !imap_host || !imap_port || !email_user || !email_password) {
+                Swal.fire({ title: 'Attenzione', text: 'Compila tutti i campi prima di avviare il test.', icon: 'warning', confirmButtonColor: '#4f46e5' });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Invio email di test...',
+                text: 'Il server SMTP e IMAP verranno collaudati dal vivo.',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                const inviaEmailFn = httpsCallable(functions, 'invia_email_fattura');
+                const res = await inviaEmailFn({
+                    azione: 'test_smtp',
+                    test_config: { smtp_host, smtp_port, imap_host, imap_port, email_user, email_password }
+                });
+                if (res.data && res.data.status === 'ok') {
+                    Swal.fire({ title: 'Test Superato!', text: 'Email di test inviata e salvata in Posta Inviata con successo!', icon: 'success', confirmButtonColor: '#4f46e5' });
+                } else {
+                    Swal.fire({ title: 'Test Fallito', text: res.data?.message || 'Errore sconosciuto', icon: 'error', confirmButtonColor: '#4f46e5' });
+                }
+            } catch (err) {
+                console.error("Errore test email:", err);
+                Swal.fire({ title: 'Test Fallito', text: 'Errore di connessione: ' + err.message, icon: 'error', confirmButtonColor: '#4f46e5' });
             }
         });
     }

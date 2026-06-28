@@ -907,6 +907,7 @@ const db = getFirestore(app);
             }
 
             const autistiToRender = isTutti ? (window.appData.lista_autisti || []).filter(emp => {
+                if (emp.attivo === false) return false;
                 if (emp.data_licenziamento && selectedMonth) {
                     return selectedMonth <= emp.data_licenziamento.substring(0, 7);
                 }

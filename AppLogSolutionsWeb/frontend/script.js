@@ -4,25 +4,28 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "3.6";
+const APP_VERSION = "3.7";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
 console.log("%c[App] Log Solution PWA â€” versione " + APP_VERSION, "color: #4f46e5; font-weight: bold; font-size: 12px;");
 
 // --- SENTRY ERROR MONITORING ---
-const sentryScript = document.createElement("script");
-sentryScript.src = "https://js-de.sentry-cdn.com/6d8e6633a889531df8d60cd252352d1e.min.js";
-sentryScript.crossOrigin = "anonymous";
-document.head.appendChild(sentryScript);
+window.addEventListener("load", () => {
+    const sentryScript = document.createElement("script");
+    sentryScript.src = "https://js-de.sentry-cdn.com/6d8e6633a889531df8d60cd252352d1e.min.js";
+    sentryScript.crossOrigin = "anonymous";
+    sentryScript.defer = true;
+    document.head.appendChild(sentryScript);
 
-window.Sentry = window.Sentry || {};
-window.Sentry.onLoad = function() {
-    Sentry.init({
-        release: "log-solution-pwa@" + APP_VERSION,
-        environment: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'development' : 'production'
-    });
-};
+    window.Sentry = window.Sentry || {};
+    window.Sentry.onLoad = function() {
+        Sentry.init({
+            release: "log-solution-pwa@" + APP_VERSION,
+            environment: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'development' : 'production'
+        });
+    };
+});
 
 // --- BANNER MEMORIA "VERSIONE SVILUPPO" ---
 document.addEventListener("DOMContentLoaded", () => {

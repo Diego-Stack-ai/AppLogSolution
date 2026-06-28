@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.87">
+    <link rel="stylesheet" href="styles.css?v=3.88">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- PWA & Mobile Optimization -->
@@ -268,21 +268,38 @@
 
             <!-- Form aggiunta/modifica cliente -->
             <div class="form-grid" style="margin-bottom: 16px;">
-                <div class="input-group">
+                <div class="input-group" style="grid-column: 1 / -1;">
                     <label for="progettoNomeInput">Nome Cliente / Progetto *</label>
                     <input type="text" id="progettoNomeInput" placeholder="es. PROGETTO SCUOLE" style="text-transform: uppercase;">
                 </div>
-                <div class="input-group">
-                    <label for="progettoReferenteInput">Nome e Cognome (Referente)</label>
-                    <input type="text" id="progettoReferenteInput" placeholder="es. Mario Rossi">
-                </div>
-                <div class="input-group">
-                    <label for="progettoEmailInput">E-mail Cliente</label>
-                    <input type="email" id="progettoEmailInput" placeholder="es. info@cliente.it">
-                </div>
-                <div class="input-group">
-                    <label for="progettoCellulareInput">Telefono / Cellulare</label>
-                    <input type="tel" id="progettoCellulareInput" placeholder="es. 3401234567">
+            </div>
+
+            <!-- Rubrica Contatti Multipli -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                <label style="font-size: 13px; font-weight: 600; color: #475569; display: block; margin-bottom: 10px;">Rubrica Referenti / Reparti</label>
+                <div id="contattiTagList" style="display: flex; flex-direction: column; gap: 8px; min-height: 20px; margin-bottom: 16px;"></div>
+                
+                <div style="background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px;">
+                    <label style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 8px; display: block;">+ Aggiungi Nuovo Referente</label>
+                    <div class="form-grid" style="margin-bottom: 10px;">
+                        <div class="input-group">
+                            <label>Nome / Reparto *</label>
+                            <input type="text" id="nuovoContattoNome" placeholder="es. Mario Rossi o Amministrazione">
+                        </div>
+                        <div class="input-group">
+                            <label>E-mail</label>
+                            <input type="email" id="nuovoContattoEmail" placeholder="es. admin@azienda.it">
+                        </div>
+                        <div class="input-group">
+                            <label>Telefono Fisso</label>
+                            <input type="tel" id="nuovoContattoFisso" placeholder="es. 045123456">
+                        </div>
+                        <div class="input-group">
+                            <label>Cellulare</label>
+                            <input type="tel" id="nuovoContattoCellulare" placeholder="es. 3401234567">
+                        </div>
+                    </div>
+                    <button type="button" onclick="aggiungiContatto()" class="btn-primary" style="width: auto; padding: 8px 14px; font-size: 12px; background: #10b981; border: none;">Aggiungi in Rubrica</button>
                 </div>
             </div>
 
@@ -1101,8 +1118,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=3.87"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.87"></script>
+    <script src="script.js?v=3.88"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.88"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1153,9 +1170,13 @@ const functions = getFunctions(app, "europe-west1");
         const contentDiv  = document.getElementById('progettiContent');
         const iconSpan    = document.getElementById('toggleProgettiIcon');
         const nomeInput   = document.getElementById('progettoNomeInput');
-        const referenteInput = document.getElementById('progettoReferenteInput');
-        const emailInput  = document.getElementById('progettoEmailInput');
-        const cellInput   = document.getElementById('progettoCellulareInput');
+        
+        const contattiTagList = document.getElementById('contattiTagList');
+        const nuovoContattoNome = document.getElementById('nuovoContattoNome');
+        const nuovoContattoEmail = document.getElementById('nuovoContattoEmail');
+        const nuovoContattoFisso = document.getElementById('nuovoContattoFisso');
+        const nuovoContattoCellulare = document.getElementById('nuovoContattoCellulare');
+        
         const tagList     = document.getElementById('viaggiTagList');
         const nuovoVInput = document.getElementById('nuovoViaggio');
         const btnSalva    = document.getElementById('btnSalvaProgetto');
@@ -1199,6 +1220,48 @@ const functions = getFunctions(app, "europe-west1");
 
         window.rimuoviViaggio = i => { currentViaggi.splice(i, 1); renderTagList(); };
 
+        let currentContatti = [];
+
+        window.aggiungiContatto = () => {
+            const nome = nuovoContattoNome.value.trim();
+            if (!nome) { alert('Il campo Nome / Reparto è obbligatorio.'); return; }
+            currentContatti.push({
+                nome: nome,
+                email: nuovoContattoEmail.value.trim(),
+                fisso: nuovoContattoFisso.value.trim(),
+                cellulare: nuovoContattoCellulare.value.trim()
+            });
+            nuovoContattoNome.value = ''; nuovoContattoEmail.value = ''; nuovoContattoFisso.value = ''; nuovoContattoCellulare.value = '';
+            renderContattiTagList();
+        };
+
+        function renderContattiTagList() {
+            contattiTagList.innerHTML = '';
+            if (currentContatti.length === 0) {
+                contattiTagList.innerHTML = '<span style="font-size:12px;color:#94a3b8;">Nessun referente aggiunto.</span>';
+                return;
+            }
+            currentContatti.forEach((c, i) => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#f1f5f9; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0;';
+                
+                let details = `<div style="font-weight:600; color:#334155; font-size:13px;">${c.nome}</div>`;
+                let info = [];
+                if (c.fisso) info.push(`Fisso: <b>${c.fisso}</b>`);
+                if (c.cellulare) info.push(`Cellulare: <b>${c.cellulare}</b>`);
+                if (c.email) info.push(`Email: <b>${c.email}</b>`);
+                if (info.length > 0) details += `<div style="font-size:11px; color:#64748b; margin-top:4px; display:flex; flex-wrap:wrap; gap:8px;">${info.join(' | ')}</div>`;
+
+                row.innerHTML = `
+                    <div style="flex:1;">${details}</div>
+                    <button type="button" onclick="rimuoviContatto(${i})" style="background:none; border:none; color:#ef4444; font-weight:bold; cursor:pointer; font-size:16px; padding:0 8px;" title="Rimuovi Referente">×</button>
+                `;
+                contattiTagList.appendChild(row);
+            });
+        }
+
+        window.rimuoviContatto = i => { currentContatti.splice(i, 1); renderContattiTagList(); };
+
         // Salva
         btnSalva.onclick = async () => {
             const nome = nomeInput.value.trim().toUpperCase();
@@ -1223,10 +1286,9 @@ const functions = getFunctions(app, "europe-west1");
 
             try {
                 const data = {
-                    nome, viaggi: currentViaggi,
-                    referente: referenteInput.value.trim(),
-                    email: emailInput.value.trim(),
-                    cellulare: cellInput.value.trim(),
+                    nome, 
+                    viaggi: currentViaggi,
+                    contatti: currentContatti,
                     patente_b: patB ? parseFloat(patB) : null,
                     patente_c: patC ? parseFloat(patC) : null,
                     navetta_sommacampagna: navS ? parseFloat(navS) : null,
@@ -1256,7 +1318,9 @@ const functions = getFunctions(app, "europe-west1");
         btnAnnulla.onclick = resetForm;
 
         function resetForm() {
-            editId = null; currentViaggi = []; nomeInput.value = ''; referenteInput.value = ''; emailInput.value = ''; cellInput.value = ''; renderTagList();
+            editId = null; currentViaggi = []; currentContatti = []; nomeInput.value = ''; 
+            nuovoContattoNome.value = ''; nuovoContattoEmail.value = ''; nuovoContattoFisso.value = ''; nuovoContattoCellulare.value = '';
+            renderTagList(); renderContattiTagList();
             ['progettoPatB','progettoPatC','progettoNavS','progettoNavC','progettoCollo',
              'cattelLimKmB','cattelLimKmC','cattelLimPesoB','cattelLimPesoC',
              'cattelUsername','cattelPassword','cattelUrl',
@@ -1272,7 +1336,23 @@ const functions = getFunctions(app, "europe-west1");
         window.editProgetto = id => {
             const p = progettiCache.find(x => x.id === id);
             if (!p) return;
-            editId = id; nomeInput.value = p.nome || ''; referenteInput.value = p.referente || ''; emailInput.value = p.email || ''; cellInput.value = p.cellulare || ''; currentViaggi = [...(p.viaggi || [])];
+            editId = id; 
+            nomeInput.value = p.nome || ''; 
+            currentViaggi = [...(p.viaggi || [])];
+            
+            // Retrocompatibilità: se non c'è l'array contatti, crea da vecchi campi piatti
+            if (p.contatti && Array.isArray(p.contatti)) {
+                currentContatti = [...p.contatti];
+            } else if (p.referente || p.email || p.cellulare) {
+                currentContatti = [{
+                    nome: p.referente || 'Referente / Contatto',
+                    email: p.email || '',
+                    fisso: '',
+                    cellulare: p.cellulare || ''
+                }];
+            } else {
+                currentContatti = [];
+            }
             
             document.getElementById('progettoPatB').value = p.patente_b ?? '';
             document.getElementById('progettoPatC').value = p.patente_c ?? '';
@@ -1303,7 +1383,7 @@ const functions = getFunctions(app, "europe-west1");
             else if (n.includes('GRAN CHEF') || n.includes('BAUER')) document.getElementById('tariffeContainerGRANCHEF').style.display = 'block';
             else if (n.includes('DNR') || n.includes('SCUOLE') || n.includes('LATTE')) document.getElementById('tariffeContainerDNR').style.display = 'block';
 
-            renderTagList(); btnSalva.textContent = 'Aggiorna Cliente'; btnAnnulla.style.display = 'block';
+            renderTagList(); renderContattiTagList(); btnSalva.textContent = 'Aggiorna Cliente'; btnAnnulla.style.display = 'block';
             contentDiv.scrollIntoView({ behavior: 'smooth' });
         };
 
@@ -1345,19 +1425,32 @@ const functions = getFunctions(app, "europe-west1");
                 `<span style="background:#e0e7ff;color:#3730a3;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:600;">${v}</span>`
             ).join('');
             
-            let contattiDetails = '';
-            if (p.referente || p.email || p.cellulare) {
-                let parts = [];
-                if (p.referente) parts.push(`Referente: <b>${p.referente}</b>`);
-                if (p.email) parts.push(`Email: <b>${p.email}</b> <a href="mailto:${p.email}" style="color:var(--primary); margin-left:4px; vertical-align:middle;" title="Invia Email"><span class="material-icons-round" style="font-size:16px; vertical-align:middle;">email</span></a>`);
-                if (p.cellulare) parts.push(`Tel: <b>${p.cellulare}</b> <a href="tel:${p.cellulare}" style="color:#16a34a; margin-left:4px; vertical-align:middle;" title="Chiama"><span class="material-icons-round" style="font-size:16px; vertical-align:middle;">call</span></a>`);
-                contattiDetails = `<div style="font-size:12px; color:#64748b; margin-bottom: 6px;">${parts.join(' | ')}</div>`;
+            // Generazione UI per i Referenti (Contatti Multipli)
+            let contattiHtml = '';
+            const cList = (p.contatti && Array.isArray(p.contatti)) ? p.contatti : 
+                          ((p.referente || p.email || p.cellulare) ? [{nome: p.referente || 'Referente', email: p.email, cellulare: p.cellulare, fisso: ''}] : []);
+            
+            if (cList.length > 0) {
+                const cHtmlArr = cList.map(c => {
+                    let parts = [];
+                    if (c.email) parts.push(`Email: <b>${c.email}</b> <a href="mailto:${c.email}" style="color:var(--primary); margin-left:2px; vertical-align:middle;" title="Invia Email"><span class="material-icons-round" style="font-size:14px; vertical-align:middle;">email</span></a>`);
+                    if (c.fisso) parts.push(`Fisso: <b>${c.fisso}</b> <a href="tel:${c.fisso}" style="color:#16a34a; margin-left:2px; vertical-align:middle;" title="Chiama Fisso"><span class="material-icons-round" style="font-size:14px; vertical-align:middle;">phone</span></a>`);
+                    if (c.cellulare) parts.push(`Cell: <b>${c.cellulare}</b> <a href="tel:${c.cellulare}" style="color:#16a34a; margin-left:2px; vertical-align:middle;" title="Chiama Cellulare"><span class="material-icons-round" style="font-size:14px; vertical-align:middle;">smartphone</span></a>`);
+                    
+                    return `
+                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px 8px; margin-bottom:6px;">
+                            <div style="font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">👤 ${c.nome}</div>
+                            ${parts.length > 0 ? `<div style="font-size:11px; color:#64748b; display:flex; flex-wrap:wrap; gap:8px;">${parts.join(' | ')}</div>` : ''}
+                        </div>
+                    `;
+                });
+                contattiHtml = `<div style="margin-bottom:8px;">${cHtmlArr.join('')}</div>`;
             }
 
             row.innerHTML = `
                 <div style="flex:1;">
-                    <div style="font-weight:700;color:#334155;margin-bottom:6px;">${p.nome}</div>
-                    ${contattiDetails}
+                    <div style="font-weight:800;color:#1e293b;font-size:14px;margin-bottom:8px;">${p.nome}</div>
+                    ${contattiHtml}
                     <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;">${tags||'<span style="font-size:12px;color:#94a3b8;">Nessun viaggio</span>'}</div>
                     ${(p.patente_b||p.patente_c||p.navetta_sommacampagna||p.navetta_cerea||p.viaggio_a||p.viaggio_b||p.costo_ddt_base||p.viaggio_forfait||p.costo_ddt_zona1||p.costo_ddt_zona2||p.costo_ddt_zona3) ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">' +
                         (p.patente_b ? '<span style="background:#dbeafe;color:#1d4ed8;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">B: \u20ac'+p.patente_b+'</span>' : '') +

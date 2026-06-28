@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.94">
+    <link rel="stylesheet" href="styles.css?v=3.95">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -91,7 +91,13 @@
         .custom-tooltip {
             display: none;
             position: absolute;
-            z-index: 99999;
+            z-index: 1000;
+        }
+        /* Garantisce che i popup di SweetAlert stiano sempre sopra tutto (inclusi i tooltip) */
+        .swal2-container {
+            z-index: 999999 !important;
+        }
+        .custom-tooltip {
             bottom: calc(100% + 5px);
             left: 50%;
             transform: translateX(-50%);
@@ -363,8 +369,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=3.94"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.94"></script>
+    <script src="script.js?v=3.95"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.95"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>

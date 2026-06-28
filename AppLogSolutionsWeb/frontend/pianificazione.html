@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.17">
+    <link rel="stylesheet" href="styles.css?v=4.18">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -380,6 +380,27 @@
             window.aggiornaDestinazioni(tr, tr.getAttribute('data-id'));
         };
 
+        window.impostaViaggioGrezzo = function(btn, clientVal, viaggioVal) {
+            const tr = btn.closest('tr');
+            if (clientVal) {
+                const selectCliente = tr.querySelector('.in-cliente');
+                selectCliente.value = clientVal;
+                window.aggiornaDestinazioni(tr, tr.getAttribute('data-id'));
+            }
+            const selectViaggio = tr.querySelector('.in-viaggio');
+            const valUpper = viaggioVal.trim().toUpperCase();
+            let foundOpt = Array.from(selectViaggio.options).find(opt => opt.value.toUpperCase() === valUpper);
+            if (!foundOpt) {
+                foundOpt = Array.from(selectViaggio.options).find(opt => {
+                    const optVal = opt.value.toUpperCase();
+                    return optVal.includes(valUpper) || valUpper.includes(optVal);
+                });
+            }
+            if (foundOpt) {
+                selectViaggio.value = foundOpt.value;
+            }
+        };
+
         window.impostaDaSuggerimento = function(btn, selector, valore) {
             const tr = btn.closest('tr');
             const targetEl = tr.querySelector(selector);
@@ -586,6 +607,7 @@
 
             dipendenti.forEach(d => {
                 const topClienti = Object.entries(affinityData[d.id].clienti).sort((a,b) => b[1] - a[1]).slice(0, 3);
+                const topViaggi = Object.entries(affinityData[d.id].viaggi).sort((a,b) => b[1] - a[1]).slice(0, 3);
                 const topTarghe = Object.entries(affinityData[d.id].targhe).sort((a,b) => b[1] - a[1]).slice(0, 2);
                 
                 let suggestClienteHtml = topClienti.length > 0 
@@ -593,6 +615,19 @@
                     : '';
                 let suggestTargaHtml = topTarghe.length > 0 
                     ? topTarghe.map(t => `<span class="suggestion-badge" style="cursor:pointer;" onclick="impostaDaSuggerimento(this, '.in-targa', '${t[0].replace(/'/g, "\\'")}')" title="Usato ${t[1]} volte">★ ${t[0]} (${t[1]})</span>`).join(' ') 
+                    : '';
+                let suggestViaggioHtml = topViaggi.length > 0 
+                    ? topViaggi.map(v => {
+                        let clientAssociato = "";
+                        for (const [c, viaggiMap] of Object.entries(affinityData[d.id].viaggiPerCliente)) {
+                            if (viaggiMap[v[0]]) {
+                                clientAssociato = c;
+                                break;
+                            }
+                        }
+                        const colorClass = window.getClienteColorClass(clientAssociato);
+                        return `<span class="suggestion-badge ${colorClass}" style="cursor:pointer;" onclick="window.impostaViaggioGrezzo(this, '${clientAssociato.replace(/'/g, "\\'")}', '${v[0].replace(/'/g, "\\'")}')" title="Usato ${v[1]} volte">★ ${v[0]} (${v[1]})</span>`;
+                    }).join(' ') 
                     : '';
 
                 const tr = document.createElement('tr');
@@ -613,7 +648,7 @@
                             <option value="">-- Seleziona --</option>
                         </select>
                         <div class="dest-container" style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">
-                             <span class="suggestion-badge badge-disabled">Seleziona prima il cliente</span>
+                             ${suggestViaggioHtml || '<span class="suggestion-badge badge-disabled">Seleziona prima il cliente</span>'}
                         </div>
                     </td>
                     <td>
@@ -770,7 +805,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.17"></script>
-    <script src="script.js?v=4.17"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.18"></script>
+    <script src="script.js?v=4.18"></script>
 </body>
 </html>

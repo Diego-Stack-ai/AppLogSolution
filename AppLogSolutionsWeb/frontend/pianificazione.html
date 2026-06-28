@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.05">
+    <link rel="stylesheet" href="styles.css?v=4.06">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -216,14 +216,12 @@
                     affinityData[d.id] = { viaggi: {}, targhe: {} };
                 });
 
-                // Leggi storico presenze (ora salvato nella collection 'viaggi' dal nuovo firestore-service)
-                const presenzeSnap = await getDocs(collection(db, "viaggi"));
+                // Per non perdere nessun dato, uniamo sia i dati storici delle "presenze" sia i nuovi dati "viaggi"
+                const viaggiSnap = await getDocs(collection(db, "viaggi"));
+                const presenzeSnap = await getDocs(collection(db, "presenze"));
                 
-                presenzeSnap.forEach(p => {
-                    const pd = p.data();
-                    // Il nuovo sistema usa autistaId, il vecchio usava dipendenteId
+                const processStatDoc = (pd) => {
                     const autistaId = pd.autistaId || pd.dipendenteId;
-                    
                     if (autistaId && affinityData[autistaId]) {
                         // Estrai viaggio
                         const vInizioM = pd.viaggioOraInizioM || "";
@@ -239,7 +237,10 @@
                             affinityData[autistaId].targhe[targa] = (affinityData[autistaId].targhe[targa] || 0) + 1;
                         }
                     }
-                });
+                };
+
+                viaggiSnap.forEach(p => processStatDoc(p.data()));
+                presenzeSnap.forEach(p => processStatDoc(p.data()));
 
                 // Genera le Datalist
                 generaDatalists();
@@ -432,7 +433,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.05"></script>
-    <script src="script.js?v=4.05"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.06"></script>
+    <script src="script.js?v=4.06"></script>
 </body>
 </html>

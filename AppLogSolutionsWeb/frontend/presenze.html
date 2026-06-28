@@ -535,6 +535,36 @@ const db = getFirestore(app);
             return { cliente: clienteTrovato, viaggio: "" };
         }
 
+        // Aggiorna dinamicamente il datalist dei viaggi per una specifica riga di presenze
+        window.aggiornaViaggiPresenza = function(tr) {
+            if (!tr) return;
+            const autistaId = tr.dataset.autistaId;
+            const dateStr = tr.dataset.date;
+            
+            const inCliente = tr.querySelector('[data-field="cliente"]');
+            const inViaggio = tr.querySelector('[data-field="viaggio"]');
+            const datalistViaggi = tr.querySelector(`#viaggi_dinamici_${autistaId}_${dateStr.replace(/-/g, '_')}`);
+            
+            if (!inCliente || !inViaggio || !datalistViaggi) return;
+            
+            const clienteSelezionato = inCliente.value.trim().toUpperCase();
+            datalistViaggi.innerHTML = '';
+            
+            if (!clienteSelezionato) {
+                return;
+            }
+            
+            const progetti = window.appData?.lista_progetti || [];
+            const proj = progetti.find(p => (p.nome || "").toUpperCase() === clienteSelezionato);
+            const viaggiConfigurati = proj ? (proj.viaggi || []) : [];
+            
+            viaggiConfigurati.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.toUpperCase();
+                datalistViaggi.appendChild(opt);
+            });
+        };
+
         
         let currentUnsub = null;
         let selectedEmployee = null;
@@ -573,6 +603,14 @@ const db = getFirestore(app);
         };
 
         // Popola dropdown dipendenti da window.appData.lista_autisti caricata da firebase-auth-sync.js
+        window.renderProgetti = function() {
+            window.generaDatalistClientiGlobali();
+            // Aggiorna anche tutti i datalist delle righe visualizzate
+            document.querySelectorAll("#presenzeTable tbody tr").forEach(tr => {
+                window.aggiornaViaggiPresenza(tr);
+            });
+        };
+
         window.renderAutistiDropdown = function() {
             const select = document.getElementById("selectEmployee");
             if (!select) return;
@@ -623,6 +661,26 @@ const db = getFirestore(app);
                     select.value = previousValue;
                 }
             }
+        };
+
+        // Genera datalist globale clienti
+        window.generaDatalistClientiGlobali = function() {
+            let datalist = document.getElementById("clienti_globali");
+            if (!datalist) {
+                datalist = document.createElement("datalist");
+                datalist.id = "clienti_globali";
+                document.body.appendChild(datalist);
+            }
+            datalist.innerHTML = "";
+            const progetti = window.appData?.lista_progetti || [];
+            progetti.forEach(p => {
+                if (p.nome) {
+                    const opt = document.createElement("option");
+                    opt.value = p.nome.toUpperCase();
+                    opt.textContent = p.nome;
+                    datalist.appendChild(opt);
+                }
+            });
         };
 
         // Event Listeners
@@ -1001,8 +1059,13 @@ const db = getFirestore(app);
 
                     tr.innerHTML = `
     <td><strong>${dayName}</strong><br><span style="font-size: 0.8em; color: #6b7280;">${displayDate}</span></td>
-                        <td><input type="text" class="edit-input" data-field="cliente" value="${rCliente}" disabled></td>
-                        <td><input type="text" class="edit-input" data-field="viaggio" value="${rViaggio}" disabled></td>
+                        <td>
+                            <input type="text" class="edit-input" data-field="cliente" value="${rCliente}" list="clienti_globali" disabled oninput="window.aggiornaViaggiPresenza(this.closest('tr'))">
+                        </td>
+                        <td>
+                            <input type="text" class="edit-input" data-field="viaggio" value="${rViaggio}" list="viaggi_dinamici_${autista.id}_${dateStr.replace(/-/g, '_')}" disabled>
+                            <datalist id="viaggi_dinamici_${autista.id}_${dateStr.replace(/-/g, '_')}"></datalist>
+                        </td>
                         <td><input type="number" class="edit-input num-input" data-field="kmPartenza" value="${record.kmPartenza || 0}" disabled onchange="onKmChange(this)"></td>
                         <td><input type="number" class="edit-input num-input" data-field="kmArrivo" value="${record.kmArrivo || 0}" disabled onchange="onKmChange(this)"></td>
                         <td><input type="number" class="edit-input num-input" data-field="kmDelta" value="${record.kmDelta || 0}" disabled readonly></td>

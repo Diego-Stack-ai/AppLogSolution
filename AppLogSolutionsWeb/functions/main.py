@@ -4935,10 +4935,15 @@ from email import encoders
 import imaplib
 import base64
 
-def send_and_save_email(smtp_host, smtp_port, imap_host, imap_port, email_user, email_password, to_email, subject, body_text, attachments=[]):
+def send_and_save_email(smtp_host, smtp_port, imap_host, imap_port, email_user, email_password, to_email, subject, body_text, attachments=[], sender_name=None, smtp_security="auto"):
     # 1. Composizione Email
     msg = MIMEMultipart()
-    msg['From'] = email_user
+    
+    if sender_name:
+        from email.utils import formataddr
+        msg['From'] = formataddr((sender_name, email_user))
+    else:
+        msg['From'] = email_user
     msg['To'] = to_email
     msg['Subject'] = subject
     
@@ -4958,11 +4963,13 @@ def send_and_save_email(smtp_host, smtp_port, imap_host, imap_port, email_user, 
             
     # 2. Invio via SMTP
     try:
-        if smtp_port == 465:
+        # Se esplicitamente 'ssl' oppure se 'auto' su porta 465
+        if smtp_security == "ssl" or (smtp_security == "auto" and smtp_port == 465):
             server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=30)
         else:
             server = smtplib.SMTP(smtp_host, smtp_port, timeout=30)
-            server.starttls()
+            if smtp_security == "tls" or smtp_security == "auto":
+                server.starttls()
             
         server.login(email_user, email_password)
         server.sendmail(email_user, [to_email], msg.as_string())
@@ -5019,6 +5026,8 @@ def invia_email_fattura(req: https_fn.CallableRequest):
         imap_port = test_config.get("imap_port")
         email_user = test_config.get("email_user")
         email_password = test_config.get("email_password")
+        sender_name = test_config.get("sender_name", "")
+        smtp_security = test_config.get("smtp_security", "auto")
         
         if not all([smtp_host, smtp_port, imap_host, imap_port, email_user, email_password]):
             return {"status": "errore", "message": "Configurazione email per il test incompleta."}
@@ -5065,6 +5074,8 @@ def invia_email_fattura(req: https_fn.CallableRequest):
             imap_port = d.get("imap_port")
             email_user = d.get("email_user")
             email_password = d.get("email_password")
+            sender_name = d.get("sender_name", "")
+            smtp_security = d.get("smtp_security", "auto")
             
             if not all([smtp_host, smtp_port, imap_host, imap_port, email_user, email_password]):
                 return {"status": "errore", "message": "Configurazione email su Firestore incompleta."}

@@ -5,8 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=3.95">
+    <link rel="stylesheet" href="styles.css?v=3.96">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -485,6 +486,18 @@
                     <div class="input-group">
                         <label for="emailImapPort">Porta IMAP *</label>
                         <input type="number" id="emailImapPort" placeholder="es. 993">
+                    </div>
+                    <div class="input-group">
+                        <label for="emailSenderName">Nome Mittente</label>
+                        <input type="text" id="emailSenderName" placeholder="es. Log Solution srl">
+                    </div>
+                    <div class="input-group">
+                        <label for="emailSecurity">Sicurezza SMTP</label>
+                        <select id="emailSecurity">
+                            <option value="auto">Auto (Rilevata dalla porta)</option>
+                            <option value="tls">STARTTLS (solitamente porta 587)</option>
+                            <option value="ssl">SSL (solitamente porta 465)</option>
+                        </select>
                     </div>
                     <div class="input-group" style="grid-column: 1 / -1;">
                         <label for="emailUser">E-mail Mittente (Ufficio) *</label>
@@ -1152,8 +1165,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=3.95"></script>
-    <script type="module" src="firebase-auth-sync.js?v=3.95"></script>
+    <script src="script.js?v=3.96"></script>
+    <script type="module" src="firebase-auth-sync.js?v=3.96"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1691,6 +1704,8 @@ const functions = getFunctions(app, "europe-west1");
             document.getElementById('emailImapPort').value = d.imap_port || '';
             document.getElementById('emailUser').value = d.email_user || '';
             document.getElementById('emailPassword').value = d.email_password || '';
+            document.getElementById('emailSenderName').value = d.sender_name || '';
+            document.getElementById('emailSecurity').value = d.smtp_security || 'auto';
         }
     });
 
@@ -1703,6 +1718,8 @@ const functions = getFunctions(app, "europe-west1");
             const imap_port = parseInt(document.getElementById('emailImapPort').value.trim(), 10);
             const email_user = document.getElementById('emailUser').value.trim();
             const email_password = document.getElementById('emailPassword').value.trim();
+            const sender_name = document.getElementById('emailSenderName').value.trim();
+            const smtp_security = document.getElementById('emailSecurity').value;
 
             if (!smtp_host || !smtp_port || !imap_host || !imap_port || !email_user || !email_password) {
                 Swal.fire({ title: 'Errore', text: 'Tutti i campi contrassegnati con * sono obbligatori.', icon: 'error', confirmButtonColor: '#4f46e5' });
@@ -1742,6 +1759,8 @@ const functions = getFunctions(app, "europe-west1");
             const imap_port = parseInt(document.getElementById('emailImapPort').value.trim(), 10);
             const email_user = document.getElementById('emailUser').value.trim();
             const email_password = document.getElementById('emailPassword').value.trim();
+            const sender_name = document.getElementById('emailSenderName').value.trim();
+            const smtp_security = document.getElementById('emailSecurity').value;
 
             if (!smtp_host || !smtp_port || !imap_host || !imap_port || !email_user || !email_password) {
                 Swal.fire({ title: 'Attenzione', text: 'Compila tutti i campi prima di avviare il test.', icon: 'warning', confirmButtonColor: '#4f46e5' });
@@ -1759,7 +1778,7 @@ const functions = getFunctions(app, "europe-west1");
                 const inviaEmailFn = httpsCallable(functions, 'invia_email_fattura');
                 const res = await inviaEmailFn({
                     azione: 'test_smtp',
-                    test_config: { smtp_host, smtp_port, imap_host, imap_port, email_user, email_password }
+                    test_config: { smtp_host, smtp_port, imap_host, imap_port, email_user, email_password, sender_name, smtp_security }
                 });
                 if (res.data && res.data.status === 'ok') {
                     Swal.fire({ title: 'Test Superato!', text: 'Email di test inviata e salvata in Posta Inviata con successo!', icon: 'success', confirmButtonColor: '#4f46e5' });

@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "3.4";
+const APP_VERSION = "3.5";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -23,6 +23,24 @@ window.Sentry.onLoad = function() {
         environment: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'development' : 'production'
     });
 };
+
+// --- BANNER MEMORIA "VERSIONE SVILUPPO" ---
+document.addEventListener("DOMContentLoaded", () => {
+    const hostname = window.location.hostname;
+    if (hostname.includes('--sviluppo') || hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+        const devBanner = document.createElement("div");
+        devBanner.id = "dev-env-banner";
+        devBanner.innerText = "VERSIONE SVILUPPO";
+        devBanner.style.cssText = "background-color: #ef4444; color: white; text-align: center; font-weight: bold; padding: 6px 12px; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 99999;";
+        
+        const firstChild = document.body.firstChild;
+        if (firstChild) {
+            document.body.insertBefore(devBanner, firstChild);
+        } else {
+            document.body.appendChild(devBanner);
+        }
+    }
+});
 
 
 // --- STATO GLOBALE ---

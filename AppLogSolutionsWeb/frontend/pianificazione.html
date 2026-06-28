@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.19">
+    <link rel="stylesheet" href="styles.css?v=4.20">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -288,8 +288,11 @@
                     affinityData[d.id] = { clienti: {}, viaggiPerCliente: {}, viaggi: {}, targhe: {}, clientiPerTarga: {} };
                 });
 
-                // Su richiesta, peschiamo i dati per le statistiche solo dalle presenze
-                const presenzeSnap = await getDocs(collection(db, "presenze"));
+                // Su richiesta, peschiamo i dati per le statistiche sia dalle presenze sia da viaggi ddt
+                const [presenzeSnap, viaggiDdtSnap] = await Promise.all([
+                    getDocs(collection(db, "presenze")),
+                    getDocs(collection(db, "clienti", "DNR", "viaggi ddt"))
+                ]);
                 
                 const processStatDoc = (pd) => {
                     const autistaId = pd.autistaId || pd.dipendenteId;
@@ -352,6 +355,56 @@
                 };
 
                 presenzeSnap.forEach(p => processStatDoc(p.data()));
+
+                // Processiamo anche i viaggi ddt storici per recuperare le targhe e i viaggi storici degli autisti
+                viaggiDdtSnap.forEach(docSnap => {
+                    const vd = docSnap.data();
+                    const autistaNome = (vd.autista || "").toString().trim().toUpperCase();
+                    if (!autistaNome) return;
+                    
+                    const dip = dipendenti.find(d => {
+                        const fullName = `${d.nome} ${d.cognome || ""}`.trim().toUpperCase();
+                        return autistaNome.includes(fullName) || fullName.includes(autistaNome);
+                    });
+                    
+                    if (dip) {
+                        const autistaId = dip.id;
+                        // Estrai targa
+                        const targa = (vd.targa || vd.targa_mezzo || "").trim().toUpperCase();
+                        if (targa && targa.length >= 4) {
+                            affinityData[autistaId].targhe[targa] = (affinityData[autistaId].targhe[targa] || 0) + 1;
+                        }
+                        
+                        // Estrai viaggio/giro
+                        let viaggioRaw = (vd.nome_giro || vd.id_zona || "").trim().toUpperCase();
+                        if (viaggioRaw) {
+                            const parsed = parseClienteDestinazione(viaggioRaw);
+                            if (parsed.viaggio) {
+                                const viaggio = parsed.viaggio;
+                                const cliente = parsed.cliente;
+                                
+                                affinityData[autistaId].viaggi[viaggio] = (affinityData[autistaId].viaggi[viaggio] || 0) + 1;
+                                
+                                if (cliente) {
+                                    affinityData[autistaId].clienti[cliente] = (affinityData[autistaId].clienti[cliente] || 0) + 1;
+                                    
+                                    if (!affinityData[autistaId].viaggiPerCliente[cliente]) {
+                                        affinityData[autistaId].viaggiPerCliente[cliente] = {};
+                                    }
+                                    affinityData[autistaId].viaggiPerCliente[cliente][viaggio] = (affinityData[autistaId].viaggiPerCliente[cliente][viaggio] || 0) + 1;
+                                    
+                                    // Popola anche clientiPerTarga per l'abbinamento smart
+                                    if (targa && targa.length >= 4) {
+                                        if (!affinityData[autistaId].clientiPerTarga[targa]) {
+                                            affinityData[autistaId].clientiPerTarga[targa] = {};
+                                        }
+                                        affinityData[autistaId].clientiPerTarga[targa][cliente] = (affinityData[autistaId].clientiPerTarga[targa][cliente] || 0) + 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
 
                 // Genera le Datalist
                 generaDatalists();
@@ -852,7 +905,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.19"></script>
-    <script src="script.js?v=4.19"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.20"></script>
+    <script src="script.js?v=4.20"></script>
 </body>
 </html>

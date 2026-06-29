@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.43">
+    <link rel="stylesheet" href="styles.css?v=4.44">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -444,12 +444,12 @@
         </div>
     </div>
 
-    <script src="script.js?v=4.43"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.43"></script>
+    <script src="script.js?v=4.44"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.44"></script>
     <script type="module">
-        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=4.43";
-        import { auth } from "./firestore-service.js?v=4.43";
-        import "./gps-tracker.js?v=4.43";
+        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=4.44";
+        import { auth } from "./firestore-service.js?v=4.44";
+        import "./gps-tracker.js?v=4.44";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -534,13 +534,26 @@
             logisticFields.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
-                    el.disabled = isMagazzino;
                     if (isMagazzino) {
-                        el.classList.add('readonly-field');
-                        el.required = false;
-                        el.value = '';
+                        if (id === 'clienteSelect') {
+                            el.value = 'MAGAZZINO';
+                            el.disabled = true;
+                            el.classList.add('readonly-field');
+                            el.required = false;
+                            if (window.updateViaggi) window.updateViaggi();
+                        } else if (id === 'viaggioSelect') {
+                            el.disabled = false;
+                            el.classList.remove('readonly-field');
+                            el.required = true;
+                        } else {
+                            el.disabled = true;
+                            el.classList.add('readonly-field');
+                            el.required = false;
+                            el.value = '';
+                        }
                     } else {
                         el.classList.remove('readonly-field');
+                        el.disabled = false;
                         if (['automezzo', 'clienteSelect', 'viaggioSelect', 'kmPartenza', 'kmArrivo'].includes(id)) {
                             el.required = true;
                         }
@@ -739,7 +752,7 @@
                 autista: window.appData.currentUser.nome,
                 automezzo: isMagazzino ? "" : document.getElementById('automezzo').value,
                 cliente: isMagazzino ? "MAGAZZINO" : document.getElementById('clienteSelect').value,
-                viaggio: isMagazzino ? "SERVIZIO INTERNO" : vSelected,
+                viaggio: isMagazzino ? document.getElementById('viaggioSelect').value : vSelected,
                 mappaUrl: isMagazzino ? "" : mapUrl,
                 kmPartenza: isMagazzino ? 0 : Number(document.getElementById('kmPartenza').value),
                 kmArrivo: isMagazzino ? 0 : Number(kmArrivo),

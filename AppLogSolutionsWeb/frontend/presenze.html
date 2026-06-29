@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=4.21">
+    <link rel="stylesheet" href="styles.css?v=4.22">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .row-error td {
@@ -443,6 +443,8 @@
                             <th>Data</th>
                             <th style="text-align:center;">Magazzino<br>Sdoppiato</th>
                             <th>Cliente</th>
+                            <th>Viaggio/Zona</th>
+                            <th>Targa</th>
                             <th style="text-align:right;">Km<br>Part.</th>
                             <th style="text-align:right;">Km<br>Arr.</th>
                             <th style="text-align:right;">Delta<br>Km</th>
@@ -487,13 +489,13 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.21"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.21"></script>
+    <script src="script.js?v=4.22"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.22"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=4.21";
+        import { calculateHours } from "./firestore-service.js?v=4.22";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -949,6 +951,7 @@ const db = getFirestore(app);
                 <th>Data</th>
                 <th>Cliente</th>
                 <th>Viaggio / Zona</th>
+                <th>Targa</th>
                 <th style="text-align:right;">Km<br>Part.</th>
                 <th style="text-align:right;">Km<br>Arr.</th>
                 <th style="text-align:right;">Delta<br>Km</th>
@@ -1092,6 +1095,7 @@ const db = getFirestore(app);
                     // Retrocompatibilità: sdoppiamo il campo cliente se non c'è viaggio
                     let rCliente = record.cliente || "";
                     let rViaggio = record.viaggio || "";
+                    let rTarga = record.targa || record.targa_mezzo || record.mezzo || "";
                     if (!rViaggio && rCliente) {
                         if (rCliente.includes(" - ")) {
                             const parti = rCliente.split(" - ");
@@ -1122,6 +1126,17 @@ const db = getFirestore(app);
                         <td title="${rViaggio.toUpperCase()}">
                             <select class="edit-input" data-field="viaggio" title="${rViaggio.toUpperCase()}" disabled>
                                 <option value="">-- Seleziona Viaggio/Zona --</option>
+                            </select>
+                        </td>
+                        <td title="${rTarga.toUpperCase()}">
+                            <select class="edit-input" data-field="targa" title="${rTarga.toUpperCase()}" disabled>
+                                <option value="">-- Seleziona Targa --</option>
+                                ${(window.appData?.lista_mezzi || []).map(m => {
+                                    const mStr = (m.targa || m.nome || "").toUpperCase();
+                                    return `<option value="${mStr}" ${mStr === rTarga.toUpperCase() ? 'selected' : ''}>${mStr}</option>`;
+                                }).join('')}
+                                ${rTarga && !(window.appData?.lista_mezzi || []).some(m => (m.targa || m.nome || "").toUpperCase() === rTarga.toUpperCase()) ? 
+                                  `<option value="${rTarga.toUpperCase()}" selected>${rTarga.toUpperCase()}</option>` : ''}
                             </select>
                         </td>
                         <td><input type="number" class="edit-input num-input" data-field="kmPartenza" value="${record.kmPartenza || 0}" disabled onchange="onKmChange(this)"></td>
@@ -1563,6 +1578,7 @@ const db = getFirestore(app);
                     giornoSettimana: tr.querySelector('strong').innerText,
                     cliente: tr.querySelector('[data-field="cliente"]').value.trim(),
                     viaggio: tr.querySelector('[data-field="viaggio"]').value.trim(),
+                    targa: tr.querySelector('[data-field="targa"]') ? tr.querySelector('[data-field="targa"]').value.trim() : "",
                     kmPartenza: kmPartenza,
                     kmArrivo: kmArrivo,
                     kmDelta: kmDelta,
@@ -1858,7 +1874,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=4.21"></script>
+    <script type="module" src="cedolini-splitter.js?v=4.22"></script>
 
 </body>
 </html>

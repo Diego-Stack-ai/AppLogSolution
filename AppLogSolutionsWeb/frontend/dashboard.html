@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.39">
+    <link rel="stylesheet" href="styles.css?v=4.40">
     <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"></noscript>
     <!-- PWA & Mobile Optimization -->
@@ -21,6 +21,14 @@
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 24px;
             margin-top: 24px;
+            opacity: 0; /* Nascondiamo tutto finchè i permessi non sono caricati */
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .dashboard-grid.ready {
+            opacity: 1;
+            pointer-events: auto;
         }
 
         .nav-card {
@@ -202,8 +210,8 @@
     </main>
 
 
-    <script src="script.js?v=4.39"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.39"></script>
+    <script src="script.js?v=4.40"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.40"></script>
     <script>
         // Quando il profilo e i permessi sono caricati
         window.onUserProfileLoaded = (user) => {
@@ -227,6 +235,10 @@
                     }
                 });
             }
+            
+            // Ora che abbiamo nascosto le card vietate, mostriamo la griglia
+            const grid = document.querySelector('.dashboard-grid');
+            if (grid) grid.classList.add('ready');
         };
     </script>
 </body>

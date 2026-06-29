@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=4.36">
+    <link rel="stylesheet" href="styles.css?v=4.37">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .row-error td {
@@ -503,13 +503,13 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.36"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.36"></script>
+    <script src="script.js?v=4.37"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.37"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=4.36";
+        import { calculateHours } from "./firestore-service.js?v=4.37";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -1207,9 +1207,9 @@ const db = getFirestore(app);
                             <input type="hidden" data-field="note" value="${(record.note || '').replace(/"/g, '&quot;')}">
                             
                             <div style="display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap;">
-                                <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;" title="Abilita Magazziniere (Doppio Turno)">
-                                    <input type="checkbox" data-field="isMagazzino" ${isMagazzino ? 'checked' : ''} disabled onchange="onDoubleShiftToggle(this)" style="cursor:pointer; accent-color: var(--primary);">
-                                    📦 Mag.
+                                <label style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:14px; cursor:pointer;" title="Abilita Magazziniere (Doppio Turno)">
+                                    <input type="checkbox" data-field="isMagazzino" ${isMagazzino ? 'checked' : ''} disabled onchange="onDoubleShiftToggle(this)" style="cursor:pointer; accent-color: var(--primary); margin:0;">
+                                    <span>📦</span>
                                 </label>
                                 ${canEdit ? `<button class="btn-edit" onclick="toggleRowEdit(this)">✏️ Mod.</button>` : ''}
                                 <button class="btn-dettagli" 
@@ -2002,7 +2002,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=4.36"></script>
+    <script type="module" src="cedolini-splitter.js?v=4.37"></script>
 
 </body>
 </html>

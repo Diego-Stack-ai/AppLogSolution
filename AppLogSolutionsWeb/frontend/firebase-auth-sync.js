@@ -316,6 +316,17 @@ function startRealtimeSync(isAdmin) {
         if (typeof window.renderProgetti === 'function') window.renderProgetti();
     });
     activeListeners.push(unsubProgetti);
+
+    // Listener per Giustificativi (Ferie, Malattia, ecc.)
+    const unsubGiustificativi = onSnapshot(collection(db, "giustificativi"), (snapshot) => {
+        const giustificativi = [];
+        snapshot.forEach((d) => {
+            giustificativi.push({ id: d.id, ...d.data() });
+        });
+        window.appData.lista_giustificativi = giustificativi;
+        if (typeof window.renderGiustificativi === 'function') window.renderGiustificativi();
+    });
+    activeListeners.push(unsubGiustificativi);
 }
 
 // ─── CRUD PROGETTI ────────────────────────────────────────────────────────────
@@ -328,10 +339,47 @@ window.saveProgetto = async function(id, data) {
         }
         return true;
     } catch (e) {
-        console.error("Errore salvataggio Progetto:", e);
+        console.error("Errore saveProgetto:", e);
         throw e;
     }
 };
+
+window.deleteProgetto = async function(id) {
+    try {
+        await deleteDoc(doc(db, "progetti", id));
+        return true;
+    } catch (e) {
+        console.error("Errore deleteProgetto:", e);
+        throw e;
+    }
+};
+
+// ─── CRUD GIUSTIFICATIVI ───────────────────────────────────────────────────────
+window.saveGiustificativo = async function(id, data) {
+    try {
+        if (id) {
+            await updateDoc(doc(db, "giustificativi", id), data);
+        } else {
+            await addDoc(collection(db, "giustificativi"), data);
+        }
+        return true;
+    } catch (e) {
+        console.error("Errore salvataggio Giustificativo:", e);
+        throw e;
+    }
+};
+
+window.deleteGiustificativo = async function(id) {
+    try {
+        await deleteDoc(doc(db, "giustificativi", id));
+        return true;
+    } catch (e) {
+        console.error("Errore deleteGiustificativo:", e);
+        throw e;
+    }
+};
+
+// ─── ALTRI CRUD (mezzi, utenti, ecc.) ─────────────────────────────────────────
 
 window.deleteProgetto = async function(id) {
     try {

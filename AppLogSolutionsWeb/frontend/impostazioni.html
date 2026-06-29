@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.29">
+    <link rel="stylesheet" href="styles.css?v=4.30">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -388,6 +388,37 @@
 
             <h3 class="section-title">Clienti Esistenti</h3>
             <div id="listaProgetti" style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- Popolato da JS -->
+            </div>
+        </div>
+
+        <!-- Sezione Gestione Giustificativi -->
+        <div id="toggleGiustificativiBtn"
+            style="display: flex; justify-content: space-between; align-items: center; margin: 32px 0 0 0; cursor: pointer; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <h3 class="section-title" style="margin: 0;">🏖️ Gestione Giustificativi / Voci Presenza</h3>
+            <span class="material-icons-round" id="toggleGiustificativiIcon" style="color: var(--primary); transition: transform 0.3s ease;">expand_more</span>
+        </div>
+
+        <div id="giustificativiContent" style="display: none; padding-top: 20px;">
+            <button type="button" class="btn-primary" style="margin-bottom:20px; width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="const f = document.getElementById('formGiustificativiContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">add_circle</span>Aggiungi Nuova Voce</button>
+            <div id="formGiustificativiContainer" style="display: none; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:24px;">
+                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
+                    💡 Queste voci compariranno ESCLUSIVAMENTE nella pagina <b>Presenze</b>, nel menu a tendina Cliente.
+                </p>
+                <div class="form-grid" style="margin-bottom: 16px;">
+                    <div class="input-group" style="grid-column: 1 / -1;">
+                        <label for="giustificativoNomeInput">Nome Giustificativo *</label>
+                        <input type="text" id="giustificativoNomeInput" placeholder="es. FERIE, MALATTIA" style="text-transform: uppercase;">
+                    </div>
+                </div>
+                <div class="action-buttons" style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+                    <button type="button" class="btn-secondary" onclick="document.getElementById('formGiustificativiContainer').style.display='none'; document.getElementById('giustificativoNomeInput').value=''; delete document.getElementById('formGiustificativiContainer').dataset.editId;">Annulla</button>
+                    <button type="button" class="btn-primary" id="btnSalvaGiustificativo" onclick="window.submitGiustificativo()">Salva Voce</button>
+                </div>
+            </div>
+
+            <h3 class="section-title">Voci Esistenti</h3>
+            <div id="listaGiustificativi" style="display: flex; flex-direction: column; gap: 12px;">
                 <!-- Popolato da JS -->
             </div>
         </div>
@@ -1165,8 +1196,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=4.29"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.29"></script>
+    <script src="script.js?v=4.30"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.30"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1603,6 +1634,104 @@ const functions = getFunctions(app, "europe-west1");
             lista.appendChild(row);
         });
     }
+
+    // ── GESTIONE GIUSTIFICATIVI (UI & LOGIC) ──────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggleGBtn = document.getElementById('toggleGiustificativiBtn');
+        const contentGDiv = document.getElementById('giustificativiContent');
+        const iconGSpan = document.getElementById('toggleGiustificativiIcon');
+
+        if (toggleGBtn) {
+            toggleGBtn.addEventListener('click', () => {
+                const isVisible = contentGDiv.style.display === 'block';
+                contentGDiv.style.display = isVisible ? 'none' : 'block';
+                iconGSpan.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
+            });
+        }
+    });
+
+    window.submitGiustificativo = async function() {
+        const btn = document.getElementById('btnSalvaGiustificativo');
+        const fContainer = document.getElementById('formGiustificativiContainer');
+        const inputNome = document.getElementById('giustificativoNomeInput');
+        const nome = inputNome.value.trim().toUpperCase();
+
+        if (!nome) {
+            alert("Inserisci il nome del giustificativo.");
+            return;
+        }
+
+        const idToEdit = fContainer.dataset.editId;
+        const data = { nome: nome };
+
+        btn.disabled = true;
+        btn.textContent = "Salvataggio...";
+        try {
+            if (typeof window.saveGiustificativo === 'function') {
+                await window.saveGiustificativo(idToEdit, data);
+            }
+            alert("Giustificativo salvato con successo!");
+            fContainer.style.display = 'none';
+            inputNome.value = '';
+            delete fContainer.dataset.editId;
+        } catch (e) {
+            alert("Errore salvataggio: " + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Salva Voce";
+        }
+    };
+
+    window.editGiustificativo = function(id, nome) {
+        const fContainer = document.getElementById('formGiustificativiContainer');
+        const inputNome = document.getElementById('giustificativoNomeInput');
+        fContainer.style.display = 'block';
+        fContainer.dataset.editId = id;
+        inputNome.value = nome;
+    };
+
+    window.deleteGiustificativo_ui = async function(id, nome) {
+        if (!confirm(`Sei sicuro di voler eliminare il giustificativo "${nome}"?\nQuesta operazione è irreversibile.`)) return;
+        try {
+            if (typeof window.deleteGiustificativo === 'function') {
+                await window.deleteGiustificativo(id);
+                alert("Giustificativo eliminato.");
+            }
+        } catch (e) {
+            alert("Errore eliminazione: " + e.message);
+        }
+    };
+
+    window.renderGiustificativi = function() {
+        const lista = document.getElementById('listaGiustificativi');
+        if (!lista) return;
+        lista.innerHTML = '';
+        const dataList = window.appData?.lista_giustificativi || [];
+        if (dataList.length === 0) {
+            lista.innerHTML = '<div style="padding:15px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; color:#64748b; font-size:13px; text-align:center;">Nessun giustificativo configurato.</div>';
+            return;
+        }
+
+        // Ordinamento alfabetico
+        dataList.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+
+        dataList.forEach(g => {
+            const row = document.createElement('div');
+            row.style.cssText = "background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 3px rgba(0,0,0,0.05);";
+            row.innerHTML = `
+                <div style="font-weight:800;color:#1e293b;font-size:14px;">${g.nome}</div>
+                <div style="display:flex;gap:8px;">
+                    <button onclick="editGiustificativo('${g.id}', '${g.nome.replace(/'/g, "\\'")}')" class="action-btn edit-btn" title="Modifica">
+                        <span class="material-icons-round" style="font-size:20px;">edit</span>
+                    </button>
+                    <button onclick="deleteGiustificativo_ui('${g.id}', '${g.nome.replace(/'/g, "\\'")}')" class="action-btn delete-btn" title="Elimina">
+                        <span class="material-icons-round" style="font-size:20px;">delete</span>
+                    </button>
+                </div>
+            `;
+            lista.appendChild(row);
+        });
+    };
 
     // ── GESTIONE E RIPRISTINO CACHE DISTANZE (UI & LOGIC) ─────────────────
     const toggleCacheBtn = document.getElementById('toggleCacheBtn');

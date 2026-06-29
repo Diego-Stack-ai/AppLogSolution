@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.30">
+    <link rel="stylesheet" href="styles.css?v=4.31">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -209,6 +209,7 @@
         // Variabili globali per l'intelligenza logistica
         let dipendenti = [];
         let affinityData = {}; // { idDipendente: { clienti: {}, viaggiPerCliente: {}, viaggi: {}, targhe: {} } }
+        window.storicoPresenzeRaw = [];
         const CLIENTI_CARDINE = ["CATTEL", "GRAN CHEF", "BAUER", "DNR"];
 
         // Elementi DOM
@@ -288,70 +289,24 @@
                     affinityData[d.id] = { clienti: {}, viaggiPerCliente: {}, viaggi: {}, targhe: {}, clientiPerTarga: {} };
                 });
 
-                // Su richiesta, peschiamo i dati per le statistiche solo dalle presenze
+                // Leggi presenze
                 const presenzeSnap = await getDocs(collection(db, "presenze"));
                 
-                const processStatDoc = (pd) => {
-                    const autistaId = pd.autistaId || pd.dipendenteId;
-                    if (autistaId && affinityData[autistaId]) {
-                        
-                        // FILTRO DATA: Consideriamo solo dati a partire dal 22 Giugno 2026 (settimana del 28 Giugno)
-                        const dataDoc = pd.data; // Formato YYYY-MM-DD
-                        if (!dataDoc || dataDoc < "2026-06-22") {
-                            return; // Salta storico sporco precedente
-                        }
+                // Calcola data limite (3 mesi fa)
+                const limiteData = new Date();
+                limiteData.setMonth(limiteData.getMonth() - 3);
+                const limiteDataIso = limiteData.toISOString().split('T')[0];
 
-                        // Estrazione pulita di cliente e viaggio con retrocompatibilità per il vecchio formato accorpato
-                        let cliente = (pd.cliente || "").toString().trim().toUpperCase();
-                        let viaggio = (pd.viaggio || "").toString().trim().toUpperCase();
-                        
-                        if (!viaggio && cliente) {
-                            if (cliente.includes(" - ")) {
-                                const parti = cliente.split(" - ");
-                                cliente = parti[0].trim().toUpperCase();
-                                viaggio = parti[1].trim().toUpperCase();
-                            } else {
-                                const parsed = parseClienteDestinazione(cliente);
-                                if (parsed.cliente) {
-                                    cliente = parsed.cliente.toUpperCase();
-                                    viaggio = parsed.viaggio.toUpperCase();
-                                }
-                            }
-                        }
-
-                        if (cliente) {
-                            affinityData[autistaId].clienti[cliente] = (affinityData[autistaId].clienti[cliente] || 0) + 1;
-                            
-                            if (viaggio) {
-                                if (!affinityData[autistaId].viaggiPerCliente[cliente]) {
-                                    affinityData[autistaId].viaggiPerCliente[cliente] = {};
-                                }
-                                affinityData[autistaId].viaggiPerCliente[cliente][viaggio] = (affinityData[autistaId].viaggiPerCliente[cliente][viaggio] || 0) + 1;
-                            }
-                        }
-
-                        if (viaggio) {
-                            affinityData[autistaId].viaggi[viaggio] = (affinityData[autistaId].viaggi[viaggio] || 0) + 1;
-                        }
-
-                        // Estrai targa
-                        const targa = (pd.targa || pd.targa_mezzo || pd.mezzo || "").trim().toUpperCase();
-                        if (targa && targa.length >= 4) {
-                            affinityData[autistaId].targhe[targa] = (affinityData[autistaId].targhe[targa] || 0) + 1;
-                            if (cliente) {
-                                if (!affinityData[autistaId].clientiPerTarga) {
-                                    affinityData[autistaId].clientiPerTarga = {};
-                                }
-                                if (!affinityData[autistaId].clientiPerTarga[targa]) {
-                                    affinityData[autistaId].clientiPerTarga[targa] = {};
-                                }
-                                affinityData[autistaId].clientiPerTarga[targa][cliente] = (affinityData[autistaId].clientiPerTarga[targa][cliente] || 0) + 1;
-                            }
-                        }
+                window.storicoPresenzeRaw = [];
+                presenzeSnap.forEach(p => {
+                    const pd = p.data();
+                    if (pd.data && pd.data >= limiteDataIso) {
+                        window.storicoPresenzeRaw.push(pd);
                     }
-                };
+                });
 
-                presenzeSnap.forEach(p => processStatDoc(p.data()));
+                // Calcola l'affinità in base al giorno selezionato (se presente)
+                ricalcolaAffinità(dataInput.value);
 
                 // Genera le Datalist
                 generaDatalists();
@@ -359,7 +314,7 @@
                 // Costruisci la tabella
                 costruisciTabella();
 
-                // Carica la pianificazione del giorno di default (domani)
+                // Carica la pianificazione del giorno (se c'è)
                 await caricaPianificazione(dataInput.value);
 
             } catch (err) {
@@ -370,6 +325,82 @@
                 tableContainer.style.display = 'block';
             }
         }
+
+        window.ricalcolaAffinità = function(dataIso) {
+            // Svuota i vecchi calcoli
+            dipendenti.forEach(d => {
+                affinityData[d.id] = { clienti: {}, viaggiPerCliente: {}, viaggi: {}, targhe: {}, clientiPerTarga: {} };
+            });
+
+            // Se c'è una data selezionata, calcoliamo il giorno della settimana (0 = domenica, 1 = lunedì, ecc)
+            let giornoTarget = -1;
+            if (dataIso) {
+                giornoTarget = new Date(dataIso).getDay();
+            }
+
+            const processStatDoc = (pd) => {
+                const autistaId = pd.autistaId || pd.dipendenteId;
+                if (!autistaId || !affinityData[autistaId]) return;
+
+                // Se abbiamo un giorno target, consideriamo solo le presenze di quello stesso giorno della settimana
+                if (giornoTarget !== -1 && pd.data) {
+                    const docGiorno = new Date(pd.data).getDay();
+                    if (docGiorno !== giornoTarget) {
+                        return;
+                    }
+                }
+
+                // Estrazione pulita di cliente e viaggio con retrocompatibilità per il vecchio formato accorpato
+                let cliente = (pd.cliente || "").toString().trim().toUpperCase();
+                let viaggio = (pd.viaggio || "").toString().trim().toUpperCase();
+                
+                if (!viaggio && cliente) {
+                    if (cliente.includes(" - ")) {
+                        const parti = cliente.split(" - ");
+                        cliente = parti[0].trim().toUpperCase();
+                        viaggio = parti[1].trim().toUpperCase();
+                    } else {
+                        const parsed = parseClienteDestinazione(cliente);
+                        if (parsed.cliente) {
+                            cliente = parsed.cliente.toUpperCase();
+                            viaggio = parsed.viaggio.toUpperCase();
+                        }
+                    }
+                }
+
+                if (cliente) {
+                    affinityData[autistaId].clienti[cliente] = (affinityData[autistaId].clienti[cliente] || 0) + 1;
+                    
+                    if (viaggio) {
+                        if (!affinityData[autistaId].viaggiPerCliente[cliente]) {
+                            affinityData[autistaId].viaggiPerCliente[cliente] = {};
+                        }
+                        affinityData[autistaId].viaggiPerCliente[cliente][viaggio] = (affinityData[autistaId].viaggiPerCliente[cliente][viaggio] || 0) + 1;
+                    }
+                }
+
+                if (viaggio) {
+                    affinityData[autistaId].viaggi[viaggio] = (affinityData[autistaId].viaggi[viaggio] || 0) + 1;
+                }
+
+                // Estrai targa
+                const targa = (pd.targa || pd.targa_mezzo || pd.mezzo || "").trim().toUpperCase();
+                if (targa && targa.length >= 4) {
+                    affinityData[autistaId].targhe[targa] = (affinityData[autistaId].targhe[targa] || 0) + 1;
+                    if (cliente) {
+                        if (!affinityData[autistaId].clientiPerTarga) {
+                            affinityData[autistaId].clientiPerTarga = {};
+                        }
+                        if (!affinityData[autistaId].clientiPerTarga[targa]) {
+                            affinityData[autistaId].clientiPerTarga[targa] = {};
+                        }
+                        affinityData[autistaId].clientiPerTarga[targa][cliente] = (affinityData[autistaId].clientiPerTarga[targa][cliente] || 0) + 1;
+                    }
+                }
+            };
+
+            window.storicoPresenzeRaw.forEach(p => processStatDoc(p));
+        };
 
         window.getClienteColorClass = (nome) => {
             if (!nome) return 'badge-default';
@@ -790,8 +821,17 @@
             }
         }
 
-        dataInput.addEventListener('change', () => {
-            caricaPianificazione(dataInput.value);
+        dataInput.addEventListener('change', async () => {
+            if (dataInput.value) {
+                // Ricalcola le affinità per il nuovo giorno della settimana
+                ricalcolaAffinità(dataInput.value);
+                // Aggiorna le datalist (opzionale ma utile)
+                generaDatalists();
+                // Ricostruisci l'intera tabella coi nuovi badge
+                costruisciTabella();
+                // Infine popola la UI con i dati del database per quel giorno
+                await caricaPianificazione(dataInput.value);
+            }
         });
 
         // 3. Salvataggio
@@ -852,7 +892,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.30"></script>
-    <script src="script.js?v=4.30"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.31"></script>
+    <script src="script.js?v=4.31"></script>
 </body>
 </html>

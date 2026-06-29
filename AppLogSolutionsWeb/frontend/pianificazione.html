@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.45">
+    <link rel="stylesheet" href="styles.css?v=4.46">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -140,6 +140,39 @@
         .badge-default { background: #f3f4f6 !important; color: #4b5563 !important; border: 1px solid #e5e7eb; }
         .badge-disabled { background: #f1f5f9 !important; color: #94a3b8 !important; cursor: not-allowed !important; border: 1px solid #cbd5e1; opacity: 0.6; }
         .badge-disabled:hover { background: #f1f5f9 !important; }
+
+        @media print {
+            .navbar, .btn-salva, .btn-stampa, .suggest-btn, .in-confermato, .btn-pulisci {
+                display: none !important;
+            }
+            body, .main-container {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+            }
+            input.in-cliente, input.in-destinazione, input.in-targa {
+                border: none !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                font-weight: 600 !important;
+                color: black !important;
+                padding: 0 !important;
+            }
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+            }
+            th, td {
+                border: 1px solid #ccc !important;
+                padding: 4px !important;
+                font-size: 11px !important;
+            }
+            th:nth-child(5), td:nth-child(5),
+            th:nth-child(6), td:nth-child(6) {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -164,10 +197,16 @@
                 <label for="dataPianificazione" style="font-weight: 600; color: #475569;">Data Pianificazione:</label>
                 <input type="date" id="dataPianificazione" class="input-field" style="width: auto; font-weight: bold;">
             </div>
-            <button id="btnSalva" class="btn-salva">
-                <span class="material-icons-round">save</span>
-                Salva Pianificazione
-            </button>
+            <div style="display: flex; gap: 10px;">
+                <button id="btnStampa" class="btn-salva btn-stampa" style="background-color: #64748b;" onclick="window.print()">
+                    <span class="material-icons-round">print</span>
+                    Stampa
+                </button>
+                <button id="btnSalva" class="btn-salva">
+                    <span class="material-icons-round">save</span>
+                    Salva Pianificazione
+                </button>
+            </div>
         </div>
 
         <div id="loadingIndicator" style="text-align: center; padding: 40px; color: #64748b;">
@@ -895,7 +934,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.45"></script>
-    <script src="script.js?v=4.45"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.46"></script>
+    <script src="script.js?v=4.46"></script>
 </body>
 </html>

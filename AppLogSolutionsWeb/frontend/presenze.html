@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=4.28">
+    <link rel="stylesheet" href="styles.css?v=4.29">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .row-error td {
@@ -503,13 +503,13 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.28"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.28"></script>
+    <script src="script.js?v=4.29"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.29"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=4.28";
+        import { calculateHours } from "./firestore-service.js?v=4.29";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -1515,14 +1515,17 @@ const db = getFirestore(app);
             const btnSaveTutti = document.getElementById('btnSaveTutti');
             if (btnSaveTutti) { btnSaveTutti.disabled = true; btnSaveTutti.textContent = '⏳ Salvataggio...'; }
             let errors = 0;
-            for (const btn of saveBtns) {
+            const promises = Array.from(saveBtns).map(async (btn) => {
                 try {
                     await window.toggleRowEdit(btn);
                 } catch(e) {
                     errors++;
                     console.error('Errore salvataggio riga:', e);
                 }
-            }
+            });
+            
+            await Promise.all(promises);
+
             if (btnSaveTutti) { btnSaveTutti.disabled = false; btnSaveTutti.textContent = '💾 Salva Tutto'; }
             // Deseleziona il checkbox e nascondi il pulsante Salva Tutto
             const chk = document.getElementById('chkUnlockAll');
@@ -1598,29 +1601,35 @@ const db = getFirestore(app);
                 // Salva le modifiche su Firestore
                 btn.innerText = "⏳ Salva...";
                 btn.disabled = true;
+                
+                try {
+                    const dateStr = tr.dataset.date;
+                    const docId = tr.dataset.docId;
 
-                const dateStr = tr.dataset.date;
-                const docId = tr.dataset.docId;
+                    const getVal = (selector) => {
+                        const el = tr.querySelector(selector);
+                        return el ? el.value : "";
+                    };
 
-                const kmPartenza = parseFloat(tr.querySelector('[data-field="kmPartenza"]').value) || 0.0;
-                const kmArrivo = parseFloat(tr.querySelector('[data-field="kmArrivo"]').value) || 0.0;
-                const kmDelta = parseFloat(tr.querySelector('[data-field="kmDelta"]').value) || 0.0;
-                const oreTotali = parseFloat(tr.querySelector('[data-field="oreTotali"]').value) || 0.0;
-                const oreOrdinarie = parseFloat(tr.querySelector('[data-field="oreOrdinarie"]').value) || 0.0;
-                const oreStraordinarie = parseFloat(tr.querySelector('[data-field="oreStraordinarie"]').value) || 0.0;
-                const importo = parseFloat(tr.querySelector('[data-field="importo"]').value) || 0.0;
-                const litri = parseFloat(tr.querySelector('[data-field="litri"]').value) || 0.0;
+                    const kmPartenza = parseFloat(getVal('[data-field="kmPartenza"]')) || 0.0;
+                    const kmArrivo = parseFloat(getVal('[data-field="kmArrivo"]')) || 0.0;
+                    const kmDelta = parseFloat(getVal('[data-field="kmDelta"]')) || 0.0;
+                    const oreTotali = parseFloat(getVal('[data-field="oreTotali"]')) || 0.0;
+                    const oreOrdinarie = parseFloat(getVal('[data-field="oreOrdinarie"]')) || 0.0;
+                    const oreStraordinarie = parseFloat(getVal('[data-field="oreStraordinarie"]')) || 0.0;
+                    const importo = parseFloat(getVal('[data-field="importo"]')) || 0.0;
+                    const litri = parseFloat(getVal('[data-field="litri"]')) || 0.0;
 
-                const rawInizioM = tr.querySelector('[data-field="oraInizioM"]').value.trim();
-                const rawFineM = tr.querySelector('[data-field="oraFineM"]').value.trim();
-                const rawInizioP = tr.querySelector('[data-field="oraInizioP"]').value.trim();
-                const rawFineP = tr.querySelector('[data-field="oraFineP"]').value.trim();
+                    const rawInizioM = getVal('[data-field="oraInizioM"]').trim();
+                    const rawFineM = getVal('[data-field="oraFineM"]').trim();
+                    const rawInizioP = getVal('[data-field="oraInizioP"]').trim();
+                    const rawFineP = getVal('[data-field="oraFineP"]').trim();
 
-                // Format times for display consistency
-                const oraInizioM = rawInizioM ? formatTimeDecimal(parseTime(rawInizioM)) : "";
-                const oraFineM = rawFineM ? formatTimeDecimal(parseTime(rawFineM)) : "";
-                const oraInizioP = rawInizioP ? formatTimeDecimal(parseTime(rawInizioP)) : "";
-                const oraFineP = rawFineP ? formatTimeDecimal(parseTime(rawFineP)) : "";
+                    // Format times for display consistency
+                    const oraInizioM = rawInizioM ? formatTimeDecimal(parseTime(rawInizioM)) : "";
+                    const oraFineM = rawFineM ? formatTimeDecimal(parseTime(rawFineM)) : "";
+                    const oraInizioP = rawInizioP ? formatTimeDecimal(parseTime(rawInizioP)) : "";
+                    const oraFineP = rawFineP ? formatTimeDecimal(parseTime(rawFineP)) : "";
 
                 // Aggiorna i valori formattati negli input
                 tr.querySelector('[data-field="oraInizioM"]').value = oraInizioM;
@@ -1673,10 +1682,10 @@ const db = getFirestore(app);
                     autistaNome: rowAutista.nome || selectedEmployee.nome,
                     data: dateStr,
                     mese: selectedMonth,
-                    giornoSettimana: tr.querySelector('strong').innerText,
-                    cliente: tr.querySelector('[data-field="cliente"]').value.trim(),
-                    viaggio: tr.querySelector('[data-field="viaggio"]').value.trim(),
-                    targa: tr.querySelector('[data-field="targa"]') ? tr.querySelector('[data-field="targa"]').value.trim() : "",
+                    giornoSettimana: tr.querySelector('strong') ? tr.querySelector('strong').innerText : "",
+                    cliente: getVal('[data-field="cliente"]').trim(),
+                    viaggio: getVal('[data-field="viaggio"]').trim(),
+                    targa: getVal('[data-field="targa"]').trim(),
                     kmPartenza: kmPartenza,
                     kmArrivo: kmArrivo,
                     kmDelta: kmDelta,
@@ -1718,6 +1727,14 @@ const db = getFirestore(app);
                     btn.innerText = "💾 Riprova";
                 } finally {
                     btn.disabled = false;
+                    btn.disabled = false;
+                }
+                } catch(globalErr) {
+                    console.error("Errore sincrono in toggleRowEdit:", globalErr);
+                    alert("Errore imprevisto durante la preparazione del salvataggio: " + globalErr.message);
+                    btn.innerText = "💾 Riprova";
+                    btn.disabled = false;
+                    throw globalErr; // Rilancia per fare contare l'errore a saveAllEdits
                 }
             }
         };
@@ -1972,7 +1989,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=4.28"></script>
+    <script type="module" src="cedolini-splitter.js?v=4.29"></script>
 
 </body>
 </html>

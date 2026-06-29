@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=4.27">
+    <link rel="stylesheet" href="styles.css?v=4.28">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .row-error td {
@@ -299,9 +299,14 @@
         .view-mode-container {
             display: flex;
             gap: 10px;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid #e2e8f0;
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+            border-top: none !important;
+            align-items: center;
+        }
+        #unlockAllContainer {
+            margin-top: 0 !important;
+            align-items: center;
         }
         .view-mode-btn {
             padding: 8px 16px;
@@ -405,7 +410,7 @@
                 </div>
             </div>
             <div id="viewModeSection" style="display:none;">
-                <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 15px;">
+                <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:15px; height:40px;">
                     <div class="view-mode-container" style="display: flex; gap: 5px; margin: 0;">
                         <button class="view-mode-btn" data-mode="giorno" onclick="setViewMode('giorno')">Giorno</button>
                         <button class="view-mode-btn" data-mode="settimana" onclick="setViewMode('settimana')">Settimana</button>
@@ -498,13 +503,13 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.27"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.27"></script>
+    <script src="script.js?v=4.28"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.28"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=4.27";
+        import { calculateHours } from "./firestore-service.js?v=4.28";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -1967,7 +1972,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=4.27"></script>
+    <script type="module" src="cedolini-splitter.js?v=4.28"></script>
 
 </body>
 </html>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.50">
+    <link rel="stylesheet" href="styles.css?v=4.51">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -142,8 +142,19 @@
         .badge-disabled:hover { background: #f1f5f9 !important; }
 
         @media print {
-            .navbar, .btn-salva, .btn-stampa, .suggest-btn, .in-confermato, .btn-pulisci, .suggestion-badge {
+            .glass-nav, .app-version-badge, .date-header, .btn-salva, .btn-stampa, .suggest-btn, .in-confermato, .btn-pulisci, .suggestion-badge {
                 display: none !important;
+            }
+            .print-header {
+                display: flex !important;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 2px solid #ccc;
+                padding-bottom: 5px;
+                margin-bottom: 10px;
+                font-size: 14px;
+                font-weight: bold;
+                color: black;
             }
             body, .main-container {
                 background: white !important;
@@ -194,13 +205,20 @@
 
     <main class="main-container" style="max-width: 1200px; margin: 0 auto; padding-top: 80px;">
         
+        <!-- Header esclusivo per la stampa -->
+        <div class="print-header" style="display: none;">
+            <span id="printDate"></span>
+            <h2 style="margin: 0; font-size: 16px;">Pianificazione Viaggi</h2>
+            <span id="printWorkingDate"></span>
+        </div>
+
         <div class="date-header">
             <div style="display: flex; align-items: center; gap: 16px;">
                 <label for="dataPianificazione" style="font-weight: 600; color: #475569;">Data Pianificazione:</label>
                 <input type="date" id="dataPianificazione" class="input-field" style="width: auto; font-weight: bold;">
             </div>
             <div style="display: flex; gap: 10px;">
-                <button id="btnStampa" class="btn-salva btn-stampa" style="background-color: #64748b;" onclick="window.print()">
+                <button id="btnStampa" class="btn-salva btn-stampa" style="background-color: #64748b;" onclick="window.impostaDatiStampaEStampa()">
                     <span class="material-icons-round">print</span>
                     Stampa
                 </button>
@@ -249,7 +267,23 @@
 
         // Variabili globali per l'intelligenza logistica
         let dipendenti = [];
-        let affinityData = {}; // { idDipendente: { clienti: {}, viaggiPerCliente: {}, viaggi: {}, targhe: {} } }
+        let affinityData = {}; // { dipendenteId: { clienti: {}, viaggi: {}, targhe: {} } }
+        let saveInProgress = false;
+
+        window.impostaDatiStampaEStampa = function() {
+            const today = new Date();
+            document.getElementById('printDate').innerText = 'Data stampa: ' + today.toLocaleDateString('it-IT');
+            
+            const workDateInput = document.getElementById('dataPianificazione').value;
+            if(workDateInput) {
+                const [y, m, d] = workDateInput.split('-');
+                document.getElementById('printWorkingDate').innerText = 'Data lavoro: ' + `${d}/${m}/${y}`;
+            } else {
+                document.getElementById('printWorkingDate').innerText = '';
+            }
+            window.print();
+        };
+
         window.storicoPresenzeRaw = [];
         const CLIENTI_CARDINE = ["CATTEL", "GRAN CHEF", "BAUER", "DNR"];
 
@@ -944,7 +978,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.50"></script>
-    <script src="script.js?v=4.50"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.51"></script>
+    <script src="script.js?v=4.51"></script>
 </body>
 </html>

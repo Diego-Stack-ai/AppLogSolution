@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.48">
+    <link rel="stylesheet" href="styles.css?v=4.49">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -809,6 +809,14 @@
             
             // Svuotiamo prima la UI e puliamo i dataset pendenti
             document.querySelectorAll('#planningTable tbody tr').forEach(tr => {
+                const id = tr.getAttribute('data-id');
+                const emp = dipendenti.find(d => d.id === id);
+                if(emp && emp.data_licenziamento && emp.data_licenziamento < dataIso) {
+                    tr.style.display = 'none';
+                } else {
+                    tr.style.display = '';
+                }
+
                 delete tr.dataset.pendingCliente;
                 delete tr.dataset.pendingViaggio;
                 delete tr.dataset.pendingTarga;
@@ -934,7 +942,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.48"></script>
-    <script src="script.js?v=4.48"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.49"></script>
+    <script src="script.js?v=4.49"></script>
 </body>
 </html>

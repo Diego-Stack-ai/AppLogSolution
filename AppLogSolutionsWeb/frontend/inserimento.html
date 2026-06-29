@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.42">
+    <link rel="stylesheet" href="styles.css?v=4.40">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -193,8 +193,6 @@
                             <input type="date" id="data" disabled class="readonly-field">
                         </div>
 
-                        <!-- Blocco logistico: visibile solo per Autista -->
-                        <div id="bloccoLogistico">
                         <div class="input-group">
                             <label for="automezzo">Automezzo (Targa) *</label>
                             <select id="automezzo" required>
@@ -203,7 +201,7 @@
                         </div>
 
                         <!-- Nuova Sezione Menu Dinamici (Cliente + Viaggio) -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px;">
+                        <div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
                             <div class="input-group">
                                 <label for="clienteSelect">Cliente / Progetto *</label>
                                 <select id="clienteSelect" required>
@@ -223,11 +221,10 @@
                             </div>
                         </div>
 
-                        <div class="input-group" style="margin-top: 20px;">
+                        <div class="input-group">
                             <label for="kmPartenza">Km Partenza *</label>
                             <input type="number" id="kmPartenza" placeholder="es. 120500" required>
                         </div>
-                        </div><!-- fine #bloccoLogistico -->
 
                         <div class="input-group" id="mattinaInizioContainer">
                             <label id="lblMattinaInizio">Ora Inizio *</label>
@@ -447,12 +444,12 @@
         </div>
     </div>
 
-    <script src="script.js?v=4.42"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.42"></script>
+    <script src="script.js?v=4.40"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.40"></script>
     <script type="module">
-        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=4.42";
-        import { auth } from "./firestore-service.js?v=4.42";
-        import "./gps-tracker.js?v=4.42";
+        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=4.40";
+        import { auth } from "./firestore-service.js?v=4.40";
+        import "./gps-tracker.js?v=4.40";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -532,91 +529,56 @@
             const tipo = document.getElementById('tipoTurno')?.value || 'autista';
             const isMagazzino = (tipo === 'magazziniere');
 
-            // --- Riferimenti ai blocchi HTML ---
-            const bloccoLogistico = document.getElementById('bloccoLogistico');  // Targa+Cliente+Viaggio+KmPartenza
+            // Campi logistici da disabilitare/abilitare
+            const logisticFields = ['automezzo', 'clienteSelect', 'viaggioSelect', 'kmPartenza', 'kmArrivo', 'importo', 'litri'];
+            logisticFields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.disabled = isMagazzino;
+                    if (isMagazzino) {
+                        el.classList.add('readonly-field');
+                        el.required = false;
+                        el.value = '';
+                    } else {
+                        el.classList.remove('readonly-field');
+                        if (['automezzo', 'clienteSelect', 'viaggioSelect', 'kmPartenza', 'kmArrivo'].includes(id)) {
+                            el.required = true;
+                        }
+                    }
+                }
+            });
+
+            // Visibilità e required degli orari spezzati
             const mattinaFineContainer = document.getElementById('mattinaFineContainer');
             const pomeriggioInizioContainer = document.getElementById('pomeriggioInizioContainer');
-            const kmArrivoContainer = document.getElementById('kmArrivo')?.closest('.input-group');
-            const riepilogoKmBox = document.querySelector('#step-2 > div[style*="background: #f8fafc"]');
-            const step2 = document.getElementById('step-2');
-            const wizardInd = document.querySelector('.wizard-step-indicator');
-            const btnStart = document.getElementById('btnStartTrip');
-            const btnPrev = document.querySelector('button[onclick="prevStep(1)"]');
             const lblMattinaInizio = document.getElementById('lblMattinaInizio');
             const lblPomeriggioFine = document.getElementById('lblPomeriggioFine');
+
             const mFHH = document.getElementById('mattinaFineHH');
             const mFMM = document.getElementById('mattinaFineMM');
             const pIHH = document.getElementById('pomeriggioInizioHH');
             const pIMM = document.getElementById('pomeriggioInizioMM');
-            const importoEl = document.getElementById('importo');
-            const litriEl = document.getElementById('litri');
 
             if (isMagazzino) {
-                // --- NASCONDI i blocchi logistici autista ---
-                if (bloccoLogistico) bloccoLogistico.style.display = 'none';
-                if (wizardInd) wizardInd.style.display = 'none';
-                if (btnStart) btnStart.style.display = 'none';
-                if (btnPrev) btnPrev.style.display = 'none';
-                if (kmArrivoContainer) kmArrivoContainer.style.display = 'none';
-                if (riepilogoKmBox) riepilogoKmBox.style.display = 'none';
-
-                // --- MOSTRA tutti e 4 i campi orari ---
                 if (mattinaFineContainer) mattinaFineContainer.style.display = 'block';
                 if (pomeriggioInizioContainer) pomeriggioInizioContainer.style.display = 'block';
-                if (lblMattinaInizio) lblMattinaInizio.textContent = 'Ora Inizio Mattina *';
-                if (lblPomeriggioFine) lblPomeriggioFine.textContent = 'Ora Fine Pomeriggio *';
+                if (lblMattinaInizio) lblMattinaInizio.textContent = "Ora Inizio Mattina *";
+                if (lblPomeriggioFine) lblPomeriggioFine.textContent = "Ora Fine Pomeriggio *";
+
                 if (mFHH) mFHH.required = true;
                 if (mFMM) mFMM.required = true;
                 if (pIHH) pIHH.required = true;
                 if (pIMM) pIMM.required = true;
-
-                // --- MOSTRA step-2 direttamente (senza wizard) ---
-                if (step2) { step2.style.display = 'block'; step2.classList.add('active'); }
-
-                // --- Disabilita carburante (grigetto) ma tienilo visibile ---
-                if (importoEl) { importoEl.disabled = true; importoEl.classList.add('readonly-field'); importoEl.value = ''; }
-                if (litriEl) { litriEl.disabled = true; litriEl.classList.add('readonly-field'); litriEl.value = ''; }
-
-                // --- Svuota e disabilita i campi logistici nascosti ---
-                ['automezzo','clienteSelect','viaggioSelect','kmPartenza','kmArrivo'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) { el.disabled = true; el.required = false; el.value = ''; }
-                });
-
             } else {
-                // --- RIPRISTINA modalità Autista ---
-                if (bloccoLogistico) bloccoLogistico.style.display = 'block';
-                if (wizardInd) wizardInd.style.display = 'flex';
-                if (kmArrivoContainer) kmArrivoContainer.style.display = 'block';
-                if (riepilogoKmBox) riepilogoKmBox.style.display = 'block';
-
-                // --- NASCONDI orari spezzati e ripristina label ---
                 if (mattinaFineContainer) mattinaFineContainer.style.display = 'none';
                 if (pomeriggioInizioContainer) pomeriggioInizioContainer.style.display = 'none';
-                if (lblMattinaInizio) lblMattinaInizio.textContent = 'Ora Inizio *';
-                if (lblPomeriggioFine) lblPomeriggioFine.textContent = 'Ora Fine *';
+                if (lblMattinaInizio) lblMattinaInizio.textContent = "Ora Inizio *";
+                if (lblPomeriggioFine) lblPomeriggioFine.textContent = "Ora Fine *";
+
                 if (mFHH) { mFHH.required = false; mFHH.value = ''; }
                 if (mFMM) { mFMM.required = false; mFMM.value = ''; }
                 if (pIHH) { pIHH.required = false; pIHH.value = ''; }
                 if (pIMM) { pIMM.required = false; pIMM.value = ''; }
-
-                // --- Riporta step-2 al comportamento wizard (nascosto, visibile solo dopo Inizia Viaggio) ---
-                if (step2 && !sessionStorage.getItem('currentTripId')) {
-                    step2.style.display = 'none';
-                    step2.classList.remove('active');
-                }
-
-                // --- Riabilita carburante ---
-                if (importoEl) { importoEl.disabled = false; importoEl.classList.remove('readonly-field'); }
-                if (litriEl) { litriEl.disabled = false; litriEl.classList.remove('readonly-field'); }
-
-                // --- Riabilita i campi logistici ---
-                ['automezzo','clienteSelect','kmPartenza'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) { el.disabled = false; el.required = true; }
-                });
-                const kmAEl = document.getElementById('kmArrivo');
-                if (kmAEl) { kmAEl.disabled = false; kmAEl.required = true; }
             }
 
             checkStep1();

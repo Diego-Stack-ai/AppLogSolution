@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.49">
+    <link rel="stylesheet" href="styles.css?v=4.50">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -142,7 +142,7 @@
         .badge-disabled:hover { background: #f1f5f9 !important; }
 
         @media print {
-            .navbar, .btn-salva, .btn-stampa, .suggest-btn, .in-confermato, .btn-pulisci {
+            .navbar, .btn-salva, .btn-stampa, .suggest-btn, .in-confermato, .btn-pulisci, .suggestion-badge {
                 display: none !important;
             }
             body, .main-container {
@@ -151,13 +151,15 @@
                 margin: 0 !important;
                 box-shadow: none !important;
             }
-            input.in-cliente, input.in-destinazione, input.in-targa {
+            input.in-cliente, input.in-viaggio, select.in-targa {
                 border: none !important;
                 background: transparent !important;
                 box-shadow: none !important;
                 font-weight: 600 !important;
                 color: black !important;
                 padding: 0 !important;
+                appearance: none !important;
+                -webkit-appearance: none !important;
             }
             table {
                 width: 100% !important;
@@ -942,7 +944,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.49"></script>
-    <script src="script.js?v=4.49"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.50"></script>
+    <script src="script.js?v=4.50"></script>
 </body>
 </html>

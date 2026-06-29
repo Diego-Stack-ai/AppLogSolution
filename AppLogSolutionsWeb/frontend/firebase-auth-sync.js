@@ -140,6 +140,17 @@ onAuthStateChanged(auth, async (user) => {
                 
                 console.log(`Auth: Profilo caricato [${userData.nome}], Ruolo: "${role}", IsAdmin: ${isAdmin}`);
 
+                // Scarica configurazione permessi dashboard
+                let permessiDoc = null;
+                try {
+                    permessiDoc = await getDoc(doc(db, "config", "permessi_dashboard"));
+                } catch(e) {
+                    console.warn("Auth: Impossibile scaricare permessi dashboard", e);
+                }
+                
+                const permessiData = permessiDoc && permessiDoc.exists() ? permessiDoc.data() : {};
+                window.appData.permessiDashboard = permessiData;
+
 
                 // Hook per aggiornamenti UI nelle pagine
                 // Chiamata immediata + retry dopo 300ms per sicurezza su mobile
@@ -158,20 +169,39 @@ onAuthStateChanged(auth, async (user) => {
 
                 // --- LOGICA DI NAVIGAZIONE E PROTEZIONE ---
                 
-                // 1. Se loggato e su pagina pubblica -> Vai alla home corretta
+                // 1. Se loggato e su pagina pubblica -> Vai alla home corretta (sempre dashboard ora)
                 if (isPublicPage) {
-                    const home = isAdmin ? 'dashboard.html' : 'inserimento.html';
+                    const home = 'dashboard.html';
                     console.log(`REDIRECT DEBUG: Pagina pubblica [${page}] -> Home corretta [${home}]`);
                     window.location.replace(home);
                     return;
                 }
 
-                // 2. Protezione assoluta: se l'utente NON è amministratore/impiegata, può accedere SOLO a inserimento.html e presenze.html
-                if (!isAdmin) {
-                    if (page !== 'inserimento.html' && page !== 'presenze.html') {
-                        console.error(`REDIRECT DEBUG: Accesso negato a [${page}] per utente non amministratore. Reindirizzamento a inserimento.html.`);
-                        window.location.replace('inserimento.html');
-                        return;
+                // 2. Protezione dinamica: controlla se l'utente ha il permesso per la pagina corrente
+                if (page !== 'dashboard.html' && page !== 'login.html') {
+                    const pageKey = page.replace('.html', '');
+                    
+                    if (role !== 'amministratore' && !isDiego) {
+                        let hasPermission = false;
+                        
+                        if (permessiData[pageKey] && typeof permessiData[pageKey][role] !== 'undefined') {
+                            // Se c'è la configurazione specifica per questa pagina e ruolo
+                            hasPermission = permessiData[pageKey][role] === true;
+                        } else {
+                            // Fallback alla vecchia logica se la configurazione non esiste ancora
+                            if (role === 'impiegata') {
+                                hasPermission = true; // Impiegata vedeva tutto come admin
+                            } else {
+                                // Autista vedeva solo inserimento e presenze
+                                hasPermission = (page === 'inserimento.html' || page === 'presenze.html');
+                            }
+                        }
+
+                        if (!hasPermission) {
+                            console.error(`REDIRECT DEBUG: Accesso negato a [${page}] per ruolo [${role}]. Reindirizzamento a dashboard.html.`);
+                            window.location.replace('dashboard.html');
+                            return;
+                        }
                     }
                 }
 

@@ -547,6 +547,41 @@
             </form>
         </div>
 
+        <!-- NUOVA SEZIONE: GESTIONE PERMESSI DASHBOARD -->
+        <div id="togglePermessiBtn"
+            style="display: flex; justify-content: space-between; align-items: center; margin: 32px 0 0 0; cursor: pointer; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <h3 class="section-title" style="margin: 0;">Gestione Permessi Dashboard</h3>
+            <span class="material-icons-round" id="togglePermessiIcon"
+                style="color: var(--primary); transition: transform 0.3s ease;">expand_more</span>
+        </div>
+
+        <div id="permessiContent" style="display: none; padding-top: 20px;">
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
+                💡 <b>Permessi Dinamici:</b> Questa tabella viene generata automaticamente leggendo le schede presenti nella Dashboard. Scegli quali ruoli possono accedere a ciascuna area. (L'Amministratore ha sempre accesso completo).
+            </p>
+            
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-size: 14px;">
+                    <thead style="background: var(--bg-color); border-bottom: 2px solid #e2e8f0;">
+                        <tr>
+                            <th style="padding: 12px; text-align: left; color: var(--text-muted); font-weight: 600;">Modulo / Card</th>
+                            <th style="padding: 12px; text-align: center; color: var(--text-muted); font-weight: 600;">Amministratore</th>
+                            <th style="padding: 12px; text-align: center; color: var(--text-muted); font-weight: 600;">Impiegata</th>
+                            <th style="padding: 12px; text-align: center; color: var(--text-muted); font-weight: 600;">Autista</th>
+                        </tr>
+                    </thead>
+                    <tbody id="permessiTableBody">
+                        <tr><td colspan="4" style="padding: 20px; text-align: center; color: var(--text-muted);">Caricamento moduli in corso...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <button type="button" id="btnSalvaPermessi" class="btn-primary" style="margin-top: 20px; width: 100%;">
+                <span class="material-icons-round" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">save</span>
+                Salva Permessi
+            </button>
+        </div>
+
     </div>
 </main>
 
@@ -1201,7 +1236,7 @@
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
-    import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot }
+    import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, getDoc }
         from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
@@ -1936,6 +1971,119 @@ const functions = getFunctions(app, "europe-west1");
             } catch (err) {
                 console.error("Errore test email:", err);
                 Swal.fire({ title: 'Test Fallito', text: 'Errore di connessione: ' + err.message, icon: 'error', confirmButtonColor: '#4f46e5' });
+            }
+        });
+    }
+
+    // ── GESTIONE PERMESSI DASHBOARD ───────────────────────────────────────
+    const togglePermessiBtn = document.getElementById('togglePermessiBtn');
+    const permessiContent = document.getElementById('permessiContent');
+    const togglePermessiIcon = document.getElementById('togglePermessiIcon');
+    const btnSalvaPermessi = document.getElementById('btnSalvaPermessi');
+    const permessiTableBody = document.getElementById('permessiTableBody');
+
+    if (togglePermessiBtn && permessiContent) {
+        togglePermessiBtn.addEventListener('click', () => {
+            const isVisible = permessiContent.style.display === 'block';
+            permessiContent.style.display = isVisible ? 'none' : 'block';
+            togglePermessiIcon.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
+            if (!isVisible && permessiTableBody.innerHTML.includes('Caricamento')) {
+                caricaPermessiDashboard();
+            }
+        });
+    }
+
+    async function caricaPermessiDashboard() {
+        try {
+            // 1. Legge il file dashboard.html
+            const response = await fetch('dashboard.html');
+            const htmlText = await response.text();
+            
+            // 2. Parsa il file come DOM
+            const parser = new DOMParser();
+            const docDashboard = parser.parseFromString(htmlText, 'text/html');
+            
+            // 3. Trova tutte le .nav-card con data-page
+            const cards = docDashboard.querySelectorAll('.nav-card[data-page]');
+            const cardModules = [];
+            cards.forEach(c => {
+                const titleEl = c.querySelector('h3');
+                const title = titleEl ? titleEl.textContent.trim() : 'Sconosciuto';
+                const page = c.getAttribute('data-page').replace('.html', '');
+                cardModules.push({ page, title });
+            });
+
+            // 4. Carica la configurazione da Firestore
+            const permessiDoc = await getDoc(doc(db, "config", "permessi_dashboard"));
+            const currentPermessi = permessiDoc.exists() ? permessiDoc.data() : {};
+
+            // 5. Costruisci la tabella
+            permessiTableBody.innerHTML = '';
+            
+            cardModules.forEach(mod => {
+                const conf = currentPermessi[mod.page] || {};
+                
+                // Amministratore è sempre true, gli altri possono essere true/false (default = boolean in base a vecchia logica o false)
+                // Vecchia logica: impiegata aveva tutto. autista solo inserimento e presenze.
+                const defImpiegata = typeof conf['impiegata'] !== 'undefined' ? conf['impiegata'] : true;
+                const defAutista = typeof conf['autista'] !== 'undefined' ? conf['autista'] : (mod.page === 'inserimento' || mod.page === 'presenze');
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
+                        <span style="font-weight: 600; color: var(--primary);">${mod.title}</span><br>
+                        <span style="font-size: 11px; color: #64748b;">${mod.page}.html</span>
+                    </td>
+                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                        <input type="checkbox" checked disabled title="Amministratore ha sempre accesso">
+                    </td>
+                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                        <input type="checkbox" class="perm-cb" data-page="${mod.page}" data-role="impiegata" ${defImpiegata ? 'checked' : ''}>
+                    </td>
+                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                        <input type="checkbox" class="perm-cb" data-page="${mod.page}" data-role="autista" ${defAutista ? 'checked' : ''}>
+                    </td>
+                `;
+                permessiTableBody.appendChild(tr);
+            });
+
+        } catch (e) {
+            console.error("Errore caricamento permessi dashboard:", e);
+            permessiTableBody.innerHTML = `<tr><td colspan="4" style="padding: 20px; text-align: center; color: #ef4444;">Errore nel caricamento: ${e.message}</td></tr>`;
+        }
+    }
+
+    if (btnSalvaPermessi) {
+        btnSalvaPermessi.addEventListener('click', async () => {
+            try {
+                btnSalvaPermessi.disabled = true;
+                btnSalvaPermessi.innerHTML = 'Salvataggio in corso...';
+                
+                const newPermessi = {};
+                const checkboxes = document.querySelectorAll('.perm-cb');
+                checkboxes.forEach(cb => {
+                    const page = cb.getAttribute('data-page');
+                    const role = cb.getAttribute('data-role');
+                    if (!newPermessi[page]) newPermessi[page] = { amministratore: true };
+                    newPermessi[page][role] = cb.checked;
+                });
+
+                await setDoc(doc(db, "config", "permessi_dashboard"), newPermessi);
+                
+                Swal.fire({
+                    title: 'Salvato',
+                    text: 'I permessi della Dashboard sono stati aggiornati!',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+
+            } catch (e) {
+                console.error("Errore salvataggio permessi:", e);
+                Swal.fire('Errore', 'Impossibile salvare i permessi: ' + e.message, 'error');
+            } finally {
+                btnSalvaPermessi.disabled = false;
+                btnSalvaPermessi.innerHTML = '<span class="material-icons-round" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">save</span> Salva Permessi';
             }
         });
     }

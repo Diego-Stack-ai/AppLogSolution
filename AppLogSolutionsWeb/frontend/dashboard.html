@@ -118,7 +118,7 @@
 
         <div class="dashboard-grid">
             <!-- Elaborazione Distinte (Novità Cloud) -->
-            <a href="javascript:void(0)" onclick="window.navigateWithState('elaborazione.html')" class="nav-card" style="border: 2px solid var(--primary); background: linear-gradient(145deg, #ffffff, #f0f4ff);">
+            <a href="javascript:void(0)" onclick="window.navigateWithState('elaborazione.html')" class="nav-card" data-page="elaborazione.html" style="border: 2px solid var(--primary); background: linear-gradient(145deg, #ffffff, #f0f4ff);">
                 <div class="icon-circle" style="background: var(--primary); color: white;">
                     <span class="material-icons-round" style="font-size: 32px;">cloud_upload</span>
                 </div>
@@ -127,7 +127,7 @@
             </a>
 
             <!-- Link Viaggi -->
-            <a href="javascript:void(0)" onclick="window.navigateWithState('link_viaggi.html')" class="nav-card">
+            <a href="javascript:void(0)" onclick="window.navigateWithState('link_viaggi.html')" class="nav-card" data-page="link_viaggi.html">
                 <div class="icon-circle" style="background: #e0f2fe; color: #0284c7;">
                     <span class="material-icons-round" style="font-size: 32px;">share_location</span>
                 </div>
@@ -136,7 +136,7 @@
             </a>
 
             <!-- Gestione Anagrafiche -->
-            <a href="javascript:void(0)" onclick="window.navigateWithState('gestione.html')" class="nav-card">
+            <a href="javascript:void(0)" onclick="window.navigateWithState('gestione.html')" class="nav-card" data-page="gestione.html">
                 <div class="icon-circle" style="background: #fef2f2; color: #ef4444;">
                     <span class="material-icons-round" style="font-size: 32px;">dvr</span>
                 </div>
@@ -145,7 +145,7 @@
             </a>
 
             <!-- Pianificazione Viaggi -->
-            <a href="javascript:void(0)" onclick="window.navigateWithState('pianificazione.html')" class="nav-card" style="border: 2px solid #8b5cf6; background: linear-gradient(145deg, #ffffff, #f5f3ff);">
+            <a href="javascript:void(0)" onclick="window.navigateWithState('pianificazione.html')" class="nav-card" data-page="pianificazione.html" style="border: 2px solid #8b5cf6; background: linear-gradient(145deg, #ffffff, #f5f3ff);">
                 <div class="icon-circle" style="background: #8b5cf6; color: white;">
                     <span class="material-icons-round" style="font-size: 32px;">route</span>
                 </div>
@@ -154,7 +154,7 @@
             </a>
 
             <!-- Visualizzazione Turni -->
-            <a href="javascript:void(0)" onclick="window.navigateWithState('visualizzazione.html')" class="nav-card">
+            <a href="javascript:void(0)" onclick="window.navigateWithState('visualizzazione.html')" class="nav-card" data-page="visualizzazione.html">
                 <div class="icon-circle">
                     <span class="material-icons-round" style="font-size: 32px;">visibility</span>
                 </div>
@@ -163,7 +163,7 @@
             </a>
 
             <!-- Inserimento Turno -->
-            <a href="javascript:void(0)" onclick="window.navigateWithState('inserimento.html')" class="nav-card">
+            <a href="javascript:void(0)" onclick="window.navigateWithState('inserimento.html')" class="nav-card" data-page="inserimento.html">
                 <div class="icon-circle">
                     <span class="material-icons-round" style="font-size: 32px;">add_road</span>
                 </div>
@@ -173,7 +173,7 @@
 
 
             <!-- Presenze Dipendenti -->
-            <a href="javascript:void(0)" onclick="window.navigateWithState('presenze.html')" class="nav-card">
+            <a href="javascript:void(0)" onclick="window.navigateWithState('presenze.html')" class="nav-card" data-page="presenze.html">
                 <div class="icon-circle" style="background: #ecfdf5; color: #10b981;">
                     <span class="material-icons-round" style="font-size: 32px;">calendar_month</span>
                 </div>
@@ -182,7 +182,7 @@
             </a>
 
             <!-- Fatturazione -->
-            <a href="javascript:void(0)" onclick="window.navigateWithState('fatturazione.html')" class="nav-card">
+            <a href="javascript:void(0)" onclick="window.navigateWithState('fatturazione.html')" class="nav-card" data-page="fatturazione.html">
                 <div class="icon-circle" style="background: #fffbeb; color: #f59e0b;">
                     <span class="material-icons-round" style="font-size: 32px;">request_quote</span>
                 </div>
@@ -191,7 +191,7 @@
             </a>
 
             <!-- Impostazioni -->
-            <a href="javascript:void(0)" onclick="window.navigateWithState('impostazioni.html')" class="nav-card">
+            <a href="javascript:void(0)" onclick="window.navigateWithState('impostazioni.html')" class="nav-card" data-page="impostazioni.html">
                 <div class="icon-circle">
                     <span class="material-icons-round" style="font-size: 32px;">settings</span>
                 </div>
@@ -204,6 +204,31 @@
 
     <script src="script.js?v=4.32"></script>
     <script type="module" src="firebase-auth-sync.js?v=4.32"></script>
+    <script>
+        // Quando il profilo e i permessi sono caricati
+        window.onUserProfileLoaded = (user) => {
+            const greeting = document.getElementById('userGreeting');
+            if (greeting) {
+                greeting.textContent = (user.nome || "Utente").charAt(0).toUpperCase() + (user.nome || "Utente").slice(1);
+            }
+
+            // Nascondi le card a cui l'utente non ha accesso
+            const permessi = window.appData ? window.appData.permessiDashboard : null;
+            if (permessi) {
+                const ruolo = user.ruolo || 'autista';
+                document.querySelectorAll('.nav-card').forEach(card => {
+                    const page = card.getAttribute('data-page');
+                    if (page) {
+                        const pageKey = page.replace('.html', '');
+                        // Se c'è la configurazione per questa pagina, controlliamo il ruolo
+                        if (permessi[pageKey] && permessi[pageKey][ruolo] === false) {
+                            card.style.display = 'none';
+                        }
+                    }
+                });
+            }
+        };
+    </script>
 </body>
 </html>
 

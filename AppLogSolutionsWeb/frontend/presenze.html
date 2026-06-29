@@ -1154,7 +1154,7 @@ const db = getFirestore(app);
                                 <optgroup label="Giustificativi / Voci Presenza">
                                     ${(window.appData?.lista_giustificativi || []).map(g => {
                                         const gNome = (g.nome || "").toUpperCase();
-                                        return `<option value="${gNome}" ${gNome === rCliente.toUpperCase() ? 'selected' : ''}>🏖️ ${g.nome.toUpperCase()}</option>`;
+                                        return `<option value="${gNome}" ${gNome === rCliente.toUpperCase() ? 'selected' : ''}>${g.nome.toUpperCase()}</option>`;
                                     }).join('')}
                                 </optgroup>
 

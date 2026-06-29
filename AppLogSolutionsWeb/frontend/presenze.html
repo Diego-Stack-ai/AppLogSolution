@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=4.26">
+    <link rel="stylesheet" href="styles.css?v=4.27">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .row-error td {
@@ -405,15 +405,18 @@
                 </div>
             </div>
             <div id="viewModeSection" style="display:none;">
-                <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 15px;">
                     <div class="view-mode-container" style="display: flex; gap: 5px; margin: 0;">
                         <button class="view-mode-btn" data-mode="giorno" onclick="setViewMode('giorno')">Giorno</button>
                         <button class="view-mode-btn" data-mode="settimana" onclick="setViewMode('settimana')">Settimana</button>
                         <button class="view-mode-btn active" data-mode="mese" onclick="setViewMode('mese')">Mese</button>
                     </div>
-                    <div id="unlockAllContainer" style="display: none; align-items: center; gap: 6px; background: #fee2e2; padding: 6px 12px; border-radius: 4px; border: 1px solid #fca5a5;">
-                        <input type="checkbox" id="chkUnlockAll" onchange="window.toggleAllEdits(this.checked)" style="margin: 0; width: 16px; height: 16px; cursor: pointer;">
-                        <label for="chkUnlockAll" style="color: #b91c1c; font-weight: 600; font-size: 0.95rem; cursor: pointer; margin: 0; width: 100%;">Sblocca Tutto</label>
+                    <div id="unlockAllContainer" style="display: none; align-items: center; gap: 6px;">
+                        <label style="display: flex; align-items: center; gap: 6px; background: #fee2e2; padding: 8px 16px; border-radius: 8px; border: 1px solid #fca5a5; cursor: pointer; font-weight: 500; color: #b91c1c; font-size: 0.9rem; height: 100%; box-sizing: border-box;">
+                            <input type="checkbox" id="chkUnlockAll" onchange="window.toggleAllEdits(this.checked)" style="margin: 0; width: 15px; height: 15px; cursor: pointer; accent-color: #b91c1c;">
+                            Sblocca Tutto
+                        </label>
+                        <button id="btnSaveTutti" onclick="window.saveAllEdits()" style="display:none; padding: 8px 16px; background: #16a34a; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer;">💾 Salva Tutto</button>
                     </div>
                 </div>
                 <div id="subFilterContainer" class="sub-filter-container"></div>
@@ -495,13 +498,13 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.26"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.26"></script>
+    <script src="script.js?v=4.27"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.27"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=4.26";
+        import { calculateHours } from "./firestore-service.js?v=4.27";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -1472,10 +1475,10 @@ const db = getFirestore(app);
                 const isMod = text.includes('Mod');
                 
                 if (unlock && isMod) {
-                    // Entra in modalità Modifica senza salvare
+                    // Entra in modalità Modifica
                     window.toggleRowEdit(btn);
                 } else if (!unlock && !isMod) {
-                    // Annulla modalità Modifica (senza salvare e perdendo modifiche non salvate)
+                    // Annulla modalità Modifica (senza salvare)
                     const inputs = tr.querySelectorAll('.edit-input');
                     const chkMagazzino = tr.querySelector('[data-field="isMagazzino"]');
                     const isMag = chkMagazzino ? chkMagazzino.checked : false;
@@ -1493,6 +1496,38 @@ const db = getFirestore(app);
                     btn.classList.remove('btn-save');
                 }
             });
+            // Mostra/nascondi il pulsante Salva Tutto
+            const btnSaveTutti = document.getElementById('btnSaveTutti');
+            if (btnSaveTutti) btnSaveTutti.style.display = unlock ? 'inline-block' : 'none';
+        };
+
+        window.saveAllEdits = async function() {
+            const saveBtns = document.querySelectorAll('#tableBody tr .btn-save');
+            if (saveBtns.length === 0) {
+                alert('Nessuna riga da salvare.');
+                return;
+            }
+            const btnSaveTutti = document.getElementById('btnSaveTutti');
+            if (btnSaveTutti) { btnSaveTutti.disabled = true; btnSaveTutti.textContent = '⏳ Salvataggio...'; }
+            let errors = 0;
+            for (const btn of saveBtns) {
+                try {
+                    await window.toggleRowEdit(btn);
+                } catch(e) {
+                    errors++;
+                    console.error('Errore salvataggio riga:', e);
+                }
+            }
+            if (btnSaveTutti) { btnSaveTutti.disabled = false; btnSaveTutti.textContent = '💾 Salva Tutto'; }
+            // Deseleziona il checkbox e nascondi il pulsante Salva Tutto
+            const chk = document.getElementById('chkUnlockAll');
+            if (chk) { chk.checked = false; }
+            if (btnSaveTutti) btnSaveTutti.style.display = 'none';
+            if (errors === 0) {
+                // feedback ok
+            } else {
+                alert(`Salvataggio completato con ${errors} errore/i. Controlla la console.`);
+            }
         };
 
         // Toggle edit della riga
@@ -1932,7 +1967,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=4.26"></script>
+    <script type="module" src="cedolini-splitter.js?v=4.27"></script>
 
 </body>
 </html>

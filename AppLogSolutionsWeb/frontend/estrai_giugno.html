@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Estrazione Dati Giugno 2026</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        h1 { color: #333; }
+        .employee-section { margin-bottom: 20px; border: 1px solid #ccc; padding: 10px; border-radius: 5px; }
+        .employee-name { color: #0056b3; margin-top: 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f4f4f4; }
+    </style>
+</head>
+<body>
+    <h1>Estrazione Dati - Giugno</h1>
+    <button id="btnDownload" style="display:none; padding: 10px; margin-bottom: 15px; background: #0056b3; color: white; border: none; border-radius: 4px; cursor: pointer;">Scarica CSV</button>
+    <div id="status">Caricamento e autenticazione in corso... Assicurati di essere loggato nell'app.</div>
+    <div id="results"></div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { firebaseConfig } from './firebase-config.js';
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                document.getElementById('status').innerText = "Autenticato. Recupero dati in corso...";
+                try {
+                    const presenzeRef = collection(db, "presenze");
+                    // Fetch all presenze (or filter by mese if possible)
+                    // We'll fetch all and filter in memory to be safe if no composite index exists
+                    const q = query(presenzeRef);
+                    const querySnapshot = await getDocs(q);
+
+                    const dataByEmployee = {};
+
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        // Check if June 2026
+                        if (data.data && data.data.startsWith("2026-06")) {
+                            const autista = data.autistaNome || "Sconosciuto";
+                            const cliente = data.cliente || "";
+                            const viaggio = data.viaggio || "";
+                            const targa = data.targa || data.targa_mezzo || data.mezzo || "";
+
+                            if (!dataByEmployee[autista]) {
+                                dataByEmployee[autista] = [];
+                            }
+                            dataByEmployee[autista].push({
+                                data: data.data,
+                                cliente: cliente,
+                                viaggio: viaggio,
+                                targa: targa
+                            });
+                        }
+                    });
+
+                    document.getElementById('status').innerText = "Dati recuperati con successo.";
+                    window.extractedData = dataByEmployee;
+                    document.getElementById('btnDownload').style.display = 'inline-block';
+                    renderResults(dataByEmployee);
+
+                } catch (error) {
+                    console.error(error);
+                    document.getElementById('status').innerText = "Errore durante il recupero: " + error.message;
+                }
+            } else {
+                document.getElementById('status').innerHTML = "<b>Non sei autenticato!</b> Per favore fai login nell'app principale, poi ricarica questa pagina.";
+            }
+        });
+
+        function renderResults(data) {
+            const container = document.getElementById('results');
+            container.innerHTML = "";
+
+            const autisti = Object.keys(data).sort();
+            
+            if (autisti.length === 0) {
+                container.innerHTML = "<p>Nessun dato trovato per giugno 2026.</p>";
+                return;
+            }
+
+            autisti.forEach(autista => {
+                const section = document.createElement('div');
+                section.className = 'employee-section';
+                
+                const title = document.createElement('h3');
+                title.className = 'employee-name';
+                title.innerText = autista;
+                section.appendChild(title);
+
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Cliente</th>
+                            <th>Viaggio / Zona</th>
+                            <th>Targa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data[autista].sort((a, b) => a.data.localeCompare(b.data)).map(row => `
+                            <tr>
+                                <td>${row.data}</td>
+                                <td>${row.cliente}</td>
+                                <td>${row.viaggio}</td>
+                                <td>${row.targa}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                `;
+                section.appendChild(table);
+                container.appendChild(section);
+            });
+        }
+
+        document.getElementById('btnDownload').addEventListener('click', () => {
+            if (!window.extractedData) return;
+            
+            let csvContent = "Autista;Data;Cliente;Viaggio/Zona;Targa\n";
+            
+            const autisti = Object.keys(window.extractedData).sort();
+            autisti.forEach(autista => {
+                const rows = window.extractedData[autista].sort((a, b) => a.data.localeCompare(b.data));
+                rows.forEach(row => {
+                    csvContent += `"${autista}";"${row.data}";"${row.cliente}";"${row.viaggio}";"${row.targa}"\n`;
+                });
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "presenze_giugno_2026.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    </script>
+</body>
+</html>

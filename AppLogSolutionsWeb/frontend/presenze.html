@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=4.22">
+    <link rel="stylesheet" href="styles.css?v=4.23">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .row-error td {
@@ -410,6 +410,10 @@
                     <button class="view-mode-btn" data-mode="settimana" onclick="setViewMode('settimana')">Settimana</button>
                     <button class="view-mode-btn active" data-mode="mese" onclick="setViewMode('mese')">Mese</button>
                 </div>
+                <div id="unlockAllContainer" style="display: none; align-items: center; gap: 5px; background: #fee2e2; padding: 5px 10px; border-radius: 4px; border: 1px solid #fca5a5; margin-left: 15px;">
+                    <input type="checkbox" id="chkUnlockAll" onchange="window.toggleAllEdits(this.checked)">
+                    <label for="chkUnlockAll" style="color: #b91c1c; font-weight: 500; font-size: 0.9rem; cursor: pointer; margin: 0;">Sblocca Tutto</label>
+                </div>
                 <div id="subFilterContainer" class="sub-filter-container"></div>
             </div>
 
@@ -489,13 +493,13 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.22"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.22"></script>
+    <script src="script.js?v=4.23"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.23"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=4.22";
+        import { calculateHours } from "./firestore-service.js?v=4.23";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -680,11 +684,20 @@ const db = getFirestore(app);
                 // Nasconde la sezione esportazioni/cedoloni per gli autisti
                 if (actionsContainer) actionsContainer.style.display = 'none';
 
+                // Nasconde Sblocca Tutto per autisti
+                const unlockContainer = document.getElementById('unlockAllContainer');
+                if (unlockContainer) unlockContainer.style.display = 'none';
+
                 // Forza il caricamento automatico delle sue presenze
                 onFilterChange();
             } else {
                 select.disabled = false;
                 if (actionsContainer) actionsContainer.style.display = 'block';
+                
+                // Mostra Sblocca Tutto per admin/impiegati
+                const unlockContainer = document.getElementById('unlockAllContainer');
+                if (unlockContainer) unlockContainer.style.display = 'flex';
+                
                 const previousValue = select.value;
                 select.innerHTML = '<option value="">-- Seleziona Dipendente --</option>\n<option value="tutti">-- Tutti i dipendenti --</option>';
                 
@@ -778,6 +791,10 @@ const db = getFirestore(app);
                 resetSummary();
                 return;
             }
+
+            // Reset Sblocca Tutto al caricamento dei dati
+            const chkUnlockAll = document.getElementById('chkUnlockAll');
+            if (chkUnlockAll) chkUnlockAll.checked = false;
 
             if (empId === 'tutti') {
                 selectedEmployee = { id: 'tutti', nome: 'Tutti i dipendenti', ruolo: 'tutti' };
@@ -945,6 +962,10 @@ const db = getFirestore(app);
 
             const isTutti = selectedEmployee.id === 'tutti';
             const forceFourCols = true;
+            
+            // Check if "Unlock All" is checked
+            const chkUnlockAll = document.getElementById('chkUnlockAll');
+            const unlockAll = chkUnlockAll ? chkUnlockAll.checked : false;
 
             const tableHeadTr = document.getElementById('tableHeadTr');
             let headerHtml = `
@@ -1439,6 +1460,37 @@ const db = getFirestore(app);
             }
         };
 
+        window.toggleAllEdits = function(unlock) {
+            const trs = document.querySelectorAll('#planningTable tbody tr');
+            trs.forEach(tr => {
+                const btn = tr.querySelector('.btn-edit');
+                if (!btn) return;
+                
+                const isMod = btn.innerText.includes('Mod');
+                if (unlock && isMod) {
+                    // Entra in modalità Modifica senza salvare
+                    window.toggleRowEdit(btn);
+                } else if (!unlock && !isMod) {
+                    // Annulla modalità Modifica (senza salvare e perdendo modifiche non salvate)
+                    const inputs = tr.querySelectorAll('.edit-input');
+                    const chkMagazzino = tr.querySelector('[data-field="isMagazzino"]');
+                    const isMag = chkMagazzino ? chkMagazzino.checked : false;
+                    inputs.forEach(input => {
+                        input.disabled = true;
+                        input.style.border = "1px solid transparent";
+                        if ((input.dataset.field === 'oraFineM' || input.dataset.field === 'oraInizioP') && !isMag) {
+                            input.style.background = "#f1f5f9";
+                        } else {
+                            input.style.background = "transparent";
+                        }
+                    });
+                    if (chkMagazzino) chkMagazzino.disabled = true;
+                    btn.innerText = "✏️ Modifica";
+                    btn.classList.remove('btn-save');
+                }
+            });
+        };
+
         // Toggle edit della riga
         window.toggleRowEdit = async function(btn) {
             const tr = btn.closest('tr');
@@ -1874,7 +1926,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=4.22"></script>
+    <script type="module" src="cedolini-splitter.js?v=4.23"></script>
 
 </body>
 </html>

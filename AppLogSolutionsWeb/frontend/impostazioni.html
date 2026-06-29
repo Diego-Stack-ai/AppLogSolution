@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.46">
+    <link rel="stylesheet" href="styles.css?v=4.48">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -198,6 +198,10 @@
                 <div class="input-group">
                     <label for="driverDataAssunzione">Data Assunzione</label>
                     <input type="date" id="driverDataAssunzione">
+                </div>
+                <div class="input-group">
+                    <label for="driverDataLicenziamento">Data Licenziamento / Fine</label>
+                    <input type="date" id="driverDataLicenziamento">
                 </div>
                 <div class="input-group">
                     <label for="driverTipoAssunzione">Tipo Assunzione</label>
@@ -714,6 +718,7 @@
         const driverPatenteRilasciataDa = document.getElementById('driverPatenteRilasciataDa');
         const driverPatenteScadenza = document.getElementById('driverPatenteScadenza');
         const driverDataAssunzione = document.getElementById('driverDataAssunzione');
+        const driverDataLicenziamento = document.getElementById('driverDataLicenziamento');
         const driverTipoAssunzione = document.getElementById('driverTipoAssunzione');
         const driverTrasformazione = document.getElementById('driverTrasformazione');
         const driverDataTrasformazione = document.getElementById('driverDataTrasformazione');
@@ -797,12 +802,13 @@
                 
                 // Visualizzazione anagrafica e patente extra a colpo d'occhio
                 let extraDetailsCompact = '';
-                if (a.codice_fiscale || a.tipo_patente || a.data_assunzione) {
+                if (a.codice_fiscale || a.tipo_patente || a.data_assunzione || a.data_licenziamento) {
                     const cfStr = a.codice_fiscale ? `CF: <b>${a.codice_fiscale}</b>` : '';
                     const patStr = a.tipo_patente ? `Patente: <b>${a.tipo_patente}</b>` : '';
                     const assStr = a.data_assunzione ? `Assunzione: <b>${a.data_assunzione}</b>` : '';
+                    const licStr = a.data_licenziamento ? `Licenziato: <b style="color:var(--danger);">${a.data_licenziamento}</b>` : '';
                     
-                    const listDetails = [cfStr, patStr, assStr].filter(x => x !== '');
+                    const listDetails = [cfStr, patStr, assStr, licStr].filter(x => x !== '');
                     if (listDetails.length > 0) {
                         extraDetailsCompact = `<div class="compact-info" style="font-size:11px; color:#64748b; margin-top: 5px; border-top: 1px dashed #e2e8f0; padding-top: 4px;">${listDetails.join(' | ')}</div>`;
                     }
@@ -904,8 +910,8 @@
                 driverCodiceFiscale, driverSesso, driverDataNascita, driverLuogoNascita,
                 driverResidenza, driverNumeroPatente, driverTipoPatente,
                 driverPatenteRilasciataDa, driverPatenteScadenza, driverDataAssunzione,
-                driverTipoAssunzione, driverTrasformazione, driverDataTrasformazione,
-                driverTipoTrasformazione
+                driverDataLicenziamento, driverTipoAssunzione, driverTrasformazione, 
+                driverDataTrasformazione, driverTipoTrasformazione
             ];
             
             // Ripristina abilitato
@@ -983,6 +989,7 @@
             driverPatenteRilasciataDa.value = targetUser.patente_rilasciata_da || '';
             driverPatenteScadenza.value = dbToInputDate(targetUser.patente_scadenza || '');
             driverDataAssunzione.value = dbToInputDate(targetUser.data_assunzione || '');
+            driverDataLicenziamento.value = dbToInputDate(targetUser.data_licenziamento || '');
             driverTipoAssunzione.value = targetUser.tipo_assunzione || '';
             driverTrasformazione.value = targetUser.trasformazione || '';
             driverDataTrasformazione.value = dbToInputDate(targetUser.data_trasformazione || '');
@@ -1029,6 +1036,7 @@
             driverPatenteRilasciataDa.value = '';
             driverPatenteScadenza.value = '';
             driverDataAssunzione.value = '';
+            driverDataLicenziamento.value = '';
             driverTipoAssunzione.value = '';
             driverTrasformazione.value = '';
             driverDataTrasformazione.value = '';
@@ -1060,6 +1068,7 @@
             const pr = driverPatenteRilasciataDa.value.trim();
             const ps = inputToDbDate(driverPatenteScadenza.value);
             const da = inputToDbDate(driverDataAssunzione.value);
+            const dl = inputToDbDate(driverDataLicenziamento.value);
             const ta = driverTipoAssunzione.value.trim();
             const tr = driverTrasformazione.value.trim();
             const dt = inputToDbDate(driverDataTrasformazione.value);
@@ -1139,6 +1148,7 @@
                                 patente_rilasciata_da: pr,
                                 patente_scadenza: ps,
                                 data_assunzione: da,
+                                data_licenziamento: dl,
                                 tipo_assunzione: ta,
                                 trasformazione: tr,
                                 data_trasformazione: dt,
@@ -1180,6 +1190,7 @@
                         patente_rilasciata_da: pr,
                         patente_scadenza: ps,
                         data_assunzione: da,
+                        data_licenziamento: dl,
                         tipo_assunzione: ta,
                         trasformazione: tr,
                         data_trasformazione: dt,
@@ -1200,8 +1211,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=4.46"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.46"></script>
+    <script src="script.js?v=4.48"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.48"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────

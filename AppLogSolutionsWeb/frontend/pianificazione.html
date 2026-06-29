@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.31">
+    <link rel="stylesheet" href="styles.css?v=4.32">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -292,10 +292,13 @@
                 // Leggi presenze
                 const presenzeSnap = await getDocs(collection(db, "presenze"));
                 
-                // Calcola data limite (3 mesi fa)
+                // Calcola data limite (il più recente tra 3 mesi fa e il 1 Giugno 2026)
                 const limiteData = new Date();
                 limiteData.setMonth(limiteData.getMonth() - 3);
-                const limiteDataIso = limiteData.toISOString().split('T')[0];
+                let limiteDataIso = limiteData.toISOString().split('T')[0];
+                if (limiteDataIso < "2026-06-01") {
+                    limiteDataIso = "2026-06-01"; // Filtro hardcoded per escludere sporcizia antecedente
+                }
 
                 window.storicoPresenzeRaw = [];
                 presenzeSnap.forEach(p => {
@@ -892,7 +895,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.31"></script>
-    <script src="script.js?v=4.31"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.32"></script>
+    <script src="script.js?v=4.32"></script>
 </body>
 </html>

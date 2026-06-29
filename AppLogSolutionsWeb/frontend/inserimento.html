@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.40">
+    <link rel="stylesheet" href="styles.css?v=4.41">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -444,12 +444,12 @@
         </div>
     </div>
 
-    <script src="script.js?v=4.40"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.40"></script>
+    <script src="script.js?v=4.41"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.41"></script>
     <script type="module">
-        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=4.40";
-        import { auth } from "./firestore-service.js?v=4.40";
-        import "./gps-tracker.js?v=4.40";
+        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=4.41";
+        import { auth } from "./firestore-service.js?v=4.41";
+        import "./gps-tracker.js?v=4.41";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -569,6 +569,18 @@
                 if (mFMM) mFMM.required = true;
                 if (pIHH) pIHH.required = true;
                 if (pIMM) pIMM.required = true;
+                
+                // UNIFICAZIONE SCHERMATE (NO WIZARD) PER MAGAZZINIERE
+                const step2 = document.getElementById('step-2');
+                const wizardInd = document.querySelector('.wizard-step-indicator');
+                const btnStart = document.getElementById('btnStartTrip');
+                const btnPrev = document.querySelector('button[onclick="prevStep(1)"]');
+                
+                if(step2) step2.style.display = 'block';
+                if(wizardInd) wizardInd.style.display = 'none';
+                if(btnStart) btnStart.style.display = 'none';
+                if(btnPrev) btnPrev.style.display = 'none';
+                
             } else {
                 if (mattinaFineContainer) mattinaFineContainer.style.display = 'none';
                 if (pomeriggioInizioContainer) pomeriggioInizioContainer.style.display = 'none';
@@ -578,6 +590,23 @@
                 if (mFHH) { mFHH.required = false; mFHH.value = ''; }
                 if (mFMM) { mFMM.required = false; mFMM.value = ''; }
                 if (pIHH) { pIHH.required = false; pIHH.value = ''; }
+                
+                // RIPRISTINA WIZARD PER AUTISTA
+                const step2 = document.getElementById('step-2');
+                const wizardInd = document.querySelector('.wizard-step-indicator');
+                const btnStart = document.getElementById('btnStartTrip');
+                const btnPrev = document.querySelector('button[onclick="prevStep(1)"]');
+                
+                // step-2 depends on current trip state, ma di base se c'è pending, lo mostreremo lì
+                // Per pulizia lo rimettiamo invisibile a meno che non si sia in step 2
+                // L'ideale è chiamare window.nextStep(1) se era in step 2.
+                if(step2 && !sessionStorage.getItem('currentTripId')) {
+                    step2.style.display = 'none';
+                }
+                if(wizardInd) wizardInd.style.display = 'flex';
+                // btnStart display varies, ma viene gestito da checkPendingTrip. 
+                // btnPrev lo mostriamo
+                if(btnPrev) btnPrev.style.display = 'block';
                 if (pIMM) { pIMM.required = false; pIMM.value = ''; }
             }
 

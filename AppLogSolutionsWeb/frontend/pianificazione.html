@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.52">
+    <link rel="stylesheet" href="styles.css?v=4.53">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -145,10 +145,16 @@
             @page {
                 margin: 0;
             }
-            body, .main-container {
+            body {
                 background: white !important;
-                padding: 1.5cm !important;
+                padding: 1cm !important;
                 margin: 0 !important;
+            }
+            .main-container {
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
                 box-shadow: none !important;
             }
             .glass-nav, .app-version-badge, .date-header, .btn-salva, .btn-stampa, .suggest-btn, .in-confermato, .btn-pulisci, .suggestion-badge {
@@ -178,12 +184,18 @@
             table {
                 width: 100% !important;
                 border-collapse: collapse !important;
+                table-layout: fixed !important;
             }
             th, td {
                 border: 1px solid #ccc !important;
                 padding: 4px !important;
                 font-size: 11px !important;
+                word-wrap: break-word !important;
             }
+            th:nth-child(1), td:nth-child(1) { width: 22% !important; }
+            th:nth-child(2), td:nth-child(2) { width: 25% !important; }
+            th:nth-child(3), td:nth-child(3) { width: 31% !important; }
+            th:nth-child(4), td:nth-child(4) { width: 22% !important; }
             th:nth-child(5), td:nth-child(5),
             th:nth-child(6), td:nth-child(6) {
                 display: none !important;
@@ -982,7 +994,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.52"></script>
-    <script src="script.js?v=4.52"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.53"></script>
+    <script src="script.js?v=4.53"></script>
 </body>
 </html>

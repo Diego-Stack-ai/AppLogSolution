@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.51">
+    <link rel="stylesheet" href="styles.css?v=4.52">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -142,6 +142,15 @@
         .badge-disabled:hover { background: #f1f5f9 !important; }
 
         @media print {
+            @page {
+                margin: 0;
+            }
+            body, .main-container {
+                background: white !important;
+                padding: 1.5cm !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+            }
             .glass-nav, .app-version-badge, .date-header, .btn-salva, .btn-stampa, .suggest-btn, .in-confermato, .btn-pulisci, .suggestion-badge {
                 display: none !important;
             }
@@ -155,12 +164,6 @@
                 font-size: 14px;
                 font-weight: bold;
                 color: black;
-            }
-            body, .main-container {
-                background: white !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                box-shadow: none !important;
             }
             input.in-cliente, input.in-viaggio, select.in-targa {
                 border: none !important;
@@ -664,8 +667,9 @@
                 return;
             }
  
-            selectViaggio.disabled = false;
-            selectTarga.disabled = false;
+            const isConfirmed = tr.querySelector('.in-confermato')?.checked || false;
+            selectViaggio.disabled = isConfirmed;
+            selectTarga.disabled = isConfirmed;
             const colorClass = window.getClienteColorClass(clienteSelezionato);
             const viaggiCliente = affinityData[idAutista].viaggiPerCliente[clienteSelezionato] || {};
             const topViaggi = Object.entries(viaggiCliente).sort((a,b) => b[1] - a[1]).slice(0, 3);
@@ -978,7 +982,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.51"></script>
-    <script src="script.js?v=4.51"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.52"></script>
+    <script src="script.js?v=4.52"></script>
 </body>
 </html>

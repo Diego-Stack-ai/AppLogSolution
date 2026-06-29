@@ -253,7 +253,7 @@ select option {
 
 /* Main Container */
 .main-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 40px auto;
   padding: 0 24px 120px 24px;
   padding-bottom: calc(120px + env(safe-area-inset-bottom));

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.54">
+    <link rel="stylesheet" href="styles.css?v=4.55">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -147,6 +147,10 @@
                 <div class="input-group">
                     <label for="driverEmailInput">E-mail *</label>
                     <input type="email" id="driverEmailInput" placeholder="Es: mario.rossi@email.com">
+                </div>
+                <div class="input-group" id="driverPasswordGroup">
+                    <label for="driverPasswordInput">Password Login *</label>
+                    <input type="text" id="driverPasswordInput" placeholder="Minimo 6 caratteri">
                 </div>
                 <div class="input-group">
                     <label for="driverCellulareInput">Cellulare</label>
@@ -997,6 +1001,9 @@
 
             // Trigger visualizzazione campi extra
             driverRuoloInput.dispatchEvent(new Event('change'));
+            
+            const pwdGroup = document.getElementById('driverPasswordGroup');
+            if (pwdGroup) pwdGroup.style.display = 'none';
 
             btnSalvaAutista.textContent = "Aggiorna Dati Cloud";
             btnAnnullaAutista.style.display = "block";
@@ -1041,6 +1048,10 @@
             driverTrasformazione.value = '';
             driverDataTrasformazione.value = '';
             driverTipoTrasformazione.value = '';
+            const pwdInput = document.getElementById('driverPasswordInput');
+            if (pwdInput) pwdInput.value = '';
+            const pwdGroup = document.getElementById('driverPasswordGroup');
+            if (pwdGroup) pwdGroup.style.display = 'block';
             
             btnSalvaAutista.textContent = "Salva";
             btnAnnullaAutista.style.display = "none";
@@ -1128,8 +1139,16 @@
             const id = editIndexAutista >= 0 ? autisti[editIndexAutista].id : null;
 
             if (!id) {
-                // Creazione di un nuovo utente con password di default
-                const pwd = "LogSolution2026!";
+                // Creazione di un nuovo utente
+                const pwdInput = document.getElementById('driverPasswordInput');
+                const pwd = pwdInput ? pwdInput.value.trim() : "";
+                if (!pwd || pwd.length < 6) {
+                    alert("Per creare un nuovo utente devi inserire una password temporanea (almeno 6 caratteri).");
+                    btnSalvaAutista.disabled = false;
+                    btnSalvaAutista.textContent = "Salva";
+                    return;
+                }
+                
                 try {
                     if (window.registerNewUserCloud) {
                         const uid = await window.registerNewUserCloud(email, pwd, n, cognome, r, t, e);
@@ -1211,8 +1230,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=4.54"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.54"></script>
+    <script src="script.js?v=4.55"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.55"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────

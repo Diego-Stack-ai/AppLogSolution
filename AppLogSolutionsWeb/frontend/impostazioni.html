@@ -130,10 +130,10 @@
         </div>
 
         <div id="autistiContent" style="display: none; padding-top: 20px;">
-            <button type="button" class="btn-primary" style="margin-bottom:20px; width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="const f = document.getElementById('formAutistiContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">person_add</span>Aggiungi Nuovo Dipendente</button>
+            <button type="button" class="btn-primary" style="margin-bottom:20px; width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="const f = document.getElementById('formAutistiContainer'); if(f.style.display==='none') { document.getElementById('btnAnnullaAutista').onclick(); f.style.display='block'; } else { f.style.display='none'; }"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">person_add</span>Aggiungi Nuovo Dipendente</button>
             <div id="formAutistiContainer" style="display: none; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:24px;">
             <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
-                💡 <b>Nuovo Accesso:</b> Inserisci un <b>Nome Utente</b> (es. <code>mario.rossi</code>). Il sistema creerà in automatico il profilo per accedere all'app. L'Email Personale invece è facoltativa e serve solo per inviare comunicazioni (es. buste paga).
+                💡 <b>Nuovo Accesso:</b> Inserisci l'<b>Email di Accesso completa</b> (es. <code>mario.rossi@logsolution.app</code>). Questo sarà il login ufficiale. L'Email Personale invece è facoltativa e serve solo per inviare comunicazioni.
             </p>
             <div class="form-grid">
                 <div class="input-group">
@@ -1090,11 +1090,7 @@
             let emailRaw = driverEmailInput.value.trim().toLowerCase();
             if (emailRaw) {
                 emailRaw = emailRaw.replace(/[\u200B-\u200D\uFEFF]/g, ''); // rimuove caratteri invisibili
-                if (!emailRaw.includes('@')) {
-                    // trasforma spazi in punti, rimuove punti doppi/iniziali/finali
-                    emailRaw = emailRaw.replace(/\s+/g, '.').replace(/\.+/g, '.').replace(/^\.|\.$/g, '');
-                    emailRaw += '@logsolution.app';
-                }
+                // Aggiunta automatica rimossa come richiesto dall'utente
             }
             const email = emailRaw;
             const emailPersonale = driverEmailPersonaleInput.value.trim();

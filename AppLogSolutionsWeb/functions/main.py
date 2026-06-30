@@ -613,7 +613,6 @@ def core_chiudi_giornata(uid):
     }
 
 
-
 # ─── PUNTO #4: PROTEZIONE TRIPLA CHIAVE ────────────────────────────────────────
 
 def _build_tripla_chiave(cod_f: str, cod_l: str, nome: str) -> str:

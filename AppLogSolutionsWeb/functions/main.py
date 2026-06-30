@@ -1370,7 +1370,7 @@ if(markers[i]){{map.panTo(markers[i].getPosition());map.setZoom(16);}}
 </body></html>"""
 
 
-def core_genera_mappa_autista(viaggio_id):
+def core_genera_mappa_autista(viaggio_id, distinta_url=None):
     start_time = time.time()
     if not viaggio_id:
         return {"status": "errore", "message": "viaggio_id mancante", "errori": ["viaggio_id mancante"], "data": {}}
@@ -1394,7 +1394,7 @@ def core_genera_mappa_autista(viaggio_id):
 
     depot = _get_depot_for_points_cloud(punti_norm)
     km, sec_guida, polylines = _get_directions_data(punti_norm, depot=depot)
-    html = _genera_html_mappa(viaggio_id, punti_norm, km, sec_guida, polylines, depot=depot)
+    html = _genera_html_mappa(viaggio_id, punti_norm, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url)
 
     bucket = storage.bucket(name=BUCKET_NAME)
     data_viaggio = viaggio.get("data", "sconosciuta").replace("/", "-")
@@ -4339,7 +4339,7 @@ def ottimizza_viaggio(req: https_fn.CallableRequest):
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
 def genera_mappa_autista(req: https_fn.CallableRequest):
-    return core_genera_mappa_autista(req.data.get("viaggio_id"))
+    return core_genera_mappa_autista(req.data.get("viaggio_id"), req.data.get("distinta_url"))
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))

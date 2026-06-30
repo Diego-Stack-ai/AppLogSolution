@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invio Mobile Autisti — Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.60">
+    <link rel="stylesheet" href="styles.css?v=4.61">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -193,8 +193,8 @@
         <div class="viaggi-grid" id="viaggiGrid"></div>
     </main>
 
-    <script src="script.js?v=4.60"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.60"></script>
+    <script src="script.js?v=4.61"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.61"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -600,10 +600,13 @@
             const btn = document.getElementById(`btn-${viaggioId}`);
             btn.disabled = true;
             btn.innerHTML = '<span class="material-icons-round spinning">autorenew</span> Generazione...';
+            
+            const v = viaggi.find(x => x.id === viaggioId);
+            const d_url = v ? (v.distinta_light || null) : null;
 
             try {
                 const fn = httpsCallable(functions, 'genera_mappa_autista', { timeout: 120000 });
-                const res = (await fn({ viaggio_id: viaggioId })).data;
+                const res = (await fn({ viaggio_id: viaggioId, distinta_url: d_url })).data;
 
                 if (res.status === 'errore') throw new Error(res.message);
 
@@ -647,7 +650,7 @@
             for (const v of viaggi) {
                 try {
                     const fn = httpsCallable(functions, 'genera_mappa_autista', { timeout: 120000 });
-                    const res = (await fn({ viaggio_id: v.id })).data;
+                    const res = (await fn({ viaggio_id: v.id, distinta_url: (v.distinta_light || null) })).data;
                     if (res.status === 'errore') throw new Error(res.message);
                     v.mappa_url = res.data.mappa_url;
                     v.km_reali  = res.data.km_reali;

@@ -642,9 +642,10 @@
                 select.innerHTML = '<option value="">-- Seleziona --</option>';
                 mezzi.sort((a,b) => a.targa.localeCompare(b.targa)).forEach(m => {
                     const targa = (m.targa || "").trim().toUpperCase();
+                    const pat = m.patente ? ` - ${m.patente}` : '';
                     const opt = document.createElement('option');
                     opt.value = targa;
-                    opt.textContent = targa;
+                    opt.textContent = targa + pat;
                     select.appendChild(opt);
                 });
                 select.value = currentVal;
@@ -778,7 +779,8 @@
             const mezzi = window.appData?.lista_mezzi || [];
             const opzioniTargheHtml = [...mezzi].sort((a,b) => a.targa.localeCompare(b.targa)).map(m => {
                 const targa = (m.targa || "").trim().toUpperCase();
-                return `<option value="${targa}">${targa}</option>`;
+                const pat = m.patente ? ` - ${m.patente}` : '';
+                return `<option value="${targa}">${targa}${pat}</option>`;
             }).join('');
 
             dipendenti.forEach(d => {

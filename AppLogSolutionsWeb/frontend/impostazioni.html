@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.63">
+    <link rel="stylesheet" href="styles.css?v=4.64">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -808,7 +808,14 @@
                 const turnoBadge = `<span style="font-size:11px; font-weight:400; background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:10px; margin-left:8px;">${a.tipoTurno === 'notturno' ? 'NOTTURNO' : 'GIORNATA'}</span>`;
                 
                 let details = [];
-                if (a.email) details.push(`Login: <b>${a.email.replace('@logsolution.app', '')}</b>`);
+                if (a.email) {
+                    // Mostra solo la parte prima della chiocciola per gli account interni
+                    let loginVisualizzato = a.email;
+                    if (a.email.toLowerCase().includes('@logsolution')) {
+                        loginVisualizzato = a.email.split('@')[0];
+                    }
+                    details.push(`Login: <b>${loginVisualizzato}</b>`);
+                }
                 if (a.emailPersonale) details.push(`Email: <b>${a.emailPersonale}</b>`);
                 if (a.cellulare) details.push(`Cellulare: <b>${a.cellulare}</b>`);
                 let detailsStr = details.length > 0 ? details.join(' | ') : 'Nessun contatto rapido inserito';
@@ -985,11 +992,13 @@
             
             driverNomeInput.value = targetUser.nome || '';
             driverCognomeInput.value = targetUser.cognome || '';
-            // Mostra solo lo username pulito (senza @logsolution.app) se è un utente interno
+            // Mostra solo lo username pulito (senza dominio) se è un utente interno
             const rawEmail = targetUser.email || '';
-            driverEmailInput.value = rawEmail.endsWith('@logsolution.app')
-                ? rawEmail.replace('@logsolution.app', '')
-                : rawEmail;
+            if (rawEmail.toLowerCase().includes('@logsolution')) {
+                driverEmailInput.value = rawEmail.split('@')[0];
+            } else {
+                driverEmailInput.value = rawEmail;
+            }
             driverEmailPersonaleInput.value = targetUser.emailPersonale || '';
             driverCellulareInput.value = targetUser.cellulare || '';
             driverRuoloInput.value = (targetUser.ruolo || 'autista').toLowerCase();
@@ -1258,8 +1267,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=4.63"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.63"></script>
+    <script src="script.js?v=4.64"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.64"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.62">
+    <link rel="stylesheet" href="styles.css?v=4.63">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -133,7 +133,7 @@
             <button type="button" class="btn-primary" style="margin-bottom:20px; width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="const f = document.getElementById('formAutistiContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">person_add</span>Aggiungi Nuovo Dipendente</button>
             <div id="formAutistiContainer" style="display: none; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:24px;">
             <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
-                💡 <b>Gestione Semplificata:</b> Inserisci un <b>Nome Utente</b> (es. <code>mario.rossi</code> oppure solo <code>mario rossi</code>) e una Password. Il sistema lo convertirà in automatico in un indirizzo interno. In alternativa puoi inserire un'email esterna completa (es. <code>mario@gmail.com</code>).
+                💡 <b>Nuovo Accesso:</b> Inserisci un <b>Nome Utente</b> (es. <code>mario.rossi</code>). Il sistema creerà in automatico il profilo per accedere all'app. L'Email Personale invece è facoltativa e serve solo per inviare comunicazioni (es. buste paga).
             </p>
             <div class="form-grid">
                 <div class="input-group">
@@ -145,9 +145,12 @@
                     <input type="text" id="driverCognomeInput" placeholder="Es: Rossi">
                 </div>
                 <div class="input-group">
-                    <label for="driverEmailInput">Nome Utente o E-mail *</label>
-                    <input type="text" id="driverEmailInput" placeholder="Es: mario.rossi oppure mario.rossi@gmail.com" autocomplete="off" autocapitalize="none" autocorrect="off">
-                    <small style="color:#64748b; font-size:11px; margin-top:4px; display:block;">💬 Se inserisci solo il nome utente (senza @), verrà creato un accesso interno <em>@logsolution.app</em></small>
+                    <label for="driverEmailInput">Nome Utente Login *</label>
+                    <input type="text" id="driverEmailInput" placeholder="Es: mario.rossi" autocomplete="off" autocapitalize="none" autocorrect="off">
+                </div>
+                <div class="input-group">
+                    <label for="driverEmailPersonaleInput">E-mail Personale (Contatto)</label>
+                    <input type="email" id="driverEmailPersonaleInput" placeholder="Es: mario.rossi@gmail.com">
                 </div>
                 <div class="input-group" id="driverPasswordGroup">
                     <label for="driverPasswordInput">Password Login *</label>
@@ -700,9 +703,11 @@
 
         // --- GESTIONE AUTISTI (MODIFICATA) ---
         const driverNomeInput = document.getElementById('driverNomeInput');
+        const driverCognomeInput = document.getElementById('driverCognomeInput');
         const driverRuoloInput = document.getElementById('driverRuoloInput');
         const driverTurnoInput = document.getElementById('driverTurnoInput');
         const driverEmailInput = document.getElementById('driverEmailInput');
+        const driverEmailPersonaleInput = document.getElementById('driverEmailPersonaleInput');
         const driverCellulareInput = document.getElementById('driverCellulareInput');
         const adminExtraFields = document.getElementById('adminExtraFields');
         const btnSalvaAutista = document.getElementById('btnSalvaAutista');
@@ -803,7 +808,8 @@
                 const turnoBadge = `<span style="font-size:11px; font-weight:400; background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:10px; margin-left:8px;">${a.tipoTurno === 'notturno' ? 'NOTTURNO' : 'GIORNATA'}</span>`;
                 
                 let details = [];
-                if (a.email) details.push(`Email: <b>${a.email}</b>`);
+                if (a.email) details.push(`Login: <b>${a.email.replace('@logsolution.app', '')}</b>`);
+                if (a.emailPersonale) details.push(`Email: <b>${a.emailPersonale}</b>`);
                 if (a.cellulare) details.push(`Cellulare: <b>${a.cellulare}</b>`);
                 let detailsStr = details.length > 0 ? details.join(' | ') : 'Nessun contatto rapido inserito';
                 
@@ -857,7 +863,7 @@
                                 <div style="margin-bottom: 4px;">Luogo di Nascita: <b>${a.luogo_nascita || 'N.D.'}</b></div>
                                 <div>Residenza: <b>${a.residenza || 'N.D.'}</b></div>
                                 <div style="margin-top:12px; display:flex; gap:8px;">
-                                    ${a.email ? `<a href="mailto:${a.email}" class="btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:#e0e7ff; color:#3730a3; padding:6px 12px; border-radius:8px; font-size:12px; box-shadow:none;"><span class="material-icons-round" style="font-size:16px;">email</span> Invia E-mail</a>` : ''}
+                                    ${a.emailPersonale ? `<a href="mailto:${a.emailPersonale}" class="btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:#e0e7ff; color:#3730a3; padding:6px 12px; border-radius:8px; font-size:12px; box-shadow:none;"><span class="material-icons-round" style="font-size:16px;">email</span> Invia E-mail</a>` : ''}
                                     ${a.cellulare ? `<a href="tel:${a.cellulare}" class="btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:#dcfce7; color:#166534; padding:6px 12px; border-radius:8px; font-size:12px; box-shadow:none;"><span class="material-icons-round" style="font-size:16px;">call</span> Chiama</a>` : ''}
                                 </div>
                             </div>
@@ -912,7 +918,7 @@
 
             // Elenco di tutti i controlli del form
             const inputs = [
-                driverNomeInput, driverCognomeInput, driverEmailInput, driverCellulareInput,
+                driverNomeInput, driverCognomeInput, driverEmailInput, driverEmailPersonaleInput, driverCellulareInput,
                 driverRuoloInput, driverTurnoInput, driverElevazione,
                 driverCodiceFiscale, driverSesso, driverDataNascita, driverLuogoNascita,
                 driverResidenza, driverNumeroPatente, driverTipoPatente,
@@ -984,6 +990,7 @@
             driverEmailInput.value = rawEmail.endsWith('@logsolution.app')
                 ? rawEmail.replace('@logsolution.app', '')
                 : rawEmail;
+            driverEmailPersonaleInput.value = targetUser.emailPersonale || '';
             driverCellulareInput.value = targetUser.cellulare || '';
             driverRuoloInput.value = (targetUser.ruolo || 'autista').toLowerCase();
             driverTurnoInput.value = targetUser.tipoTurno || 'giornata';
@@ -1037,6 +1044,7 @@
             driverNomeInput.value = '';
             driverCognomeInput.value = '';
             driverEmailInput.value = '';
+            driverEmailPersonaleInput.value = '';
             driverCellulareInput.value = '';
 
             // Resetta i nuovi campi
@@ -1080,6 +1088,7 @@
                 }
             }
             const email = emailRaw;
+            const emailPersonale = driverEmailPersonaleInput.value.trim();
             const cellulare = driverCellulareInput.value.trim();
             const r = driverRuoloInput.value.toLowerCase();
             const t = driverTurnoInput.value;
@@ -1173,6 +1182,7 @@
                         // Per i nuovi utenti registrati dal pannello, salviamo subito anche i campi extra
                         if (uid && window.updateUser) {
                             await window.updateUser(uid, {
+                                emailPersonale: emailPersonale,
                                 cellulare: cellulare,
                                 codice_fiscale: cf,
                                 sesso: sesso,
@@ -1212,6 +1222,7 @@
                         nome: n, 
                         cognome: cognome,
                         email: email,
+                        emailPersonale: emailPersonale,
                         cellulare: cellulare,
                         ruolo: r, 
                         tipoTurno: t, 
@@ -1247,8 +1258,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=4.62"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.62"></script>
+    <script src="script.js?v=4.63"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.63"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────

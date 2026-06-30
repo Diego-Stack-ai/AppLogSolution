@@ -23,9 +23,14 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/dipendenti/$(request.auth.uid)).data.ruolo == 'impiegata';
     }
 
+    // Funzione helper per verificare se utente e' soel
+    function isSoel() {
+      return get(/databases/$(database)/documents/dipendenti/$(request.auth.uid)).data.ruolo == 'soel';
+    }
+
     // Regole per i dipendenti (lettura/scrittura profilo)
     match /dipendenti/{userId} {
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isImpiegata());
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isImpiegata() || isSoel());
       allow write: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isImpiegata());
     }
 

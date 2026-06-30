@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.56">
+    <link rel="stylesheet" href="styles.css?v=4.58">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -162,6 +162,7 @@
                         <option value="autista">Autista</option>
                         <option value="impiegata">Impiegata (Amministrativo)</option>
                         <option id="optAdmin" value="amministratore">Amministratore</option>
+                        <option value="soel">Soel</option>
                     </select>
                 </div>
                 <div class="input-group">
@@ -545,10 +546,11 @@
                             <th style="padding: 12px; text-align: center; color: var(--text-muted); font-weight: 600;">Amministratore</th>
                             <th style="padding: 12px; text-align: center; color: var(--text-muted); font-weight: 600;">Impiegata</th>
                             <th style="padding: 12px; text-align: center; color: var(--text-muted); font-weight: 600;">Autista</th>
+                            <th style="padding: 12px; text-align: center; color: var(--text-muted); font-weight: 600;">Soel</th>
                         </tr>
                     </thead>
                     <tbody id="permessiTableBody">
-                        <tr><td colspan="4" style="padding: 20px; text-align: center; color: var(--text-muted);">Caricamento moduli in corso...</td></tr>
+                        <tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--text-muted);">Caricamento moduli in corso...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1230,8 +1232,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=4.56"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.56"></script>
+    <script src="script.js?v=4.58"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.58"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -2026,6 +2028,7 @@ const functions = getFunctions(app, "europe-west1");
                 // Vecchia logica: impiegata aveva tutto. autista solo inserimento e presenze.
                 const defImpiegata = typeof conf['impiegata'] !== 'undefined' ? conf['impiegata'] : true;
                 const defAutista = typeof conf['autista'] !== 'undefined' ? conf['autista'] : (mod.page === 'inserimento' || mod.page === 'presenze');
+                const defSoel = typeof conf['soel'] !== 'undefined' ? conf['soel'] : false;
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -2042,13 +2045,16 @@ const functions = getFunctions(app, "europe-west1");
                     <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0;">
                         <input type="checkbox" class="perm-cb" data-page="${mod.page}" data-role="autista" ${defAutista ? 'checked' : ''}>
                     </td>
+                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                        <input type="checkbox" class="perm-cb" data-page="${mod.page}" data-role="soel" ${defSoel ? 'checked' : ''}>
+                    </td>
                 `;
                 permessiTableBody.appendChild(tr);
             });
 
         } catch (e) {
             console.error("Errore caricamento permessi dashboard:", e);
-            permessiTableBody.innerHTML = `<tr><td colspan="4" style="padding: 20px; text-align: center; color: #ef4444;">Errore nel caricamento: ${e.message}</td></tr>`;
+            permessiTableBody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: #ef4444;">Errore nel caricamento: ${e.message}</td></tr>`;
         }
     }
 

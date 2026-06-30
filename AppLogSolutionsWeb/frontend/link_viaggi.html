@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invio Mobile Autisti — Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.58">
+    <link rel="stylesheet" href="styles.css?v=4.59">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -193,8 +193,8 @@
         <div class="viaggi-grid" id="viaggiGrid"></div>
     </main>
 
-    <script src="script.js?v=4.58"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.58"></script>
+    <script src="script.js?v=4.59"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.59"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -376,6 +376,14 @@
                         <span class="material-icons-round">directions_car</span>
                         ${hasMappa ? 'RIGENERA MAPPA' : 'GENERA MAPPA'}
                     </button>
+                    ${v.distinta_light ? `
+                    <a class="btn-apri" href="${v.distinta_light}" target="_blank" style="background: #f59e0b; color: white; padding: 0 10px; display: inline-flex; align-items: center; gap: 4px;" title="Apri Distinta">
+                        <span class="material-icons-round" style="font-size:16px;">description</span> Distinta
+                    </a>` : ''}
+                    ${v.distinta_completa ? `
+                    <a class="btn-apri" href="${v.distinta_completa}" target="_blank" style="background: #10b981; color: white; padding: 0 10px; display: inline-flex; align-items: center; gap: 4px;" title="Apri Distinta Completa">
+                        <span class="material-icons-round" style="font-size:16px;">picture_as_pdf</span> PDF Full
+                    </a>` : ''}
                     ${hasMappa ? `
                     <button class="btn-copia" id="copia-${v.id}" onclick="window.copiaLink('${v.id}','🗺️ Mappa percorso ${v.nome_giro}: ${v.mappa_url}${v.distinta_light ? '\\n📄 Distinta: ' + v.distinta_light : ''}')">
                         <span class="material-icons-round" style="font-size:16px;">content_copy</span> Copia link
@@ -383,10 +391,6 @@
                     <a class="btn-wa" href="https://wa.me/?text=${encodeURIComponent('🗺️ Mappa percorso '+v.nome_giro+': '+v.mappa_url + (v.distinta_light ? '\n📄 Distinta: '+v.distinta_light : ''))}" target="_blank">
                         <span class="material-icons-round" style="font-size:16px;">chat</span> WhatsApp
                     </a>
-                    ${v.distinta_light ? `
-                    <a class="btn-apri" href="${v.distinta_light}" target="_blank" style="background: #f59e0b; color: white;" title="Apri Distinta">
-                        <span class="material-icons-round" style="font-size:16px;">description</span>
-                    </a>` : ''}
                     <a class="btn-apri" href="${v.mappa_url}" target="_blank" title="Apri Mappa">
                         <span class="material-icons-round" style="font-size:16px;">map</span>
                     </a>` : ''}

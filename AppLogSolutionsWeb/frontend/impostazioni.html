@@ -992,13 +992,8 @@
             
             driverNomeInput.value = targetUser.nome || '';
             driverCognomeInput.value = targetUser.cognome || '';
-            // Mostra solo lo username pulito (senza dominio) se è un utente interno
-            const rawEmail = targetUser.email || '';
-            if (rawEmail.toLowerCase().includes('@logsolution')) {
-                driverEmailInput.value = rawEmail.split('@')[0];
-            } else {
-                driverEmailInput.value = rawEmail;
-            }
+            // L'utente vuole gestire le email manualmente, mostriamo l'indirizzo per intero
+            driverEmailInput.value = targetUser.email || '';
             driverEmailPersonaleInput.value = targetUser.emailPersonale || '';
             driverCellulareInput.value = targetUser.cellulare || '';
             driverRuoloInput.value = (targetUser.ruolo || 'autista').toLowerCase();

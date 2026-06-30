@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.61">
+    <link rel="stylesheet" href="styles.css?v=4.62">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -133,7 +133,7 @@
             <button type="button" class="btn-primary" style="margin-bottom:20px; width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="const f = document.getElementById('formAutistiContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">person_add</span>Aggiungi Nuovo Dipendente</button>
             <div id="formAutistiContainer" style="display: none; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:24px;">
             <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
-                💡 <b>Gestione Semplificata:</b> Puoi creare nuovi utenti inserendo Nome Completo, Nome Utente (es. `mario.rossi`) e una Password. Il sistema configurerà l'account in modo sicuro senza inviare alcuna email all'autista.
+                💡 <b>Gestione Semplificata:</b> Inserisci un <b>Nome Utente</b> (es. <code>mario.rossi</code> oppure solo <code>mario rossi</code>) e una Password. Il sistema lo convertirà in automatico in un indirizzo interno. In alternativa puoi inserire un'email esterna completa (es. <code>mario@gmail.com</code>).
             </p>
             <div class="form-grid">
                 <div class="input-group">
@@ -145,8 +145,9 @@
                     <input type="text" id="driverCognomeInput" placeholder="Es: Rossi">
                 </div>
                 <div class="input-group">
-                    <label for="driverEmailInput">E-mail *</label>
-                    <input type="email" id="driverEmailInput" placeholder="Es: mario.rossi@email.com">
+                    <label for="driverEmailInput">Nome Utente o E-mail *</label>
+                    <input type="text" id="driverEmailInput" placeholder="Es: mario.rossi oppure mario.rossi@gmail.com" autocomplete="off" autocapitalize="none" autocorrect="off">
+                    <small style="color:#64748b; font-size:11px; margin-top:4px; display:block;">💬 Se inserisci solo il nome utente (senza @), verrà creato un accesso interno <em>@logsolution.app</em></small>
                 </div>
                 <div class="input-group" id="driverPasswordGroup">
                     <label for="driverPasswordInput">Password Login *</label>
@@ -978,7 +979,11 @@
             
             driverNomeInput.value = targetUser.nome || '';
             driverCognomeInput.value = targetUser.cognome || '';
-            driverEmailInput.value = targetUser.email || '';
+            // Mostra solo lo username pulito (senza @logsolution.app) se è un utente interno
+            const rawEmail = targetUser.email || '';
+            driverEmailInput.value = rawEmail.endsWith('@logsolution.app')
+                ? rawEmail.replace('@logsolution.app', '')
+                : rawEmail;
             driverCellulareInput.value = targetUser.cellulare || '';
             driverRuoloInput.value = (targetUser.ruolo || 'autista').toLowerCase();
             driverTurnoInput.value = targetUser.tipoTurno || 'giornata';
@@ -1064,7 +1069,17 @@
         btnSalvaAutista.onclick = async () => {
             const n = driverNomeInput.value.trim();
             const cognome = driverCognomeInput.value.trim();
-            const email = driverEmailInput.value.trim();
+            // Normalizzazione username → email interna
+            let emailRaw = driverEmailInput.value.trim().toLowerCase();
+            if (emailRaw) {
+                emailRaw = emailRaw.replace(/[\u200B-\u200D\uFEFF]/g, ''); // rimuove caratteri invisibili
+                if (!emailRaw.includes('@')) {
+                    // trasforma spazi in punti, rimuove punti doppi/iniziali/finali
+                    emailRaw = emailRaw.replace(/\s+/g, '.').replace(/\.+/g, '.').replace(/^\.|\.$/g, '');
+                    emailRaw += '@logsolution.app';
+                }
+            }
+            const email = emailRaw;
             const cellulare = driverCellulareInput.value.trim();
             const r = driverRuoloInput.value.toLowerCase();
             const t = driverTurnoInput.value;
@@ -1232,8 +1247,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=4.61"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.61"></script>
+    <script src="script.js?v=4.62"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.62"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────

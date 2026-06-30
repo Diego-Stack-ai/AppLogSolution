@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.61">
+    <link rel="stylesheet" href="styles.css?v=4.62">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -237,6 +237,10 @@
                 <input type="date" id="dataPianificazione" class="input-field" style="width: auto; font-weight: bold;">
             </div>
             <div style="display: flex; gap: 10px;">
+                <button id="btnBloccaGiornata" class="btn-salva" style="background-color: #ef4444; display: none;">
+                    <span class="material-icons-round">lock</span>
+                    Blocca Giornata
+                </button>
                 <button id="btnStampa" class="btn-salva btn-stampa" style="background-color: #64748b;" onclick="window.impostaDatiStampaEStampa()">
                     <span class="material-icons-round">print</span>
                     Stampa
@@ -246,6 +250,11 @@
                     Salva Pianificazione
                 </button>
             </div>
+        </div>
+
+        <div id="alertGiornataBloccata" style="display: none; background: #fee2e2; color: #991b1b; padding: 12px; text-align: center; font-weight: bold; border-radius: 8px; margin: 10px 20px;">
+            <span class="material-icons-round" style="vertical-align: middle; margin-right: 6px;">lock</span>
+            Questa giornata è stata bloccata dall'Amministratore. Non è più possibile apportare modifiche.
         </div>
 
         <div id="loadingIndicator" style="text-align: center; padding: 40px; color: #64748b;">
@@ -891,6 +900,9 @@
                 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
+                    window.currentGiornataBloccata = data.isBloccato || false;
+                    applicaStatoBlocco(window.currentGiornataBloccata);
+
                     if (data.assegnazioni) {
                         data.assegnazioni.forEach(ass => {
                             const tr = document.querySelector(`tr[data-id="${ass.dipendenteId}"]`);
@@ -927,8 +939,70 @@
             }
         }
 
+        function applicaStatoBlocco(isBloccato) {
+            const isAdmin = (window.appData && window.appData.currentUser && (window.appData.currentUser.ruolo || '').toLowerCase() === 'amministratore');
+            const alertBlocco = document.getElementById('alertGiornataBloccata');
+            const btnBlocca = document.getElementById('btnBloccaGiornata');
+            const btnSalva = document.getElementById('btnSalva');
+            
+            // Gestione alert
+            if (alertBlocco) alertBlocco.style.display = isBloccato ? 'block' : 'none';
+            
+            // Gestione pulsante Salva e input tabella
+            if (isBloccato) {
+                btnSalva.disabled = true;
+                btnSalva.style.opacity = '0.5';
+                document.querySelectorAll('#planningTable select, #planningTable input').forEach(el => el.disabled = true);
+            } else {
+                btnSalva.disabled = false;
+                btnSalva.style.opacity = '1';
+                document.querySelectorAll('#planningTable select, #planningTable input').forEach(el => el.disabled = false);
+            }
+            
+            // Gestione visibilità pulsante Blocca (solo Admin)
+            if (isAdmin && btnBlocca) {
+                btnBlocca.style.display = 'flex'; // o block
+                if (isBloccato) {
+                    btnBlocca.innerHTML = '<span class="material-icons-round">lock_open</span>Sblocca Giornata';
+                    btnBlocca.style.backgroundColor = '#10b981'; // Verde per sbloccare
+                } else {
+                    btnBlocca.innerHTML = '<span class="material-icons-round">lock</span>Blocca Giornata';
+                    btnBlocca.style.backgroundColor = '#ef4444'; // Rosso per bloccare
+                }
+            } else if (btnBlocca) {
+                btnBlocca.style.display = 'none';
+            }
+        }
+
+        // Listener Pulsante Blocca Giornata
+        document.getElementById('btnBloccaGiornata').addEventListener('click', async () => {
+            const dataIso = dataInput.value;
+            if (!dataIso) return Swal.fire('Attenzione', 'Seleziona una data per la pianificazione.', 'warning');
+            
+            const btnBlocca = document.getElementById('btnBloccaGiornata');
+            btnBlocca.disabled = true;
+            
+            const newState = !window.currentGiornataBloccata;
+            try {
+                const docRef = doc(db, "clienti", "DNR", "pianificazione_viaggi", dataIso);
+                await setDoc(docRef, { isBloccato: newState }, { merge: true });
+                window.currentGiornataBloccata = newState;
+                applicaStatoBlocco(newState);
+                Swal.fire('Fatto!', newState ? 'Giornata bloccata con successo.' : 'Giornata sbloccata con successo.', 'success');
+            } catch (err) {
+                console.error("Errore aggiornamento blocco:", err);
+                Swal.fire('Errore', 'Impossibile modificare il blocco: ' + err.message, 'error');
+            } finally {
+                btnBlocca.disabled = false;
+            }
+        });
+
         dataInput.addEventListener('change', async () => {
             if (dataInput.value) {
+                // Reset blocco per default
+                window.currentGiornataBloccata = false;
+                applicaStatoBlocco(false);
+                
                 // Ricalcola le affinità per il nuovo giorno della settimana
                 ricalcolaAffinità(dataInput.value);
                 // Aggiorna le datalist (opzionale ma utile)
@@ -942,6 +1016,9 @@
 
         // 3. Salvataggio
         btnSalva.addEventListener('click', async () => {
+            if (window.currentGiornataBloccata) {
+                return Swal.fire('Attenzione', 'Questa giornata è bloccata.', 'error');
+            }
             const dataIso = dataInput.value;
             if (!dataIso) return Swal.fire('Attenzione', 'Seleziona una data per la pianificazione.', 'warning');
 
@@ -998,7 +1075,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.61"></script>
-    <script src="script.js?v=4.61"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.62"></script>
+    <script src="script.js?v=4.62"></script>
 </body>
 </html>

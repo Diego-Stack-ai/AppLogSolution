@@ -543,7 +543,12 @@
                 });
             }
             if (foundOpt) {
-                selectViaggio.value = foundOpt.value;
+                if (foundOpt.disabled) {
+                    Swal.fire('Attenzione', 'Questa Zona è già in uso per questo Cliente.', 'warning');
+                } else {
+                    selectViaggio.value = foundOpt.value;
+                    if (typeof window.aggiornaDisponibilitaGlobale === 'function') window.aggiornaDisponibilitaGlobale();
+                }
             }
         };
 
@@ -568,7 +573,12 @@
                 });
             }
             if (foundOpt) {
-                selectTarga.value = foundOpt.value;
+                if (foundOpt.disabled) {
+                    Swal.fire('Attenzione', 'Questa Targa è già in uso da un altro autista.', 'warning');
+                } else {
+                    selectTarga.value = foundOpt.value;
+                    if (typeof window.aggiornaDisponibilitaGlobale === 'function') window.aggiornaDisponibilitaGlobale();
+                }
             }
         };
 
@@ -590,7 +600,12 @@
                         });
                     }
                     if (foundOpt) {
-                        targetEl.value = foundOpt.value;
+                        if (foundOpt.disabled) {
+                            Swal.fire('Attenzione', 'Questa opzione è già in uso da un altro autista.', 'warning');
+                        } else {
+                            targetEl.value = foundOpt.value;
+                            if (typeof window.aggiornaDisponibilitaGlobale === 'function') window.aggiornaDisponibilitaGlobale();
+                        }
                     }
                 } else {
                     targetEl.value = valore;
@@ -690,6 +705,7 @@
                 selectTarga.value = '';
                 selectTarga.disabled = true;
                 destContainer.innerHTML = tr.dataset.generalViaggi || '<span class="suggestion-badge badge-disabled">Seleziona prima il cliente</span>';
+                if (typeof window.aggiornaDisponibilitaGlobale === 'function') window.aggiornaDisponibilitaGlobale();
                 return;
             }
  
@@ -707,6 +723,79 @@
                     `<span class="suggestion-badge ${colorClass}" style="cursor:pointer;" onclick="impostaDaSuggerimento(this, '.in-viaggio', '${v[0].replace(/'/g, "\\'")}')" title="Usato ${v[1]} volte">★ ${v[0]} (${v[1]})</span>`
                 ).join(' ');
             }
+            if (typeof window.aggiornaDisponibilitaGlobale === 'function') window.aggiornaDisponibilitaGlobale();
+        };
+
+        window.aggiornaDisponibilitaGlobale = function() {
+            const usedViaggi = new Set();
+            const usedTarghe = new Map();
+
+            const righe = document.querySelectorAll('#tabellaPianificazione tbody tr');
+            righe.forEach(tr => {
+                if (tr.id === 'no-data-row') return;
+                const autistaId = tr.getAttribute('data-id');
+                const selectCliente = tr.querySelector('.in-cliente');
+                const selectViaggio = tr.querySelector('.in-viaggio');
+                const selectTarga = tr.querySelector('.in-targa');
+
+                const cliente = selectCliente ? selectCliente.value.trim().toUpperCase() : "";
+                const viaggio = selectViaggio ? selectViaggio.value.trim().toUpperCase() : "";
+                const targa = selectTarga ? selectTarga.value.trim().toUpperCase() : "";
+
+                if (cliente && viaggio) usedViaggi.add(cliente + "||" + viaggio);
+                if (targa) usedTarghe.set(targa, autistaId);
+            });
+
+            righe.forEach(tr => {
+                if (tr.id === 'no-data-row') return;
+                const autistaId = tr.getAttribute('data-id');
+                
+                const selectCliente = tr.querySelector('.in-cliente');
+                const currentCliente = selectCliente ? selectCliente.value.trim().toUpperCase() : "";
+                const selectViaggio = tr.querySelector('.in-viaggio');
+                const currentViaggio = selectViaggio ? selectViaggio.value.trim().toUpperCase() : "";
+                
+                if (selectViaggio) {
+                    Array.from(selectViaggio.options).forEach(opt => {
+                        if (!opt.value) return;
+                        const val = opt.value.trim().toUpperCase();
+                        const combo = currentCliente + "||" + val;
+                        if (usedViaggi.has(combo) && val !== currentViaggio) {
+                            opt.disabled = true;
+                            opt.text = val + " (In uso)";
+                        } else {
+                            opt.disabled = false;
+                            opt.text = val;
+                        }
+                    });
+                }
+
+                const selectTarga = tr.querySelector('.in-targa');
+                const currentTarga = selectTarga ? selectTarga.value.trim().toUpperCase() : "";
+                if (selectTarga) {
+                    Array.from(selectTarga.options).forEach(opt => {
+                        if (!opt.value) return;
+                        const val = opt.value.trim().toUpperCase();
+                        const owner = usedTarghe.get(val);
+                        const isUsedByOther = (owner && owner !== autistaId);
+                        
+                        // Ripristina testo base se non è disabilitato
+                        let baseText = val;
+                        // Nel testo base della targa abbiamo concatenato la patente se presente
+                        // Dobbiamo estrarla dal DOM originale
+                        if (!opt.dataset.originalText) opt.dataset.originalText = opt.textContent;
+                        baseText = opt.dataset.originalText.replace(" (In uso)", "");
+
+                        if (isUsedByOther) {
+                            opt.disabled = true;
+                            opt.text = baseText + " (In uso)";
+                        } else {
+                            opt.disabled = false;
+                            opt.text = baseText;
+                        }
+                    });
+                }
+            });
         };
 
         window.toggleLockRow = (tr) => {
@@ -831,7 +920,7 @@
                         <div style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">${suggestClienteHtml}</div>
                     </td>
                     <td>
-                        <select class="input-field in-viaggio" disabled>
+                        <select class="input-field in-viaggio" disabled onchange="if(typeof window.aggiornaDisponibilitaGlobale === 'function') window.aggiornaDisponibilitaGlobale()">
                             <option value="">-- Seleziona --</option>
                         </select>
                         <div class="dest-container" style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">
@@ -839,7 +928,7 @@
                         </div>
                     </td>
                     <td>
-                        <select class="input-field in-targa" disabled>
+                        <select class="input-field in-targa" disabled onchange="if(typeof window.aggiornaDisponibilitaGlobale === 'function') window.aggiornaDisponibilitaGlobale()">
                             <option value="">-- Seleziona --</option>
                             ${opzioniTargheHtml}
                         </select>
@@ -934,6 +1023,10 @@
                                 window.toggleLockRow(tr);
                             }
                         });
+                        
+                        if (typeof window.aggiornaDisponibilitaGlobale === 'function') {
+                            window.aggiornaDisponibilitaGlobale();
+                        }
                     }
                 }
             } catch (err) {

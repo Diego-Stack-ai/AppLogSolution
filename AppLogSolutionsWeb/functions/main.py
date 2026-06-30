@@ -659,7 +659,14 @@ def admin_reset_password(req: https_fn.CallableRequest) -> dict:
                 message="La password deve essere di almeno 6 caratteri."
             )
 
-        user = auth.get_user_by_email(target_email)
+        try:
+            user = auth.get_user_by_email(target_email)
+        except firebase_admin.auth.UserNotFoundError:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.NOT_FOUND,
+                message=f"L'utente con email {target_email} non è stato trovato nel sistema di autenticazione Firebase. Assicurati che l'email sia corretta o che l'utente sia stato registrato correttamente."
+            )
+            
         auth.update_user(user.uid, password=new_password)
         
         # Sblocchiamo anche l'utente nel caso fosse disabilitato o avesse needsPasswordChange
@@ -672,6 +679,8 @@ def admin_reset_password(req: https_fn.CallableRequest) -> dict:
             "message": f"Password per {target_email} aggiornata con successo."
         }
         
+    except https_fn.HttpsError as he:
+        raise he
     except Exception as e:
         logger.error(f"Errore in admin_reset_password: {e}")
         raise https_fn.HttpsError(

@@ -1020,8 +1020,13 @@
             // Trigger visualizzazione campi extra
             driverRuoloInput.dispatchEvent(new Event('change'));
             
+            const pwdInput = document.getElementById('driverPasswordInput');
+            if (pwdInput) {
+                pwdInput.value = '';
+                pwdInput.placeholder = "Nuova password (lascia vuoto per non modificare)";
+            }
             const pwdGroup = document.getElementById('driverPasswordGroup');
-            if (pwdGroup) pwdGroup.style.display = 'none';
+            if (pwdGroup) pwdGroup.style.display = 'block';
 
             btnSalvaAutista.textContent = "Aggiorna Dati Cloud";
             btnAnnullaAutista.style.display = "block";
@@ -1068,7 +1073,10 @@
             driverDataTrasformazione.value = '';
             driverTipoTrasformazione.value = '';
             const pwdInput = document.getElementById('driverPasswordInput');
-            if (pwdInput) pwdInput.value = '';
+            if (pwdInput) {
+                pwdInput.value = '';
+                pwdInput.placeholder = "Inserisci password...";
+            }
             const pwdGroup = document.getElementById('driverPasswordGroup');
             if (pwdGroup) pwdGroup.style.display = 'block';
             
@@ -1243,7 +1251,23 @@
                         data_trasformazione: dt,
                         tipo_trasformazione: tt
                     });
-                    alert("Dati aggiornati correttamente!");
+                    
+                    // Controllo cambio password forzato da admin
+                    const pwdInput = document.getElementById('driverPasswordInput');
+                    const newPassword = pwdInput ? pwdInput.value.trim() : '';
+                    if (newPassword) {
+                        try {
+                            const { getFunctions, httpsCallable } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js");
+                            const functions = getFunctions(window.appData.app);
+                            const adminResetPassword = httpsCallable(functions, 'admin_reset_password');
+                            await adminResetPassword({ email: email, newPassword: newPassword });
+                            alert("Dati e PASSWORD aggiornati correttamente!");
+                        } catch (pwdErr) {
+                            alert("Dati aggiornati, ma ERRORE nel cambio password: " + pwdErr.message);
+                        }
+                    } else {
+                        alert("Dati aggiornati correttamente!");
+                    }
                     btnAnnullaAutista.onclick();
                 }
             } catch (err) {

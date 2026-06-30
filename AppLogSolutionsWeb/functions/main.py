@@ -1394,6 +1394,10 @@ def core_genera_mappa_autista(viaggio_id, distinta_url=None):
 
     depot = _get_depot_for_points_cloud(punti_norm)
     km, sec_guida, polylines = _get_directions_data(punti_norm, depot=depot)
+
+    if not distinta_url:
+        distinta_url = viaggio.get("distinta_light")
+
     html = _genera_html_mappa(viaggio_id, punti_norm, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url)
 
     bucket = storage.bucket(name=BUCKET_NAME)
@@ -1516,7 +1520,8 @@ def core_ricalcola_percorso(viaggio_id, nuovi_punti, num_locked=0):
 
     # Rigenera mappa autista aggiornata
     viaggio = doc_viaggio.to_dict()
-    html = _genera_html_mappa(viaggio_id, punti_finali, km, sec_guida, polylines, depot=depot)
+    distinta_url = viaggio.get("distinta_light")
+    html = _genera_html_mappa(viaggio_id, punti_finali, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url)
     bucket = storage.bucket(name=BUCKET_NAME)
     data_v = viaggio.get("data", "sconosciuta").replace("/", "-")
     html_path = f"CONSEGNE/CONSEGNE_{data_v}/MAPPE_AUTISTI/{viaggio_id}.html"
@@ -4203,6 +4208,16 @@ def core_genera_completo_giornata(data_consegna):
         light_blob = bucket.blob(f"REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_LIGHT_{nome_giro}.pdf")
         light_blob.upload_from_file(light_stream, content_type="application/pdf")
         distinta_light_url = _genera_url_storage_token(light_blob)
+
+        # Salva i link direttamente nel documento del viaggio
+        doc_ref = get_db().collection('clienti').document('DNR').collection('viaggi ddt').document(nome_giro)
+        try:
+            doc_ref.update({
+                "distinta_light": distinta_light_url,
+                "distinta_completa": distinta_completa_url
+            })
+        except:
+            pass
 
         km = zone.get("_stats", {}).get("km", 0.0)
         sec_guida = zone.get("_stats", {}).get("t_guida", 0) * 60

@@ -12,14 +12,21 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Funzione helper per verificare se utente e' amministratore
+    // Funzione helper per verificare se utente e' amministratore o impiegata con privilegi elevati
     function isAdmin() {
-      return get(/databases/$(database)/documents/dipendenti/$(request.auth.uid)).data.ruolo == 'amministratore';
+      let userData = get(/databases/$(database)/documents/dipendenti/$(request.auth.uid)).data;
+      return userData.ruolo == 'amministratore' || (userData.ruolo == 'impiegata' && userData.canElevate == true);
+    }
+
+    // Funzione helper per verificare se utente e' impiegata base
+    function isImpiegata() {
+      return get(/databases/$(database)/documents/dipendenti/$(request.auth.uid)).data.ruolo == 'impiegata';
     }
 
     // Regole per i dipendenti (lettura/scrittura profilo)
     match /dipendenti/{userId} {
-      allow read, write: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isImpiegata());
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isImpiegata());
     }
 
     match /mezzi/{docId} {

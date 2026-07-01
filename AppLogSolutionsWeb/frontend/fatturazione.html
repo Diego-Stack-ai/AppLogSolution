@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.73">
+    <link rel="stylesheet" href="styles.css?v=4.74">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -397,8 +397,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.73"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.73"></script>
+    <script src="script.js?v=4.74"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.74"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -1574,7 +1574,7 @@
             }
         });
 
-        function buildCattelSummaryTable(trips, year, month, mezziMap, configCattel) {
+        window.buildCattelSummaryTable = function(trips, year, month, mezziMap, configCattel) {
             const daysInMonth = new Date(year, month, 0).getDate();
             let cattelData = {};
             for (let d = 1; d <= daysInMonth; d++) {
@@ -1691,7 +1691,7 @@
             window.currentCattelMonthLabel = currentMonthLabel;
         }
 
-        function esportaModuloCattelExcel() {
+        window.esportaModuloCattelExcel = function() {
             if (typeof XLSX === 'undefined') {
                 Swal.fire('Errore', 'Libreria XLSX non trovata.', 'error');
                 return;

@@ -2,8 +2,8 @@ import os
 import re
 
 frontend_dir = r"G:\Il mio Drive\App\AppLogSolutionsWeb\frontend"
-old_version = "4.79"
-new_version = "4.80"
+old_version = "4.80"
+new_version = "4.81"
 
 pattern = re.compile(rf"\?v={re.escape(old_version)}")
 replacement = f"?v={new_version}"

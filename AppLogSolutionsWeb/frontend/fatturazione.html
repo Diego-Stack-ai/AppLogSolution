@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.80">
+    <link rel="stylesheet" href="styles.css?v=4.81">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -346,7 +346,7 @@
                             <th>DATA</th>
                             <th>GIRI B</th>
                             <th>GIRI C</th>
-                            <th>NAVETTA CEREA</th>
+                            <th>NAVETTA BENCARNI</th>
                             <th>NAVETTA</th>
                             <th></th>
                             <th>COLLI</th>
@@ -412,8 +412,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.80"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.80"></script>
+    <script src="script.js?v=4.81"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.81"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -1634,7 +1634,7 @@
                 });
                 
                 if (nomeStr.includes("NAVETTA")) {
-                    if (nomeStr.includes("CEREA")) {
+                    if (nomeStr.includes("CEREA") || nomeStr.includes("BENCARNI")) {
                         cattelData[day].navCerea++;
                     } else {
                         cattelData[day].navSomma++;
@@ -1814,9 +1814,9 @@
             ws_data.push([]);
             ws_data.push(["", "VOCE", "TARIFFA", "QUANTITA'", "IMPORTO"]);
             
-            // NAVETTA CEREA
+            // NAVETTA BENCARNI
             let recapRowCerea = recapStartR + 1;
-            ws_data.push(["", "NAVETTA CEREA", CAT_NAV2, 0, 0]);
+            ws_data.push(["", "NAVETTA BENCARNI", CAT_NAV2, 0, 0]);
             XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowCerea - 1, c: 0}});
             ws[XLSX.utils.encode_cell({c: 3, r: recapRowCerea - 1})] = { t: 'n', f: `D${tfootStartR}` };
             ws[XLSX.utils.encode_cell({c: 4, r: recapRowCerea - 1})] = { t: 'n', f: `C${recapRowCerea}*D${recapRowCerea}`, z: '"€"\\ #,##0.00' };

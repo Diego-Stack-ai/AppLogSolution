@@ -348,7 +348,7 @@ function startRealtimeSync(isAdmin) {
     activeListeners.push(unsubProgetti);
 
     // Listener per Destinazioni Navette
-    const unsubDestinazioni = onSnapshot(collection(db, "destinazioni_navette"), (snapshot) => {
+    const unsubDestinazioni = onSnapshot(collection(db, "clienti/DNR/destinazioni_navette"), (snapshot) => {
         const destinazioni = [];
         snapshot.forEach((d) => {
             destinazioni.push({ id: d.id, ...d.data() });

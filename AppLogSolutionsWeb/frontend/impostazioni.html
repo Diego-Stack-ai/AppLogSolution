@@ -1354,7 +1354,7 @@ const functions = getFunctions(app, "europe-west1");
         if (!nome) return;
 
         try {
-            await addDoc(collection(db, "destinazioni_navette"), { nome: nome });
+            await addDoc(collection(db, "clienti/DNR/destinazioni_navette"), { nome: nome });
             input.value = '';
             alert("Destinazione aggiunta!");
         } catch (error) {
@@ -1395,7 +1395,7 @@ const functions = getFunctions(app, "europe-west1");
                 return;
             }
 
-            await deleteDoc(doc(db, "destinazioni_navette", id));
+            await deleteDoc(doc(db, "clienti/DNR/destinazioni_navette", id));
             alert("Destinazione eliminata con successo!");
         } catch (error) {
             alert("Errore durante la verifica o eliminazione: " + error.message);

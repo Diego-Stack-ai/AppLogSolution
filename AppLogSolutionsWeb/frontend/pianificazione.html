@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.91">
+    <link rel="stylesheet" href="styles.css?v=4.92">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -658,9 +658,11 @@
                 mezzi.sort((a,b) => a.targa.localeCompare(b.targa)).forEach(m => {
                     const targa = (m.targa || "").trim().toUpperCase();
                     const pat = m.patente ? ` - ${m.patente}` : '';
+                    const modelloPulito = m.modello && m.modello !== 'undefined' && m.modello !== 'null' ? m.modello.trim() : '';
+                    const mod = modelloPulito ? ` (${modelloPulito})` : '';
                     const opt = document.createElement('option');
                     opt.value = targa;
-                    opt.textContent = targa + pat;
+                    opt.textContent = targa + mod + pat;
                     select.appendChild(opt);
                 });
                 select.value = currentVal;
@@ -869,7 +871,9 @@
             const opzioniTargheHtml = [...mezzi].sort((a,b) => a.targa.localeCompare(b.targa)).map(m => {
                 const targa = (m.targa || "").trim().toUpperCase();
                 const pat = m.patente ? ` - ${m.patente}` : '';
-                return `<option value="${targa}">${targa}${pat}</option>`;
+                const modelloPulito = m.modello && m.modello !== 'undefined' && m.modello !== 'null' ? m.modello.trim() : '';
+                const mod = modelloPulito ? ` (${modelloPulito})` : '';
+                return `<option value="${targa}">${targa}${mod}${pat}</option>`;
             }).join('');
 
             dipendenti.forEach(d => {
@@ -1170,7 +1174,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.91"></script>
-    <script src="script.js?v=4.91"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.92"></script>
+    <script src="script.js?v=4.92"></script>
 </body>
 </html>

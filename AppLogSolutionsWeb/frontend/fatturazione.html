@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.74">
+    <link rel="stylesheet" href="styles.css?v=4.75">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -358,6 +358,21 @@
                     <tfoot id="cattel-summary-tfoot"></tfoot>
                 </table>
             </div>
+            
+            <div id="cattel-recap-container" style="margin-top: 24px; max-width: 500px;">
+                <h4 style="color: var(--text-main); margin-bottom: 12px;">Riepilogo Dati</h4>
+                <table class="pivot-table" id="cattel-recap-table">
+                    <thead>
+                        <tr>
+                            <th>VOCE</th>
+                            <th>TARIFFA</th>
+                            <th>QUANTITA'</th>
+                            <th>IMPORTO</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cattel-recap-tbody"></tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Popup / Modal Invio E-mail -->
@@ -397,8 +412,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.74"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.74"></script>
+    <script src="script.js?v=4.75"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.75"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -1603,19 +1618,9 @@
                 
                 if (!isCat) continue; 
                 
-                let dateObj = null;
-                if (t.data_ritiro_richiesta) {
-                    let [d, m, y] = t.data_ritiro_richiesta.split('/');
-                    dateObj = new Date(y, m - 1, d);
-                } else if (t.data) {
-                    let [d, m, y] = t.data.split('/');
-                    dateObj = new Date(y, m - 1, d);
-                }
+                let day = window.getDayFromDateString ? window.getDayFromDateString(t.rawDate) : null;
+                if (!day) continue;
                 
-                if (!dateObj) continue;
-                if (dateObj.getFullYear() !== year || dateObj.getMonth() + 1 !== month) continue;
-                
-                let day = dateObj.getDate();
                 let q = 0;
                 p.forEach(pt => {
                     q += parseFloat(pt.quantita) || 0;
@@ -1685,6 +1690,45 @@
                 <th style="text-align: right;">€ ${sumTot.toFixed(2)}</th>
             </tr>`;
             tfoot.innerHTML = trFoot;
+            
+            // Render Recap Table
+            const recapTbody = document.getElementById('cattel-recap-tbody');
+            recapTbody.innerHTML = `
+                <tr>
+                    <td>NAVETTA CEREA</td>
+                    <td style="text-align: right;">€ ${CAT_NAV2.toFixed(2)}</td>
+                    <td style="text-align: right;">${sumNavC}</td>
+                    <td style="text-align: right;">€ ${(CAT_NAV2 * sumNavC).toFixed(2)}</td>
+                </tr>
+                <tr>
+                    <td>NAVETTA</td>
+                    <td style="text-align: right;">€ ${CAT_NAV1.toFixed(2)}</td>
+                    <td style="text-align: right;">${sumNavS}</td>
+                    <td style="text-align: right;">€ ${(CAT_NAV1 * sumNavS).toFixed(2)}</td>
+                </tr>
+                <tr>
+                    <td>TRASPORTO B</td>
+                    <td style="text-align: right;">€ ${CAT_B.toFixed(2)}</td>
+                    <td style="text-align: right;">${sumB}</td>
+                    <td style="text-align: right;">€ ${(CAT_B * sumB).toFixed(2)}</td>
+                </tr>
+                <tr>
+                    <td>TRASPORTO C</td>
+                    <td style="text-align: right;">€ ${CAT_C.toFixed(2)}</td>
+                    <td style="text-align: right;">${sumC}</td>
+                    <td style="text-align: right;">€ ${(CAT_C * sumC).toFixed(2)}</td>
+                </tr>
+                <tr>
+                    <td>HANDLING</td>
+                    <td style="text-align: right;">€ ${CAT_COLLO.toFixed(2)}</td>
+                    <td style="text-align: right;">${sumColli}</td>
+                    <td style="text-align: right;">€ ${(CAT_COLLO * sumColli).toFixed(2)}</td>
+                </tr>
+                <tr>
+                    <td colspan="3"></td>
+                    <td style="text-align: right; font-weight: bold; background: #f8fafc;">€ ${sumTot.toFixed(2)}</td>
+                </tr>
+            `;
             
             window.currentCattelConfig = configCattel;
             window.currentCattelDays = daysInMonth;
@@ -1756,6 +1800,53 @@
                 };
                 if (col === 'I') ws[cellAddress].z = '"€"\\ #,##0.00';
             });
+            
+            // Add Recap Data
+            let recapStartR = tfootStartR + 3; // Leave a few blank rows
+            ws_data.push([]);
+            ws_data.push([]);
+            ws_data.push(["", "VOCE", "TARIFFA", "QUANTITA'", "IMPORTO"]);
+            
+            // NAVETTA CEREA
+            let recapRowCerea = recapStartR + 1;
+            ws_data.push(["", "NAVETTA CEREA", CAT_NAV2, 0, 0]);
+            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowCerea - 1, c: 0}});
+            ws[XLSX.utils.encode_cell({c: 3, r: recapRowCerea - 1})] = { t: 'n', f: `D${tfootStartR}` };
+            ws[XLSX.utils.encode_cell({c: 4, r: recapRowCerea - 1})] = { t: 'n', f: `C${recapRowCerea}*D${recapRowCerea}`, z: '"€"\\ #,##0.00' };
+
+            // NAVETTA SOMMACAMPAGNA
+            let recapRowSomma = recapStartR + 2;
+            ws_data.push(["", "NAVETTA", CAT_NAV1, 0, 0]);
+            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowSomma - 1, c: 0}});
+            ws[XLSX.utils.encode_cell({c: 3, r: recapRowSomma - 1})] = { t: 'n', f: `E${tfootStartR}` };
+            ws[XLSX.utils.encode_cell({c: 4, r: recapRowSomma - 1})] = { t: 'n', f: `C${recapRowSomma}*D${recapRowSomma}`, z: '"€"\\ #,##0.00' };
+
+            // TRASPORTO B
+            let recapRowB = recapStartR + 3;
+            ws_data.push(["", "TRASPORTO B", CAT_B, 0, 0]);
+            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowB - 1, c: 0}});
+            ws[XLSX.utils.encode_cell({c: 3, r: recapRowB - 1})] = { t: 'n', f: `B${tfootStartR}` };
+            ws[XLSX.utils.encode_cell({c: 4, r: recapRowB - 1})] = { t: 'n', f: `C${recapRowB}*D${recapRowB}`, z: '"€"\\ #,##0.00' };
+
+            // TRASPORTO C
+            let recapRowC = recapStartR + 4;
+            ws_data.push(["", "TRASPORTO C", CAT_C, 0, 0]);
+            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowC - 1, c: 0}});
+            ws[XLSX.utils.encode_cell({c: 3, r: recapRowC - 1})] = { t: 'n', f: `C${tfootStartR}` };
+            ws[XLSX.utils.encode_cell({c: 4, r: recapRowC - 1})] = { t: 'n', f: `C${recapRowC}*D${recapRowC}`, z: '"€"\\ #,##0.00' };
+
+            // HANDLING (COLLI)
+            let recapRowColli = recapStartR + 5;
+            ws_data.push(["", "HANDLING", CAT_COLLO, 0, 0]);
+            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowColli - 1, c: 0}});
+            ws[XLSX.utils.encode_cell({c: 3, r: recapRowColli - 1})] = { t: 'n', f: `G${tfootStartR}` };
+            ws[XLSX.utils.encode_cell({c: 4, r: recapRowColli - 1})] = { t: 'n', f: `C${recapRowColli}*D${recapRowColli}`, z: '"€"\\ #,##0.00' };
+
+            // RECAP TOTAL
+            let recapRowTotal = recapStartR + 6;
+            ws_data.push(["", "", "", "", 0]);
+            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowTotal - 1, c: 0}});
+            ws[XLSX.utils.encode_cell({c: 4, r: recapRowTotal - 1})] = { t: 'n', f: `SUM(E${recapRowCerea}:E${recapRowColli})`, z: '"€"\\ #,##0.00' };
 
             const range = XLSX.utils.decode_range(ws['!ref']);
             for(let R = range.s.r; R <= range.e.r; ++R) {

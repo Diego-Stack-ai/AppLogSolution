@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.86">
+    <link rel="stylesheet" href="styles.css?v=4.87">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -284,6 +284,10 @@
                     <span class="material-icons-round" style="color: white; margin-right: 8px;">download</span>
                     Scarica Modulo Cattel
                 </button>
+                <button class="btn btn-primary" id="btn-export-granchef" onclick="esportaModuloGranChefExcel()" style="display: none; background-color: #f59e0b; border-color: #f59e0b;">
+                    <span class="material-icons-round" style="color: white; margin-right: 8px;">download</span>
+                    Scarica Modulo Gran Chef
+                </button>
                 <button class="btn btn-primary" onclick="esportaPDF()">
                     <span class="material-icons-round" style="color: #dc2626; margin-right: 8px;">picture_as_pdf</span>
                     Esporta PDF
@@ -375,6 +379,40 @@
             </div>
         </div>
 
+        <!-- GRAN CHEF SUMMARY MODULE -->
+        <div id="granchef-summary-container" style="display: none; margin-top: 32px;">
+            <h3 style="margin-bottom: 16px; color: var(--text-main);">Modulo Gran Chef - <span id="granchef-summary-month"></span></h3>
+            <div class="pivot-wrapper">
+                <table class="pivot-table" id="granchef-summary-table">
+                    <thead>
+                        <tr>
+                            <th>DATA</th>
+                            <th>VIAGGIO A</th>
+                            <th>NAVETTA SOMMACAMPAGNA</th>
+                            <th>totale /gg</th>
+                        </tr>
+                    </thead>
+                    <tbody id="granchef-summary-tbody"></tbody>
+                    <tfoot id="granchef-summary-tfoot"></tfoot>
+                </table>
+            </div>
+            
+            <div id="granchef-recap-container" style="margin-top: 24px; max-width: 500px;">
+                <h4 style="color: var(--text-main); margin-bottom: 12px;">Riepilogo Dati</h4>
+                <table class="pivot-table" id="granchef-recap-table">
+                    <thead>
+                        <tr>
+                            <th>VOCE</th>
+                            <th>TARIFFA</th>
+                            <th>QUANTITA'</th>
+                            <th>IMPORTO</th>
+                        </tr>
+                    </thead>
+                    <tbody id="granchef-recap-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Popup / Modal Invio E-mail -->
         <div id="emailModal" class="modal-overlay">
             <div class="modal-content" style="max-width: 550px; width: 90%;">
@@ -412,8 +450,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.86"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.86"></script>
+    <script src="script.js?v=4.87"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.87"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -1034,9 +1072,22 @@
                         document.getElementById('btn-export-cattel').style.display = 'inline-flex';
                         document.getElementById('cattel-summary-month').textContent = currentMonthLabel;
                         buildCattelSummaryTable(trips, parseInt(year), parseInt(month), mezziMap, configCattel);
+                        
+                        document.getElementById('granchef-summary-container').style.display = 'none';
+                        document.getElementById('btn-export-granchef').style.display = 'none';
+                    } else if (clientSel === "GRAN CHEF") {
+                        document.getElementById('granchef-summary-container').style.display = 'block';
+                        document.getElementById('btn-export-granchef').style.display = 'inline-flex';
+                        document.getElementById('granchef-summary-month').textContent = currentMonthLabel;
+                        buildGranChefSummaryTable(trips, parseInt(year), parseInt(month), mezziMap, TARIFFA_GC, TARIFFA_GC_B);
+                        
+                        document.getElementById('cattel-summary-container').style.display = 'none';
+                        document.getElementById('btn-export-cattel').style.display = 'none';
                     } else {
                         document.getElementById('cattel-summary-container').style.display = 'none';
                         document.getElementById('btn-export-cattel').style.display = 'none';
+                        document.getElementById('granchef-summary-container').style.display = 'none';
+                        document.getElementById('btn-export-granchef').style.display = 'none';
                     }
                 }
 
@@ -1613,6 +1664,116 @@
             }
         });
 
+        window.buildGranChefSummaryTable = function(trips, year, month, mezziMap, TARIFFA_GC, TARIFFA_GC_B) {
+            const daysInMonth = new Date(year, month, 0).getDate();
+            let gcData = {};
+            for (let d = 1; d <= daysInMonth; d++) {
+                gcData[d] = {
+                    viaggioA: 0,
+                    navSomma: 0,
+                    totale: 0
+                };
+            }
+            
+            for (const t of trips) {
+                const nomeStr = (t.nome_giro || t.id_zona || 'GENERICO').toUpperCase();
+                
+                const dbClient = (t.cliente || '').toUpperCase();
+                let isGC = dbClient === "GRAN CHEF" || dbClient === "GRANCHEF" || t.is_grand_chef === true || t.is_gc === true;
+                if (!isGC) {
+                    const p = t.punti || t.punti_ottimizzati || [];
+                    isGC = p.some(pt => {
+                        const tg = (pt.tipologia_grado || pt.tipo || '').toUpperCase();
+                        const zn = (pt.zona || '').toUpperCase();
+                        return tg.includes("GRAND") || tg.includes("CHEF") || zn.includes("CHEF") || zn.includes("GRANCHEF");
+                    });
+                    if (!isGC && (nomeStr.includes("CHEF") || nomeStr.includes("GRAN"))) isGC = true;
+                }
+                
+                if (!isGC) continue; 
+                
+                let day = window.getDayFromDateString ? window.getDayFromDateString(t.rawDate) : null;
+                if (!day) continue;
+                
+                if (nomeStr.includes("VIAGGIO B") || nomeStr.includes("SOMMACAMPAGNA") || nomeStr.includes("NAVETTA")) {
+                    gcData[day].navSomma++;
+                } else {
+                    gcData[day].viaggioA++;
+                }
+            }
+            
+            // Render Table Body
+            const tbody = document.getElementById('granchef-summary-tbody');
+            tbody.innerHTML = '';
+            
+            let sumA = 0;
+            let sumS = 0;
+            let sumTot = 0;
+            
+            const weekdays = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+            
+            for (let d = 1; d <= daysInMonth; d++) {
+                const date = new Date(year, month - 1, d);
+                const dayName = weekdays[date.getDay()];
+                
+                let dayTotal = (gcData[d].viaggioA * TARIFFA_GC) + (gcData[d].navSomma * TARIFFA_GC_B);
+                gcData[d].totale = dayTotal;
+                
+                sumA += gcData[d].viaggioA;
+                sumS += gcData[d].navSomma;
+                sumTot += dayTotal;
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${dayName} ${d}</td>
+                        <td style="text-align: right;">${gcData[d].viaggioA || ''}</td>
+                        <td style="text-align: right;">${gcData[d].navSomma || ''}</td>
+                        <td style="text-align: right; font-weight: 500;">${dayTotal > 0 ? '€ ' + dayTotal.toFixed(2) : ''}</td>
+                    </tr>
+                `;
+            }
+            
+            // Render Table Footer
+            const tfoot = document.getElementById('granchef-summary-tfoot');
+            tfoot.innerHTML = `
+                <tr style="font-weight: bold; background: #f1f5f9;">
+                    <td>TOTALE</td>
+                    <td style="text-align: right;">${sumA}</td>
+                    <td style="text-align: right;">${sumS}</td>
+                    <td style="text-align: right;">€ ${sumTot.toFixed(2)}</td>
+                </tr>
+            `;
+            
+            // Render Recap Table
+            const recapTbody = document.getElementById('granchef-recap-tbody');
+            recapTbody.innerHTML = `
+                <tr>
+                    <td>VIAGGIO A</td>
+                    <td style="text-align: right;">€ ${TARIFFA_GC.toFixed(2)}</td>
+                    <td style="text-align: right;">${sumA}</td>
+                    <td style="text-align: right;">€ ${(TARIFFA_GC * sumA).toFixed(2)}</td>
+                </tr>
+                <tr>
+                    <td>NAVETTA SOMMACAMPAGNA</td>
+                    <td style="text-align: right;">€ ${TARIFFA_GC_B.toFixed(2)}</td>
+                    <td style="text-align: right;">${sumS}</td>
+                    <td style="text-align: right;">€ ${(TARIFFA_GC_B * sumS).toFixed(2)}</td>
+                </tr>
+                <tr style="font-weight: bold; background: #e2e8f0;">
+                    <td>TOTALE FATTURATO</td>
+                    <td colspan="2"></td>
+                    <td style="text-align: right;">€ ${sumTot.toFixed(2)}</td>
+                </tr>
+            `;
+            
+            window.currentGCConfig = {
+                TARIFFA_GC: TARIFFA_GC,
+                TARIFFA_GC_B: TARIFFA_GC_B
+            };
+            window.currentGCDays = daysInMonth;
+            window.currentGCMonthLabel = window.currentMonthLabel;
+        }
+
         window.buildCattelSummaryTable = function(trips, year, month, mezziMap, configCattel) {
             const daysInMonth = new Date(year, month, 0).getDate();
             let cattelData = {};
@@ -1761,6 +1922,145 @@
             window.currentCattelConfig = configCattel;
             window.currentCattelDays = daysInMonth;
             window.currentCattelMonthLabel = currentMonthLabel;
+        }
+
+        window.esportaModuloGranChefExcel = function() {
+            if (typeof XLSX === 'undefined') {
+                Swal.fire('Errore', 'Libreria XLSX non trovata.', 'error');
+                return;
+            }
+            const config = window.currentGCConfig || {};
+            const daysInMonth = window.currentGCDays || 31;
+            const TARIFFA_GC = config.TARIFFA_GC || 350;
+            const TARIFFA_GC_B = config.TARIFFA_GC_B || 150;
+
+            const wb = XLSX.utils.book_new();
+            
+            const ws_data = [
+                ["DATA", "VIAGGIO A", "NAVETTA SOMMACAMPAGNA", "", "totale /gg"]
+            ];
+
+            const tbody = document.getElementById('granchef-summary-tbody');
+            const rows = tbody.querySelectorAll('tr');
+            
+            rows.forEach((tr) => {
+                let rowData = [];
+                const tds = tr.querySelectorAll('td');
+                
+                rowData.push(tds[0].innerText.trim());
+                rowData.push(parseFloat(tds[1].innerText.trim()) || null);
+                rowData.push(parseFloat(tds[2].innerText.trim()) || null);
+                rowData.push(null);
+                rowData.push(0); 
+                ws_data.push(rowData);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+            let tfootStartR = daysInMonth + 2; 
+            let recapStartR = tfootStartR + 3; // Leave a few blank rows
+            let recapRowA = recapStartR + 1;
+            let recapRowSomma = recapStartR + 2;
+            let recapRowTotal = recapStartR + 3;
+
+            // Calculate sums in JS to pre-populate the .v field
+            let sumA = 0, sumS = 0, sumTot = 0;
+            let dailyTotals = [];
+            for (let i = 1; i < ws_data.length; i++) {
+                const r = ws_data[i];
+                sumA += r[1] || 0;
+                sumS += r[2] || 0;
+                let rTotal = ((r[1] || 0) * TARIFFA_GC) + ((r[2] || 0) * TARIFFA_GC_B);
+                sumTot += rTotal;
+                dailyTotals.push(rTotal);
+            }
+
+            for (let i = 0; i < daysInMonth; i++) {
+                let r = i + 2; 
+                let cellAddress = XLSX.utils.encode_cell({c: 4, r: i + 1});
+                ws[cellAddress] = {
+                    t: 'n', 
+                    f: `IFERROR((B${r}*$C$${recapRowA})+(C${r}*$C$${recapRowSomma}), 0)`,
+                    v: dailyTotals[i] || 0,
+                    z: '"€"\\ #,##0.00'
+                };
+            }
+
+            ws_data.push(["TOTALE", 0, 0, null, 0]);
+            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: tfootStartR - 1, c: 0}});
+            
+            let sumCols = ['B', 'C', 'E'];
+            sumCols.forEach((col) => {
+                let cIndex = col.charCodeAt(0) - 65; 
+                let cellAddress = XLSX.utils.encode_cell({c: cIndex, r: tfootStartR - 1});
+                let val = 0;
+                if (col === 'B') val = sumA;
+                else if (col === 'C') val = sumS;
+                else if (col === 'E') val = sumTot;
+
+                ws[cellAddress] = {
+                    t: 'n',
+                    f: `SUM(${col}2:${col}${tfootStartR - 1})`,
+                    v: val
+                };
+                if (col === 'E') ws[cellAddress].z = '"€"\\ #,##0.00';
+            });
+            
+            // Add Recap Data
+            XLSX.utils.sheet_add_aoa(ws, [
+                [],
+                [],
+                ["", "VOCE", "TARIFFA", "QUANTITA'", "IMPORTO"]
+            ], {origin: {r: tfootStartR, c: 0}});
+            
+            // VIAGGIO A
+            ws_data.push(["", "VIAGGIO A", TARIFFA_GC, 0, 0]);
+            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowA - 1, c: 0}});
+            ws[XLSX.utils.encode_cell({c: 3, r: recapRowA - 1})] = { t: 'n', f: `B${tfootStartR}`, v: sumA };
+            ws[XLSX.utils.encode_cell({c: 4, r: recapRowA - 1})] = { t: 'n', f: `C${recapRowA}*D${recapRowA}`, v: TARIFFA_GC * sumA, z: '"€"\\ #,##0.00' };
+
+            // NAVETTA SOMMACAMPAGNA
+            ws_data.push(["", "NAVETTA SOMMACAMPAGNA", TARIFFA_GC_B, 0, 0]);
+            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowSomma - 1, c: 0}});
+            ws[XLSX.utils.encode_cell({c: 3, r: recapRowSomma - 1})] = { t: 'n', f: `C${tfootStartR}`, v: sumS };
+            ws[XLSX.utils.encode_cell({c: 4, r: recapRowSomma - 1})] = { t: 'n', f: `C${recapRowSomma}*D${recapRowSomma}`, v: TARIFFA_GC_B * sumS, z: '"€"\\ #,##0.00' };
+
+            // RECAP TOTAL
+            ws_data.push(["", "", "", "", 0]);
+            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowTotal - 1, c: 0}});
+            ws[XLSX.utils.encode_cell({c: 4, r: recapRowTotal - 1})] = { t: 'n', f: `SUM(E${recapRowA}:E${recapRowSomma})`, v: sumTot, z: '"€"\\ #,##0.00' };
+
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for(let R = range.s.r; R <= range.e.r; ++R) {
+                for(let C = range.s.c; C <= range.e.c; ++C) {
+                    let cellAddress = XLSX.utils.encode_cell({r: R, c: C});
+                    if(!ws[cellAddress]) continue;
+                    if(!ws[cellAddress].s) ws[cellAddress].s = {};
+                    
+                    ws[cellAddress].s.font = { name: "Arial", sz: 11 };
+                    ws[cellAddress].s.border = {
+                        top: {style: 'thin', color: {auto: 1}},
+                        bottom: {style: 'thin', color: {auto: 1}},
+                        left: {style: 'thin', color: {auto: 1}},
+                        right: {style: 'thin', color: {auto: 1}}
+                    };
+                    
+                    if (R === 0) {
+                        ws[cellAddress].s.fill = { fgColor: { rgb: "FFE2EFDA" } };
+                        ws[cellAddress].s.font.bold = true;
+                        ws[cellAddress].s.alignment = { horizontal: "center", vertical: "center" };
+                    } else if (R === tfootStartR - 1) {
+                        ws[cellAddress].s.fill = { fgColor: { rgb: "FFD9E1F2" } };
+                        ws[cellAddress].s.font.bold = true;
+                    }
+                }
+            }
+            
+            ws['!cols'] = [{wch:15}, {wch:15}, {wch:25}, {wch:15}, {wch:15}];
+
+            XLSX.utils.book_append_sheet(wb, ws, "GRAN_CHEF");
+            let safeMonthLabel = window.currentGCMonthLabel ? window.currentGCMonthLabel.replace(/[\/\\]/g, '_') : 'mese';
+            XLSX.writeFile(wb, `Riepilogo_GranChef_${safeMonthLabel}.xlsx`);
         }
 
         window.esportaModuloCattelExcel = function() {

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.98">
+    <link rel="stylesheet" href="styles.css?v=4.99">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -385,7 +385,19 @@
                     const isStaff = ruolo === 'amministratore' || ruolo === 'impiegata';
                     
                     const stato = (data.stato || data.Stato || "").toLowerCase();
-                    const isFired = stato.includes('licenziat') || stato.includes('inattiv');
+                    let isFired = stato.includes('licenziat') || stato.includes('inattiv');
+                    
+                    // Controlla anche campi dinamici come dataLicenziamento o Data Dimissioni
+                    if (!isFired) {
+                        for (const key in data) {
+                            if (key.toLowerCase().includes('licenziam') || key.toLowerCase().includes('dimission')) {
+                                if (data[key]) {
+                                    isFired = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
 
                     // Mostriamo tutti i dipendenti attivi che non sono amministratori o impiegati (stesso filtro di presenze)
                     if (data.attivo !== false && !isStaff && !isFired) {
@@ -1181,7 +1193,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.98"></script>
-    <script src="script.js?v=4.98"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.99"></script>
+    <script src="script.js?v=4.99"></script>
 </body>
 </html>

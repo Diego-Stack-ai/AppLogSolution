@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.00">
+    <link rel="stylesheet" href="styles.css?v=5.01">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -776,53 +776,52 @@
                 const selectViaggio = tr.querySelector('.in-viaggio');
                 const currentViaggio = selectViaggio ? selectViaggio.value.trim().toUpperCase() : "";
                 
-                if (selectViaggio) {
-                    Array.from(selectViaggio.options).forEach(opt => {
-                        if (!opt.value) return;
-                        const val = opt.value.trim().toUpperCase();
+                if (selectViaggio && currentCliente) {
+                    const progetti = window.appData?.lista_progetti || [];
+                    const proj = progetti.find(p => p.nome.toUpperCase() === currentCliente);
+                    const viaggiConfigurati = proj ? (proj.viaggi || []) : [];
+                    
+                    selectViaggio.innerHTML = '<option value="">-- Seleziona --</option>';
+                    viaggiConfigurati.forEach(v => {
+                        const val = v.toUpperCase();
                         const combo = currentCliente + "||" + val;
                         if (usedViaggi.has(combo) && val !== currentViaggio) {
-                            opt.disabled = true;
-                            opt.hidden = true;
-                            opt.style.display = 'none';
-                            opt.text = val + " (In uso)";
+                            // Salta l'opzione (nasconde fisicamente)
                         } else {
-                            opt.disabled = false;
-                            opt.hidden = false;
-                            opt.style.display = '';
-                            opt.text = val;
+                            const opt = document.createElement('option');
+                            opt.value = val;
+                            opt.textContent = val;
+                            selectViaggio.appendChild(opt);
                         }
                     });
+                    if (currentViaggio) selectViaggio.value = currentViaggio;
                 }
 
                 const selectTarga = tr.querySelector('.in-targa');
                 const currentTarga = selectTarga ? selectTarga.value.trim().toUpperCase() : "";
                 if (selectTarga) {
-                    Array.from(selectTarga.options).forEach(opt => {
-                        if (!opt.value) return;
-                        const val = opt.value.trim().toUpperCase();
+                    const mezzi = window.appData?.lista_mezzi || [];
+                    selectTarga.innerHTML = '<option value="">-- Seleziona --</option>';
+                    mezzi.sort((a,b) => (a.targa||"").localeCompare(b.targa||"")).forEach(m => {
+                        const val = (m.targa || "").trim().toUpperCase();
+                        const pat = m.patente ? ` - ${m.patente}` : '';
+                        const modelloPulito = m.modello && m.modello !== 'undefined' && m.modello !== 'null' ? m.modello.trim() : '';
+                        const mod = modelloPulito ? ` (${modelloPulito})` : '';
+                        const baseText = val + pat + mod;
+                        
                         const owner = usedTarghe.get(val);
                         const isUsedByOther = (owner && owner !== autistaId);
                         
-                        // Ripristina testo base se non è disabilitato
-                        let baseText = val;
-                        // Nel testo base della targa abbiamo concatenato la patente se presente
-                        // Dobbiamo estrarla dal DOM originale
-                        if (!opt.dataset.originalText) opt.dataset.originalText = opt.textContent;
-                        baseText = opt.dataset.originalText.replace(" (In uso)", "");
-
                         if (isUsedByOther) {
-                            opt.disabled = true;
-                            opt.hidden = true;
-                            opt.style.display = 'none';
-                            opt.text = baseText + " (In uso)";
+                            // Salta l'opzione (nasconde fisicamente)
                         } else {
-                            opt.disabled = false;
-                            opt.hidden = false;
-                            opt.style.display = '';
-                            opt.text = baseText;
+                            const opt = document.createElement('option');
+                            opt.value = val;
+                            opt.textContent = baseText;
+                            selectTarga.appendChild(opt);
                         }
                     });
+                    if (currentTarga) selectTarga.value = currentTarga;
                 }
             });
         };
@@ -1201,7 +1200,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=5.00"></script>
-    <script src="script.js?v=5.00"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.01"></script>
+    <script src="script.js?v=5.01"></script>
 </body>
 </html>

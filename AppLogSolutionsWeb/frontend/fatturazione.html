@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.64">
+    <link rel="stylesheet" href="styles.css?v=4.72">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -369,8 +369,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.64"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.64"></script>
+    <script src="script.js?v=4.72"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.72"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -1302,7 +1302,7 @@
             });
 
             // Ripristiniamo le note
-            document.querySelectorAll('.extra-info-cell').forEach(el => el.style.display = 'inline-block');
+            document.querySelectorAll('.extra-info-cell').forEach(el => el.style.display = '');
 
             doc.save(`Fatturazione_${currentClient.replace(/ /g, '_')}_${currentMonthLabel.replace(/ /g, '_')}.pdf`);
         };
@@ -1413,7 +1413,7 @@
                         footStyles: { fillColor: [209, 213, 219], textColor: 20 },
                         theme: 'grid'
                     });
-                    document.querySelectorAll('.extra-info-cell').forEach(el => el.style.display = 'inline-block');
+                    document.querySelectorAll('.extra-info-cell').forEach(el => el.style.display = '');
                     
                     docPdf.save(`Riepilogo_${safeClientName}_${safeMonthLabel}.pdf`);
                 }

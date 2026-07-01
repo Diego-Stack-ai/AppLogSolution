@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "4.90";
+const APP_VERSION = "4.91";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -177,6 +177,7 @@ function saveDraft() {
     const ids = ['data', 'automezzo', 'clienteSelect', 'viaggioSelect', 'kmPartenza', 'kmArrivo', 'importo', 'litri', 'nota'];
     ids.forEach(id => { const el = document.getElementById(id); if (el) draft.data[id] = el.value; });
     ['mattinaInizio', 'mattinaFine', 'pomeriggioInizio', 'pomeriggioFine'].forEach(id => { draft.data[id] = window.getTimeValue(id); });
+    draft.data.attivitaAggiuntive = window.attivitaAggiuntive || [];
     sessionStorage.setItem('currentDraft', JSON.stringify(draft));
 }
 
@@ -185,11 +186,20 @@ window.resumeDraft = () => {
     if (!saved) return;
     const draft = JSON.parse(saved);
     Object.keys(draft.data).forEach(id => {
-        if (id.includes('Inizio') || id.includes('Fine')) window.setTimeValue(id, draft.data[id]);
-        else { const el = document.getElementById(id); if (el) el.value = draft.data[id]; }
+        if (id === 'attivitaAggiuntive') {
+            window.attivitaAggiuntive = draft.data[id] || [];
+        } else if (id.includes('Inizio') || id.includes('Fine')) {
+            window.setTimeValue(id, draft.data[id]);
+        } else {
+            const el = document.getElementById(id);
+            if (el) el.value = draft.data[id];
+        }
     });
     if (typeof window.updateNomeGiorno === 'function') window.updateNomeGiorno();
     if (document.getElementById('clienteSelect')?.value) window.updateViaggi();
+    
+    if (typeof window.renderAttivitaRows === 'function') window.renderAttivitaRows();
+    if (typeof window.aggiornaVisibilitaAttivita === 'function') window.aggiornaVisibilitaAttivita();
     
     // Ripristina Tracking se necessario
     if (window.recoverGPSTracking) window.recoverGPSTracking();

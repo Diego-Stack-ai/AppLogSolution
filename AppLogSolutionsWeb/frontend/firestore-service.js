@@ -200,6 +200,7 @@ export async function saveTrip(tripData) {
                 note: tripData.nota || "",
                 importo: Number(tripData.importo) || 0,
                 isMagazzino: tripData.isMagazzino || false,
+                attivitaAggiuntive: tripData.attivitaAggiuntive || [],
                 // Campi "congelati" originari del viaggio per il confronto discrepanze
                 viaggioOraInizioM: finalInizioM,
                 viaggioOraFineM: finalFineM,

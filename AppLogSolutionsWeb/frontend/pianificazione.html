@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.92">
+    <link rel="stylesheet" href="styles.css?v=4.93">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -662,7 +662,7 @@
                     const mod = modelloPulito ? ` (${modelloPulito})` : '';
                     const opt = document.createElement('option');
                     opt.value = targa;
-                    opt.textContent = targa + mod + pat;
+                    opt.textContent = targa + pat + mod;
                     select.appendChild(opt);
                 });
                 select.value = currentVal;
@@ -873,7 +873,7 @@
                 const pat = m.patente ? ` - ${m.patente}` : '';
                 const modelloPulito = m.modello && m.modello !== 'undefined' && m.modello !== 'null' ? m.modello.trim() : '';
                 const mod = modelloPulito ? ` (${modelloPulito})` : '';
-                return `<option value="${targa}">${targa}${mod}${pat}</option>`;
+                return `<option value="${targa}">${targa}${pat}${mod}</option>`;
             }).join('');
 
             dipendenti.forEach(d => {
@@ -1174,7 +1174,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.92"></script>
-    <script src="script.js?v=4.92"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.93"></script>
+    <script src="script.js?v=4.93"></script>
 </body>
 </html>

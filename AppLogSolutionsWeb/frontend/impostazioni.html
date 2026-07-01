@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.82">
+    <link rel="stylesheet" href="styles.css?v=4.83">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -368,7 +368,7 @@
                 <label style="font-size: 13px; font-weight: 700; color: #b45309; display: block; margin-bottom: 10px;">&#x1F4B6; Tariffe Viaggio (GRAN CHEF / BAUER)</label>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div><label style="font-size: 11px; font-weight: 700;">Viaggio A &euro;</label><input type="number" step="0.01" min="0" id="progettoViaggioA" style="width:100%; margin-top:4px;"></div>
-                    <div><label style="font-size: 11px; font-weight: 700;">Viaggio B &euro;</label><input type="number" step="0.01" min="0" id="progettoViaggioB" style="width:100%; margin-top:4px;"></div>
+                    <div><label style="font-size: 11px; font-weight: 700;">Navetta Sommacampagna &euro;</label><input type="number" step="0.01" min="0" id="progettoViaggioB" style="width:100%; margin-top:4px;"></div>
                 </div>
             </div>
 
@@ -1282,8 +1282,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=4.82"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.82"></script>
+    <script src="script.js?v=4.83"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.83"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1676,7 +1676,7 @@ const functions = getFunctions(app, "europe-west1");
                         ${p.navetta_sommacampagna ? '<span style="background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Nav.S: &euro;'+p.navetta_sommacampagna+'</span>' : ''}
                         ${p.navetta_cerea ? '<span style="background:#fdf4ff;color:#7e22ce;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Nav.Bencarni: &euro;'+p.navetta_cerea+'</span>' : ''}
                         ${p.viaggio_a ? '<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Viaggio A: &euro;'+p.viaggio_a+'</span>' : ''}
-                        ${p.viaggio_b ? '<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Viaggio B: &euro;'+p.viaggio_b+'</span>' : ''}
+                        ${p.viaggio_b ? '<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Nav.Sommacampagna: &euro;'+p.viaggio_b+'</span>' : ''}
                         ${p.costo_ddt_base ? '<span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">DDT: &euro;'+p.costo_ddt_base+'</span>' : ''}
                         ${p.viaggio_forfait ? '<span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Forfait: &euro;'+p.viaggio_forfait+'</span>' : ''}
                         ${p.costo_ddt_zona1 ? '<span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">DDT(Z1): &euro;'+p.costo_ddt_zona1+'</span>' : ''}

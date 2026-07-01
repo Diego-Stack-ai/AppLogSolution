@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.83">
+    <link rel="stylesheet" href="styles.css?v=4.84">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -412,8 +412,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.83"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.83"></script>
+    <script src="script.js?v=4.84"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.84"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -718,6 +718,7 @@
 
             // Recupero Tariffe
             let TARIFFA_GC = 350.0;
+            let TARIFFA_GC_B = 150.0;
             let TARIFFA_BAU = 390.0;
             let CAT_B = 340.0;
             let CAT_C = 380.0;
@@ -760,6 +761,8 @@
                     } else if (nome === "GRAN CHEF") {
                         if (d.viaggio_a) TARIFFA_GC = parseFloat(d.viaggio_a);
                         else if (d.tariffa_viaggio) TARIFFA_GC = parseFloat(d.tariffa_viaggio);
+                        
+                        if (d.viaggio_b) TARIFFA_GC_B = parseFloat(d.viaggio_b);
                     } else if (nome === "BAUER") {
                         if (d.viaggio_a) TARIFFA_BAU = parseFloat(d.viaggio_a);
                         else if (d.tariffa_viaggio) TARIFFA_BAU = parseFloat(d.tariffa_viaggio);
@@ -860,7 +863,11 @@
                     let importo = 0;
                     let importo_colli = 0;
                     if (tripClient === "GRAN CHEF") {
-                        importo = TARIFFA_GC;
+                        if (nomeStr.includes("VIAGGIO B") || nomeStr.includes("SOMMACAMPAGNA") || nomeStr.includes("NAVETTA")) {
+                            importo = TARIFFA_GC_B;
+                        } else {
+                            importo = TARIFFA_GC;
+                        }
                         countGC++; totGC += importo;
                     } else if (tripClient === "CATTEL") {
                         if (nomeStr.includes("NAVETTA")) {
@@ -943,6 +950,11 @@
                                     pivotData[currentKey][day].km += isNaN(pk) ? 0 : pk;
                                 });
                             } else if (tripClient === "GRAN CHEF") {
+                                if (rowKey.includes("VIAGGIO B") || rowKey.includes("SOMMACAMPAGNA") || rowKey.includes("NAVETTA")) {
+                                    rowKey = "NAVETTA SOMMACAMPAGNA";
+                                } else if (rowKey.includes("VIAGGIO A") || rowKey.includes("GRAN CHEF")) {
+                                    rowKey = "VIAGGIO A";
+                                }
                                 if (!pivotData[rowKey]) pivotData[rowKey] = {};
                                 
                                 let targaStrVal = (t.targa || t.targa_mezzo || '').toUpperCase();

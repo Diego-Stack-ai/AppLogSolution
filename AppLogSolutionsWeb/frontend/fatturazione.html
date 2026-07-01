@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.87">
+    <link rel="stylesheet" href="styles.css?v=4.88">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -286,7 +286,7 @@
                 </button>
                 <button class="btn btn-primary" id="btn-export-granchef" onclick="esportaModuloGranChefExcel()" style="display: none; background-color: #f59e0b; border-color: #f59e0b;">
                     <span class="material-icons-round" style="color: white; margin-right: 8px;">download</span>
-                    Scarica Modulo Gran Chef
+                    Fatturazione Gran Chef
                 </button>
                 <button class="btn btn-primary" onclick="esportaPDF()">
                     <span class="material-icons-round" style="color: #dc2626; margin-right: 8px;">picture_as_pdf</span>
@@ -381,7 +381,7 @@
 
         <!-- GRAN CHEF SUMMARY MODULE -->
         <div id="granchef-summary-container" style="display: none; margin-top: 32px;">
-            <h3 style="margin-bottom: 16px; color: var(--text-main);">Modulo Gran Chef - <span id="granchef-summary-month"></span></h3>
+            <h3 style="margin-bottom: 16px; color: var(--text-main);">Fatturazione Gran Chef - <span id="granchef-summary-month"></span></h3>
             <div class="pivot-wrapper">
                 <table class="pivot-table" id="granchef-summary-table">
                     <thead>
@@ -450,8 +450,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.87"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.87"></script>
+    <script src="script.js?v=4.88"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.88"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -2058,9 +2058,9 @@
             
             ws['!cols'] = [{wch:15}, {wch:15}, {wch:25}, {wch:15}, {wch:15}];
 
-            XLSX.utils.book_append_sheet(wb, ws, "GRAN_CHEF");
+            XLSX.utils.book_append_sheet(wb, ws, "Fatturazione Gran Chef");
             let safeMonthLabel = window.currentGCMonthLabel ? window.currentGCMonthLabel.replace(/[\/\\]/g, '_') : 'mese';
-            XLSX.writeFile(wb, `Riepilogo_GranChef_${safeMonthLabel}.xlsx`);
+            XLSX.writeFile(wb, `Fatturazione_GranChef_${safeMonthLabel}.xlsx`);
         }
 
         window.esportaModuloCattelExcel = function() {

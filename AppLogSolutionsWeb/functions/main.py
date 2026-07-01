@@ -1196,7 +1196,7 @@ def _extract_phone(p):
             tel = m.group(0).strip()
     return re.sub(r'[\s\-]', '', tel) if tel else ''
 
-def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, distinta_url=None):
+def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, distinta_url=None, ora_partenza_dep="07:00"):
     """Genera HTML mappa mobile-first con polyline strade vere."""
     if depot is None:
         depot = _get_depot_for_points_cloud(punti)
@@ -1209,7 +1209,6 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, 
         return f"{hh}h {mm}m" if hh > 0 else f"{mm}m"
 
     depot_nome = depot.get("nome", "Deposito").title() if depot else "Deposito"
-    ora_partenza_dep = "07:00"
     
     fermate_html = ""
     
@@ -1309,8 +1308,11 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, 
     # 3. Card di Arrivo
     ora_rientro_dep = ""
     try:
+        part_m = re.match(r"(\d{2}):(\d{2})", str(ora_partenza_dep).strip())
+        start_min = int(part_m.group(1)) * 60 + int(part_m.group(2)) if part_m else 420
+        
         t_tot_min = (sec_guida // 60) + len(punti) * TIME_PER_STOP_MIN
-        hh_ret, mm_ret = divmod(7 * 60 + int(t_tot_min), 60)
+        hh_ret, mm_ret = divmod(start_min + int(t_tot_min), 60)
         hh_ret = hh_ret % 24
         ora_rientro_dep = f"{hh_ret:02d}:{mm_ret:02d}"
     except Exception as e_time:
@@ -1357,7 +1359,7 @@ body,html{{margin:0;padding:0;height:100%;font-family:'Outfit',sans-serif;overfl
 #sidebar{{flex:1;display:flex;flex-direction:column;background:white;border-top:2px solid #cbd5e1;overflow:hidden}}
 .header{{padding:8px 12px;background:#1e293b;color:white;border-bottom:2px solid var(--accent)}}
 .trip-title{{margin:0;font-size:.65rem;font-weight:800;text-transform:uppercase;color:var(--accent)}}
-.stats-row{{display:flex;gap:16px;margin-top:4px}}
+.stats-row{{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}}
 .stat-val{{font-size:.85rem;font-weight:800;color:white}}
 .stat-lbl{{font-size:.52rem;color:#94a3b8;text-transform:uppercase}}
 #delivery-list{{flex:1;overflow-y:auto;padding:8px;background:#f1f5f9;padding-bottom:60px}}
@@ -1392,6 +1394,7 @@ border: 2px solid black;
 <div class="header">
 <p class="trip-title">&#x1F69B; {viaggio_id}</p>
 <div class="stats-row">
+<div><div class="stat-val">&#x23F0; {ora_partenza_dep}</div><div class="stat-lbl">Partenza</div></div>
 <div><div class="stat-val">&#x1F6E3;&#xFE0F; {km} km</div><div class="stat-lbl">Km Reali</div></div>
 <div><div class="stat-val">&#x1F552; {fmt_min(t_guida_min)}</div><div class="stat-lbl">Guida</div></div>
 <div><div class="stat-val">&#x23F1;&#xFE0F; {fmt_min(t_tot_min)}</div><div class="stat-lbl">Totale</div></div>

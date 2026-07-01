@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=4.79">
+    <link rel="stylesheet" href="styles.css?v=4.80">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
@@ -1496,6 +1496,13 @@ const db = getFirestore(app);
         ];
         const NOMI_GC_FALLBACK = NOMI_DNR_FALLBACK.map(n => 'GranChef ' + n);
 
+        function checkIsGC(z, zid) {
+            const id = (zid || (z && z.id_zona) || '').toLowerCase();
+            const nome = (z && z.nome_giro || '').toLowerCase();
+            const isGcStats = (z && z._stats && z._stats.is_gc === true);
+            return id.includes('granchef') || nome.includes('granchef') || nome.includes('gran chef') || isGcStats;
+        }
+
         // Recupera la lista nomi viaggi dinamicamente da Firestore (lista_progetti).
         // Usa _CLIENTE_PROGETTO (letto dal JSON dei viaggi) come prima scelta,
         // poi il prefisso del giro (isGC) come fallback, e infine gli array statici.
@@ -1503,7 +1510,10 @@ const db = getFirestore(app);
             const progetti = (window.appData && window.appData.lista_progetti) || [];
             let progetto = null;
 
-            if (_CLIENTE_PROGETTO) {
+            if (isGC) {
+                // Se stiamo espressamente parlando di un giro Gran Chef, forziamo il progetto Gran Chef
+                progetto = progetti.find(p => (p.nome || '').toUpperCase().includes('GRAN') || (p.nome || '').toUpperCase().includes('CHEF'));
+            } else if (_CLIENTE_PROGETTO) {
                 // Metodo preciso: cerca per nome esatto del cliente dal JSON
                 const clienteUpper = _CLIENTE_PROGETTO.toUpperCase();
                 progetto = progetti.find(p => (p.nome || '').toUpperCase() === clienteUpper);
@@ -1532,7 +1542,7 @@ const db = getFirestore(app);
         window.apriModal = (zid) => {
             modalZid = zid;
             const z = DATA_ZONE.find(x => x.id_zona === zid);
-            const isGC = (zid || '').startsWith('GranChef') || (z && z.nome_giro && z.nome_giro.startsWith('GranChef')) || (z && z._stats && z._stats.is_gc === true) || (z && z.id_zona && z.id_zona.includes('GranChef'));
+            const isGC = checkIsGC(z, zid);
             const nomi = getNomiViaggi(isGC);
             
             document.getElementById('modal-title').textContent = isGC ? '🍽️ Rinomina giro GranChef' : '🚚 Rinomina giro';
@@ -1586,7 +1596,7 @@ const db = getFirestore(app);
             // --- NUOVA LOGICA AUTO-AGGIUNTA ---
             const isCustomInput = !!document.getElementById('modal-input').value.trim();
             if (isCustomInput && z) {
-                const isGC = (modalZid || '').startsWith('GranChef') || (z.nome_giro && z.nome_giro.startsWith('GranChef')) || (z._stats && z._stats.is_gc === true) || (modalZid && modalZid.includes('GranChef'));
+                const isGC = checkIsGC(z, modalZid);
                 const currentList = getNomiViaggi(isGC);
                 if (!currentList.includes(v)) {
                     // Trova il progetto
@@ -3123,7 +3133,7 @@ const db = getFirestore(app);
             DATA_ZONE.forEach(z => {
                 if (z.id_zona === 'DDT_DA_INSERIRE' || z.lista_punti.length === 0) return;
                 
-                const isGC = (z.id_zona || '').startsWith('GranChef') || (z.nome_giro || '').startsWith('GranChef') || (z._stats && z._stats.is_gc === true) || (z.id_zona && z.id_zona.includes('GranChef'));
+                const isGC = checkIsGC(z);
                 const nomiAmmessi = getNomiViaggi(isGC);
                 const nomeAttuale = z.nome_giro || z.id_zona;
                 

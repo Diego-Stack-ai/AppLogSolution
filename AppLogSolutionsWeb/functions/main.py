@@ -1476,7 +1476,8 @@ def core_genera_mappa_autista(viaggio_id, distinta_url=None):
     if not distinta_url:
         distinta_url = viaggio.get("distinta_light")
 
-    html = _genera_html_mappa(viaggio_id, punti_norm, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url)
+    ora_partenza_calc = viaggio.get("_stats", {}).get("ora_partenza", "07:00")
+    html = _genera_html_mappa(viaggio_id, punti_norm, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc)
 
     bucket = storage.bucket(name=BUCKET_NAME)
     data_viaggio = viaggio.get("data", "sconosciuta").replace("/", "-")
@@ -1599,7 +1600,8 @@ def core_ricalcola_percorso(viaggio_id, nuovi_punti, num_locked=0):
     # Rigenera mappa autista aggiornata
     viaggio = doc_viaggio.to_dict()
     distinta_url = viaggio.get("distinta_light")
-    html = _genera_html_mappa(viaggio_id, punti_finali, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url)
+    ora_partenza_calc = viaggio.get("_stats", {}).get("ora_partenza", "07:00")
+    html = _genera_html_mappa(viaggio_id, punti_finali, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc)
     bucket = storage.bucket(name=BUCKET_NAME)
     data_v = viaggio.get("data", "sconosciuta").replace("/", "-")
     html_path = f"CONSEGNE/CONSEGNE_{data_v}/MAPPE_AUTISTI/{viaggio_id}.html"
@@ -3454,6 +3456,7 @@ def _get_directions_and_simulate_cloud(percorso, depot, is_grand_chef, data_cons
         
         if idx == 0:
             current_time = target_arr_time_min - durata_guida_min
+            partenza_magazzino_min = current_time
             
         arr_time_min = current_time + durata_guida_min
         
@@ -3469,7 +3472,8 @@ def _get_directions_and_simulate_cloud(percorso, depot, is_grand_chef, data_cons
             
         current_time = dep_time_min
         
-    return km_tot, sec_tot, polylines, percorso
+    ora_partenza_calc = format_minutes_to_time(partenza_magazzino_min) if len(percorso) > 0 else "07:00"
+    return km_tot, sec_tot, polylines, percorso, ora_partenza_calc
 
 def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=False, usa_or_tools=True):
     start_time = time.time()
@@ -3587,7 +3591,8 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
             "tot_ddt": tot_ddt,
             "fatturato": fatturato_str,
             "depot": depot["nome"],
-            "is_gc": is_grand_chef
+            "is_gc": is_grand_chef,
+            "ora_partenza": ora_partenza_calc
         }
         
         zone["lista_punti"] = punti_simulati
@@ -4327,7 +4332,8 @@ def core_genera_completo_giornata(data_consegna):
                 punti_html.append(p)
                 
         depot = _get_depot_for_points_cloud(punti_html)
-        html_map_content = _genera_html_mappa(f"Giro {nome_giro}", punti_html, km, sec_guida, polylines, depot=depot, distinta_url=distinta_light_url)
+        ora_partenza_calc = zone.get("_stats", {}).get("ora_partenza", "07:00")
+        html_map_content = _genera_html_mappa(f"Giro {nome_giro}", punti_html, km, sec_guida, polylines, depot=depot, distinta_url=distinta_light_url, ora_partenza_dep=ora_partenza_calc)
         
         map_blob = bucket.blob(f"REPORTS/{data_consegna}/MAPPE_AUTISTI/{nome_giro}.html")
         map_blob.upload_from_string(html_map_content.encode('utf-8'), content_type="text/html; charset=utf-8")

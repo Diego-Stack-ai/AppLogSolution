@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=4.78">
+    <link rel="stylesheet" href="styles.css?v=4.79">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
@@ -2649,7 +2649,11 @@ const db = getFirestore(app);
                 id_zona: subId,
                 nome_giro: `${baseNome}/${nextLetter}`,
                 color: subColor,
-                lista_punti: pointsToMove
+                lista_punti: pointsToMove,
+                _stats: z._stats ? JSON.parse(JSON.stringify(z._stats)) : undefined,
+                veicolo: z.veicolo,
+                autista: z.autista,
+                _stato: 'modificato'
             };
 
             DATA_ZONE.push(newVoyage);
@@ -2863,7 +2867,14 @@ const db = getFirestore(app);
 
                 const pathBase = `REPORTS/${targetFileDate}`;
                 
-                const jsonViaggi = JSON.stringify(formattedVoyages, null, 2);
+                let dataToSave = formattedVoyages;
+                if (_CLIENTE_PROGETTO) {
+                    dataToSave = {
+                        cliente: _CLIENTE_PROGETTO,
+                        zone: formattedVoyages
+                    };
+                }
+                const jsonViaggi = JSON.stringify(dataToSave, null, 2);
                 await uploadString(ref(storage, `${pathBase}/viaggi_giornalieri_Johnson.json`), jsonViaggi, 'raw', {
                     contentType: 'application/json'
                 });
@@ -2960,7 +2971,14 @@ const db = getFirestore(app);
                 const pathBase = `REPORTS/${targetFileDate}`;
                 
                 // 1. Save viaggi_giornalieri_Johnson.json
-                const jsonViaggi = JSON.stringify(formattedVoyages, null, 2);
+                let dataToSave = formattedVoyages;
+                if (_CLIENTE_PROGETTO) {
+                    dataToSave = {
+                        cliente: _CLIENTE_PROGETTO,
+                        zone: formattedVoyages
+                    };
+                }
+                const jsonViaggi = JSON.stringify(dataToSave, null, 2);
                 await uploadString(ref(storage, `${pathBase}/viaggi_giornalieri_Johnson.json`), jsonViaggi, 'raw', {
                     contentType: 'application/json'
                 });
@@ -3160,7 +3178,14 @@ const db = getFirestore(app);
                 const pathBase = `REPORTS/${targetFileDate}`;
                 
                 // 1. Save viaggi_giornalieri_Johnson.json
-                const jsonViaggi = JSON.stringify(formattedVoyages, null, 2);
+                let dataToSave = formattedVoyages;
+                if (_CLIENTE_PROGETTO) {
+                    dataToSave = {
+                        cliente: _CLIENTE_PROGETTO,
+                        zone: formattedVoyages
+                    };
+                }
+                const jsonViaggi = JSON.stringify(dataToSave, null, 2);
                 await uploadString(ref(storage, `${pathBase}/viaggi_giornalieri_Johnson.json`), jsonViaggi, 'raw', {
                     contentType: 'application/json'
                 });

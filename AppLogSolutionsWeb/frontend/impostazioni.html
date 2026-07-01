@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.95">
+    <link rel="stylesheet" href="styles.css?v=4.96">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -284,25 +284,54 @@
         <div id="progettiContent" style="display: none; padding-top: 20px;">
             <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
                 <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="const f = document.getElementById('formProgettiContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">domain_add</span>Aggiungi Nuovo Cliente</button>
-                <button type="button" class="btn-secondary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px; background-color:#f1f5f9; color:#475569;" onclick="const f = document.getElementById('gestioneDestinazioniContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">route</span>Gestisci Destinazioni Navette</button>
+                <button type="button" class="btn-secondary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px; background-color:#f1f5f9; color:#475569;" onclick="const f = document.getElementById('gestioneScaletteContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">route</span>Gestisci Liste Scalette</button>
             </div>
 
-            <!-- Container Destinazioni Navette -->
-            <div id="gestioneDestinazioniContainer" style="display: none; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:24px;">
+            <!-- Container Scalette Navette -->
+            <div id="gestioneScaletteContainer" style="display: none; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:24px;">
                 <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
-                    💡 Queste destinazioni compaiono nei menù a tendina <b>Da/A</b> quando l'autista aggiunge una navetta extra.
+                    💡 Configura le quattro liste a tendina utilizzate dall'autista per compilare il modulo "Scalette Navette".
                 </p>
-                <div class="form-grid" style="margin-bottom: 16px;">
-                    <div class="input-group" style="grid-column: 1 / -1;">
-                        <label for="nuovaDestinazioneInput">Nome Nuova Destinazione</label>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="text" id="nuovaDestinazioneInput" placeholder="es. CATTEL" style="text-transform: uppercase; flex: 1;">
-                            <button type="button" class="btn-primary" style="width:auto; padding:0 20px;" onclick="if(typeof window.aggiungiDestinazioneNavetta === 'function') window.aggiungiDestinazioneNavetta()">Aggiungi</button>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+                    <!-- 1. Partenza / Rientro -->
+                    <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: block;">1. Partenza / Rientro</label>
+                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                            <input type="text" id="nuovaScalettaPartenza" placeholder="es. Mag. Veggiano" style="text-transform: uppercase; flex: 1; padding: 6px; font-size: 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                            <button type="button" class="btn-primary" style="padding: 0 12px; font-size: 12px; border-radius: 6px;" onclick="window.aggiungiScalettaItem('scaletta_partenze', 'nuovaScalettaPartenza')">+</button>
                         </div>
+                        <div id="listaScalettaPartenze" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
                     </div>
-                </div>
-                <div id="listaDestinazioniNavette" style="display: flex; flex-direction: column; gap: 10px;">
-                    <!-- Popolato da JS -->
+
+                    <!-- 2. Luogo di Carico -->
+                    <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: block;">2. Luogo di Carico</label>
+                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                            <input type="text" id="nuovaScalettaCarico" placeholder="es. Magazzino A" style="text-transform: uppercase; flex: 1; padding: 6px; font-size: 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                            <button type="button" class="btn-primary" style="padding: 0 12px; font-size: 12px; border-radius: 6px;" onclick="window.aggiungiScalettaItem('scaletta_carico', 'nuovaScalettaCarico')">+</button>
+                        </div>
+                        <div id="listaScalettaCarico" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+
+                    <!-- 3. Clienti Caricati -->
+                    <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: block;">3. Clienti / Merce</label>
+                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                            <input type="text" id="nuovaScalettaClienti" placeholder="es. Cliente X" style="text-transform: uppercase; flex: 1; padding: 6px; font-size: 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                            <button type="button" class="btn-primary" style="padding: 0 12px; font-size: 12px; border-radius: 6px;" onclick="window.aggiungiScalettaItem('scaletta_clienti', 'nuovaScalettaClienti')">+</button>
+                        </div>
+                        <div id="listaScalettaClienti" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+
+                    <!-- 4. Destinazione Merce -->
+                    <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: block;">4. Destinazione Merce</label>
+                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                            <input type="text" id="nuovaScalettaDestinazioni" placeholder="es. Cons. Cliente" style="text-transform: uppercase; flex: 1; padding: 6px; font-size: 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                            <button type="button" class="btn-primary" style="padding: 0 12px; font-size: 12px; border-radius: 6px;" onclick="window.aggiungiScalettaItem('scaletta_destinazioni_merce', 'nuovaScalettaDestinazioni')">+</button>
+                        </div>
+                        <div id="listaScalettaDestinazioni" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
+                    </div>
                 </div>
             </div>
             <div id="formProgettiContainer" style="display: none; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:24px;">
@@ -1304,8 +1333,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=4.95"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.95"></script>
+    <script src="script.js?v=4.96"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.96"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1328,77 +1357,57 @@ const functions = getFunctions(app, "europe-west1");
     async function delProgetto(id) { await deleteDoc(doc(db, "progetti", id)); }
 
     // ── GESTIONE DESTINAZIONI NAVETTE ─────────────────────────────────────
-    window.renderDestinazioniImpostazioni = () => {
-        const container = document.getElementById('listaDestinazioniNavette');
+    window.renderScaletteItems = function(tipo) {
+        let items = [];
+        let containerId = '';
+        if (tipo === 'scaletta_partenze') { items = window.appData?.lista_scaletta_partenze || []; containerId = 'listaScalettaPartenze'; }
+        else if (tipo === 'scaletta_carico') { items = window.appData?.lista_scaletta_carico || []; containerId = 'listaScalettaCarico'; }
+        else if (tipo === 'scaletta_clienti') { items = window.appData?.lista_scaletta_clienti || []; containerId = 'listaScalettaClienti'; }
+        else if (tipo === 'scaletta_destinazioni_merce') { items = window.appData?.lista_scaletta_destinazioni_merce || []; containerId = 'listaScalettaDestinazioni'; }
+
+        const container = document.getElementById(containerId);
         if (!container) return;
-        const destinazioni = window.appData?.lista_destinazioni_navette || [];
-        
-        if (destinazioni.length === 0) {
-            container.innerHTML = '<div style="color: #64748b; font-size: 13px;">Nessuna destinazione registrata.</div>';
+
+        if (items.length === 0) {
+            container.innerHTML = '<div style="color: #64748b; font-size: 11px;">Nessuna voce registrata.</div>';
             return;
         }
 
-        container.innerHTML = destinazioni.map(d => `
-            <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 10px 16px; border: 1px solid #e2e8f0; border-radius: 8px;">
+        // ordina alfabeticamente
+        let sorted = [...items].sort((a,b) => (a.nome || "").localeCompare(b.nome || ""));
+
+        container.innerHTML = sorted.map(d => `
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 6px;">
                 <span style="font-weight: 500;">${d.nome}</span>
-                <button type="button" class="btn-danger" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="if(typeof window.eliminaDestinazioneNavetta === 'function') window.eliminaDestinazioneNavetta('${d.id}', '${d.nome}')">
-                    Elimina
+                <button type="button" class="btn-danger" style="width: auto; padding: 4px 8px; font-size: 11px;" onclick="window.eliminaScalettaItem('${tipo}', '${d.id}', '${d.nome}')">
+                    <span class="material-icons-round" style="font-size: 14px;">close</span>
                 </button>
             </div>
         `).join('');
     };
 
-    window.aggiungiDestinazioneNavetta = async () => {
-        const input = document.getElementById('nuovaDestinazioneInput');
+    window.aggiungiScalettaItem = async (tipo, inputId) => {
+        const input = document.getElementById(inputId);
         const nome = input.value.trim().toUpperCase();
         if (!nome) return;
 
         try {
-            await addDoc(collection(db, "clienti/DNR/destinazioni_navette"), { nome: nome });
+            await addDoc(collection(db, "clienti/DNR/" + tipo), { nome: nome });
             input.value = '';
-            alert("Destinazione aggiunta!");
         } catch (error) {
-            alert("Errore: " + error.message);
+            alert("Errore aggiunta: " + error.message);
         }
     };
 
-    window.eliminaDestinazioneNavetta = async (id, nome) => {
-        if (!confirm(`Sei sicuro di voler eliminare la destinazione ${nome}?`)) return;
-
-        // Controllo utilizzo nel mese in corso
-        const now = new Date();
-        const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-        const endOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-31`;
-
+    window.eliminaScalettaItem = async (tipo, id, nome) => {
+        if (!confirm(`Sei sicuro di voler eliminare "${nome}"?`)) return;
+        
+        // Al momento non facciamo controllo utilizzi storici per semplicità. 
+        // Eliminare un'opzione la nasconderà semplicemente dai futuri inserimenti.
         try {
-            const q = query(
-                collection(db, "presenze"),
-                where("data", ">=", startOfMonth),
-                where("data", "<=", endOfMonth)
-            );
-            const snapshot = await getDocs(q);
-            let inUso = false;
-
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.attivitaAggiuntive && Array.isArray(data.attivitaAggiuntive)) {
-                    data.attivitaAggiuntive.forEach(att => {
-                        if (att.partenza === nome || att.destinazione === nome) {
-                            inUso = true;
-                        }
-                    });
-                }
-            });
-
-            if (inUso) {
-                alert(`Impossibile eliminare: la destinazione "${nome}" è stata utilizzata in almeno un viaggio in questo mese. Puoi eliminarla solo in un mese in cui non viene mai utilizzata, per non corrompere gli storici.`);
-                return;
-            }
-
-            await deleteDoc(doc(db, "clienti/DNR/destinazioni_navette", id));
-            alert("Destinazione eliminata con successo!");
+            await deleteDoc(doc(db, "clienti/DNR/" + tipo, id));
         } catch (error) {
-            alert("Errore durante la verifica o eliminazione: " + error.message);
+            alert("Errore eliminazione: " + error.message);
         }
     };
 

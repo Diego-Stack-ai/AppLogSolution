@@ -347,17 +347,23 @@ function startRealtimeSync(isAdmin) {
     });
     activeListeners.push(unsubProgetti);
 
-    // Listener per Destinazioni Navette
-    const unsubDestinazioni = onSnapshot(collection(db, "clienti/DNR/destinazioni_navette"), (snapshot) => {
-        const destinazioni = [];
-        snapshot.forEach((d) => {
-            destinazioni.push({ id: d.id, ...d.data() });
+    // Listeners per le 4 liste delle Scalette Navette
+    const setupScalettaListener = (tipo, globalProp) => {
+        const unsub = onSnapshot(collection(db, "clienti/DNR/" + tipo), (snapshot) => {
+            const dataList = [];
+            snapshot.forEach((d) => dataList.push({ id: d.id, ...d.data() }));
+            window.appData[globalProp] = dataList;
+            // Aggiorna interfaccia impostazioni se aperta
+            if (typeof window.renderScaletteItems === 'function') window.renderScaletteItems(tipo);
+            // Aggiornerà interfaccia inserimento se necessario in futuro
         });
-        window.appData.lista_destinazioni_navette = destinazioni;
-        if (typeof window.renderDestinazioniImpostazioni === 'function') window.renderDestinazioniImpostazioni();
-        if (typeof window.renderDestinazioniInserimento === 'function') window.renderDestinazioniInserimento();
-    });
-    activeListeners.push(unsubDestinazioni);
+        activeListeners.push(unsub);
+    };
+
+    setupScalettaListener('scaletta_partenze', 'lista_scaletta_partenze');
+    setupScalettaListener('scaletta_carico', 'lista_scaletta_carico');
+    setupScalettaListener('scaletta_clienti', 'lista_scaletta_clienti');
+    setupScalettaListener('scaletta_destinazioni_merce', 'lista_scaletta_destinazioni_merce');
 
     // Listener per Giustificativi (Ferie, Malattia, ecc.)
     const unsubGiustificativi = onSnapshot(collection(db, "giustificativi"), (snapshot) => {

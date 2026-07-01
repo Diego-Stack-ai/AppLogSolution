@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.01">
+    <link rel="stylesheet" href="styles.css?v=5.02">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -783,10 +783,11 @@
                     
                     selectViaggio.innerHTML = '<option value="">-- Seleziona --</option>';
                     viaggiConfigurati.forEach(v => {
-                        const val = v.toUpperCase();
+                        if (!v) return;
+                        const val = String(v).trim().toUpperCase();
                         const combo = currentCliente + "||" + val;
                         if (usedViaggi.has(combo) && val !== currentViaggio) {
-                            // Salta l'opzione (nasconde fisicamente)
+                            // Salta l'opzione
                         } else {
                             const opt = document.createElement('option');
                             opt.value = val;
@@ -802,8 +803,13 @@
                 if (selectTarga) {
                     const mezzi = window.appData?.lista_mezzi || [];
                     selectTarga.innerHTML = '<option value="">-- Seleziona --</option>';
-                    mezzi.sort((a,b) => (a.targa||"").localeCompare(b.targa||"")).forEach(m => {
+                    
+                    // Facciamo una copia dell'array per non mutarlo globalmente
+                    [...mezzi].sort((a,b) => (a.targa||"").localeCompare(b.targa||"")).forEach(m => {
+                        if (!m) return;
                         const val = (m.targa || "").trim().toUpperCase();
+                        if (!val) return;
+                        
                         const pat = m.patente ? ` - ${m.patente}` : '';
                         const modelloPulito = m.modello && m.modello !== 'undefined' && m.modello !== 'null' ? m.modello.trim() : '';
                         const mod = modelloPulito ? ` (${modelloPulito})` : '';
@@ -813,7 +819,7 @@
                         const isUsedByOther = (owner && owner !== autistaId);
                         
                         if (isUsedByOther) {
-                            // Salta l'opzione (nasconde fisicamente)
+                            // Salta l'opzione
                         } else {
                             const opt = document.createElement('option');
                             opt.value = val;
@@ -1200,7 +1206,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=5.01"></script>
-    <script src="script.js?v=5.01"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.02"></script>
+    <script src="script.js?v=5.02"></script>
 </body>
 </html>

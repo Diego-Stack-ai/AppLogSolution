@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.97">
+    <link rel="stylesheet" href="styles.css?v=4.98">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -383,8 +383,12 @@
                     const data = d.data();
                     const ruolo = (data.ruolo || "").toLowerCase().trim();
                     const isStaff = ruolo === 'amministratore' || ruolo === 'impiegata';
+                    
+                    const stato = (data.stato || data.Stato || "").toLowerCase();
+                    const isFired = stato.includes('licenziat') || stato.includes('inattiv');
+
                     // Mostriamo tutti i dipendenti attivi che non sono amministratori o impiegati (stesso filtro di presenze)
-                    if (data.attivo !== false && !isStaff) {
+                    if (data.attivo !== false && !isStaff && !isFired) {
                         dipendenti.push({ id: d.id, ...data });
                     }
                 });
@@ -1177,7 +1181,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=4.97"></script>
-    <script src="script.js?v=4.97"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.98"></script>
+    <script src="script.js?v=4.98"></script>
 </body>
 </html>

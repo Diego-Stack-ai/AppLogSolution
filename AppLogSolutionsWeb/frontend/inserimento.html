@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.93">
+    <link rel="stylesheet" href="styles.css?v=4.94">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -462,12 +462,12 @@
         </div>
     </div>
 
-    <script src="script.js?v=4.93"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.93"></script>
+    <script src="script.js?v=4.94"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.94"></script>
     <script type="module">
-        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=4.93";
-        import { auth } from "./firestore-service.js?v=4.93";
-        import "./gps-tracker.js?v=4.93";
+        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=4.94";
+        import { auth } from "./firestore-service.js?v=4.94";
+        import "./gps-tracker.js?v=4.94";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -837,10 +837,9 @@
                 return;
             }
             
-            const progetti = window.appData.lista_progetti || [];
-            let nomiClienti = progetti.map(p => p.nome).filter(Boolean);
-            if (nomiClienti.length === 0) nomiClienti = ["PROGETTO SCUOLE", "CATTEL", "GRAN CHEF", "BAUER"];
-            nomiClienti.sort();
+            const destinazioniList = window.appData?.lista_destinazioni_navette || [];
+            let nomiDestinazioni = destinazioniList.map(d => d.nome).filter(Boolean);
+            nomiDestinazioni.sort();
             
             window.attivitaAggiuntive.forEach((att, index) => {
                 const card = document.createElement('div');
@@ -850,11 +849,19 @@
                 let daOptions = '<option value="">Da...</option>';
                 let aOptions = '<option value="">A...</option>';
                 
-                nomiClienti.forEach(nome => {
-                    const selectedDa = (att.da === nome) ? 'selected' : '';
-                    const selectedA = (att.a === nome) ? 'selected' : '';
-                    daOptions += `<option value="${nome}" ${selectedDa}>${nome.toUpperCase()}</option>`;
-                    aOptions += `<option value="${nome}" ${selectedA}>${nome.toUpperCase()}</option>`;
+                nomiDestinazioni.forEach(nome => {
+                    const isDaSelected = (att.da === nome);
+                    const isASelected = (att.a === nome);
+                    
+                    // Logica di esclusione: se "A" è selezionato, nascondiamo/disabilitiamo in "Da" (e viceversa)
+                    const disabledInDa = (att.a === nome) ? 'disabled style="display:none;"' : '';
+                    const disabledInA = (att.da === nome) ? 'disabled style="display:none;"' : '';
+                    
+                    const selectedDa = isDaSelected ? 'selected' : '';
+                    const selectedA = isASelected ? 'selected' : '';
+                    
+                    daOptions += `<option value="${nome}" ${selectedDa} ${disabledInDa}>${nome.toUpperCase()}</option>`;
+                    aOptions += `<option value="${nome}" ${selectedA} ${disabledInA}>${nome.toUpperCase()}</option>`;
                 });
                 
                 card.innerHTML = `
@@ -943,6 +950,39 @@
             }
             
             window.attivitaAggiuntive[idx][field] = val;
+            
+            if (field === 'da' || field === 'a') {
+                const card = el.closest('.attivita-card');
+                if (card) {
+                    const daSelect = card.querySelector('select[data-field="da"]');
+                    const aSelect = card.querySelector('select[data-field="a"]');
+                    
+                    if (daSelect && aSelect) {
+                        const daVal = daSelect.value;
+                        const aVal = aSelect.value;
+                        
+                        Array.from(aSelect.options).forEach(opt => {
+                            if (opt.value && opt.value === daVal) {
+                                opt.disabled = true;
+                                opt.style.display = 'none';
+                            } else {
+                                opt.disabled = false;
+                                opt.style.display = '';
+                            }
+                        });
+                        
+                        Array.from(daSelect.options).forEach(opt => {
+                            if (opt.value && opt.value === aVal) {
+                                opt.disabled = true;
+                                opt.style.display = 'none';
+                            } else {
+                                opt.disabled = false;
+                                opt.style.display = '';
+                            }
+                        });
+                    }
+                }
+            }
             
             if (field === 'kmIniziali' || field === 'kmFinali') {
                 const kmIniz = window.attivitaAggiuntive[idx].kmIniziali;

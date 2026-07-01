@@ -347,6 +347,18 @@ function startRealtimeSync(isAdmin) {
     });
     activeListeners.push(unsubProgetti);
 
+    // Listener per Destinazioni Navette
+    const unsubDestinazioni = onSnapshot(collection(db, "destinazioni_navette"), (snapshot) => {
+        const destinazioni = [];
+        snapshot.forEach((d) => {
+            destinazioni.push({ id: d.id, ...d.data() });
+        });
+        window.appData.lista_destinazioni_navette = destinazioni;
+        if (typeof window.renderDestinazioniImpostazioni === 'function') window.renderDestinazioniImpostazioni();
+        if (typeof window.renderDestinazioniInserimento === 'function') window.renderDestinazioniInserimento();
+    });
+    activeListeners.push(unsubDestinazioni);
+
     // Listener per Giustificativi (Ferie, Malattia, ecc.)
     const unsubGiustificativi = onSnapshot(collection(db, "giustificativi"), (snapshot) => {
         const giustificativi = [];

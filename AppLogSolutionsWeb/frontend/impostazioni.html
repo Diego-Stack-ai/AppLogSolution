@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.93">
+    <link rel="stylesheet" href="styles.css?v=4.94">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -282,7 +282,29 @@
         </div>
 
         <div id="progettiContent" style="display: none; padding-top: 20px;">
-            <button type="button" class="btn-primary" style="margin-bottom:20px; width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="const f = document.getElementById('formProgettiContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">domain_add</span>Aggiungi Nuovo Cliente</button>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="const f = document.getElementById('formProgettiContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">domain_add</span>Aggiungi Nuovo Cliente</button>
+                <button type="button" class="btn-secondary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px; background-color:#f1f5f9; color:#475569;" onclick="const f = document.getElementById('gestioneDestinazioniContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">route</span>Gestisci Destinazioni Navette</button>
+            </div>
+
+            <!-- Container Destinazioni Navette -->
+            <div id="gestioneDestinazioniContainer" style="display: none; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:24px;">
+                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
+                    💡 Queste destinazioni compaiono nei menù a tendina <b>Da/A</b> quando l'autista aggiunge una navetta extra.
+                </p>
+                <div class="form-grid" style="margin-bottom: 16px;">
+                    <div class="input-group" style="grid-column: 1 / -1;">
+                        <label for="nuovaDestinazioneInput">Nome Nuova Destinazione</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="nuovaDestinazioneInput" placeholder="es. CATTEL" style="text-transform: uppercase; flex: 1;">
+                            <button type="button" class="btn-primary" style="width:auto; padding:0 20px;" onclick="if(typeof window.aggiungiDestinazioneNavetta === 'function') window.aggiungiDestinazioneNavetta()">Aggiungi</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="listaDestinazioniNavette" style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Popolato da JS -->
+                </div>
+            </div>
             <div id="formProgettiContainer" style="display: none; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:24px;">
             <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
                 💡 Gestisci qui i clienti/progetti e i viaggi associati. Questi dati vengono usati nel dropdown della pagina <b>Registrazione Turno</b>.
@@ -1282,12 +1304,12 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=4.93"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.93"></script>
+    <script src="script.js?v=4.94"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.94"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
-    import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, getDoc }
+    import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, getDoc, query, where, getDocs }
         from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
@@ -1304,6 +1326,81 @@ const functions = getFunctions(app, "europe-west1");
         else     { await addDoc(collection(db, "progetti"), data); }
     }
     async function delProgetto(id) { await deleteDoc(doc(db, "progetti", id)); }
+
+    // ── GESTIONE DESTINAZIONI NAVETTE ─────────────────────────────────────
+    window.renderDestinazioniImpostazioni = () => {
+        const container = document.getElementById('listaDestinazioniNavette');
+        if (!container) return;
+        const destinazioni = window.appData?.lista_destinazioni_navette || [];
+        
+        if (destinazioni.length === 0) {
+            container.innerHTML = '<div style="color: #64748b; font-size: 13px;">Nessuna destinazione registrata.</div>';
+            return;
+        }
+
+        container.innerHTML = destinazioni.map(d => `
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 10px 16px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <span style="font-weight: 500;">${d.nome}</span>
+                <button type="button" class="btn-danger" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="if(typeof window.eliminaDestinazioneNavetta === 'function') window.eliminaDestinazioneNavetta('${d.id}', '${d.nome}')">
+                    Elimina
+                </button>
+            </div>
+        `).join('');
+    };
+
+    window.aggiungiDestinazioneNavetta = async () => {
+        const input = document.getElementById('nuovaDestinazioneInput');
+        const nome = input.value.trim().toUpperCase();
+        if (!nome) return;
+
+        try {
+            await addDoc(collection(db, "destinazioni_navette"), { nome: nome });
+            input.value = '';
+            alert("Destinazione aggiunta!");
+        } catch (error) {
+            alert("Errore: " + error.message);
+        }
+    };
+
+    window.eliminaDestinazioneNavetta = async (id, nome) => {
+        if (!confirm(`Sei sicuro di voler eliminare la destinazione ${nome}?`)) return;
+
+        // Controllo utilizzo nel mese in corso
+        const now = new Date();
+        const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+        const endOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-31`;
+
+        try {
+            const q = query(
+                collection(db, "presenze"),
+                where("data", ">=", startOfMonth),
+                where("data", "<=", endOfMonth)
+            );
+            const snapshot = await getDocs(q);
+            let inUso = false;
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.attivitaAggiuntive && Array.isArray(data.attivitaAggiuntive)) {
+                    data.attivitaAggiuntive.forEach(att => {
+                        if (att.partenza === nome || att.destinazione === nome) {
+                            inUso = true;
+                        }
+                    });
+                }
+            });
+
+            if (inUso) {
+                alert(`Impossibile eliminare: la destinazione "${nome}" è stata utilizzata in almeno un viaggio in questo mese. Puoi eliminarla solo in un mese in cui non viene mai utilizzata, per non corrompere gli storici.`);
+                return;
+            }
+
+            await deleteDoc(doc(db, "destinazioni_navette", id));
+            alert("Destinazione eliminata con successo!");
+        } catch (error) {
+            alert("Errore durante la verifica o eliminazione: " + error.message);
+        }
+    };
 
     // ── DATI DI DEFAULT ───────────────────────────────────────────────────
     const DEFAULT_PROGETTI = [

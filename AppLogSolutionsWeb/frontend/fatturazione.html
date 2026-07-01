@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.77">
+    <link rel="stylesheet" href="styles.css?v=4.78">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -348,9 +348,9 @@
                             <th>GIRI C</th>
                             <th>NAVETTA CEREA</th>
                             <th>NAVETTA</th>
-                            <th>EXTRA 1</th>
+                            <th></th>
                             <th>COLLI</th>
-                            <th>EXTRA 2</th>
+                            <th></th>
                             <th>totale /gg</th>
                         </tr>
                     </thead>
@@ -412,8 +412,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.77"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.77"></script>
+    <script src="script.js?v=4.78"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.78"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -1759,7 +1759,7 @@
             const ws_name = "MAGGIO"; // Default for visual mapping, but we can call it CATTEL
             
             const ws_data = [
-                ["DATA", "GIRI B", "GIRI C", "NAVETTA CEREA", "NAVETTA", "EXTRA 1", "COLLI", "EXTRA 2", "totale /gg"]
+                ["DATA", "GIRI B", "GIRI C", "NAVETTA CEREA", "NAVETTA", "", "COLLI", "", "totale /gg"]
             ];
 
             const tbody = document.getElementById('cattel-summary-tbody');

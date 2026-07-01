@@ -9,7 +9,7 @@ for file_path in html_files:
     with open(file_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    new_content = re.sub(r'\?v=\d+\.\d+', '?v=4.77', content)
+    new_content = re.sub(r'\?v=\d+\.\d+', '?v=4.78', content)
 
     if content != new_content:
         with open(file_path, "w", encoding="utf-8") as f:

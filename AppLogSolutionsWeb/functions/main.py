@@ -3477,7 +3477,13 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
         return {"status": "errore", "message": f"Nessun file viaggi_giornalieri_Johnson.json trovato per il {data_consegna}."}
         
     try:
-        zone_list = json.loads(blob_json.download_as_string().decode('utf-8'))
+        raw_json = json.loads(blob_json.download_as_string().decode('utf-8'))
+        # Retrocompatibilità: nuovo formato { "cliente": "...", "zone": [...] }
+        # oppure vecchio formato diretto: [...]
+        if isinstance(raw_json, dict):
+            zone_list = raw_json.get("zone", [])
+        else:
+            zone_list = raw_json
     except Exception as e:
         return {"status": "errore", "message": f"Errore lettura JSON: {str(e)}"}
         

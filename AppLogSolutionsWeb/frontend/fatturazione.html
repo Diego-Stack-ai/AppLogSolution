@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.72">
+    <link rel="stylesheet" href="styles.css?v=4.73">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -280,6 +280,10 @@
                     <span class="material-icons-round" style="color: #16a34a; margin-right: 8px;">table_view</span>
                     Esporta Excel
                 </button>
+                <button class="btn btn-primary" id="btn-export-cattel" onclick="esportaModuloCattelExcel()" style="display: none; background-color: #0ea5e9; border-color: #0ea5e9;">
+                    <span class="material-icons-round" style="color: white; margin-right: 8px;">download</span>
+                    Scarica Modulo Cattel
+                </button>
                 <button class="btn btn-primary" onclick="esportaPDF()">
                     <span class="material-icons-round" style="color: #dc2626; margin-right: 8px;">picture_as_pdf</span>
                     Esporta PDF
@@ -332,6 +336,30 @@
             </div>
         </div>
 
+        <!-- CATTEL SUMMARY MODULE -->
+        <div id="cattel-summary-container" style="display: none; margin-top: 32px;">
+            <h3 style="margin-bottom: 16px; color: var(--text-main);">Modulo Cattel - <span id="cattel-summary-month"></span></h3>
+            <div class="pivot-wrapper">
+                <table class="pivot-table" id="cattel-summary-table">
+                    <thead>
+                        <tr>
+                            <th>DATA</th>
+                            <th>GIRI B</th>
+                            <th>GIRI C</th>
+                            <th>NAVETTA CEREA</th>
+                            <th>NAVETTA</th>
+                            <th>EXTRA 1</th>
+                            <th>COLLI</th>
+                            <th>EXTRA 2</th>
+                            <th>totale /gg</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cattel-summary-tbody"></tbody>
+                    <tfoot id="cattel-summary-tfoot"></tfoot>
+                </table>
+            </div>
+        </div>
+
         <!-- Popup / Modal Invio E-mail -->
         <div id="emailModal" class="modal-overlay">
             <div class="modal-content" style="max-width: 550px; width: 90%;">
@@ -369,8 +397,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.72"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.72"></script>
+    <script src="script.js?v=4.73"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.73"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -961,6 +989,16 @@
                     // Generazione Matrice
                     document.getElementById('pivot-title').textContent = `Fatturazione ${clientSel} - ${currentMonthLabel}`;
                     buildPivotTable(pivotData, parseInt(year), parseInt(month), configCattel);
+                    
+                    if (clientSel === "CATTEL") {
+                        document.getElementById('cattel-summary-container').style.display = 'block';
+                        document.getElementById('btn-export-cattel').style.display = 'inline-flex';
+                        document.getElementById('cattel-summary-month').textContent = currentMonthLabel;
+                        buildCattelSummaryTable(trips, parseInt(year), parseInt(month), mezziMap, configCattel);
+                    } else {
+                        document.getElementById('cattel-summary-container').style.display = 'none';
+                        document.getElementById('btn-export-cattel').style.display = 'none';
+                    }
                 }
 
                 Swal.close();
@@ -1535,6 +1573,223 @@
                 Swal.fire({ title: 'Errore', text: 'Si è verificato un errore durante la generazione: ' + err.message, icon: 'error', confirmButtonColor: '#4f46e5' });
             }
         });
+
+        function buildCattelSummaryTable(trips, year, month, mezziMap, configCattel) {
+            const daysInMonth = new Date(year, month, 0).getDate();
+            let cattelData = {};
+            for (let d = 1; d <= daysInMonth; d++) {
+                cattelData[d] = {
+                    giriB: 0,
+                    giriC: 0,
+                    navCerea: 0,
+                    navSomma: 0,
+                    colli: 0,
+                    totale: 0
+                };
+            }
+            
+            const CAT_B = configCattel.TARIFFA_B || 340;
+            const CAT_C = configCattel.TARIFFA_C || 380;
+            const CAT_NAV1 = configCattel.TARIFFA_NAV1 || 380; 
+            const CAT_NAV2 = configCattel.TARIFFA_NAV2 || 350; 
+            const CAT_COLLO = configCattel.TARIFFA_COLLO || 0.40;
+            
+            for (const t of trips) {
+                const p = t.punti || t.punti_ottimizzati || [];
+                const nomeStr = (t.nome_giro || t.id_zona || 'GENERICO').toUpperCase();
+                
+                let isCat = p.some(pt => (pt.zona || '').toUpperCase().includes("CATTEL") || (pt.codice_frutta || '').toUpperCase().includes("CATTEL"));
+                if (!isCat && nomeStr.includes("CATTEL")) isCat = true;
+                
+                if (!isCat) continue; 
+                
+                let dateObj = null;
+                if (t.data_ritiro_richiesta) {
+                    let [d, m, y] = t.data_ritiro_richiesta.split('/');
+                    dateObj = new Date(y, m - 1, d);
+                } else if (t.data) {
+                    let [d, m, y] = t.data.split('/');
+                    dateObj = new Date(y, m - 1, d);
+                }
+                
+                if (!dateObj) continue;
+                if (dateObj.getFullYear() !== year || dateObj.getMonth() + 1 !== month) continue;
+                
+                let day = dateObj.getDate();
+                let q = 0;
+                p.forEach(pt => {
+                    q += parseFloat(pt.quantita) || 0;
+                });
+                
+                if (nomeStr.includes("NAVETTA")) {
+                    if (nomeStr.includes("CEREA")) {
+                        cattelData[day].navCerea++;
+                    } else {
+                        cattelData[day].navSomma++;
+                    }
+                } else {
+                    const targaStr = (t.targa || t.targa_mezzo || '').toUpperCase();
+                    let patente = mezziMap[targaStr] || 'B';
+                    if (patente === 'C') {
+                        cattelData[day].giriC++;
+                    } else {
+                        cattelData[day].giriB++;
+                    }
+                    cattelData[day].colli += q;
+                }
+            }
+            
+            const tbody = document.getElementById('cattel-summary-tbody');
+            const tfoot = document.getElementById('cattel-summary-tfoot');
+            tbody.innerHTML = ''; tfoot.innerHTML = '';
+            
+            let sumB = 0, sumC = 0, sumNavC = 0, sumNavS = 0, sumColli = 0, sumTot = 0;
+            
+            for (let d = 1; d <= daysInMonth; d++) {
+                const row = cattelData[d];
+                let rowTotal = (row.giriB * CAT_B) + (row.giriC * CAT_C) + (row.navCerea * CAT_NAV2) + (row.navSomma * CAT_NAV1) + (row.colli * CAT_COLLO);
+                row.totale = rowTotal;
+                
+                sumB += row.giriB;
+                sumC += row.giriC;
+                sumNavC += row.navCerea;
+                sumNavS += row.navSomma;
+                sumColli += row.colli;
+                sumTot += row.totale;
+                
+                const formattedDate = `${String(d).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+                
+                let tr = `<tr>
+                    <td>${formattedDate}</td>
+                    <td style="text-align: center;">${row.giriB || ''}</td>
+                    <td style="text-align: center;">${row.giriC || ''}</td>
+                    <td style="text-align: center;">${row.navCerea || ''}</td>
+                    <td style="text-align: center;">${row.navSomma || ''}</td>
+                    <td></td>
+                    <td style="text-align: right;">${row.colli > 0 ? row.colli : ''}</td>
+                    <td></td>
+                    <td style="text-align: right;">€ ${row.totale.toFixed(2)}</td>
+                </tr>`;
+                tbody.innerHTML += tr;
+            }
+            
+            let trFoot = `<tr>
+                <th>TOTALE</th>
+                <th style="text-align: center;">${sumB}</th>
+                <th style="text-align: center;">${sumC}</th>
+                <th style="text-align: center;">${sumNavC}</th>
+                <th style="text-align: center;">${sumNavS}</th>
+                <th></th>
+                <th style="text-align: right;">${sumColli}</th>
+                <th></th>
+                <th style="text-align: right;">€ ${sumTot.toFixed(2)}</th>
+            </tr>`;
+            tfoot.innerHTML = trFoot;
+            
+            window.currentCattelConfig = configCattel;
+            window.currentCattelDays = daysInMonth;
+            window.currentCattelMonthLabel = currentMonthLabel;
+        }
+
+        function esportaModuloCattelExcel() {
+            if (typeof XLSX === 'undefined') {
+                Swal.fire('Errore', 'Libreria XLSX non trovata.', 'error');
+                return;
+            }
+            const config = window.currentCattelConfig || {};
+            const daysInMonth = window.currentCattelDays || 31;
+            const CAT_B = config.TARIFFA_B || 340;
+            const CAT_C = config.TARIFFA_C || 380;
+            const CAT_NAV1 = config.TARIFFA_NAV1 || 380; 
+            const CAT_NAV2 = config.TARIFFA_NAV2 || 350; 
+            const CAT_COLLO = config.TARIFFA_COLLO || 0.40;
+
+            const wb = XLSX.utils.book_new();
+            const ws_name = "MAGGIO"; // Default for visual mapping, but we can call it CATTEL
+            
+            const ws_data = [
+                ["DATA", "GIRI B", "GIRI C", "NAVETTA CEREA", "NAVETTA", "EXTRA 1", "COLLI", "EXTRA 2", "totale /gg"]
+            ];
+
+            const tbody = document.getElementById('cattel-summary-tbody');
+            const rows = tbody.querySelectorAll('tr');
+            
+            rows.forEach((tr) => {
+                let rowData = [];
+                const tds = tr.querySelectorAll('td');
+                
+                rowData.push(tds[0].innerText.trim());
+                rowData.push(parseFloat(tds[1].innerText.trim()) || null);
+                rowData.push(parseFloat(tds[2].innerText.trim()) || null);
+                rowData.push(parseFloat(tds[3].innerText.trim()) || null);
+                rowData.push(parseFloat(tds[4].innerText.trim()) || null);
+                rowData.push(null);
+                rowData.push(parseFloat(tds[6].innerText.trim()) || null);
+                rowData.push(null);
+                rowData.push(0); 
+                ws_data.push(rowData);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+            for (let i = 0; i < daysInMonth; i++) {
+                let r = i + 2; 
+                let cellAddress = XLSX.utils.encode_cell({c: 8, r: i + 1});
+                ws[cellAddress] = {
+                    t: 'n', 
+                    f: `IFERROR((B${r}*${CAT_B})+(C${r}*${CAT_C})+(D${r}*${CAT_NAV2})+(E${r}*${CAT_NAV1})+(G${r}*${CAT_COLLO}), 0)`,
+                    z: '"€"\\ #,##0.00'
+                };
+            }
+
+            let tfootStartR = daysInMonth + 2; 
+            ws_data.push(["TOTALE", 0, 0, 0, 0, null, 0, null, 0]);
+            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: tfootStartR - 1, c: 0}});
+            
+            let sumCols = ['B', 'C', 'D', 'E', 'G', 'I'];
+            sumCols.forEach((col) => {
+                let cIndex = col.charCodeAt(0) - 65; 
+                let cellAddress = XLSX.utils.encode_cell({c: cIndex, r: tfootStartR - 1});
+                ws[cellAddress] = {
+                    t: 'n',
+                    f: `SUM(${col}2:${col}${tfootStartR - 1})`
+                };
+                if (col === 'I') ws[cellAddress].z = '"€"\\ #,##0.00';
+            });
+
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for(let R = range.s.r; R <= range.e.r; ++R) {
+                for(let C = range.s.c; C <= range.e.c; ++C) {
+                    let cellAddress = XLSX.utils.encode_cell({r: R, c: C});
+                    if(!ws[cellAddress]) continue;
+                    if(!ws[cellAddress].s) ws[cellAddress].s = {};
+                    
+                    ws[cellAddress].s.font = { name: "Arial", sz: 11 };
+                    ws[cellAddress].s.border = {
+                        top: {style: 'thin', color: {auto: 1}},
+                        bottom: {style: 'thin', color: {auto: 1}},
+                        left: {style: 'thin', color: {auto: 1}},
+                        right: {style: 'thin', color: {auto: 1}}
+                    };
+                    
+                    if (R === 0) {
+                        ws[cellAddress].s.fill = { fgColor: { rgb: "FFE2EFDA" } };
+                        ws[cellAddress].s.font.bold = true;
+                        ws[cellAddress].s.alignment = { horizontal: "center", vertical: "center" };
+                    } else if (R === tfootStartR - 1) {
+                        ws[cellAddress].s.fill = { fgColor: { rgb: "FFD9E1F2" } };
+                        ws[cellAddress].s.font.bold = true;
+                    }
+                }
+            }
+            
+            ws['!cols'] = [{wch:15}, {wch:10}, {wch:10}, {wch:18}, {wch:15}, {wch:15}, {wch:10}, {wch:15}, {wch:15}];
+
+            XLSX.utils.book_append_sheet(wb, ws, "CATTEL");
+            let safeMonthLabel = window.currentCattelMonthLabel ? window.currentCattelMonthLabel.replace(/[\/\\]/g, '_') : 'mese';
+            XLSX.writeFile(wb, `Riepilogo_Cattel_${safeMonthLabel}.xlsx`);
+        }
+
     </script>
 </body>
 </html>

@@ -3101,8 +3101,8 @@ from urllib.parse import quote
 from decimal import Decimal
 
 DEPOT_VEGGIANO = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO", "indirizzo": "Via Alessandro Volta 25/a, 35030 Veggiano (PD)"}
-DEPOT_CASTENEDOLO = {"lat": 45.471591, "lon": 10.298200, "nome": "DEPOSITO CASTENEDOLO", "indirizzo": "Castenedolo (BS)"}
-DEPOT_SOMMACAMPAGNA = {"lat": 45.414500, "lon": 10.898500, "nome": "DEPOSITO SOMMACAMPAGNA", "indirizzo": "Via Caselle 90, 37066 Sommacampagna (VR)"}
+DEPOT_CASTENEDOLO = {"lat": 45.471591, "lon": 10.298200, "nome": "DEPOSITO CASTENEDOLO", "indirizzo": "Via Vulcania snc, 25014 Castenedolo (BS)"}
+DEPOT_SOMMACAMPAGNA = {"lat": 45.414500, "lon": 10.898500, "nome": "DEPOSITO SOMMACAMPAGNA", "indirizzo": "Via Caselle 90/b, 37066 Sommacampagna (VR)"}
 
 TRAFFIC_SLOTS_MIN = [600, 630, 660, 690, 720, 750, 780]
 CODICE_VUOTO = "p00000"
@@ -3347,7 +3347,7 @@ def get_traffic_duration(p1, p2, slot_str):
         print(f"[TRAFFIC] Errore API: {e}")
     return None
 
-def _get_directions_and_simulate_cloud(percorso, depot, is_grand_chef, data_consegna, aggiorna_traffico):
+def _get_directions_and_simulate_cloud(percorso, depot, is_grand_chef, data_consegna, aggiorna_traffico, target_arr_time_min=390):
     punti_pieni = [depot] + percorso + [depot]
     
     _dir_key = _route_key(punti_pieni)
@@ -3393,7 +3393,7 @@ def _get_directions_and_simulate_cloud(percorso, depot, is_grand_chef, data_cons
             km_tot, sec_tot = km_stima, sec_stima
 
     sosta = 12 if is_grand_chef else 8
-    current_time = 420
+    current_time = target_arr_time_min
     
     def parse_time_to_minutes(time_str, default_val):
         if not time_str: return default_val
@@ -3410,48 +3410,50 @@ def _get_directions_and_simulate_cloud(percorso, depot, is_grand_chef, data_cons
         p_precedente = percorso[idx - 1] if idx > 0 else depot
         durata_guida_sec = 0
         
-        if is_grand_chef and idx == 0:
-            arr_time_min = 420
-        else:
-            cached = _leggi_cache_completa_firestore(p_precedente, p)
-            if cached:
-                durata_guida_sec = cached['dur']
-                if aggiorna_traffico:
-                    slot = nearest_slot(current_time)
-                    if slot:
-                        traf = _leggi_traffic_cache(p_precedente, p, slot)
-                        if traf is None:
-                            traf = get_traffic_duration(p_precedente, p, slot)
-                            if traf:
-                                _scrivi_traffic_cache(p_precedente, p, slot, traf)
+        cached = _leggi_cache_completa_firestore(p_precedente, p)
+        if cached:
+            durata_guida_sec = cached['dur']
+            if aggiorna_traffico:
+                slot_time = target_arr_time_min if idx == 0 else current_time
+                slot = nearest_slot(slot_time)
+                if slot:
+                    traf = _leggi_traffic_cache(p_precedente, p, slot)
+                    if traf is None:
+                        traf = get_traffic_duration(p_precedente, p, slot)
                         if traf:
-                            durata_guida_sec = traf
-            else:
-                _api_ok = False
-                if GOOGLE_MAPS_API_KEY and requests:
-                    try:
-                        _orig = f"{p_precedente['lat']},{p_precedente['lon']}"
-                        _dest = f"{p['lat']},{p['lon']}"
-                        _url = (f"https://maps.googleapis.com/maps/api/distancematrix/json"
-                                f"?origins={_orig}&destinations={_dest}&key={GOOGLE_MAPS_API_KEY}")
-                        _resp = requests.get(_url, timeout=10).json()
-                        if _resp.get('status') == 'OK':
-                            _el = _resp['rows'][0]['elements'][0]
-                            if _el.get('status') == 'OK':
-                                _dist = _el['distance']['value']
-                                _dur = _el['duration']['value']
-                                _scrivi_cache_firestore([(_cache_key(p_precedente, p), _dist, _dur)])
-                                durata_guida_sec = _dur
-                                _api_ok = True
-                    except:
-                        pass
-                if not _api_ok:
-                    dist_m = _haversine(p_precedente, p) * 1.3
-                    durata_guida_sec = (dist_m / 1000.0 / 35.0) * 3600
-                    
-            durata_guida_min = durata_guida_sec / 60.0 + 4
-            arr_time_min = current_time + durata_guida_min
+                            _scrivi_traffic_cache(p_precedente, p, slot, traf)
+                    if traf:
+                        durata_guida_sec = traf
+        else:
+            _api_ok = False
+            if GOOGLE_MAPS_API_KEY and requests:
+                try:
+                    _orig = f"{p_precedente['lat']},{p_precedente['lon']}"
+                    _dest = f"{p['lat']},{p['lon']}"
+                    _url = (f"https://maps.googleapis.com/maps/api/distancematrix/json"
+                            f"?origins={_orig}&destinations={_dest}&key={GOOGLE_MAPS_API_KEY}")
+                    _resp = requests.get(_url, timeout=10).json()
+                    if _resp.get('status') == 'OK':
+                        _el = _resp['rows'][0]['elements'][0]
+                        if _el.get('status') == 'OK':
+                            _dist = _el['distance']['value']
+                            _dur = _el['duration']['value']
+                            _scrivi_cache_firestore([(_cache_key(p_precedente, p), _dist, _dur)])
+                            durata_guida_sec = _dur
+                            _api_ok = True
+                except:
+                    pass
+            if not _api_ok:
+                dist_m = _haversine(p_precedente, p) * 1.3
+                durata_guida_sec = (dist_m / 1000.0 / 35.0) * 3600
+                
+        durata_guida_min = durata_guida_sec / 60.0 + 4
+        
+        if idx == 0:
+            current_time = target_arr_time_min - durata_guida_min
             
+        arr_time_min = current_time + durata_guida_min
+        
         dep_time_min = arr_time_min + sosta
         p["ora_arrivo"] = format_minutes_to_time(arr_time_min)
         p["ora_ripartenza"] = format_minutes_to_time(dep_time_min)
@@ -3537,7 +3539,17 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
             except:
                 punti_pieni.append(p)
                 
-        km, sec_guida, polylines, punti_simulati = _get_directions_and_simulate_cloud(punti_pieni, depot, is_grand_chef, data_consegna, aggiorna_traffico)
+        target_arr_time_str = zone.get("orario_arrivo_primo_cliente", "")
+        if not target_arr_time_str:
+            target_arr_time_min = 390
+        else:
+            m = re.match(r"(\d{2}):(\d{2})", str(target_arr_time_str).strip())
+            if m:
+                target_arr_time_min = int(m.group(1)) * 60 + int(m.group(2))
+            else:
+                target_arr_time_min = 390
+                
+        km, sec_guida, polylines, punti_simulati = _get_directions_and_simulate_cloud(punti_pieni, depot, is_grand_chef, data_consegna, aggiorna_traffico, target_arr_time_min)
         
         tot_ddt = 0
         for p in punti_simulati:

@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=4.94">
+    <link rel="stylesheet" href="styles.css?v=4.95">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
@@ -2301,6 +2301,14 @@ const db = getFirestore(app);
             }
         }
 
+        window.updateOrarioPrimoCliente = (zid, val) => {
+            const z = DATA_ZONE.find(x => x.id_zona === zid);
+            if (z) {
+                z.orario_arrivo_primo_cliente = val;
+                window.saveToServerBackground();
+            }
+        };
+
         // Render Sidebar Zones and Points List
         window.renderSidebar = () => {
             const listContainer = document.getElementById('zone-list');
@@ -2387,8 +2395,16 @@ const db = getFirestore(app);
                                     <span>${isBloccato ? '🔒 ' : ''}${z.nome_giro || z.id_zona}${isSpeciale ? '<span class="badge-speciale-label">RIENTRI</span>' : ''}</span>
                                     ${badgeStato(isBloccato ? 'bloccato' : (z._stato || 'da_calcolare'))}
                                 </div>
-                                <div class="zc-sub" style="font-size:0.72rem; color:var(--text-muted); margin-top:3px;">
-                                    ${z.lista_punti.length} fermate${stats.tot_ddt > 0 ? ` · ${stats.tot_ddt} DDT` : ''}${pesoStr}${stats.valore > 0 && !isGcOrSpecial ? ` · € ${stats.valore}` : ''}
+                                <div class="zc-sub" style="font-size:0.72rem; color:var(--text-muted); margin-top:3px; display:flex; align-items:center; gap:8px;">
+                                    <span>${z.lista_punti.length} fermate${stats.tot_ddt > 0 ? ` · ${stats.tot_ddt} DDT` : ''}${pesoStr}${stats.valore > 0 && !isGcOrSpecial ? ` · € ${stats.valore}` : ''}</span>
+                                    ${!isSpeciale ? `
+                                    <div style="display:flex; align-items:center; gap:4px; border:1px solid #e2e8f0; border-radius:4px; padding:1px 4px; background:#fff;" onclick="event.stopPropagation()">
+                                        <span class="material-icons-round" style="font-size:12px; color:#64748b;">schedule</span>
+                                        <input type="time" title="Arrivo 1° Cliente (default 06:30)" value="${z.orario_arrivo_primo_cliente || ''}" 
+                                               onchange="window.updateOrarioPrimoCliente('${z.id_zona}', this.value)" 
+                                               style="border:none; outline:none; font-size:0.72rem; padding:0; background:transparent; width:60px; font-family:inherit; color:#0f172a;">
+                                    </div>
+                                    ` : ''}
                                 </div>
                             </div>
                             <div class="zone-meta-right" style="display:flex; align-items:center; gap:6px; flex-shrink: 0;" onclick="event.stopPropagation()">

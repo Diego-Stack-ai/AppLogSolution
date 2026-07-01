@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.85">
+    <link rel="stylesheet" href="styles.css?v=4.86">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -412,8 +412,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=4.85"></script>
-    <script type="module" src="firebase-auth-sync.js?v=4.85"></script>
+    <script src="script.js?v=4.86"></script>
+    <script type="module" src="firebase-auth-sync.js?v=4.86"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -822,9 +822,10 @@
                     const p = t.punti || t.punti_ottimizzati || [];
                     const nomeStr = (t.nome_giro || t.id_zona || 'GENERICO').toUpperCase();
                     
-                    let isGC = t.is_grand_chef === true || t.is_gc === true;
-                    let isCat = false;
-                    let isBau = false;
+                    const dbClient = (t.cliente || '').toUpperCase();
+                    let isGC = dbClient === "GRAN CHEF" || dbClient === "GRANCHEF" || t.is_grand_chef === true || t.is_gc === true;
+                    let isCat = dbClient === "CATTEL";
+                    let isBau = dbClient === "BAUER";
 
                     if (!isGC) {
                         isGC = p.some(pt => {
@@ -835,11 +836,15 @@
                         if (!isGC && (nomeStr.includes("CHEF") || nomeStr.includes("GRAN"))) isGC = true;
                     }
 
-                    isCat = p.some(pt => (pt.zona || '').toUpperCase().includes("CATTEL") || (pt.codice_frutta || '').toUpperCase().includes("CATTEL"));
-                    if (!isCat && nomeStr.includes("CATTEL")) isCat = true;
+                    if (!isCat) {
+                        isCat = p.some(pt => (pt.zona || '').toUpperCase().includes("CATTEL") || (pt.codice_frutta || '').toUpperCase().includes("CATTEL"));
+                        if (!isCat && nomeStr.includes("CATTEL")) isCat = true;
+                    }
 
-                    isBau = p.some(pt => (pt.zona || '').toUpperCase().includes("BAUER") || (pt.codice_frutta || '').toUpperCase().includes("BAUER"));
-                    if (!isBau && nomeStr.includes("BAUER")) isBau = true;
+                    if (!isBau) {
+                        isBau = p.some(pt => (pt.zona || '').toUpperCase().includes("BAUER") || (pt.codice_frutta || '').toUpperCase().includes("BAUER"));
+                        if (!isBau && nomeStr.includes("BAUER")) isBau = true;
+                    }
 
                     // Determiniamo il cliente per questo viaggio
                     let tripClient = "DNR";
@@ -1632,8 +1637,12 @@
                 const p = t.punti || t.punti_ottimizzati || [];
                 const nomeStr = (t.nome_giro || t.id_zona || 'GENERICO').toUpperCase();
                 
-                let isCat = p.some(pt => (pt.zona || '').toUpperCase().includes("CATTEL") || (pt.codice_frutta || '').toUpperCase().includes("CATTEL"));
-                if (!isCat && nomeStr.includes("CATTEL")) isCat = true;
+                const dbClient = (t.cliente || '').toUpperCase();
+                let isCat = dbClient === "CATTEL";
+                if (!isCat) {
+                    isCat = p.some(pt => (pt.zona || '').toUpperCase().includes("CATTEL") || (pt.codice_frutta || '').toUpperCase().includes("CATTEL"));
+                    if (!isCat && nomeStr.includes("CATTEL")) isCat = true;
+                }
                 
                 if (!isCat) continue; 
                 

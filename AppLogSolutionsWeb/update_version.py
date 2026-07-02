@@ -6,7 +6,7 @@ frontend_dir = 'frontend'
 html_files = glob.glob(os.path.join(frontend_dir, '*.html'))
 
 old_version_pattern = r'\?v=\d+\.\d+'
-new_version_string = '?v=5.03'
+new_version_string = '?v=5.04'
 
 for filepath in html_files:
     with open(filepath, 'r', encoding='utf-8') as f:

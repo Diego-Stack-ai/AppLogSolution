@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "5.15";
+const APP_VERSION = "5.16";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -263,6 +263,12 @@ window.renderClientiInserimento = function() {
     navOpt.textContent = '🚐 NAVETTA';
     select.appendChild(navOpt);
 
+    // Aggiungi sempre MAGAZZINO come voce separata
+    const magOpt = document.createElement('option');
+    magOpt.value = 'MAGAZZINO';
+    magOpt.textContent = '📦 MAGAZZINO';
+    select.appendChild(magOpt);
+
     if (currentVal) select.value = currentVal;
 };
 
@@ -329,6 +335,27 @@ window.updateViaggi = async function() {
         };
 
         fillSelect('navettaPartenzaSelect', window.appData.lista_navetta_partenze);
+        return;
+    }
+
+    // ── CASO MAGAZZINO ───────────────────────────────────────────────────────
+    if (clienteNome.toUpperCase() === 'MAGAZZINO') {
+        // Nascondi i campi navetta
+        if (navettaContainer) { navettaContainer.style.display = 'none'; }
+        
+        // Ripristina e popola il select viaggio (sedi magazzino)
+        if (viaggioWrapper) viaggioWrapper.style.display = '';
+        if (viaggioSelect) { 
+            viaggioSelect.innerHTML = '<option value="">Seleziona sede magazzino</option>';
+            const sedi = window.appData.lista_magazzini_sedi || [];
+            sedi.sort((a,b) => (a.nome||'').localeCompare(b.nome||'')).forEach(sede => {
+                const opt = document.createElement('option');
+                opt.value = sede.nome; opt.textContent = sede.nome.toUpperCase();
+                viaggioSelect.appendChild(opt);
+            });
+            viaggioSelect.disabled = false;
+            viaggioSelect.required = true;
+        }
         return;
     }
 

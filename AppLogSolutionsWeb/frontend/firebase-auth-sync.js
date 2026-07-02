@@ -371,6 +371,9 @@ function startRealtimeSync(isAdmin) {
     setupScalettaListener('navetta_clienti', 'lista_navetta_clienti');
     setupScalettaListener('navetta_destinazioni_merce', 'lista_navetta_destinazioni_merce');
 
+    // Listener per la lista delle Sedi Magazzino
+    setupScalettaListener('magazzini_sedi', 'lista_magazzini_sedi');
+
     // Listener per Giustificativi (Ferie, Malattia, ecc.)
     const unsubGiustificativi = onSnapshot(collection(db, "giustificativi"), (snapshot) => {
         const giustificativi = [];

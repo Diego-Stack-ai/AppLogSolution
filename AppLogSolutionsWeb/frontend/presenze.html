@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=5.02">
+    <link rel="stylesheet" href="styles.css?v=5.03">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .row-error td {
@@ -503,13 +503,13 @@
         </div>
     </main>
 
-    <script src="script.js?v=5.02"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.02"></script>
+    <script src="script.js?v=5.03"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.03"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=5.02";
+        import { calculateHours } from "./firestore-service.js?v=5.03";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -687,7 +687,8 @@ const db = getFirestore(app);
             const actionsContainer = document.getElementById('adminActionsContainer');
             if (isDriver) {
                 // Se è autista, può selezionare solo se stesso
-                select.innerHTML = `<option value="${currentUser.id}">${currentUser.nome}</option>`;
+                const fullUserName = ((currentUser.nome || '') + ' ' + (currentUser.cognome || '')).trim();
+                select.innerHTML = `<option value="${currentUser.id}">${fullUserName}</option>`;
                 select.value = currentUser.id;
                 select.disabled = true; // Impedisce modifiche
                 
@@ -720,18 +721,27 @@ const db = getFirestore(app);
                         return selectedMonthStr <= emp.data_licenziamento.substring(0, 7);
                     }
                     return true;
-                }).sort((a, b) => 
-                    (a.nome || '').localeCompare(b.nome || '')
-                );
+                });
                 
-                sorted.forEach(emp => {
-                    const opt = document.createElement("option");
+                const dipendentiOrdinati = dipendenti.sort((a,b) => {
+                    const rA = a.ruolo || 'autista';
+                    const rB = b.ruolo || 'autista';
+                    if (rA === 'autista' && rB !== 'autista') return -1;
+                    if (rA !== 'autista' && rB === 'autista') return 1;
+                    const nameA = ((a.nome||'') + ' ' + (a.cognome||'')).trim();
+                    const nameB = ((b.nome||'') + ' ' + (b.cognome||'')).trim();
+                    return nameA.localeCompare(nameB);
+                });
+                
+                dipendentiOrdinati.forEach(emp => {
+                    const opt = document.createElement('option');
                     opt.value = emp.id;
-                    opt.textContent = emp.nome + (emp.ruolo ? ` (${emp.ruolo})` : '');
+                    const fullEmpName = ((emp.nome || '') + ' ' + (emp.cognome || '')).trim();
+                    opt.textContent = fullEmpName + (emp.ruolo ? ` (${emp.ruolo})` : '');
                     select.appendChild(opt);
                 });
                 
-                if (previousValue && sorted.some(e => e.id === previousValue)) {
+                if (previousValue && dipendentiOrdinati.some(e => e.id === previousValue)) {
                     select.value = previousValue;
                 }
             }
@@ -1053,7 +1063,11 @@ const db = getFirestore(app);
                     return selectedMonth <= emp.data_licenziamento.substring(0, 7);
                 }
                 return true;
-            }).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')) : [selectedEmployee];
+            }).sort((a,b) => {
+                const nameA = ((a.nome||'') + ' ' + (a.cognome||'')).trim();
+                const nameB = ((b.nome||'') + ' ' + (b.cognome||'')).trim();
+                return nameA.localeCompare(nameB);
+            }) : [selectedEmployee];
 
             autistiToRender.forEach(autista => {
                 const isAdmin = autista.ruolo === 'amministratore' || autista.ruolo === 'impiegata';
@@ -1062,7 +1076,8 @@ const db = getFirestore(app);
                 if (isTutti) {
                     const sepTr = document.createElement('tr');
                     sepTr.className = 'employee-separator';
-                    sepTr.innerHTML = `<td colspan="17">${autista.nome} ${autista.ruolo ? `(${autista.ruolo})` : ''}</td>`;
+                    const fullEmpName = ((autista.nome || '') + ' ' + (autista.cognome || '')).trim();
+                    sepTr.innerHTML = `<td colspan="17">${fullEmpName} ${autista.ruolo ? `(${autista.ruolo})` : ''}</td>`;
                     tbody.appendChild(sepTr);
                 }
 
@@ -1692,7 +1707,7 @@ const db = getFirestore(app);
 
                 const updatedData = {
                     autistaId: rowAutista.id || selectedEmployee.id,
-                    autistaNome: rowAutista.nome || selectedEmployee.nome,
+                    autistaNome: ((rowAutista.nome || '') + ' ' + (rowAutista.cognome || '')).trim() || selectedEmployee.nome,
                     data: dateStr,
                     mese: selectedMonth,
                     giornoSettimana: tr.querySelector('strong') ? tr.querySelector('strong').innerText : "",
@@ -1804,7 +1819,11 @@ const db = getFirestore(app);
                   headRow.push('Ord.', 'Str.', 'GG', 'Note');
                   
                   const bodyRows = [];
-                  const sortedAutisti = [...listaAutisti].sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+                  const sortedAutisti = [...listaAutisti].sort((a,b) => {
+                      const nameA = ((a.nome||'') + ' ' + (a.cognome||'')).trim();
+                      const nameB = ((b.nome||'') + ' ' + (b.cognome||'')).trim();
+                      return nameA.localeCompare(nameB);
+                  });
                   
                   function pt(val) {
                       if (!val || val.trim() === "") return 0;
@@ -1871,7 +1890,8 @@ const db = getFirestore(app);
                       
                       if (totOrd === 0 && totStr === 0 && totTrasf === 0) return;
                       
-                      const nome = autista.nome.length > 20 ? autista.nome.substring(0,20) + '...' : autista.nome;
+                      const fullName = ((autista.nome || '') + ' ' + (autista.cognome || '')).trim();
+                      const nome = fullName.length > 20 ? fullName.substring(0,20) + '...' : fullName;
                       
                       const rowOrd = [nome + '\n(Ord.)'];
                       for(let i=1; i<=numDays; i++) {
@@ -2002,7 +2022,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=5.02"></script>
+    <script type="module" src="cedolini-splitter.js?v=5.03"></script>
 
 </body>
 </html>

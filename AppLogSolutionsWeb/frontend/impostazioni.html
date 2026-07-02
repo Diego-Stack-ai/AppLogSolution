@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.06">
+    <link rel="stylesheet" href="styles.css?v=5.07">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -284,13 +284,14 @@
         <div id="progettiContent" style="display: none; padding-top: 20px;">
             <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
                 <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="const f = document.getElementById('formProgettiContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">domain_add</span>Aggiungi Nuovo Cliente</button>
-                <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px; background-color: white; color: var(--primary); border: 1px solid var(--primary);" onclick="const f = document.getElementById('gestioneScaletteContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">route</span>Gestisci Liste Scalette</button>
+                <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px; background-color: white; color: var(--primary); border: 1px solid var(--primary);" onclick="const f = document.getElementById('gestioneScaletteAutistiContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">person</span>Navetta Autisti</button>
+                <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px; background-color: white; color: #7c3aed; border: 1px solid #7c3aed;" onclick="const f = document.getElementById('gestioneNavettaContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px; color:#7c3aed;">airport_shuttle</span>Navetta</button>
             </div>
 
-            <!-- Container Scalette Navette -->
-            <div id="gestioneScaletteContainer" style="display: none; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:24px;">
+            <!-- Container: Navetta Autisti -->
+            <div id="gestioneScaletteAutistiContainer" style="display: none; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:24px;">
                 <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
-                    💡 Configura le quattro liste a tendina utilizzate dall'autista per compilare il modulo "Scalette Navette".
+                    👤 Liste per la <strong>Navetta Autisti</strong>: utilizzate dagli autisti con cliente primario (es. Cattel, Grand Chef) che effettuano una navetta aggiuntiva durante il loro turno.
                 </p>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
                     <!-- 1. Partenza / Rientro -->
@@ -302,7 +303,6 @@
                         </div>
                         <div id="listaScalettaPartenze" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
                     </div>
-
                     <!-- 2. Luogo di Carico -->
                     <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                         <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: block;">2. Luogo di Carico</label>
@@ -312,8 +312,7 @@
                         </div>
                         <div id="listaScalettaCarico" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
                     </div>
-
-                    <!-- 3. Clienti Caricati -->
+                    <!-- 3. Clienti / Merce -->
                     <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                         <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: block;">3. Clienti / Merce</label>
                         <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
@@ -322,7 +321,6 @@
                         </div>
                         <div id="listaScalettaClienti" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
                     </div>
-
                     <!-- 4. Destinazione Merce -->
                     <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                         <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: block;">4. Destinazione Merce</label>
@@ -331,6 +329,51 @@
                             <button type="button" class="btn-primary" style="padding: 8px; font-size: 13px; border-radius: 6px; width: 100%; justify-content: center;" onclick="window.aggiungiScalettaItem('scaletta_destinazioni_merce', 'nuovaScalettaDestinazioni')"><span class="material-icons-round" style="font-size:16px; vertical-align:middle; margin-right:4px;">add</span>Aggiungi</button>
                         </div>
                         <div id="listaScalettaDestinazioni" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Container: Navetta Pura -->
+            <div id="gestioneNavettaContainer" style="display: none; background:#faf5ff; padding:20px; border-radius:12px; border:1px solid #e9d5ff; margin-bottom:24px;">
+                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid #7c3aed; padding-left: 10px;">
+                    🚐 Liste per la <strong>Navetta</strong>: utilizzate dagli autisti dedicati che selezionano "Navetta" come mansione primaria del turno.
+                </p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+                    <!-- 1. Partenza / Rientro Navetta -->
+                    <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e9d5ff;">
+                        <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: block;">1. Partenza / Rientro</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                            <input type="text" id="nuovaNavettaPartenza" placeholder="es. Deposito Centrale" style="text-transform: uppercase; width: 100%; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #e9d5ff; box-sizing: border-box;">
+                            <button type="button" class="btn-primary" style="padding: 8px; font-size: 13px; border-radius: 6px; width: 100%; justify-content: center; background:#7c3aed; border-color:#7c3aed;" onclick="window.aggiungiScalettaItem('navetta_partenze', 'nuovaNavettaPartenza')"><span class="material-icons-round" style="font-size:16px; vertical-align:middle; margin-right:4px;">add</span>Aggiungi</button>
+                        </div>
+                        <div id="listaNavettaPartenze" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+                    <!-- 2. Luogo di Carico Navetta -->
+                    <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e9d5ff;">
+                        <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: block;">2. Luogo di Carico</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                            <input type="text" id="nuovaNavettaCarico" placeholder="es. Hub Logistico" style="text-transform: uppercase; width: 100%; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #e9d5ff; box-sizing: border-box;">
+                            <button type="button" class="btn-primary" style="padding: 8px; font-size: 13px; border-radius: 6px; width: 100%; justify-content: center; background:#7c3aed; border-color:#7c3aed;" onclick="window.aggiungiScalettaItem('navetta_carico', 'nuovaNavettaCarico')"><span class="material-icons-round" style="font-size:16px; vertical-align:middle; margin-right:4px;">add</span>Aggiungi</button>
+                        </div>
+                        <div id="listaNavettaCarico" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+                    <!-- 3. Clienti / Merce Navetta -->
+                    <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e9d5ff;">
+                        <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: block;">3. Clienti / Merce</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                            <input type="text" id="nuovaNavettaClienti" placeholder="es. Cliente Y" style="text-transform: uppercase; width: 100%; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #e9d5ff; box-sizing: border-box;">
+                            <button type="button" class="btn-primary" style="padding: 8px; font-size: 13px; border-radius: 6px; width: 100%; justify-content: center; background:#7c3aed; border-color:#7c3aed;" onclick="window.aggiungiScalettaItem('navetta_clienti', 'nuovaNavettaClienti')"><span class="material-icons-round" style="font-size:16px; vertical-align:middle; margin-right:4px;">add</span>Aggiungi</button>
+                        </div>
+                        <div id="listaNavettaClienti" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+                    <!-- 4. Destinazione Merce Navetta -->
+                    <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e9d5ff;">
+                        <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: block;">4. Destinazione Merce</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                            <input type="text" id="nuovaNavettaDestinazioni" placeholder="es. Punto Scarico B" style="text-transform: uppercase; width: 100%; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #e9d5ff; box-sizing: border-box;">
+                            <button type="button" class="btn-primary" style="padding: 8px; font-size: 13px; border-radius: 6px; width: 100%; justify-content: center; background:#7c3aed; border-color:#7c3aed;" onclick="window.aggiungiScalettaItem('navetta_destinazioni_merce', 'nuovaNavettaDestinazioni')"><span class="material-icons-round" style="font-size:16px; vertical-align:middle; margin-right:4px;">add</span>Aggiungi</button>
+                        </div>
+                        <div id="listaNavettaDestinazioni" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
                     </div>
                 </div>
             </div>
@@ -1333,8 +1376,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=5.06"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.06"></script>
+    <script src="script.js?v=5.07"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.07"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1360,10 +1403,16 @@ const functions = getFunctions(app, "europe-west1");
     window.renderScaletteItems = function(tipo) {
         let items = [];
         let containerId = '';
+        // Navetta Autisti
         if (tipo === 'scaletta_partenze') { items = window.appData?.lista_scaletta_partenze || []; containerId = 'listaScalettaPartenze'; }
         else if (tipo === 'scaletta_carico') { items = window.appData?.lista_scaletta_carico || []; containerId = 'listaScalettaCarico'; }
         else if (tipo === 'scaletta_clienti') { items = window.appData?.lista_scaletta_clienti || []; containerId = 'listaScalettaClienti'; }
         else if (tipo === 'scaletta_destinazioni_merce') { items = window.appData?.lista_scaletta_destinazioni_merce || []; containerId = 'listaScalettaDestinazioni'; }
+        // Navetta Pura
+        else if (tipo === 'navetta_partenze') { items = window.appData?.lista_navetta_partenze || []; containerId = 'listaNavettaPartenze'; }
+        else if (tipo === 'navetta_carico') { items = window.appData?.lista_navetta_carico || []; containerId = 'listaNavettaCarico'; }
+        else if (tipo === 'navetta_clienti') { items = window.appData?.lista_navetta_clienti || []; containerId = 'listaNavettaClienti'; }
+        else if (tipo === 'navetta_destinazioni_merce') { items = window.appData?.lista_navetta_destinazioni_merce || []; containerId = 'listaNavettaDestinazioni'; }
 
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -1406,7 +1455,10 @@ const functions = getFunctions(app, "europe-west1");
     // Inizializza immediatamente il rendering nel caso onSnapshot fosse già scattato
     setTimeout(() => {
         if (typeof window.renderScaletteItems === 'function') {
-            ['scaletta_partenze', 'scaletta_carico', 'scaletta_clienti', 'scaletta_destinazioni_merce'].forEach(t => window.renderScaletteItems(t));
+            [
+                'scaletta_partenze', 'scaletta_carico', 'scaletta_clienti', 'scaletta_destinazioni_merce',
+                'navetta_partenze', 'navetta_carico', 'navetta_clienti', 'navetta_destinazioni_merce'
+            ].forEach(t => window.renderScaletteItems(t));
         }
     }, 500);
 

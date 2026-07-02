@@ -3556,7 +3556,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
             else:
                 target_arr_time_min = 390
                 
-        km, sec_guida, polylines, punti_simulati = _get_directions_and_simulate_cloud(punti_pieni, depot, is_grand_chef, data_consegna, aggiorna_traffico, target_arr_time_min)
+        km, sec_guida, polylines, punti_simulati, ora_partenza_calc = _get_directions_and_simulate_cloud(punti_pieni, depot, is_grand_chef, data_consegna, aggiorna_traffico, target_arr_time_min)
         
         tot_ddt = 0
         for p in punti_simulati:

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.18">
+    <link rel="stylesheet" href="styles.css?v=5.19">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -727,7 +727,7 @@
                 viaggiConfigurati = (window.appData?.lista_magazzini_sedi || []).map(s => s.nome);
             } else {
                 const progetti = window.appData?.lista_progetti || [];
-                const proj = progetti.find(p => p.nome.toUpperCase() === clienteSelezionato);
+                const proj = progetti.find(p => (p.nome || "").toUpperCase() === clienteSelezionato);
                 viaggiConfigurati = proj ? (proj.viaggi || []) : [];
             }
             viaggiConfigurati.forEach(v => {
@@ -808,7 +808,7 @@
                         viaggiConfigurati = (window.appData?.lista_magazzini_sedi || []).map(s => s.nome);
                     } else {
                         const progetti = window.appData?.lista_progetti || [];
-                        const proj = progetti.find(p => p.nome.toUpperCase() === currentCliente);
+                        const proj = progetti.find(p => (p.nome || "").toUpperCase() === currentCliente);
                         viaggiConfigurati = proj ? (proj.viaggi || []) : [];
                     }
                     
@@ -900,6 +900,7 @@
             html += `<datalist id="clienti_globali">`;
             const progetti = window.appData?.lista_progetti || [];
             progetti.forEach(p => {
+                if (!p.nome) return;
                 html += `<option value="${p.nome.toUpperCase()}">${p.nome}</option>`;
             });
             html += `</datalist>`;
@@ -1237,7 +1238,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=5.18"></script>
-    <script src="script.js?v=5.18"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.19"></script>
+    <script src="script.js?v=5.19"></script>
 </body>
 </html>

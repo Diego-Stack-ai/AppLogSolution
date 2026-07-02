@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.05">
+    <link rel="stylesheet" href="styles.css?v=5.06">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -284,7 +284,7 @@
         <div id="progettiContent" style="display: none; padding-top: 20px;">
             <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
                 <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="const f = document.getElementById('formProgettiContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">domain_add</span>Aggiungi Nuovo Cliente</button>
-                <button type="button" class="btn-secondary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px; background-color:#f1f5f9; color:#475569;" onclick="const f = document.getElementById('gestioneScaletteContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">route</span>Gestisci Liste Scalette</button>
+                <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px; background-color: white; color: var(--primary); border: 1px solid var(--primary);" onclick="const f = document.getElementById('gestioneScaletteContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">route</span>Gestisci Liste Scalette</button>
             </div>
 
             <!-- Container Scalette Navette -->
@@ -296,9 +296,9 @@
                     <!-- 1. Partenza / Rientro -->
                     <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                         <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: block;">1. Partenza / Rientro</label>
-                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                            <input type="text" id="nuovaScalettaPartenza" placeholder="es. Mag. Veggiano" style="text-transform: uppercase; flex: 1; padding: 6px; font-size: 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
-                            <button type="button" class="btn-primary" style="padding: 0 12px; font-size: 12px; border-radius: 6px;" onclick="window.aggiungiScalettaItem('scaletta_partenze', 'nuovaScalettaPartenza')">+</button>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                            <input type="text" id="nuovaScalettaPartenza" placeholder="es. Mag. Veggiano" style="text-transform: uppercase; width: 100%; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                            <button type="button" class="btn-primary" style="padding: 8px; font-size: 13px; border-radius: 6px; width: 100%; justify-content: center;" onclick="window.aggiungiScalettaItem('scaletta_partenze', 'nuovaScalettaPartenza')"><span class="material-icons-round" style="font-size:16px; vertical-align:middle; margin-right:4px;">add</span>Aggiungi</button>
                         </div>
                         <div id="listaScalettaPartenze" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
                     </div>
@@ -306,9 +306,9 @@
                     <!-- 2. Luogo di Carico -->
                     <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                         <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: block;">2. Luogo di Carico</label>
-                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                            <input type="text" id="nuovaScalettaCarico" placeholder="es. Magazzino A" style="text-transform: uppercase; flex: 1; padding: 6px; font-size: 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
-                            <button type="button" class="btn-primary" style="padding: 0 12px; font-size: 12px; border-radius: 6px;" onclick="window.aggiungiScalettaItem('scaletta_carico', 'nuovaScalettaCarico')">+</button>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                            <input type="text" id="nuovaScalettaCarico" placeholder="es. Magazzino A" style="text-transform: uppercase; width: 100%; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                            <button type="button" class="btn-primary" style="padding: 8px; font-size: 13px; border-radius: 6px; width: 100%; justify-content: center;" onclick="window.aggiungiScalettaItem('scaletta_carico', 'nuovaScalettaCarico')"><span class="material-icons-round" style="font-size:16px; vertical-align:middle; margin-right:4px;">add</span>Aggiungi</button>
                         </div>
                         <div id="listaScalettaCarico" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
                     </div>
@@ -316,9 +316,9 @@
                     <!-- 3. Clienti Caricati -->
                     <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                         <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: block;">3. Clienti / Merce</label>
-                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                            <input type="text" id="nuovaScalettaClienti" placeholder="es. Cliente X" style="text-transform: uppercase; flex: 1; padding: 6px; font-size: 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
-                            <button type="button" class="btn-primary" style="padding: 0 12px; font-size: 12px; border-radius: 6px;" onclick="window.aggiungiScalettaItem('scaletta_clienti', 'nuovaScalettaClienti')">+</button>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                            <input type="text" id="nuovaScalettaClienti" placeholder="es. Cliente X" style="text-transform: uppercase; width: 100%; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                            <button type="button" class="btn-primary" style="padding: 8px; font-size: 13px; border-radius: 6px; width: 100%; justify-content: center;" onclick="window.aggiungiScalettaItem('scaletta_clienti', 'nuovaScalettaClienti')"><span class="material-icons-round" style="font-size:16px; vertical-align:middle; margin-right:4px;">add</span>Aggiungi</button>
                         </div>
                         <div id="listaScalettaClienti" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
                     </div>
@@ -326,9 +326,9 @@
                     <!-- 4. Destinazione Merce -->
                     <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                         <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: block;">4. Destinazione Merce</label>
-                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                            <input type="text" id="nuovaScalettaDestinazioni" placeholder="es. Cons. Cliente" style="text-transform: uppercase; flex: 1; padding: 6px; font-size: 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
-                            <button type="button" class="btn-primary" style="padding: 0 12px; font-size: 12px; border-radius: 6px;" onclick="window.aggiungiScalettaItem('scaletta_destinazioni_merce', 'nuovaScalettaDestinazioni')">+</button>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                            <input type="text" id="nuovaScalettaDestinazioni" placeholder="es. Cons. Cliente" style="text-transform: uppercase; width: 100%; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                            <button type="button" class="btn-primary" style="padding: 8px; font-size: 13px; border-radius: 6px; width: 100%; justify-content: center;" onclick="window.aggiungiScalettaItem('scaletta_destinazioni_merce', 'nuovaScalettaDestinazioni')"><span class="material-icons-round" style="font-size:16px; vertical-align:middle; margin-right:4px;">add</span>Aggiungi</button>
                         </div>
                         <div id="listaScalettaDestinazioni" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
                     </div>
@@ -1333,8 +1333,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=5.05"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.05"></script>
+    <script src="script.js?v=5.06"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.06"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1379,8 +1379,8 @@ const functions = getFunctions(app, "europe-west1");
         container.innerHTML = sorted.map(d => `
             <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 6px;">
                 <span style="font-weight: 500;">${d.nome}</span>
-                <button type="button" class="btn-danger" style="width: auto; padding: 4px 8px; font-size: 11px;" onclick="window.eliminaScalettaItem('${tipo}', '${d.id}', '${d.nome}')">
-                    <span class="material-icons-round" style="font-size: 14px;">close</span>
+                <button type="button" style="background: none; border: none; color: #ef4444; padding: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="Elimina" onclick="window.eliminaScalettaItem('${tipo}', '${d.id}', '${d.nome}')">
+                    <span class="material-icons-round" style="font-size: 18px;">delete_outline</span>
                 </button>
             </div>
         `).join('');

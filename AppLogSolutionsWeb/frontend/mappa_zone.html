@@ -2570,6 +2570,10 @@ const db = getFirestore(app);
                     handle: '.drag-handle-map',
                     animation: 150,
                     ghostClass: 'sortable-ghost',
+                    scroll: document.getElementById('zone-list'), // Forza lo scroll sul contenitore della sidebar
+                    scrollSensitivity: 80, // Inizia a scorrere quando il mouse è a 80px dal bordo
+                    scrollSpeed: 20,       // Velocità dello scroll
+                    bubbleScroll: true,
                     onEnd: function (evt) {
                         const zid = evt.from.dataset.zid;
                         const oldIdx = evt.oldIndex;

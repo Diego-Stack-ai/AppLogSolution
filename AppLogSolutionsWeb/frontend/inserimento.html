@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.08">
+    <link rel="stylesheet" href="styles.css?v=5.09">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -222,29 +222,11 @@
                         </div>
 
                         <!-- Sezione Navetta Pura (visibile solo se cliente = NAVETTA) -->
-                        <div id="navettaFieldsContainer" style="display: none; grid-column: 1 / -1; display: none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                        <div id="navettaFieldsContainer" style="display: none; grid-column: 1 / -1;">
                             <div class="input-group">
-                                <label for="navettaPartenzaSelect">Partenza / Rientro *</label>
+                                <label for="navettaPartenzaSelect">📍 Partenza / Rientro *</label>
                                 <select id="navettaPartenzaSelect">
-                                    <option value="">Seleziona partenza</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label for="navettaCaricoSelect">Luogo di Carico *</label>
-                                <select id="navettaCaricoSelect">
-                                    <option value="">Seleziona luogo di carico</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label for="navettaClientiSelect">Clienti / Merce *</label>
-                                <select id="navettaClientiSelect">
-                                    <option value="">Seleziona cliente/merce</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label for="navettaDestinazioniSelect">Destinazione Merce *</label>
-                                <select id="navettaDestinazioniSelect">
-                                    <option value="">Seleziona destinazione</option>
+                                    <option value="">Seleziona punto di partenza</option>
                                 </select>
                             </div>
                         </div>
@@ -490,12 +472,12 @@
         </div>
     </div>
 
-    <script src="script.js?v=5.08"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.08"></script>
+    <script src="script.js?v=5.09"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.09"></script>
     <script type="module">
-        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.08";
-        import { auth } from "./firestore-service.js?v=5.08";
-        import "./gps-tracker.js?v=5.08";
+        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.09";
+        import { auth } from "./firestore-service.js?v=5.09";
+        import "./gps-tracker.js?v=5.09";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -672,12 +654,9 @@
                     btnStartTrip.style.display = 'none';
                 }
             } else if (isNavetta) {
-                // Caso NAVETTA: verifica i 4 select navetta invece di viaggioSelect
+                // Caso NAVETTA: verifica solo partenza + campi base
                 const d1 = document.getElementById('automezzo').value;
                 const d2 = document.getElementById('navettaPartenzaSelect').value;
-                const d3 = document.getElementById('navettaCaricoSelect').value;
-                const d4 = document.getElementById('navettaClientiSelect').value;
-                const d_dest = document.getElementById('navettaDestinazioniSelect').value;
                 const d_km = document.getElementById('kmPartenza').value;
                 const d5 = document.getElementById('mattinaInizioHH').value;
                 const d6 = document.getElementById('mattinaInizioMM').value;
@@ -687,7 +666,7 @@
                 btnStartTrip.style.boxShadow = '0 10px 25px rgba(124, 58, 237, 0.3)';
 
                 if (!btnStartTrip.disabled) {
-                    if (d1 && d2 && d3 && d4 && d_dest && d_km && d5 && d6) {
+                    if (d1 && d2 && d_km && d5 && d6) {
                         btnStartTrip.style.display = 'flex';
                     } else {
                         btnStartTrip.style.display = 'none';
@@ -758,7 +737,7 @@
             if (tipo === 'magazziniere') {
                 step1Fields = ['mattinaInizioHH', 'mattinaInizioMM', 'mattinaFineHH', 'mattinaFineMM'];
             } else if (clienteVal.toUpperCase() === 'NAVETTA') {
-                step1Fields = ['automezzo', 'clienteSelect', 'navettaPartenzaSelect', 'navettaCaricoSelect', 'navettaClientiSelect', 'navettaDestinazioniSelect', 'kmPartenza', 'mattinaInizioHH', 'mattinaInizioMM'];
+                step1Fields = ['automezzo', 'clienteSelect', 'navettaPartenzaSelect', 'kmPartenza', 'mattinaInizioHH', 'mattinaInizioMM'];
             } else {
                 step1Fields = ['automezzo', 'clienteSelect', 'viaggioSelect', 'kmPartenza', 'mattinaInizioHH', 'mattinaInizioMM'];
             }
@@ -787,7 +766,7 @@
             let vSelected, mapUrl, tripData;
 
             if (isNavetta) {
-                // Payload per turno Navetta Pura
+                // Payload per turno Navetta Pura — solo partenza nello step 1
                 tripData = {
                     data: document.getElementById('data').value,
                     autista: window.appData.currentUser.nome,
@@ -799,10 +778,7 @@
                     mattinaInizio: window.getTimeValue('mattinaInizio'),
                     stato: "in corso",
                     isNavetta: true,
-                    navetta_partenza:     document.getElementById('navettaPartenzaSelect').value,
-                    navetta_carico:       document.getElementById('navettaCaricoSelect').value,
-                    navetta_clienti:      document.getElementById('navettaClientiSelect').value,
-                    navetta_destinazione: document.getElementById('navettaDestinazioniSelect').value,
+                    navetta_partenza: document.getElementById('navettaPartenzaSelect').value,
                     attivitaAggiuntive: []
                 };
             } else {
@@ -881,10 +857,7 @@
                 isMagazzino: isMagazzino,
                 isNavetta: isNavettaFinale,
                 ...(isNavettaFinale ? {
-                    navetta_partenza:     document.getElementById('navettaPartenzaSelect')?.value || '',
-                    navetta_carico:       document.getElementById('navettaCaricoSelect')?.value || '',
-                    navetta_clienti:      document.getElementById('navettaClientiSelect')?.value || '',
-                    navetta_destinazione: document.getElementById('navettaDestinazioniSelect')?.value || ''
+                    navetta_partenza: document.getElementById('navettaPartenzaSelect')?.value || ''
                 } : {}),
                 attivitaAggiuntive: window.attivitaAggiuntive || []
             };
@@ -918,105 +891,180 @@
             const container = document.getElementById('listaAttivitaContainer');
             if (!container) return;
             container.innerHTML = '';
-            
+
             if (window.attivitaAggiuntive.length === 0) {
                 container.innerHTML = '<div style="color: #94a3b8; font-size: 13px; font-style: italic; text-align: center; padding: 10px 0;">Nessuna attività aggiunta.</div>';
                 return;
             }
-            
+
+            // Liste per tratte standard (navetta autisti)
             const destinazioniList = window.appData?.lista_destinazioni_navette || [];
-            let nomiDestinazioni = destinazioniList.map(d => d.nome).filter(Boolean);
-            nomiDestinazioni.sort();
-            
+            let nomiDestinazioni = destinazioniList.map(d => d.nome).filter(Boolean).sort();
+
+            // Liste per missioni navetta pura
+            const buildOptions = (items, currentVal) => {
+                let opts = '';
+                (items || []).sort((a,b) => (a.nome||'').localeCompare(b.nome||'')).forEach(item => {
+                    const sel = (item.nome === currentVal) ? 'selected' : '';
+                    opts += `<option value="${item.nome}" ${sel}>${item.nome}</option>`;
+                });
+                return opts;
+            };
+
             window.attivitaAggiuntive.forEach((att, index) => {
                 const card = document.createElement('div');
                 card.className = 'attivita-card';
-                card.style.cssText = 'background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 12px; position: relative; margin-bottom: 10px; text-align: left;';
-                
-                let daOptions = '<option value="">Da...</option>';
-                let aOptions = '<option value="">A...</option>';
-                
-                nomiDestinazioni.forEach(nome => {
-                    const isDaSelected = (att.da === nome);
-                    const isASelected = (att.a === nome);
-                    
-                    // Logica di esclusione: se "A" è selezionato, nascondiamo/disabilitiamo in "Da" (e viceversa)
-                    const disabledInDa = (att.a === nome) ? 'disabled style="display:none;"' : '';
-                    const disabledInA = (att.da === nome) ? 'disabled style="display:none;"' : '';
-                    
-                    const selectedDa = isDaSelected ? 'selected' : '';
-                    const selectedA = isASelected ? 'selected' : '';
-                    
-                    daOptions += `<option value="${nome}" ${selectedDa} ${disabledInDa}>${nome.toUpperCase()}</option>`;
-                    aOptions += `<option value="${nome}" ${selectedA} ${disabledInA}>${nome.toUpperCase()}</option>`;
-                });
-                
-                card.innerHTML = `
-                    <div style="position: absolute; top: 10px; right: 10px;">
-                        <button type="button" onclick="window.rimuoviAttivita(${index})" style="border: none; background: none; color: #ef4444; cursor: pointer; padding: 4px;" title="Rimuovi">
-                            <span class="material-icons-round" style="font-size: 20px;">delete</span>
-                        </button>
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-right: 25px;">
-                        <div class="input-group" style="margin-bottom: 0;">
-                            <label style="font-size: 11px; margin-bottom: 4px;">Partenza *</label>
-                            <select data-index="${index}" data-field="da" onchange="window.aggiornaCampoAttivita(this)" required style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; background-position: right 6px center; background-size: 10px; padding-right: 20px; width: 100%;">
-                                ${daOptions}
-                            </select>
+
+                // ── CARD MISSIONE NAVETTA PURA ─────────────────────────────────
+                if (att.tipo === 'navettaMissione') {
+                    card.style.cssText = 'background: #faf5ff; border: 1px solid #d8b4fe; padding: 14px; border-radius: 12px; position: relative; margin-bottom: 10px; text-align: left;';
+
+                    const caricoOpts = buildOptions(window.appData?.lista_navetta_carico, att.carico);
+                    const clienteOpts = buildOptions(window.appData?.lista_navetta_clienti, att.cliente_merce);
+                    const destOpts = buildOptions(window.appData?.lista_navetta_destinazioni_merce, att.destinazione_merce);
+
+                    card.innerHTML = `
+                        <div style="position: absolute; top: 10px; right: 10px;">
+                            <button type="button" onclick="window.rimuoviAttivita(${index})" style="border: none; background: none; color: #ef4444; cursor: pointer; padding: 4px;" title="Rimuovi">
+                                <span class="material-icons-round" style="font-size: 20px;">delete</span>
+                            </button>
                         </div>
-                        <div class="input-group" style="margin-bottom: 0;">
-                            <label style="font-size: 11px; margin-bottom: 4px;">Destinazione *</label>
-                            <select data-index="${index}" data-field="a" onchange="window.aggiornaCampoAttivita(this)" required style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; background-position: right 6px center; background-size: 10px; padding-right: 20px; width: 100%;">
-                                ${aOptions}
-                            </select>
+                        <div style="font-size: 11px; font-weight: 700; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; margin-right: 25px;">
+                            🚐 Missione ${index + 1}
                         </div>
-                        <div class="input-group" style="margin-bottom: 0;">
-                            <label style="font-size: 11px; margin-bottom: 4px;">Ora Inizio *</label>
-                            <input type="time" data-index="${index}" data-field="oraInizio" value="${att.oraInizio || ''}" oninput="window.aggiornaCampoAttivita(this)" required style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-right: 25px;">
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 11px; margin-bottom: 4px;">📦 Luogo di Carico *</label>
+                                <select data-index="${index}" data-field="carico" onchange="window.aggiornaCampoAttivita(this)" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; width: 100%;">
+                                    <option value="">Seleziona carico...</option>
+                                    ${caricoOpts}
+                                </select>
+                            </div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 11px; margin-bottom: 4px;">👤 Cliente / Merce *</label>
+                                <select data-index="${index}" data-field="cliente_merce" onchange="window.aggiornaCampoAttivita(this)" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; width: 100%;">
+                                    <option value="">Seleziona cliente...</option>
+                                    ${clienteOpts}
+                                </select>
+                            </div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 11px; margin-bottom: 4px;">📍 Destinazione Merce *</label>
+                                <select data-index="${index}" data-field="destinazione_merce" onchange="window.aggiornaCampoAttivita(this)" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; width: 100%;">
+                                    <option value="">Seleziona destinazione...</option>
+                                    ${destOpts}
+                                </select>
+                            </div>
                         </div>
-                        <div class="input-group" style="margin-bottom: 0;">
-                            <label style="font-size: 11px; margin-bottom: 4px;">Ora Fine *</label>
-                            <input type="time" data-index="${index}" data-field="oraFine" value="${att.oraFine || ''}" oninput="window.aggiornaCampoAttivita(this)" required style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 11px; margin-bottom: 4px;">Ora Inizio</label>
+                                <input type="time" data-index="${index}" data-field="oraInizio" value="${att.oraInizio || ''}" oninput="window.aggiornaCampoAttivita(this)" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
+                            </div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 11px; margin-bottom: 4px;">Ora Fine</label>
+                                <input type="time" data-index="${index}" data-field="oraFine" value="${att.oraFine || ''}" oninput="window.aggiornaCampoAttivita(this)" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; margin-top: 10px;">
-                        <div class="input-group" style="margin-bottom: 0;">
-                            <label style="font-size: 11px; margin-bottom: 4px;">Km Iniziali</label>
-                            <input type="number" data-index="${index}" data-field="kmIniziali" value="${att.kmIniziali !== undefined && att.kmIniziali !== null ? att.kmIniziali : ''}" placeholder="Inizio" oninput="window.aggiornaCampoAttivita(this)" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
+                        <div class="input-group" style="margin-bottom: 0; margin-top: 10px;">
+                            <label style="font-size: 11px; margin-bottom: 4px;">Note</label>
+                            <input type="text" data-index="${index}" data-field="note" value="${att.note || ''}" placeholder="Dettagli sulla missione..." oninput="window.aggiornaCampoAttivita(this)" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
                         </div>
-                        <div class="input-group" style="margin-bottom: 0;">
-                            <label style="font-size: 11px; margin-bottom: 4px;">Km Finali</label>
-                            <input type="number" data-index="${index}" data-field="kmFinali" value="${att.kmFinali !== undefined && att.kmFinali !== null ? att.kmFinali : ''}" placeholder="Fine" oninput="window.aggiornaCampoAttivita(this)" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
+                    `;
+
+                } else {
+                    // ── CARD TRATTA STANDARD (navetta autisti) ──────────────────
+                    card.style.cssText = 'background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 12px; position: relative; margin-bottom: 10px; text-align: left;';
+
+                    let daOptions = '<option value="">Da...</option>';
+                    let aOptions = '<option value="">A...</option>';
+
+                    nomiDestinazioni.forEach(nome => {
+                        const disabledInDa = (att.a === nome) ? 'disabled style="display:none;"' : '';
+                        const disabledInA = (att.da === nome) ? 'disabled style="display:none;"' : '';
+                        daOptions += `<option value="${nome}" ${att.da === nome ? 'selected' : ''} ${disabledInDa}>${nome.toUpperCase()}</option>`;
+                        aOptions  += `<option value="${nome}" ${att.a  === nome ? 'selected' : ''} ${disabledInA}>${nome.toUpperCase()}</option>`;
+                    });
+
+                    card.innerHTML = `
+                        <div style="position: absolute; top: 10px; right: 10px;">
+                            <button type="button" onclick="window.rimuoviAttivita(${index})" style="border: none; background: none; color: #ef4444; cursor: pointer; padding: 4px;" title="Rimuovi">
+                                <span class="material-icons-round" style="font-size: 20px;">delete</span>
+                            </button>
                         </div>
-                        <div class="input-group" style="margin-bottom: 0;">
-                            <label style="font-size: 11px; margin-bottom: 4px;">Delta Km</label>
-                            <input type="text" data-index="${index}" data-field="deltaKm" value="${att.deltaKm !== undefined && att.deltaKm !== null ? att.deltaKm : ''}" readonly class="readonly-field" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-right: 25px;">
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 11px; margin-bottom: 4px;">Partenza *</label>
+                                <select data-index="${index}" data-field="da" onchange="window.aggiornaCampoAttivita(this)" required style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; background-position: right 6px center; background-size: 10px; padding-right: 20px; width: 100%;">
+                                    ${daOptions}
+                                </select>
+                            </div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 11px; margin-bottom: 4px;">Destinazione *</label>
+                                <select data-index="${index}" data-field="a" onchange="window.aggiornaCampoAttivita(this)" required style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; background-position: right 6px center; background-size: 10px; padding-right: 20px; width: 100%;">
+                                    ${aOptions}
+                                </select>
+                            </div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 11px; margin-bottom: 4px;">Ora Inizio *</label>
+                                <input type="time" data-index="${index}" data-field="oraInizio" value="${att.oraInizio || ''}" oninput="window.aggiornaCampoAttivita(this)" required style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
+                            </div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 11px; margin-bottom: 4px;">Ora Fine *</label>
+                                <input type="time" data-index="${index}" data-field="oraFine" value="${att.oraFine || ''}" oninput="window.aggiornaCampoAttivita(this)" required style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="input-group" style="margin-bottom: 0; margin-top: 10px;">
-                        <label style="font-size: 11px; margin-bottom: 4px;">Note</label>
-                        <input type="text" data-index="${index}" data-field="note" value="${att.note || ''}" placeholder="Dettagli, anomalie..." oninput="window.aggiornaCampoAttivita(this)" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
-                    </div>
-                `;
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; margin-top: 10px;">
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 11px; margin-bottom: 4px;">Km Iniziali</label>
+                                <input type="number" data-index="${index}" data-field="kmIniziali" value="${att.kmIniziali !== undefined && att.kmIniziali !== null ? att.kmIniziali : ''}" placeholder="Inizio" oninput="window.aggiornaCampoAttivita(this)" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
+                            </div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 11px; margin-bottom: 4px;">Km Finali</label>
+                                <input type="number" data-index="${index}" data-field="kmFinali" value="${att.kmFinali !== undefined && att.kmFinali !== null ? att.kmFinali : ''}" placeholder="Fine" oninput="window.aggiornaCampoAttivita(this)" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
+                            </div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 11px; margin-bottom: 4px;">Delta Km</label>
+                                <input type="text" data-index="${index}" data-field="deltaKm" value="${att.deltaKm !== undefined && att.deltaKm !== null ? att.deltaKm : ''}" readonly class="readonly-field" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
+                            </div>
+                        </div>
+                        <div class="input-group" style="margin-bottom: 0; margin-top: 10px;">
+                            <label style="font-size: 11px; margin-bottom: 4px;">Note</label>
+                            <input type="text" data-index="${index}" data-field="note" value="${att.note || ''}" placeholder="Dettagli, anomalie..." oninput="window.aggiornaCampoAttivita(this)" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
+                        </div>
+                    `;
+                }
+
                 container.appendChild(card);
             });
         };
 
         window.aggiungiAttivita = function() {
-            window.attivitaAggiuntive.push({
-                tipo: 'navetta',
-                da: '',
-                a: '',
-                oraInizio: '',
-                oraFine: '',
-                kmIniziali: '',
-                kmFinali: '',
-                deltaKm: '',
-                note: ''
-            });
+            const cliente = document.getElementById('clienteSelect')?.value || '';
+            const isNavettaPura = cliente.toUpperCase() === 'NAVETTA';
+
+            if (isNavettaPura) {
+                window.attivitaAggiuntive.push({
+                    tipo: 'navettaMissione',
+                    carico: '',
+                    cliente_merce: '',
+                    destinazione_merce: '',
+                    oraInizio: '',
+                    oraFine: '',
+                    note: ''
+                });
+            } else {
+                window.attivitaAggiuntive.push({
+                    tipo: 'navetta',
+                    da: '',
+                    a: '',
+                    oraInizio: '',
+                    oraFine: '',
+                    kmIniziali: '',
+                    kmFinali: '',
+                    deltaKm: '',
+                    note: ''
+                });
+            }
             window.renderAttivitaRows();
             if (typeof window.saveDraft === 'function') window.saveDraft();
         };
@@ -1096,26 +1144,42 @@
             const btn = document.getElementById('btnAggiungiAttivita');
             const cliente = document.getElementById('clienteSelect')?.value || '';
             const viaggio = document.getElementById('viaggioSelect')?.value || '';
-            
+
             if (!sez || !titolo || !btn) return;
-            
+
+            const clienteUpper = cliente.toUpperCase();
+            const isNavettaPura = clienteUpper === 'NAVETTA';
+
+            // Navetta Pura: mostra sezione anche senza viaggio selezionato
+            if (isNavettaPura && tipoTurno !== 'magazziniere') {
+                titolo.textContent = "Missioni Navetta";
+                btn.innerHTML = '<span class="material-icons-round" style="font-size: 16px;">add</span> Aggiungi Missione';
+                btn.style.backgroundColor = '#7c3aed';
+                btn.style.boxShadow = '0 4px 15px rgba(124,58,237,0.3)';
+                sez.style.display = 'block';
+                return;
+            }
+
             if (tipoTurno === 'magazziniere' || !cliente || !viaggio) {
                 sez.style.display = 'none';
                 return;
             }
-            
+
             const viaggioUpper = viaggio.toUpperCase();
-            const clienteUpper = cliente.toUpperCase();
             const isNavetta = viaggioUpper.includes('NAVETTA') || clienteUpper.includes('NAVETTA');
-            
+
             if (isNavetta) {
                 titolo.textContent = "Tratte Consecutive";
                 btn.innerHTML = '<span class="material-icons-round" style="font-size: 16px;">add</span> Aggiungi Tratta';
+                btn.style.backgroundColor = '';
+                btn.style.boxShadow = '';
             } else {
                 titolo.textContent = "Attività Aggiuntive";
                 btn.innerHTML = '<span class="material-icons-round" style="font-size: 16px;">add</span> Aggiungi Navetta';
+                btn.style.backgroundColor = '';
+                btn.style.boxShadow = '';
             }
-            
+
             sez.style.display = 'block';
         };
 

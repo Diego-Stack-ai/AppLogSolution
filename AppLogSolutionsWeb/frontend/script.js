@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "5.08";
+const APP_VERSION = "5.09";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -311,10 +311,10 @@ window.updateViaggi = async function() {
         if (viaggioWrapper) viaggioWrapper.style.display = 'none';
         if (viaggioSelect) { viaggioSelect.required = false; viaggioSelect.disabled = true; viaggioSelect.value = ''; }
 
-        // Mostra i 4 select navetta
-        if (navettaContainer) { navettaContainer.style.display = 'grid'; }
+        // Mostra solo il campo Partenza / Rientro
+        if (navettaContainer) { navettaContainer.style.display = 'block'; }
 
-        // Popola i 4 select con le liste da Firestore
+        // Popola solo navettaPartenzaSelect
         const fillSelect = (id, items) => {
             const sel = document.getElementById(id);
             if (!sel) return;
@@ -328,10 +328,7 @@ window.updateViaggi = async function() {
             if (cur) sel.value = cur;
         };
 
-        fillSelect('navettaPartenzaSelect',     window.appData.lista_navetta_partenze);
-        fillSelect('navettaCaricoSelect',        window.appData.lista_navetta_carico);
-        fillSelect('navettaClientiSelect',       window.appData.lista_navetta_clienti);
-        fillSelect('navettaDestinazioniSelect',  window.appData.lista_navetta_destinazioni_merce);
+        fillSelect('navettaPartenzaSelect', window.appData.lista_navetta_partenze);
         return;
     }
 

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.20">
+    <link rel="stylesheet" href="styles.css?v=5.21">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -1398,8 +1398,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=5.20"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.20"></script>
+    <script src="script.js?v=5.21"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.21"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -2268,11 +2268,26 @@ const functions = getFunctions(app, "europe-west1");
             cardModules.forEach(mod => {
                 const conf = currentPermessi[mod.page] || {};
                 
-                // Amministratore è sempre true, gli altri possono essere true/false (default = boolean in base a vecchia logica o false)
-                // Vecchia logica: impiegata aveva tutto. autista solo inserimento e presenze.
-                const defImpiegata = typeof conf['impiegata'] !== 'undefined' ? conf['impiegata'] : true;
-                const defAutista = typeof conf['autista'] !== 'undefined' ? conf['autista'] : (mod.page === 'inserimento' || mod.page === 'presenze');
-                const defSoel = typeof conf['soel'] !== 'undefined' ? conf['soel'] : false;
+                // Helper per recuperare il valore, gestendo anche la retrocompatibilità (true = write, false = none)
+                const getPermVal = (role, def) => {
+                    const val = conf[role];
+                    if (val === 'read' || val === 'write' || val === 'none') return val;
+                    if (val === true) return 'write';
+                    if (val === false) return 'none';
+                    return def;
+                };
+
+                const valImpiegata = getPermVal('impiegata', 'write');
+                const valAutista = getPermVal('autista', (mod.page === 'inserimento' || mod.page === 'presenze') ? 'write' : 'none');
+                const valSoel = getPermVal('soel', 'none');
+
+                const createSelect = (role, val) => `
+                    <select class="input-field perm-select" data-page="${mod.page}" data-role="${role}" style="padding: 4px 8px; font-size: 12px; height: auto;">
+                        <option value="none" ${val === 'none' ? 'selected' : ''}>🚫 Nessun Accesso</option>
+                        <option value="read" ${val === 'read' ? 'selected' : ''}>👁️ Solo Lettura</option>
+                        <option value="write" ${val === 'write' ? 'selected' : ''}>✍️ Modifica</option>
+                    </select>
+                `;
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -2281,16 +2296,16 @@ const functions = getFunctions(app, "europe-west1");
                         <span style="font-size: 11px; color: #64748b;">${mod.page}.html</span>
                     </td>
                     <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0;">
-                        <input type="checkbox" checked disabled title="Amministratore ha sempre accesso">
+                        <span style="font-size: 12px; color: #10b981; font-weight: bold;">✍️ Modifica (Fisso)</span>
                     </td>
                     <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0;">
-                        <input type="checkbox" class="perm-cb" data-page="${mod.page}" data-role="impiegata" ${defImpiegata ? 'checked' : ''}>
+                        ${createSelect('impiegata', valImpiegata)}
                     </td>
                     <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0;">
-                        <input type="checkbox" class="perm-cb" data-page="${mod.page}" data-role="autista" ${defAutista ? 'checked' : ''}>
+                        ${createSelect('autista', valAutista)}
                     </td>
                     <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0;">
-                        <input type="checkbox" class="perm-cb" data-page="${mod.page}" data-role="soel" ${defSoel ? 'checked' : ''}>
+                        ${createSelect('soel', valSoel)}
                     </td>
                 `;
                 permessiTableBody.appendChild(tr);
@@ -2309,12 +2324,12 @@ const functions = getFunctions(app, "europe-west1");
                 btnSalvaPermessi.innerHTML = 'Salvataggio in corso...';
                 
                 const newPermessi = {};
-                const checkboxes = document.querySelectorAll('.perm-cb');
-                checkboxes.forEach(cb => {
-                    const page = cb.getAttribute('data-page');
-                    const role = cb.getAttribute('data-role');
-                    if (!newPermessi[page]) newPermessi[page] = { amministratore: true };
-                    newPermessi[page][role] = cb.checked;
+                const selects = document.querySelectorAll('.perm-select');
+                selects.forEach(sel => {
+                    const page = sel.getAttribute('data-page');
+                    const role = sel.getAttribute('data-role');
+                    if (!newPermessi[page]) newPermessi[page] = { amministratore: 'write' };
+                    newPermessi[page][role] = sel.value;
                 });
 
                 await setDoc(doc(db, "config", "permessi_dashboard"), newPermessi);

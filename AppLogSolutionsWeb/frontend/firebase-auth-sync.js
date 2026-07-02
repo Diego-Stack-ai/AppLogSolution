@@ -181,27 +181,90 @@ onAuthStateChanged(auth, async (user) => {
                 if (page !== 'dashboard.html' && page !== 'login.html') {
                     const pageKey = page.replace('.html', '');
                     
+                    window.appData.isReadOnly = false;
+
                     if (role !== 'amministratore' && !isDiego) {
-                        let hasPermission = false;
+                        let permLevel = 'none'; // 'none', 'read', 'write'
                         
                         if (permessiData[pageKey] && typeof permessiData[pageKey][role] !== 'undefined') {
                             // Se c'è la configurazione specifica per questa pagina e ruolo
-                            hasPermission = permessiData[pageKey][role] === true;
+                            const val = permessiData[pageKey][role];
+                            if (val === 'write' || val === true) permLevel = 'write';
+                            else if (val === 'read') permLevel = 'read';
+                            else permLevel = 'none';
                         } else {
                             // Fallback alla vecchia logica se la configurazione non esiste ancora
                             if (role === 'impiegata') {
-                                hasPermission = true; // Impiegata vedeva tutto come admin
+                                permLevel = 'write'; // Impiegata vedeva tutto come admin
                             } else {
                                 // Autista vedeva solo inserimento e presenze
-                                hasPermission = (page === 'inserimento.html' || page === 'presenze.html');
+                                permLevel = (page === 'inserimento.html' || page === 'presenze.html') ? 'write' : 'none';
                             }
                         }
 
-                        if (!hasPermission) {
+                        if (permLevel === 'none') {
                             console.error(`REDIRECT DEBUG: Accesso negato a [${page}] per ruolo [${role}]. Reindirizzamento a dashboard.html.`);
                             window.location.replace('dashboard.html');
                             return;
                         }
+
+                        if (permLevel === 'read') {
+                            window.appData.isReadOnly = true;
+                            console.log(`AUTH DEBUG: Accesso in modalità SOLO LETTURA a [${page}] per ruolo [${role}].`);
+                        }
+                    }
+
+                    // Se è in sola lettura, applichiamo lo scudo protettivo universale
+                    if (window.appData.isReadOnly) {
+                        const applyReadOnlyShield = () => {
+                            // Disabilita input di scrittura
+                            document.querySelectorAll('input:not([id*="search" i]):not([class*="search" i]):not([id*="filter" i]):not([class*="filter" i]), select:not([id*="search" i]):not([class*="search" i]):not([id*="filter" i]):not([class*="filter" i]), textarea').forEach(el => {
+                                el.disabled = true;
+                                el.style.backgroundColor = '#f8fafc'; // feedback visivo
+                            });
+                            // Nasconde i tasti di salvataggio/modifica
+                            document.querySelectorAll('button[type="submit"], .btn-primary, .btn-success, .btn-delete, .btn-add, .delete-btn, .btn-edit, #btnSalva, #updateBtn').forEach(btn => {
+                                // Escludiamo i bottoni di navigazione/mappa che hanno la classe btn-edit per mostrare dati
+                                if (btn.title && btn.title.toLowerCase().includes('mappa')) return;
+                                if (!btn.className.toLowerCase().includes('search') && !btn.id.toLowerCase().includes('search') && !btn.className.toLowerCase().includes('tab')) {
+                                    btn.style.display = 'none';
+                                }
+                            });
+                            
+                            // Disabilita specificamente le interazioni sui drag&drop o lock in pianificazione
+                            if (typeof window.toggleLockRow === 'function') {
+                                document.querySelectorAll('.lock-btn').forEach(btn => btn.style.display = 'none');
+                            }
+                        };
+
+                        // Applica all'avvio
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', applyReadOnlyShield);
+                        } else {
+                            applyReadOnlyShield();
+                        }
+
+                        // MutationObserver per bloccare anche gli elementi caricati dinamicamente (es. righe tabelle, modali)
+                        const observer = new MutationObserver((mutations) => {
+                            let shouldReapply = false;
+                            for (const mut of mutations) {
+                                if (mut.addedNodes.length > 0) {
+                                    shouldReapply = true;
+                                    break;
+                                }
+                            }
+                            if (shouldReapply) applyReadOnlyShield();
+                        });
+                        observer.observe(document.body, { childList: true, subtree: true });
+                        
+                        // Mostra banner di avviso all'utente (dopo che l'UI è caricata)
+                        setTimeout(() => {
+                            const banner = document.createElement('div');
+                            banner.innerHTML = '<span class="material-icons-round" style="font-size: 16px;">visibility</span> Modalità Solo Lettura. Non hai i permessi per modificare i dati in questa pagina.';
+                            banner.style.cssText = 'position:fixed; top:0; left:0; right:0; background:#f59e0b; color:white; text-align:center; padding:6px; font-size:13px; font-weight:bold; z-index:999999; display:flex; justify-content:center; align-items:center; gap:6px; box-shadow:0 2px 10px rgba(0,0,0,0.1);';
+                            document.body.appendChild(banner);
+                            document.body.style.paddingTop = '32px';
+                        }, 500);
                     }
                 }
 

@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=5.24">
+    <link rel="stylesheet" href="styles.css?v=5.25">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -2597,8 +2597,13 @@ const db = getFirestore(app);
                         z._polylines = null;
                         z._stato = 'modificato';
                         
+                        _hasUnsavedChanges = true;
                         renderSidebar();
-                        drawMap();
+                        if (typeof IS_POPUP !== 'undefined' && !IS_POPUP && typeof renderMarkers === 'function') {
+                            renderMarkers();
+                        }
+                        if (typeof syncState === 'function') syncState();
+                        if (typeof window.saveToServerBackground === 'function') window.saveToServerBackground();
                     }
                 });
             });

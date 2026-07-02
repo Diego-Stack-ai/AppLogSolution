@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         .planning-table {
             width: 100%;
@@ -254,6 +255,10 @@
                     <span class="material-icons-round">print</span>
                     Stampa
                 </button>
+                <button id="btnScaricaPdf" class="btn-salva btn-stampa" style="background-color: #f59e0b;" onclick="window.scaricaPDF()">
+                    <span class="material-icons-round">picture_as_pdf</span>
+                    Scarica PDF
+                </button>
                 <button id="btnOrdina" class="btn-salva" style="background-color: #3b82f6;" onclick="window.ordinaPerCliente()">
                     <span class="material-icons-round">sort_by_alpha</span>
                     Ordina
@@ -324,6 +329,52 @@
                 document.getElementById('printWorkingDate').innerText = '';
             }
             window.print();
+        };
+
+        window.scaricaPDF = function() {
+            const today = new Date();
+            document.getElementById('printDate').innerText = 'Data stampa: ' + today.toLocaleDateString('it-IT');
+            
+            let dateStr = 'Generica';
+            const workDateInput = document.getElementById('dataPianificazione').value;
+            if(workDateInput) {
+                const [y, m, d] = workDateInput.split('-');
+                document.getElementById('printWorkingDate').innerText = 'Data lavoro: ' + `${d}/${m}/${y}`;
+                dateStr = `${d}-${m}-${y}`;
+            } else {
+                document.getElementById('printWorkingDate').innerText = '';
+            }
+
+            const element = document.getElementById('tableContainer');
+            const printHeader = document.getElementById('printHeader');
+            
+            // Clona per non rovinare il DOM visibile
+            const clone = document.createElement('div');
+            const clonedHeader = printHeader.cloneNode(true);
+            clonedHeader.style.display = 'block';
+            clone.appendChild(clonedHeader);
+            clone.appendChild(element.cloneNode(true));
+
+            // Nasconde roba che non serve in stampa dal clone
+            const rowsToRemove = clone.querySelectorAll('.navetta-row, .magazzino-row');
+            rowsToRemove.forEach(el => el.remove());
+
+            const opt = {
+              margin:       10,
+              filename:     `Pianificazione_Viaggi_${dateStr}.pdf`,
+              image:        { type: 'jpeg', quality: 0.98 },
+              html2canvas:  { scale: 2 },
+              jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            loadingIndicator.style.display = 'flex';
+            html2pdf().set(opt).from(clone).save().then(() => {
+                loadingIndicator.style.display = 'none';
+            }).catch(err => {
+                loadingIndicator.style.display = 'none';
+                Swal.fire('Errore', 'Si è verificato un errore durante la generazione del PDF.', 'error');
+                console.error(err);
+            });
         };
 
         window.storicoPresenzeRaw = [];

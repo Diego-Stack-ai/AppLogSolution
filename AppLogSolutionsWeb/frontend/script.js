@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "5.07";
+const APP_VERSION = "5.08";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -256,6 +256,13 @@ window.renderClientiInserimento = function() {
         opt.textContent = nome.toUpperCase();
         select.appendChild(opt);
     });
+
+    // Aggiungi sempre NAVETTA come voce separata
+    const navOpt = document.createElement('option');
+    navOpt.value = 'NAVETTA';
+    navOpt.textContent = '🚐 NAVETTA';
+    select.appendChild(navOpt);
+
     if (currentVal) select.value = currentVal;
 };
 
@@ -287,10 +294,8 @@ window.updateNomeGiorno = function() {
 window.updateViaggi = async function() {
     const clienteNome = document.getElementById("clienteSelect")?.value || "";
     const viaggioSelect = document.getElementById("viaggioSelect");
-    if (!viaggioSelect) return;
-
-    viaggioSelect.innerHTML = '<option value="">Seleziona viaggio</option>';
-    viaggioSelect.disabled = true;
+    const viaggioWrapper = viaggioSelect?.closest('.input-group');
+    const navettaContainer = document.getElementById('navettaFieldsContainer');
 
     // Reset link mappa
     const linkMappa = document.getElementById('linkMappaViaggio');
@@ -299,6 +304,47 @@ window.updateViaggi = async function() {
         linkMappa.style.display = 'none';
     }
     window.viaggiLinksMap = {};
+
+    // ── CASO NAVETTA PURA ────────────────────────────────────────────────────
+    if (clienteNome.toUpperCase() === 'NAVETTA') {
+        // Nascondi il select viaggio standard
+        if (viaggioWrapper) viaggioWrapper.style.display = 'none';
+        if (viaggioSelect) { viaggioSelect.required = false; viaggioSelect.disabled = true; viaggioSelect.value = ''; }
+
+        // Mostra i 4 select navetta
+        if (navettaContainer) { navettaContainer.style.display = 'grid'; }
+
+        // Popola i 4 select con le liste da Firestore
+        const fillSelect = (id, items) => {
+            const sel = document.getElementById(id);
+            if (!sel) return;
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">' + sel.options[0].text + '</option>';
+            (items || []).sort((a,b) => (a.nome||'').localeCompare(b.nome||'')).forEach(item => {
+                const o = document.createElement('option');
+                o.value = item.nome; o.textContent = item.nome;
+                sel.appendChild(o);
+            });
+            if (cur) sel.value = cur;
+        };
+
+        fillSelect('navettaPartenzaSelect',     window.appData.lista_navetta_partenze);
+        fillSelect('navettaCaricoSelect',        window.appData.lista_navetta_carico);
+        fillSelect('navettaClientiSelect',       window.appData.lista_navetta_clienti);
+        fillSelect('navettaDestinazioniSelect',  window.appData.lista_navetta_destinazioni_merce);
+        return;
+    }
+
+    // ── CASO CLIENTE STANDARD ────────────────────────────────────────────────
+    // Ripristina il select viaggio
+    if (viaggioWrapper) viaggioWrapper.style.display = '';
+    if (viaggioSelect) { viaggioSelect.required = true; }
+    // Nascondi i campi navetta
+    if (navettaContainer) { navettaContainer.style.display = 'none'; }
+
+    if (!viaggioSelect) return;
+    viaggioSelect.innerHTML = '<option value="">Seleziona viaggio</option>';
+    viaggioSelect.disabled = true;
 
     const selectedDate = document.getElementById("data")?.value;
     

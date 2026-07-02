@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.07">
+    <link rel="stylesheet" href="styles.css?v=5.08">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -217,6 +217,34 @@
                                 </div>
                                 <select id="viaggioSelect" required disabled>
                                     <option value="">Seleziona viaggio</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Sezione Navetta Pura (visibile solo se cliente = NAVETTA) -->
+                        <div id="navettaFieldsContainer" style="display: none; grid-column: 1 / -1; display: none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                            <div class="input-group">
+                                <label for="navettaPartenzaSelect">Partenza / Rientro *</label>
+                                <select id="navettaPartenzaSelect">
+                                    <option value="">Seleziona partenza</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="navettaCaricoSelect">Luogo di Carico *</label>
+                                <select id="navettaCaricoSelect">
+                                    <option value="">Seleziona luogo di carico</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="navettaClientiSelect">Clienti / Merce *</label>
+                                <select id="navettaClientiSelect">
+                                    <option value="">Seleziona cliente/merce</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="navettaDestinazioniSelect">Destinazione Merce *</label>
+                                <select id="navettaDestinazioniSelect">
+                                    <option value="">Seleziona destinazione</option>
                                 </select>
                             </div>
                         </div>
@@ -462,12 +490,12 @@
         </div>
     </div>
 
-    <script src="script.js?v=5.07"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.07"></script>
+    <script src="script.js?v=5.08"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.08"></script>
     <script type="module">
-        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.07";
-        import { auth } from "./firestore-service.js?v=5.07";
-        import "./gps-tracker.js?v=5.07";
+        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.08";
+        import { auth } from "./firestore-service.js?v=5.08";
+        import "./gps-tracker.js?v=5.08";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -625,7 +653,9 @@
         // Logic to show/hide Start Trip button based on inputs
         const checkStep1 = () => {
             const tipo = document.getElementById('tipoTurno')?.value || 'autista';
-            
+            const cliente = document.getElementById('clienteSelect')?.value || '';
+            const isNavetta = cliente.toUpperCase() === 'NAVETTA';
+
             if (tipo === 'magazziniere') {
                 const d5 = document.getElementById('mattinaInizioHH').value;
                 const d6 = document.getElementById('mattinaInizioMM').value;
@@ -640,6 +670,28 @@
                     btnStartTrip.style.display = 'flex';
                 } else {
                     btnStartTrip.style.display = 'none';
+                }
+            } else if (isNavetta) {
+                // Caso NAVETTA: verifica i 4 select navetta invece di viaggioSelect
+                const d1 = document.getElementById('automezzo').value;
+                const d2 = document.getElementById('navettaPartenzaSelect').value;
+                const d3 = document.getElementById('navettaCaricoSelect').value;
+                const d4 = document.getElementById('navettaClientiSelect').value;
+                const d_dest = document.getElementById('navettaDestinazioniSelect').value;
+                const d_km = document.getElementById('kmPartenza').value;
+                const d5 = document.getElementById('mattinaInizioHH').value;
+                const d6 = document.getElementById('mattinaInizioMM').value;
+
+                btnStartTrip.innerHTML = '<span class="material-icons-round">airport_shuttle</span> Inizia Navetta';
+                btnStartTrip.style.backgroundColor = '#7c3aed';
+                btnStartTrip.style.boxShadow = '0 10px 25px rgba(124, 58, 237, 0.3)';
+
+                if (!btnStartTrip.disabled) {
+                    if (d1 && d2 && d3 && d4 && d_dest && d_km && d5 && d6) {
+                        btnStartTrip.style.display = 'flex';
+                    } else {
+                        btnStartTrip.style.display = 'none';
+                    }
                 }
             } else {
                 const d1 = document.getElementById('automezzo').value;
@@ -663,7 +715,7 @@
             }
         };
 
-        ['tipoTurno', 'automezzo', 'clienteSelect', 'viaggioSelect', 'kmPartenza', 'mattinaInizioHH', 'mattinaInizioMM', 'mattinaFineHH', 'mattinaFineMM'].forEach(id => {
+        ['tipoTurno', 'automezzo', 'clienteSelect', 'viaggioSelect', 'kmPartenza', 'mattinaInizioHH', 'mattinaInizioMM', 'mattinaFineHH', 'mattinaFineMM', 'navettaPartenzaSelect', 'navettaCaricoSelect', 'navettaClientiSelect', 'navettaDestinazioniSelect'].forEach(id => {
             const el = document.getElementById(id);
             if (el) {
                 el.addEventListener('input', () => {
@@ -702,8 +754,11 @@
             
             // Check HTML5 validity for Step 1 required fields only
             let step1Fields = [];
+            const clienteVal = document.getElementById('clienteSelect')?.value || '';
             if (tipo === 'magazziniere') {
                 step1Fields = ['mattinaInizioHH', 'mattinaInizioMM', 'mattinaFineHH', 'mattinaFineMM'];
+            } else if (clienteVal.toUpperCase() === 'NAVETTA') {
+                step1Fields = ['automezzo', 'clienteSelect', 'navettaPartenzaSelect', 'navettaCaricoSelect', 'navettaClientiSelect', 'navettaDestinazioniSelect', 'kmPartenza', 'mattinaInizioHH', 'mattinaInizioMM'];
             } else {
                 step1Fields = ['automezzo', 'clienteSelect', 'viaggioSelect', 'kmPartenza', 'mattinaInizioHH', 'mattinaInizioMM'];
             }
@@ -727,22 +782,45 @@
 
             const targa = document.getElementById('automezzo').value;
             const kmPartenza = document.getElementById('kmPartenza').value;
-            
-            const vSelected = document.getElementById('viaggioSelect').value;
-            const mapUrl = (window.viaggiLinksMap && vSelected) ? (window.viaggiLinksMap[vSelected.toUpperCase()] || "") : "";
+            const isNavetta = document.getElementById('clienteSelect').value.toUpperCase() === 'NAVETTA';
 
-            const tripData = {
-                data: document.getElementById('data').value,
-                autista: window.appData.currentUser.nome,
-                automezzo: targa,
-                cliente: document.getElementById('clienteSelect').value,
-                viaggio: vSelected,
-                mappaUrl: mapUrl,
-                kmPartenza: Number(kmPartenza),
-                mattinaInizio: window.getTimeValue('mattinaInizio'),
-                stato: "in corso",
-                attivitaAggiuntive: []
-            };
+            let vSelected, mapUrl, tripData;
+
+            if (isNavetta) {
+                // Payload per turno Navetta Pura
+                tripData = {
+                    data: document.getElementById('data').value,
+                    autista: window.appData.currentUser.nome,
+                    automezzo: targa,
+                    cliente: 'NAVETTA',
+                    viaggio: '',
+                    mappaUrl: '',
+                    kmPartenza: Number(kmPartenza),
+                    mattinaInizio: window.getTimeValue('mattinaInizio'),
+                    stato: "in corso",
+                    isNavetta: true,
+                    navetta_partenza:     document.getElementById('navettaPartenzaSelect').value,
+                    navetta_carico:       document.getElementById('navettaCaricoSelect').value,
+                    navetta_clienti:      document.getElementById('navettaClientiSelect').value,
+                    navetta_destinazione: document.getElementById('navettaDestinazioniSelect').value,
+                    attivitaAggiuntive: []
+                };
+            } else {
+                vSelected = document.getElementById('viaggioSelect').value;
+                mapUrl = (window.viaggiLinksMap && vSelected) ? (window.viaggiLinksMap[vSelected.toUpperCase()] || "") : "";
+                tripData = {
+                    data: document.getElementById('data').value,
+                    autista: window.appData.currentUser.nome,
+                    automezzo: targa,
+                    cliente: document.getElementById('clienteSelect').value,
+                    viaggio: vSelected,
+                    mappaUrl: mapUrl,
+                    kmPartenza: Number(kmPartenza),
+                    mattinaInizio: window.getTimeValue('mattinaInizio'),
+                    stato: "in corso",
+                    attivitaAggiuntive: []
+                };
+            }
 
             try {
                 const tripId = await saveTrip(tripData);
@@ -775,15 +853,17 @@
 
             const tipo = document.getElementById('tipoTurno').value;
             const isMagazzino = (tipo === 'magazziniere');
+            const clienteFinale = isMagazzino ? "MAGAZZINO" : document.getElementById('clienteSelect').value;
+            const isNavettaFinale = clienteFinale.toUpperCase() === 'NAVETTA';
 
             const finalData = {
                 id: isMagazzino ? null : tripId,
                 data: document.getElementById('data').value,
                 autista: window.appData.currentUser.nome,
                 automezzo: isMagazzino ? "" : document.getElementById('automezzo').value,
-                cliente: isMagazzino ? "MAGAZZINO" : document.getElementById('clienteSelect').value,
-                viaggio: isMagazzino ? document.getElementById('viaggioSelect').value : vSelected,
-                mappaUrl: isMagazzino ? "" : mapUrl,
+                cliente: clienteFinale,
+                viaggio: isMagazzino ? document.getElementById('viaggioSelect').value : (isNavettaFinale ? '' : vSelected),
+                mappaUrl: (isMagazzino || isNavettaFinale) ? "" : mapUrl,
                 kmPartenza: isMagazzino ? 0 : Number(document.getElementById('kmPartenza').value),
                 kmArrivo: isMagazzino ? 0 : Number(kmArrivo),
                 delta_km: isMagazzino ? "0" : document.getElementById('deltaKm').value,
@@ -799,6 +879,13 @@
                 nota: document.getElementById('nota').value,
                 stato: "concluso",
                 isMagazzino: isMagazzino,
+                isNavetta: isNavettaFinale,
+                ...(isNavettaFinale ? {
+                    navetta_partenza:     document.getElementById('navettaPartenzaSelect')?.value || '',
+                    navetta_carico:       document.getElementById('navettaCaricoSelect')?.value || '',
+                    navetta_clienti:      document.getElementById('navettaClientiSelect')?.value || '',
+                    navetta_destinazione: document.getElementById('navettaDestinazioniSelect')?.value || ''
+                } : {}),
                 attivitaAggiuntive: window.attivitaAggiuntive || []
             };
 

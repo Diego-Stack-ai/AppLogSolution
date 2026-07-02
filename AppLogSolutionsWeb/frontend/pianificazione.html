@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.22">
+    <link rel="stylesheet" href="styles.css?v=5.23">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
         .planning-table {
             width: 100%;
@@ -144,6 +145,10 @@
         .badge-default { background: #f3f4f6 !important; color: #4b5563 !important; border: 1px solid #e5e7eb; }
         .badge-disabled { background: #f1f5f9 !important; color: #94a3b8 !important; cursor: not-allowed !important; border: 1px solid #cbd5e1; opacity: 0.6; }
         .badge-disabled:hover { background: #f1f5f9 !important; }
+        .drag-handle { cursor: grab; color: #cbd5e1; transition: color 0.2s; }
+        .drag-handle:hover { color: #64748b; }
+        .drag-handle:active { cursor: grabbing; color: #3b82f6; }
+        .sortable-ghost { opacity: 0.4; background-color: #f1f5f9; }
 
         @media print {
             @page {
@@ -249,6 +254,10 @@
                     <span class="material-icons-round">print</span>
                     Stampa
                 </button>
+                <button id="btnOrdina" class="btn-salva" style="background-color: #3b82f6;" onclick="window.ordinaPerCliente()">
+                    <span class="material-icons-round">sort_by_alpha</span>
+                    Ordina
+                </button>
                 <button id="btnSalva" class="btn-salva">
                     <span class="material-icons-round">save</span>
                     Salva Pianificazione
@@ -270,6 +279,7 @@
             <table class="planning-table" id="planningTable">
                 <thead>
                     <tr>
+                        <th style="width: 3%; text-align: center;"></th>
                         <th style="width: 20%;">Nome Autista</th>
                         <th style="width: 25%;">Cliente</th>
                         <th style="width: 25%;">Zona / Viaggio</th>
@@ -925,10 +935,13 @@
             
             // Carica la lista progetti corrente per popolare il select cliente
             const progetti = window.appData?.lista_progetti || [];
-            const opzioniClientiHtml = progetti.map(p => {
+            let opzioniClientiHtml = progetti.map(p => {
                 const nome = (p.nome || "").trim().toUpperCase();
                 return `<option value="${nome}">${nome}</option>`;
             }).join('');
+            
+            opzioniClientiHtml += `<option value="NAVETTA">🚐 NAVETTA</option>`;
+            opzioniClientiHtml += `<option value="MAGAZZINO">📦 MAGAZZINO</option>`;
 
             // Carica la lista mezzi corrente per popolare il select targa
             const mezzi = window.appData?.lista_mezzi || [];
@@ -977,6 +990,9 @@
                 tr.setAttribute('data-id', d.id);
                 tr.dataset.generalViaggi = suggestViaggioHtml;
                 tr.innerHTML = `
+                    <td style="text-align: center;">
+                        <span class="material-icons-round drag-handle" title="Trascina per riordinare">drag_indicator</span>
+                    </td>
                     <td>
                         <div class="driver-name">${d.nome} ${d.cognome || ''}</div>
                     </td>
@@ -1013,7 +1029,42 @@
                 `;
                 tbody.appendChild(tr);
             });
+            // Inizializza SortableJS sul tbody
+            if (window.planningSortable) {
+                window.planningSortable.destroy();
+            }
+            window.planningSortable = Sortable.create(tbody, {
+                handle: '.drag-handle',
+                animation: 150,
+                ghostClass: 'sortable-ghost'
+            });
         }
+
+        window.ordinaPerCliente = () => {
+            const tbody = document.getElementById('planningTbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            rows.sort((a, b) => {
+                const clienteA = a.querySelector('.in-cliente').value.trim().toUpperCase();
+                const clienteB = b.querySelector('.in-cliente').value.trim().toUpperCase();
+                
+                if (clienteA && !clienteB) return -1;
+                if (!clienteA && clienteB) return 1;
+                if (clienteA < clienteB) return -1;
+                if (clienteA > clienteB) return 1;
+                return 0;
+            });
+            
+            rows.forEach(row => tbody.appendChild(row));
+            
+            Swal.fire({
+                title: 'Ordinato!',
+                text: 'Le righe sono state ordinate alfabeticamente per Cliente.',
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        };
 
         window.pulisciRiga = (id) => {
             const tr = document.querySelector(`tr[data-id="${id}"]`);
@@ -1089,6 +1140,9 @@
                                 tr.querySelector('.in-targa').value = ass.targa || '';
                                 tr.querySelector('.in-confermato').checked = ass.confermato || false;
                                 window.toggleLockRow(tr);
+                                
+                                // Ripristina l'ordine del database spostando la riga in fondo al tbody
+                                tr.parentNode.appendChild(tr);
                             }
                         });
                         
@@ -1238,7 +1292,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=5.22"></script>
-    <script src="script.js?v=5.22"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.23"></script>
+    <script src="script.js?v=5.23"></script>
 </body>
 </html>

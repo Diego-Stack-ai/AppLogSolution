@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.11">
+    <link rel="stylesheet" href="styles.css?v=5.12">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -472,12 +472,12 @@
         </div>
     </div>
 
-    <script src="script.js?v=5.11"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.11"></script>
+    <script src="script.js?v=5.12"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.12"></script>
     <script type="module">
-        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.11";
-        import { auth } from "./firestore-service.js?v=5.11";
-        import "./gps-tracker.js?v=5.11";
+        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.12";
+        import { auth } from "./firestore-service.js?v=5.12";
+        import "./gps-tracker.js?v=5.12";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -898,8 +898,11 @@
             }
 
             // Liste per tratte standard (navetta autisti)
-            const destinazioniList = window.appData?.lista_destinazioni_navette || [];
-            let nomiDestinazioni = destinazioniList.map(d => d.nome).filter(Boolean).sort();
+            const partenzeList = window.appData?.lista_scaletta_partenze || [];
+            const carichiList = window.appData?.lista_scaletta_carico || [];
+            const destList = window.appData?.lista_scaletta_destinazioni_merce || [];
+            const combinedList = [...partenzeList, ...carichiList, ...destList];
+            let nomiDestinazioni = Array.from(new Set(combinedList.map(d => d.nome).filter(Boolean))).sort((a,b) => a.localeCompare(b));
 
             // Liste per missioni navetta pura
             const buildOptions = (items, currentVal) => {

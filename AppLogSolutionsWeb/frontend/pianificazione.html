@@ -206,14 +206,18 @@
                 word-wrap: break-word !important;
                 box-sizing: border-box !important;
             }
-            th:nth-child(1), td:nth-child(1) { width: 22% !important; }
-            th:nth-child(2), td:nth-child(2) { width: 25% !important; }
-            th:nth-child(3), td:nth-child(3) { width: 31% !important; }
-            th:nth-child(4), td:nth-child(4) { width: 22% !important; }
-            th:nth-child(5), td:nth-child(5),
-            th:nth-child(6), td:nth-child(6) {
+            .drag-handle { display: none !important; }
+            /* Colonne da nascondere in stampa: drag(1), autista(2), conf(6), azioni(7) */
+            th:nth-child(1), td:nth-child(1),
+            th:nth-child(2), td:nth-child(2),
+            th:nth-child(6), td:nth-child(6),
+            th:nth-child(7), td:nth-child(7) {
                 display: none !important;
             }
+            /* Colonne visibili: Cliente(3), Zona/Viaggio(4), Targa(5) */
+            th:nth-child(3), td:nth-child(3) { width: 33% !important; }
+            th:nth-child(4), td:nth-child(4) { width: 40% !important; }
+            th:nth-child(5), td:nth-child(5) { width: 27% !important; }
         }
     </style>
 </head>
@@ -358,6 +362,35 @@
             // Nasconde roba che non serve in stampa dal clone
             const rowsToRemove = clone.querySelectorAll('.navetta-row, .magazzino-row');
             rowsToRemove.forEach(el => el.remove());
+
+            // Rimuovi drag handle e colonne non necessarie (1=drag, 2=autista, 6=conf, 7=azioni)
+            // Rimuovi per posizione nelle righe del clone
+            clone.querySelectorAll('tr').forEach(row => {
+                const cells = row.querySelectorAll('th, td');
+                [6, 5, 1, 0].forEach(idx => { // reverse order per non perdere gli indici
+                    if (cells[idx]) cells[idx].remove();
+                });
+            });
+
+            // Converti tutti i <select> (es. targa) in span con testo visibile
+            clone.querySelectorAll('select').forEach(sel => {
+                const val = sel.options[sel.selectedIndex]?.text || sel.value || '-';
+                const span = document.createElement('span');
+                span.style.fontWeight = '600';
+                span.textContent = val;
+                sel.replaceWith(span);
+            });
+
+            // Converti anche gli input di testo in span
+            clone.querySelectorAll('input[type="text"], input:not([type])').forEach(inp => {
+                const span = document.createElement('span');
+                span.style.fontWeight = '600';
+                span.textContent = inp.value || '-';
+                inp.replaceWith(span);
+            });
+
+            // Nascondi elementi UI non necessari nel clone
+            clone.querySelectorAll('.drag-handle, .suggest-btn, .suggestion-badge, button').forEach(el => el.remove());
 
             const opt = {
               margin:       10,

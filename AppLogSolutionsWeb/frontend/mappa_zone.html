@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="stylesheet" href="styles.css?v=5.23">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
         :root {
             --sidebar-width: 420px;
@@ -936,6 +937,17 @@
             opacity: 0.3;
             cursor: not-allowed;
         }
+
+        .drag-handle-map {
+            cursor: grab;
+            color: #cbd5e1;
+            transition: color 0.2s;
+            margin-right: 8px;
+            font-size: 20px;
+        }
+        .drag-handle-map:hover { color: #64748b; }
+        .drag-handle-map:active { cursor: grabbing; color: #3b82f6; }
+        .sortable-ghost { opacity: 0.4; background-color: #f1f5f9; }
 
         /* sposta overlay styling */
         #sposta-overlay {
@@ -2426,7 +2438,7 @@ const db = getFirestore(app);
                         ${statsBar}
 
                         ${isSelected ? `
-                            <div class="stops-container" onclick="event.stopPropagation()">
+                            <div class="stops-container" data-zid="${z.id_zona}" onclick="event.stopPropagation()">
                                 ${z.lista_punti.map((p, idx) => {
                                     // Check for partial returns alert background
                                     let isParz = false;
@@ -2457,12 +2469,6 @@ const db = getFirestore(app);
                                     if (!isBloccato && !activeAction) {
                                         _arrowHtml = `
                                             <div style="display:flex; align-items:center; gap:4px;" onclick="event.stopPropagation()">
-                                                ${!isSpeciale ? `
-                                                <div class="pt-arrow-btns">
-                                                    <button class="pt-arrow" title="Su" onclick="window.muoviPunto('${z.id_zona}', ${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
-                                                    <button class="pt-arrow" title="Giu" onclick="window.muoviPunto('${z.id_zona}', ${idx}, 1)" ${idx === z.lista_punti.length - 1 ? 'disabled' : ''}>▼</button>
-                                                </div>
-                                                ` : ''}
                                                 <button class="pt-arrow" title="Sposta in altro giro" style="width:24px; height:42px; font-size:14px;" onclick="window.avviaSposta('${z.id_zona}', ${idx})">↔</button>
                                             </div>
                                         `;
@@ -2510,6 +2516,7 @@ const db = getFirestore(app);
                                         <div class="point-card" style="${pointStyle}">
                                             <div class="point-header">
                                                 <div style="display:flex; align-items:center; flex:1; min-width:0;">
+                                                    ${(!isBloccato && !activeAction && !isSpeciale) ? '<span class="material-icons-round drag-handle-map" title="Trascina per riordinare">drag_indicator</span>' : ''}
                                                     <span class="point-num" style="${numBgStyle}">${idx + 1}</span>
                                                     <span class="point-name" style="cursor:pointer;" title="${p.nome}" onclick="window.panToPoint(${p.lat || 0}, ${p.lon || 0})">${p.nome}</span>
                                                 </div>
@@ -2556,6 +2563,45 @@ const db = getFirestore(app);
                     btnAggiorna.style.display = 'none';
                 }
             }
+
+            // Inizializza SortableJS su tutti i container delle tappe
+            document.querySelectorAll('.stops-container').forEach(container => {
+                Sortable.create(container, {
+                    handle: '.drag-handle-map',
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    onEnd: function (evt) {
+                        const zid = evt.from.dataset.zid;
+                        const oldIdx = evt.oldIndex;
+                        const newIdx = evt.newIndex;
+                        if (oldIdx === newIdx) return;
+                        
+                        const z = DATA_ZONE.find(x => x.id_zona === zid);
+                        if (!z) return;
+                        
+                        // Sposta l'elemento nell'array
+                        const item = z.lista_punti.splice(oldIdx, 1)[0];
+                        z.lista_punti.splice(newIdx, 0, item);
+                        
+                        // Resetta le statistiche e segna come modificato
+                        if (z._stats) {
+                            z._stats.km = 0;
+                            z._stats.t_guida = 0;
+                            z._stats.t_tot = 0;
+                        }
+                        z.lista_punti.forEach(p => {
+                            p.ora_arrivo = '';
+                            p.ora_ripartenza = '';
+                            p.ritardo = false;
+                        });
+                        z._polylines = null;
+                        z._stato = 'modificato';
+                        
+                        renderSidebar();
+                        drawMap();
+                    }
+                });
+            });
         };
 
         // Focus and pan map to zone bounding box

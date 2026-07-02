@@ -566,7 +566,7 @@ const db = getFirestore(app);
             // Conserva il valore attuale del viaggio prima di svuotare
             const currentVal = initialViaggioValue !== null ? initialViaggioValue : inViaggio.value;
             
-            inViaggio.innerHTML = '<option value="">-- Seleziona Viaggio/Zona --</option>';
+            inViaggio.innerHTML = '<option value="">-</option>';
             
             if (clienteSelezionato) {
                 const progetti = window.appData?.lista_progetti || [];
@@ -651,7 +651,7 @@ const db = getFirestore(app);
                 const selectCliente = tr.querySelector('select[data-field="cliente"]');
                 if (selectCliente) {
                     const currentVal = selectCliente.value;
-                    selectCliente.innerHTML = '<option value="">-- Seleziona Cliente --</option>';
+                    selectCliente.innerHTML = '<option value="">-</option>';
                     const progetti = window.appData?.lista_progetti || [];
                     progetti.forEach(p => {
                         if (p.nome) {
@@ -1160,7 +1160,7 @@ const db = getFirestore(app);
     <td><strong>${dayName}</strong><br><span style="font-size: 0.8em; color: #6b7280;">${displayDate}</span></td>
                         <td title="${rCliente.toUpperCase()}">
                             <select class="edit-input" data-field="cliente" title="${rCliente.toUpperCase()}" disabled onchange="window.aggiornaViaggiPresenza(this.closest('tr'))">
-                                <option value="">-- Seleziona Cliente --</option>
+                                <option value="">-</option>
                                 ${(window.appData?.lista_progetti || []).map(p => {
                                     const pNome = (p.nome || "").toUpperCase();
                                     return `<option value="${pNome}" ${pNome === rCliente.toUpperCase() ? 'selected' : ''}>${p.nome.toUpperCase()}</option>`;
@@ -1186,12 +1186,14 @@ const db = getFirestore(app);
                         </td>
                         <td title="${rViaggio.toUpperCase()}">
                             <select class="edit-input" data-field="viaggio" title="${rViaggio.toUpperCase()}" disabled>
-                                <option value="">-- Seleziona Viaggio/Zona --</option>
+                                <option value="">-</option>
+                                ${rViaggio ? `<option value="${rViaggio.toUpperCase()}" selected>${rViaggio.toUpperCase()}</option>` : ''}
                             </select>
                         </td>
                         <td title="${rTarga.toUpperCase()}">
                             <select class="edit-input" data-field="targa" title="${rTarga.toUpperCase()}" disabled>
-                                <option value="">-- Seleziona Targa --</option>
+                                <option value="">-</option>
+                                ${rTarga ? `<option value="${rTarga.toUpperCase()}" selected>${rTarga.toUpperCase()}</option>` : ''}
                                 ${(window.appData?.lista_mezzi || []).map(m => {
                                     const mStr = (m.targa || m.nome || "").toUpperCase();
                                     return `<option value="${mStr}" ${mStr === rTarga.toUpperCase() ? 'selected' : ''}>${mStr}</option>`;

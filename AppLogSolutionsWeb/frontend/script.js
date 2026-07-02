@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "5.14";
+const APP_VERSION = "5.15";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -403,21 +403,9 @@ window.updateViaggi = async function() {
     if (!loadedFromManifest) {
         options = viaggiConfigurati;
 
-        // Fallback hardcoded se non trovato su Firestore
+        // Fallback hardcoded rimosso per evitare flash di vecchi dati
         if (options.length === 0) {
-            const viaggiMap = {
-                "PROGETTO SCUOLE": ["VIAGGIO 01", "VIAGGIO 02", "VIAGGIO 03", "VIAGGIO 04", "VIAGGIO 05", "VIAGGIO 06", "VIAGGIO 07", "VIAGGIO 08", "VIAGGIO 09", "VIAGGIO 10"],
-                "CATTEL": ["BS * BRESCIA", "FBS * FUORI BRESCIA"],
-                "GRAN CHEF": ["BL 1 * BELLUNO", "BS * BRESCIA"],
-                "BAUER": [
-                    "1 - LUNEDI - VI * VICENZA", 
-                    "2 - MARTEDI - TV * TREVISO", 
-                    "3 - MERCOLEDI - VI * VICENZA", 
-                    "4 - GIOVEDI - TV * TREVISO", 
-                    "5 - VENERDI - VI * VICENZA"
-                ]
-            };
-            options = viaggiMap[clienteNome.toUpperCase()] || [];
+            options = [];
         }
     }
 

@@ -1172,6 +1172,11 @@ const db = getFirestore(app);
                                         return `<option value="${gNome}" ${gNome === rCliente.toUpperCase() ? 'selected' : ''}>${g.nome.toUpperCase()}</option>`;
                                     }).join('')}
                                 </optgroup>
+                                
+                                <optgroup label="Mansioni Interne">
+                                    <option value="MAGAZZINO" ${'MAGAZZINO' === rCliente.toUpperCase() ? 'selected' : ''}>MAGAZZINO</option>
+                                    <option value="NAVETTA" ${'NAVETTA' === rCliente.toUpperCase() ? 'selected' : ''}>NAVETTA</option>
+                                </optgroup>
 
                                 ${rCliente && 
                                   !(window.appData?.lista_progetti || []).some(p => (p.nome || "").toUpperCase() === rCliente.toUpperCase()) &&
@@ -1221,11 +1226,8 @@ const db = getFirestore(app);
                             <input type="hidden" data-field="litri" value="${record.litri || 0}">
                             <input type="hidden" data-field="note" value="${(record.note || '').replace(/"/g, '&quot;')}">
                             
-                            <div style="display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap;">
-                                <label style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:14px; cursor:pointer;" title="Abilita Magazziniere (Doppio Turno)">
-                                    <input type="checkbox" data-field="isMagazzino" ${isMagazzino ? 'checked' : ''} disabled onchange="onDoubleShiftToggle(this)" style="cursor:pointer; accent-color: var(--primary); margin:0;">
-                                    <span>📦</span>
-                                </label>
+                            <div style="display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:nowrap; white-space: nowrap;">
+                                <input type="checkbox" data-field="isMagazzino" ${isMagazzino ? 'checked' : ''} disabled onchange="onDoubleShiftToggle(this)" style="cursor:pointer; accent-color: var(--primary); margin:0; width:16px; height:16px;" title="Abilita Doppio Turno">
                                 ${canEdit ? `<button class="btn-edit" onclick="toggleRowEdit(this)">✏️ Mod.</button>` : ''}
                                 <button class="btn-dettagli" 
                                     style="${(isMagazzino || parseFloat(record.importo || 0) > 0 || parseFloat(record.litri || 0) > 0 || (record.note && record.note.trim() !== '')) ? 'background-color: #dcfce3; color: #166534; border-color: #86efac;' : ''}" 

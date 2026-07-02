@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.12">
+    <link rel="stylesheet" href="styles.css?v=5.13">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -472,12 +472,12 @@
         </div>
     </div>
 
-    <script src="script.js?v=5.12"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.12"></script>
+    <script src="script.js?v=5.13"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.13"></script>
     <script type="module">
-        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.12";
-        import { auth } from "./firestore-service.js?v=5.12";
-        import "./gps-tracker.js?v=5.12";
+        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.13";
+        import { auth } from "./firestore-service.js?v=5.13";
+        import "./gps-tracker.js?v=5.13";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -897,12 +897,6 @@
                 return;
             }
 
-            // Liste per tratte standard (navetta autisti)
-            const partenzeList = window.appData?.lista_scaletta_partenze || [];
-            const carichiList = window.appData?.lista_scaletta_carico || [];
-            const destList = window.appData?.lista_scaletta_destinazioni_merce || [];
-            const combinedList = [...partenzeList, ...carichiList, ...destList];
-            let nomiDestinazioni = Array.from(new Set(combinedList.map(d => d.nome).filter(Boolean))).sort((a,b) => a.localeCompare(b));
 
             // Liste per missioni navetta pura
             const buildOptions = (items, currentVal) => {
@@ -993,15 +987,10 @@
                     // ── CARD TRATTA STANDARD (navetta autisti) ──────────────────
                     card.style.cssText = 'background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 12px; position: relative; margin-bottom: 10px; text-align: left;';
 
-                    let daOptions = '<option value="">Da...</option>';
-                    let aOptions = '<option value="">A...</option>';
-
-                    nomiDestinazioni.forEach(nome => {
-                        const disabledInDa = (att.a === nome) ? 'disabled style="display:none;"' : '';
-                        const disabledInA = (att.da === nome) ? 'disabled style="display:none;"' : '';
-                        daOptions += `<option value="${nome}" ${att.da === nome ? 'selected' : ''} ${disabledInDa}>${nome.toUpperCase()}</option>`;
-                        aOptions  += `<option value="${nome}" ${att.a  === nome ? 'selected' : ''} ${disabledInA}>${nome.toUpperCase()}</option>`;
-                    });
+                    const partenzaOpts = buildOptions(window.appData?.lista_scaletta_partenze, att.partenza || att.da);
+                    const caricoOpts = buildOptions(window.appData?.lista_scaletta_carico, att.carico);
+                    const clienteOpts = buildOptions(window.appData?.lista_scaletta_clienti, att.cliente_merce);
+                    const destOpts = buildOptions(window.appData?.lista_scaletta_destinazioni_merce, att.destinazione_merce || att.a);
 
                     card.innerHTML = `
                         <div style="position: absolute; top: 10px; right: 10px;">
@@ -1009,19 +998,37 @@
                                 <span class="material-icons-round" style="font-size: 20px;">delete</span>
                             </button>
                         </div>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-right: 25px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 10px; margin-right: 25px;">
                             <div class="input-group" style="margin-bottom: 0;">
                                 <label style="font-size: 11px; margin-bottom: 4px;">Partenza *</label>
-                                <select data-index="${index}" data-field="da" onchange="window.aggiornaCampoAttivita(this)" required style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; background-position: right 6px center; background-size: 10px; padding-right: 20px; width: 100%;">
-                                    ${daOptions}
+                                <select data-index="${index}" data-field="partenza" onchange="window.aggiornaCampoAttivita(this)" required style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; background-position: right 6px center; background-size: 10px; padding-right: 20px; width: 100%;">
+                                    <option value="">Seleziona...</option>
+                                    ${partenzaOpts}
                                 </select>
                             </div>
                             <div class="input-group" style="margin-bottom: 0;">
-                                <label style="font-size: 11px; margin-bottom: 4px;">Destinazione *</label>
-                                <select data-index="${index}" data-field="a" onchange="window.aggiornaCampoAttivita(this)" required style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; background-position: right 6px center; background-size: 10px; padding-right: 20px; width: 100%;">
-                                    ${aOptions}
+                                <label style="font-size: 11px; margin-bottom: 4px;">Luogo di Carico *</label>
+                                <select data-index="${index}" data-field="carico" onchange="window.aggiornaCampoAttivita(this)" required style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; background-position: right 6px center; background-size: 10px; padding-right: 20px; width: 100%;">
+                                    <option value="">Seleziona...</option>
+                                    ${caricoOpts}
                                 </select>
                             </div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 11px; margin-bottom: 4px;">Cliente / Merce *</label>
+                                <select data-index="${index}" data-field="cliente_merce" onchange="window.aggiornaCampoAttivita(this)" required style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; background-position: right 6px center; background-size: 10px; padding-right: 20px; width: 100%;">
+                                    <option value="">Seleziona...</option>
+                                    ${clienteOpts}
+                                </select>
+                            </div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 11px; margin-bottom: 4px;">Destinazione Finale *</label>
+                                <select data-index="${index}" data-field="destinazione_merce" onchange="window.aggiornaCampoAttivita(this)" required style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; background-position: right 6px center; background-size: 10px; padding-right: 20px; width: 100%;">
+                                    <option value="">Seleziona...</option>
+                                    ${destOpts}
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-top: 10px;">
                             <div class="input-group" style="margin-bottom: 0;">
                                 <label style="font-size: 11px; margin-bottom: 4px;">Ora Inizio *</label>
                                 <input type="time" data-index="${index}" data-field="oraInizio" value="${att.oraInizio || ''}" oninput="window.aggiornaCampoAttivita(this)" required style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
@@ -1030,8 +1037,6 @@
                                 <label style="font-size: 11px; margin-bottom: 4px;">Ora Fine *</label>
                                 <input type="time" data-index="${index}" data-field="oraFine" value="${att.oraFine || ''}" oninput="window.aggiornaCampoAttivita(this)" required style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
                             </div>
-                        </div>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; margin-top: 10px;">
                             <div class="input-group" style="margin-bottom: 0;">
                                 <label style="font-size: 11px; margin-bottom: 4px;">Km Iniziali</label>
                                 <input type="number" data-index="${index}" data-field="kmIniziali" value="${att.kmIniziali !== undefined && att.kmIniziali !== null ? att.kmIniziali : ''}" placeholder="Inizio" oninput="window.aggiornaCampoAttivita(this)" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
@@ -1074,8 +1079,10 @@
             } else {
                 window.attivitaAggiuntive.push({
                     tipo: 'navetta',
-                    da: '',
-                    a: '',
+                    partenza: '',
+                    carico: '',
+                    cliente_merce: '',
+                    destinazione_merce: '',
                     oraInizio: '',
                     oraFine: '',
                     kmIniziali: '',
@@ -1131,39 +1138,6 @@
             }
 
             window.attivitaAggiuntive[idx][field] = val;
-
-            if (field === 'da' || field === 'a') {
-                const card = el.closest('.attivita-card');
-                if (card) {
-                    const daSelect = card.querySelector('select[data-field="da"]');
-                    const aSelect = card.querySelector('select[data-field="a"]');
-
-                    if (daSelect && aSelect) {
-                        const daVal = daSelect.value;
-                        const aVal = aSelect.value;
-
-                        Array.from(aSelect.options).forEach(opt => {
-                            if (opt.value && opt.value === daVal) {
-                                opt.disabled = true;
-                                opt.style.display = 'none';
-                            } else {
-                                opt.disabled = false;
-                                opt.style.display = '';
-                            }
-                        });
-
-                        Array.from(daSelect.options).forEach(opt => {
-                            if (opt.value && opt.value === aVal) {
-                                opt.disabled = true;
-                                opt.style.display = 'none';
-                            } else {
-                                opt.disabled = false;
-                                opt.style.display = '';
-                            }
-                        });
-                    }
-                }
-            }
 
             if (field === 'kmIniziali' || field === 'kmFinali') {
                 const att = window.attivitaAggiuntive[idx];

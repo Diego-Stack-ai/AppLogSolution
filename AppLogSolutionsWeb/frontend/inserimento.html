@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.10">
+    <link rel="stylesheet" href="styles.css?v=5.11">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -472,12 +472,12 @@
         </div>
     </div>
 
-    <script src="script.js?v=5.10"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.10"></script>
+    <script src="script.js?v=5.11"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.11"></script>
     <script type="module">
-        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.10";
-        import { auth } from "./firestore-service.js?v=5.10";
-        import "./gps-tracker.js?v=5.10";
+        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.11";
+        import { auth } from "./firestore-service.js?v=5.11";
+        import "./gps-tracker.js?v=5.11";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -967,30 +967,6 @@
                             <button type="button" onclick="window.rimuoviAttivita(${index})" style="border: none; background: none; color: #ef4444; cursor: pointer; padding: 2px;" title="Elimina giro">
                                 <span class="material-icons-round" style="font-size: 20px;">delete_outline</span>
                             </button>
-                        </div>
-
-                        <!-- Dati globali del giro: orari e km -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 14px; padding: 10px; background: #f3e8ff; border-radius: 8px;">
-                            <div class="input-group" style="margin-bottom: 0;">
-                                <label style="font-size: 11px; margin-bottom: 4px; color: #6d28d9;">🕐 Ora Inizio</label>
-                                <input type="time" data-index="${index}" data-field="oraInizio" value="${att.oraInizio || ''}" oninput="window.aggiornaCampoAttivita(this)" style="padding: 5px 8px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
-                            </div>
-                            <div class="input-group" style="margin-bottom: 0;">
-                                <label style="font-size: 11px; margin-bottom: 4px; color: #6d28d9;">🕐 Ora Fine</label>
-                                <input type="time" data-index="${index}" data-field="oraFine" value="${att.oraFine || ''}" oninput="window.aggiornaCampoAttivita(this)" style="padding: 5px 8px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
-                            </div>
-                            <div class="input-group" style="margin-bottom: 0;">
-                                <label style="font-size: 11px; margin-bottom: 4px; color: #6d28d9;">Km Inizio</label>
-                                <input type="number" data-index="${index}" data-field="kmIniziali" value="${att.kmIniziali !== undefined && att.kmIniziali !== null ? att.kmIniziali : ''}" placeholder="es. 12500" oninput="window.aggiornaCampoAttivita(this)" style="padding: 5px 8px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
-                            </div>
-                            <div class="input-group" style="margin-bottom: 0;">
-                                <label style="font-size: 11px; margin-bottom: 4px; color: #6d28d9;">Km Fine</label>
-                                <input type="number" data-index="${index}" data-field="kmFinali" value="${att.kmFinali !== undefined && att.kmFinali !== null ? att.kmFinali : ''}" placeholder="es. 12650" oninput="window.aggiornaCampoAttivita(this)" style="padding: 5px 8px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
-                            </div>
-                            <div class="input-group" style="margin-bottom: 0;">
-                                <label style="font-size: 11px; margin-bottom: 4px; color: #6d28d9;">Δ Km</label>
-                                <input type="text" data-index="${index}" data-field="deltaKm" value="${att.deltaKm !== undefined && att.deltaKm !== null ? att.deltaKm : ''}" readonly class="readonly-field" style="padding: 5px 8px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%; color: #7c3aed; font-weight: 600;">
-                            </div>
                         </div>
 
                         <!-- Lista Tappe (carichi/scarichi del giro) -->

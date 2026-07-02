@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.17">
+    <link rel="stylesheet" href="styles.css?v=5.18">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -660,6 +660,14 @@
                     opt.textContent = nome;
                     select.appendChild(opt);
                 });
+                
+                const navOpt = document.createElement('option');
+                navOpt.value = 'NAVETTA'; navOpt.textContent = '🚐 NAVETTA';
+                select.appendChild(navOpt);
+                
+                const magOpt = document.createElement('option');
+                magOpt.value = 'MAGAZZINO'; magOpt.textContent = '📦 MAGAZZINO';
+                select.appendChild(magOpt);
                 select.value = currentVal;
                 if (select.value === currentVal) {
                     delete tr.dataset.pendingCliente;
@@ -694,6 +702,9 @@
                     delete tr.dataset.pendingTarga;
                 }
             });
+            
+            // Applica il filtro delle disponibilità appena terminato di renderizzare tutte le targhe
+            if (typeof window.aggiornaDisponibilitaGlobale === 'function') window.aggiornaDisponibilitaGlobale();
         };
 
         window.aggiornaDestinazioni = function(tr, idAutista) {
@@ -708,9 +719,17 @@
  
             // Aggiorna opzioni select viaggio per questa riga
             selectViaggio.innerHTML = '<option value="">-- Seleziona --</option>';
-            const progetti = window.appData?.lista_progetti || [];
-            const proj = progetti.find(p => p.nome.toUpperCase() === clienteSelezionato);
-            const viaggiConfigurati = proj ? (proj.viaggi || []) : [];
+            
+            let viaggiConfigurati = [];
+            if (clienteSelezionato === 'NAVETTA') {
+                viaggiConfigurati = (window.appData?.lista_navetta_partenze || []).map(p => p.nome);
+            } else if (clienteSelezionato === 'MAGAZZINO') {
+                viaggiConfigurati = (window.appData?.lista_magazzini_sedi || []).map(s => s.nome);
+            } else {
+                const progetti = window.appData?.lista_progetti || [];
+                const proj = progetti.find(p => p.nome.toUpperCase() === clienteSelezionato);
+                viaggiConfigurati = proj ? (proj.viaggi || []) : [];
+            }
             viaggiConfigurati.forEach(v => {
                 const opt = document.createElement('option');
                 const vUpper = v.toUpperCase();
@@ -782,9 +801,16 @@
                 const currentViaggio = selectViaggio ? selectViaggio.value.trim().toUpperCase() : "";
                 
                 if (selectViaggio && currentCliente) {
-                    const progetti = window.appData?.lista_progetti || [];
-                    const proj = progetti.find(p => p.nome.toUpperCase() === currentCliente);
-                    const viaggiConfigurati = proj ? (proj.viaggi || []) : [];
+                    let viaggiConfigurati = [];
+                    if (currentCliente === 'NAVETTA') {
+                        viaggiConfigurati = (window.appData?.lista_navetta_partenze || []).map(p => p.nome);
+                    } else if (currentCliente === 'MAGAZZINO') {
+                        viaggiConfigurati = (window.appData?.lista_magazzini_sedi || []).map(s => s.nome);
+                    } else {
+                        const progetti = window.appData?.lista_progetti || [];
+                        const proj = progetti.find(p => p.nome.toUpperCase() === currentCliente);
+                        viaggiConfigurati = proj ? (proj.viaggi || []) : [];
+                    }
                     
                     selectViaggio.innerHTML = '<option value="">-- Seleziona --</option>';
                     viaggiConfigurati.forEach(v => {
@@ -1211,7 +1237,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=5.17"></script>
-    <script src="script.js?v=5.17"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.18"></script>
+    <script src="script.js?v=5.18"></script>
 </body>
 </html>

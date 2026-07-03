@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.39">
+    <link rel="stylesheet" href="styles.css?v=5.40">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -207,17 +207,17 @@
                 box-sizing: border-box !important;
             }
             .drag-handle { display: none !important; }
-            /* Colonne da nascondere in stampa: drag(1), autista(2), conf(6), azioni(7) */
+            /* Colonne da nascondere in stampa: drag(1), conf(6), azioni(7) */
             th:nth-child(1), td:nth-child(1),
-            th:nth-child(2), td:nth-child(2),
             th:nth-child(6), td:nth-child(6),
             th:nth-child(7), td:nth-child(7) {
                 display: none !important;
             }
-            /* Colonne visibili: Cliente(3), Zona/Viaggio(4), Targa(5) */
-            th:nth-child(3), td:nth-child(3) { width: 33% !important; }
-            th:nth-child(4), td:nth-child(4) { width: 40% !important; }
-            th:nth-child(5), td:nth-child(5) { width: 27% !important; }
+            /* Colonne visibili: Autista(2), Cliente(3), Zona/Viaggio(4), Targa(5) */
+            th:nth-child(2), td:nth-child(2) { width: 20% !important; }
+            th:nth-child(3), td:nth-child(3) { width: 25% !important; }
+            th:nth-child(4), td:nth-child(4) { width: 30% !important; }
+            th:nth-child(5), td:nth-child(5) { width: 25% !important; }
         }
     </style>
 </head>
@@ -363,34 +363,45 @@
             const rowsToRemove = clone.querySelectorAll('.navetta-row, .magazzino-row');
             rowsToRemove.forEach(el => el.remove());
 
-            // Rimuovi drag handle e colonne non necessarie (1=drag, 2=autista, 6=conf, 7=azioni)
+            // Rimuovi drag handle e colonne non necessarie (1=drag, 6=conf, 7=azioni)
             // Rimuovi per posizione nelle righe del clone
             clone.querySelectorAll('tr').forEach(row => {
                 const cells = row.querySelectorAll('th, td');
-                [6, 5, 1, 0].forEach(idx => { // reverse order per non perdere gli indici
+                [6, 5, 0].forEach(idx => { // reverse order per non perdere gli indici
                     if (cells[idx]) cells[idx].remove();
                 });
             });
 
-            // Converti tutti i <select> (es. targa) in span con testo visibile
-            clone.querySelectorAll('select').forEach(sel => {
-                const val = sel.options[sel.selectedIndex]?.text || sel.value || '-';
-                const span = document.createElement('span');
-                span.style.fontWeight = '600';
-                span.textContent = val;
-                sel.replaceWith(span);
+            // Converti tutti i <select> (es. targa, cliente) in span con testo visibile
+            // Nota: cloneNode(true) non copia i valori dinamici, quindi leggiamo dall'originale
+            const originalSelects = element.querySelectorAll('select');
+            const clonedSelects = clone.querySelectorAll('select');
+            originalSelects.forEach((origSel, i) => {
+                const clonedSel = clonedSelects[i];
+                if (clonedSel) {
+                    const val = origSel.options[origSel.selectedIndex]?.text || origSel.value || '-';
+                    const span = document.createElement('span');
+                    span.style.fontWeight = '600';
+                    span.textContent = val;
+                    clonedSel.replaceWith(span);
+                }
             });
 
-            // Converti anche gli input di testo in span
-            clone.querySelectorAll('input[type="text"], input:not([type])').forEach(inp => {
-                const span = document.createElement('span');
-                span.style.fontWeight = '600';
-                span.textContent = inp.value || '-';
-                inp.replaceWith(span);
+            // Converti anche gli input di testo in span, copiando i valori dinamici dall'originale
+            const originalInputs = element.querySelectorAll('input[type="text"], input:not([type])');
+            const clonedInputs = clone.querySelectorAll('input[type="text"], input:not([type])');
+            originalInputs.forEach((origInp, i) => {
+                const clonedInp = clonedInputs[i];
+                if (clonedInp) {
+                    const span = document.createElement('span');
+                    span.style.fontWeight = '600';
+                    span.textContent = origInp.value || '-';
+                    clonedInp.replaceWith(span);
+                }
             });
 
             // Nascondi elementi UI non necessari nel clone
-            clone.querySelectorAll('.drag-handle, .suggest-btn, .suggestion-badge, button').forEach(el => el.remove());
+            clone.querySelectorAll('.drag-handle, .suggest-btn, .suggestion-badge, button, input[type="hidden"]').forEach(el => el.remove());
 
             const opt = {
               margin:       10,
@@ -1376,7 +1387,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=5.39"></script>
-    <script src="script.js?v=5.39"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.40"></script>
+    <script src="script.js?v=5.40"></script>
 </body>
 </html>

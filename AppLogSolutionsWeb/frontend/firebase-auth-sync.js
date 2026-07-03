@@ -25,7 +25,7 @@ window.appData = window.appData || {
     activeTenant: localStorage.getItem('activeTenant') || 'DNR' // Tenant di default
 };
 
-// --- GESTIONE TENANT (SELETTORE GLOBALE) ---
+// --- GESTIONE TENANT (SELETTORE LOCALE) ---
 window.changeActiveTenant = function(newTenant) {
     if (newTenant && newTenant !== window.appData.activeTenant) {
         localStorage.setItem('activeTenant', newTenant);
@@ -35,34 +35,6 @@ window.changeActiveTenant = function(newTenant) {
         window.location.reload();
     }
 };
-
-// Inietta il selettore del Tenant nella Navbar (se esiste) quando il DOM è pronto
-document.addEventListener('DOMContentLoaded', () => {
-    const navContent = document.querySelector('.nav-content');
-    // Mostriamo il selettore ovunque tranne nella pagina di login
-    if (navContent && !window.location.pathname.includes('login.html')) {
-        const selectorHTML = `
-            <div style="margin-right: 16px; display: flex; align-items: center; background: rgba(79, 70, 229, 0.1); padding: 4px 12px; border-radius: 20px;">
-                <span class="material-icons-round" style="font-size: 16px; color: var(--primary); margin-right: 6px;">business</span>
-                <select id="globalTenantSelector" onchange="window.changeActiveTenant(this.value)" 
-                    style="background: transparent; border: none; font-size: 13px; font-weight: 700; color: var(--primary); outline: none; cursor: pointer; appearance: none; padding-right: 16px;">
-                    <option value="DNR" ${window.appData.activeTenant === 'DNR' ? 'selected' : ''}>DNR</option>
-                    <option value="CATTEL" ${window.appData.activeTenant === 'CATTEL' ? 'selected' : ''}>CATTEL</option>
-                    <option value="GRAN CHEF" ${window.appData.activeTenant === 'GRAN CHEF' ? 'selected' : ''}>GRAN CHEF</option>
-                    <option value="BAUER" ${window.appData.activeTenant === 'BAUER' ? 'selected' : ''}>BAUER</option>
-                </select>
-            </div>
-        `;
-        
-        // Inseriamo il selettore prima del bottone di logout
-        const logoutBtn = navContent.querySelector('.logout-btn');
-        if (logoutBtn) {
-            logoutBtn.insertAdjacentHTML('beforebegin', selectorHTML);
-        } else {
-            navContent.insertAdjacentHTML('beforeend', selectorHTML);
-        }
-    }
-});
 
 // --- GESTIONE EMERGENZA (DEBUG) ---
 window.forcePasswordResetDebug = async (newPassword) => {

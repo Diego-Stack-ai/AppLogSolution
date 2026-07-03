@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=5.44">
+    <link rel="stylesheet" href="styles.css?v=5.45">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .row-error td {
@@ -503,13 +503,13 @@
         </div>
     </main>
 
-    <script src="script.js?v=5.44"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.44"></script>
+    <script src="script.js?v=5.45"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.45"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=5.44";
+        import { calculateHours } from "./firestore-service.js?v=5.45";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -1276,9 +1276,13 @@ const db = getFirestore(app);
             const isChecked = chk.checked;
             const oraFineM = tr.querySelector('[data-field="oraFineM"]');
             const oraInizioP = tr.querySelector('[data-field="oraInizioP"]');
+            const oraFineP = tr.querySelector('[data-field="oraFineP"]');
             
             const btnEdit = tr.querySelector('.btn-edit');
             const isEditing = btnEdit ? btnEdit.innerText.includes('Salva') : false;
+            
+            // In modalità mobile (2 colonne per orari), mostriamo/nascondiamo gli input stacked
+            const isMobile = window.innerWidth <= 1024;
 
             if (isEditing) {
                 if (isChecked) {
@@ -1291,6 +1295,10 @@ const db = getFirestore(app);
                         oraInizioP.disabled = false;
                         oraInizioP.style.border = "1px solid var(--primary)";
                         oraInizioP.style.background = "white";
+                        if (isMobile) oraInizioP.style.display = "block";
+                    }
+                    if (oraFineP && isMobile) {
+                        oraFineP.style.display = "block";
                     }
                 } else {
                     if (oraFineM) {
@@ -1304,6 +1312,10 @@ const db = getFirestore(app);
                         oraInizioP.disabled = true;
                         oraInizioP.style.border = "1px solid transparent";
                         oraInizioP.style.background = "#f1f5f9";
+                        if (isMobile) oraInizioP.style.display = "none";
+                    }
+                    if (oraFineP && isMobile) {
+                        oraFineP.style.display = "none";
                     }
                 }
             } else {
@@ -1312,6 +1324,10 @@ const db = getFirestore(app);
                 }
                 if (oraInizioP) {
                     oraInizioP.style.background = isChecked ? "transparent" : "#f1f5f9";
+                    if (isMobile) oraInizioP.style.display = isChecked ? "block" : "none";
+                }
+                if (oraFineP && isMobile) {
+                    oraFineP.style.display = isChecked ? "block" : "none";
                 }
             }
             recalculateRowHours(tr);
@@ -2026,7 +2042,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=5.44"></script>
+    <script type="module" src="cedolini-splitter.js?v=5.45"></script>
 
 </body>
 </html>

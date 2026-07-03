@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=5.48">
+    <link rel="stylesheet" href="styles.css?v=5.49">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .row-error td {
@@ -503,13 +503,13 @@
         </div>
     </main>
 
-    <script src="script.js?v=5.48"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.48"></script>
+    <script src="script.js?v=5.49"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.49"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=5.48";
+        import { calculateHours } from "./firestore-service.js?v=5.49";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -710,7 +710,10 @@ const db = getFirestore(app);
                 if (unlockContainer) unlockContainer.style.display = 'flex';
                 
                 const previousValue = select.value;
-                select.innerHTML = '<option value="">-- Seleziona Dipendente --</option>\n<option value="tutti">-- Tutti i dipendenti --</option>';
+                select.innerHTML = '<option value="">-- Seleziona Dipendente --</option>\n' +
+                                   '<option value="tutti">-- Tutti i dipendenti (Storico) --</option>\n' +
+                                   '<option value="in_forza">-- Dipendenti in Forza --</option>\n' +
+                                   '<option value="licenziati">-- Dipendenti Licenziati --</option>';
                 
                 const selectedMonthStr = document.getElementById('inputMonth').value; // YYYY-MM
                 
@@ -816,8 +819,11 @@ const db = getFirestore(app);
             const chkUnlockAll = document.getElementById('chkUnlockAll');
             if (chkUnlockAll) chkUnlockAll.checked = false;
 
-            if (empId === 'tutti') {
-                selectedEmployee = { id: 'tutti', nome: 'Tutti i dipendenti', ruolo: 'tutti' };
+            if (empId === 'tutti' || empId === 'in_forza' || empId === 'licenziati') {
+                let nomeVis = 'Tutti i dipendenti';
+                if (empId === 'in_forza') nomeVis = 'Dipendenti in Forza';
+                if (empId === 'licenziati') nomeVis = 'Dipendenti Licenziati';
+                selectedEmployee = { id: empId, nome: nomeVis, ruolo: 'group' };
                 document.getElementById('viewModeSection').style.display = 'block';
             } else {
                 if (isDriver) {
@@ -833,7 +839,7 @@ const db = getFirestore(app);
 
             // Avvia la sottoscrizione Firestore in tempo reale
             let q;
-            if (empId === 'tutti') {
+            if (empId === 'tutti' || empId === 'in_forza' || empId === 'licenziati') {
                 q = query(
                     collection(db, "presenze"),
                     where("mese", "==", month)
@@ -980,7 +986,7 @@ const db = getFirestore(app);
             let totalImporto = 0.0;
             let totalLitri = 0.0;
 
-            const isTutti = selectedEmployee.id === 'tutti';
+            const isGroup = ['tutti', 'in_forza', 'licenziati'].includes(selectedEmployee.id);
             const forceFourCols = true;
             
             // Check if "Unlock All" is checked
@@ -1057,12 +1063,12 @@ const db = getFirestore(app);
                 }
             }
 
-            const autistiToRender = isTutti ? (window.appData.lista_autisti || []).filter(emp => {
-                if (emp.attivo === false) return false;
-                if (emp.data_licenziamento && selectedMonth) {
-                    return selectedMonth <= emp.data_licenziamento.substring(0, 7);
-                }
-                return true;
+            const autistiToRender = isGroup ? (window.appData.lista_autisti || []).filter(emp => {
+                const isInForza = emp.attivo !== false && (!emp.data_licenziamento || (selectedMonth && selectedMonth <= emp.data_licenziamento.substring(0, 7)));
+                
+                if (selectedEmployee.id === 'in_forza') return isInForza;
+                if (selectedEmployee.id === 'licenziati') return !isInForza;
+                return true; // 'tutti'
             }).sort((a,b) => {
                 const nameA = ((a.nome||'') + ' ' + (a.cognome||'')).trim();
                 const nameB = ((b.nome||'') + ' ' + (b.cognome||'')).trim();
@@ -1073,11 +1079,16 @@ const db = getFirestore(app);
                 const isAdmin = autista.ruolo === 'amministratore' || autista.ruolo === 'impiegata';
                 const defaultDoubleShift = isAdmin;
 
-                if (isTutti) {
+                if (isGroup) {
                     const sepTr = document.createElement('tr');
                     sepTr.className = 'employee-separator';
                     const fullEmpName = ((autista.nome || '') + ' ' + (autista.cognome || '')).trim();
-                    sepTr.innerHTML = `<td colspan="17">${fullEmpName} ${autista.ruolo ? `(${autista.ruolo})` : ''}</td>`;
+                    
+                    // Aggiungiamo un badge per indicare se è licenziato
+                    const isInForza = autista.attivo !== false && (!autista.data_licenziamento || (selectedMonth && selectedMonth <= autista.data_licenziamento.substring(0, 7)));
+                    const badgeHtml = !isInForza ? `<span style="background: #fee2e2; color: #b91c1c; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Licenziato</span>` : '';
+                    
+                    sepTr.innerHTML = `<td colspan="17">${fullEmpName} ${autista.ruolo ? `(${autista.ruolo})` : ''} ${badgeHtml}</td>`;
                     tbody.appendChild(sepTr);
                 }
 
@@ -2026,7 +2037,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=5.48"></script>
+    <script type="module" src="cedolini-splitter.js?v=5.49"></script>
 
 </body>
 </html>

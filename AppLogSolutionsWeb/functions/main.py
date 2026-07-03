@@ -3654,6 +3654,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
                 "status": current_status,
                 "mappa_url": mappa_url,
                 "distinta_url": distinta_url,
+                "_stats": stats,
                 "updated_at": firestore.SERVER_TIMESTAMP
             }, merge=True)
             print(f"[Firestore] Scritto viaggio {viaggio_id} con successo.")

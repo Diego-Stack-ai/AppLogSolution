@@ -3659,7 +3659,23 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
             print(f"[Firestore] Scritto viaggio {viaggio_id} con successo.")
         except Exception as e_fs:
             print(f"[Firestore ERROR] Impossibile scrivere viaggio {viaggio_id}: {e_fs}")
-        
+
+        # === RIGENERA HTML MAPPA AUTISTA aggiornata con nuovi orari ===
+        try:
+            data_viaggio_str = data_consegna.replace("/", "-")
+            html_path = f"CONSEGNE/CONSEGNE_{data_viaggio_str}/MAPPE_AUTISTI/{viaggio_id}.html"
+            html_mappa = _genera_html_mappa(
+                viaggio_id, punti_simulati, km, sec_guida, polylines,
+                depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc
+            )
+            html_blob = bucket.blob(html_path)
+            html_blob.upload_from_string(html_mappa.encode("utf-8"), content_type="text/html; charset=utf-8")
+            new_mappa_url = _genera_url_storage_token(html_blob)
+            doc_ref.update({"mappa_url": new_mappa_url})
+            print(f"[Mappa] Rigenerata mappa autista per {viaggio_id} con partenza {ora_partenza_calc}")
+        except Exception as e_map:
+            print(f"[Mappa ERROR] Impossibile rigenerare mappa per {viaggio_id}: {e_map}")
+
         calcolati.append(zone["nome_giro"])
         modificato = True
 

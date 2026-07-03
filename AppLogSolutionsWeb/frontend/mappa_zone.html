@@ -2317,6 +2317,62 @@ const db = getFirestore(app);
             const z = DATA_ZONE.find(x => x.id_zona === zid);
             if (z) {
                 z.orario_arrivo_primo_cliente = val;
+                
+                // --- RICALCOLO RAPIDO E A CASCATA DEGLI ORARI ---
+                // Evita chiamate API riutilizzando la durata del tragitto già nota.
+                if (z._stats && z._stats.ora_partenza && z.lista_punti && z.lista_punti.length > 0) {
+                    const oldPartenza = z._stats.ora_partenza;
+                    const oldArrivo = z.lista_punti[0].ora_arrivo;
+                    
+                    if (oldPartenza && oldArrivo && val) {
+                        const pm = oldPartenza.match(/(\d{2}):(\d{2})/);
+                        const am = oldArrivo.match(/(\d{2}):(\d{2})/);
+                        const nm = val.match(/(\d{2}):(\d{2})/);
+                        
+                        if (pm && am && nm) {
+                            const minPartenza = parseInt(pm[1])*60 + parseInt(pm[2]);
+                            const minArrivo = parseInt(am[1])*60 + parseInt(am[2]);
+                            const newMinArrivo = parseInt(nm[1])*60 + parseInt(nm[2]);
+                            
+                            const deltaMin = newMinArrivo - minArrivo;
+                            
+                            const addMinutes = (timeStr, delta) => {
+                                if (!timeStr) return timeStr;
+                                const m = timeStr.match(/(\d{2}):(\d{2})/);
+                                if (!m) return timeStr;
+                                let min = parseInt(m[1])*60 + parseInt(m[2]) + delta;
+                                if (min < 0) min += 1440;
+                                return `${String(Math.floor(min/60)).padStart(2,'0')}:${String(min%60).padStart(2,'0')}`;
+                            };
+                            
+                            // Sposta l'orario di partenza
+                            z._stats.ora_partenza = addMinutes(oldPartenza, deltaMin);
+                            
+                            // Sposta a cascata tutti gli ETA dei clienti e ricalcola i ritardi
+                            z.lista_punti.forEach(p => {
+                                p.ora_arrivo = addMinutes(p.ora_arrivo, deltaMin);
+                                p.ora_ripartenza = addMinutes(p.ora_ripartenza, deltaMin);
+                                
+                                const oM = p.orario_max || p.ora_max || "";
+                                if (oM) {
+                                    const mx = oM.match(/(\d{2}):(\d{2})/);
+                                    if (mx) {
+                                        const maxMin = parseInt(mx[1])*60 + parseInt(mx[2]);
+                                        const curArr = p.ora_arrivo.match(/(\d{2}):(\d{2})/);
+                                        if (curArr) {
+                                            const curMin = parseInt(curArr[1])*60 + parseInt(curArr[2]);
+                                            p.ritardo = (curMin > maxMin + 1);
+                                        }
+                                    }
+                                }
+                            });
+                            
+                            // Aggiorna l'interfaccia istantaneamente
+                            window.renderSidebar();
+                        }
+                    }
+                }
+                
                 window.saveToServerBackground();
             }
         };

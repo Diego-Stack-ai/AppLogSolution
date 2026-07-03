@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.41">
+    <link rel="stylesheet" href="styles.css?v=5.42">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -354,10 +354,25 @@
             
             // Clona per non rovinare il DOM visibile
             const clone = document.createElement('div');
+            clone.style.padding = '10px'; // Un po' di margine nel PDF
             const clonedHeader = printHeader.cloneNode(true);
-            clonedHeader.style.display = 'block';
+            clonedHeader.style.display = 'flex';
+            clonedHeader.style.justifyContent = 'space-between';
+            clonedHeader.style.alignItems = 'center';
+            clonedHeader.style.borderBottom = '2px solid #ccc';
+            clonedHeader.style.paddingBottom = '5px';
+            clonedHeader.style.marginBottom = '10px';
+            clonedHeader.style.fontSize = '12px';
+            
+            // Forza il reset degli h2 e span nel clonedHeader per non andare a capo
+            clonedHeader.querySelectorAll('*').forEach(el => el.style.margin = '0');
+
             clone.appendChild(clonedHeader);
-            clone.appendChild(element.cloneNode(true));
+            
+            const clonedTable = element.cloneNode(true);
+            clonedTable.style.width = '100%';
+            clonedTable.style.fontSize = '10px';
+            clone.appendChild(clonedTable);
 
             // Nasconde roba che non serve in stampa dal clone
             const rowsToRemove = clone.querySelectorAll('.navetta-row, .magazzino-row');
@@ -1387,7 +1402,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=5.41"></script>
-    <script src="script.js?v=5.41"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.42"></script>
+    <script src="script.js?v=5.42"></script>
 </body>
 </html>

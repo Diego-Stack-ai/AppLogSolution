@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=5.36">
+    <link rel="stylesheet" href="styles.css?v=5.37">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -3417,6 +3417,9 @@ const db = getFirestore(app);
             
             const isCalc = (z._stato === 'calcolato' || z._stato === 'ottimizzato');
             
+            const zIdx = DATA_ZONE.indexOf(z);
+            const resolvedColor = z.color || _get_color(zIdx);
+            
             z.lista_punti.forEach((p, idx) => {
                 const isLate = (isCalc && p.ritardo === true);
                 const addressParts = (p.indirizzo || '').split(',');
@@ -3432,7 +3435,7 @@ const db = getFirestore(app);
                 
                 div.innerHTML = `
                     <div class="material-icons-round" style="color:#cbd5e1; cursor:grab;">drag_indicator</div>
-                    <div class="compact-num" style="background:${window.getColorForZone(z.id_zona)};">${idx + 1}</div>
+                    <div class="compact-num" style="background:${resolvedColor};">${idx + 1}</div>
                     <div class="compact-name" title="${p.nome}">${p.nome}</div>
                     <div class="compact-city" title="${cityName}">${cityName}</div>
                     <div class="compact-time" style="color:${isLate ? 'var(--danger)' : '#10b981'};">${timeHtml}</div>

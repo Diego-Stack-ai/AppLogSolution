@@ -4328,14 +4328,16 @@ def core_genera_completo_giornata(data_consegna):
         distinta_light_url = _genera_url_storage_token(light_blob)
 
         # Salva i link direttamente nel documento del viaggio
-        doc_ref = get_db().collection('clienti').document('DNR').collection('viaggi ddt').document(nome_giro)
+        viaggio_id = f"{data_consegna}_{zid}"
+        doc_ref = get_db().collection('clienti').document('DNR').collection('viaggi ddt').document(viaggio_id)
         try:
             doc_ref.update({
                 "distinta_light": distinta_light_url,
-                "distinta_completa": distinta_completa_url
+                "distinta_completa": distinta_completa_url,
+                "_stats": zone.get("_stats", {})
             })
-        except:
-            pass
+        except Exception as e_fs:
+            print(f"[ERROR] Impossibile aggiornare Firestore per {viaggio_id}: {e_fs}")
 
         km = zone.get("_stats", {}).get("km", 0.0)
         sec_guida = zone.get("_stats", {}).get("t_guida", 0) * 60

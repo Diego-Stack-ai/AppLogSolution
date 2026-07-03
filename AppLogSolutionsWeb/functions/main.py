@@ -3186,7 +3186,7 @@ def _get_depot_for_points_cloud(punti):
 
     return DEPOT_VEGGIANO
 
-def _ottimizza_singolo_viaggio_cloud(punti, depot, is_grand_chef):
+def _ottimizza_singolo_viaggio_cloud(punti, depot, use_time_windows):
     try:
         from ortools.constraint_solver import routing_enums_pb2
         from ortools.constraint_solver import pywrapcp
@@ -3210,7 +3210,7 @@ def _ottimizza_singolo_viaggio_cloud(punti, depot, is_grand_chef):
     routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
 
     solution = None
-    if is_grand_chef:
+    if use_time_windows:
         try:
             def time_callback(from_index, to_index):
                 from_node = manager.IndexToNode(from_index)
@@ -3242,7 +3242,7 @@ def _ottimizza_singolo_viaggio_cloud(punti, depot, is_grand_chef):
                 _oM = p.get("orario_max") or p.get("ora_max") or ""
                 if not _om and not _oM:
                     continue
-                min_min = parse_time_to_minutes(_om, 420)
+                min_min = parse_time_to_minutes(_om, 300)
                 max_min = parse_time_to_minutes(_oM, 1140)
                 if min_min > max_min:
                     continue
@@ -3534,7 +3534,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
         depot = _get_depot_for_points_cloud(punti)
         
         if usa_or_tools:
-            punti_ottimizzati = _ottimizza_singolo_viaggio_cloud(punti, depot, is_grand_chef)
+            punti_ottimizzati = _ottimizza_singolo_viaggio_cloud(punti, depot, is_grand_chef or is_cattel or is_bauer)
         else:
             punti_ottimizzati = punti
         

@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=5.38">
+    <link rel="stylesheet" href="styles.css?v=5.39">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -2436,6 +2436,7 @@ const db = getFirestore(app);
 
                 const statsBar = isCalc ? `
                     <div class="zc-stats" onclick="event.stopPropagation()">
+                        ${zStats.ora_partenza ? `<div class="stat-item"><div class="stat-val" style="color:#f59e0b;">⏰ ${zStats.ora_partenza}</div><div class="stat-lbl">Partenza</div></div>` : ''}
                         <div class="stat-item"><div class="stat-val">${zStats.km ? zStats.km.toFixed(1) : 0} km</div><div class="stat-lbl">Distanza</div></div>
                         <div class="stat-item"><div class="stat-val">${fmtMin(zStats.t_guida)}</div><div class="stat-lbl">Guida</div></div>
                         <div class="stat-item"><div class="stat-val">${fmtMin(zStats.t_tot)}</div><div class="stat-lbl">Totale</div></div>

@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=5.50">
+    <link rel="stylesheet" href="styles.css?v=5.52">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .row-error td {
@@ -503,13 +503,13 @@
         </div>
     </main>
 
-    <script src="script.js?v=5.50"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.50"></script>
+    <script src="script.js?v=5.52"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.52"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=5.50";
+        import { calculateHours } from "./firestore-service.js?v=5.52";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -720,22 +720,11 @@ const db = getFirestore(app);
                 
                 const previousValue = select.value;
                 select.innerHTML = '<option value="">-- Seleziona Dipendente --</option>\n' +
-                                   '<option value="tutti">-- Tutti i dipendenti (Storico) --</option>\n' +
-                                   '<option value="in_forza">-- Dipendenti in Forza --</option>\n' +
-                                   '<option value="licenziati">-- Dipendenti Licenziati --</option>';
+                                   '<option value="tutti">-- Vista Globale: Tutti i dipendenti --</option>\n' +
+                                   '<option value="in_forza">-- Vista Globale: Solo In Forza --</option>\n' +
+                                   '<option value="licenziati">-- Vista Globale: Solo Licenziati --</option>';
                 
-                const selectedMonthStr = document.getElementById('inputMonth').value; // YYYY-MM
-                
-                // Ordina alfabeticamente e filtra i licenziati e i non attivi
-                const sorted = [...(window.appData.lista_autisti || [])].filter(emp => {
-                    if (emp.attivo === false) return false;
-                    if (emp.data_licenziamento && selectedMonthStr) {
-                        return selectedMonthStr <= emp.data_licenziamento.substring(0, 7);
-                    }
-                    return true;
-                });
-                
-                const dipendentiOrdinati = sorted.sort((a,b) => {
+                const allEmp = [...(window.appData.lista_autisti || [])].sort((a,b) => {
                     const rA = a.ruolo || 'autista';
                     const rB = b.ruolo || 'autista';
                     if (rA === 'autista' && rB !== 'autista') return -1;
@@ -744,16 +733,42 @@ const db = getFirestore(app);
                     const nameB = ((b.nome||'') + ' ' + (b.cognome||'')).trim();
                     return nameA.localeCompare(nameB);
                 });
-                
-                dipendentiOrdinati.forEach(emp => {
+
+                const inForza = [];
+                const licenziati = [];
+
+                allEmp.forEach(emp => {
+                    const isLicenziato = (emp.data_licenziamento && emp.data_licenziamento.trim() !== '') || emp.attivo === false;
+                    if (isLicenziato) {
+                        licenziati.push(emp);
+                    } else {
+                        inForza.push(emp);
+                    }
+                });
+
+                const groupInForza = document.createElement('optgroup');
+                groupInForza.label = "--- DIPENDENTI IN FORZA ---";
+                inForza.forEach(emp => {
                     const opt = document.createElement('option');
                     opt.value = emp.id;
-                    const fullEmpName = ((emp.nome || '') + ' ' + (emp.cognome || '')).trim();
-                    opt.textContent = fullEmpName + (emp.ruolo ? ` (${emp.ruolo})` : '');
-                    select.appendChild(opt);
+                    opt.textContent = ((emp.nome || '') + ' ' + (emp.cognome || '')).trim() + (emp.ruolo ? ` (${emp.ruolo})` : '');
+                    groupInForza.appendChild(opt);
                 });
+                select.appendChild(groupInForza);
+
+                if (licenziati.length > 0) {
+                    const groupLicenziati = document.createElement('optgroup');
+                    groupLicenziati.label = "--- DIPENDENTI LICENZIATI ---";
+                    licenziati.forEach(emp => {
+                        const opt = document.createElement('option');
+                        opt.value = emp.id;
+                        opt.textContent = ((emp.nome || '') + ' ' + (emp.cognome || '')).trim() + (emp.ruolo ? ` (${emp.ruolo})` : '');
+                        groupLicenziati.appendChild(opt);
+                    });
+                    select.appendChild(groupLicenziati);
+                }
                 
-                if (previousValue && dipendentiOrdinati.some(e => e.id === previousValue)) {
+                if (previousValue && allEmp.some(e => e.id === previousValue)) {
                     select.value = previousValue;
                 }
             }
@@ -1073,10 +1088,11 @@ const db = getFirestore(app);
             }
 
             const autistiToRender = isGroup ? (window.appData.lista_autisti || []).filter(emp => {
-                const isInForza = emp.attivo !== false && (!emp.data_licenziamento || (selectedMonth && selectedMonth <= emp.data_licenziamento.substring(0, 7)));
+                const isLicenziato = (emp.data_licenziamento && emp.data_licenziamento.trim() !== '') || emp.attivo === false;
+                const isInForza = !isLicenziato;
                 
                 if (selectedEmployee.id === 'in_forza') return isInForza;
-                if (selectedEmployee.id === 'licenziati') return !isInForza;
+                if (selectedEmployee.id === 'licenziati') return isLicenziato;
                 return true; // 'tutti'
             }).sort((a,b) => {
                 const nameA = ((a.nome||'') + ' ' + (a.cognome||'')).trim();
@@ -1094,8 +1110,8 @@ const db = getFirestore(app);
                     const fullEmpName = ((autista.nome || '') + ' ' + (autista.cognome || '')).trim();
                     
                     // Aggiungiamo un badge per indicare se è licenziato
-                    const isInForza = autista.attivo !== false && (!autista.data_licenziamento || (selectedMonth && selectedMonth <= autista.data_licenziamento.substring(0, 7)));
-                    const badgeHtml = !isInForza ? `<span style="background: #fee2e2; color: #b91c1c; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Licenziato</span>` : '';
+                    const isLicenziato = (autista.data_licenziamento && autista.data_licenziamento.trim() !== '') || autista.attivo === false;
+                    const badgeHtml = isLicenziato ? `<span style="background: #fee2e2; color: #b91c1c; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Licenziato</span>` : '';
                     
                     sepTr.innerHTML = `<td colspan="17">${fullEmpName} ${autista.ruolo ? `(${autista.ruolo})` : ''} ${badgeHtml}</td>`;
                     tbody.appendChild(sepTr);
@@ -1296,9 +1312,12 @@ const db = getFirestore(app);
             const isChecked = chk.checked;
             const oraFineM = tr.querySelector('[data-field="oraFineM"]');
             const oraInizioP = tr.querySelector('[data-field="oraInizioP"]');
+            const oraFineP = tr.querySelector('[data-field="oraFineP"]');
             
             const btnEdit = tr.querySelector('.btn-edit');
             const isEditing = btnEdit ? btnEdit.innerText.includes('Salva') : false;
+            
+            const isMobile = window.innerWidth <= 1024;
 
             if (isEditing) {
                 if (isChecked) {
@@ -1311,6 +1330,10 @@ const db = getFirestore(app);
                         oraInizioP.disabled = false;
                         oraInizioP.style.border = "1px solid var(--primary)";
                         oraInizioP.style.background = "white";
+                        if (isMobile) oraInizioP.style.display = "block";
+                    }
+                    if (oraFineP && isMobile) {
+                        oraFineP.style.display = "block";
                     }
                 } else {
                     if (oraFineM) {
@@ -1324,6 +1347,10 @@ const db = getFirestore(app);
                         oraInizioP.disabled = true;
                         oraInizioP.style.border = "1px solid transparent";
                         oraInizioP.style.background = "#f1f5f9";
+                        if (isMobile) oraInizioP.style.display = "none";
+                    }
+                    if (oraFineP && isMobile) {
+                        oraFineP.style.display = "none";
                     }
                 }
             } else {
@@ -1332,6 +1359,10 @@ const db = getFirestore(app);
                 }
                 if (oraInizioP) {
                     oraInizioP.style.background = isChecked ? "transparent" : "#f1f5f9";
+                    if (isMobile) oraInizioP.style.display = isChecked ? "block" : "none";
+                }
+                if (oraFineP && isMobile) {
+                    oraFineP.style.display = isChecked ? "block" : "none";
                 }
             }
             recalculateRowHours(tr);
@@ -2046,7 +2077,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=5.50"></script>
+    <script type="module" src="cedolini-splitter.js?v=5.52"></script>
 
 </body>
 </html>

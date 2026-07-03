@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.50">
+    <link rel="stylesheet" href="styles.css?v=5.52">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -213,11 +213,27 @@
             th:nth-child(7), td:nth-child(7) {
                 display: none !important;
             }
-            /* Colonne visibili: Autista(2), Cliente(3), Zona/Viaggio(4), Targa(5) */
-            th:nth-child(2), td:nth-child(2) { width: 20% !important; }
+            th:nth-child(2), td:nth-child(2) { width: 20% !important; position: static !important; }
             th:nth-child(3), td:nth-child(3) { width: 25% !important; }
             th:nth-child(4), td:nth-child(4) { width: 30% !important; }
             th:nth-child(5), td:nth-child(5) { width: 25% !important; }
+        }
+
+        /* Colonna Nome Autista fissa (sticky) */
+        .planning-table th:nth-child(2),
+        .planning-table td:nth-child(2) {
+            position: sticky;
+            left: 0;
+            background-color: white;
+            z-index: 2;
+        }
+        .planning-table th:nth-child(2) {
+            background-color: #f8fafc;
+            z-index: 3;
+        }
+        /* Sul tr hover, dobbiamo applicare il colore alla td sticky per mantenere coerenza visiva */
+        .planning-table tr:hover td:nth-child(2) {
+            background-color: #f8fafc;
         }
     </style>
 </head>
@@ -240,9 +256,10 @@
         
         <!-- Header esclusivo per la stampa -->
         <div class="print-header" style="display: none;">
-            <span id="printDate"></span>
-            <h2 style="margin: 0; font-size: 16px;">Pianificazione Viaggi</h2>
-            <span id="printWorkingDate"></span>
+            <h2 style="margin: 0; font-size: 16px;">
+                Pianificazione Viaggi<span id="printWorkingDate"></span> 
+                <span id="printDate" style="font-size:12px; font-weight:normal; margin-left:10px; color:#555;"></span>
+            </h2>
         </div>
 
         <div class="date-header">
@@ -323,12 +340,12 @@
 
         window.impostaDatiStampaEStampa = function() {
             const today = new Date();
-            document.getElementById('printDate').innerText = 'Data stampa: ' + today.toLocaleDateString('it-IT');
+            document.getElementById('printDate').innerText = '(Stampato il ' + today.toLocaleDateString('it-IT') + ')';
             
             const workDateInput = document.getElementById('dataPianificazione').value;
             if(workDateInput) {
                 const [y, m, d] = workDateInput.split('-');
-                document.getElementById('printWorkingDate').innerText = 'Data lavoro: ' + `${d}/${m}/${y}`;
+                document.getElementById('printWorkingDate').innerText = ' del ' + `${d}/${m}/${y}`;
             } else {
                 document.getElementById('printWorkingDate').innerText = '';
             }
@@ -337,13 +354,13 @@
 
         window.scaricaPDF = function() {
             const today = new Date();
-            document.getElementById('printDate').innerText = 'Data stampa: ' + today.toLocaleDateString('it-IT');
+            document.getElementById('printDate').innerText = '(Stampato il ' + today.toLocaleDateString('it-IT') + ')';
             
             let dateStr = 'Generica';
             const workDateInput = document.getElementById('dataPianificazione').value;
             if(workDateInput) {
                 const [y, m, d] = workDateInput.split('-');
-                document.getElementById('printWorkingDate').innerText = 'Data lavoro: ' + `${d}/${m}/${y}`;
+                document.getElementById('printWorkingDate').innerText = ' del ' + `${d}/${m}/${y}`;
                 dateStr = `${d}-${m}-${y}`;
             } else {
                 document.getElementById('printWorkingDate').innerText = '';
@@ -356,13 +373,10 @@
             const clone = document.createElement('div');
             clone.style.padding = '10px'; // Un po' di margine nel PDF
             const clonedHeader = printHeader.cloneNode(true);
-            clonedHeader.style.display = 'flex';
-            clonedHeader.style.justifyContent = 'space-between';
-            clonedHeader.style.alignItems = 'center';
+            clonedHeader.style.display = 'block';
             clonedHeader.style.borderBottom = '2px solid #ccc';
             clonedHeader.style.paddingBottom = '5px';
             clonedHeader.style.marginBottom = '10px';
-            clonedHeader.style.fontSize = '12px';
             
             // Forza il reset degli h2 e span nel clonedHeader per non andare a capo
             clonedHeader.querySelectorAll('*').forEach(el => el.style.margin = '0');
@@ -423,7 +437,7 @@
               filename:     `Pianificazione_Viaggi_${dateStr}.pdf`,
               image:        { type: 'jpeg', quality: 0.98 },
               html2canvas:  { scale: 2 },
-              jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+              jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
             };
 
             loadingIndicator.style.display = 'flex';
@@ -1402,7 +1416,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=5.50"></script>
-    <script src="script.js?v=5.50"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.52"></script>
+    <script src="script.js?v=5.52"></script>
 </body>
 </html>

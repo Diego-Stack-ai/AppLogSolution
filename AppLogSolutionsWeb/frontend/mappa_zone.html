@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=5.57">
+    <link rel="stylesheet" href="styles.css?v=5.58">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1283,8 +1283,6 @@ const db = getFirestore(app);
         let DRAGGING_ENABLED = false; // true allows dragging markers on map
         let isLockedGlobal = false;    // routes lock status
         let targetFileDate = "";      // DD-MM-YYYY format
-        let urlTenant = 'DNR';        // Tenant attivo, letto dall'URL all'avvio
-
 
         // Helper: Format minutes into readable hours and minutes
         function fmtMin(m) {
@@ -1786,10 +1784,7 @@ const db = getFirestore(app);
                         // Fallback: check if we have a locked date in localStorage
                         targetFileDate = localStorage.getItem('locked_date');
                     }
-
-                    // Leggi il tenant dall'URL (passato da elaborazione.html), default DNR
-                    urlTenant = getQueryParam('tenant') || 'DNR';
-
+                    
                     if (!targetFileDate) {
                         clearTimeout(safetyTimeout);
                         Swal.fire('Data mancante', 'Nessuna data di consegna fornita nel link. Torna alla pagina di elaborazione.', 'warning')
@@ -1818,17 +1813,10 @@ const db = getFirestore(app);
                         }
 
                         // 2. Load Firestore customers database for coordinate matching
-                        // Carica l'anagrafica da TUTTI i tenant: la mappa è unificata
                         setLoaderMsg("Lettura anagrafica clienti master...");
-                        const allTenants = ['DNR', 'GRAN CHEF', 'CATTEL'];
-                        const snapPromises = allTenants.map(t => getDocs(collection(db, 'clienti', t, 'raccolta clienti')));
-                        const snapResults = await Promise.all(snapPromises);
-                        masterClientiList = [];
-                        snapResults.forEach((snap, idx) => {
-                            const t = allTenants[idx];
-                            snap.docs.forEach(d => masterClientiList.push({ id: d.id, _tenant: t, ...d.data() }));
-                        });
-                        console.log(`[Map] Master clienti caricato: ${masterClientiList.length} record (tutti i tenant).`);
+                        const snap = await getDocs(collection(db, 'clienti', 'DNR', 'raccolta clienti'));
+                        masterClientiList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                        console.log(`[Map] Master clienti caricato: ${masterClientiList.length} record.`);
                         
                         // Inizializza trascinamento dell'header
                         initFloatDrag();
@@ -2318,8 +2306,7 @@ const db = getFirestore(app);
 
                 if (matchedClient) {
                     const docId = matchedClient.id;
-                    const clientTenant = matchedClient._tenant || urlTenant;
-                    const clientRef = doc(db, 'clienti', clientTenant, 'raccolta clienti', docId);
+                    const clientRef = doc(db, 'clienti', 'DNR', 'raccolta clienti', docId);
                     
                     // Atomic update to Firestore
                     await setDoc(clientRef, {
@@ -2901,7 +2888,6 @@ const db = getFirestore(app);
                 const res = await webCalcolaPercorsiFn({
                     data_consegna: targetFileDate,
                     id_zona: zid,
-                    tenant: urlTenant,
                     aggiorna_traffico: false // Single giro calculation defaults to false for speed
                 });
                 
@@ -3220,7 +3206,6 @@ const db = getFirestore(app);
                 const res = await webCalcolaPercorsiFn({
                     data_consegna: targetFileDate,
                     target_zones: modificati,
-                    tenant: urlTenant,
                     aggiorna_traffico: false,
                     usa_or_tools: false // The magic flag!
                 });
@@ -3273,7 +3258,6 @@ const db = getFirestore(app);
                 const webCalcolaPercorsiFn = httpsCallable(functions, 'web_calcola_percorsi', { timeout: 540000 });
                 const res = await webCalcolaPercorsiFn({
                     data_consegna: targetFileDate,
-                    tenant: urlTenant,
                     aggiorna_traffico: aggiornaTraffico
                 });
                 
@@ -3390,8 +3374,7 @@ const db = getFirestore(app);
                 
                 const generaCompletoFn = httpsCallable(functions, 'genera_completo_giornata', { timeout: 300000 });
                 const res = await generaCompletoFn({
-                    data_consegna: targetFileDate,
-                    tenant: urlTenant
+                    data_consegna: targetFileDate
                 });
                 
                 console.log("[Generazione Cloud] Risultato:", res.data);
@@ -3403,7 +3386,7 @@ const db = getFirestore(app);
                         icon: 'success',
                         confirmButtonText: 'Vai ai Link Viaggi 🔗'
                     }).then(() => {
-                        window.location.href = `link_viaggi.html?data=${targetFileDate}&tenant=${encodeURIComponent(urlTenant)}`;
+                        window.location.href = `link_viaggi.html?data=${targetFileDate}`;
                     });
                 } else {
                     throw new Error(res.data ? res.data.message : 'Risposta non valida dal server.');

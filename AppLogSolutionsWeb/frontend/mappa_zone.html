@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=5.59">
+    <link rel="stylesheet" href="styles.css?v=5.60">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -790,11 +790,13 @@
             transition: all 0.2s;
             color: #64748b;
         }
-        .btn-matita:hover, .btn-eye:hover, .btn-forbici:hover {
-            background: #f1f5f9;
-            border-color: var(--primary);
-            color: var(--primary);
-            transform: scale(1.05);
+        @media (hover: hover) {
+            .btn-matita:hover, .btn-eye:hover, .btn-forbici:hover {
+                background: #f1f5f9;
+                border-color: var(--primary);
+                color: var(--primary);
+                transform: scale(1.05);
+            }
         }
         .btn-eye.hidden-zone {
             background: #fef3c7;
@@ -944,8 +946,11 @@
             transition: color 0.2s;
             margin-right: 8px;
             font-size: 20px;
+            touch-action: none;
         }
-        .drag-handle-map:hover { color: #64748b; }
+        @media (hover: hover) {
+            .drag-handle-map:hover { color: #64748b; }
+        }
         .drag-handle-map:active { cursor: grabbing; color: #3b82f6; }
         .sortable-ghost { opacity: 0.4; background-color: #f1f5f9; }
 
@@ -3435,7 +3440,7 @@ const db = getFirestore(app);
                 div.dataset.index = idx;
                 
                 div.innerHTML = `
-                    <div class="material-icons-round" style="color:#cbd5e1; cursor:grab;">drag_indicator</div>
+                    <div class="material-icons-round drag-handle-map" style="cursor:grab;">drag_indicator</div>
                     <div class="compact-num" style="background:${resolvedColor};">${idx + 1}</div>
                     <div class="compact-name" title="${p.nome}">${p.nome}</div>
                     <div class="compact-city" title="${cityName}">${cityName}</div>
@@ -3453,7 +3458,7 @@ const db = getFirestore(app);
             expandSortable = Sortable.create(listContainer, {
                 animation: 150,
                 ghostClass: 'sortable-ghost',
-                handle: '.compact-stop-item',
+                handle: '.drag-handle-map',
                 onEnd: function() {
                     // Update numbering visually
                     const items = listContainer.querySelectorAll('.compact-stop-item');

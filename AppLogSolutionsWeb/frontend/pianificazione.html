@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.53">
+    <link rel="stylesheet" href="styles.css?v=5.54">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -386,9 +386,13 @@
             
             const clonedTable = element.cloneNode(true);
             clonedTable.style.width = '100%';
-            clonedTable.style.maxWidth = '1000px'; /* Force a constrained width so it fits portrait well */
-            clonedTable.style.fontSize = '12px';
-            clonedTable.style.margin = '0 auto';
+            clonedTable.style.fontSize = '11px';
+            
+            // Fix per bug html2canvas con position: sticky
+            clonedTable.querySelectorAll('th, td').forEach(cell => {
+                cell.style.position = 'static';
+            });
+            
             clone.appendChild(clonedTable);
 
             // Nasconde roba che non serve in stampa dal clone
@@ -439,7 +443,7 @@
               margin:       10,
               filename:     `Pianificazione_Viaggi_${dateStr}.pdf`,
               image:        { type: 'jpeg', quality: 0.98 },
-              html2canvas:  { scale: 2, windowWidth: 1000 },
+              html2canvas:  { scale: 2, useCORS: true },
               jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
@@ -1419,7 +1423,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=5.53"></script>
-    <script src="script.js?v=5.53"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.54"></script>
+    <script src="script.js?v=5.54"></script>
 </body>
 </html>

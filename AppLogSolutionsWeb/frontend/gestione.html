@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anagrafiche - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.60">
+    <link rel="stylesheet" href="styles.css?v=5.61">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- Leaflet per Mappe -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -393,9 +393,12 @@
 
 
             <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="Cerca cliente, codice o città..." onkeyup="filterTable()">
+                <input type="text" id="searchInput" placeholder="Cerca cliente, codice o cittÃ ..." onkeyup="filterTable()">
                 <select id="brandFilter" onchange="filterTable()" style="flex: 0 1 160px; height: 45px; padding: 0 16px; border: 1px solid #e2e8f0; border-radius: 12px; font-family: inherit; font-size: 14px; background: white; outline: none; cursor: pointer; box-sizing: border-box;">
-                    <!-- Le opzioni vengono caricate dinamicamente in populateBrandFilter() -->
+                    <option value="">Tutti i Fornitori</option>
+                    <option value="DNR">DNR</option>
+                    <option value="CATTEL">CATTEL</option>
+                    <option value="GRAN CHEF">GRAN CHEF</option>
                 </select>
                 <div class="action-buttons" style="display:flex; gap:12px;">
                     <button id="btnShowMap" class="btn-map" onclick="window.navigateWithState('mappa_google.html')">
@@ -441,8 +444,8 @@
         </div>
     </div>
 
-    <script src="script.js?v=5.60"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.60"></script>
+    <script src="script.js?v=5.61"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.61"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -466,15 +469,14 @@ const db = getFirestore(app);
                 btn.classList.toggle('active', btn.innerText.toLowerCase().includes(tab));
             });
             
-            // Gestione visibilità pulsante Mappa e filtro brand
+            // Gestione visibilitÃ  pulsante Mappa e filtro brand
             const btnMap = document.getElementById('btnShowMap');
             if(btnMap) {
                 btnMap.style.display = (tab === 'clienti') ? 'flex' : 'none';
             }
             const brandSelect = document.getElementById('brandFilter');
             if(brandSelect) {
-                // Il brandFilter ora serve come Selettore Tenant, quindi è sempre visibile
-                brandSelect.style.display = 'inline-block';
+                brandSelect.style.display = (tab === 'clienti') ? 'inline-block' : 'none';
             }
             const rubricaAlert = document.getElementById('rubricaClientiAlert');
             if(rubricaAlert) {
@@ -484,68 +486,71 @@ const db = getFirestore(app);
             loadData();
         };
 
-        window.renderProgetti = function() {
-            const brandSelect = document.getElementById('brandFilter');
-            if (brandSelect && window.appData && window.appData.lista_progetti) {
-                const currentVal = brandSelect.value;
-                let optionsHtml = '<option value="">Tutti i Fornitori</option>';
-                window.appData.lista_progetti.forEach(p => {
-                    optionsHtml += `<option value="${p.id}">${p.nome || p.id}</option>`;
-                });
-                brandSelect.innerHTML = optionsHtml;
-                if (currentVal) brandSelect.value = currentVal;
-            }
-        };
-
-        // Chiamata periodica se lista_progetti non è ancora caricata
-        const checkProgetti = setInterval(() => {
-            if (window.appData && window.appData.lista_progetti && window.appData.lista_progetti.length > 0) {
-                window.renderProgetti();
-                clearInterval(checkProgetti);
-            }
-        }, 500);
-
         function loadData() {
             clearUnsubscribes();
             document.getElementById('loading').style.display = 'block';
             document.getElementById('dataContainer').innerHTML = '';
             
-            // Aspettiamo che lista_progetti sia pronta, se non c'è riproviamo tra 500ms
-            if (!window.appData || !window.appData.lista_progetti || window.appData.lista_progetti.length === 0) {
-                setTimeout(loadData, 500);
-                return;
-            }
-
-            let allData = [];
-            let tenantsLoaded = 0;
-            const tenants = window.appData.lista_progetti.map(p => p.id);
-
-            tenants.forEach(tenant => {
-                let collPath = '';
-                if(currentTab === 'clienti') collPath = `clienti/${tenant}/raccolta clienti`;
-                if(currentTab === 'articoli') collPath = `clienti/${tenant}/codici articoli`;
-                if(currentTab === 'rientri') collPath = `clienti/${tenant}/rientri ddt`;
+            if(currentTab === 'clienti') {
+                let dnrData = [];
+                let gcData = [];
+                let cattelData = [];
                 
-                const q = query(collection(db, collPath));
-                const unsub = onSnapshot(q, (snapshot) => {
-                    const tenantData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, tenant: tenant }));
-                    
-                    // Rimuoviamo i vecchi dati di questo tenant prima di inserire i nuovi
-                    allData = allData.filter(d => d.tenant !== tenant);
-                    allData = [...allData, ...tenantData];
-                    
-                    window.fullData = allData;
-                    
-                    tenantsLoaded++;
-                    // Nascondiamo il loading solo dopo il primo giro (o se almeno 1 è caricato)
+                const qDNR = query(collection(db, 'clienti/DNR/raccolta clienti'));
+                const qGC = query(collection(db, 'clienti/GRAN CHEF/raccolta clienti'));
+                const qCattel = query(collection(db, 'clienti/CATTEL/raccolta clienti'));
+                
+                const unsubDNR = onSnapshot(qDNR, (snapshot) => {
+                    dnrData = snapshot.docs.map(doc => {
+                        const d = doc.data();
+                        return { ...d, id: doc.id, tenant: 'DNR' };
+                    });
+                    window.fullData = [...dnrData, ...gcData, ...cattelData];
                     document.getElementById('loading').style.display = 'none';
                     filterTable();
                 }, (error) => {
-                    console.error(`Errore caricamento ${currentTab} per ${tenant}:`, error);
+                    console.error("Errore caricamento clienti DNR:", error);
+                    document.getElementById('loading').style.display = 'none';
+                });
+                unsubscribes.push(unsubDNR);
+                
+                const unsubGC = onSnapshot(qGC, (snapshot) => {
+                    gcData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, tenant: 'GRAN CHEF' }));
+                    window.fullData = [...dnrData, ...gcData, ...cattelData];
+                    document.getElementById('loading').style.display = 'none';
+                    filterTable();
+                }, (error) => {
+                    console.error("Errore caricamento clienti GRAN CHEF:", error);
+                    document.getElementById('loading').style.display = 'none';
+                });
+                unsubscribes.push(unsubGC);
+
+                const unsubCattel = onSnapshot(qCattel, (snapshot) => {
+                    cattelData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, tenant: 'CATTEL' }));
+                    window.fullData = [...dnrData, ...gcData, ...cattelData];
+                    document.getElementById('loading').style.display = 'none';
+                    filterTable();
+                }, (error) => {
+                    console.error("Errore caricamento clienti CATTEL:", error);
+                    document.getElementById('loading').style.display = 'none';
+                });
+                unsubscribes.push(unsubCattel);
+            } else {
+                let collPath = '';
+                if(currentTab === 'articoli') collPath = 'clienti/DNR/codici articoli';
+                if(currentTab === 'rientri') collPath = 'clienti/DNR/rientri ddt';
+                
+                const q = query(collection(db, collPath));
+                const unsub = onSnapshot(q, (snapshot) => {
+                    document.getElementById('loading').style.display = 'none';
+                    window.fullData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                    filterTable();
+                }, (error) => {
+                    console.error("Errore caricamento:", error);
                     document.getElementById('loading').style.display = 'none';
                 });
                 unsubscribes.push(unsub);
-            });
+            }
         }
 
         function renderTable(data) {
@@ -573,7 +578,7 @@ const db = getFirestore(app);
                                     <span class="data-value">${d.indirizzo || ''}</span>
                                 </div>
                                 <div class="data-item" style="flex:1">
-                                    <span class="data-label">Città / Prov</span>
+                                    <span class="data-label">CittÃ  / Prov</span>
                                     <span class="data-value">${d.citta || ''} (${d.provincia || d.prov || '-'})</span>
                                 </div>
                             </div>
@@ -664,7 +669,7 @@ const db = getFirestore(app);
                             </div>
                             <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
                                 ${stato ? `<span class="badge badge-stato">${stato}</span>` : ''}
-                                ${isParziale ? `<span class="badge badge-parziale">⚠️ parziale</span>` : ''}
+                                ${isParziale ? `<span class="badge badge-parziale">âš ï¸ parziale</span>` : ''}
                             </div>
                         </div>
                         <div class="card-body">
@@ -701,8 +706,10 @@ const db = getFirestore(app);
                     <!-- 0. CANALE -->
                     <div class="input-group" style="grid-column: span 6">
                         <label>Canale / Master</label>
-                        <select name="tenant" id="formTenantSelect">
-                            <!-- Popolato dinamicamente -->
+                        <select name="tenant">
+                            <option value="DNR">DNR</option>
+                            <option value="CATTEL">CATTEL</option>
+                            <option value="GRAN CHEF">GRAN CHEF</option>
                         </select>
                     </div>
                     <div class="input-group" style="grid-column: span 6"></div>
@@ -729,7 +736,7 @@ const db = getFirestore(app);
 
                     <!-- 3. GEOGRAFIA -->
                     <div class="input-group" style="grid-column: span 2">
-                        <label>Città</label>
+                        <label>CittÃ </label>
                         <input type="text" name="citta">
                     </div>
                     <div class="input-group" style="grid-column: span 2">
@@ -779,14 +786,6 @@ const db = getFirestore(app);
                 title.innerText = "Nuovo Articolo";
                 fields.innerHTML = `
                     <div class="input-group" style="grid-column: span 6">
-                        <label>Canale / Master</label>
-                        <select name="tenant" id="formTenantSelect">
-                            <!-- Popolato dinamicamente -->
-                        </select>
-                    </div>
-                    <div class="input-group" style="grid-column: span 6"></div>
-                    
-                    <div class="input-group" style="grid-column: span 6">
                         <label>Codice Articolo (ID)</label>
                         <input type="text" name="id" required placeholder="es: AL-T-LI-NA">
                     </div>
@@ -807,15 +806,15 @@ const db = getFirestore(app);
                         <input type="text" name="confezionamento" placeholder="es: Busta 5kg">
                     </div>
                     <div class="input-group" style="grid-column: span 3">
-                        <label>Unità Principale</label>
+                        <label>UnitÃ  Principale</label>
                         <input type="text" name="unita_principale" placeholder="es: KG">
                     </div>
                     <div class="input-group" style="grid-column: span 2">
-                        <label>Per (Quantità)</label>
+                        <label>Per (QuantitÃ )</label>
                         <input type="number" name="per" step="0.01" value="1">
                     </div>
                     <div class="input-group" style="grid-column: span 2">
-                        <label>Unità Secondaria</label>
+                        <label>UnitÃ  Secondaria</label>
                         <input type="text" name="unita_secondaria" placeholder="es: PZ">
                     </div>
                     <div class="input-group" style="grid-column: span 2">
@@ -830,14 +829,6 @@ const db = getFirestore(app);
             } else {
                 title.innerText = "Nuovo Rientro";
                 fields.innerHTML = `
-                    <div class="input-group" style="grid-column: span 6">
-                        <label>Canale / Master</label>
-                        <select name="tenant" id="formTenantSelect">
-                            <!-- Popolato dinamicamente -->
-                        </select>
-                    </div>
-                    <div class="input-group" style="grid-column: span 6"></div>
-                    
                     <div class="input-group">
                         <label>Codice Consegna</label>
                         <input type="text" name="Codice consegna" required>
@@ -853,7 +844,7 @@ const db = getFirestore(app);
                     <div class="input-group">
                         <label>Tipo</label>
                         <select name="Tipo" style="padding:10px; border-radius:8px; border:1px solid #e2e8f0; font-size:14px; width:100%; font-family:inherit;">
-                            <option value="">— completo —</option>
+                            <option value="">â€” completo â€”</option>
                             <option value="parziale">parziale</option>
                         </select>
                     </div>
@@ -862,19 +853,6 @@ const db = getFirestore(app);
                         <textarea name="Note" rows="2" placeholder="Dettagli da consegnare / ritirare..." style="padding:10px; border-radius:8px; border:1px solid #e2e8f0; font-size:14px; width:100%; font-family:inherit;"></textarea>
                     </div>
                 `;
-            }
-            
-            // Popolamento dinamico delle select tenant
-            const formTenantSelect = document.getElementById('formTenantSelect');
-            if (formTenantSelect && window.appData && window.appData.lista_progetti) {
-                let optionsHtml = '';
-                window.appData.lista_progetti.forEach(p => {
-                    optionsHtml += `<option value="${p.id}">${p.nome || p.id}</option>`;
-                });
-                formTenantSelect.innerHTML = optionsHtml;
-                // Seleziona di default il tenant filtrato attualmente
-                const brand = document.getElementById('brandFilter')?.value;
-                if (brand) formTenantSelect.value = brand;
             }
         };
 
@@ -890,30 +868,34 @@ const db = getFirestore(app);
             try {
                 let collPath = '';
                 let docId = formId || null;
-                const formTenant = data.tenant || 'DNR'; // Tenant dal selettore nel form
                 
                 if(currentTab === 'clienti') {
-                    // Manteniamo i default storici per tipo/tipologia_grado se servono (si potrebbero anche rimuovere se non usati)
-                    if (formTenant === 'CATTEL') {
+                    let formVal = data.tenant || 'DNR';
+                    let tenant = 'DNR';
+                    if (formVal === 'CATTEL') {
                         data.tipo = 'CATTEL';
                         data.tipologia_grado = 'CATTEL';
-                    } else if (formTenant === 'GRAN CHEF') {
+                        tenant = 'CATTEL';
+                    } else if (formVal === 'GRAN CHEF') {
                         data.tipo = 'GRAN CHEF';
                         data.tipologia_grado = 'GRAND_CHEF';
+                        tenant = 'GRAN CHEF';
                     } else {
-                        data.tipo = formTenant;
-                        data.tipologia_grado = formTenant;
+                        data.tipo = 'DNR';
+                        data.tipologia_grado = 'DNR';
+                        tenant = 'DNR';
                     }
+                    data.tenant = tenant;
 
-                    collPath = `clienti/${formTenant}/raccolta clienti`;
+                    collPath = `clienti/${tenant}/raccolta clienti`;
                     docId = docId || data.codice_frutta || data.codice_latte || null;
                 } else if(currentTab === 'articoli') {
-                    collPath = `clienti/${formTenant}/codici articoli`;
+                    collPath = 'clienti/DNR/codici articoli';
                     docId = docId || data.id;
                     delete data.id;
                 } else if (currentTab === 'rientri') {
-                    collPath = `clienti/${formTenant}/rientri ddt`;
-                    // Se è un inserimento manuale da zero, creiamo un ID univoco dal codice
+                    collPath = 'clienti/DNR/rientri ddt';
+                    // Se Ã¨ un inserimento manuale da zero, creiamo un ID univoco dal codice
                     if (!docId && data['Codice consegna']) {
                         const ddtStr = (data['Data e Num DDT'] || '').replace(/\s+/g, '_');
                         docId = ddtStr ? `${data['Codice consegna']}_${ddtStr}` : data['Codice consegna'];
@@ -935,15 +917,16 @@ const db = getFirestore(app);
         });
 
         window.deleteItem = async function(id) {
-            if(!confirm("⚠️ ATTENZIONE: Sei sicuro di voler eliminare questo record definitivamente dal database?")) return;
-            
-            const item = (window.fullData || []).find(c => c.id === id);
-            const tenant = item ? (item.tenant || 'DNR') : 'DNR';
+            if(!confirm("âš ï¸ ATTENZIONE: Sei sicuro di voler eliminare questo record definitivamente dal database?")) return;
             
             let collPath = '';
-            if(currentTab === 'clienti') collPath = `clienti/${tenant}/raccolta clienti`;
-            if(currentTab === 'articoli') collPath = `clienti/${tenant}/codici articoli`;
-            if(currentTab === 'rientri') collPath = `clienti/${tenant}/rientri ddt`;
+            if(currentTab === 'clienti') {
+                const item = (window.fullData || []).find(c => c.id === id);
+                const tenant = item ? item.tenant : 'DNR';
+                collPath = `clienti/${tenant}/raccolta clienti`;
+            }
+            if(currentTab === 'articoli') collPath = 'clienti/DNR/codici articoli';
+            if(currentTab === 'rientri') collPath = 'clienti/DNR/rientri ddt';
             
             try {
                 await deleteDoc(doc(db, collPath, id));
@@ -960,10 +943,9 @@ const db = getFirestore(app);
             if(!window.fullData) return;
             let filtered = window.fullData;
             
-            // Filtro Tenant applicato su tutte le schede se selezionato
-            if (brand) {
+            if (currentTab === 'clienti' && brand) {
                 filtered = filtered.filter(d => {
-                    const t = d.tenant || 'DNR'; // Fallback per sicurezza
+                    const t = d.tenant || 'DNR';
                     return t === brand;
                 });
             }
@@ -991,7 +973,7 @@ const db = getFirestore(app);
             // Mappa Satellitare Ibrida (Satellite + Nomi Strade di Google Maps)
             L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
                 maxZoom: 20,
-                attribution: '© Google Maps (Ibrida/Satellitare)'
+                attribution: 'Â© Google Maps (Ibrida/Satellitare)'
             }).addTo(map);
             
             // Marker BLOCCATO di default

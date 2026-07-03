@@ -4,11 +4,11 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "5.60";
+const APP_VERSION = "5.61";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
-console.log("%c[App] Log Solution PWA â€” versione " + APP_VERSION, "color: #4f46e5; font-weight: bold; font-size: 12px;");
+console.log("%c[App] Log Solution PWA Ã¢â‚¬â€ versione " + APP_VERSION, "color: #4f46e5; font-weight: bold; font-size: 12px;");
 
 // --- SENTRY ERROR MONITORING ---
 window.addEventListener("load", () => {
@@ -114,7 +114,7 @@ function updateStepUI() {
     for (let i = 1; i <= totalSteps; i++) {
         const dot = document.getElementById(`dot-${i}`);
         if (!dot) continue;
-        if (i < currentStep) { dot.classList.add('completed'); dot.innerHTML = 'âœ”'; }
+        if (i < currentStep) { dot.classList.add('completed'); dot.innerHTML = 'Ã¢Å“â€'; }
         else if (i === currentStep) { dot.classList.add('active'); dot.classList.remove('completed'); dot.innerHTML = i; }
         else { dot.classList.remove('active', 'completed'); dot.innerHTML = i; }
     }
@@ -243,7 +243,7 @@ window.renderClientiInserimento = function() {
     const progetti = window.appData.lista_progetti || [];
     let nomi = progetti.map(p => p.nome).filter(Boolean);
 
-    // 2. Fallback hardcoded se Firestore è vuoto
+    // 2. Fallback hardcoded se Firestore Ã¨ vuoto
     if (nomi.length === 0) {
         nomi = ["PROGETTO SCUOLE", "CATTEL", "GRAN CHEF", "BAUER"];
     }
@@ -260,13 +260,13 @@ window.renderClientiInserimento = function() {
     // Aggiungi sempre NAVETTA come voce separata
     const navOpt = document.createElement('option');
     navOpt.value = 'NAVETTA';
-    navOpt.textContent = '🚐 NAVETTA';
+    navOpt.textContent = 'ðŸš NAVETTA';
     select.appendChild(navOpt);
 
     // Aggiungi sempre MAGAZZINO come voce separata
     const magOpt = document.createElement('option');
     magOpt.value = 'MAGAZZINO';
-    magOpt.textContent = '📦 MAGAZZINO';
+    magOpt.textContent = 'ðŸ“¦ MAGAZZINO';
     select.appendChild(magOpt);
 
     if (currentVal) select.value = currentVal;
@@ -311,7 +311,7 @@ window.updateViaggi = async function() {
     }
     window.viaggiLinksMap = {};
 
-    // ── CASO NAVETTA PURA ────────────────────────────────────────────────────
+    // â”€â”€ CASO NAVETTA PURA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (clienteNome.toUpperCase() === 'NAVETTA') {
         // Nascondi il select viaggio standard
         if (viaggioWrapper) viaggioWrapper.style.display = 'none';
@@ -338,7 +338,7 @@ window.updateViaggi = async function() {
         return;
     }
 
-    // ── CASO MAGAZZINO ───────────────────────────────────────────────────────
+    // â”€â”€ CASO MAGAZZINO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (clienteNome.toUpperCase() === 'MAGAZZINO') {
         // Nascondi i campi navetta
         if (navettaContainer) { navettaContainer.style.display = 'none'; }
@@ -359,7 +359,7 @@ window.updateViaggi = async function() {
         return;
     }
 
-    // ── CASO CLIENTE STANDARD ────────────────────────────────────────────────
+    // â”€â”€ CASO CLIENTE STANDARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Ripristina il select viaggio
     if (viaggioWrapper) viaggioWrapper.style.display = '';
     if (viaggioSelect) { viaggioSelect.required = true; }
@@ -592,10 +592,10 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.serviceWorker.register('./sw.js').then(reg => {
             console.log('[SW] Registrato correttamente sw.js con versione ' + APP_VERSION);
 
-            // Se c'è già un SW in attesa (tab rimasto aperto durante aggiornamento)
+            // Se c'Ã¨ giÃ  un SW in attesa (tab rimasto aperto durante aggiornamento)
             // - invia subito SKIP_WAITING per forzare l'attivazione
             if (reg.waiting) {
-                console.log('[SW] SW in attesa trovato — invio SKIP_WAITING.');
+                console.log('[SW] SW in attesa trovato â€” invio SKIP_WAITING.');
                 reg.waiting.postMessage({ type: 'SKIP_WAITING' });
                 showUpdateToast(reg);
             }
@@ -613,27 +613,27 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('[SW] Errore registrazione:', err);
         });
 
-        // ⚡ CRITICO: Quando il nuovo SW prende il controllo, ricarica la pagina automaticamente
+        // âš¡ CRITICO: Quando il nuovo SW prende il controllo, ricarica la pagina automaticamente
         // Questo garantisce che il telefono non rimanga su una versione vecchia.
         let swRefreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (swRefreshing) return;
             swRefreshing = true;
-            console.log('[SW] Nuova versione attiva — ricarico la pagina...');
+            console.log('[SW] Nuova versione attiva â€” ricarico la pagina...');
             window.location.reload();
         });
     }
 });
 
 function showUpdateToast(reg) {
-    // Evita duplicati se il toast è già presente
+    // Evita duplicati se il toast Ã¨ giÃ  presente
     if (document.getElementById('sw-update-toast')) return;
 
     const toast = document.createElement('div');
     toast.id = 'sw-update-toast';
     toast.className = 'sw-update-toast show';
     toast.innerHTML = `
-        <div style="flex:1;">🆕 Nuova versione disponibile!</div>
+        <div style="flex:1;">ðŸ†• Nuova versione disponibile!</div>
         <button class="btn-update" id="btn-sw-update">Aggiorna ora</button>
     `;
     document.body.appendChild(toast);
@@ -641,7 +641,7 @@ function showUpdateToast(reg) {
     // Il pulsante invia SKIP_WAITING al SW in attesa, poi il controllerchange ricarica
     document.getElementById('btn-sw-update').addEventListener('click', () => {
         if (reg.waiting) {
-            console.log('[SW] Utente ha cliccato Aggiorna — invio SKIP_WAITING.');
+            console.log('[SW] Utente ha cliccato Aggiorna â€” invio SKIP_WAITING.');
             reg.waiting.postMessage({ type: 'SKIP_WAITING' });
         } else {
             // Fallback: nessun SW in attesa, ricarica direttamente
@@ -670,7 +670,7 @@ window.onUserProfileLoaded = (user) => {
             // Se autista
             const isInserimentoPage = window.location.pathname.includes('inserimento.html');
             if (isInserimentoPage) {
-                // Non serve il tasto Home se siamo già in inserimento.html
+                // Non serve il tasto Home se siamo giÃ  in inserimento.html
                 dashBtn.style.display = 'none';
             } else {
                 dashBtn.style.display = 'flex';
@@ -688,11 +688,11 @@ window.onUserProfileLoaded = (user) => {
         presenzeBtn.style.display = (role === 'autista') ? 'flex' : 'none';
     }
 
-    // Inizializza i menu a tendina dinamici se i dati sono già pronti
+    // Inizializza i menu a tendina dinamici se i dati sono giÃ  pronti
     if (typeof window.renderMezziInserimento === 'function') window.renderMezziInserimento();
     if (typeof window.renderClientiInserimento === 'function') window.renderClientiInserimento();
 
-    // Se siamo in inserimento e c'è una bozza, mostriamo il modale
+    // Se siamo in inserimento e c'Ã¨ una bozza, mostriamo il modale
     if (document.getElementById('presenzeForm') && sessionStorage.getItem('currentDraft')) {
         document.getElementById('recoveryTripModal')?.classList.add('active');
     }

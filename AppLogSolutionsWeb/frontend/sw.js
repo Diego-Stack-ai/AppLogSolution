@@ -1,4 +1,4 @@
-const CACHE_NAME = 'log-solution-v5.60';
+const CACHE_NAME = 'log-solution-v5.61';
 const ASSETS = [
     './',
     './index.html',
@@ -46,7 +46,7 @@ self.addEventListener('activate', (event) => {
 // 3. SKIP_WAITING via messaggio (forza aggiornamento immediato)
 self.addEventListener('message', (event) => {
     if (event.data === 'SKIP_WAITING' || event.data?.type === 'SKIP_WAITING') {
-        console.log(`[SW ${CACHE_NAME}] SKIP_WAITING ricevuto � attivazione forzata.`);
+        console.log(`[SW ${CACHE_NAME}] SKIP_WAITING ricevuto ï¿½ attivazione forzata.`);
         self.skipWaiting();
     }
 });

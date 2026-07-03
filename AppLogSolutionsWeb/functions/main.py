@@ -2258,7 +2258,7 @@ def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_c
     deliveries_list = []
     
     f_io = io.BytesIO(excel_bytes)
-    df = pd.read_excel(f_io, sheet_name=0)
+    df = pd.read_excel(f_io, sheet_name=0, header=None)
     df_clean = df.dropna(how='all')
     
     header_row_idx = None

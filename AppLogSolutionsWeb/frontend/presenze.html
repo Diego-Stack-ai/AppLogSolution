@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=5.49">
+    <link rel="stylesheet" href="styles.css?v=5.50">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .row-error td {
@@ -503,13 +503,13 @@
         </div>
     </main>
 
-    <script src="script.js?v=5.49"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.49"></script>
+    <script src="script.js?v=5.50"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.50"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=5.49";
+        import { calculateHours } from "./firestore-service.js?v=5.50";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -569,12 +569,21 @@ const db = getFirestore(app);
             inViaggio.innerHTML = '<option value="">-</option>';
             
             if (clienteSelezionato) {
-                const progetti = window.appData?.lista_progetti || [];
-                const proj = progetti.find(p => (p.nome || "").toUpperCase() === clienteSelezionato);
-                const viaggiConfigurati = proj ? (proj.viaggi || []) : [];
+                let viaggiConfigurati = [];
+                
+                if (clienteSelezionato === 'MAGAZZINO') {
+                    viaggiConfigurati = (window.appData?.lista_magazzini_sedi || []).map(m => m.nome);
+                } else if (clienteSelezionato === 'NAVETTA') {
+                    viaggiConfigurati = (window.appData?.lista_navetta_partenze || []).map(n => n.nome);
+                } else {
+                    const progetti = window.appData?.lista_progetti || [];
+                    const proj = progetti.find(p => (p.nome || "").toUpperCase() === clienteSelezionato);
+                    viaggiConfigurati = proj ? (proj.viaggi || []) : [];
+                }
                 
                 let foundSelected = false;
                 viaggiConfigurati.forEach(v => {
+                    if (!v) return;
                     const opt = document.createElement('option');
                     const vUpper = v.trim().toUpperCase();
                     opt.value = vUpper;
@@ -2037,7 +2046,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=5.49"></script>
+    <script type="module" src="cedolini-splitter.js?v=5.50"></script>
 
 </body>
 </html>

@@ -1,0 +1,1 @@
+const fs = require('fs'); const html = fs.readFileSync('frontend/elaborazione.html', 'utf8'); const match = html.match(/<script type="module">([\s\S]*?)<\/script>/); if (match) { let js = match[1].replace(/import .*;/g, ''); try { new Function(js); console.log('Nessun errore sintassi'); } catch(e) { console.log('ERRORE:', e.message); } }

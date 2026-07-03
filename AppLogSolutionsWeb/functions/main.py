@@ -3257,7 +3257,7 @@ def _ottimizza_singolo_viaggio_cloud(punti, depot, use_time_windows):
             print(f"[OR-Tools] Errore vincoli orari: {e}")
             solution = None
 
-    if not is_grand_chef or solution is None:
+    if not use_time_windows or solution is None:
         search_parameters = pywrapcp.DefaultRoutingSearchParameters()
         search_parameters.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
         search_parameters.time_limit.seconds = 10

@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=5.54">
+    <link rel="stylesheet" href="styles.css?v=5.55">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1814,7 +1814,7 @@ const db = getFirestore(app);
 
                         // 2. Load Firestore customers database for coordinate matching
                         setLoaderMsg("Lettura anagrafica clienti master...");
-                        const snap = await getDocs(collection(db, 'clienti', 'DNR', 'raccolta clienti'));
+                        const snap = await getDocs(collection(db, 'clienti', urlTenant, 'raccolta clienti'));
                         masterClientiList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                         console.log(`[Map] Master clienti caricato: ${masterClientiList.length} record.`);
                         
@@ -2306,7 +2306,7 @@ const db = getFirestore(app);
 
                 if (matchedClient) {
                     const docId = matchedClient.id;
-                    const clientRef = doc(db, 'clienti', 'DNR', 'raccolta clienti', docId);
+                    const clientRef = doc(db, 'clienti', urlTenant, 'raccolta clienti', docId);
                     
                     // Atomic update to Firestore
                     await setDoc(clientRef, {
@@ -3386,7 +3386,7 @@ const db = getFirestore(app);
                         icon: 'success',
                         confirmButtonText: 'Vai ai Link Viaggi 🔗'
                     }).then(() => {
-                        window.location.href = `link_viaggi.html?data=${targetFileDate}`;
+                        window.location.href = `link_viaggi.html?data=${targetFileDate}&tenant=${encodeURIComponent(urlTenant)}`;
                     });
                 } else {
                     throw new Error(res.data ? res.data.message : 'Risposta non valida dal server.');

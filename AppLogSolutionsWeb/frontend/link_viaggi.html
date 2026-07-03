@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invio Mobile Autisti — Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.54">
+    <link rel="stylesheet" href="styles.css?v=5.55">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -193,8 +193,8 @@
         <div class="viaggi-grid" id="viaggiGrid"></div>
     </main>
 
-    <script src="script.js?v=5.54"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.54"></script>
+    <script src="script.js?v=5.55"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.55"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -253,6 +253,7 @@
             // Update URL search params senza ricaricare la pagina
             const url = new URL(window.location);
             url.searchParams.set('data', dataLavoro);
+            if(urlTenant) url.searchParams.set('tenant', urlTenant);
             window.history.pushState({}, '', url);
 
             document.getElementById('loadingState').style.display = 'block';
@@ -266,7 +267,7 @@
         async function caricaViaggi() {
             try {
                 const q = query(
-                    collection(db, 'clienti', 'DNR', 'viaggi ddt'),
+                    collection(db, 'clienti', urlTenant, 'viaggi ddt'),
                     where('data_lavoro', '==', dataLavoro)
                 );
                 const snap = await getDocs(q);
@@ -508,7 +509,7 @@
             selectMese.innerHTML = '<option value="">Caricamento archivio R&D...</option>';
             try {
                 const fn = httpsCallable(functions, 'recupera_viaggio_storico');
-                const res = await fn({ azione: 'lista_mesi' });
+                const res = await fn({ azione: 'lista_mesi', tenant: urlTenant });
                 if (res.data && res.data.status === 'ok') {
                     const mesi = res.data.mesi || [];
                     selectMese.innerHTML = '<option value="">-- Seleziona Mese Storico --</option>';
@@ -532,7 +533,7 @@
             selectData.innerHTML = '<option value="">Caricamento giornate...</option>';
             try {
                 const fn = httpsCallable(functions, 'recupera_viaggio_storico');
-                const res = await fn({ azione: 'lista_giornate', mese: mese });
+                const res = await fn({ azione: 'lista_giornate', mese: mese, tenant: urlTenant });
                 if (res.data && res.data.status === 'ok') {
                     const date = res.data.giornate || [];
                     selectData.innerHTML = '<option value="">-- Seleziona Giornata --</option>';
@@ -557,12 +558,13 @@
             Swal.fire({ title: 'Ripristino Sandbox R&D...', html: `Ripristino del viaggio <b>${dataTarget}</b> in corso...<br>Questo viaggio riceverà il badge ⚠️ VIAGGIO STORICO RECUPERATO e sarà pronto per Genera Tutte le Mappe.`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
                 const fn = httpsCallable(functions, 'recupera_viaggio_storico');
-                const res = await fn({ azione: 'recupera', mese: mese, data_consegna: dataTarget });
+                const res = await fn({ azione: 'recupera', mese: mese, data_consegna: dataTarget, tenant: urlTenant });
                 if (res.data && res.data.status === 'ok') {
                     dataLavoro = dataTarget;
                     localStorage.setItem('locked_date', dataLavoro);
                     const url = new URL(window.location);
                     url.searchParams.set('data', dataLavoro);
+            if(urlTenant) url.searchParams.set('tenant', urlTenant);
                     window.history.pushState({}, '', url);
                     
                     if (dataLavoro.includes('-') && dataLavoro.split('-')[0].length === 2) {
@@ -583,7 +585,7 @@
             Swal.fire({ title: 'Pulizia in corso...', text: `Rilascio e cancellazione dei record provvisori di ${dataLavoro}...`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
                 const fn = httpsCallable(functions, 'rilascia_recupero_storico');
-                const res = await fn({ data_consegna: dataLavoro });
+                const res = await fn({ data_consegna: dataLavoro, tenant: urlTenant });
                 if (res.data && res.data.status === 'ok') {
                     Swal.fire('Rilasciato!', res.data.message, 'success');
                     document.getElementById('btnRilasciaRecupero').style.display = 'none';
@@ -606,7 +608,7 @@
 
             try {
                 const fn = httpsCallable(functions, 'genera_mappa_autista', { timeout: 120000 });
-                const res = (await fn({ viaggio_id: viaggioId, distinta_url: d_url })).data;
+                const res = (await fn({ viaggio_id: viaggioId, distinta_url: d_url, tenant: urlTenant })).data;
 
                 if (res.status === 'errore') throw new Error(res.message);
 
@@ -650,7 +652,7 @@
             for (const v of viaggi) {
                 try {
                     const fn = httpsCallable(functions, 'genera_mappa_autista', { timeout: 120000 });
-                    const res = (await fn({ viaggio_id: v.id, distinta_url: (v.distinta_light || null) })).data;
+                    const res = (await fn({ viaggio_id: v.id, distinta_url: (v.distinta_light || null), tenant: urlTenant })).data;
                     if (res.status === 'errore') throw new Error(res.message);
                     v.mappa_url = res.data.mappa_url;
                     v.km_reali  = res.data.km_reali;

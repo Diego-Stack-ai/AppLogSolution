@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.54">
+    <link rel="stylesheet" href="styles.css?v=5.55">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -369,8 +369,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=5.54"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.54"></script>
+    <script src="script.js?v=5.55"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.55"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
@@ -864,11 +864,13 @@
             
             try {
                 const generaReportFn = httpsCallable(functions, 'genera_report_giornaliero', { timeout: 300000 });
-                const result = await generaReportFn({ data_consegna: formattedDate });
+                const tenant = document.getElementById('brandFilter').value;
+                const result = await generaReportFn({ data_consegna: formattedDate, tenant: tenant });
                 
                 if (result.data.status === 'ok') {
                     console.log("Report generato con successo!");
-                    window.navigateWithState('mappa_zone.html?data=' + formattedDate + '&cb=' + Date.now());
+                    const urlTenant = document.getElementById('brandFilter').value;
+                    window.navigateWithState('mappa_zone.html?data=' + formattedDate + '&tenant=' + encodeURIComponent(urlTenant) + '&cb=' + Date.now());
                 } else {
                     alert("Errore durante la generazione: " + result.data.message);
                 }
@@ -908,7 +910,8 @@
 
             try {
                 const eliminaGiornataFn = httpsCallable(functions, 'elimina_giornata_logistica');
-                const elimResult = await eliminaGiornataFn({ data_consegna: data_consegna, soft_delete: true });
+                const tenant = document.getElementById('brandFilter').value;
+                const elimResult = await eliminaGiornataFn({ data_consegna: data_consegna, tenant: tenant, soft_delete: true });
                 if (elimResult.data && elimResult.data.status === 'ok') {
                     Swal.fire({
                         title: 'Archiviata!',
@@ -978,7 +981,7 @@
                             </div>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
 
-                                <button onclick="window.navigateWithState('mappa_zone.html?data=${data.data_consegna}&cb=' + Date.now())" style="background: linear-gradient(135deg, var(--primary), #3730a3); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                                <button onclick="window.navigateWithState('mappa_zone.html?data=${data.data_consegna}&tenant=' + encodeURIComponent(document.getElementById('brandFilter').value) + '&cb=' + Date.now())" style="background: linear-gradient(135deg, var(--primary), #3730a3); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
                                     <span class="material-icons-round">edit_location</span> GESTIONE VIAGGI
                                 </button>
 
@@ -1003,7 +1006,8 @@
             const dateInput = document.getElementById('master-date-selector').value;
             if (!dateInput) return alert("Seleziona una data nel calendario in alto.");
             const formattedDate = dateInput.split('-').reverse().join('-');
-            window.navigateWithState('mappa_zone.html?data=' + formattedDate + '&cb=' + Date.now());
+            const urlTenant = document.getElementById('brandFilter').value;
+            window.navigateWithState('mappa_zone.html?data=' + formattedDate + '&tenant=' + encodeURIComponent(urlTenant) + '&cb=' + Date.now());
         });
         
         const savedDate = localStorage.getItem('master_date');
@@ -1098,7 +1102,8 @@
                         didOpen: () => { Swal.showLoading(); }
                     });
                     const eliminaFn = httpsCallable(functions, 'elimina_giornata_logistica');
-                    await eliminaFn({ data_consegna: dateStr });
+                    const tenant = document.getElementById('brandFilter').value;
+                    const res = await eliminaFn({ data_consegna: dateStr, tenant: tenant });
                     Swal.close();
                     console.log('[Upload] Pulizia completa completata per', dateStr);
                 } catch (err_cleanup) {

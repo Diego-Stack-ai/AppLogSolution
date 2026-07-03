@@ -2378,7 +2378,7 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
                 if cf and cf != 'p00000' and cf != 'nan': db_mappati[cf] = d
                 if cl and cl != 'p00000' and cl != 'nan': db_mappati[cl] = d
         
-        articoli_ref = db.collection('clienti').document('DNR').collection('codici articoli')
+        articoli_ref = db.collection('clienti').document(tenant).collection('codici articoli')
         db_articoli = {doc.id: doc.to_dict() for doc in articoli_ref.stream()}
         
         # 2. Download
@@ -2443,7 +2443,7 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
 
         # 4. Upload split e salvataggio DDT
         for fname, out_stream in split_files.items():
-            out_path = f"split_ddt/{data_elab}/{etichetta}/{fname}"
+            out_path = f"{tenant}/split_ddt/{data_elab}/{etichetta}/{fname}"
             split_blob = bucket.blob(out_path)
             if hasattr(out_stream, "seek"):
                 out_stream.seek(0)
@@ -2457,7 +2457,7 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
             "competenza": competenza,
             "deliveries": deliveries
         }
-        meta_path = f"split_ddt/{data_elab}/{etichetta}/ddt_estratti_{job_id}.json"
+        meta_path = f"{tenant}/split_ddt/{data_elab}/{etichetta}/ddt_estratti_{job_id}.json"
         bucket.blob(meta_path).upload_from_string(
             json.dumps(metadata_ddt, indent=2), 
             content_type='application/json'
@@ -2508,7 +2508,7 @@ def _ordina_job_ids_gc(job_ids, tenant="GRAN CHEF"):
     jobs_info.sort(key=lambda x: x[1])
     return [x[0] for x in jobs_info]
 
-def core_genera_report_giornaliero(uid, data_consegna):
+def core_genera_report_giornaliero(uid, data_consegna, tenant="DNR"):
     """
     Implementa gli step 2, 3 e 4 del workflow locale:
     - Aggrega i DDT per la data indicata (Step 2)
@@ -2527,8 +2527,8 @@ def core_genera_report_giornaliero(uid, data_consegna):
     try:
         data_f = data_consegna.replace('/', '-')
         prefixes_to_clean = [
-            f"REPORTS/{data_consegna}/",
-            f"CONSEGNE/CONSEGNE_{data_f}/"
+            f"{tenant}/REPORTS/{data_consegna}/",
+            f"{tenant}/CONSEGNE/CONSEGNE_{data_f}/"
         ]
         for pref in prefixes_to_clean:
             blobs_old = bucket.list_blobs(prefix=pref)
@@ -2541,7 +2541,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
     
     # 1. Recupera i DDT scansionando la cartella dello Storage
     ddt_list = []
-    prefix_search = f"split_ddt/{data_consegna}/"
+    prefix_search = f"{tenant}/split_ddt/{data_consegna}/"
     print(f"[INFO] Scansione Storage per data {data_consegna}...")
     
     try:
@@ -2583,9 +2583,9 @@ def core_genera_report_giornaliero(uid, data_consegna):
 
     if not ddt_list:
         # Debug Radar: vediamo cosa c'e' effettivamente nello Storage
-        cercati = [f"split_ddt/{data_consegna}/**/ddt_estratti_*.json"]
+        cercati = [f"{tenant}/split_ddt/{data_consegna}/**/ddt_estratti_*.json"]
         try:
-            prefix_check = f"split_ddt/{data_consegna}/"
+            prefix_check = f"{tenant}/split_ddt/{data_consegna}/"
             blobs_esistenti = list(bucket.list_blobs(prefix=prefix_check))
             files_trovati = [b.name for b in blobs_esistenti]
             msg = f"Nessun dato trovato per il {data_consegna}. Percorsi attesi: {', '.join(cercati)}. Nello Storage vedo: {', '.join(files_trovati) if files_trovati else 'NULLA'}"
@@ -2760,7 +2760,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
     # --- INTEGRAZIONE RIENTRI DDT ---
     try:
         # Interroga direttamente la collezione 'rientri ddt' per garantire consistenza con il frontend
-        rientri_ref = db.collection('clienti').document('DNR').collection('rientri ddt')
+        rientri_ref = db.collection('clienti').document(tenant).collection('rientri ddt')
         
         for r_doc in rientri_ref.stream():
             r_data = r_doc.to_dict() or {}
@@ -2823,7 +2823,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
             # Aggiorna DB se lo stato è cambiato
             if stato_attuale != nuovo_stato:
                 try:
-                    db.collection('clienti').document('DNR').collection('rientri ddt').document(r_doc.id).update({
+                    db.collection('clienti').document(tenant).collection('rientri ddt').document(r_doc.id).update({
                         'Stato': nuovo_stato,
                         'stato': firestore.DELETE_FIELD
                     })
@@ -2921,7 +2921,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
         })
 
     # 4. Salvataggio file JSON storici nello Storage (Standard Johnson)
-    path_base = f"REPORTS/{data_consegna}"
+    path_base = f"{tenant}/REPORTS/{data_consegna}"
     
     # punti_consegna.json
     bucket.blob(f"{path_base}/punti_consegna.json").upload_from_string(
@@ -2971,7 +2971,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
         "created_at": firestore.SERVER_TIMESTAMP,
         "tipo": "REPORT_GENERALE"
     }
-    db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna).set(report_meta)
+    db.collection('clienti').document(tenant).collection('reports_logistici').document(data_consegna).set(report_meta)
     
     elapsed = time.time() - start_time
     _registra_statistica('genera_report_generale', elapsed)
@@ -3480,7 +3480,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
     db = get_db()
     bucket = storage.bucket(name=BUCKET_NAME)
     
-    path_base = f"REPORTS/{data_consegna}"
+    path_base = f"{tenant}/REPORTS/{data_consegna}"
     blob_json = bucket.blob(f"{path_base}/viaggi_giornalieri_Johnson.json")
     if not blob_json.exists():
         return {"status": "errore", "message": f"Nessun file viaggi_giornalieri_Johnson.json trovato per il {data_consegna}."}
@@ -3613,7 +3613,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
                     if c_latte and c_latte != "p00000":
                         ddt_ids.append(f"{data_consegna}_{c_latte}")
             
-            doc_ref = db.collection('clienti').document('DNR').collection('viaggi ddt').document(viaggio_id)
+            doc_ref = db.collection('clienti').document(tenant).collection('viaggi ddt').document(viaggio_id)
             
             # Preserva lo stato esistente (es. se è già completato/stampato) e i link
             existing_doc = doc_ref.get()
@@ -3664,7 +3664,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
         # === RIGENERA HTML MAPPA AUTISTA aggiornata con nuovi orari ===
         try:
             data_viaggio_str = data_consegna.replace("/", "-")
-            html_path = f"CONSEGNE/CONSEGNE_{data_viaggio_str}/MAPPE_AUTISTI/{viaggio_id}.html"
+            html_path = f"{tenant}/CONSEGNE/CONSEGNE_{data_viaggio_str}/MAPPE_AUTISTI/{viaggio_id}.html"
             html_mappa = _genera_html_mappa(
                 viaggio_id, punti_simulati, km, sec_guida, polylines,
                 depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc
@@ -3686,7 +3686,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
     # === GHOST TRIP CLEANUP ===
     try:
         active_viaggio_ids = {f"{data_consegna}_{z.get('id_zona')}" for z in zone_list if z.get('id_zona')}
-        viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
+        viaggi_ref = db.collection('clienti').document(tenant).collection('viaggi ddt')
         query_viaggi = viaggi_ref.where('data_lavoro', '==', data_consegna).stream()
         for doc in query_viaggi:
             if doc.id not in active_viaggio_ids:
@@ -4200,7 +4200,7 @@ def core_genera_completo_giornata(data_consegna):
     db = get_db()
     bucket = storage.bucket(name=BUCKET_NAME)
     
-    path_base = f"REPORTS/{data_consegna}"
+    path_base = f"{tenant}/REPORTS/{data_consegna}"
     blob_json = bucket.blob(f"{path_base}/viaggi_giornalieri_Johnson.json")
     if not blob_json.exists():
         return {"status": "errore", "message": f"Nessun file viaggi_giornalieri_Johnson.json trovato per il {data_consegna}."}
@@ -4211,7 +4211,7 @@ def core_genera_completo_giornata(data_consegna):
         return {"status": "errore", "message": f"Errore lettura JSON: {str(e)}"}
         
     deliveries_all = []
-    prefix_search = f"split_ddt/{data_consegna}/"
+    prefix_search = f"{tenant}/split_ddt/{data_consegna}/"
     try:
         blobs = bucket.list_blobs(prefix=prefix_search)
         for blob in blobs:
@@ -4228,7 +4228,7 @@ def core_genera_completo_giornata(data_consegna):
     
     rientri_list = []
     try:
-        for doc in db.collection('clienti').document('DNR').collection('rientri ddt').stream():
+        for doc in db.collection('clienti').document(tenant).collection('rientri ddt').stream():
             r_data = doc.to_dict() or {}
             r_cod = str(r_data.get('codice_consegna') or r_data.get('Codice consegna') or '').strip()
             r_data_ddt = r_data.get('data_ddt') or r_data.get('Data e Num DDT') or ''
@@ -4290,7 +4290,7 @@ def core_genera_completo_giornata(data_consegna):
             for ddt in ddt_trovati:
                 tipo_ddt = ddt.get("tipo")
                 pdf_name = ddt.get("pdf_name")
-                storage_path = f"split_ddt/{data_consegna}/{tipo_ddt}/{pdf_name}"
+                storage_path = f"{tenant}/split_ddt/{data_consegna}/{tipo_ddt}/{pdf_name}"
                 blob_ddt = bucket.blob(storage_path)
                 if blob_ddt.exists():
                     try:
@@ -4319,11 +4319,11 @@ def core_genera_completo_giornata(data_consegna):
 
         full_stream, light_stream = _genera_distinta_pdf_cloud(zone, articoli_viaggio, data_consegna, pdf_ddt_streams, rientri_giro, pdf_non_trovati_giro)
         
-        full_blob = bucket.blob(f"REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_{nome_giro}.pdf")
+        full_blob = bucket.blob(f"{tenant}/REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_{nome_giro}.pdf")
         full_blob.upload_from_file(full_stream, content_type="application/pdf")
         distinta_completa_url = _genera_url_storage_token(full_blob)
         
-        light_blob = bucket.blob(f"REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_LIGHT_{nome_giro}.pdf")
+        light_blob = bucket.blob(f"{tenant}/REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_LIGHT_{nome_giro}.pdf")
         light_blob.upload_from_file(light_stream, content_type="application/pdf")
         distinta_light_url = _genera_url_storage_token(light_blob)
 
@@ -4354,7 +4354,7 @@ def core_genera_completo_giornata(data_consegna):
         ora_partenza_calc = zone.get("_stats", {}).get("ora_partenza", "07:00")
         html_map_content = _genera_html_mappa(f"Giro {nome_giro}", punti_html, km, sec_guida, polylines, depot=depot, distinta_url=distinta_light_url, ora_partenza_dep=ora_partenza_calc)
         
-        map_blob = bucket.blob(f"REPORTS/{data_consegna}/MAPPE_AUTISTI/{nome_giro}.html")
+        map_blob = bucket.blob(f"{tenant}/REPORTS/{data_consegna}/MAPPE_AUTISTI/{nome_giro}.html")
         map_blob.upload_from_string(html_map_content.encode('utf-8'), content_type="text/html; charset=utf-8")
         map_url = _genera_url_storage_token(map_blob)
 
@@ -4381,7 +4381,7 @@ def core_genera_completo_giornata(data_consegna):
             zid = zone.get("id_zona")
             if zid == "DDT_DA_INSERIRE": continue
             nome_giro = zone.get("nome_giro")
-            giro_blob = bucket.blob(f"REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_{nome_giro}.pdf")
+            giro_blob = bucket.blob(f"{tenant}/REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_{nome_giro}.pdf")
             if giro_blob.exists():
                 master_writer.append(io.BytesIO(giro_blob.download_as_bytes()))
                 
@@ -4389,7 +4389,7 @@ def core_genera_completo_giornata(data_consegna):
         master_writer.write(master_stream)
         master_stream.seek(0)
         
-        master_blob = bucket.blob(f"REPORTS/{data_consegna}/MASTER_DISTINTE_{data_consegna}.pdf")
+        master_blob = bucket.blob(f"{tenant}/REPORTS/{data_consegna}/MASTER_DISTINTE_{data_consegna}.pdf")
         master_blob.upload_from_file(master_stream, content_type="application/pdf")
         master_distinte_url = _genera_url_storage_token(master_blob)
         print(f"[MASTER] Generato MASTER_DISTINTE_{data_consegna}.pdf con successo.")
@@ -4398,7 +4398,7 @@ def core_genera_completo_giornata(data_consegna):
 
     whatsapp_lines = [f"Giro {l['v_id']} - Mappa: {l['url']}" for l in links]
     whatsapp_txt = "\n".join(whatsapp_lines)
-    bucket.blob(f"REPORTS/{data_consegna}/LINK_WHATSAPP_AUTISTI.txt").upload_from_string(whatsapp_txt.encode('utf-8'), content_type="text/plain; charset=utf-8")
+    bucket.blob(f"{tenant}/REPORTS/{data_consegna}/LINK_WHATSAPP_AUTISTI.txt").upload_from_string(whatsapp_txt.encode('utf-8'), content_type="text/plain; charset=utf-8")
 
     manifest_data = {
         "date": data_consegna,
@@ -4406,7 +4406,7 @@ def core_genera_completo_giornata(data_consegna):
     }
     if master_distinte_url:
         manifest_data["master_distinte_url"] = master_distinte_url
-    bucket.blob(f"REPORTS/{data_consegna}/manifest_link_viaggi.json").upload_from_string(json.dumps(manifest_data, indent=2), content_type='application/json')
+    bucket.blob(f"{tenant}/REPORTS/{data_consegna}/manifest_link_viaggi.json").upload_from_string(json.dumps(manifest_data, indent=2), content_type='application/json')
 
     punti_totali = sum(len(z.get("lista_punti", [])) for z in zone_list if z.get("id_zona") != "DDT_DA_INSERIRE")
     zone_totali = len([z for z in zone_list if z.get("id_zona") != "DDT_DA_INSERIRE"])
@@ -4419,7 +4419,7 @@ def core_genera_completo_giornata(data_consegna):
         "created_at": firestore.SERVER_TIMESTAMP,
         "tipo": "REPORT_GENERALE"
     }
-    db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna).set(report_meta)
+    db.collection('clienti').document(tenant).collection('reports_logistici').document(data_consegna).set(report_meta)
 
     elapsed = time.time() - start_time
     _registra_statistica("genera_completo_giornata", elapsed)
@@ -4508,7 +4508,7 @@ def pulisci_cartelle_elaborazione(req: https_fn.CallableRequest):
         db = get_db()
         
         for t in tipologie:
-            cart_out_base = f"split_ddt/{data_consegna}/{t.upper()}/"
+            cart_out_base = f"{tenant}/split_ddt/{data_consegna}/{t.upper()}/"
             blobs = bucket.list_blobs(prefix=cart_out_base)
             for b in blobs:
                 try:
@@ -4548,6 +4548,7 @@ def chiudi_giornata(req: https_fn.CallableRequest):
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
 def genera_report_giornaliero(req: https_fn.CallableRequest):
     try:
+        tenant = req.data.get('tenant', 'DNR')
         data_consegna = req.data.get("data_consegna") if isinstance(req.data, dict) else None
         return core_genera_report_giornaliero(
             req.auth.uid if req.auth else None,
@@ -4843,8 +4844,8 @@ def gestisci_archiviazione_mensile(req: https_fn.CallableRequest):
     
     try:
         now = datetime.now()
-        reports_ref = db.collection('clienti').document('DNR').collection('reports_logistici')
-        viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
+        reports_ref = db.collection('clienti').document(tenant).collection('reports_logistici')
+        viaggi_ref = db.collection('clienti').document(tenant).collection('viaggi ddt')
         
         reports = list(reports_ref.stream())
         
@@ -4882,9 +4883,9 @@ def gestisci_archiviazione_mensile(req: https_fn.CallableRequest):
                 # 2. Copia cartelle Storage
                 data_f = data_consegna.replace('/', '-')
                 prefixes_to_copy = [
-                    f"split_ddt/{data_consegna}/",
-                    f"REPORTS/{data_consegna}/",
-                    f"CONSEGNE/CONSEGNE_{data_f}/"
+                    f"{tenant}/split_ddt/{data_consegna}/",
+                    f"{tenant}/REPORTS/{data_consegna}/",
+                    f"{tenant}/CONSEGNE/CONSEGNE_{data_f}/"
                 ]
                 
                 file_copiati_verificati = True
@@ -4996,12 +4997,12 @@ def recupera_viaggio_storico(req: https_fn.CallableRequest):
                 rep_data = json.loads(rep_blob.download_as_string().decode('utf-8'))
                 rep_data["is_recupero_rd"] = True
                 rep_data["archiviato_ui"] = False
-                db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna).set(rep_data)
+                db.collection('clienti').document(tenant).collection('reports_logistici').document(data_consegna).set(rep_data)
                 
             # 2. Ripristina tutti i viaggi ddt associati
             viaggi_pref = f"{pref_base}/viaggi_ddt/"
             blobs = bucket.list_blobs(prefix=viaggi_pref)
-            viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
+            viaggi_ref = db.collection('clienti').document(tenant).collection('viaggi ddt')
             
             count = 0
             for b in blobs:
@@ -5040,13 +5041,13 @@ def rilascia_recupero_storico(req: https_fn.CallableRequest):
     
     try:
         # Elimina da reports_logistici se is_recupero_rd == True
-        rep_ref = db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna)
+        rep_ref = db.collection('clienti').document(tenant).collection('reports_logistici').document(data_consegna)
         doc = rep_ref.get()
         if doc.exists and doc.to_dict().get("is_recupero_rd", False):
             rep_ref.delete()
             
         # Elimina da viaggi ddt
-        viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
+        viaggi_ref = db.collection('clienti').document(tenant).collection('viaggi ddt')
         viaggi = viaggi_ref.where("data_lavoro", "==", data_consegna).where("is_recupero_rd", "==", True).stream()
         count = 0
         for v in viaggi:

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anagrafiche - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.47">
+    <link rel="stylesheet" href="styles.css?v=5.48">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- Leaflet per Mappe -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -441,8 +441,8 @@
         </div>
     </div>
 
-    <script src="script.js?v=5.47"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.47"></script>
+    <script src="script.js?v=5.48"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.48"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -905,18 +905,18 @@ const db = getFirestore(app);
                         data.tipologia_grado = formTenant;
                     }
 
-                    collPath = \`clienti/\${formTenant}/raccolta clienti\`;
+                    collPath = `clienti/${formTenant}/raccolta clienti`;
                     docId = docId || data.codice_frutta || data.codice_latte || null;
                 } else if(currentTab === 'articoli') {
-                    collPath = \`clienti/\${formTenant}/codici articoli\`;
+                    collPath = `clienti/${formTenant}/codici articoli`;
                     docId = docId || data.id;
                     delete data.id;
                 } else if (currentTab === 'rientri') {
-                    collPath = \`clienti/\${formTenant}/rientri ddt\`;
+                    collPath = `clienti/${formTenant}/rientri ddt`;
                     // Se è un inserimento manuale da zero, creiamo un ID univoco dal codice
                     if (!docId && data['Codice consegna']) {
-                        const ddtStr = (data['Data e Num DDT'] || '').replace(/\\s+/g, '_');
-                        docId = ddtStr ? \`\${data['Codice consegna']}_\${ddtStr}\` : data['Codice consegna'];
+                        const ddtStr = (data['Data e Num DDT'] || '').replace(/\s+/g, '_');
+                        docId = ddtStr ? `${data['Codice consegna']}_${ddtStr}` : data['Codice consegna'];
                     }
                 }
                 

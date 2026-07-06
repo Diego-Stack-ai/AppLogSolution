@@ -8,7 +8,7 @@ NON devono essere ignorate, aggirate o modificate senza esplicita approvazione d
 
 ## PROCEDURA OBBLIGATORIA: Aggiornamento Versione
 
-Ogni volta che vengono apportate modifiche significative al frontend (nuove funzionalita, bugfix importanti, nuovi pulsanti, modifiche al comportamento), l'agente DEVE aggiornare la versione dell'applicazione seguendo QUESTA e SOLO questa procedura.
+Ogni volta che vengono apportate modifiche, sia al frontend che al backend (nuove funzionalita, bugfix, modifiche strutturali), l'agente DEVE SEMPRE far scattare e aggiornare la versione dell'applicazione seguendo QUESTA e SOLO questa procedura.
 
 ### File da modificare (ENTRAMBI, sempre insieme):
 

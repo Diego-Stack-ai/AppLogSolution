@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.61">
+    <link rel="stylesheet" href="styles.css?v=5.62">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -369,8 +369,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=5.61"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.61"></script>
+    <script src="script.js?v=5.62"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.62"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
@@ -956,6 +956,65 @@
             }
         };
 
+        window.cancellaGiornataTotale = async function(data_consegna) {
+            // HARD DELETE — rimuove Storage + Firestore completamente
+            const result = await Swal.fire({
+                title: '⚠️ ELIMINAZIONE DEFINITIVA',
+                html: `Stai per eliminare <b>DEFINITIVAMENTE</b> tutti i dati del <b>${data_consegna}</b>.<br><br>
+                       Verranno rimossi:<br>
+                       • File PDF e JSON dallo Storage<br>
+                       • Mappe e report<br>
+                       • Record giri e viaggi da Firestore<br><br>
+                       <span style="color:#dc2626;font-weight:700;">⚠️ Questa operazione è IRREVERSIBILE.<br>I dati fatturazione non verranno toccati.</span><br><br>
+                       Digita <b>${data_consegna}</b> per confermare:`,
+                input: 'text',
+                inputPlaceholder: `es. ${data_consegna}`,
+                icon: 'error',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '🗑️ Elimina tutto definitivamente',
+                cancelButtonText: 'Annulla',
+                reverseButtons: true,
+                preConfirm: (inputVal) => {
+                    if (inputVal !== data_consegna) {
+                        Swal.showValidationMessage(`Devi digitare esattamente: ${data_consegna}`);
+                        return false;
+                    }
+                    return true;
+                }
+            });
+            if (!result.isConfirmed) return;
+
+            Swal.fire({
+                title: 'Eliminazione definitiva in corso...',
+                html: `Rimozione completa di tutti i dati del <b>${data_consegna}</b>.<br>Attendere prego.`,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                const eliminaFn = httpsCallable(functions, 'elimina_giornata_logistica');
+                const elimResult = await eliminaFn({ data_consegna: data_consegna, soft_delete: false });
+                if (elimResult.data && elimResult.data.status === 'ok') {
+                    Swal.fire({
+                        title: 'Eliminato!',
+                        text: `Tutti i dati della giornata del ${data_consegna} sono stati rimossi definitivamente.`,
+                        icon: 'success',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire('Errore', elimResult.data ? elimResult.data.message : 'Errore sconosciuto', 'error');
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Errore', error.message, 'error');
+            }
+        };
+
         function listenToReports() {
             // Esegui in background il controllo mensile di archiviazione R&D (3° mese)
             setTimeout(async () => {
@@ -1012,8 +1071,12 @@
                                     <span class="material-icons-round">edit_location</span> GESTIONE VIAGGI
                                 </button>
 
-                                <button onclick="window.cancellaGiornata('${data.data_consegna}')" style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
-                                    <span class="material-icons-round">delete_forever</span> CANCELLA GIORNATA
+                                <button onclick="window.cancellaGiornata('${data.data_consegna}')" style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;" title="Archivia visivamente (dati conservati su Cloud)">
+                                    <span class="material-icons-round">archive</span> CANCELLA GIORNATA
+                                </button>
+
+                                <button onclick="window.cancellaGiornataTotale('${data.data_consegna}')" style="background: #1e293b; color: #f87171; border: 2px solid #ef4444; padding: 8px 16px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;" title="Elimina DEFINITIVAMENTE tutti i dati (Storage + Firestore)">
+                                    <span class="material-icons-round">delete_forever</span> ELIMINA TUTTO
                                 </button>
                             </div>
                         </div>

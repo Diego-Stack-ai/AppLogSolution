@@ -43,16 +43,25 @@ if not firebase_admin._apps:
     initialize_app()
 
 def get_dynamic_project_id():
-    pid = os.environ.get("GCP_PROJECT") or os.environ.get("GOOGLE_CLOUD_PROJECT")
+    pid = os.environ.get("GCP_PROJECT") or os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get("GCLOUD_PROJECT")
     if not pid:
         try:
             pid = firebase_admin.get_app().project_id
         except Exception:
             pass
+    if not pid:
+        try:
+            import google.auth
+            _, pid = google.auth.default()
+        except Exception:
+            pass
     return pid or "log-solution-60007"
 
 PROJECT_ID = get_dynamic_project_id()
-BUCKET_NAME = f"{PROJECT_ID}.firebasestorage.app"
+if PROJECT_ID == "log-solutions-sviluppo":
+    BUCKET_NAME = "log-solutions-sviluppo.appspot.com"
+else:
+    BUCKET_NAME = f"{PROJECT_ID}.firebasestorage.app"
 DATA_DDT_RE = re.compile(r'del\s+(\d{2})/(\d{2})/(\d{4})', re.I)
 LUOGO_RE = re.compile(r'(?:[Ll]uogo [Dd]i [Dd]estinazione|[Cc]odice [Dd]estinazione):\s*([pP]\d{4,5})')
 CAP_RE = re.compile(r"\b(\d{5})\b")

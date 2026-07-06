@@ -59,7 +59,7 @@ def get_dynamic_project_id():
 
 PROJECT_ID = get_dynamic_project_id()
 if PROJECT_ID == "log-solutions-sviluppo":
-    BUCKET_NAME = "log-solutions-sviluppo.appspot.com"
+    BUCKET_NAME = "log-solutions-sviluppo.firebasestorage.app"
 else:
     BUCKET_NAME = f"{PROJECT_ID}.firebasestorage.app"
 DATA_DDT_RE = re.compile(r'del\s+(\d{2})/(\d{2})/(\d{4})', re.I)

@@ -30,7 +30,7 @@ window.addEventListener("load", () => {
 // --- BANNER MEMORIA "VERSIONE SVILUPPO" ---
 document.addEventListener("DOMContentLoaded", () => {
     const hostname = window.location.hostname;
-    if (hostname.includes('--sviluppo') || hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+    if (hostname.includes('log-solutions-sviluppo') || hostname.includes('--sviluppo') || hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
         const devBanner = document.createElement("div");
         devBanner.id = "dev-env-banner";
         devBanner.innerText = "VERSIONE SVILUPPO";

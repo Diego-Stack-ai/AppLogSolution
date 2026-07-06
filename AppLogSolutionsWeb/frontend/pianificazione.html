@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.63">
+    <link rel="stylesheet" href="styles.css?v=5.64">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -330,14 +330,23 @@
         import { firebaseConfig } from './firebase-config.js';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getPianificazioneGiorno, salvaPianificazione, bloccaGiornataPianificazione } from "./services/viaggiService.js";
+        import { getAutistiAttivi, getStoricoPresenze } from "./services/dipendentiService.js";
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
         // Variabili globali per l'intelligenza logistica
-        let dipendenti = [];
-        let affinityData = {}; // { dipendenteId: { clienti: {}, viaggi: {}, targhe: {} } }
-        let saveInProgress = false;
+        window.appState = {
+            dipendenti: [],
+            presenzeStorico: [],
+            affinityData: {}, // { dipendenteId: { clienti: {}, viaggi: {}, targhe: {} } }
+            assegnazioniGiorno: new Map(), // dipendenteId => { cliente, viaggio, targa }
+            usatoViaggi: new Set(),
+            usatoTarghe: new Map(),
+            saveInProgress: false
+        };
+
 
         window.impostaDatiStampaEStampa = function() {
             const today = new Date();
@@ -518,48 +527,15 @@
         // 1. Caricamento Dati e Calcolo Affinità
         async function inizializza() {
             try {
-                // Leggi dipendenti
-                const dipendentiSnap = await getDocs(collection(db, "dipendenti"));
-                dipendenti = [];
-                dipendentiSnap.forEach(d => {
-                    const data = d.data();
-                    const ruolo = (data.ruolo || "").toLowerCase().trim();
-                    const isStaff = ruolo === 'amministratore' || ruolo === 'impiegata';
-                    
-                    const stato = (data.stato || data.Stato || "").toLowerCase();
-                    let isFired = stato.includes('licenziat') || stato.includes('inattiv');
-                    
-                    // Controlla anche campi dinamici come dataLicenziamento o Data Dimissioni
-                    if (!isFired) {
-                        for (const key in data) {
-                            if (key.toLowerCase().includes('licenziam') || key.toLowerCase().includes('dimission')) {
-                                if (data[key]) {
-                                    isFired = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    // Mostriamo tutti i dipendenti attivi che non sono amministratori o impiegati (stesso filtro di presenze)
-                    if (data.attivo !== false && !isStaff && !isFired) {
-                        dipendenti.push({ id: d.id, ...data });
-                    }
-                });
-                dipendenti.sort((a, b) => {
-                    const nomeA = ((a.nome || '') + ' ' + (a.cognome || '')).trim();
-                    const nomeB = ((b.nome || '') + ' ' + (b.cognome || '')).trim();
-                    return nomeA.localeCompare(nomeB);
-                });
+                // Leggi dipendenti (solo autisti attivi) tramite Service Layer
+                // Leggi dipendenti (solo autisti attivi) tramite Service Layer
+                appState.dipendenti = await getAutistiAttivi();
 
                 // Inizializza mappa affinità
-                dipendenti.forEach(d => {
-                    affinityData[d.id] = { clienti: {}, viaggiPerCliente: {}, viaggi: {}, targhe: {}, clientiPerTarga: {} };
+                appState.dipendenti.forEach(d => {
+                    appState.affinityData[d.id] = { clienti: {}, viaggiPerCliente: {}, viaggi: {}, targhe: {}, clientiPerTarga: {} };
                 });
 
-                // Leggi presenze
-                const presenzeSnap = await getDocs(collection(db, "presenze"));
-                
                 // Calcola data limite (il più recente tra 3 mesi fa e il 1 Giugno 2026)
                 const limiteData = new Date();
                 limiteData.setMonth(limiteData.getMonth() - 3);
@@ -568,13 +544,8 @@
                     limiteDataIso = "2026-06-01"; // Filtro hardcoded per escludere sporcizia antecedente
                 }
 
-                window.storicoPresenzeRaw = [];
-                presenzeSnap.forEach(p => {
-                    const pd = p.data();
-                    if (pd.data && pd.data >= limiteDataIso) {
-                        window.storicoPresenzeRaw.push(pd);
-                    }
-                });
+                // Leggi presenze tramite Service Layer
+                appState.presenzeStorico = await getStoricoPresenze(limiteDataIso);
 
                 // Calcola l'affinità in base al giorno selezionato (se presente)
                 ricalcolaAffinità(dataInput.value);
@@ -599,8 +570,8 @@
 
         window.ricalcolaAffinità = function(dataIso) {
             // Svuota i vecchi calcoli
-            dipendenti.forEach(d => {
-                affinityData[d.id] = { clienti: {}, viaggiPerCliente: {}, viaggi: {}, targhe: {}, clientiPerTarga: {} };
+            appState.dipendenti.forEach(d => {
+                appState.affinityData[d.id] = { clienti: {}, viaggiPerCliente: {}, viaggi: {}, targhe: {}, clientiPerTarga: {} };
             });
 
             // Se c'è una data selezionata, calcoliamo il giorno della settimana (0 = domenica, 1 = lunedì, ecc)
@@ -611,7 +582,7 @@
 
             const processStatDoc = (pd) => {
                 const autistaId = pd.autistaId || pd.dipendenteId;
-                if (!autistaId || !affinityData[autistaId]) return;
+                if (!autistaId || !appState.affinityData[autistaId]) return;
 
                 // Se abbiamo un giorno target, consideriamo solo le presenze di quello stesso giorno della settimana
                 if (giornoTarget !== -1 && pd.data) {
@@ -640,37 +611,37 @@
                 }
 
                 if (cliente) {
-                    affinityData[autistaId].clienti[cliente] = (affinityData[autistaId].clienti[cliente] || 0) + 1;
+                    appState.affinityData[autistaId].clienti[cliente] = (appState.affinityData[autistaId].clienti[cliente] || 0) + 1;
                     
                     if (viaggio) {
-                        if (!affinityData[autistaId].viaggiPerCliente[cliente]) {
-                            affinityData[autistaId].viaggiPerCliente[cliente] = {};
+                        if (!appState.affinityData[autistaId].viaggiPerCliente[cliente]) {
+                            appState.affinityData[autistaId].viaggiPerCliente[cliente] = {};
                         }
-                        affinityData[autistaId].viaggiPerCliente[cliente][viaggio] = (affinityData[autistaId].viaggiPerCliente[cliente][viaggio] || 0) + 1;
+                        appState.affinityData[autistaId].viaggiPerCliente[cliente][viaggio] = (appState.affinityData[autistaId].viaggiPerCliente[cliente][viaggio] || 0) + 1;
                     }
                 }
 
                 if (viaggio) {
-                    affinityData[autistaId].viaggi[viaggio] = (affinityData[autistaId].viaggi[viaggio] || 0) + 1;
+                    appState.affinityData[autistaId].viaggi[viaggio] = (appState.affinityData[autistaId].viaggi[viaggio] || 0) + 1;
                 }
 
                 // Estrai targa
                 const targa = (pd.targa || pd.targa_mezzo || pd.mezzo || "").trim().toUpperCase();
                 if (targa && targa.length >= 4) {
-                    affinityData[autistaId].targhe[targa] = (affinityData[autistaId].targhe[targa] || 0) + 1;
+                    appState.affinityData[autistaId].targhe[targa] = (appState.affinityData[autistaId].targhe[targa] || 0) + 1;
                     if (cliente) {
-                        if (!affinityData[autistaId].clientiPerTarga) {
-                            affinityData[autistaId].clientiPerTarga = {};
+                        if (!appState.affinityData[autistaId].clientiPerTarga) {
+                            appState.affinityData[autistaId].clientiPerTarga = {};
                         }
-                        if (!affinityData[autistaId].clientiPerTarga[targa]) {
-                            affinityData[autistaId].clientiPerTarga[targa] = {};
+                        if (!appState.affinityData[autistaId].clientiPerTarga[targa]) {
+                            appState.affinityData[autistaId].clientiPerTarga[targa] = {};
                         }
-                        affinityData[autistaId].clientiPerTarga[targa][cliente] = (affinityData[autistaId].clientiPerTarga[targa][cliente] || 0) + 1;
+                        appState.affinityData[autistaId].clientiPerTarga[targa][cliente] = (appState.affinityData[autistaId].clientiPerTarga[targa][cliente] || 0) + 1;
                     }
                 }
             };
 
-            window.storicoPresenzeRaw.forEach(p => processStatDoc(p));
+            appState.presenzeStorico.forEach(p => processStatDoc(p));
         };
 
         window.getClienteColorClass = (nome) => {
@@ -848,7 +819,7 @@
             if (typeof window.aggiornaDisponibilitaGlobale === 'function') window.aggiornaDisponibilitaGlobale();
         };
 
-        window.aggiornaDestinazioni = function(tr, idAutista) {
+        window.aggiornaDestinazioni = function(tr, idAutista, skipGlobalUpdate = false) {
             const selectCliente = tr.querySelector('.in-cliente');
             const clienteSelezionato = selectCliente.value.trim().toUpperCase();
             const destContainer = tr.querySelector('.dest-container');
@@ -872,8 +843,9 @@
                 viaggiConfigurati = proj ? (proj.viaggi || []) : [];
             }
             viaggiConfigurati.forEach(v => {
+                if(!v) return;
                 const opt = document.createElement('option');
-                const vUpper = v.toUpperCase();
+                const vUpper = String(v).trim().toUpperCase();
                 opt.value = vUpper;
                 opt.textContent = vUpper;
                 selectViaggio.appendChild(opt);
@@ -891,7 +863,7 @@
                 selectTarga.value = '';
                 selectTarga.disabled = true;
                 destContainer.innerHTML = tr.dataset.generalViaggi || '<span class="suggestion-badge badge-disabled">Seleziona prima il cliente</span>';
-                if (typeof window.aggiornaDisponibilitaGlobale === 'function') window.aggiornaDisponibilitaGlobale();
+                if (!skipGlobalUpdate && typeof window.aggiornaDisponibilitaGlobale === 'function') window.aggiornaDisponibilitaGlobale();
                 return;
             }
  
@@ -899,7 +871,7 @@
             selectViaggio.disabled = isConfirmed;
             selectTarga.disabled = isConfirmed;
             const colorClass = window.getClienteColorClass(clienteSelezionato);
-            const viaggiCliente = affinityData[idAutista].viaggiPerCliente[clienteSelezionato] || {};
+            const viaggiCliente = appState.affinityData[idAutista].viaggiPerCliente[clienteSelezionato] || {};
             const topViaggi = Object.entries(viaggiCliente).sort((a,b) => b[1] - a[1]).slice(0, 3);
  
             if (topViaggi.length === 0) {
@@ -913,93 +885,60 @@
         };
 
         window.aggiornaDisponibilitaGlobale = function() {
-            const usedViaggi = new Set();
-            const usedTarghe = new Map();
+            appState.usatoViaggi.clear();
+            appState.usatoTarghe.clear();
 
             const righe = document.querySelectorAll('#planningTable tbody tr');
+            
+            // 1. Fase di Lettura Rapida
             righe.forEach(tr => {
                 if (tr.id === 'no-data-row') return;
                 const autistaId = tr.getAttribute('data-id');
-                const selectCliente = tr.querySelector('.in-cliente');
-                const selectViaggio = tr.querySelector('.in-viaggio');
-                const selectTarga = tr.querySelector('.in-targa');
+                const cliente = tr.querySelector('.in-cliente')?.value.trim().toUpperCase() || "";
+                const viaggio = tr.querySelector('.in-viaggio')?.value.trim().toUpperCase() || "";
+                const targa = tr.querySelector('.in-targa')?.value.trim().toUpperCase() || "";
 
-                const cliente = selectCliente ? selectCliente.value.trim().toUpperCase() : "";
-                const viaggio = selectViaggio ? selectViaggio.value.trim().toUpperCase() : "";
-                const targa = selectTarga ? selectTarga.value.trim().toUpperCase() : "";
-
-                if (cliente && viaggio) usedViaggi.add(cliente + "||" + viaggio);
-                if (targa) usedTarghe.set(targa, autistaId);
+                if (cliente && viaggio) appState.usatoViaggi.add(cliente + "||" + viaggio);
+                if (targa) appState.usatoTarghe.set(targa, autistaId);
             });
 
+            // 2. Fase di Scrittura (Nascondi opzioni occupate senza distruggere il DOM)
             righe.forEach(tr => {
                 if (tr.id === 'no-data-row') return;
                 const autistaId = tr.getAttribute('data-id');
                 
-                const selectCliente = tr.querySelector('.in-cliente');
-                const currentCliente = selectCliente ? selectCliente.value.trim().toUpperCase() : "";
+                const currentCliente = tr.querySelector('.in-cliente')?.value.trim().toUpperCase() || "";
                 const selectViaggio = tr.querySelector('.in-viaggio');
-                const currentViaggio = selectViaggio ? selectViaggio.value.trim().toUpperCase() : "";
+                const selectTarga = tr.querySelector('.in-targa');
                 
                 if (selectViaggio && currentCliente) {
-                    let viaggiConfigurati = [];
-                    if (currentCliente === 'NAVETTA') {
-                        viaggiConfigurati = (window.appData?.lista_navetta_partenze || []).map(p => p.nome);
-                    } else if (currentCliente === 'MAGAZZINO') {
-                        viaggiConfigurati = (window.appData?.lista_magazzini_sedi || []).map(s => s.nome);
-                    } else {
-                        const progetti = window.appData?.lista_progetti || [];
-                        const proj = progetti.find(p => (p.nome || "").toUpperCase() === currentCliente);
-                        viaggiConfigurati = proj ? (proj.viaggi || []) : [];
-                    }
-                    
-                    selectViaggio.innerHTML = '<option value="">-- Seleziona --</option>';
-                    viaggiConfigurati.forEach(v => {
-                        if (!v) return;
-                        const val = String(v).trim().toUpperCase();
-                        const combo = currentCliente + "||" + val;
-                        if (usedViaggi.has(combo) && val !== currentViaggio) {
-                            // Salta l'opzione
+                    Array.from(selectViaggio.options).forEach(opt => {
+                        if(!opt.value) return;
+                        const combo = currentCliente + "||" + opt.value;
+                        if (appState.usatoViaggi.has(combo) && opt.value !== selectViaggio.value) {
+                            opt.style.display = 'none';
+                            opt.disabled = true;
                         } else {
-                            const opt = document.createElement('option');
-                            opt.value = val;
-                            opt.textContent = val;
-                            selectViaggio.appendChild(opt);
+                            opt.style.display = '';
+                            opt.disabled = false;
                         }
                     });
-                    if (currentViaggio) selectViaggio.value = currentViaggio;
                 }
 
-                const selectTarga = tr.querySelector('.in-targa');
-                const currentTarga = selectTarga ? selectTarga.value.trim().toUpperCase() : "";
                 if (selectTarga) {
-                    const mezzi = window.appData?.lista_mezzi || [];
-                    selectTarga.innerHTML = '<option value="">-- Seleziona --</option>';
-                    
-                    // Facciamo una copia dell'array per non mutarlo globalmente
-                    [...mezzi].sort((a,b) => (a.targa||"").localeCompare(b.targa||"")).forEach(m => {
-                        if (!m) return;
-                        const val = (m.targa || "").trim().toUpperCase();
-                        if (!val) return;
-                        
-                        const pat = m.patente ? ` - ${m.patente}` : '';
-                        const modelloPulito = m.modello && m.modello !== 'undefined' && m.modello !== 'null' ? m.modello.trim() : '';
-                        const mod = modelloPulito ? ` (${modelloPulito})` : '';
-                        const baseText = val + pat + mod;
-                        
-                        const owner = usedTarghe.get(val);
+                    Array.from(selectTarga.options).forEach(opt => {
+                        if(!opt.value) return;
+                        const owner = appState.usatoTarghe.get(opt.value);
                         const isUsedByOther = (owner && owner !== autistaId);
                         
                         if (isUsedByOther) {
-                            // Salta l'opzione
+                            opt.style.display = 'none';
+                            opt.disabled = true;
                         } else {
-                            const opt = document.createElement('option');
-                            opt.value = val;
-                            opt.textContent = baseText;
-                            selectTarga.appendChild(opt);
+                            opt.style.display = '';
+                            opt.disabled = false;
                         }
                     });
-                    if (currentTarga) selectTarga.value = currentTarga;
                 }
             });
         };
@@ -1128,14 +1067,14 @@
                         <div class="driver-name">${d.nome} ${d.cognome || ''}</div>
                     </td>
                     <td>
-                        <select class="input-field in-cliente" onchange="window.aggiornaDestinazioni(this.closest('tr'), '${d.id}')">
+                        <select class="input-field in-cliente">
                             <option value="">-- Seleziona --</option>
                             ${opzioniClientiHtml}
                         </select>
                         <div style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">${suggestClienteHtml}</div>
                     </td>
                     <td>
-                        <select class="input-field in-viaggio" disabled onchange="if(typeof window.aggiornaDisponibilitaGlobale === 'function') window.aggiornaDisponibilitaGlobale()">
+                        <select class="input-field in-viaggio" disabled>
                             <option value="">-- Seleziona --</option>
                         </select>
                         <div class="dest-container" style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">
@@ -1143,14 +1082,14 @@
                         </div>
                     </td>
                     <td>
-                        <select class="input-field in-targa" disabled onchange="if(typeof window.aggiornaDisponibilitaGlobale === 'function') window.aggiornaDisponibilitaGlobale()">
+                        <select class="input-field in-targa" disabled>
                             <option value="">-- Seleziona --</option>
                             ${opzioniTargheHtml}
                         </select>
                         <div style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">${suggestTargaHtml}</div>
                     </td>
                     <td class="check-container">
-                        <input type="checkbox" class="in-confermato" title="Spunta per segnare come confermato" onchange="window.toggleLockRow(this.closest('tr'))">
+                        <input type="checkbox" class="in-confermato" title="Spunta per segnare come confermato">
                     </td>
                     <td style="text-align:center;">
                         <button class="icon-btn btn-pulisci" onclick="pulisciRiga('${d.id}')" title="Svuota riga" style="background:none; border:none; color:#94a3b8; cursor:pointer;">
@@ -1231,16 +1170,14 @@
                 tr.querySelector('.in-viaggio').value = '';
                 tr.querySelector('.in-targa').value = '';
                 tr.querySelector('.in-confermato').checked = false;
-                window.aggiornaDestinazioni(tr, tr.getAttribute('data-id'));
+                window.aggiornaDestinazioni(tr, tr.getAttribute('data-id'), true);
                 window.toggleLockRow(tr);
             });
 
             try {
-                const docRef = doc(db, "clienti", "DNR", "pianificazione_viaggi", dataIso);
-                const docSnap = await getDoc(docRef);
+                const data = await getPianificazioneGiorno("DNR", dataIso);
                 
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
+                if (data) {
                     window.currentGiornataBloccata = data.isBloccato || false;
                     applicaStatoBlocco(window.currentGiornataBloccata);
 
@@ -1266,7 +1203,7 @@
 
                                 // Prova a impostarli subito
                                 tr.querySelector('.in-cliente').value = clientVal;
-                                window.aggiornaDestinazioni(tr, ass.dipendenteId);
+                                window.aggiornaDestinazioni(tr, ass.dipendenteId, true);
                                 tr.querySelector('.in-viaggio').value = destVal;
                                 tr.querySelector('.in-targa').value = ass.targa || '';
                                 tr.querySelector('.in-confermato').checked = ass.confermato || false;
@@ -1332,8 +1269,7 @@
             
             const newState = !window.currentGiornataBloccata;
             try {
-                const docRef = doc(db, "clienti", "DNR", "pianificazione_viaggi", dataIso);
-                await setDoc(docRef, { isBloccato: newState }, { merge: true });
+                await bloccaGiornataPianificazione("DNR", dataIso, newState);
                 window.currentGiornataBloccata = newState;
                 applicaStatoBlocco(newState);
                 Swal.fire('Fatto!', newState ? 'Giornata bloccata con successo.' : 'Giornata sbloccata con successo.', 'success');
@@ -1393,12 +1329,7 @@
                     });
                 });
 
-                const docRef = doc(db, "clienti", "DNR", "pianificazione_viaggi", dataIso);
-                await setDoc(docRef, {
-                    dataPianificazione: dataIso,
-                    ultimaModifica: new Date().toISOString(),
-                    assegnazioni: assegnazioni
-                });
+                await salvaPianificazione("DNR", dataIso, assegnazioni);
 
                 Swal.fire({
                     title: 'Salvato!',
@@ -1419,11 +1350,25 @@
 
         // Avvio
         document.addEventListener("DOMContentLoaded", () => {
+            // Event Delegation per evitare eventi inline e migliorare le prestazioni
+            document.getElementById('planningTable').addEventListener('change', (e) => {
+                const tr = e.target.closest('tr');
+                if (!tr || tr.id === 'no-data-row') return;
+                
+                if (e.target.classList.contains('in-cliente')) {
+                    window.aggiornaDestinazioni(tr, tr.dataset.id);
+                } else if (e.target.classList.contains('in-viaggio') || e.target.classList.contains('in-targa')) {
+                    if (typeof window.aggiornaDisponibilitaGlobale === 'function') window.aggiornaDisponibilitaGlobale();
+                } else if (e.target.classList.contains('in-confermato')) {
+                    if (typeof window.toggleLockRow === 'function') window.toggleLockRow(tr);
+                }
+            });
+
             inizializza();
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=5.63"></script>
-    <script src="script.js?v=5.63"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.64"></script>
+    <script src="script.js?v=5.64"></script>
 </body>
 </html>

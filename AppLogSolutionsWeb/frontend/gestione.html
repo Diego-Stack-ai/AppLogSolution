@@ -1,11 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anagrafiche - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.63">
+    <link rel="stylesheet" href="styles.css?v=5.64">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- Leaflet per Mappe -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -444,12 +444,13 @@
         </div>
     </div>
 
-    <script src="script.js?v=5.63"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.63"></script>
+    <script src="script.js?v=5.64"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.64"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
+        import { subscribeToAnagrafica } from "./services/anagraficheService.js";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -496,11 +497,7 @@ const db = getFirestore(app);
                 let gcData = [];
                 let cattelData = [];
                 
-                const qDNR = query(collection(db, 'clienti/DNR/raccolta clienti'));
-                const qGC = query(collection(db, 'clienti/GRAN CHEF/raccolta clienti'));
-                const qCattel = query(collection(db, 'clienti/CATTEL/raccolta clienti'));
-                
-                const unsubDNR = onSnapshot(qDNR, (snapshot) => {
+                const unsubDNR = subscribeToAnagrafica('clienti/DNR/raccolta clienti', (snapshot) => {
                     dnrData = snapshot.docs.map(doc => {
                         const d = doc.data();
                         return { ...d, id: doc.id, tenant: 'DNR' };
@@ -514,7 +511,7 @@ const db = getFirestore(app);
                 });
                 unsubscribes.push(unsubDNR);
                 
-                const unsubGC = onSnapshot(qGC, (snapshot) => {
+                const unsubGC = subscribeToAnagrafica('clienti/GRAN CHEF/raccolta clienti', (snapshot) => {
                     gcData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, tenant: 'GRAN CHEF' }));
                     window.fullData = [...dnrData, ...gcData, ...cattelData];
                     document.getElementById('loading').style.display = 'none';
@@ -525,7 +522,7 @@ const db = getFirestore(app);
                 });
                 unsubscribes.push(unsubGC);
 
-                const unsubCattel = onSnapshot(qCattel, (snapshot) => {
+                const unsubCattel = subscribeToAnagrafica('clienti/CATTEL/raccolta clienti', (snapshot) => {
                     cattelData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, tenant: 'CATTEL' }));
                     window.fullData = [...dnrData, ...gcData, ...cattelData];
                     document.getElementById('loading').style.display = 'none';
@@ -540,8 +537,7 @@ const db = getFirestore(app);
                 if(currentTab === 'articoli') collPath = 'clienti/DNR/codici articoli';
                 if(currentTab === 'rientri') collPath = 'clienti/DNR/rientri ddt';
                 
-                const q = query(collection(db, collPath));
-                const unsub = onSnapshot(q, (snapshot) => {
+                const unsub = subscribeToAnagrafica(collPath, (snapshot) => {
                     document.getElementById('loading').style.display = 'none';
                     window.fullData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
                     filterTable();

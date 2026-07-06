@@ -1,5 +1,5 @@
 // firebase-config.js
-// Gestione Multi-Ambiente: Produzione e Sviluppo (Muletto)
+// Gestione Multi-Ambiente: Produzione e Sviluppo
 
 const firebaseConfigProd = {
   apiKey: "AIzaSyDLnhP2Q4bz2ubYwcMLiD3-qq4c220eVKw",
@@ -27,7 +27,7 @@ const isDevEnvironment = window.location.hostname.includes('--sviluppo') ||
 export const firebaseConfig = isDevEnvironment ? firebaseConfigDev : firebaseConfigProd;
 
 if (isDevEnvironment) {
-    console.log("[Firebase Config] ATTENZIONE: Connesso al MULETTO SVILUPPO (log-solutions-sviluppo)");
+    console.log("[Firebase Config] ATTENZIONE: Connesso all'AMBIENTE DI SVILUPPO (log-solutions-sviluppo)");
 } else {
-    console.log("[Firebase Config] Connesso alla PRODUZIONE (log-solution-60007)");
+    console.log("[Firebase Config] Connesso alla PRODUZIONE PRINCIPALE (log-solution-60007)");
 }

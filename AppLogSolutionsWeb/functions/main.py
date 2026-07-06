@@ -1173,7 +1173,7 @@ def _get_directions_data(percorso_punti, depot=None):
     if not GOOGLE_MAPS_API_KEY or not requests:
         return round(km_stima, 1), sec_stima, []
 
-    CHUNK = 20
+    CHUNK = 10
     try:
         for i in range(0, len(punti_pieni) - 1, CHUNK):
             sub = punti_pieni[i:i + CHUNK + 1]
@@ -3389,7 +3389,7 @@ def _get_directions_and_simulate_cloud(percorso, depot, is_grand_chef, data_cons
         sec_stima = int((km_stima / 35.0) * 3600)
         
         if GOOGLE_MAPS_API_KEY and requests:
-            CHUNK = 20
+            CHUNK = 10
             try:
                 for i in range(0, len(punti_pieni) - 1, CHUNK):
                     sub = punti_pieni[i:i + CHUNK + 1]

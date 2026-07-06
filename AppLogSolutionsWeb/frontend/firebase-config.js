@@ -20,7 +20,8 @@ const firebaseConfigDev = {
 };
 
 // Riconosciamo l'ambiente dall'URL o se stiamo girando in locale
-const isDevEnvironment = window.location.hostname.includes('--sviluppo') || 
+const isDevEnvironment = window.location.hostname.includes('log-solutions-sviluppo') || 
+                         window.location.hostname.includes('--sviluppo') ||
                          window.location.hostname === 'localhost' || 
                          window.location.hostname === '127.0.0.1';
 

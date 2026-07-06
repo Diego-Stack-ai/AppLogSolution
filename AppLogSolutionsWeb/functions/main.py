@@ -4616,8 +4616,32 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
                     print(f"[WARN] Errore cancellazione {b.name}: {ex}")
                     
         # 2. Elimina record da Firestore
+        print(f"[INFO] Eliminazione report logistico principale per {data_consegna}")
         doc_ref = db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna)
         doc_ref.delete()
+        
+        # 3. Elimina i viaggi ddt orfani
+        print(f"[INFO] Eliminazione viaggi ddt per la giornata {data_consegna}")
+        viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
+        viaggi_da_eliminare = viaggi_ref.where("data_lavoro", "==", data_consegna).stream()
+        for v in viaggi_da_eliminare:
+            try:
+                v.reference.delete()
+            except Exception as e:
+                print(f"[ERROR] Impossibile eliminare viaggio {v.id}: {str(e)}")
+                pass
+                
+        # 4. Elimina eventuali processing_jobs rimasti
+        print(f"[INFO] Eliminazione processing_jobs per la giornata {data_consegna}")
+        for t in ["GRAND_CHEF", "CATTEL", "DNR"]:
+            tenant = "GRAN CHEF" if t == "GRAND_CHEF" else t
+            jobs_ref = db.collection('clienti').document(tenant).collection('processing_jobs')
+            old_jobs = jobs_ref.where('data_lavoro', '==', data_consegna).stream()
+            for oj in old_jobs:
+                try:
+                    oj.reference.delete()
+                except Exception:
+                    pass
         
         print(f"[INFO] Eliminazione completata con successo per {data_consegna}")
         return {"status": "ok", "message": "Giornata eliminata con successo"}

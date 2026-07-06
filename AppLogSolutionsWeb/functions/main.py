@@ -37,7 +37,9 @@ if not GOOGLE_MAPS_API_KEY:
     logger.error("CRITICAL: GOOGLE_MAPS_API_KEY non trovata nell'ambiente! Le API Mappe/Matrix falliranno in Cloud.")
 
 # --- CONFIGURAZIONI ---
-BUCKET_NAME = "log-solution-60007.firebasestorage.app"
+# Riconoscimento automatico dell'ambiente per il Bucket
+PROJECT_ID = os.environ.get("GCP_PROJECT", os.environ.get("GOOGLE_CLOUD_PROJECT", "log-solution-60007"))
+BUCKET_NAME = f"{PROJECT_ID}.firebasestorage.app"
 DATA_DDT_RE = re.compile(r'del\s+(\d{2})/(\d{2})/(\d{4})', re.I)
 LUOGO_RE = re.compile(r'(?:[Ll]uogo [Dd]i [Dd]estinazione|[Cc]odice [Dd]estinazione):\s*([pP]\d{4,5})')
 CAP_RE = re.compile(r"\b(\d{5})\b")

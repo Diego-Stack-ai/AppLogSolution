@@ -1,0 +1,93 @@
+{
+  "version": "2.0",
+  "rules": {
+    "strict_mode": true,
+    "forbidden": [
+      "inline_styles",
+      "new_css_classes_without_approval",
+      "component_duplication",
+      "arbitrary_spacing"
+    ],
+    "on_violation": "Stop execution, do not generate UI, propose compliant alternative."
+  },
+  "tokens": {
+    "typography": {
+      "font_family": "Outfit, sans-serif",
+      "hierarchy": {
+        "page_title": { "weight": 700, "size_desktop": "24px", "size_mobile": "18px" },
+        "section_title": { "weight": 600, "size_desktop": "18px", "size_mobile": "16px" },
+        "subtitle": { "weight": 700, "size_desktop": "13px", "size_mobile": "11px", "transform": "uppercase" },
+        "body": { "weight": 400, "size_desktop": "16px", "size_mobile": "14px" },
+        "input": { "weight": 400, "size_desktop": "15px", "size_mobile": "16px" },
+        "secondary": { "weight": 400, "size_desktop": "14px", "size_mobile": "10.5px" },
+        "caption": { "weight": 400, "size_desktop": "12px", "size_mobile": "10px" }
+      }
+    },
+    "colors": {
+      "primary": "#4f46e5",
+      "primary_hover": "#4338ca",
+      "success": "#10b981",
+      "danger": "#ef4444",
+      "warning": "#f59e0b",
+      "info": "#0ea5e9",
+      "background": "#f8fafc",
+      "surface": "rgba(255, 255, 255, 0.85)",
+      "text_main": "#0f172a",
+      "text_muted": "#64748b"
+    },
+    "spacing": {
+      "xs": "4px",
+      "s": "8px",
+      "m": "16px",
+      "l": "24px",
+      "xl": "32px",
+      "xxl": "48px"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": ".btn-primary",
+      "action": ".btn-elabora, .glass-btn",
+      "secondary_table": ".btn-edit, .btn-delete, .btn-dettagli",
+      "icon_only": ".icon-btn",
+      "rules": "Max 1 primary button per section. Icon buttons must have aria-label or title."
+    },
+    "panels": {
+      "main_container": ".main-container",
+      "glass": ".glass-panel",
+      "card": ".form-card",
+      "summary": ".summary-card",
+      "rules": "Do not nest .glass-panel multiple times."
+    },
+    "forms": {
+      "grid": ".form-grid",
+      "group": ".input-group",
+      "rules": "Inputs must be wrapped in .input-group. Always maintain visible focus ring (box-shadow)."
+    },
+    "badges": {
+      "suggestion": ".suggestion-badge",
+      "disabled": ".badge-disabled",
+      "cattel": ".badge-cattel",
+      "granchef": ".badge-granchef",
+      "dnr": ".badge-dnr"
+    },
+    "navigation": {
+      "navbar": ".glass-nav",
+      "logout": ".logout-btn"
+    }
+  },
+  "accessibility": {
+    "minimum_contrast": true,
+    "mobile_touch_target": "44x44px min for mobile buttons",
+    "focus_ring": "required on all interactive elements"
+  },
+  "page_pattern": [
+    "Navbar (.glass-nav)",
+    "Page Title (h2)",
+    "Filters/Actions (.filters-container)",
+    "Summary (optional, .summary-grid)",
+    "Main Content/Table (.glass-panel)",
+    "Pagination",
+    "Modals (.modal-overlay)"
+  ]
+}

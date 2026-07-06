@@ -4,11 +4,11 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "5.64";
+const APP_VERSION = "5.65";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
-console.log("%c[App] Log Solution PWA Ã¢â‚¬â€ versione " + APP_VERSION, "color: #4f46e5; font-weight: bold; font-size: 12px;");
+console.log("%c[App] Log Solution PWA — versione " + APP_VERSION, "color: #4f46e5; font-weight: bold; font-size: 12px;");
 
 // --- SENTRY ERROR MONITORING ---
 window.addEventListener("load", () => {
@@ -114,7 +114,7 @@ function updateStepUI() {
     for (let i = 1; i <= totalSteps; i++) {
         const dot = document.getElementById(`dot-${i}`);
         if (!dot) continue;
-        if (i < currentStep) { dot.classList.add('completed'); dot.innerHTML = 'Ã¢Å“â€'; }
+        if (i < currentStep) { dot.classList.add('completed'); dot.innerHTML = '✓'; }
         else if (i === currentStep) { dot.classList.add('active'); dot.classList.remove('completed'); dot.innerHTML = i; }
         else { dot.classList.remove('active', 'completed'); dot.innerHTML = i; }
     }
@@ -243,7 +243,7 @@ window.renderClientiInserimento = function() {
     const progetti = window.appData.lista_progetti || [];
     let nomi = progetti.map(p => p.nome).filter(Boolean);
 
-    // 2. Fallback hardcoded se Firestore Ã¨ vuoto
+    // 2. Fallback hardcoded se Firestore è vuoto
     if (nomi.length === 0) {
         nomi = ["PROGETTO SCUOLE", "CATTEL", "GRAN CHEF", "BAUER"];
     }
@@ -592,7 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.serviceWorker.register('./sw.js').then(reg => {
             console.log('[SW] Registrato correttamente sw.js con versione ' + APP_VERSION);
 
-            // Se c'Ã¨ giÃ  un SW in attesa (tab rimasto aperto durante aggiornamento)
+            // Se c'è già  un SW in attesa (tab rimasto aperto durante aggiornamento)
             // - invia subito SKIP_WAITING per forzare l'attivazione
             if (reg.waiting) {
                 console.log('[SW] SW in attesa trovato â€” invio SKIP_WAITING.');
@@ -626,7 +626,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function showUpdateToast(reg) {
-    // Evita duplicati se il toast Ã¨ giÃ  presente
+    // Evita duplicati se il toast è già  presente
     if (document.getElementById('sw-update-toast')) return;
 
     const toast = document.createElement('div');
@@ -670,7 +670,7 @@ window.onUserProfileLoaded = (user) => {
             // Se autista
             const isInserimentoPage = window.location.pathname.includes('inserimento.html');
             if (isInserimentoPage) {
-                // Non serve il tasto Home se siamo giÃ  in inserimento.html
+                // Non serve il tasto Home se siamo già  in inserimento.html
                 dashBtn.style.display = 'none';
             } else {
                 dashBtn.style.display = 'flex';
@@ -688,11 +688,11 @@ window.onUserProfileLoaded = (user) => {
         presenzeBtn.style.display = (role === 'autista') ? 'flex' : 'none';
     }
 
-    // Inizializza i menu a tendina dinamici se i dati sono giÃ  pronti
+    // Inizializza i menu a tendina dinamici se i dati sono già  pronti
     if (typeof window.renderMezziInserimento === 'function') window.renderMezziInserimento();
     if (typeof window.renderClientiInserimento === 'function') window.renderClientiInserimento();
 
-    // Se siamo in inserimento e c'Ã¨ una bozza, mostriamo il modale
+    // Se siamo in inserimento e c'è una bozza, mostriamo il modale
     if (document.getElementById('presenzeForm') && sessionStorage.getItem('currentDraft')) {
         document.getElementById('recoveryTripModal')?.classList.add('active');
     }

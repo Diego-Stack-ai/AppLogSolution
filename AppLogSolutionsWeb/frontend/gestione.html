@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anagrafiche - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.64">
+    <link rel="stylesheet" href="styles.css?v=5.65">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- Leaflet per Mappe -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -393,7 +393,7 @@
 
 
             <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="Cerca cliente, codice o cittÃ ..." onkeyup="filterTable()">
+                <input type="text" id="searchInput" placeholder="Cerca cliente, codice o città ..." onkeyup="filterTable()">
                 <select id="brandFilter" onchange="filterTable()" style="flex: 0 1 160px; height: 45px; padding: 0 16px; border: 1px solid #e2e8f0; border-radius: 12px; font-family: inherit; font-size: 14px; background: white; outline: none; cursor: pointer; box-sizing: border-box;">
                     <option value="">Tutti i Fornitori</option>
                     <option value="DNR">DNR</option>
@@ -444,8 +444,8 @@
         </div>
     </div>
 
-    <script src="script.js?v=5.64"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.64"></script>
+    <script src="script.js?v=5.65"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.65"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -470,7 +470,7 @@ const db = getFirestore(app);
                 btn.classList.toggle('active', btn.innerText.toLowerCase().includes(tab));
             });
             
-            // Gestione visibilitÃ  pulsante Mappa e filtro brand
+            // Gestione visibilità  pulsante Mappa e filtro brand
             const btnMap = document.getElementById('btnShowMap');
             if(btnMap) {
                 btnMap.style.display = (tab === 'clienti') ? 'flex' : 'none';
@@ -574,7 +574,7 @@ const db = getFirestore(app);
                                     <span class="data-value">${d.indirizzo || ''}</span>
                                 </div>
                                 <div class="data-item" style="flex:1">
-                                    <span class="data-label">CittÃ  / Prov</span>
+                                    <span class="data-label">Città  / Prov</span>
                                     <span class="data-value">${d.citta || ''} (${d.provincia || d.prov || '-'})</span>
                                 </div>
                             </div>
@@ -732,7 +732,7 @@ const db = getFirestore(app);
 
                     <!-- 3. GEOGRAFIA -->
                     <div class="input-group" style="grid-column: span 2">
-                        <label>CittÃ </label>
+                        <label>Città </label>
                         <input type="text" name="citta">
                     </div>
                     <div class="input-group" style="grid-column: span 2">
@@ -802,15 +802,15 @@ const db = getFirestore(app);
                         <input type="text" name="confezionamento" placeholder="es: Busta 5kg">
                     </div>
                     <div class="input-group" style="grid-column: span 3">
-                        <label>UnitÃ  Principale</label>
+                        <label>Unità  Principale</label>
                         <input type="text" name="unita_principale" placeholder="es: KG">
                     </div>
                     <div class="input-group" style="grid-column: span 2">
-                        <label>Per (QuantitÃ )</label>
+                        <label>Per (Quantità )</label>
                         <input type="number" name="per" step="0.01" value="1">
                     </div>
                     <div class="input-group" style="grid-column: span 2">
-                        <label>UnitÃ  Secondaria</label>
+                        <label>Unità  Secondaria</label>
                         <input type="text" name="unita_secondaria" placeholder="es: PZ">
                     </div>
                     <div class="input-group" style="grid-column: span 2">
@@ -891,7 +891,7 @@ const db = getFirestore(app);
                     delete data.id;
                 } else if (currentTab === 'rientri') {
                     collPath = 'clienti/DNR/rientri ddt';
-                    // Se Ã¨ un inserimento manuale da zero, creiamo un ID univoco dal codice
+                    // Se è un inserimento manuale da zero, creiamo un ID univoco dal codice
                     if (!docId && data['Codice consegna']) {
                         const ddtStr = (data['Data e Num DDT'] || '').replace(/\s+/g, '_');
                         docId = ddtStr ? `${data['Codice consegna']}_${ddtStr}` : data['Codice consegna'];

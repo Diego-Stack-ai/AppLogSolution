@@ -499,6 +499,148 @@ select option {
     padding-top: 20px;
 }
 
+/* ==========================================
+   DASHBOARD COMPONENTS (WOW EFFECT)
+   ========================================== */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-top: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dashboard-grid.ready {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Card Themes */
+.theme-primary {
+    --card-accent: var(--primary);
+    --card-bg-hover: #eef2ff;
+    --card-icon-bg: var(--primary-glow);
+}
+.theme-blue {
+    --card-accent: #0284c7;
+    --card-bg-hover: #f0f9ff;
+    --card-icon-bg: #e0f2fe;
+}
+.theme-red {
+    --card-accent: #ef4444;
+    --card-bg-hover: #fef2f2;
+    --card-icon-bg: #fee2e2;
+}
+.theme-purple {
+    --card-accent: #8b5cf6;
+    --card-bg-hover: #f5f3ff;
+    --card-icon-bg: #ede9fe;
+}
+.theme-green {
+    --card-accent: #10b981;
+    --card-bg-hover: #ecfdf5;
+    --card-icon-bg: #d1fae5;
+}
+.theme-amber {
+    --card-accent: #f59e0b;
+    --card-bg-hover: #fffbeb;
+    --card-icon-bg: #fef3c7;
+}
+
+.nav-card {
+    background: var(--surface);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    padding: 32px 24px;
+    border-radius: 24px;
+    text-align: center;
+    text-decoration: none;
+    color: var(--text-main);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    overflow: hidden;
+    /* Default theme variables if not specified */
+    --card-accent: var(--text-muted);
+    --card-bg-hover: #f8fafc;
+    --card-icon-bg: #f1f5f9;
+}
+
+.nav-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+    border-radius: 24px;
+}
+
+.nav-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    border-color: var(--card-accent);
+    background: var(--card-bg-hover);
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.05), 0 0 20px -5px var(--card-icon-bg);
+}
+
+.nav-card .icon-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+    background: var(--card-icon-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--card-accent);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-card:hover .icon-circle {
+    background: var(--card-accent);
+    color: white;
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 10px 20px -5px var(--card-accent);
+}
+
+.nav-card h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.nav-card p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.welcome-section {
+    margin-bottom: 40px;
+}
+
+.welcome-section h1 {
+    font-size: 32px;
+    margin-bottom: 8px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.text-gradient-primary {
+    background: linear-gradient(135deg, var(--primary), #a855f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
 /* Version Update Toast */
 .sw-update-toast {
   position: fixed;
@@ -543,6 +685,25 @@ select option {
   .main-container {
     padding: 10px 16px 120px 16px !important;
     margin-top: 10px !important;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .nav-card {
+    padding: 24px 16px !important;
+    gap: 12px !important;
+  }
+
+  .nav-card .icon-circle {
+    width: 48px !important;
+    height: 48px !important;
+  }
+  
+  .nav-card .icon-circle span {
+    font-size: 24px !important;
   }
 
   .glass-panel {

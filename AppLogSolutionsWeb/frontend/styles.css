@@ -500,6 +500,174 @@ select option {
 }
 
 /* ==========================================
+   GLOBAL TABLES (.glass-table)
+   ========================================== */
+.table-wrapper {
+    background: var(--surface);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    border: 1px solid var(--border);
+    overflow-x: auto;
+    margin-bottom: 24px;
+}
+
+.glass-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.glass-table th, .glass-table td {
+    padding: 12px 16px;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border);
+}
+
+.glass-table th {
+    background-color: rgba(248, 250, 252, 0.5);
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+.glass-table tr {
+    transition: background-color 0.2s ease;
+}
+
+.glass-table tr:hover {
+    background-color: rgba(241, 245, 249, 0.4);
+}
+
+/* Dense Inputs for Tables */
+.glass-table input:not([type="checkbox"]),
+.glass-table select {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    height: 36px;
+}
+
+/* Checkboxes in Tables */
+.check-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.check-container input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--primary);
+}
+
+/* ==========================================
+   BADGES & UTILITIES
+   ========================================== */
+.suggestion-badge, .status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.badge-cattel { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; }
+.badge-bauer { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+.badge-granchef { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+.badge-dnr { background: #ffedd5; color: #ea580c; border: 1px solid #fed7aa; }
+.badge-default { background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; }
+.badge-disabled { 
+    background: #f1f5f9; 
+    color: #94a3b8; 
+    cursor: not-allowed; 
+    border: 1px solid #cbd5e1; 
+    opacity: 0.7; 
+}
+
+/* Filters Container */
+.filters-container {
+    background: var(--surface);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 20px 24px;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.filters-container .input-group {
+    margin-bottom: 0;
+    flex: 1;
+    min-width: 200px;
+}
+
+/* Drag & Drop */
+.drag-handle { cursor: grab; color: #cbd5e1; transition: color 0.2s; }
+.drag-handle:hover { color: #64748b; }
+.drag-handle:active { cursor: grabbing; color: var(--primary); }
+.sortable-ghost { opacity: 0.4; background-color: #f1f5f9; }
+
+/* ==========================================
+   PRINT STYLES
+   ========================================== */
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 5mm;
+    }
+    body {
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .main-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: none !important;
+        box-shadow: none !important;
+    }
+    .glass-nav, .filters-container, .btn-primary, .logout-btn, .dashboard-grid {
+        display: none !important;
+    }
+    .glass-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+    .glass-table th, .glass-table td {
+        border: 1px solid #ccc !important;
+        padding: 4px !important;
+        font-size: 11px !important;
+        color: black !important;
+    }
+    input, select {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        color: black !important;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+    }
+}
+
+/* ==========================================
    DASHBOARD COMPONENTS (WOW EFFECT)
    ========================================== */
 .dashboard-grid {

@@ -4,237 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.67">
+    <link rel="stylesheet" href="styles.css?v=5.68">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        .planning-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
-        }
-
-        .planning-table th, .planning-table td {
-            padding: 12px 16px;
-            text-align: left;
-            vertical-align: middle;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .planning-table th {
-            background-color: #f8fafc;
-            font-weight: 600;
-            color: #475569;
-            text-transform: uppercase;
-            font-size: 13px;
-        }
-
-        .planning-table tr {
-            transition: background-color 0.2s, opacity 0.2s;
-        }
-
-        .planning-table tr:hover {
-            background-color: #f8fafc;
-        }
-
-        .input-field {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 14px;
-            font-family: inherit;
-            transition: all 0.2s;
-        }
-
-        .input-field:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-
-        select.input-field {
-            background-color: #fff;
-            cursor: pointer;
-            height: 38px;
-        }
-
-        select.input-field:disabled {
-            background-color: #f1f5f9;
-            color: #1e293b; /* Testo nero normale come richiesto */
-            font-weight: 500;
-            opacity: 1; /* Previene l'opacità di default su iOS/Safari */
-            -webkit-text-fill-color: #1e293b;
-            cursor: not-allowed;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-        }
-
-        .check-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .check-container input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            accent-color: var(--primary);
-        }
-
-        .date-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-
-        .driver-name {
-            font-weight: 600;
-            color: #1e293b;
-            font-size: 15px;
-        }
-
-        .btn-salva {
-            background-color: var(--primary);
-            color: white;
-            padding: 10px 24px;
-            border-radius: 8px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
-        }
-
-        .btn-salva:hover {
-            background-color: #4338ca;
-            transform: translateY(-1px);
-        }
-        
-        .suggestion-badge {
-            display: inline-block;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 600;
-            transition: all 0.2s;
-            user-select: none;
-        }
-
-        /* Classi colore Clienti */
-        .badge-cattel { background: #e0f2fe !important; color: #0284c7 !important; border: 1px solid #bae6fd; }
-        .badge-bauer { background: #fee2e2 !important; color: #dc2626 !important; border: 1px solid #fecaca; }
-        .badge-granchef { background: #dcfce7 !important; color: #16a34a !important; border: 1px solid #bbf7d0; }
-        .badge-dnr { background: #ffedd5 !important; color: #ea580c !important; border: 1px solid #fed7aa; }
-        .badge-default { background: #f3f4f6 !important; color: #4b5563 !important; border: 1px solid #e5e7eb; }
-        .badge-disabled { background: #f1f5f9 !important; color: #94a3b8 !important; cursor: not-allowed !important; border: 1px solid #cbd5e1; opacity: 0.6; }
-        .badge-disabled:hover { background: #f1f5f9 !important; }
-        .drag-handle { cursor: grab; color: #cbd5e1; transition: color 0.2s; }
-        .drag-handle:hover { color: #64748b; }
-        .drag-handle:active { cursor: grabbing; color: #3b82f6; }
-        .sortable-ghost { opacity: 0.4; background-color: #f1f5f9; }
-
-        @media print {
-            @page {
-                size: A4 portrait;
-                margin: 5mm;
-            }
-            body {
-                background: white !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                box-sizing: border-box !important;
-            }
-            .main-container {
-                padding: 0 !important;
-                margin: 0 !important;
-                max-width: none !important;
-                width: auto !important;
-                box-shadow: none !important;
-                box-sizing: border-box !important;
-            }
-            .glass-nav, .app-version-badge, .date-header, .btn-salva, .btn-stampa, .suggest-btn, .in-confermato, .btn-pulisci, .suggestion-badge {
-                display: none !important;
-            }
-            .print-header {
-                display: flex !important;
-                justify-content: space-between;
-                align-items: center;
-                border-bottom: 2px solid #ccc;
-                padding-bottom: 5px;
-                margin-bottom: 10px;
-                font-size: 14px;
-                font-weight: bold;
-                color: black;
-            }
-            input.in-cliente, input.in-viaggio, select.in-targa {
-                border: none !important;
-                background: transparent !important;
-                box-shadow: none !important;
-                font-weight: 600 !important;
-                color: black !important;
-                padding: 0 !important;
-                appearance: none !important;
-                -webkit-appearance: none !important;
-            }
-            table {
-                width: 100% !important;
-                border-collapse: collapse !important;
-                table-layout: fixed !important;
-                box-sizing: border-box !important;
-            }
-            th, td {
-                border: 1px solid #ccc !important;
-                padding: 4px !important;
-                font-size: 11px !important;
-                word-wrap: break-word !important;
-                box-sizing: border-box !important;
-            }
-            .drag-handle { display: none !important; }
-            /* Colonne da nascondere in stampa: drag(1), conf(6), azioni(7) */
-            th:nth-child(1), td:nth-child(1),
-            th:nth-child(6), td:nth-child(6),
-            th:nth-child(7), td:nth-child(7) {
-                display: none !important;
-            }
-            th:nth-child(2), td:nth-child(2) { width: 22% !important; position: static !important; }
-            th:nth-child(3), td:nth-child(3) { width: 23% !important; }
-            th:nth-child(4), td:nth-child(4) { width: 33% !important; }
-            th:nth-child(5), td:nth-child(5) { width: 22% !important; }
-        }
-
         /* Colonna Nome Autista fissa (sticky) */
-        .planning-table th:nth-child(2),
-        .planning-table td:nth-child(2) {
+        .glass-table th:nth-child(2),
+        .glass-table td:nth-child(2) {
             position: sticky;
             left: 0;
-            background-color: white;
+            background-color: var(--surface);
             z-index: 2;
         }
-        .planning-table th:nth-child(2) {
-            background-color: #f8fafc;
+        .glass-table th:nth-child(2) {
+            background-color: rgba(248, 250, 252, 0.95);
             z-index: 3;
         }
-        /* Sul tr hover, dobbiamo applicare il colore alla td sticky per mantenere coerenza visiva */
-        .planning-table tr:hover td:nth-child(2) {
-            background-color: #f8fafc;
+        .glass-table tr:hover td:nth-child(2) {
+            background-color: rgba(241, 245, 249, 0.95);
         }
     </style>
 </head>
@@ -263,29 +52,29 @@
             </h2>
         </div>
 
-        <div class="date-header">
-            <div style="display: flex; align-items: center; gap: 16px;">
-                <label for="dataPianificazione" style="font-weight: 600; color: #475569;">Data Pianificazione:</label>
-                <input type="date" id="dataPianificazione" class="input-field" style="width: auto; font-weight: bold;">
+        <div class="filters-container">
+            <div class="input-group" style="flex: 0 1 auto; margin: 0;">
+                <label for="dataPianificazione" style="font-weight: 600; color: var(--text-muted);">Data Pianificazione:</label>
+                <input type="date" id="dataPianificazione" style="width: auto; font-weight: bold; background: var(--input-bg);">
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button id="btnBloccaGiornata" class="btn-salva" style="background-color: #ef4444; display: none;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button id="btnBloccaGiornata" class="btn-primary" style="background-color: #ef4444; width: auto; padding: 10px 16px; display: none;">
                     <span class="material-icons-round">lock</span>
                     Blocca Giornata
                 </button>
-                <button id="btnStampa" class="btn-salva btn-stampa" style="background-color: #64748b;" onclick="window.impostaDatiStampaEStampa()">
+                <button id="btnStampa" class="btn-primary" style="background-color: var(--surface); color: var(--text-main); border: 1px solid var(--border); box-shadow: none; width: auto; padding: 10px 16px;" onclick="window.impostaDatiStampaEStampa()">
                     <span class="material-icons-round">print</span>
                     Stampa
                 </button>
-                <button id="btnScaricaPdf" class="btn-salva btn-stampa" style="background-color: #f59e0b;" onclick="window.scaricaPDF()">
+                <button id="btnScaricaPdf" class="btn-primary" style="background-color: #f59e0b; width: auto; padding: 10px 16px;" onclick="window.scaricaPDF()">
                     <span class="material-icons-round">picture_as_pdf</span>
                     Scarica PDF
                 </button>
-                <button id="btnOrdina" class="btn-salva" style="background-color: #3b82f6;" onclick="window.ordinaPerCliente()">
+                <button id="btnOrdina" class="btn-primary" style="background-color: #3b82f6; width: auto; padding: 10px 16px;" onclick="window.ordinaPerCliente()">
                     <span class="material-icons-round">sort_by_alpha</span>
                     Ordina
                 </button>
-                <button id="btnSalva" class="btn-salva">
+                <button id="btnSalva" class="btn-primary" style="width: auto; padding: 10px 24px;">
                     <span class="material-icons-round">save</span>
                     Salva Pianificazione
                 </button>
@@ -302,8 +91,8 @@
             <p style="margin-top: 16px; font-weight: 500;">Inizializzazione Intelligenza Logistica in corso...<br><small>Analisi dello storico presenze e calcolo affinità...</small></p>
         </div>
 
-        <div style="overflow-x: auto; display: none;" id="tableContainer">
-            <table class="planning-table" id="planningTable">
+        <div class="table-wrapper" id="tableContainer" style="display: none;">
+            <table class="glass-table" id="planningTable">
                 <thead>
                     <tr>
                         <th style="width: 3%; text-align: center;"></th>
@@ -1368,7 +1157,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=5.67"></script>
-    <script src="script.js?v=5.67"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.68"></script>
+    <script src="script.js?v=5.68"></script>
 </body>
 </html>

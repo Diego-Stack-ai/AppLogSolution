@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.67">
+    <link rel="stylesheet" href="styles.css?v=5.69">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -12,92 +12,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <meta name="theme-color" content="#4f46e5">
     <style>
-        .fatturazione-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-
-        .controls-card {
-            background: var(--surface);
-            padding: 24px;
-            border-radius: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            margin-bottom: 24px;
-            display: flex;
-            gap: 16px;
-            align-items: flex-end;
-            border: 1px solid var(--border);
-            flex-wrap: wrap;
-        }
-
-        .controls-card .btn-primary {
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 20px;
-            white-space: nowrap;
-            margin: 0;
-            width: auto;
-            flex-shrink: 0;
-        }
-
-        .input-group { margin: 0; flex: 1; min-width: 200px; }
-        
-        .action-group {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-        
-        .export-actions {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            margin-left: auto;
-        }
-
-        /* Pivot Table Styles */
-        .pivot-wrapper {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            border: 1px solid var(--border);
-            overflow-x: auto;
-            margin-bottom: 24px;
-        }
-
-        .pivot-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-            white-space: nowrap;
-        }
-
-        .excel-note {
-            position: relative;
-            cursor: help;
-        }
-        .excel-note::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            border-width: 0 8px 8px 0;
-            border-style: solid;
-            border-color: transparent #dc2626 transparent transparent;
-        }
         .custom-tooltip {
             display: none;
             position: absolute;
             z-index: 1000;
-        }
-        /* Garantisce che i popup di SweetAlert stiano sempre sopra tutto (inclusi i tooltip) */
-        .swal2-container {
-            z-index: 999999 !important;
-        }
-        .custom-tooltip {
             bottom: calc(100% + 5px);
             left: 50%;
             transform: translateX(-50%);
@@ -124,6 +42,19 @@
             border-style: solid;
             border-color: #1e293b transparent transparent transparent;
         }
+        .excel-note {
+            position: relative;
+            cursor: help;
+        }
+        .excel-note::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            border-width: 0 8px 8px 0;
+            border-style: solid;
+            border-color: transparent #dc2626 transparent transparent;
+        }
         .excel-note:hover .custom-tooltip {
             display: block;
         }
@@ -137,96 +68,9 @@
             bottom: 100%;
             border-color: transparent transparent #1e293b transparent;
         }
-
-        .pivot-table th, .pivot-table td {
-            padding: 8px 12px;
-            border: 1px solid #e5e7eb;
-            text-align: right;
-        }
-
-        .pivot-table th:first-child, .pivot-table td:first-child {
-            position: sticky;
-            left: 0;
-            background: white;
-            z-index: 2;
-            text-align: left;
-            font-weight: 600;
-            border-right: 2px solid #d1d5db;
-        }
-        
-        .pivot-table th:last-child, .pivot-table td:last-child {
-            font-weight: bold;
-            background: #f9fafb;
-            border-left: 2px solid #d1d5db;
-        }
-
-        .pivot-table thead th {
-            background: #f3f4f6;
-            color: #374151;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        .pivot-table thead th:first-child {
-            background: #f3f4f6;
-        }
-
-        .pivot-table tfoot th, .pivot-table tfoot td {
-            background: #e5e7eb;
-            font-weight: bold;
-            color: #111827;
-        }
-        
-        .pivot-table tfoot th:first-child {
-            background: #e5e7eb;
-        }
-
-        /* Summary styles for TUTTI */
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 24px;
-            margin-bottom: 32px;
-        }
-
-        .summary-card {
-            background: linear-gradient(135deg, #fffbeb, #fef3c7);
-            padding: 24px;
-            border-radius: 16px;
-            text-align: center;
-            border: 1px solid #fde68a;
-            box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.1);
-        }
-
-        .summary-card.cattel {
-            background: linear-gradient(135deg, #e0f2fe, #bae6fd);
-            border-color: #7dd3fc;
-            box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.1);
-        }
-
-        .summary-card.bauer {
-            background: linear-gradient(135deg, #fce7f3, #fbcfe8);
-            border-color: #f9a8d4;
-            box-shadow: 0 4px 6px -1px rgba(219, 39, 119, 0.1);
-        }
-
-        .summary-card h3 {
-            margin: 0;
-            color: var(--text-main);
-            font-size: 18px;
-        }
-
-        .summary-card .big-number {
-            font-size: 36px;
-            font-weight: 800;
-            color: var(--text-main);
-            margin: 12px 0;
-        }
-
-        .summary-card .money {
-            font-size: 20px;
-            color: var(--primary);
-            font-weight: 600;
+        /* Garantisce che i popup di SweetAlert stiano sempre sopra tutto (inclusi i tooltip) */
+        .swal2-container {
+            z-index: 999999 !important;
         }
     </style>
 </head>
@@ -244,8 +88,8 @@
         </div>
     </nav>
 
-    <main class="fatturazione-container">
-        <div class="controls-card">
+    <main class="main-container fatturazione-container">
+        <div class="filters-container">
             <div class="input-group">
                 <label>Mese di Riferimento</label>
                 <input type="month" id="month-selector" class="file-input">
@@ -450,8 +294,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=5.67"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.67"></script>
+    <script src="script.js?v=5.69"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.69"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>

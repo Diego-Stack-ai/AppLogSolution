@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anagrafiche - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.67">
+    <link rel="stylesheet" href="styles.css?v=5.70">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- Leaflet per Mappe -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -41,99 +41,13 @@
             box-shadow: 0 4px 12px var(--primary-glow);
         }
 
-        .data-table-container {
-            overflow-x: auto;
-            background: white;
-            border-radius: 16px;
-            border: 1px solid #e2e8f0;
-            max-height: 70vh;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-
-        th {
-            background: #f8fafc;
-            text-align: left;
-            padding: 12px 16px;
-            font-weight: 700;
-            color: #475569;
-            border-bottom: 1px solid #e2e8f0;
-            white-space: nowrap;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #f1f5f9;
-            color: var(--text-main);
-            white-space: nowrap;
-        }
-
-        /* Forza larghezza minima per colonne importanti */
-        th:nth-child(3), td:nth-child(3) { min-width: 200px; white-space: normal; } /* Nome Consegna */
-        th:nth-child(4), td:nth-child(4) { min-width: 250px; white-space: normal; } /* Indirizzo */
-        th:nth-child(8), td:nth-child(8) { min-width: 120px; } /* Lat/Lon */
-        th:nth-child(9), td:nth-child(9) { min-width: 150px; } /* Orari */
-
-        tr:hover td {
-            background: #f8fafc;
-        }
-
-        .badge {
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .badge-frutta { background: #dcfce7; color: #166534; }
-        .badge-latte { background: #e0f2fe; color: #075985; }
-
-        .search-bar {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap; /* Permette di andare a capo su mobile */
-        }
-
-        .search-bar input {
-            flex: 1;
-            min-width: 200px; /* Evita che diventi troppo piccolo */
-            height: 45px;
-            padding: 0 16px;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
+        /* Forza larghezza minima per colonne importanti nella vista tabella (creata in JS) */
+        .glass-table th:nth-child(3), .glass-table td:nth-child(3) { min-width: 200px; white-space: normal; } /* Nome Consegna */
+        .glass-table th:nth-child(4), .glass-table td:nth-child(4) { min-width: 250px; white-space: normal; } /* Indirizzo */
+        .glass-table th:nth-child(8), .glass-table td:nth-child(8) { min-width: 120px; } /* Lat/Lon */
+        .glass-table th:nth-child(9), .glass-table td:nth-child(9) { min-width: 150px; } /* Orari */
 
         @media (max-width: 600px) {
-            .search-bar {
-                flex-direction: column-reverse;
-                gap: 8px;
-            }
-            .search-bar .action-buttons {
-                display: flex;
-                gap: 8px;
-                width: 100%;
-            }
-            .search-bar .action-buttons button {
-                flex: 1;
-                padding: 10px;
-                font-size: 13px;
-            }
-            .search-bar input {
-                width: 100%;
-                flex: none;
-            }
             .cards-container {
                 grid-template-columns: 1fr;
             }
@@ -392,14 +306,18 @@
         <div class="glass-panel" style="padding: 24px;">
 
 
-            <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="Cerca cliente, codice o città ..." onkeyup="filterTable()">
-                <select id="brandFilter" onchange="filterTable()" style="flex: 0 1 160px; height: 45px; padding: 0 16px; border: 1px solid #e2e8f0; border-radius: 12px; font-family: inherit; font-size: 14px; background: white; outline: none; cursor: pointer; box-sizing: border-box;">
-                    <option value="">Tutti i Fornitori</option>
-                    <option value="DNR">DNR</option>
-                    <option value="CATTEL">CATTEL</option>
-                    <option value="GRAN CHEF">GRAN CHEF</option>
-                </select>
+            <div class="filters-container" style="margin-bottom: 20px;">
+                <div class="input-group" style="flex:1;">
+                    <input type="text" id="searchInput" placeholder="Cerca cliente, codice o città ..." onkeyup="filterTable()" style="width:100%;">
+                </div>
+                <div class="input-group">
+                    <select id="brandFilter" onchange="filterTable()" style="min-width: 160px; height: 45px; cursor: pointer;">
+                        <option value="">Tutti i Fornitori</option>
+                        <option value="DNR">DNR</option>
+                        <option value="CATTEL">CATTEL</option>
+                        <option value="GRAN CHEF">GRAN CHEF</option>
+                    </select>
+                </div>
                 <div class="action-buttons" style="display:flex; gap:12px;">
                     <button id="btnShowMap" class="btn-map" onclick="window.navigateWithState('mappa_google.html')">
                         <span class="material-icons-round">map</span> Mappa
@@ -444,8 +362,8 @@
         </div>
     </div>
 
-    <script src="script.js?v=5.67"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.67"></script>
+    <script src="script.js?v=5.70"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.70"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";

@@ -2,7 +2,7 @@ import os
 import re
 
 root = 'frontend'
-v_new = '5.66'
+v_new = '5.67'
 
 # 1. sw.js
 with open(os.path.join(root, 'sw.js'), 'r', encoding='utf-8') as f:

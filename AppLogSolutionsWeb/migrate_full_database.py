@@ -87,8 +87,7 @@ def export_storage(app_prod):
     
     # Rilevamento bucket
     # Sebbene log-solution-60007.firebasestorage.app sia standard, 
-    # la console di Firebase usa storicamente .appspot.com come default per app antiche.
-    bucket_prod = storage.bucket(name="log-solution-60007.appspot.com", app=app_prod)
+    bucket_prod = storage.bucket(name="log-solution-60007.firebasestorage.app", app=app_prod)
     
     blobs = bucket_prod.list_blobs()
     count = 0
@@ -224,7 +223,8 @@ def main():
     
     try:
         # FASE 1: Esportazione Database (Prod)
-        export_firestore(app_prod)
+        # export_firestore(app_prod)
+        print("[*] Salto export Firestore: file JSON già generato con successo.")
         
         # FASE 2: Esportazione Storage (Prod)
         export_storage(app_prod)

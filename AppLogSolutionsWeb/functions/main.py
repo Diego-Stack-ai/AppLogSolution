@@ -1943,17 +1943,6 @@ def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data
     f_io = io.BytesIO(excel_bytes)
     xl = pd.ExcelFile(f_io)
     
-    def _cell_val(row_data, col_name, fallback_idx=None):
-        lower_col = str(col_name).lower()
-        matched_key = next((k for k in row_data.index if str(k).lower() == lower_col), None)
-        if matched_key is not None:
-            val = row_data[matched_key]
-        elif fallback_idx is not None and len(row_data) > fallback_idx:
-            val = row_data.iloc[fallback_idx]
-        else:
-            return ""
-        return str(val).strip() if pd.notna(val) and str(val).strip() not in ("", "nan") else ""
-
     def normalize_address(addr):
         if not addr:
             return ""
@@ -1964,7 +1953,6 @@ def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data
         addr = re.sub(r'\b(via|viale|piazza|corso|localita|loc|strada|vicolo|lato|piaz)\b', '', addr)
         return " ".join(addr.split())
 
-    # Indicizziamo l'anagrafica esistente per l'abbinamento incrociato
     indirizzi_master = {}
     for code_db, cust in db_mappati.items():
         addr_raw = cust.get("ind") or cust.get("indirizzo") or ""
@@ -1972,91 +1960,40 @@ def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data
         if norm_addr and cust.get("lat") and cust.get("lon"):
             indirizzi_master[norm_addr] = cust
 
-    # Rileva se è presente il foglio Riepilogo
-    has_riepilogo = any(s.lower() == "riepilogo" for s in xl.sheet_names)
+    print(f"[Parser Cattel] Inizio estrazione dai fogli ({xl.sheet_names}) ignorando 'Riepilogo'.")
     
-    if has_riepilogo:
-        print("[Parser Cattel] Rilevato formato Riepilogo + Fogli.")
-        # 1. Estrarre anagrafiche dai fogli dei singoli giri
-        clienti_info_excel = {}
-        for s_name in xl.sheet_names:
-            if s_name.lower() in ("riepilogo", "summary"):
-                continue
-                
-            df = xl.parse(s_name)
-            df_clean = df.dropna(how='all')
+    for s_name in xl.sheet_names:
+        if s_name.lower() == "riepilogo":
+            continue
             
-            header_row_idx = None
-            for idx, row in df_clean.iterrows():
-                row_vals = [str(val).strip().lower() for val in row.values if pd.notna(val)]
-                if any('committente' in rv for rv in row_vals) or any('codice' in rv for rv in row_vals):
-                    header_row_idx = idx
-                    break
-                    
-            if header_row_idx is not None:
-                df_cols = [str(val).strip() for val in df_clean.loc[header_row_idx].values]
-                df_data = df_clean.loc[header_row_idx + 1:].copy()
-                df_data.columns = df_cols
-            else:
-                df_data = df_clean
-                
-            has_codice_cliente = any('codice cliente' in str(col).lower() for col in df_data.columns)
-            
-            for _, row in df_data.iterrows():
-                if has_codice_cliente:
-                    codice = clean_client_code(_cell_val(row, "Codice cliente", 0))
-                    if not codice or codice.lower() in ('codice cliente', 'codicecliente', 'sommacampagna'):
-                        continue
-                    ragione_sociale = _cell_val(row, "Nome cliente", 1)
-                    indirizzo = _cell_val(row, "Indirizzo", 2)
-                else:
-                    codice = clean_client_code(_cell_val(row, "Zona 2", 7))
-                    if not codice or codice.lower() in ('zona 2', 'zona2'):
-                        continue
-                    ragione_sociale = _cell_val(row, "Nome Cliente", 8)
-                    indirizzo = _cell_val(row, "Indirizzo", 9)
-                    
-                if codice not in clienti_info_excel:
-                    clienti_info_excel[codice] = {
-                        "dest": ragione_sociale,
-                        "ind": indirizzo
-                    }
-
-        # 2. Leggere la sequenza ed i dati reali dal foglio Riepilogo
-        # Cerca il nome esatto del foglio Riepilogo (case-insensitive)
-        riepilogo_name = next(s for s in xl.sheet_names if s.lower() == "riepilogo")
-        df_riep = xl.parse(riepilogo_name)
-        df_riep_clean = df_riep.dropna(how='all')
+        targa = s_name.strip()
+        df = xl.parse(s_name, header=None)
         
-        header_row_idx = None
-        for idx, row in df_riep_clean.iterrows():
-            row_vals = [str(val).strip().lower() for val in row.values if pd.notna(val)]
-            if any('codice partenza' in rv for rv in row_vals) or any('targa' in rv for rv in row_vals):
-                header_row_idx = idx
-                break
-                
-        if header_row_idx is not None:
-            df_cols = [str(val).strip() for val in df_riep_clean.loc[header_row_idx].values]
-            df_data_riep = df_riep_clean.loc[header_row_idx + 1:].copy()
-            df_data_riep.columns = df_cols
-        else:
-            df_data_riep = df_riep_clean
+        # Estrarre autista dalla cella C2 (Riga 2, Colonna 3, quindi indice row 1, col 2)
+        autista = ""
+        if len(df) > 1 and len(df.columns) > 2:
+            autista_val = df.iloc[1, 2]
+            autista = str(autista_val).strip() if pd.notna(autista_val) else ""
             
-        for _, row in df_data_riep.iterrows():
-            targa = _cell_val(row, "Targa", 2)
-            codice = clean_client_code(_cell_val(row, "Codice arrivo", 8))
+        # L'intestazione è alla riga 4 (indice 3). I dati partono dalla riga 6 (indice 5).
+        # L'ultima riga è il magazzino d'arrivo, quindi ci fermiamo a len(df) - 1.
+        if len(df) <= 5:
+            continue
             
-            if not codice or codice.lower() in ('codice arrivo', 'codicearrivo', 'sommacampagna'):
+        last_idx = len(df) - 1
+        
+        for i in range(5, last_idx):
+            row = df.iloc[i]
+            
+            codice = clean_client_code(row.iloc[0]) if len(row) > 0 else ""
+            if not codice or str(codice).lower() == 'nan':
                 continue
                 
-            info_ex = clienti_info_excel.get(codice, {})
-            ragione_sociale = info_ex.get("dest") or _cell_val(row, "Nome cliente") or _cell_val(row, "Nome Cliente") or codice
-            indirizzo = info_ex.get("ind") or _cell_val(row, "Indirizzo")
+            ragione_sociale = str(row.iloc[1]).strip() if len(row) > 1 and pd.notna(row.iloc[1]) else ""
+            indirizzo = str(row.iloc[2]).strip() if len(row) > 2 and pd.notna(row.iloc[2]) else ""
+            colli = str(row.iloc[9]).strip() if len(row) > 9 and pd.notna(row.iloc[9]) else ""
             
-            colli = _cell_val(row, "N. PD. CONSEGNATE", 18)
-            if not colli or colli == "0" or colli == "0.0":
-                colli = _cell_val(row, "Quantità") or _cell_val(row, "Quantita")
-                
+            # Estrazione località e provincia dall'indirizzo (se presenti)
             localita = ""
             provincia = ""
             if indirizzo:
@@ -2066,12 +2003,11 @@ def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data
                 parts = indirizzo.split(',')
                 if len(parts) > 1:
                     cit_part = parts[-1].strip()
-                    # Verifica che contenga almeno qualche lettera per essere una città (esclude i civici puri come "51")
                     if re.search(r'[a-zA-Z]{2,}', cit_part):
                         cit_part = re.sub(r'\(.*?\)', '', cit_part).strip()
                         cit_part = re.sub(r'\d{5}', '', cit_part).strip()
                         localita = cit_part
-                    
+                        
             orario_min = "08:00"
             orario_max = "14:00"
             note = ""
@@ -2130,8 +2066,8 @@ def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data
                 )
                 split_files[fname] = pdf_io
                 
-                # La zona logistica mantiene la targa del giro
-                zona_cod = f"CATTEL_{targa}_{job_id}" if targa else f"CATTEL_{job_id}"
+                # Zona logistica include targa e autista
+                zona_cod = f"CATTEL_{targa}_{autista}_{job_id}" if autista else f"CATTEL_{targa}_{job_id}"
                 
                 deliveries_list.append({
                     "codice_consegna": codice,
@@ -2143,126 +2079,10 @@ def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data
                     "gc_colli": colli,
                     "gc_peso_kg": "",
                     "gc_num_cartone": "",
-                    "cattel_zona_viaggio": targa
+                    "cattel_zona_viaggio": targa,
+                    "autista": autista
                 })
-    else:
-        # Formato Grezzo Standalone (retrocompatibilità: ogni foglio è un giro completo)
-        print("[Parser Cattel] Nessun foglio Riepilogo trovato. Eseguo fallback su formato esteso.")
-        for s_name in xl.sheet_names:
-            df = xl.parse(s_name)
-            df_clean = df.dropna(how='all')
-            
-            header_row_idx = None
-            for idx, row in df_clean.iterrows():
-                row_vals = [str(val).strip().lower() for val in row.values if pd.notna(val)]
-                if any('committente' in rv for rv in row_vals) or any('targa viaggio' in rv for rv in row_vals) or any('codice cliente' in rv for rv in row_vals) or any('nome cliente' in rv for rv in row_vals):
-                    header_row_idx = idx
-                    break
-                    
-            if header_row_idx is not None:
-                df_cols = [str(val).strip() for val in df_clean.loc[header_row_idx].values]
-                df_data = df_clean.loc[header_row_idx + 1:].copy()
-                df_data.columns = df_cols
-            else:
-                df_data = df_clean
                 
-            for _, row in df_data.iterrows():
-                codice = clean_client_code(_cell_val(row, "Zona 2", 7))
-                if not codice or codice.lower() in ('zona 2', 'zona2'):
-                    continue
-                zona_viaggio = _cell_val(row, "Zona Viaggio", 1)
-                ordine = _cell_val(row, "Ordine", 4)
-                ragione_sociale = _cell_val(row, "Nome Cliente", 8)
-                indirizzo = _cell_val(row, "Indirizzo", 9)
-                colli = _cell_val(row, "Quantità", 10)
-                peso_kg = _cell_val(row, "Peso", 12)
-                
-                localita = ""
-                provincia = ""
-                if indirizzo:
-                    m_prov = re.search(r'\(([^)]+)\)', indirizzo)
-                    if m_prov:
-                        provincia = m_prov.group(1).strip().upper()
-                    parts = indirizzo.split(',')
-                    if len(parts) > 1:
-                        cit_part = parts[-1].strip()
-                        cit_part = re.sub(r'\(.*?\)', '', cit_part).strip()
-                        cit_part = re.sub(r'\d{5}', '', cit_part).strip()
-                        localita = cit_part
-                        
-                orario_min = "08:00"
-                orario_max = "14:00"
-                note = ""
-                
-                codice_l = codice.lower()
-                if codice_l not in db_mappati:
-                    if codice not in nuovi_dati:
-                        norm_new_addr = normalize_address(indirizzo)
-                        match_found = False
-                        matched_cust = None
-                        if norm_new_addr and norm_new_addr in indirizzi_master:
-                            matched_cust = indirizzi_master[norm_new_addr]
-                            match_found = True
-                            
-                        if match_found and matched_cust:
-                            nuovi_dati[codice] = {
-                                "dest": ragione_sociale,
-                                "ind": indirizzo,
-                                "cap": matched_cust.get("cap") or "",
-                                "cit": matched_cust.get("cit") or matched_cust.get("citta") or localita,
-                                "prov": matched_cust.get("prov") or matched_cust.get("provincia") or provincia,
-                                "om": matched_cust.get("om") or orario_min,
-                                "oM": matched_cust.get("oM") or orario_max,
-                                "tipo": "CATTEL",
-                                "lat": matched_cust.get("lat"),
-                                "lon": matched_cust.get("lon"),
-                                "stato_suggerito": "giallo",
-                                "matched_name": matched_cust.get("cliente") or matched_cust.get("nome_consegna") or "",
-                                "matched_brand": matched_cust.get("tipologia_grado") or "MASTER"
-                            }
-                        else:
-                            nuovi_dati[codice] = {
-                                "dest": ragione_sociale,
-                                "ind": indirizzo,
-                                "cap": "",
-                                "cit": localita,
-                                "prov": provincia,
-                                "om": orario_min,
-                                "oM": orario_max,
-                                "tipo": "CATTEL",
-                                "stato_suggerito": "rosso"
-                            }
-                else:
-                    cust_d = db_mappati[codice_l]
-                    fname = f"{codice}_{data_consegna}.pdf"
-                    pdf_io = _genera_pdf_placeholder_cattel_io(
-                        codice,
-                        cust_d.get("cliente") or cust_d.get("nome_consegna") or ragione_sociale,
-                        cust_d.get("ind") or cust_d.get("indirizzo") or indirizzo,
-                        cust_d.get("cit") or cust_d.get("citta") or localita,
-                        cust_d.get("prov") or cust_d.get("provincia") or provincia,
-                        cust_d.get("note") or note,
-                        cust_d.get("om") or orario_min,
-                        cust_d.get("oM") or orario_max,
-                        data_consegna
-                    )
-                    split_files[fname] = pdf_io
-                    
-                    zona_cod = f"CATTEL_{zona_viaggio}_{job_id}" if zona_viaggio else f"CATTEL_{job_id}"
-                    
-                    deliveries_list.append({
-                        "codice_consegna": codice,
-                        "data": data_consegna,
-                        "num_ddt": ordine if ordine else f"CATTEL_{codice}",
-                        "pdf_name": fname,
-                        "tipo": "CATTEL",
-                        "zona": zona_cod,
-                        "gc_colli": colli,
-                        "gc_peso_kg": peso_kg,
-                        "gc_num_cartone": "",
-                        "cattel_zona_viaggio": zona_viaggio
-                    })
-                    
     return {
         "split_files": split_files,
         "nuovi_dati": nuovi_dati,

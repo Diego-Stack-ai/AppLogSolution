@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.73">
+    <link rel="stylesheet" href="styles.css?v=5.74">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -774,8 +774,8 @@
             });
             html += `</datalist>`;
 
-            dipendenti.forEach(d => {
-                const targheSortate = Object.entries(affinityData[d.id].targhe).sort((a,b) => b[1] - a[1]);
+            appState.dipendenti.forEach(d => {
+                const targheSortate = Object.entries(appState.affinityData[d.id].targhe).sort((a,b) => b[1] - a[1]);
 
                 // Datalist dinamico per viaggi di questa riga (inizialmente vuoto)
                 html += `<datalist id="viaggi_dinamici_${d.id}"></datalist>`;
@@ -812,19 +812,19 @@
                 return `<option value="${targa}">${targa}${pat}${mod}</option>`;
             }).join('');
 
-            dipendenti.forEach(d => {
-                const topClienti = Object.entries(affinityData[d.id].clienti).sort((a,b) => b[1] - a[1]).slice(0, 3);
-                const topViaggi = Object.entries(affinityData[d.id].viaggi).sort((a,b) => b[1] - a[1]).slice(0, 3);
-                const topTarghe = Object.entries(affinityData[d.id].targhe).sort((a,b) => b[1] - a[1]).slice(0, 2);
+            appState.dipendenti.forEach(d => {
+                const topClienti = Object.entries(appState.affinityData[d.id].clienti).sort((a,b) => b[1] - a[1]).slice(0, 3);
+                const topViaggi = Object.entries(appState.affinityData[d.id].viaggi).sort((a,b) => b[1] - a[1]).slice(0, 3);
+                const topTarghe = Object.entries(appState.affinityData[d.id].targhe).sort((a,b) => b[1] - a[1]).slice(0, 2);
                 
                 let suggestClienteHtml = topClienti.length > 0 
                     ? topClienti.map(c => `<span class="suggestion-badge ${window.getClienteColorClass(c[0])}" style="cursor:pointer;" onclick="impostaCliente(this, '${c[0].replace(/'/g, "\\'")}')" title="Assegnato ${c[1]} volte">★ ${c[0]} (${c[1]})</span>`).join(' ') 
                     : '';
                 let suggestTargaHtml = topTarghe.length > 0 
                     ? topTarghe.map(t => {
-                        let clientAssociato = "";
-                        const clientiTarga = affinityData[d.id].clientiPerTarga?.[t[0]] || {};
-                        const topClientiTarga = Object.entries(clientiTarga).sort((a,b) => b[1] - a[1]);
+                    let clientAssociato = "";
+                    const clientiTarga = appState.affinityData[d.id].clientiPerTarga?.[t[0]] || {};
+                    const topClientiTarga = Object.entries(clientiTarga).sort((a,b) => b[1] - a[1]);
                         if (topClientiTarga.length > 0) {
                             clientAssociato = topClientiTarga[0][0];
                         }
@@ -834,7 +834,7 @@
                 let suggestViaggioHtml = topViaggi.length > 0 
                     ? topViaggi.map(v => {
                         let clientAssociato = "";
-                        for (const [c, viaggiMap] of Object.entries(affinityData[d.id].viaggiPerCliente)) {
+                        for (const [c, viaggiMap] of Object.entries(appState.affinityData[d.id].viaggiPerCliente)) {
                             if (viaggiMap[v[0]]) {
                                 clientAssociato = c;
                                 break;
@@ -944,7 +944,7 @@
             // Svuotiamo prima la UI e puliamo i dataset pendenti
             document.querySelectorAll('#planningTable tbody tr').forEach(tr => {
                 const id = tr.getAttribute('data-id');
-                const emp = dipendenti.find(d => d.id === id);
+                const emp = appState.dipendenti.find(d => d.id === id);
                 if(emp && emp.data_licenziamento && emp.data_licenziamento < dataIso) {
                     tr.style.display = 'none';
                 } else {
@@ -1157,7 +1157,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=5.73"></script>
-    <script src="script.js?v=5.73"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.74"></script>
+    <script src="script.js?v=5.74"></script>
 </body>
 </html>

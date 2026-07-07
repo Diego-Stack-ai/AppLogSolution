@@ -16,9 +16,75 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=5.76">
+    <link rel="stylesheet" href="styles.css?v=5.77">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
+        .navetta-details-row {
+            background: rgba(248, 250, 252, 0.95);
+            backdrop-filter: blur(8px);
+        }
+        .navetta-details-row > td {
+            padding: 0 !important;
+            border-bottom: 2px solid var(--primary-glow) !important;
+        }
+        .navetta-table-container {
+            padding: 12px 24px;
+            margin: 0;
+            border-radius: 0 0 12px 12px;
+            box-shadow: inset 0 4px 6px -4px rgba(0,0,0,0.1);
+        }
+        .navetta-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .navetta-table th {
+            background: #f1f5f9;
+            color: #475569;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .navetta-table td {
+            padding: 8px 12px;
+            color: #334155;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .navetta-table tr:last-child td {
+            border-bottom: none;
+        }
+        .badge-navetta {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #f3e8ff;
+            color: #7e22ce;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid #e9d5ff;
+            transition: all 0.2s;
+            margin-left: 6px;
+        }
+        .badge-navetta:hover {
+            background: #e9d5ff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(126, 34, 206, 0.15);
+        }
+        .badge-navetta.active {
+            background: #7e22ce;
+            color: white;
+            border-color: #7e22ce;
+        }
         .row-error
 .row-discrepancy
 .filters-container {
@@ -353,6 +419,10 @@ tr.weekend:hover
                         <button class="view-mode-btn active" data-mode="mese" onclick="setViewMode('mese')">Mese</button>
                     </div>
                     <div id="unlockAllContainer" style="display: none; align-items: center; gap: 6px;">
+                        <label style="display: flex; align-items: center; gap: 6px; background: #f3e8ff; padding: 8px 16px; border-radius: 8px; border: 1px solid #d8b4fe; cursor: pointer; font-weight: 500; color: #6b21a8; font-size: 0.9rem; height: 100%; box-sizing: border-box;">
+                            <input type="checkbox" id="chkFilterNavette" onchange="window.toggleNavetteFilter(this.checked)" style="margin: 0; width: 15px; height: 15px; cursor: pointer; accent-color: #7e22ce;">
+                            🚌 Solo Navette
+                        </label>
                         <label style="display: flex; align-items: center; gap: 6px; background: #fee2e2; padding: 8px 16px; border-radius: 8px; border: 1px solid #fca5a5; cursor: pointer; font-weight: 500; color: #b91c1c; font-size: 0.9rem; height: 100%; box-sizing: border-box;">
                             <input type="checkbox" id="chkUnlockAll" onchange="window.toggleAllEdits(this.checked)" style="margin: 0; width: 15px; height: 15px; cursor: pointer; accent-color: #b91c1c;">
                             Sblocca Tutto
@@ -439,13 +509,13 @@ tr.weekend:hover
         </div>
     </main>
 
-    <script src="script.js?v=5.76"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.76"></script>
+    <script src="script.js?v=5.77"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.77"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=5.76";
+        import { calculateHours } from "./firestore-service.js?v=5.77";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -1128,8 +1198,12 @@ const db = getFirestore(app);
                         }
                     }
 
+                    const hasNavette = record.attivitaAggiuntive && record.attivitaAggiuntive.length > 0;
+                    const navetteBadge = hasNavette ? `<div class="badge-navetta" onclick="toggleNavettaRow('${docId}', this)" title="Mostra Dettagli Navette">🚌 ${record.attivitaAggiuntive.length} Viaggi</div>` : '';
+                    if (hasNavette) tr.classList.add('has-navette-main-row');
+
                     tr.innerHTML = `
-    <td><strong>${dayName}</strong><br><span style="font-size: 0.8em; color: #6b7280;">${displayDate}</span></td>
+    <td><strong>${dayName}</strong><br><span style="font-size: 0.8em; color: #6b7280;">${displayDate}</span><br>${navetteBadge}</td>
                         <td title="${rCliente.toUpperCase()}">
                             <select class="edit-input" data-field="cliente" title="${rCliente.toUpperCase()}" disabled onchange="window.aggiornaViaggiPresenza(this.closest('tr'))">
                                 <option value="">-</option>
@@ -1211,6 +1285,61 @@ const db = getFirestore(app);
                     `;
 
                     tbody.appendChild(tr);
+
+                    if (hasNavette) {
+                        const subTr = document.createElement('tr');
+                        subTr.id = `navetta-row-${docId}`;
+                        subTr.className = 'navetta-details-row';
+                        subTr.style.display = 'none';
+                        
+                        let subTableHtml = `
+                            <td colspan="100%">
+                                <div class="navetta-table-container">
+                                    <table class="navetta-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Orario</th>
+                                                <th>Partenza</th>
+                                                <th>Tappe (Carico / Cliente / Dest.)</th>
+                                                <th>Km (Delta)</th>
+                                                <th>Note</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                        `;
+                        record.attivitaAggiuntive.forEach(att => {
+                            const orario = `${att.oraInizio || '-'} / ${att.oraFine || '-'}`;
+                            const partenza = att.partenza || '<em>-</em>';
+                            
+                            let tappeStr = '';
+                            if (att.tappe && att.tappe.length > 0) {
+                                tappeStr = att.tappe.map(t => `<div style="margin-bottom:4px; padding-bottom:4px; border-bottom:1px solid #f1f5f9;"><strong>C:</strong> ${t.carico||'-'} &bull; <strong>Cli:</strong> ${t.cliente_merce||'-'} &bull; <strong>D:</strong> ${t.destinazione_merce||'-'}</div>`).join('');
+                            } else {
+                                tappeStr = '-';
+                            }
+                            
+                            const km = `${att.kmIniziali||0} &rarr; ${att.kmFinali||0} (<strong>${att.deltaKm||0}</strong> km)`;
+                            
+                            subTableHtml += `
+                                <tr>
+                                    <td style="white-space: nowrap; font-weight:600; color: var(--primary);">${orario}</td>
+                                    <td>${partenza}</td>
+                                    <td>${tappeStr}</td>
+                                    <td style="white-space: nowrap;">${km}</td>
+                                    <td>${att.note || '-'}</td>
+                                </tr>
+                            `;
+                        });
+                        subTableHtml += `
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        `;
+                        subTr.innerHTML = subTableHtml;
+                        tbody.appendChild(subTr);
+                    }
+
                     window.aggiornaViaggiPresenza(tr, rViaggio);
 
                     // Accumula totali
@@ -1969,6 +2098,52 @@ const db = getFirestore(app);
                   btn.disabled = false;
               }
           };
+        // Gestione espansione righe navetta
+        window.toggleNavettaRow = function(docId, btn) {
+            const row = document.getElementById(`navetta-row-${docId}`);
+            if (row) {
+                if (row.style.display === 'none') {
+                    row.style.display = 'table-row';
+                    if (btn) btn.classList.add('active');
+                } else {
+                    row.style.display = 'none';
+                    if (btn) btn.classList.remove('active');
+                }
+            }
+        };
+
+        // Filtro Globale "Mostra solo Navette"
+        window.toggleNavetteFilter = function(checked) {
+            const allMainRows = document.querySelectorAll('#tableBody tr:not(.navetta-details-row):not(.employee-separator)');
+            
+            if (checked) {
+                allMainRows.forEach(tr => {
+                    if (tr.classList.contains('has-navette-main-row')) {
+                        tr.style.display = 'table-row';
+                        const docId = tr.dataset.docId;
+                        const subRow = document.getElementById(`navetta-row-${docId}`);
+                        if (subRow) subRow.style.display = 'table-row';
+                        const badge = tr.querySelector('.badge-navetta');
+                        if (badge) badge.classList.add('active');
+                    } else {
+                        if (tr.dataset.docId) {
+                            tr.style.display = 'none';
+                        }
+                    }
+                });
+            } else {
+                allMainRows.forEach(tr => {
+                    tr.style.display = 'table-row';
+                    if (tr.classList.contains('has-navette-main-row')) {
+                        const docId = tr.dataset.docId;
+                        const subRow = document.getElementById(`navetta-row-${docId}`);
+                        if (subRow) subRow.style.display = 'none';
+                        const badge = tr.querySelector('.badge-navetta');
+                        if (badge) badge.classList.remove('active');
+                    }
+                });
+            }
+        };
     </script>
 
     <!-- DETTAGLI MODAL -->
@@ -2013,7 +2188,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=5.76"></script>
+    <script type="module" src="cedolini-splitter.js?v=5.77"></script>
 
 </body>
 </html>

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anomalie - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.76">
+    <link rel="stylesheet" href="styles.css?v=5.77">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -100,8 +100,8 @@
 
     </div>
 
-    <script src="script.js?v=5.76"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.76"></script>
+    <script src="script.js?v=5.77"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.77"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -220,7 +220,7 @@ const db = getFirestore(app);
                             </div>
                             
                             <div class="section-title">Codici di Consegna</div>
-                            <div class="input-group"><label>Codice Frutta</label><input type="text" id="cli-${id}-codF" value="${(d.tipo === 'FRUTTA' || d.tipo === 'GRAND CHEF' || tenant === 'GRAN CHEF') ? id : 'p00000'}"></div>
+                            <div class="input-group"><label>Codice Frutta</label><input type="text" id="cli-${id}-codF" value="${(d.tipo === 'FRUTTA' || d.tipo === 'GRAND CHEF' || tenant === 'GRAN CHEF' || d.tipo === 'CATTEL' || tenant === 'CATTEL') ? id : 'p00000'}"></div>
                             <div class="input-group"><label>Codice Latte</label><input type="text" id="cli-${id}-codL" value="${d.tipo === 'LATTE' ? id : 'p00000'}"></div>
                             
                             <div class="section-title">Orari di Consegna (Frutta)</div>
@@ -329,7 +329,7 @@ const db = getFirestore(app);
                         </div>
                         <div style="font-size: 12px; color: #64748b;">${c.indirizzo || ''}, ${c.citta || ''} (${c.cap || ''})</div>
                         <div style="display: flex; gap: 6px; font-size: 11px; margin-top: 2px;">
-                            <span style="background: #eef2ff; color:#4f46e5; padding: 2px 6px; border-radius: 4px; font-weight:600;">Frutta: ${c.codice_frutta || 'p00000'}</span>
+                            <span style="background: #eef2ff; color:#4f46e5; padding: 2px 6px; border-radius: 4px; font-weight:600;">Frutta: ${c.codice_frutta !== 'p00000' ? c.codice_frutta : 'p00000'}</span>
                             <span style="background: #eef2ff; color:#4f46e5; padding: 2px 6px; border-radius: 4px; font-weight:600;">Latte: ${c.codice_latte || 'p00000'}</span>
                         </div>
                     </div>
@@ -411,7 +411,7 @@ const db = getFirestore(app);
                 document.getElementById(`cli-${idAnomalia}-prov`).value = def.prov;
                 document.getElementById(`cli-${idAnomalia}-lat`).value = '';
                 document.getElementById(`cli-${idAnomalia}-lon`).value = '';
-                document.getElementById(`cli-${idAnomalia}-codF`).value = def.tipo === 'FRUTTA' ? idAnomalia : 'p00000';
+                document.getElementById(`cli-${idAnomalia}-codF`).value = (def.tipo === 'FRUTTA' || def.tipo === 'GRAND CHEF' || def.tipo === 'CATTEL') ? idAnomalia : 'p00000';
                 document.getElementById(`cli-${idAnomalia}-codL`).value = def.tipo === 'LATTE' ? idAnomalia : 'p00000';
                 document.getElementById(`cli-${idAnomalia}-omF`).value = def.tipo === 'FRUTTA' ? def.om : '';
                 document.getElementById(`cli-${idAnomalia}-oMF`).value = def.tipo === 'FRUTTA' ? def.oM : '';
@@ -579,7 +579,7 @@ const db = getFirestore(app);
                 
                 let clientData = {
                     cliente: d.cliente || '', indirizzo: '', citta: '', cap: '', provincia: '',
-                    codice_frutta: d.tipo === 'FRUTTA' ? id : 'p00000',
+                    codice_frutta: (d.tipo === 'FRUTTA' || d.tipo === 'GRAND CHEF' || d.tipo === 'CATTEL') ? id : 'p00000',
                     codice_latte: d.tipo === 'LATTE' ? id : 'p00000',
                     orario_min_frutta: '', orario_max_frutta: '',
                     orario_min_latte: '', orario_max_latte: '',

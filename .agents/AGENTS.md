@@ -58,15 +58,18 @@ Ogni volta che vengono apportate modifiche, sia al frontend che al backend (nuov
 
 ---
 
-## Regole sul Deploy (CI/CD Obbligatorio)
+## Regole sul Deploy (CI/CD Obbligatorio) e ISOLAMENTO AMBIENTI
 
-- TASSATIVO — DIVIETO SUL MULETTO: Il progetto e ambiente muletto (`log-solution-muletto`) NON DEVE MAI ESSERE TOCCATO. Qualsiasi operazione di deploy (sia Hosting che Functions) deve essere sempre e solo indirizzata alla produzione attiva (`log-solution-60007`), salvo che l'utente non impartisca l'ordine esplicito di collaudo sul muletto.
+- **TASSATIVO — ISOLAMENTO TOTALE E DEFINITIVO DEI DUE MONDI (PRODUZIONE vs SVILUPPO):**
+  - **PRODUZIONE (`main`):** Qualsiasi operazione di deploy ufficiale (sia Hosting automatico via GitHub che Functions manuali) deve puntare unicamente al progetto `log-solution-60007`.
+  - **SVILUPPO (`sviluppo`):** Quando si lavora sul branch `sviluppo`, QUALSIASI operazione di deploy manuale (Hosting o Cloud Functions) DEVE essere indirizzata esclusivamente al progetto di sviluppo (`log-solutions-sviluppo`) aggiungendo il flag `--project log-solutions-sviluppo`. È severamente vietato caricare codice in fase di test sul server di produzione.
+- TASSATIVO — DIVIETO SUL MULETTO: Il progetto e ambiente muletto (`log-solution-muletto`) NON DEVE MAI ESSERE TOCCATO o UTILIZZATO.
 - **TASSATIVO — STOP PER COLLAUDO UTENTE SULL'APP:** Dopo aver completato la scrittura del codice sul branch `sviluppo` e aver fatto il commit, l'agente DEVE TASSATIVAMENTE FERMARSI e invitare l'operatore umano a testare l'applicazione dal vivo nel proprio ambiente locale/browser. È severamente vietato eseguire il merge su `main` e il push per la CI/CD fino a quando l'utente non rilascerà l'esplicita autorizzazione: "Collaudo superato, procedi al deploy sul main".
-- **HOSTING (FRONTEND):** Tassativamente VIETATO fare `firebase deploy --only hosting` manualmente dal terminale locale. Il deploy in produzione avviene IN AUTOMATICO tramite GitHub Actions quando si effettua il `git push origin main`. L'agente deve limitarsi a unire le modifiche su `main` e fare il push (esclusivamente dopo l'autorizzazione di collaudo superato).
-- **CANALI PREVIEW (BRANCH SVILUPPO):** Per pubblicare e testare online il ramo di sviluppo `sviluppo` (o qualsiasi altro branch secondario) senza intaccare il `main` e senza che lo vedano la ragioniera o gli autisti, usare ESCLUSIVAMENTE il comando: `firebase hosting:channel:deploy sviluppo`. È severamente vietato fare `firebase deploy --only hosting` su branch secondari.
-- **FUNCTIONS (BACKEND):** Il deploy delle Cloud Functions (`firebase deploy --only functions`) si esegue dal terminale locale, ma **TASSATIVAMENTE** solo dopo aver committato e pushato ogni singola modifica su Git (`main` e `sviluppo`).
-- Una sola funzione: `firebase deploy --only functions:nome_funzione` (eseguire sempre dalla cartella G:\Il mio Drive\App\AppLogSolutionsWeb dopo il git push).
-- NON eseguire mai `firebase deploy` senza `--only` (deploy totale inutilmente lento e a rischio di scavalcare la CI/CD).
+- **HOSTING (FRONTEND):** Tassativamente VIETATO fare `firebase deploy --only hosting` verso la produzione manualmente dal terminale locale. Il deploy in produzione avviene IN AUTOMATICO tramite GitHub Actions quando si effettua il `git push origin main`. L'agente deve limitarsi a unire le modifiche su `main` e fare il push. Per l'Hosting dell'ambiente di Sviluppo, è consentito l'uso di `firebase deploy --only hosting --project log-solutions-sviluppo`.
+- **FUNCTIONS (BACKEND):** Il deploy delle Cloud Functions si esegue dal terminale locale, ma **TASSATIVAMENTE** specificando sempre il progetto di destinazione: `--project log-solutions-sviluppo` (per i test) o `--project log-solution-60007` (per l'ufficiale, solo dopo approvazione).
+- Una sola funzione: `firebase deploy --only functions:nome_funzione --project [NOME_PROGETTO]` (eseguire sempre dalla cartella G:\Il mio Drive\App\AppLogSolutionsWeb).
+- NON eseguire mai `firebase deploy` totale senza `--only`.
+- **SINCRONIZZAZIONE DATI:** Prima di validare modifiche critiche in sviluppo, usare lo script `sincronizza_dati_freschi.py` per copiare database e cache delle distanze dalla Produzione allo Sviluppo, assicurando test realistici su dati attuali.
 
 ---
 
@@ -97,3 +100,19 @@ L'infrastruttura aziendale prevede l'istituzione e la manutenzione di un sistema
 2. **Barriera PRE_BACKUP_CHECK:** Lo script di estrazione DR deve avviare collaudi sintattici (compilazione Python di main.py, check validità JSON cache e controllo file critici). Se il progetto presenta il minimo errore o inconsistenza, il backup si ferma istantaneamente per garantire un caveau incorrotto.
 3. **Audit e Segreti:** Il Caveau conserva la memoria evolutiva dell'app in `09_AUDIT_LOG/` (storico di backup, deploy, autori, descrizioni e motivazioni) e archivia le credenziali sensibili esclusivamente in forma protetta/crittografata in `04_SEGRETI/`.
 4. **Strategia di Conservazione Fisica e Manutenzione:** Il Caveau Master adotta una triplice architettura ridondata (copia locale G:, copia su supporto fisico esterno USB/HDD, copia remota protetta). Tutte le copie condividono lo stesso checksum SHA256 e manifesto. Ogni mese o trimestre, il sistema esegue la certificazione periodica (verifica hash anti bit-rot, controllo leggibilità e spazio), rendendo il Caveau un organismo mantenuto vivo e pulsante.
+
+---
+
+## VINCOLO OPERATIVO UI E DESIGN SYSTEM
+
+Da questo momento, ogni modifica o creazione UI deve rispettare tassativamente:
+- `G:\Il mio Drive\App\AppLogSolutionsWeb\frontend\docs\design-system.md`
+- `G:\Il mio Drive\App\AppLogSolutionsWeb\frontend\docs\design-system.json`
+
+**È SEVERAMENTE VIETATO:**
+- Creare nuove classi CSS non presenti nel sistema.
+- Usare inline styles (es. `<div style="...">`).
+- Duplicare componenti UI già esistenti.
+- Ignorare lo spacing system o la gerarchia tipografica.
+
+Se una richiesta dell'utente viola il design system, l'agente DEVE fermarsi, NON generare la UI e proporre all'utente un'alternativa coerente con il sistema e le classi esistenti.

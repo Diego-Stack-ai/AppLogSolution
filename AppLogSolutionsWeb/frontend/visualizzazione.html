@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visualizzazione Dati - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.67">
+    <link rel="stylesheet" href="styles.css?v=5.71">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     
     <!-- PWA & Mobile Optimization -->
@@ -159,15 +159,10 @@
             display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;
         }
-        .log-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-        .log-table th { text-align: left; padding: 8px; background: #f8fafc; color: #64748b; font-size: 11px; text-transform: uppercase; }
-        .log-table td { padding: 8px; border-bottom: 1px solid #f1f5f9; }
-        
-        #mapModalContent { padding: 0; height: 500px; }
+        .log-
+.log-table
+.log-table
+#mapModalContent { padding: 0; height: 500px; }
         #logMap { height: 100%; width: 100%; border-radius: 0 0 20px 20px; }
     </style>
 </head>
@@ -242,13 +237,13 @@
     </main>
 
         <!-- Script base: inizializza window.appData -->
-    <script src="script.js?v=5.67"></script>
+    <script src="script.js?v=5.71"></script>
     <!-- Autenticazione Firebase: popola currentUser e chiama onUserProfileLoaded -->
-    <script type="module" src="firebase-auth-sync.js?v=5.67"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.71"></script>
 
     <script type="module">
-        import { getAllTrips, getTripLogs, deleteTrip } from "./firestore-service.js?v=5.67";
-        import { renderTripList, removeTripCard } from "./ui-render.js?v=5.67";
+        import { getAllTrips, getTripLogs, deleteTrip } from "./firestore-service.js?v=5.71";
+        import { renderTripList, removeTripCard } from "./ui-render.js?v=5.71";
 
         const filterAutista = document.getElementById('filterAutista');
         const btnRefresh = document.getElementById('btnRefresh');
@@ -286,7 +281,7 @@
                     return;
                 }
 
-                let html = `<table class="log-table">
+                let html = `<table class="log-table glass-table">
                     <thead>
                         <tr>
                             <th>SEQ</th>

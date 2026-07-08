@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "5.89";
+const APP_VERSION = "5.9";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -262,12 +262,6 @@ window.renderClientiInserimento = function() {
     navOpt.value = 'NAVETTA';
     navOpt.textContent = 'NAVETTA';
     select.appendChild(navOpt);
-
-    // Aggiungi sempre MAGAZZINO come voce separata
-    const magOpt = document.createElement('option');
-    magOpt.value = 'MAGAZZINO';
-    magOpt.textContent = 'MAGAZZINO';
-    select.appendChild(magOpt);
 
     if (currentVal) select.value = currentVal;
 };

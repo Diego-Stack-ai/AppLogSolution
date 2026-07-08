@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=5.101">
+    <link rel="stylesheet" href="styles.css?v=5.102">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .navetta-details-row {
@@ -509,13 +509,13 @@ tr.weekend:hover
         </div>
     </main>
 
-    <script src="script.js?v=5.101"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.101"></script>
+    <script src="script.js?v=5.102"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.102"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=5.101";
+        import { calculateHours } from "./firestore-service.js?v=5.102";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
           window.db = getFirestore(app);
@@ -1483,6 +1483,11 @@ const db = getFirestore(app);
             if (!container) return;
             container.innerHTML = '';
 
+            const docId = document.getElementById('navettaDocId').value;
+            const rowData = currentPresenzeData[docId] || {};
+            const clienteStr = (rowData.cliente || '').toUpperCase();
+            const isMainRowNavettaPura = clienteStr === 'NAVETTA';
+
             if (currentNavetteArray.length === 0) {
                 container.innerHTML = '<div style="color: #94a3b8; font-size: 13px; font-style: italic; text-align: center; padding: 10px 0;">Nessuna navetta inserita.</div>';
                 return;
@@ -1494,8 +1499,10 @@ const db = getFirestore(app);
                 card.style.cssText = 'background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 12px; position: relative; margin-bottom: 10px; text-align: left;';
 
                 let tappeHtml = '';
+                
+                const isMissione = att.tipo === 'navettaMissione' || (!att.tipo && isMainRowNavettaPura);
 
-                if (att.tipo === 'navettaMissione') {
+                if (isMissione) {
                     // NAVETTA PURA
                     const tappe = att.tappe || [];
                     tappe.forEach((tappa, tIdx) => {
@@ -2440,7 +2447,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=5.101"></script>
+    <script type="module" src="cedolini-splitter.js?v=5.102"></script>
 
 </body>
 </html>

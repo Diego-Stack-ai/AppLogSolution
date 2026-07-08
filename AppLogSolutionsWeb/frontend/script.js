@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "5.85";
+const APP_VERSION = "5.71";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -260,13 +260,13 @@ window.renderClientiInserimento = function() {
     // Aggiungi sempre NAVETTA come voce separata
     const navOpt = document.createElement('option');
     navOpt.value = 'NAVETTA';
-    navOpt.textContent = 'ðŸš NAVETTA';
+    navOpt.textContent = 'NAVETTA';
     select.appendChild(navOpt);
 
     // Aggiungi sempre MAGAZZINO come voce separata
     const magOpt = document.createElement('option');
     magOpt.value = 'MAGAZZINO';
-    magOpt.textContent = 'ðŸ“¦ MAGAZZINO';
+    magOpt.textContent = 'MAGAZZINO';
     select.appendChild(magOpt);
 
     if (currentVal) select.value = currentVal;
@@ -699,3 +699,53 @@ window.onUserProfileLoaded = (user) => {
 };
 
 window.closeConfirmModal = () => document.getElementById('confirmModal')?.classList.remove('active');
+
+window.caricaFotoDDT = async function(inputEl, index) {
+    const file = inputEl.files[0];
+    if (!file) return;
+
+    try {
+        const storage = window.firebaseStorage || (typeof firebaseStorage !== 'undefined' ? firebaseStorage : null);
+        if (!storage) {
+            alert("Errore: Firebase Storage non inizializzato.");
+            return;
+        }
+
+        // Recupera le funzioni modulari da Firebase Storage
+        const { ref: sRef, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js");
+
+        // Crea un nome univoco basato sulla data odierna
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const formattedDate = `${yyyy}-${mm}-${dd}`;
+        
+        const timestamp = Date.now();
+        const username = window.appData?.currentUser?.nome || 'sconosciuto';
+        const safeUsername = username.replace(/\s+/g, '_').toLowerCase();
+        
+        const path = `DDT_NAVETTE/${formattedDate}/DDT_${safeUsername}_${timestamp}.jpg`;
+        const fileRef = sRef(storage, path);
+
+        // Upload
+        const snapshot = await uploadBytes(fileRef, file);
+        const downloadUrl = await getDownloadURL(snapshot.ref);
+
+        // Salva nell'array
+        window.attivitaAggiuntive[index].fotoUrl = downloadUrl;
+
+        // Mostra il check visivo
+        const previewEl = document.getElementById(`previewDDT_${index}`);
+        if (previewEl) {
+            previewEl.style.display = 'block';
+        }
+
+        // Salva in bozza
+        if (typeof window.saveDraft === 'function') window.saveDraft();
+        
+    } catch (e) {
+        console.error("Errore caricamento foto DDT:", e);
+        alert("Errore durante il caricamento della foto: " + e.message);
+    }
+};

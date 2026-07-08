@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=5.85">
+    <link rel="stylesheet" href="styles.css?v=5.71">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .navetta-details-row {
@@ -509,13 +509,13 @@ tr.weekend:hover
         </div>
     </main>
 
-    <script src="script.js?v=5.85"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.85"></script>
+    <script src="script.js?v=5.71"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.71"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=5.85";
+        import { calculateHours } from "./firestore-service.js?v=5.71";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -1302,7 +1302,7 @@ const db = getFirestore(app);
                                                 <th>Partenza</th>
                                                 <th>Tappe (Carico / Cliente / Dest.)</th>
                                                 <th>Km (Delta)</th>
-                                                <th>Note</th>
+                                                <th>Foto DDT</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -1320,13 +1320,15 @@ const db = getFirestore(app);
                             
                             const km = `${att.kmIniziali||0} &rarr; ${att.kmFinali||0} (<strong>${att.deltaKm||0}</strong> km)`;
                             
+                            const fotoBtn = att.fotoUrl ? `<a href="${att.fotoUrl}" target="_blank" style="color: #059669; font-weight: bold; text-decoration: underline; font-size: 12px;"><span class="material-icons-round" style="font-size: 14px; vertical-align: middle;">image</span> Vedi Foto</a>` : '-';
+                            
                             subTableHtml += `
                                 <tr>
                                     <td style="white-space: nowrap; font-weight:600; color: var(--primary);">${orario}</td>
                                     <td>${partenza}</td>
                                     <td>${tappeStr}</td>
                                     <td style="white-space: nowrap;">${km}</td>
-                                    <td>${att.note || '-'}</td>
+                                    <td>${fotoBtn}</td>
                                 </tr>
                             `;
                         });
@@ -2188,7 +2190,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=5.85"></script>
+    <script type="module" src="cedolini-splitter.js?v=5.71"></script>
 
 </body>
 </html>

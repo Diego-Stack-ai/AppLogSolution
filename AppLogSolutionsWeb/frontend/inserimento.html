@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.85">
+    <link rel="stylesheet" href="styles.css?v=5.71">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -273,6 +273,7 @@
                                 </select>
                             </div>
                         </div>
+                        <div id="navettaAggiuntivePlaceholderStep1"></div>
                     </div>
                     <div style="display: flex; gap: 12px; margin-top: 15px;">
                         <button type="button" onclick="window.annullaInserimento()" class="btn-wizard btn-back" style="flex: 1; margin-top: 0;">
@@ -287,6 +288,7 @@
 
                 <!-- STEP 2: CHIUSURA E RIEPILOGO -->
                 <div id="step-2" class="step-container">
+                    <div id="navettaAggiuntivePlaceholderStep2"></div>
                     <h3 class="section-title">Chiusura Giornaliera</h3>
                     <div class="form-grid">
                         <div class="input-group" id="pomeriggioInizioContainer" style="display: none;">
@@ -330,16 +332,15 @@
                             <label for="kmArrivo">Km Arrivo *</label>
                             <input type="number" id="kmArrivo" placeholder="es. 120800" required>
                         </div>
-                        </div>
                     </div>
 
                     <!-- Nuova Sezione: Attività Aggiuntive / Tratte consecutive -->
-                    <div id="sezioneAttivitaAggiuntive" style="margin-top: 24px; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; background: white; display: none;">
+                    <div id="sezioneAttivitaAggiuntive" style="padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; background: white; display: none;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; flex-wrap: wrap;">
                             <h4 id="titoloSezioneAttivita" style="margin: 0; color: #1e293b; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
                                 Attività Aggiuntive
                             </h4>
-                            <button type="button" id="btnAggiungiAttivita" class="btn-primary" style="width: auto; padding: 8px 14px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin: 0; border-radius: 8px;">
+                            <button type="button" id="btnAggiungiAttivita" onclick="window.aggiungiAttivita()" class="btn-primary" style="width: auto; padding: 8px 14px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin: 0; border-radius: 8px;">
                                 <span class="material-icons-round" style="font-size: 16px;">add</span> Aggiungi Navetta
                             </button>
                         </div>
@@ -349,6 +350,8 @@
                             <!-- Righe inserite dinamicamente -->
                         </div>
                     </div>
+                    
+                    <div id="navettaAggiuntivePlaceholderDefault" style="margin-top: 24px;"></div>
 
                     <div
                         style="background: #f8fafc; padding: 20px; border-radius: 16px; margin: 24px 0; border: 1px solid #e2e8f0;">
@@ -472,12 +475,12 @@
         </div>
     </div>
 
-    <script src="script.js?v=5.85"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.85"></script>
+    <script src="script.js?v=5.71"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.71"></script>
     <script type="module">
-        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.85";
-        import { auth } from "./firestore-service.js?v=5.85";
-        import "./gps-tracker.js?v=5.85";
+        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.71";
+        import { auth } from "./firestore-service.js?v=5.71";
+        import "./gps-tracker.js?v=5.71";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -976,10 +979,15 @@
                             Aggiungi Tappa al Giro
                         </button>
 
-                        <!-- Note del giro -->
+                        <!-- Foto DDT -->
                         <div class="input-group" style="margin-bottom: 0; margin-top: 10px;">
-                            <label style="font-size: 11px; margin-bottom: 4px;">📝 Note Giro</label>
-                            <input type="text" data-index="${index}" data-field="note" value="${att.note || ''}" placeholder="Annotazioni sul giro..." oninput="window.aggiornaCampoAttivita(this)" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
+                            <button type="button" class="btn-wizard" style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; box-shadow: none; font-size: 12px; padding: 8px;" onclick="document.getElementById('fotoDDT_${index}').click()">
+                                <span class="material-icons-round" style="font-size: 16px;">camera_alt</span> Scatta Foto DDT
+                            </button>
+                            <input type="file" accept="image/*" capture="environment" id="fotoDDT_${index}" style="display: none;" onchange="window.caricaFotoDDT(this, ${index})">
+                            <div id="previewDDT_${index}" style="margin-top: 5px; font-size: 11px; color: #059669; display: ${att.fotoUrl ? 'block' : 'none'}; font-weight: bold;">
+                                <span class="material-icons-round" style="font-size: 14px; vertical-align: middle;">check_circle</span> Foto acquisita
+                            </div>
                         </div>
                     `;
 
@@ -1080,8 +1088,13 @@
                             </div>
                         </div>
                         <div class="input-group" style="margin-bottom: 0; margin-top: 10px;">
-                            <label style="font-size: 11px; margin-bottom: 4px;">Note</label>
-                            <input type="text" data-index="${index}" data-field="note" value="${att.note || ''}" placeholder="Dettagli, anomalie..." oninput="window.aggiornaCampoAttivita(this)" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
+                            <button type="button" class="btn-wizard" style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; box-shadow: none; font-size: 12px; padding: 8px;" onclick="document.getElementById('fotoDDT_${index}').click()">
+                                <span class="material-icons-round" style="font-size: 16px;">camera_alt</span> Scatta Foto DDT
+                            </button>
+                            <input type="file" accept="image/*" capture="environment" id="fotoDDT_${index}" style="display: none;" onchange="window.caricaFotoDDT(this, ${index})">
+                            <div id="previewDDT_${index}" style="margin-top: 5px; font-size: 11px; color: #059669; display: ${att.fotoUrl ? 'block' : 'none'}; font-weight: bold;">
+                                <span class="material-icons-round" style="font-size: 14px; vertical-align: middle;">check_circle</span> Foto acquisita
+                            </div>
                         </div>
                     `;
                 }
@@ -1102,7 +1115,7 @@
                     kmIniziali: '',
                     kmFinali: '',
                     deltaKm: '',
-                    note: '',
+                    fotoUrl: '',
                     tappe: [{ carico: '', cliente_merce: '', destinazione_merce: '' }]
                 });
             } else {
@@ -1115,7 +1128,7 @@
                     kmIniziali: '',
                     kmFinali: '',
                     deltaKm: '',
-                    note: ''
+                    fotoUrl: ''
                 });
             }
             window.renderAttivitaRows();
@@ -1227,30 +1240,37 @@
                 btn.style.backgroundColor = '#7c3aed';
                 btn.style.boxShadow = '0 4px 15px rgba(124,58,237,0.3)';
                 sez.style.display = 'block';
+                
+                // Riposizionamento dinamico per Navetta Pura
+                const isStep1Active = document.getElementById('step-1').classList.contains('active');
+                if (isStep1Active) {
+                    const ph1 = document.getElementById('navettaAggiuntivePlaceholderStep1');
+                    if (ph1) ph1.appendChild(sez);
+                } else {
+                    const ph2 = document.getElementById('navettaAggiuntivePlaceholderStep2');
+                    if (ph2) ph2.appendChild(sez);
+                }
                 return;
             }
 
-            if (tipoTurno === 'magazziniere' || !cliente || !viaggio) {
-                sez.style.display = 'none';
-                return;
-            }
+            // Navetta Autisti: mostra sezione solo se ha selezionato un viaggio di navetta (es. VIAGGIO N1)
+            const isViaggioNavetta = viaggio.toUpperCase().includes('NAVETTA') || viaggio.toUpperCase().includes('N1') || viaggio.toUpperCase().includes('N2');
 
-            const viaggioUpper = viaggio.toUpperCase();
-            const isNavetta = viaggioUpper.includes('NAVETTA') || clienteUpper.includes('NAVETTA');
-
-            if (isNavetta) {
-                titolo.textContent = "Tratte Consecutive";
+            if (isViaggioNavetta && tipoTurno !== 'magazziniere') {
+                titolo.textContent = "Navetta Autisti - Aggiungi Tratte";
                 btn.innerHTML = '<span class="material-icons-round" style="font-size: 16px;">add</span> Aggiungi Tratta';
-                btn.style.backgroundColor = '';
-                btn.style.boxShadow = '';
+                btn.style.backgroundColor = '#f59e0b';
+                btn.style.boxShadow = '0 4px 15px rgba(245,158,11,0.3)';
+                sez.style.display = 'block';
+                
+                // Riposizionamento default
+                const phDefault = document.getElementById('navettaAggiuntivePlaceholderDefault');
+                if (phDefault) phDefault.appendChild(sez);
             } else {
-                titolo.textContent = "Attività Aggiuntive";
-                btn.innerHTML = '<span class="material-icons-round" style="font-size: 16px;">add</span> Aggiungi Navetta';
-                btn.style.backgroundColor = '';
-                btn.style.boxShadow = '';
+                sez.style.display = 'none';
+                const phDefault = document.getElementById('navettaAggiuntivePlaceholderDefault');
+                if (phDefault) phDefault.appendChild(sez);
             }
-
-            sez.style.display = 'block';
         };
 
         // Aggancia click al pulsante Aggiungi

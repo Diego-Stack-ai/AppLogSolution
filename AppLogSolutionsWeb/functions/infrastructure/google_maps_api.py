@@ -4,6 +4,7 @@ import json
 import time
 import logging
 import hashlib
+import re
 try:
     import requests
 except ImportError:

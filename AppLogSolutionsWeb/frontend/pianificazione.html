@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.93">
+    <link rel="stylesheet" href="styles.css?v=5.94">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -914,6 +914,20 @@
                 if (!clienteA && clienteB) return 1;
                 if (clienteA < clienteB) return -1;
                 if (clienteA > clienteB) return 1;
+                
+                const viaggioA = a.querySelector('.in-viaggio').value.trim().toUpperCase();
+                const viaggioB = b.querySelector('.in-viaggio').value.trim().toUpperCase();
+                
+                if (viaggioA && !viaggioB) return -1;
+                if (!viaggioA && viaggioB) return 1;
+                if (viaggioA < viaggioB) return -1;
+                if (viaggioA > viaggioB) return 1;
+                
+                const nomeA = a.querySelector('.driver-name').innerText.trim().toUpperCase();
+                const nomeB = b.querySelector('.driver-name').innerText.trim().toUpperCase();
+                if (nomeA < nomeB) return -1;
+                if (nomeA > nomeB) return 1;
+                
                 return 0;
             });
             
@@ -921,7 +935,7 @@
             
             Swal.fire({
                 title: 'Ordinato!',
-                text: 'Le righe sono state ordinate alfabeticamente per Cliente.',
+                text: 'Le righe sono state ordinate alfabeticamente per Cliente, Viaggio e Autista.',
                 icon: 'success',
                 timer: 1500,
                 showConfirmButton: false
@@ -1000,11 +1014,39 @@
                                 tr.querySelector('.in-targa').value = ass.targa || '';
                                 tr.querySelector('.in-confermato').checked = ass.confermato || false;
                                 window.toggleLockRow(tr);
-                                
-                                // Ripristina l'ordine del database spostando la riga in fondo al tbody
-                                tr.parentNode.appendChild(tr);
                             }
                         });
+                        
+                        // Riordina il DOM basandosi sull'array assegnazioni salvato
+                        const tbody = document.getElementById('planningTbody');
+                        const rows = Array.from(tbody.querySelectorAll('tr'));
+                        const orderMap = new Map();
+                        data.assegnazioni.forEach((ass, idx) => {
+                            orderMap.set(ass.dipendenteId, idx);
+                        });
+
+                        rows.sort((a, b) => {
+                            const idA = a.getAttribute('data-id');
+                            const idB = b.getAttribute('data-id');
+                            const hasA = orderMap.has(idA);
+                            const hasB = orderMap.has(idB);
+
+                            if (hasA && hasB) {
+                                return orderMap.get(idA) - orderMap.get(idB);
+                            }
+                            // Chi non era salvato va in fondo
+                            if (!hasA && hasB) return 1;
+                            if (hasA && !hasB) return -1;
+
+                            // Ordine alfabetico autisti come fallback per quelli non salvati
+                            const nomeA = a.querySelector('.driver-name').innerText.trim().toUpperCase();
+                            const nomeB = b.querySelector('.driver-name').innerText.trim().toUpperCase();
+                            if (nomeA < nomeB) return -1;
+                            if (nomeA > nomeB) return 1;
+                            return 0;
+                        });
+
+                        rows.forEach(r => tbody.appendChild(r));
                         
                         if (typeof window.aggiornaDisponibilitaGlobale === 'function') {
                             window.aggiornaDisponibilitaGlobale();
@@ -1160,7 +1202,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=5.93"></script>
-    <script src="script.js?v=5.93"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.94"></script>
+    <script src="script.js?v=5.94"></script>
 </body>
 </html>

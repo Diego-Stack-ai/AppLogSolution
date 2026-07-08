@@ -116,3 +116,5 @@ Da questo momento, ogni modifica o creazione UI deve rispettare tassativamente:
 - Ignorare lo spacing system o la gerarchia tipografica.
 
 Se una richiesta dell'utente viola il design system, l'agente DEVE fermarsi, NON generare la UI e proporre all'utente un'alternativa coerente con il sistema e le classi esistenti.
+
+- TASSATIVO — DIVIETO ASSOLUTO DI MODIFICA SCRIPT BUMP: È severamente vietato agli agenti modificare, semplificare, tagliare o alterare lo script ump_version.py (che si occupa del calcolo intelligente e progressivo della versione sui file js e html). Lo script deve rimanere così com'è. Qualsiasi modifica a questo script richiede una esplicita autorizzazione dell'utente.

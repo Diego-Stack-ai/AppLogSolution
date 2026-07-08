@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.88">
+    <link rel="stylesheet" href="styles.css?v=5.89">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -475,12 +475,12 @@
         </div>
     </div>
 
-    <script src="script.js?v=5.88"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.88"></script>
+    <script src="script.js?v=5.89"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.89"></script>
     <script type="module">
-        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.88";
-        import { auth } from "./firestore-service.js?v=5.88";
-        import "./gps-tracker.js?v=5.88";
+        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.89";
+        import { auth } from "./firestore-service.js?v=5.89";
+        import "./gps-tracker.js?v=5.89";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -564,31 +564,36 @@
             const tipo = document.getElementById('tipoTurno')?.value || 'autista';
             const isMagazzino = (tipo === 'magazziniere');
 
-            // Campi logistici da disabilitare/abilitare
+            // Campi logistici da disabilitare/abilitare e nascondere/mostrare
             const logisticFields = ['automezzo', 'clienteSelect', 'viaggioSelect', 'kmPartenza', 'kmArrivo', 'importo', 'litri'];
             logisticFields.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
+                    const inputGroup = el.closest('.input-group');
                     if (isMagazzino) {
                         if (id === 'clienteSelect') {
                             el.value = 'MAGAZZINO';
                             el.disabled = true;
                             el.classList.add('readonly-field');
                             el.required = false;
+                            if (inputGroup) inputGroup.style.display = 'none';
                             if (window.updateViaggi) window.updateViaggi();
                         } else if (id === 'viaggioSelect') {
                             el.disabled = false;
                             el.classList.remove('readonly-field');
                             el.required = true;
+                            if (inputGroup) inputGroup.style.display = ''; // Torna visibile
                         } else {
                             el.disabled = true;
                             el.classList.add('readonly-field');
                             el.required = false;
                             el.value = '';
+                            if (inputGroup) inputGroup.style.display = 'none';
                         }
                     } else {
                         el.classList.remove('readonly-field');
                         el.disabled = false;
+                        if (inputGroup) inputGroup.style.display = ''; // Torna visibile
                         if (['automezzo', 'clienteSelect', 'viaggioSelect', 'kmPartenza', 'kmArrivo'].includes(id)) {
                             el.required = true;
                         }

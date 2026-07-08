@@ -23,6 +23,40 @@ def nearest_slot(current_minutes):
     nearest = min(slots, key=lambda s: abs(s - current_minutes))
     return f"{nearest // 60:02d}{nearest % 60:02d}"
 
+def get_weekday_timestamp(hour, minute):
+    import datetime
+    now = datetime.datetime.now()
+    days_ahead = 0
+    while True:
+        candidate = now + datetime.timedelta(days=days_ahead)
+        if candidate.weekday() < 5:
+            ts = candidate.replace(hour=hour, minute=minute, second=0, microsecond=0)
+            if ts > now:
+                return int(ts.timestamp())
+        days_ahead += 1
+
+def get_traffic_duration(p1, p2, slot_str):
+    if not slot_str: return None
+    h = int(slot_str[:2])
+    m = int(slot_str[2:])
+    dep_ts = get_weekday_timestamp(h, m)
+    orig = f"{p1.get('lat',0)},{p1.get('lon', p1.get('lng', 0))}"
+    dest = f"{p2.get('lat',0)},{p2.get('lon', p2.get('lng', 0))}"
+    url = (f"https://maps.googleapis.com/maps/api/distancematrix/json"
+           f"?origins={orig}&destinations={dest}"
+           f"&departure_time={dep_ts}&traffic_model=best_guess"
+           f"&key={GOOGLE_MAPS_API_KEY}")
+    try:
+        resp = requests.get(url, timeout=10).json()
+        if resp.get('status') == 'OK':
+            el = resp['rows'][0]['elements'][0]
+            if el.get('status') == 'OK':
+                dur = el.get('duration_in_traffic', el.get('duration', {})).get('value')
+                return dur
+    except Exception as e:
+        print(f"[TRAFFIC] Errore API: {e}")
+    return None
+
 def _route_key(punti_pieni):
     seq = "|".join(f"{round(p.get('lat',0.0),5)},{round(p.get('lon', p.get('lng',0.0)),5)}" for p in punti_pieni)
     return hashlib.md5(seq.encode()).hexdigest()

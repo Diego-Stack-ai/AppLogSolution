@@ -648,8 +648,12 @@ select option {
         box-shadow: none !important;
         display: block !important;
     }
-    .glass-nav, .filters-container, .btn-primary, .logout-btn, .dashboard-grid, .no-print {
+    .glass-nav, .filters-container, .btn-primary, .logout-btn, .dashboard-grid, .no-print, #alertGiornataBloccata {
         display: none !important;
+    }
+    .print-header {
+        display: block !important;
+        margin-bottom: 20px !important;
     }
     .glass-table {
         width: 100% !important;

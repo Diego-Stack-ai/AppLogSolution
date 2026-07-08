@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=5.103">
+    <link rel="stylesheet" href="styles.css?v=5.86">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .navetta-details-row {
@@ -509,13 +509,13 @@ tr.weekend:hover
         </div>
     </main>
 
-    <script src="script.js?v=5.103"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.103"></script>
+    <script src="script.js?v=5.86"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.86"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=5.103";
+        import { calculateHours } from "./firestore-service.js?v=5.86";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
           window.db = getFirestore(app);
@@ -1904,34 +1904,52 @@ const db = getFirestore(app);
         };
 
         window.saveAllEdits = async function() {
-            const saveBtns = document.querySelectorAll('#tableBody tr .btn-save');
+            const saveBtns = Array.from(document.querySelectorAll('#tableBody tr .btn-save'));
             if (saveBtns.length === 0) {
                 alert('Nessuna riga da salvare.');
                 return;
             }
             const btnSaveTutti = document.getElementById('btnSaveTutti');
-            if (btnSaveTutti) { btnSaveTutti.disabled = true; btnSaveTutti.textContent = '⏳ Salvataggio...'; }
-            let errors = 0;
-            const promises = Array.from(saveBtns).map(async (btn) => {
-                try {
-                    await window.toggleRowEdit(btn);
-                } catch(e) {
-                    errors++;
-                    console.error('Errore salvataggio riga:', e);
-                }
-            });
+            if (btnSaveTutti) { btnSaveTutti.disabled = true; btnSaveTutti.textContent = '⏳ Salvataggio in corso...'; }
             
-            await Promise.all(promises);
+            try {
+                // Firebase batch limit is 500, we'll chunk by 400 just to be safe
+                const CHUNK_SIZE = 400;
+                let errors = 0;
+                
+                for (let i = 0; i < saveBtns.length; i += CHUNK_SIZE) {
+                    const chunk = saveBtns.slice(i, i + CHUNK_SIZE);
+                    const batch = writeBatch(db);
+                    
+                    for (const btn of chunk) {
+                        try {
+                            await window.toggleRowEdit(btn, batch);
+                        } catch(e) {
+                            errors++;
+                            console.error('Errore preparazione riga:', e);
+                        }
+                    }
+                    
+                    await batch.commit();
+                }
 
-            if (btnSaveTutti) { btnSaveTutti.disabled = false; btnSaveTutti.textContent = '💾 Salva Tutto'; }
-            // Deseleziona il checkbox e nascondi il pulsante Salva Tutto
-            const chk = document.getElementById('chkUnlockAll');
-            if (chk) { chk.checked = false; }
-            if (btnSaveTutti) btnSaveTutti.style.display = 'none';
-            if (errors === 0) {
-                // feedback ok
-            } else {
-                alert(`Salvataggio completato con ${errors} errore/i. Controlla la console.`);
+                if (btnSaveTutti) { btnSaveTutti.disabled = false; btnSaveTutti.textContent = '✅ Salva Tutto'; }
+                const chk = document.getElementById('chkUnlockAll');
+                if (chk) { chk.checked = false; }
+                if (btnSaveTutti) btnSaveTutti.style.display = 'none';
+                
+                if (errors > 0) {
+                    alert(`Salvataggio completato con ${errors} errore/i. Controlla la console.`);
+                } else {
+                    // Small delay to let the listener catch up before alerting
+                    setTimeout(() => {
+                        alert("Tutte le righe sono state salvate correttamente!");
+                    }, 500);
+                }
+            } catch(globalError) {
+                console.error("Errore irreversibile durante il batch:", globalError);
+                alert("Errore critico durante il salvataggio multiplo: " + globalError.message);
+                if (btnSaveTutti) { btnSaveTutti.disabled = false; btnSaveTutti.textContent = '✅ Salva Tutto'; }
             }
         };
 
@@ -1967,9 +1985,7 @@ const db = getFirestore(app);
                 const aId = docId ? docId.split('_')[0] : tr.dataset.autistaId;
                 rowAutista = window.appData.lista_autisti.find(a => a.id === aId) || { id: aId, nome: 'Dipendente' };
             }
-            const isAdmin = rowAutista.ruolo === 'amministratore' || rowAutista.ruolo === 'impiegata';
-
-            const defaultDoubleShift = isAdmin;
+            const isAdmin = rowAutista && (rowAutista.ruolo === 'amministratore' || rowAutista.ruolo === 'impiegata');
 
             const btnText = btn.textContent || btn.innerText || '';
 
@@ -2107,7 +2123,11 @@ const db = getFirestore(app);
                 };
 
                 try {
-                    await setDoc(doc(db, "presenze", docId), updatedData, { merge: true });
+                    if (batch) {
+                        batch.set(doc(db, "presenze", docId), updatedData, { merge: true });
+                    } else {
+                        await setDoc(doc(db, "presenze", docId), updatedData, { merge: true });
+                    }
 
                     // Disattiva input
                     const isMag = chkMagazzino.checked;
@@ -2449,7 +2469,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=5.103"></script>
+    <script type="module" src="cedolini-splitter.js?v=5.86"></script>
 
 </body>
 </html>

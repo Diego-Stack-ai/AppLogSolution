@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=5.97">
+    <link rel="stylesheet" href="styles.css?v=5.98">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .navetta-details-row {
@@ -509,13 +509,13 @@ tr.weekend:hover
         </div>
     </main>
 
-    <script src="script.js?v=5.97"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.97"></script>
+    <script src="script.js?v=5.98"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.98"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=5.97";
+        import { calculateHours } from "./firestore-service.js?v=5.98";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
           window.db = getFirestore(app);
@@ -1282,7 +1282,8 @@ const db = getFirestore(app);
                                 ${canEdit ? `<button class="btn-edit" onclick="toggleRowEdit(this)">✏️ Mod.</button>` : ''}
                                 <button class="btn-dettagli" 
                                     style="${(isMagazzino || parseFloat(record.importo || 0) > 0 || parseFloat(record.litri || 0) > 0 || (record.note && record.note.trim() !== '')) ? 'background-color: #dcfce3; color: #166534; border-color: #86efac;' : ''}" 
-                                    onclick="openDettagli(this)">🔍 Dati</button>
+                                    onclick="openDettagli(this)">📝 Dati</button>
+                                ${canEdit ? `<button class="btn-primary btn-add-navetta-main" onclick="openNavettaModal('${docId}', -1)" style="display:none; font-size:11px; padding:4px 8px; background-color: #3b82f6; border-color: #3b82f6; border-radius: 4px; cursor: pointer; color: white;">➕ Navetta</button>` : ''}
                             </div>
                         </td>
                     `;
@@ -1802,6 +1803,8 @@ const db = getFirestore(app);
                     window.toggleRowEdit(btn);
                 } else if (!unlock && !isMod) {
                     // Annulla modalità Modifica (senza salvare)
+                    const btnAddNav = tr.querySelector('.btn-add-navetta-main');
+                    if (btnAddNav) btnAddNav.style.display = 'none';
                     const inputs = tr.querySelectorAll('.edit-input');
                     const chkMagazzino = tr.querySelector('[data-field="isMagazzino"]');
                     const isMag = chkMagazzino ? chkMagazzino.checked : false;
@@ -1894,6 +1897,9 @@ const db = getFirestore(app);
 
             if (btnText.includes('Mod')) {
                 // Attiva modalità modifica
+                const btnAddNav = tr.querySelector('.btn-add-navetta-main');
+                if (btnAddNav) btnAddNav.style.display = 'inline-block';
+
                 const isMag = chkMagazzino.checked;
                 inputs.forEach(input => {
                     if (input.dataset.field !== 'oreTotali' && input.dataset.field !== 'oreOrdinarie' && input.dataset.field !== 'oreStraordinarie' && input.dataset.field !== 'kmDelta') {
@@ -1915,6 +1921,9 @@ const db = getFirestore(app);
                 btn.classList.add('btn-save');
             } else {
                 // Salva le modifiche su Firestore
+                const btnAddNav = tr.querySelector('.btn-add-navetta-main');
+                if (btnAddNav) btnAddNav.style.display = 'none';
+
                 btn.innerText = "⏳ Salva...";
                 btn.disabled = true;
                 
@@ -2420,7 +2429,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=5.97"></script>
+    <script type="module" src="cedolini-splitter.js?v=5.98"></script>
 
 </body>
 </html>

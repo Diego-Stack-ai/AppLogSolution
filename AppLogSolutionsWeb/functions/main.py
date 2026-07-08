@@ -2701,17 +2701,7 @@ CONSOLIDAMENTO = {
 UNITA_QTY = r"(Confezioni|Confezione|confezioni|confezione|Colli|Collo|colli|collo|Brick|brick|Fardelli|Fardello|fardelli|fardello|Bottiglie|Bottiglia|bottiglie|bottiglia|Cartoni|Cartone|cartoni|cartone|Cluster|cluster|Porzioni|Porzione|porzioni|porzione|Fascette|Fascetta|fascette|fascetta|Manifesti|Manifesto|manifesti|manifesto|Fette|Fetta|fette|fetta|Buste|Busta|buste|busta|pz)"
 SCAD_RE = re.compile(r"Scad\.\s*min\.\s*(\d{2}/\d{2}/\d{4})", re.I)
 
-def _route_key(punti_pieni):
-    seq = "|".join(f"{round(p.get('lat',0.0),5)},{round(p.get('lon', p.get('lng',0.0)),5)}" for p in punti_pieni)
-    return hashlib.md5(seq.encode()).hexdigest()
 
-def _leggi_percorsi_cache(key):
-    cache = load_storage_cache("directions_cache.json")
-    return cache.get(key)
-
-def _scrivi_percorsi_cache(key, data):
-    cache = load_storage_cache("directions_cache.json")
-    cache[key] = data
 
     return DEPOT_VEGGIANO
 

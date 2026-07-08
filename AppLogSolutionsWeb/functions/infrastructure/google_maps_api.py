@@ -3,6 +3,7 @@ import math
 import json
 import time
 import logging
+import hashlib
 try:
     import requests
 except ImportError:
@@ -11,6 +12,20 @@ except ImportError:
 from infrastructure.firebase_setup import load_storage_cache, save_storage_cache
 
 logger = logging.getLogger('AppLogSolutions')
+
+def _route_key(punti_pieni):
+    seq = "|".join(f"{round(p.get('lat',0.0),5)},{round(p.get('lon', p.get('lng',0.0)),5)}" for p in punti_pieni)
+    return hashlib.md5(seq.encode()).hexdigest()
+
+def _leggi_percorsi_cache(key):
+    cache = load_storage_cache("directions_cache.json")
+    return cache.get(key)
+
+def _scrivi_percorsi_cache(key, data):
+    cache = load_storage_cache("directions_cache.json")
+    cache[key] = data
+    save_storage_cache("directions_cache.json")
+
 GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', '')
 AVG_SPEED_KMH = 35.0
 

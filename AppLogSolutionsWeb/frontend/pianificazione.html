@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.79">
+    <link rel="stylesheet" href="styles.css?v=5.80">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -704,7 +704,9 @@
                     Array.from(selectViaggio.options).forEach(opt => {
                         if(!opt.value) return;
                         const combo = currentCliente + "||" + opt.value;
-                        if (appState.usatoViaggi.has(combo) && opt.value !== selectViaggio.value) {
+                        const isSpecialCliente = currentCliente === 'NAVETTA' || currentCliente === 'MAGAZZINO';
+                        
+                        if (!isSpecialCliente && appState.usatoViaggi.has(combo) && opt.value !== selectViaggio.value) {
                             opt.style.display = 'none';
                             opt.disabled = true;
                         } else {
@@ -719,8 +721,9 @@
                         if(!opt.value) return;
                         const owner = appState.usatoTarghe.get(opt.value);
                         const isUsedByOther = (owner && owner !== autistaId);
+                        const isSpecialCliente = currentCliente === 'NAVETTA' || currentCliente === 'MAGAZZINO';
                         
-                        if (isUsedByOther) {
+                        if (!isSpecialCliente && isUsedByOther) {
                             opt.style.display = 'none';
                             opt.disabled = true;
                         } else {
@@ -1157,7 +1160,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=5.79"></script>
-    <script src="script.js?v=5.79"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.80"></script>
+    <script src="script.js?v=5.80"></script>
 </body>
 </html>

@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=5.94">
+    <link rel="stylesheet" href="styles.css?v=5.95">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .navetta-details-row {
@@ -509,13 +509,13 @@ tr.weekend:hover
         </div>
     </main>
 
-    <script src="script.js?v=5.94"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.94"></script>
+    <script src="script.js?v=5.95"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.95"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=5.94";
+        import { calculateHours } from "./firestore-service.js?v=5.95";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
@@ -1384,8 +1384,6 @@ const db = getFirestore(app);
             const btnEdit = tr.querySelector('.btn-edit');
             const isEditing = btnEdit ? btnEdit.innerText.includes('Salva') : false;
             
-            const isMobile = window.innerWidth <= 1024;
-
             if (isEditing) {
                 if (isChecked) {
                     if (oraFineM) {
@@ -1397,9 +1395,12 @@ const db = getFirestore(app);
                         oraInizioP.disabled = false;
                         oraInizioP.style.border = "1px solid var(--primary)";
                         oraInizioP.style.background = "white";
-                        if (isMobile) oraInizioP.style.display = "block";
+                        oraInizioP.style.display = "block";
                     }
-                    if (oraFineP && isMobile) {
+                    if (oraFineP) {
+                        oraFineP.disabled = false;
+                        oraFineP.style.border = "1px solid var(--primary)";
+                        oraFineP.style.background = "white";
                         oraFineP.style.display = "block";
                     }
                 } else {
@@ -1414,9 +1415,13 @@ const db = getFirestore(app);
                         oraInizioP.disabled = true;
                         oraInizioP.style.border = "1px solid transparent";
                         oraInizioP.style.background = "#f1f5f9";
-                        if (isMobile) oraInizioP.style.display = "none";
+                        oraInizioP.style.display = "none";
                     }
-                    if (oraFineP && isMobile) {
+                    if (oraFineP) {
+                        oraFineP.value = "";
+                        oraFineP.disabled = true;
+                        oraFineP.style.border = "1px solid transparent";
+                        oraFineP.style.background = "#f1f5f9";
                         oraFineP.style.display = "none";
                     }
                 }
@@ -1741,9 +1746,7 @@ const db = getFirestore(app);
                     }
                 });
 
-                if (!defaultDoubleShift) {
-                    chkMagazzino.disabled = false;
-                }
+                chkMagazzino.disabled = false;
 
                 btn.innerText = "💾 Salva";
                 btn.classList.add('btn-save');
@@ -2190,7 +2193,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=5.94"></script>
+    <script type="module" src="cedolini-splitter.js?v=5.95"></script>
 
 </body>
 </html>

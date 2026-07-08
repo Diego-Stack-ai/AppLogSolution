@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.91">
+    <link rel="stylesheet" href="styles.css?v=5.92">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -203,7 +203,9 @@
                         <!-- Nuova Sezione Menu Dinamici (Cliente + Viaggio) -->
                         <div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
                             <div class="input-group">
-                                <label for="clienteSelect">Cliente / Progetto *</label>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <label for="clienteSelect" style="margin-bottom: 0;">Cliente / Progetto *</label>
+                                </div>
                                 <select id="clienteSelect" required>
                                     <option value="">Seleziona cliente</option>
                                 </select>
@@ -475,12 +477,12 @@
         </div>
     </div>
 
-    <script src="script.js?v=5.91"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.91"></script>
+    <script src="script.js?v=5.92"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.92"></script>
     <script type="module">
-        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.91";
-        import { auth } from "./firestore-service.js?v=5.91";
-        import "./gps-tracker.js?v=5.91";
+        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.92";
+        import { auth } from "./firestore-service.js?v=5.92";
+        import "./gps-tracker.js?v=5.92";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.9">
+    <link rel="stylesheet" href="styles.css?v=5.91">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -273,8 +273,8 @@
                                 </select>
                             </div>
                         </div>
-                        <div id="navettaAggiuntivePlaceholderStep1"></div>
                     </div>
+                    <div id="navettaAggiuntivePlaceholderStep1"></div>
                     <div style="display: flex; gap: 12px; margin-top: 15px;">
                         <button type="button" onclick="window.annullaInserimento()" class="btn-wizard btn-back" style="flex: 1; margin-top: 0;">
                             <span class="material-icons-round">close</span> Annulla
@@ -475,12 +475,12 @@
         </div>
     </div>
 
-    <script src="script.js?v=5.9"></script>
-    <script type="module" src="firebase-auth-sync.js?v=5.9"></script>
+    <script src="script.js?v=5.91"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.91"></script>
     <script type="module">
-        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.9";
-        import { auth } from "./firestore-service.js?v=5.9";
-        import "./gps-tracker.js?v=5.9";
+        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=5.91";
+        import { auth } from "./firestore-service.js?v=5.91";
+        import "./gps-tracker.js?v=5.91";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -978,12 +978,6 @@
                         <div style="font-size: 11px; font-weight: 600; color: #7c3aed; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px;">Tappe del Giro</div>
                         ${tappeHtml}
 
-                        <!-- Pulsante Aggiungi Tappa -->
-                        <button type="button" onclick="window.aggiungiTappa(${index})" style="width: 100%; padding: 8px; margin-top: 4px; border: 1.5px dashed #a78bfa; background: transparent; border-radius: 8px; color: #7c3aed; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                            <span class="material-icons-round" style="font-size: 15px;">add</span>
-                            Aggiungi Tappa al Giro
-                        </button>
-
                         <!-- Foto DDT -->
                         <div class="input-group" style="margin-bottom: 0; margin-top: 10px;">
                             <button type="button" class="btn-wizard" style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; box-shadow: none; font-size: 12px; padding: 8px;" onclick="document.getElementById('fotoDDT_${index}').click()">
@@ -994,6 +988,12 @@
                                 <span class="material-icons-round" style="font-size: 14px; vertical-align: middle;">check_circle</span> Foto acquisita
                             </div>
                         </div>
+
+                        <!-- Pulsante Aggiungi Tappa -->
+                        <button type="button" onclick="window.aggiungiTappa(${index})" style="width: 100%; padding: 8px; margin-top: 8px; border: 1.5px dashed #a78bfa; background: transparent; border-radius: 8px; color: #7c3aed; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                            <span class="material-icons-round" style="font-size: 15px;">add</span>
+                            Aggiungi Tappa al Giro
+                        </button>
                     `;
 
                 } else {
@@ -1065,6 +1065,18 @@
                             </div>
                         </div>
                         ${tappeHtml}
+                        
+                        <!-- Foto DDT -->
+                        <div class="input-group" style="margin-bottom: 0; margin-top: 10px;">
+                            <button type="button" class="btn-wizard" style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; box-shadow: none; font-size: 12px; padding: 8px;" onclick="document.getElementById('fotoDDT_${index}').click()">
+                                <span class="material-icons-round" style="font-size: 16px;">camera_alt</span> Scatta Foto DDT
+                            </button>
+                            <input type="file" accept="image/*" capture="environment" id="fotoDDT_${index}" style="display: none;" onchange="window.caricaFotoDDT(this, ${index})">
+                            <div id="previewDDT_${index}" style="margin-top: 5px; font-size: 11px; color: #059669; display: ${att.fotoUrl ? 'block' : 'none'}; font-weight: bold;">
+                                <span class="material-icons-round" style="font-size: 14px; vertical-align: middle;">check_circle</span> Foto acquisita
+                            </div>
+                        </div>
+
                         <div style="text-align: center; margin-top: 10px;">
                             <button type="button" onclick="window.aggiungiTappaNavettaAutisti(${index})" style="background: #e2e8f0; color: #475569; border: none; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
                                 <span class="material-icons-round" style="font-size: 14px;">add</span> Aggiungi Tappa alla Tratta
@@ -1090,15 +1102,6 @@
                             <div class="input-group" style="margin-bottom: 0;">
                                 <label style="font-size: 11px; margin-bottom: 4px;">Delta Km</label>
                                 <input type="text" data-index="${index}" data-field="deltaKm" value="${att.deltaKm !== undefined && att.deltaKm !== null ? att.deltaKm : ''}" readonly class="readonly-field" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; margin: 0; height: auto; width: 100%;">
-                            </div>
-                        </div>
-                        <div class="input-group" style="margin-bottom: 0; margin-top: 10px;">
-                            <button type="button" class="btn-wizard" style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; box-shadow: none; font-size: 12px; padding: 8px;" onclick="document.getElementById('fotoDDT_${index}').click()">
-                                <span class="material-icons-round" style="font-size: 16px;">camera_alt</span> Scatta Foto DDT
-                            </button>
-                            <input type="file" accept="image/*" capture="environment" id="fotoDDT_${index}" style="display: none;" onchange="window.caricaFotoDDT(this, ${index})">
-                            <div id="previewDDT_${index}" style="margin-top: 5px; font-size: 11px; color: #059669; display: ${att.fotoUrl ? 'block' : 'none'}; font-weight: bold;">
-                                <span class="material-icons-round" style="font-size: 14px; vertical-align: middle;">check_circle</span> Foto acquisita
                             </div>
                         </div>
                     `;

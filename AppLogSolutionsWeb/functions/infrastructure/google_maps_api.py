@@ -397,6 +397,8 @@ def _get_directions_and_simulate_cloud(percorso, depot, is_grand_chef, data_cons
             
         current_time = dep_time_min
         
+    ora_partenza_calc = format_minutes_to_time(partenza_magazzino_min) if len(percorso) > 0 else "07:00"
+    return km_tot, sec_tot, polylines, percorso, ora_partenza_calc
 
 # ─── CLOUD FUNCTION PER BAT 7B: AGGIORNA TRAFFICO SERALE ──────────────────────
 

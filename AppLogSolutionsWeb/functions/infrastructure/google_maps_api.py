@@ -26,6 +26,36 @@ def _scrivi_percorsi_cache(key, data):
     cache[key] = data
     save_storage_cache("directions_cache.json")
 
+def _leggi_cache_completa_firestore(p1, p2):
+    cache = load_storage_cache("distanze_reali_cache.json")
+    key = _cache_key(p1, p2)
+    val = cache.get(key)
+    if val: return val
+    rev_key = _cache_key(p2, p1)
+    val_rev = cache.get(rev_key)
+    if val_rev: return val_rev
+    return None
+
+def _leggi_traffic_cache(p1, p2, slot_str):
+    cache = load_storage_cache("distanze_traffico_cache.json")
+    key = _cache_key(p1, p2)
+    val = cache.get(key)
+    if val: return val.get(slot_str)
+    rev_key = _cache_key(p2, p1)
+    val_rev = cache.get(rev_key)
+    if val_rev: return val_rev.get(slot_str)
+    return None
+
+def _scrivi_traffic_cache(p1, p2, slot_str, dur_sec):
+    try:
+        cache = load_storage_cache("distanze_traffico_cache.json")
+        key = _cache_key(p1, p2)
+        if key not in cache: cache[key] = {}
+        cache[key][slot_str] = int(dur_sec)
+        save_storage_cache("distanze_traffico_cache.json")
+    except:
+        pass
+
 GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', '')
 AVG_SPEED_KMH = 35.0
 

@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=6.001">
+    <link rel="stylesheet" href="styles.css?v=6.002">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .navetta-details-row {
@@ -509,13 +509,13 @@ tr.weekend:hover
         </div>
     </main>
 
-    <script src="script.js?v=6.001"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.001"></script>
+    <script src="script.js?v=6.002"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.002"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=6.001";
+        import { calculateHours } from "./firestore-service.js?v=6.002";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
           window.db = getFirestore(app);
@@ -1687,7 +1687,7 @@ const db = getFirestore(app);
                 btnSave.innerText = "Caricamento file in corso...";
                 btnSave.disabled = true;
 
-                const { ref: sRef, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js");
+                const { ref: sRef, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js");
                 const storage = window.firebaseStorage || (typeof firebaseStorage !== 'undefined' ? firebaseStorage : null);
 
                 const timestamp = Date.now();
@@ -2469,7 +2469,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=6.001"></script>
+    <script type="module" src="cedolini-splitter.js?v=6.002"></script>
 
 </body>
 </html>

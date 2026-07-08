@@ -2674,7 +2674,6 @@ DEPOT_VEGGIANO = {"lat": 45.442805, "lon": 11.714498, "nome": "DEPOSITO VEGGIANO
 DEPOT_CASTENEDOLO = {"lat": 45.471591, "lon": 10.298200, "nome": "DEPOSITO CASTENEDOLO", "indirizzo": "Via Vulcania snc, 25014 Castenedolo (BS)"}
 DEPOT_SOMMACAMPAGNA = {"lat": 45.414500, "lon": 10.898500, "nome": "DEPOSITO SOMMACAMPAGNA", "indirizzo": "Via Caselle 90/b, 37066 Sommacampagna (VR)"}
 
-TRAFFIC_SLOTS_MIN = [600, 630, 660, 690, 720, 750, 780]
 CODICE_VUOTO = "p00000"
 
 CONSOLIDAMENTO = {
@@ -2799,13 +2798,6 @@ def _ottimizza_singolo_viaggio_cloud(punti, depot, use_time_windows):
     return punti
 
 
-
-def nearest_slot(current_minutes):
-    slots = TRAFFIC_SLOTS_MIN
-    if current_minutes < slots[0] - 15 or current_minutes > slots[-1] + 15:
-        return None
-    nearest = min(slots, key=lambda s: abs(s - current_minutes))
-    return f"{nearest // 60:02d}{nearest % 60:02d}"
 
 def get_weekday_timestamp(hour, minute):
     import datetime

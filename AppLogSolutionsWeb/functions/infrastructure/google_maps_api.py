@@ -14,6 +14,15 @@ from infrastructure.firebase_setup import load_storage_cache, save_storage_cache
 
 logger = logging.getLogger('AppLogSolutions')
 
+TRAFFIC_SLOTS_MIN = [600, 630, 660, 690, 720, 750, 780]
+
+def nearest_slot(current_minutes):
+    slots = TRAFFIC_SLOTS_MIN
+    if current_minutes < slots[0] - 15 or current_minutes > slots[-1] + 15:
+        return None
+    nearest = min(slots, key=lambda s: abs(s - current_minutes))
+    return f"{nearest // 60:02d}{nearest % 60:02d}"
+
 def _route_key(punti_pieni):
     seq = "|".join(f"{round(p.get('lat',0.0),5)},{round(p.get('lon', p.get('lng',0.0)),5)}" for p in punti_pieni)
     return hashlib.md5(seq.encode()).hexdigest()

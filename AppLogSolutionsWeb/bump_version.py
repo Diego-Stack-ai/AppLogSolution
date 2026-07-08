@@ -8,13 +8,24 @@ with open(os.path.join(root, 'script.js'), 'r', encoding='utf-8') as f:
 
 match = re.search(r'APP_VERSION\s*=\s*"([\d\.]+)"', c_script)
 if match:
-    v_old = float(match.group(1))
-    if v_old < 5.85:
-        v_new = '5.86'
+    v_old_str = match.group(1)
+    
+    if v_old_str.startswith('5.'):
+        # Force jump to 6.000
+        v_new = '6.000'
     else:
-        v_new = str(round(v_old + 0.01, 2))
+        # Handle 6.xxx logic
+        try:
+            major, minor = v_old_str.split('.')
+            minor_int = int(minor) + 1
+            if minor_int >= 1000:
+                major = str(int(major) + 1)
+                minor_int = 0
+            v_new = f"{major}.{minor_int:03d}"
+        except:
+            v_new = '6.000'
 else:
-    v_new = '5.86'
+    v_new = '6.000'
 
 print(f"Nuova versione calcolata: {v_new}")
 
@@ -37,7 +48,6 @@ for h in htmls:
     with open(p, 'w', encoding='utf-8') as f:
         f.write(c_h)
 
-# 7. Aggiorna eventuali riferimenti ?v= negli altri script JS
 js_files = [f for f in os.listdir(root) if f.endswith('.js') and f not in ['script.js', 'sw.js']]
 for js_file in js_files:
     p = os.path.join(root, js_file)

@@ -2702,9 +2702,6 @@ UNITA_QTY = r"(Confezioni|Confezione|confezioni|confezione|Colli|Collo|colli|col
 SCAD_RE = re.compile(r"Scad\.\s*min\.\s*(\d{2}/\d{2}/\d{4})", re.I)
 
 
-
-    return DEPOT_VEGGIANO
-
 def _ottimizza_singolo_viaggio_cloud(punti, depot, use_time_windows):
     try:
         from ortools.constraint_solver import routing_enums_pb2

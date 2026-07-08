@@ -37,4 +37,14 @@ for h in htmls:
     with open(p, 'w', encoding='utf-8') as f:
         f.write(c_h)
 
+# 7. Aggiorna eventuali riferimenti ?v= negli altri script JS
+js_files = [f for f in os.listdir(root) if f.endswith('.js') and f not in ['script.js', 'sw.js']]
+for js_file in js_files:
+    p = os.path.join(root, js_file)
+    with open(p, 'r', encoding='utf-8') as f:
+        c_js = f.read()
+    c_js = re.sub(r'\?v=[\d\.]+', f'?v={v_new}', c_js)
+    with open(p, 'w', encoding='utf-8') as f:
+        f.write(c_js)
+
 print(f"Versione bumpata a {v_new}")

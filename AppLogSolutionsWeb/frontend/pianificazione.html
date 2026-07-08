@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=5.92">
+    <link rel="stylesheet" href="styles.css?v=5.93">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -863,13 +863,13 @@
                             <option value="">-- Seleziona --</option>
                             ${opzioniClientiHtml}
                         </select>
-                        <div style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">${suggestClienteHtml}</div>
+                        <div class="no-print" style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">${suggestClienteHtml}</div>
                     </td>
                     <td>
                         <select class="input-field in-viaggio" disabled>
                             <option value="">-- Seleziona --</option>
                         </select>
-                        <div class="dest-container" style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">
+                        <div class="dest-container no-print" style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">
                              ${suggestViaggioHtml || '<span class="suggestion-badge badge-disabled">Seleziona prima il cliente</span>'}
                         </div>
                     </td>
@@ -878,7 +878,7 @@
                             <option value="">-- Seleziona --</option>
                             ${opzioniTargheHtml}
                         </select>
-                        <div style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">${suggestTargaHtml}</div>
+                        <div class="no-print" style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;">${suggestTargaHtml}</div>
                     </td>
                     <td class="check-container">
                         <input type="checkbox" class="in-confermato" title="Spunta per segnare come confermato">
@@ -1160,7 +1160,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=5.92"></script>
-    <script src="script.js?v=5.92"></script>
+    <script type="module" src="firebase-auth-sync.js?v=5.93"></script>
+    <script src="script.js?v=5.93"></script>
 </body>
 </html>

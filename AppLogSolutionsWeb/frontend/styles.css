@@ -634,31 +634,41 @@ select option {
         size: A4 portrait;
         margin: 5mm;
     }
-    body {
+    html, body {
         background: white !important;
         padding: 0 !important;
         margin: 0 !important;
+        display: block !important;
+        height: auto !important;
     }
     .main-container {
         padding: 0 !important;
         margin: 0 !important;
         max-width: none !important;
         box-shadow: none !important;
+        display: block !important;
     }
-    .glass-nav, .filters-container, .btn-primary, .logout-btn, .dashboard-grid {
+    .glass-nav, .filters-container, .btn-primary, .logout-btn, .dashboard-grid, .no-print {
         display: none !important;
     }
     .glass-table {
         width: 100% !important;
         border-collapse: collapse !important;
+        table-layout: auto !important;
     }
     .glass-table th, .glass-table td {
         border: 1px solid #ccc !important;
-        padding: 4px !important;
+        padding: 6px !important;
         font-size: 11px !important;
         color: black !important;
+        vertical-align: top !important;
     }
-    input, select {
+    .glass-table th:nth-child(1), .glass-table td:nth-child(1),
+    .glass-table th:nth-child(6), .glass-table td:nth-child(6),
+    .glass-table th:nth-child(7), .glass-table td:nth-child(7) {
+        display: none !important;
+    }
+    input, select, textarea {
         border: none !important;
         background: transparent !important;
         box-shadow: none !important;
@@ -666,6 +676,7 @@ select option {
         color: black !important;
         appearance: none !important;
         -webkit-appearance: none !important;
+        font-weight: 600 !important;
     }
 }
 

@@ -4,11 +4,11 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "5.96";
+const APP_VERSION = "5.97";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
-console.log("%c[App] Log Solution PWA — versione " + APP_VERSION, "color: #4f46e5; font-weight: bold; font-size: 12px;");
+console.log("%c[App] Log Solution PWA - versione " + APP_VERSION, "color: #4f46e5; font-weight: bold; font-size: 12px;");
 
 // --- SENTRY ERROR MONITORING ---
 window.addEventListener("load", () => {
@@ -114,7 +114,7 @@ function updateStepUI() {
     for (let i = 1; i <= totalSteps; i++) {
         const dot = document.getElementById(`dot-${i}`);
         if (!dot) continue;
-        if (i < currentStep) { dot.classList.add('completed'); dot.innerHTML = '✓'; }
+        if (i < currentStep) { dot.classList.add('completed'); dot.innerHTML = '✓ '; }
         else if (i === currentStep) { dot.classList.add('active'); dot.classList.remove('completed'); dot.innerHTML = i; }
         else { dot.classList.remove('active', 'completed'); dot.innerHTML = i; }
     }
@@ -305,7 +305,7 @@ window.updateViaggi = async function() {
     }
     window.viaggiLinksMap = {};
 
-    // â”€â”€ CASO NAVETTA PURA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ────────────────────────────────────────────────────────────────────────
     if (clienteNome.toUpperCase() === 'NAVETTA') {
         // Nascondi il select viaggio standard
         if (viaggioWrapper) viaggioWrapper.style.display = 'none';
@@ -332,7 +332,7 @@ window.updateViaggi = async function() {
         return;
     }
 
-    // â”€â”€ CASO MAGAZZINO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ────────────────────────────────────────────────────────────────────────
     if (clienteNome.toUpperCase() === 'MAGAZZINO') {
         // Nascondi i campi navetta
         if (navettaContainer) { navettaContainer.style.display = 'none'; }
@@ -353,7 +353,7 @@ window.updateViaggi = async function() {
         return;
     }
 
-    // â”€â”€ CASO CLIENTE STANDARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ────────────────────────────────────────────────────────────────────────
     // Ripristina il select viaggio
     if (viaggioWrapper) viaggioWrapper.style.display = '';
     if (viaggioSelect) { viaggioSelect.required = true; }
@@ -586,10 +586,10 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.serviceWorker.register('./sw.js').then(reg => {
             console.log('[SW] Registrato correttamente sw.js con versione ' + APP_VERSION);
 
-            // Se c'è già  un SW in attesa (tab rimasto aperto durante aggiornamento)
+            // Se c'è già un SW in attesa (tab rimasto aperto durante aggiornamento)
             // - invia subito SKIP_WAITING per forzare l'attivazione
             if (reg.waiting) {
-                console.log('[SW] SW in attesa trovato â€” invio SKIP_WAITING.');
+                console.log('[SW] SW in attesa trovato -> invio SKIP_WAITING.');
                 reg.waiting.postMessage({ type: 'SKIP_WAITING' });
                 showUpdateToast(reg);
             }
@@ -607,27 +607,27 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('[SW] Errore registrazione:', err);
         });
 
-        // âš¡ CRITICO: Quando il nuovo SW prende il controllo, ricarica la pagina automaticamente
+        // ⚡ CRITICO: Quando il nuovo SW prende il controllo, ricarica la pagina automaticamente
         // Questo garantisce che il telefono non rimanga su una versione vecchia.
         let swRefreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (swRefreshing) return;
             swRefreshing = true;
-            console.log('[SW] Nuova versione attiva â€” ricarico la pagina...');
+            console.log('[SW] Nuova versione attiva -> ricarico la pagina...');
             window.location.reload();
         });
     }
 });
 
 function showUpdateToast(reg) {
-    // Evita duplicati se il toast è già  presente
+    // Evita duplicati se il toast è già presente
     if (document.getElementById('sw-update-toast')) return;
 
     const toast = document.createElement('div');
     toast.id = 'sw-update-toast';
     toast.className = 'sw-update-toast show';
     toast.innerHTML = `
-        <div style="flex:1;">ðŸ†• Nuova versione disponibile!</div>
+        <div style="flex:1;">🚀 Nuova versione disponibile!</div>
         <button class="btn-update" id="btn-sw-update">Aggiorna ora</button>
     `;
     document.body.appendChild(toast);
@@ -635,7 +635,7 @@ function showUpdateToast(reg) {
     // Il pulsante invia SKIP_WAITING al SW in attesa, poi il controllerchange ricarica
     document.getElementById('btn-sw-update').addEventListener('click', () => {
         if (reg.waiting) {
-            console.log('[SW] Utente ha cliccato Aggiorna â€” invio SKIP_WAITING.');
+            console.log('[SW] Utente ha cliccato Aggiorna -> invio SKIP_WAITING.');
             reg.waiting.postMessage({ type: 'SKIP_WAITING' });
         } else {
             // Fallback: nessun SW in attesa, ricarica direttamente

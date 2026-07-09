@@ -1166,6 +1166,7 @@ border: 2px solid black;
 <div id="sidebar">
 <div class="header">
 <p class="trip-title">&#x1F69B; {viaggio_id}</p>
+<button onclick="apriModalEspansa()" style="width:100%; margin-top:10px; margin-bottom:10px; background:var(--p); color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; font-size:16px; cursor:pointer;">MODIFICA SEQUENZA VIAGGIO</button>
 <div class="stats-row">
 <div><div class="stat-val">&#x23F0; {ora_partenza_dep}</div><div class="stat-lbl">Partenza</div></div>
 <div><div class="stat-val">&#x1F6E3;&#xFE0F; {float(km or 0):.1f} km</div><div class="stat-lbl">Km Reali</div></div>
@@ -1185,6 +1186,18 @@ border: 2px solid black;
         <button onclick="selectCamType('reso_pregresso')" style="width:100%; padding:15px; margin-bottom:15px; background:#3b82f6; color:white; border:none; border-radius:8px; font-weight:bold; font-size:16px; font-family:'Outfit',sans-serif;">🔵 Reso / Ritiro</button>
         <button onclick="closeCamModal()" style="width:100%; padding:15px; background:#e2e8f0; color:#475569; border:none; border-radius:8px; font-weight:bold; font-size:16px; font-family:'Outfit',sans-serif;">Annulla</button>
     </div>
+</div>
+<div id="expand-trip-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; box-sizing:border-box; background:rgba(15,23,42,0.8); z-index:9999; flex-direction:column; align-items:center; justify-content:center; padding:16px;">
+<div style="background:white; border-radius:16px; width:100%; max-width:500px; height:90vh; display:flex; flex-direction:column; overflow:hidden;">
+<div style="padding:16px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:#f8fafc;">
+<h3 style="margin:0; font-family:'Outfit',sans-serif;">Modifica Sequenza</h3>
+<div style="display:flex; gap:10px;">
+<button onclick="chiudiModalEspansa()" style="background:#e2e8f0; color:#475569; border:none; padding:8px 16px; border-radius:8px; font-weight:bold; cursor:pointer;">Annulla</button>
+<button onclick="applicaOrdineEspanso()" style="background:var(--p); color:white; border:none; padding:8px 16px; border-radius:8px; font-weight:bold; cursor:pointer;">Applica</button>
+</div>
+</div>
+<div id="expand-modal-list" style="flex:1; overflow-y:auto; padding:8px; background:#f1f5f9; display:flex; flex-direction:column; gap:8px;"></div>
+</div>
 </div>
 <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleFile(event)">
 </div>
@@ -1230,24 +1243,82 @@ if(markers[i]){{map.panTo(markers[i].getPosition());map.setZoom(16);}}
 }}
 
 let sequenceChanged = false;
-document.addEventListener("DOMContentLoaded", () => {{
-    const list = document.getElementById("delivery-list");
-    if(list) {{
-        new Sortable(list, {{
-            handle: ".drag-handle",
-            animation: 150,
-            delay: 150,
-            delayOnTouchOnly: true,
-            fallbackTolerance: 3,
-            onEnd: function(evt) {{
-                if(evt.oldIndex !== evt.newIndex) {{
-                    sequenceChanged = true;
-                    document.getElementById("fab-save").style.display = "flex";
+
+function apriModalEspansa() {{
+    const list = document.getElementById("expand-modal-list");
+    list.innerHTML = "";
+    document.querySelectorAll("#delivery-list .card").forEach(c => {{
+        if (!c.id.startsWith("card-")) return;
+        const clone = c.cloneNode(true);
+        clone.id = "modal-" + c.id;
+        
+        // Hide some elements in modal to keep it clean
+        const actions = clone.querySelector(".actions");
+        if(actions) actions.style.display = "none";
+        
+        const stopNum = clone.querySelector(".stop-num");
+        if(stopNum) {{
+            stopNum.innerHTML = '<span class="material-icons-round" style="color:#94a3b8;">drag_indicator</span>';
+            stopNum.style.background = "transparent";
+            stopNum.style.color = "#94a3b8";
+            stopNum.style.boxShadow = "none";
+            stopNum.className = "stop-num drag-handle-modal"; // add handle class
+        }}
+        
+        list.appendChild(clone);
+    }});
+    document.getElementById("expand-trip-modal").style.display = "flex";
+    
+    new Sortable(list, {{
+        handle: ".drag-handle-modal",
+        animation: 150,
+        delay: 150,
+        delayOnTouchOnly: true,
+        fallbackTolerance: 3
+    }});
+}}
+
+function chiudiModalEspansa() {{
+    document.getElementById("expand-trip-modal").style.display = "none";
+}}
+
+function applicaOrdineEspanso() {{
+    const mainList = document.getElementById("delivery-list");
+    const modalCards = document.querySelectorAll("#expand-modal-list .card");
+    const newOrderIds = Array.from(modalCards).map(mc => mc.id.replace("modal-", ""));
+    
+    const currentCards = Array.from(document.querySelectorAll("#delivery-list .card")).filter(c => c.id.startsWith("card-"));
+    let changed = false;
+    for(let i=0; i<newOrderIds.length; i++) {{
+        if(currentCards[i] && currentCards[i].id !== newOrderIds[i]) {{
+            changed = true; break;
+        }}
+    }}
+    
+    if(changed) {{
+        newOrderIds.forEach(id => {{
+            const c = document.getElementById(id);
+            if(c) mainList.appendChild(c);
+        }});
+        
+        // Aggiorna i numeri visivi delle fermate originali
+        const updatedCards = document.querySelectorAll("#delivery-list .card");
+        let counter = 1;
+        updatedCards.forEach(c => {{
+            if (c.id.startsWith("card-")) {{
+                const stopNum = c.querySelector(".stop-num");
+                if (stopNum && stopNum.innerText !== "R") {{
+                    stopNum.innerText = counter;
                 }}
+                counter++;
             }}
         }});
+        
+        sequenceChanged = true;
+        document.getElementById("fab-save").style.display = "flex";
     }}
-}});
+    chiudiModalEspansa();
+}}
 
 async function saveSequence() {{
     if(!sequenceChanged) return;

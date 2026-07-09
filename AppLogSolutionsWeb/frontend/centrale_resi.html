@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centrale Resi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.027">
+    <link rel="stylesheet" href="styles.css?v=6.028">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -71,10 +71,7 @@
         </h1>
 
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('tab-nuovi', this)">
-                <span class="material-icons-round">fiber_new</span> Nuovi (<span id="countNuovi">0</span>)
-            </button>
-            <button class="tab" onclick="switchTab('tab-gestire', this)">
+            <button class="tab active" onclick="switchTab('tab-gestire', this)">
                 <span class="material-icons-round">build_circle</span> Da Lavorare (<span id="countGestire">0</span>)
             </button>
             <button class="tab" onclick="switchTab('tab-storico', this)">
@@ -82,17 +79,7 @@
             </button>
         </div>
 
-        <div id="tab-nuovi" class="tab-content active">
-            <div id="gridNuovi" class="cards-grid">
-                <!-- Cards iniettate via JS -->
-            </div>
-            <div id="emptyNuovi" style="display:none; text-align:center; padding: 40px; color: #64748b;">
-                <span class="material-icons-round" style="font-size: 64px; color: #cbd5e1; margin-bottom: 16px;">task_alt</span>
-                <h3>Nessuna nuova segnalazione</h3>
-            </div>
-        </div>
-
-        <div id="tab-gestire" class="tab-content">
+        <div id="tab-gestire" class="tab-content active">
             <div id="gridGestire" class="cards-grid">
                 <!-- Cards iniettate via JS -->
             </div>
@@ -119,8 +106,8 @@
         <img class="modal-content" id="imgModalContent" onclick="event.stopPropagation()">
     </div>
 
-    <script src="script.js?v=6.027"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.027"></script>
+    <script src="script.js?v=6.028"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.028"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -232,27 +219,19 @@
         }
 
         function renderResi() {
-            const nuovi = resiData.filter(r => !r.letto_da_ufficio && !r.visto_da_ufficio);
-            const daGestire = resiData.filter(r => !r.letto_da_ufficio && r.visto_da_ufficio);
+            const daGestire = resiData.filter(r => !r.letto_da_ufficio);
             const storico = resiData.filter(r => r.letto_da_ufficio);
 
-            document.getElementById('countNuovi').textContent = nuovi.length;
             document.getElementById('countGestire').textContent = daGestire.length;
-
-            const gridNuovi = document.getElementById('gridNuovi');
-            const emptyNuovi = document.getElementById('emptyNuovi');
-            if (nuovi.length > 0) {
-                gridNuovi.innerHTML = nuovi.map(r => createCardHTML(r, 'nuovi')).join('');
-                emptyNuovi.style.display = 'none';
-            } else {
-                gridNuovi.innerHTML = '';
-                emptyNuovi.style.display = 'block';
-            }
 
             const gridGestire = document.getElementById('gridGestire');
             const emptyGestire = document.getElementById('emptyGestire');
             if (daGestire.length > 0) {
-                gridGestire.innerHTML = daGestire.map(r => createCardHTML(r, 'gestire')).join('');
+                gridGestire.innerHTML = daGestire.map(r => {
+                    // Se non è stato ancora "visto", usa le azioni di 'nuovi' (Visto), altrimenti 'gestire' (Segna Risolto)
+                    const type = r.visto_da_ufficio ? 'gestire' : 'nuovi';
+                    return createCardHTML(r, type);
+                }).join('');
                 emptyGestire.style.display = 'none';
             } else {
                 gridGestire.innerHTML = '';

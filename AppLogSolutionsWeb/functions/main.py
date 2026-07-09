@@ -1138,7 +1138,7 @@ border: 2px solid black;
 <p class="trip-title">&#x1F69B; {viaggio_id}</p>
 <div class="stats-row">
 <div><div class="stat-val">&#x23F0; {ora_partenza_dep}</div><div class="stat-lbl">Partenza</div></div>
-<div><div class="stat-val">&#x1F6E3;&#xFE0F; {km} km</div><div class="stat-lbl">Km Reali</div></div>
+<div><div class="stat-val">&#x1F6E3;&#xFE0F; {float(km or 0):.1f} km</div><div class="stat-lbl">Km Reali</div></div>
 <div><div class="stat-val">&#x1F552; {fmt_min(t_guida_min)}</div><div class="stat-lbl">Guida</div></div>
 <div><div class="stat-val">&#x23F1;&#xFE0F; {fmt_min(t_tot_min)}</div><div class="stat-lbl">Totale</div></div>
 <div><div class="stat-val">&#x1F4E6; {len(punti)}</div><div class="stat-lbl">Tappe</div></div>
@@ -1217,7 +1217,7 @@ def core_genera_mappa_autista(viaggio_id, distinta_url=None):
     km, sec_guida, polylines = _get_directions_data(punti_norm, depot=depot)
 
     if not distinta_url:
-        distinta_url = viaggio.get("distinta_light")
+        distinta_url = viaggio.get("distinta_url") or viaggio.get("distinta_light")
 
     ora_partenza_calc = viaggio.get("_stats", {}).get("ora_partenza", "07:00")
     html = _genera_html_mappa(viaggio_id, punti_norm, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc)

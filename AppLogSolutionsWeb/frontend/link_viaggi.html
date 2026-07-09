@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invio Mobile Autisti — Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.007">
+    <link rel="stylesheet" href="styles.css?v=6.008">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -193,8 +193,8 @@
         <div class="viaggi-grid" id="viaggiGrid"></div>
     </main>
 
-    <script src="script.js?v=6.007"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.007"></script>
+    <script src="script.js?v=6.008"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.008"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -274,6 +274,13 @@
                     .map(d => ({ id: d.id, ...d.data() }))
                     .filter(v => v.id_zona !== 'DDT_DA_INSERIRE')
                     .sort((a, b) => (a.nome_giro || '').localeCompare(b.nome_giro || ''));
+                
+                // Precarica distinta_url dal DB
+                viaggi.forEach(v => {
+                    if (v.distinta_url) {
+                        v.distinta_light = v.distinta_url;
+                    }
+                });
 
                 // Integrazione manifest PDF (distinte_light) dal bucket Storage
                 try {
@@ -286,7 +293,7 @@
                             viaggi.forEach(v => {
                                 const mLink = manifest.links.find(l => l.v_id === v.nome_giro || l.v_id === v.id_zona);
                                 if (mLink) {
-                                    v.distinta_light = mLink.distinta_light || '';
+                                    v.distinta_light = mLink.distinta_light || v.distinta_light || '';
                                     v.distinta_completa = mLink.distinta_completa || '';
                                 }
                             });

@@ -4794,9 +4794,11 @@ def autista_aggiorna_sequenza(req: https_fn.Request) -> https_fn.Response:
             if i not in nuova_sequenza:
                 nuovi_punti.append(p)
                 
-        # Calcola distanze ed ETA (usa_or_tools=False mantiene il nuovo ordine e ricalcola i tempi)
+        # Calcola distanze ed ETA - _get_directions_data mantiene l'ordine che gli passiamo
         depot = _get_depot_for_points_cloud(nuovi_punti)
-        punti_finali, km, sec_guida, polylines = _get_directions_data(nuovi_punti, depot=depot, usa_or_tools=False)
+        km, sec_guida, polylines = _get_directions_data(nuovi_punti, depot=depot)
+        punti_finali = nuovi_punti  # l'ordine è già quello richiesto dall'autista
+
         
         distinta_url = viaggio.get("distinta_url") or viaggio.get("distinta_light")
         ora_partenza_calc = viaggio.get("_stats", {}).get("ora_partenza", "07:00")

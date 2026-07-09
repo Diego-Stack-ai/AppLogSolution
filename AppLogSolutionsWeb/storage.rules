@@ -56,5 +56,11 @@ service firebase.storage {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated();
     }
+
+    // Cartella navette per upload DDT
+    match /DDT_NAVETTE/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
   }
 }

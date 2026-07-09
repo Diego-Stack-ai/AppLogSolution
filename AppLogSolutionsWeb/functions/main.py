@@ -2845,9 +2845,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
         if zid == "DDT_DA_INSERIRE":
             continue
             
-        # Esclude i percorsi bloccati
-        if zone.get("_bloccato") or zone.get("_stato") == "bloccato":
-            continue
+        is_bloccato = zone.get("_bloccato") or zone.get("_stato") == "bloccato"
             
         punti = zone.get("lista_punti", [])
         if not punti:
@@ -2859,7 +2857,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
         
         depot = _get_depot_for_points_cloud(punti)
         
-        if usa_or_tools:
+        if usa_or_tools and not is_bloccato:
             punti_ottimizzati = _ottimizza_singolo_viaggio_cloud(punti, depot, is_grand_chef or is_cattel or is_bauer)
         else:
             punti_ottimizzati = punti
@@ -2977,7 +2975,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
                 "km_reali": km,
                 "t_guida_min": sec_guida // 60,
                 "t_tot_min": (sec_guida // 60) + len(punti_simulati) * (12 if is_grand_chef else 8),
-                "status": current_status,
+                "status": "bloccato" if is_bloccato else current_status,
                 "mappa_url": mappa_url,
                 "distinta_url": distinta_url,
                 "_stats": stats,

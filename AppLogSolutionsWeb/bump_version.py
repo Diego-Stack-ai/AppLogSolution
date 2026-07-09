@@ -42,19 +42,31 @@ with open(os.path.join(root, 'script.js'), 'w', encoding='utf-8') as f:
 htmls = [f for f in os.listdir(root) if f.endswith('.html')]
 for h in htmls:
     p = os.path.join(root, h)
-    with open(p, 'r', encoding='utf-8') as f:
-        c_h = f.read()
+    try:
+        with open(p, 'r', encoding='utf-8') as f:
+            c_h = f.read()
+        enc = 'utf-8'
+    except UnicodeDecodeError:
+        with open(p, 'r', encoding='cp1252') as f:
+            c_h = f.read()
+        enc = 'cp1252'
     c_h = re.sub(r'\?v=[\d\.]+', f'?v={v_new}', c_h)
-    with open(p, 'w', encoding='utf-8') as f:
+    with open(p, 'w', encoding=enc) as f:
         f.write(c_h)
 
 js_files = [f for f in os.listdir(root) if f.endswith('.js') and f not in ['script.js', 'sw.js']]
 for js_file in js_files:
     p = os.path.join(root, js_file)
-    with open(p, 'r', encoding='utf-8') as f:
-        c_js = f.read()
+    try:
+        with open(p, 'r', encoding='utf-8') as f:
+            c_js = f.read()
+        enc = 'utf-8'
+    except UnicodeDecodeError:
+        with open(p, 'r', encoding='cp1252') as f:
+            c_js = f.read()
+        enc = 'cp1252'
     c_js = re.sub(r'\?v=[\d\.]+', f'?v={v_new}', c_js)
-    with open(p, 'w', encoding='utf-8') as f:
+    with open(p, 'w', encoding=enc) as f:
         f.write(c_js)
 
 print(f"Versione bumpata a {v_new}")

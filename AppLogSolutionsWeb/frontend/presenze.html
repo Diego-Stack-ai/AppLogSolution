@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=6.003">
+    <link rel="stylesheet" href="styles.css?v=6.007">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .navetta-details-row {
@@ -509,13 +509,13 @@ tr.weekend:hover
         </div>
     </main>
 
-    <script src="script.js?v=6.003"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.003"></script>
+    <script src="script.js?v=6.007"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.007"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=6.003";
+        import { calculateHours } from "./firestore-service.js?v=6.007";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
           window.db = getFirestore(app);
@@ -1552,9 +1552,15 @@ const db = getFirestore(app);
                             <div class="input-group"><label style="font-size: 11px;">Km Finali</label><input type="number" value="${att.kmFinali||''}" oninput="window.aggiornaCampoAttivitaAdmin(${index}, 'kmFinali', this.value)" style="width:100%; padding:4px; font-size:12px;"></div>
                         </div>
                         <div class="input-group" style="margin-top:10px;">
-                            <label style="font-size: 11px;">Carica Foto DDT</label>
-                            <input type="file" accept="image/*,.pdf" onchange="window.caricaFotoDDTAdmin(this, ${index})" style="font-size: 11px; width: 100%;">
-                            ${att.fotoUrl ? `<a href="${att.fotoUrl}" target="_blank" style="font-size:11px; color:#059669; display:block; margin-top:4px;">✓ Vedi File Attuale</a>` : ''}
+                            <label style="font-size: 11px;">Documentazione DDT</label>
+                            <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 8px;">
+                                <label for="ddt-upload-${index}" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; border-radius: 8px; background: rgba(79, 70, 229, 0.08); color: var(--p); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 1px dashed var(--p);">
+                                    <span class="material-icons-round" style="font-size: 16px;">cloud_upload</span>
+                                    Scegli file o scatta foto
+                                </label>
+                                <input type="file" id="ddt-upload-${index}" accept="image/*,.pdf" onchange="window.caricaFotoDDTAdmin(this, ${index})" style="display: none;">
+                            </div>
+                            ${att.fotoUrl ? `<a href="${att.fotoUrl}" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); color: var(--accent); font-size: 12px; font-weight: 600; text-decoration: none; margin-top: 4px; width: fit-content;"><span class="material-icons-round" style="font-size: 16px;">visibility</span> Vedi File Attuale</a>` : ''}
                         </div>
                     `;
                 } else {
@@ -1604,9 +1610,15 @@ const db = getFirestore(app);
                             <div class="input-group"><label style="font-size: 11px;">Km Finali</label><input type="number" value="${att.kmFinali||''}" oninput="window.aggiornaCampoAttivitaAdmin(${index}, 'kmFinali', this.value)" style="width:100%; padding:4px; font-size:12px;"></div>
                         </div>
                         <div class="input-group" style="margin-top:10px;">
-                            <label style="font-size: 11px;">Carica Foto DDT</label>
-                            <input type="file" accept="image/*,.pdf" onchange="window.caricaFotoDDTAdmin(this, ${index})" style="font-size: 11px; width: 100%;">
-                            ${att.fotoUrl ? `<a href="${att.fotoUrl}" target="_blank" style="font-size:11px; color:#059669; display:block; margin-top:4px;">✓ Vedi File Attuale</a>` : ''}
+                            <label style="font-size: 11px;">Documentazione DDT</label>
+                            <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 8px;">
+                                <label for="ddt-upload-${index}" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; border-radius: 8px; background: rgba(79, 70, 229, 0.08); color: var(--p); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 1px dashed var(--p);">
+                                    <span class="material-icons-round" style="font-size: 16px;">cloud_upload</span>
+                                    Scegli file o scatta foto
+                                </label>
+                                <input type="file" id="ddt-upload-${index}" accept="image/*,.pdf" onchange="window.caricaFotoDDTAdmin(this, ${index})" style="display: none;">
+                            </div>
+                            ${att.fotoUrl ? `<a href="${att.fotoUrl}" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); color: var(--accent); font-size: 12px; font-weight: 600; text-decoration: none; margin-top: 4px; width: fit-content;"><span class="material-icons-round" style="font-size: 16px;">visibility</span> Vedi File Attuale</a>` : ''}
                         </div>
                     `;
                 }
@@ -2469,7 +2481,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=6.003"></script>
+    <script type="module" src="cedolini-splitter.js?v=6.007"></script>
 
 </body>
 </html>

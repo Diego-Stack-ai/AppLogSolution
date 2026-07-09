@@ -1,4 +1,4 @@
-﻿import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, doc, getDoc, updateDoc, setDoc, deleteDoc, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, browserLocalPersistence, setPersistence, updatePassword, sendEmailVerification, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getPerformance } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-performance.js";
@@ -134,7 +134,7 @@ onAuthStateChanged(auth, async (user) => {
                 // Normalizzazione ruolo (sempre minuscolo e senza spazi)
                 const role = (userData.ruolo || 'autista').toString().toLowerCase().trim();
                 const nomeUtente = (userData.nome || '').toLowerCase();
-                // Diego Boschetto è sempre amministratore a prescindere dal database
+                // Diego Boschetto � sempre amministratore a prescindere dal database
                 const isDiego = nomeUtente.includes('boschetto diego') || nomeUtente.includes('diego boschetto');
                 const isAdmin = role === 'amministratore' || role === 'impiegata' || isDiego;
 
@@ -189,7 +189,7 @@ onAuthStateChanged(auth, async (user) => {
                         let permLevel = 'none'; // 'none', 'read', 'write'
                         
                         if (permessiData[pageKey] && typeof permessiData[pageKey][role] !== 'undefined') {
-                            // Se c'è la configurazione specifica per questa pagina e ruolo
+                            // Se c'� la configurazione specifica per questa pagina e ruolo
                             const val = permessiData[pageKey][role];
                             if (val === 'write' || val === true) permLevel = 'write';
                             else if (val === 'read') permLevel = 'read';
@@ -212,11 +212,11 @@ onAuthStateChanged(auth, async (user) => {
 
                         if (permLevel === 'read') {
                             window.appData.isReadOnly = true;
-                            console.log(`AUTH DEBUG: Accesso in modalità  SOLO LETTURA a [${page}] per ruolo [${role}].`);
+                            console.log(`AUTH DEBUG: Accesso in modalit� SOLO LETTURA a [${page}] per ruolo [${role}].`);
                         }
                     }
 
-                    // Se è in sola lettura, applichiamo lo scudo protettivo universale
+                    // Se � in sola lettura, applichiamo lo scudo protettivo universale
                     if (window.appData.isReadOnly) {
                         const applyReadOnlyShield = () => {
                             // Disabilita input di scrittura
@@ -259,10 +259,10 @@ onAuthStateChanged(auth, async (user) => {
                         });
                         observer.observe(document.body, { childList: true, subtree: true });
                         
-                        // Mostra banner di avviso all'utente (dopo che l'UI è caricata)
+                        // Mostra banner di avviso all'utente (dopo che l'UI � caricata)
                         setTimeout(() => {
                             const banner = document.createElement('div');
-                            banner.innerHTML = '<span class="material-icons-round" style="font-size: 16px;">visibility</span> Modalità  Solo Lettura. Non hai i permessi per modificare i dati in questa pagina.';
+                            banner.innerHTML = '<span class="material-icons-round" style="font-size: 16px;">visibility</span> Modalit� Solo Lettura. Non hai i permessi per modificare i dati in questa pagina.';
                             banner.style.cssText = 'position:fixed; top:0; left:0; right:0; background:#f59e0b; color:white; text-align:center; padding:6px; font-size:13px; font-weight:bold; z-index:999999; display:flex; justify-content:center; align-items:center; gap:6px; box-shadow:0 2px 10px rgba(0,0,0,0.1);';
                             document.body.appendChild(banner);
                             document.body.style.paddingTop = '32px';
@@ -274,9 +274,9 @@ onAuthStateChanged(auth, async (user) => {
                 console.warn("Auth: Sessione attiva ma profilo Firestore mancante.");
                 
                 // --- AUTO-FIX DI EMERGENZA ---
-                // Se l'utente si è appena loggato con Firebase Auth ma il suo documento in 'dipendenti' non esiste
+                // Se l'utente si � appena loggato con Firebase Auth ma il suo documento in 'dipendenti' non esiste
                 // (ad es. database azzerato), chiediamo se vogliamo ricrearlo come amministratore.
-                const confirmCreate = confirm("ATTENZIONE: Il tuo utente Firebase esiste, ma il profilo nel database è stato cancellato.\n\nVuoi ricreare automaticamente il tuo profilo come AMMINISTRATORE per poter accedere?");
+                const confirmCreate = confirm("ATTENZIONE: Il tuo utente Firebase esiste, ma il profilo nel database � stato cancellato.\n\nVuoi ricreare automaticamente il tuo profilo come AMMINISTRATORE per poter accedere?");
                 
                 if (confirmCreate) {
                     try {
@@ -372,7 +372,7 @@ function startRealtimeSync(isAdmin) {
     activeListeners.push(unsubArticoli);
 
     // Listener per Autisti/Utenti
-    // Se Admin scarica tutti, altrimenti NON scarica nulla (o solo se stesso, già  fatto in Auth)
+    // Se Admin scarica tutti, altrimenti NON scarica nulla (o solo se stesso, gi� fatto in Auth)
     if (isAdmin) {
         const unsubUsers = onSnapshot(collection(db, "dipendenti"), (snapshot) => {
             const autisti = [];
@@ -420,7 +420,7 @@ function startRealtimeSync(isAdmin) {
             window.appData[globalProp] = dataList;
             // Aggiorna interfaccia impostazioni se aperta
             if (typeof window.renderScaletteItems === 'function') window.renderScaletteItems(tipo);
-            // Aggiornerà  interfaccia inserimento se necessario in futuro
+            // Aggiorner� interfaccia inserimento se necessario in futuro
         });
         activeListeners.push(unsub);
     };
@@ -451,7 +451,7 @@ function startRealtimeSync(isAdmin) {
     activeListeners.push(unsubGiustificativi);
 }
 
-// â”€â”€â”€ CRUD PROGETTI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── CRUD PROGETTI ────────────────────────────────────────────────────────────
 window.saveProgetto = async function(id, data) {
     try {
         if (id) {
@@ -476,7 +476,7 @@ window.deleteProgetto = async function(id) {
     }
 };
 
-// â”€â”€â”€ CRUD GIUSTIFICATIVI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── CRUD GIUSTIFICATIVI ───────────────────────────────────────────────────────
 window.saveGiustificativo = async function(id, data) {
     try {
         if (id) {
@@ -501,7 +501,7 @@ window.deleteGiustificativo = async function(id) {
     }
 };
 
-// â”€â”€â”€ ALTRI CRUD (mezzi, utenti, ecc.) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── ALTRI CRUD (mezzi, utenti, ecc.) ─────────────────────────────────────────
 
 window.deleteProgetto = async function(id) {
     try {
@@ -520,7 +520,7 @@ window.updateCustomer = async function(id, data) {
         let docId = id;
         
         if (!docId) {
-            // Se non c'è id creiamo il documento col codice frutta o latte (oppure usiamo addDoc ma setDoc è meglio)
+            // Se non c'� id creiamo il documento col codice frutta o latte (oppure usiamo addDoc ma setDoc � meglio)
             // Lavoriamo con doc() senza id per generarlo
             const docRef = doc(collection(db, "clienti", "DNR", "raccolta clienti"));
             await setDoc(docRef, updateData);

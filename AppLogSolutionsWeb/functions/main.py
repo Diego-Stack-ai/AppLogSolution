@@ -939,7 +939,7 @@ def _extract_phone(p):
             tel = m.group(0).strip()
     return re.sub(r'[\s\-]', '', tel) if tel else ''
 
-def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, distinta_url=None, ora_partenza_dep="07:00"):
+def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, distinta_url=None, ora_partenza_dep="07:00", actual_viaggio_id=None):
     """Genera HTML mappa mobile-first con polyline strade vere."""
     if depot is None:
         depot = _get_depot_for_points_cloud(punti)
@@ -1243,7 +1243,7 @@ async function saveSequence() {{
         .map(c => parseInt(c.id.replace("card-", "")));
         
     try {{
-        let realViaggioId = "{viaggio_id}";
+        let realViaggioId = "{actual_viaggio_id if actual_viaggio_id else viaggio_id}";
         if (realViaggioId.includes(" - ")) {{
             realViaggioId = realViaggioId.split(" - ")[1];
         }}
@@ -1313,7 +1313,7 @@ function handleFile(e) {{
             const base64 = canvas.toDataURL("image/jpeg", 0.7);
             
             try {{
-                let realViaggioId = "{viaggio_id}";
+                let realViaggioId = "{actual_viaggio_id if actual_viaggio_id else viaggio_id}";
                 if (realViaggioId.includes(" - ")) realViaggioId = realViaggioId.split(" - ")[1];
                 
                 const url = `https://europe-west1-{PROJECT_ID}.cloudfunctions.net/autista_salva_reso`;
@@ -1387,7 +1387,7 @@ def core_genera_mappa_autista(viaggio_id, distinta_url=None):
     else:
         titolo_giro = nome_giro
         
-    html = _genera_html_mappa(titolo_giro, punti_norm, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc)
+    html = _genera_html_mappa(titolo_giro, punti_norm, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc, actual_viaggio_id=viaggio_id)
 
     bucket = storage.bucket(name=BUCKET_NAME)
     data_viaggio = viaggio.get("data", "sconosciuta").replace("/", "-")
@@ -1519,7 +1519,7 @@ def core_ricalcola_percorso(viaggio_id, nuovi_punti, num_locked=0):
     else:
         titolo_giro = nome_giro
         
-    html = _genera_html_mappa(titolo_giro, punti_finali, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc)
+    html = _genera_html_mappa(titolo_giro, punti_finali, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc, actual_viaggio_id=viaggio_id)
     bucket = storage.bucket(name=BUCKET_NAME)
     data_v = viaggio.get("data", "sconosciuta").replace("/", "-")
     html_path = f"CONSEGNE/CONSEGNE_{data_v}/MAPPE_AUTISTI/{viaggio_id}.html"
@@ -3170,8 +3170,8 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
             data_viaggio_str = data_consegna.replace("/", "-")
             html_path = f"CONSEGNE/CONSEGNE_{data_viaggio_str}/MAPPE_AUTISTI/{viaggio_id}.html"
             html_mappa = _genera_html_mappa(
-                viaggio_id, punti_simulati, km, sec_guida, polylines,
-                depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc
+                titolo_giro, punti_simulati, km, sec_guida, polylines,
+                depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc, actual_viaggio_id=viaggio_id
             )
             html_blob = bucket.blob(html_path)
             html_blob.upload_from_string(html_mappa.encode("utf-8"), content_type="text/html; charset=utf-8")
@@ -4809,7 +4809,7 @@ def autista_aggiorna_sequenza(req: https_fn.Request) -> https_fn.Response:
             titolo_giro = nome_giro
             
         # Rigenera HTML della mappa per l'autista
-        html = _genera_html_mappa(titolo_giro, punti_finali, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc)
+        html = _genera_html_mappa(titolo_giro, punti_finali, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc, actual_viaggio_id=viaggio_id)
         
         bucket = storage.bucket(name=BUCKET_NAME)
         data_v = viaggio.get("data", "sconosciuta").replace("/", "-")

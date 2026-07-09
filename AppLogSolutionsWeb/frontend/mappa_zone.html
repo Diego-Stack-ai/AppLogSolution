@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.013">
+    <link rel="stylesheet" href="styles.css?v=6.014">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1248,7 +1248,7 @@
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, doc, getDocs, setDoc, onSnapshot, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, doc, getDocs, setDoc, onSnapshot, updateDoc, arrayUnion, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getStorage, ref, getDownloadURL, uploadString } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
         import { firebaseConfig } from "./firebase-config.js";
@@ -1275,6 +1275,7 @@ const db = getFirestore(app);
         const IS_POPUP = getQueryParam('popup') === 'true';
         let ZONE_HIDDEN = new Set();
         let DATA_ZONE = [];
+          let viaggiTimestamps = {}; // { id_zona: timestamp }
         let map;
         let gMarkers = [];
         let gPolylines = {};          // {id_zona: [google.maps.Polyline]}
@@ -1367,7 +1368,22 @@ const db = getFirestore(app);
                 _hasUnsavedChanges = ev.data._hasUnsavedChanges;
 
                 _updateLockUI();
-                updateTotals();
+                              // --- CARICAMENTO TIMESTAMP VIAGGI ---
+              try {
+                  const q = query(collection(db, 'clienti/DNR/viaggi ddt'), where('data_lavoro', '==', targetFileDate));
+                  const snap = await getDocs(q);
+                  snap.forEach(doc => {
+                      const id_zona = doc.id.split('_')[1];
+                      const data = doc.data();
+                      if(data.ultimo_aggiornamento) {
+                          viaggiTimestamps[id_zona] = data.ultimo_aggiornamento.toMillis ? data.ultimo_aggiornamento.toMillis() : new Date(data.ultimo_aggiornamento).getTime();
+                      }
+                  });
+              } catch(e) {
+                  console.warn("Impossibile caricare timestamps:", e);
+              }
+
+              updateTotals();
                 if (!IS_POPUP) {
                     await renderMarkers();
                 }
@@ -3237,6 +3253,30 @@ const db = getFirestore(app);
 
         window.aggiornaModificati = async () => {
             const modificati = DATA_ZONE.filter(z => z._stato === 'modificato').map(z => z.id_zona);
+            // --- CONTROLLO CONFLITTI (LOCK TIMESTAMP) ---
+            try {
+                const q = query(collection(db, 'clienti/DNR/viaggi ddt'), where('data_lavoro', '==', targetFileDate));
+                const snap = await getDocs(q);
+                let conflitto = false;
+                let nomeConflitto = "";
+                snap.forEach(doc => {
+                    const id_zona = doc.id.split('_')[1];
+                    const data = doc.data();
+                    if(data.ultimo_aggiornamento) {
+                        const currentTs = data.ultimo_aggiornamento.toMillis ? data.ultimo_aggiornamento.toMillis() : new Date(data.ultimo_aggiornamento).getTime();
+                        if (viaggiTimestamps[id_zona] && currentTs > viaggiTimestamps[id_zona]) {
+                            conflitto = true;
+                            nomeConflitto = data.nome_giro || id_zona;
+                        }
+                    }
+                });
+                if (conflitto) {
+                    Swal.fire('Conflitto Rilevato', `Il giro ${nomeConflitto} è stato modificato dall'autista mentre avevi questa pagina aperta. Ricarica la pagina per evitare di sovrascrivere.`, 'error');
+                    return; // Blocca il salvataggio
+                }
+            } catch(e) {
+                console.warn("Errore controllo conflitti:", e);
+            }
             if (!modificati.length) {
                 Swal.fire('Nessun Giro', 'Nessun giro modificato da aggiornare.', 'info');
                 return;

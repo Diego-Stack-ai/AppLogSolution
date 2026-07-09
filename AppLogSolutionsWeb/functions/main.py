@@ -1028,15 +1028,22 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, 
                 f'<div class="nav-col">'
                 f'<a href="{nav}" target="_blank" class="btn-nav" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a>'
                 f'<a href="tel:{phone_num}" class="btn-call" onclick="event.stopPropagation()"><span class="material-icons-round">call</span></a>'
+                f'<button class="btn-cam" onclick="openCamera(event, {idx})"><span class="material-icons-round">photo_camera</span></button>'
                 f'</div>'
             )
-            card_style = 'grid-template-columns: 42px 1fr auto;'
+            card_style = 'grid-template-columns: 24px 42px 1fr auto;'
         else:
-            action_col = f'<a href="{nav}" target="_blank" class="btn-nav" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a>'
-            card_style = 'grid-template-columns: 42px 1fr 44px;'
+            action_col = (
+                f'<div class="nav-col">'
+                f'<a href="{nav}" target="_blank" class="btn-nav" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a>'
+                f'<button class="btn-cam" onclick="openCamera(event, {idx})"><span class="material-icons-round">photo_camera</span></button>'
+                f'</div>'
+            )
+            card_style = 'grid-template-columns: 24px 42px 1fr auto;'
             
         fermate_html += (
             f'<div class="card" id="card-{idx}" onclick="selectCard({idx})" style="{card_style}">'
+            f'<div class="drag-handle" style="color:#94a3b8; cursor:grab; display:flex; align-items:center; justify-content:center;" onclick="event.stopPropagation()"><span class="material-icons-round" style="font-size:20px;">drag_indicator</span></div>'
             f'<div class="stop-num{warn_class}">{idx+1}</div>'
             f'<div class="stop-info">'
             f'<span class="name">{nome}</span>'
@@ -1080,6 +1087,7 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, 
             "lat": float(p.get("lat", 0)),
             "lng": float(p.get("lon", p.get("lng", 0))),
             "nome": p.get("nome", ""),
+            "codice_cliente": p.get("codice_cliente", ""),
             "is_parziale": is_parz
         })
     punti_js     = json.dumps(punti_js_list)
@@ -1093,6 +1101,7 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, 
 <title>Mappa {viaggio_id}</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?key={GOOGLE_MAPS_API_KEY}&libraries=geometry&callback=initMap" async defer></script>
 <style>
 :root{{--p:#4f46e5;--accent:#10b981;--call:#16a34a}}
@@ -1126,8 +1135,11 @@ border: 2px solid black;
 .note-chip .material-icons-round{{font-size:12px !important;flex-shrink:0;margin-top:1px}}
 .btn-nav{{background:var(--accent);color:white;width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none}}
 .btn-call{{background:var(--call);color:white;width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none}}
+.btn-cam{{background:#f59e0b;color:white;width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer}}
 .nav-col{{display:flex;flex-direction:column;gap:5px;align-items:center}}
 .material-icons-round{{font-size:18px !important}}
+.fab-save{{position:fixed;bottom:20px;right:20px;background:var(--accent);color:white;border:none;border-radius:30px;padding:12px 20px;font-weight:800;font-family:'Outfit',sans-serif;box-shadow:0 4px 12px rgba(16,185,129,0.4);display:none;align-items:center;gap:8px;cursor:pointer;z-index:1000;font-size:1rem;transition:transform 0.2s;}}
+.fab-save:active{{transform:scale(0.95);}}
 </style>
 </head>
 <body>
@@ -1146,6 +1158,17 @@ border: 2px solid black;
 </div>
 <div id="delivery-list">{fermate_html}</div>
 </div>
+<button id="fab-save" class="fab-save" onclick="saveSequence()"><span class="material-icons-round">save</span> Salva Sequenza</button>
+<div id="cam-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:white; border-radius:12px; padding:20px; width:100%; max-width:400px; text-align:center; box-sizing:border-box;">
+        <h3 style="margin-top:0; font-family:'Outfit',sans-serif;">Segnalazione</h3>
+        <p id="cam-cliente-name" style="font-weight:bold; color:var(--p); margin-bottom:15px; font-family:'Outfit',sans-serif;"></p>
+        <button onclick="selectCamType('merce_rotta')" style="width:100%; padding:15px; margin-bottom:10px; background:#ef4444; color:white; border:none; border-radius:8px; font-weight:bold; font-size:16px; font-family:'Outfit',sans-serif;">🔴 Merce Rifiutata / Rotta</button>
+        <button onclick="selectCamType('reso_pregresso')" style="width:100%; padding:15px; margin-bottom:15px; background:#3b82f6; color:white; border:none; border-radius:8px; font-weight:bold; font-size:16px; font-family:'Outfit',sans-serif;">🔵 Reso / Ritiro</button>
+        <button onclick="closeCamModal()" style="width:100%; padding:15px; background:#e2e8f0; color:#475569; border:none; border-radius:8px; font-weight:bold; font-size:16px; font-family:'Outfit',sans-serif;">Annulla</button>
+    </div>
+</div>
+<input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleFile(event)">
 </div>
 <script>
 const PUNTI={punti_js};
@@ -1186,6 +1209,139 @@ document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
 const card=document.getElementById("card-"+i);
 if(card){{card.classList.add("active");card.scrollIntoView({{behavior:"smooth",block:"center"}});}}
 if(markers[i]){{map.panTo(markers[i].getPosition());map.setZoom(16);}}
+}}
+
+let sequenceChanged = false;
+document.addEventListener("DOMContentLoaded", () => {{
+    const list = document.getElementById("delivery-list");
+    if(list) {{
+        new Sortable(list, {{
+            handle: ".drag-handle",
+            animation: 150,
+            onEnd: function(evt) {{
+                if(evt.oldIndex !== evt.newIndex) {{
+                    sequenceChanged = true;
+                    document.getElementById("fab-save").style.display = "flex";
+                }}
+            }}
+        }});
+    }}
+}});
+
+async function saveSequence() {{
+    if(!sequenceChanged) return;
+    const btn = document.getElementById("fab-save");
+    btn.innerHTML = '<span class="material-icons-round">autorenew</span> Salvataggio...';
+    btn.style.pointerEvents = "none";
+    
+    const cards = document.querySelectorAll("#delivery-list .card");
+    const sequenza = Array.from(cards)
+        .filter(c => c.id.startsWith("card-"))
+        .map(c => parseInt(c.id.replace("card-", "")));
+        
+    try {{
+        let realViaggioId = "{viaggio_id}";
+        if (realViaggioId.includes(" - ")) {{
+            realViaggioId = realViaggioId.split(" - ")[1];
+        }}
+        
+        const url = `https://europe-west1-{PROJECT_ID}.cloudfunctions.net/autista_aggiorna_sequenza`;
+        const res = await fetch(url, {{
+            method: "POST",
+            headers: {{"Content-Type": "application/json"}},
+            body: JSON.stringify({{ viaggio_id: realViaggioId, sequenza: sequenza }})
+        }});
+        if(res.ok) {{
+            btn.innerHTML = '<span class="material-icons-round">check</span> Fatto!';
+            setTimeout(() => window.location.reload(), 1000);
+        }} else {{
+            throw new Error("Errore salvataggio");
+        }}
+    }} catch(e) {{
+        alert("Errore durante l'aggiornamento. Riprova.");
+        btn.innerHTML = '<span class="material-icons-round">save</span> Salva Sequenza';
+        btn.style.pointerEvents = "auto";
+    }}
+}}
+
+let currentCamIdx = -1;
+let currentCamType = "";
+function openCamera(e, idx) {{
+    e.stopPropagation();
+    currentCamIdx = idx;
+    document.getElementById("cam-cliente-name").innerText = PUNTI[idx].nome;
+    document.getElementById("cam-modal").style.display = "flex";
+}}
+function closeCamModal() {{
+    document.getElementById("cam-modal").style.display = "none";
+}}
+function selectCamType(type) {{
+    currentCamType = type;
+    closeCamModal();
+    document.getElementById("cameraInput").click();
+}}
+function handleFile(e) {{
+    const file = e.target.files[0];
+    if(!file) return;
+    
+    const btn = document.getElementById("fab-save");
+    const origHtml = btn.innerHTML;
+    btn.innerHTML = '<span class="material-icons-round" style="animation: spin 1s linear infinite;">autorenew</span> Invio in corso...';
+    btn.style.display = "flex";
+    btn.style.pointerEvents = "none";
+    
+    const reader = new FileReader();
+    reader.onload = function(event) {{
+        const img = new Image();
+        img.onload = async function() {{
+            const canvas = document.createElement("canvas");
+            let width = img.width;
+            let height = img.height;
+            const MAX_DIM = 1200;
+            if (width > height) {{
+                if (width > MAX_DIM) {{ height *= MAX_DIM / width; width = MAX_DIM; }}
+            }} else {{
+                if (height > MAX_DIM) {{ width *= MAX_DIM / height; height = MAX_DIM; }}
+            }}
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+            const base64 = canvas.toDataURL("image/jpeg", 0.7);
+            
+            try {{
+                let realViaggioId = "{viaggio_id}";
+                if (realViaggioId.includes(" - ")) realViaggioId = realViaggioId.split(" - ")[1];
+                
+                const url = `https://europe-west1-{PROJECT_ID}.cloudfunctions.net/autista_salva_reso`;
+                const res = await fetch(url, {{
+                    method: "POST",
+                    headers: {{"Content-Type": "application/json"}},
+                    body: JSON.stringify({{
+                        viaggio_id: realViaggioId,
+                        codice_cliente: PUNTI[currentCamIdx].codice_cliente || "UNK",
+                        nome_cliente: PUNTI[currentCamIdx].nome,
+                        tipo_segnalazione: currentCamType,
+                        foto_base64: base64
+                    }})
+                }});
+                if(res.ok) {{
+                    alert("Foto inviata in ufficio con successo!");
+                }} else {{
+                    alert("Errore nell'invio della foto.");
+                }}
+            }} catch(err) {{
+                alert("Errore di rete durante l'invio.");
+            }} finally {{
+                btn.innerHTML = origHtml;
+                if(!sequenceChanged) btn.style.display = "none";
+                btn.style.pointerEvents = "auto";
+                document.getElementById("cameraInput").value = "";
+            }}
+        }}
+        img.src = event.target.result;
+    }}
+    reader.readAsDataURL(file);
 }}
 </script>
 </body></html>"""
@@ -4606,3 +4762,168 @@ def invia_email_fattura(req: https_fn.CallableRequest):
             return {"status": "errore", "message": str(e)}
             
     return {"status": "errore", "message": "Azione non riconosciuta"}
+
+@https_fn.on_request(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=60,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post", "options"]))
+def autista_aggiorna_sequenza(req: https_fn.Request) -> https_fn.Response:
+    if req.method == 'OPTIONS':
+        headers = {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Max-Age': '3600'
+        }
+        return https_fn.Response('', status=204, headers=headers)
+        
+    try:
+        data = req.get_json()
+        viaggio_id = data.get("viaggio_id")
+        nuova_sequenza = data.get("sequenza") # list of indices, e.g. [2, 0, 1]
+        
+        db = get_db()
+        doc_ref = db.collection("clienti").document("DNR").collection("viaggi ddt").document(viaggio_id)
+        doc = doc_ref.get()
+        if not doc.exists:
+            return https_fn.Response(json.dumps({"status": "errore", "message": "Viaggio non trovato"}), status=404, headers={'Access-Control-Allow-Origin': '*'})
+            
+        viaggio = doc.to_dict()
+        vecchi_punti = viaggio.get("punti_ottimizzati") or viaggio.get("punti", [])
+        
+        # Riordina i punti in base alla nuova sequenza degli indici inviata dall'autista
+        nuovi_punti = []
+        for idx in nuova_sequenza:
+            if idx < len(vecchi_punti):
+                nuovi_punti.append(vecchi_punti[idx])
+                
+        # Se mancano dei punti (per qualche strano motivo), aggiungiamoli in fondo
+        for i, p in enumerate(vecchi_punti):
+            if i not in nuova_sequenza:
+                nuovi_punti.append(p)
+                
+        # Calcola distanze ed ETA (usa_or_tools=False mantiene il nuovo ordine e ricalcola i tempi)
+        depot = _get_depot_for_points_cloud(nuovi_punti)
+        punti_finali, km, sec_guida, polylines = _get_directions_data(nuovi_punti, depot=depot, usa_or_tools=False)
+        
+        distinta_url = viaggio.get("distinta_url") or viaggio.get("distinta_light")
+        ora_partenza_calc = viaggio.get("_stats", {}).get("ora_partenza", "07:00")
+        
+        cliente_zona = viaggio.get("cliente_zona", "")
+        nome_giro = viaggio.get("nome_giro", viaggio_id)
+        if cliente_zona and cliente_zona.upper() not in nome_giro.upper():
+            titolo_giro = f"{cliente_zona.upper()} - {nome_giro}"
+        else:
+            titolo_giro = nome_giro
+            
+        # Rigenera HTML della mappa per l'autista
+        html = _genera_html_mappa(titolo_giro, punti_finali, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc)
+        
+        bucket = storage.bucket(name=BUCKET_NAME)
+        data_v = viaggio.get("data", "sconosciuta").replace("/", "-")
+        html_path = f"CONSEGNE/CONSEGNE_{data_v}/MAPPE_AUTISTI/{viaggio_id}.html"
+        blob = bucket.blob(html_path)
+        blob.upload_from_string(html.encode("utf-8"), content_type="text/html; charset=utf-8")
+        
+        # Aggiorna JSON in Storage per la mappa_zone
+        try:
+            data_str = viaggio.get("data_lavoro") or viaggio.get("data")
+            if data_str:
+                data_consegna = data_str.replace("/", "-")
+                json_path = f"REPORTS/{data_consegna}/viaggi_giornalieri_Johnson.json"
+                json_blob = bucket.blob(json_path)
+                if json_blob.exists():
+                    import json
+                    raw_json = json.loads(json_blob.download_as_string().decode('utf-8'))
+                    if isinstance(raw_json, dict):
+                        zone_list = raw_json.get("zone", [])
+                    else:
+                        zone_list = raw_json
+                        
+                    modificato_json = False
+                    id_zona_str = viaggio_id.split('_', 1)[1] if '_' in viaggio_id else viaggio_id
+                    for z in zone_list:
+                        if z.get("id_zona") == id_zona_str:
+                            z["lista_punti"] = punti_finali
+                            modificato_json = True
+                            break
+                            
+                    if modificato_json:
+                        json_blob.upload_from_string(json.dumps(raw_json, indent=2), content_type='application/json')
+                        print(f"Aggiornato JSON Storage per {viaggio_id}")
+        except Exception as json_err:
+            print(f"Errore aggiornamento JSON Storage: {json_err}")
+
+        # Aggiorna database e timestamp
+        doc_ref.update({
+            "punti_ottimizzati": punti_finali,
+            "_stats.km_reali": km,
+            "_stats.minuti_guida": sec_guida // 60,
+            "ultimo_aggiornamento": firestore.SERVER_TIMESTAMP
+        })
+        
+        return https_fn.Response(json.dumps({"status": "ok"}), status=200, headers={'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return https_fn.Response(json.dumps({"status": "errore", "message": str(e)}), status=500, headers={'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'})
+
+@https_fn.on_request(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=60,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post", "options"]))
+def autista_salva_reso(req: https_fn.Request) -> https_fn.Response:
+    if req.method == 'OPTIONS':
+        headers = {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Max-Age': '3600'
+        }
+        return https_fn.Response('', status=204, headers=headers)
+        
+    try:
+        data = req.get_json()
+        viaggio_id = data.get("viaggio_id")
+        codice_cliente = data.get("codice_cliente", "UNK")
+        nome_cliente = data.get("nome_cliente", "Sconosciuto")
+        tipo_segnalazione = data.get("tipo_segnalazione", "reso_pregresso")
+        base64_img = data.get("foto_base64", "")
+        
+        if not base64_img:
+            return https_fn.Response(json.dumps({"status": "errore", "message": "Nessuna foto fornita"}), status=400, headers={'Access-Control-Allow-Origin': '*'})
+            
+        # Pulisci header base64 se presente (es. data:image/jpeg;base64,....)
+        if "," in base64_img:
+            base64_img = base64_img.split(",")[1]
+            
+        import base64
+        image_data = base64.b64decode(base64_img)
+        
+        data_oggi = datetime.now().strftime("%Y-%m-%d")
+        timestamp_ms = int(time.time() * 1000)
+        
+        # 1. Carica su Storage
+        bucket = storage.bucket(name=BUCKET_NAME)
+        file_path = f"RESI/{data_oggi}/{codice_cliente}_{timestamp_ms}.jpg"
+        blob = bucket.blob(file_path)
+        blob.upload_from_string(image_data, content_type='image/jpeg')
+        # Costruisci URL pubblico o tramite get_signed_url
+        blob.make_public()
+        url_foto = blob.public_url
+        
+        # 2. Salva su Firestore
+        db = get_db()
+        db.collection("clienti").document("DNR").collection("resi_e_ritiri").add({
+            "id_viaggio": viaggio_id,
+            "autista": "Sconosciuto", # in futuro lo recupereremo dal viaggio o dall'auth
+            "data_evento": data_oggi,
+            "timestamp": timestamp_ms,
+            "codice_cliente": codice_cliente,
+            "nome_cliente": nome_cliente,
+            "tipo_segnalazione": tipo_segnalazione,
+            "url_foto": url_foto,
+            "letto_da_ufficio": False
+        })
+        
+        return https_fn.Response(json.dumps({"status": "ok", "url_foto": url_foto}), status=200, headers={'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return https_fn.Response(json.dumps({"status": "errore", "message": str(e)}), status=500, headers={'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'})

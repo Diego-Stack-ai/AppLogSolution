@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, doc, getDoc, updateDoc, setDoc, deleteDoc, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, doc, getDoc, updateDoc, setDoc, deleteDoc, onSnapshot, addDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, browserLocalPersistence, setPersistence, updatePassword, sendEmailVerification, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getPerformance } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-performance.js";
 import { firebaseConfig } from "./firebase-config.js";
@@ -134,7 +134,7 @@ onAuthStateChanged(auth, async (user) => {
                 // Normalizzazione ruolo (sempre minuscolo e senza spazi)
                 const role = (userData.ruolo || 'autista').toString().toLowerCase().trim();
                 const nomeUtente = (userData.nome || '').toLowerCase();
-                // Diego Boschetto � sempre amministratore a prescindere dal database
+                // Diego Boschetto è sempre amministratore a prescindere dal database
                 const isDiego = nomeUtente.includes('boschetto diego') || nomeUtente.includes('diego boschetto');
                 const isAdmin = role === 'amministratore' || role === 'impiegata' || isDiego;
 
@@ -189,7 +189,7 @@ onAuthStateChanged(auth, async (user) => {
                         let permLevel = 'none'; // 'none', 'read', 'write'
                         
                         if (permessiData[pageKey] && typeof permessiData[pageKey][role] !== 'undefined') {
-                            // Se c'� la configurazione specifica per questa pagina e ruolo
+                            // Se c'è la configurazione specifica per questa pagina e ruolo
                             const val = permessiData[pageKey][role];
                             if (val === 'write' || val === true) permLevel = 'write';
                             else if (val === 'read') permLevel = 'read';
@@ -212,11 +212,11 @@ onAuthStateChanged(auth, async (user) => {
 
                         if (permLevel === 'read') {
                             window.appData.isReadOnly = true;
-                            console.log(`AUTH DEBUG: Accesso in modalit� SOLO LETTURA a [${page}] per ruolo [${role}].`);
+                            console.log(`AUTH DEBUG: Accesso in modalità  SOLO LETTURA a [${page}] per ruolo [${role}].`);
                         }
                     }
 
-                    // Se � in sola lettura, applichiamo lo scudo protettivo universale
+                    // Se è in sola lettura, applichiamo lo scudo protettivo universale
                     if (window.appData.isReadOnly) {
                         const applyReadOnlyShield = () => {
                             // Disabilita input di scrittura
@@ -259,10 +259,10 @@ onAuthStateChanged(auth, async (user) => {
                         });
                         observer.observe(document.body, { childList: true, subtree: true });
                         
-                        // Mostra banner di avviso all'utente (dopo che l'UI � caricata)
+                        // Mostra banner di avviso all'utente (dopo che l'UI è caricata)
                         setTimeout(() => {
                             const banner = document.createElement('div');
-                            banner.innerHTML = '<span class="material-icons-round" style="font-size: 16px;">visibility</span> Modalit� Solo Lettura. Non hai i permessi per modificare i dati in questa pagina.';
+                            banner.innerHTML = '<span class="material-icons-round" style="font-size: 16px;">visibility</span> Modalità  Solo Lettura. Non hai i permessi per modificare i dati in questa pagina.';
                             banner.style.cssText = 'position:fixed; top:0; left:0; right:0; background:#f59e0b; color:white; text-align:center; padding:6px; font-size:13px; font-weight:bold; z-index:999999; display:flex; justify-content:center; align-items:center; gap:6px; box-shadow:0 2px 10px rgba(0,0,0,0.1);';
                             document.body.appendChild(banner);
                             document.body.style.paddingTop = '32px';
@@ -274,9 +274,9 @@ onAuthStateChanged(auth, async (user) => {
                 console.warn("Auth: Sessione attiva ma profilo Firestore mancante.");
                 
                 // --- AUTO-FIX DI EMERGENZA ---
-                // Se l'utente si � appena loggato con Firebase Auth ma il suo documento in 'dipendenti' non esiste
+                // Se l'utente si è appena loggato con Firebase Auth ma il suo documento in 'dipendenti' non esiste
                 // (ad es. database azzerato), chiediamo se vogliamo ricrearlo come amministratore.
-                const confirmCreate = confirm("ATTENZIONE: Il tuo utente Firebase esiste, ma il profilo nel database � stato cancellato.\n\nVuoi ricreare automaticamente il tuo profilo come AMMINISTRATORE per poter accedere?");
+                const confirmCreate = confirm("ATTENZIONE: Il tuo utente Firebase esiste, ma il profilo nel database è stato cancellato.\n\nVuoi ricreare automaticamente il tuo profilo come AMMINISTRATORE per poter accedere?");
                 
                 if (confirmCreate) {
                     try {
@@ -372,7 +372,7 @@ function startRealtimeSync(isAdmin) {
     activeListeners.push(unsubArticoli);
 
     // Listener per Autisti/Utenti
-    // Se Admin scarica tutti, altrimenti NON scarica nulla (o solo se stesso, gi� fatto in Auth)
+    // Se Admin scarica tutti, altrimenti NON scarica nulla (o solo se stesso, già  fatto in Auth)
     if (isAdmin) {
         const unsubUsers = onSnapshot(collection(db, "dipendenti"), (snapshot) => {
             const autisti = [];
@@ -420,7 +420,7 @@ function startRealtimeSync(isAdmin) {
             window.appData[globalProp] = dataList;
             // Aggiorna interfaccia impostazioni se aperta
             if (typeof window.renderScaletteItems === 'function') window.renderScaletteItems(tipo);
-            // Aggiorner� interfaccia inserimento se necessario in futuro
+            // Aggiornerà  interfaccia inserimento se necessario in futuro
         });
         activeListeners.push(unsub);
     };
@@ -449,9 +449,83 @@ function startRealtimeSync(isAdmin) {
         if (typeof window.renderGiustificativi === 'function') window.renderGiustificativi();
     });
     activeListeners.push(unsubGiustificativi);
+
+      // NOTIFICHE RESI/RITIRI IN TEMPO REALE (Solo per Admin)
+      if (isAdmin) {
+          const todayStr = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+          const qResi = query(
+              collection(db, "clienti", "DNR", "resi_e_ritiri"),
+              where("data_evento", "==", todayStr),
+              where("letto_da_ufficio", "==", false)
+          );
+          const unsubResi = onSnapshot(qResi, (snapshot) => {
+              snapshot.docChanges().forEach((change) => {
+                  if (change.type === "added") {
+                      showResoToast(change.doc.id, change.doc.data(), db);
+                  }
+                  if (change.type === "removed" || change.type === "modified") {
+                      const data = change.doc.data();
+                      if(data.letto_da_ufficio || change.type === "removed") {
+                          const toast = document.getElementById(`toast-${change.doc.id}`);
+                          if(toast) toast.remove();
+                      }
+                  }
+              });
+          });
+          activeListeners.push(unsubResi);
+      }
+  }
+
+function showResoToast(docId, data, db) {
+    if(document.getElementById(`toast-${docId}`)) return;
+    
+    const container = document.getElementById("toast-container") || createToastContainer();
+    
+    const t = document.createElement("div");
+    t.id = `toast-${docId}`;
+    t.style.cssText = "background:white; border-left:5px solid #ef4444; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.15); padding:15px; margin-bottom:15px; width:300px; font-family:'Outfit',sans-serif; animation: slideIn 0.3s ease-out; position:relative;";
+    
+    const iconStr = data.tipo_segnalazione === "merce_rotta" ? "🔴 Rifiuto/Rotta" : "🔵 Reso/Ritiro";
+    
+    t.innerHTML = `
+        <h4 style="margin:0 0 5px 0; font-size:14px;">${iconStr}</h4>
+        <p style="margin:0 0 5px 0; font-size:13px; color:#475569;">Cliente: <b>${data.nome_cliente || data.codice_cliente}</b></p>
+        <p style="margin:0 0 10px 0; font-size:12px; color:#94a3b8;">Giro: ${data.id_viaggio}</p>
+        <div style="display:flex; gap:10px;">
+            <a href="${data.url_foto}" target="_blank" style="flex:1; background:#f1f5f9; color:#475569; padding:8px; text-align:center; text-decoration:none; border-radius:6px; font-size:12px; font-weight:bold;">Vedi Foto</a>
+            <button id="btn-letto-${docId}" style="flex:1; background:#10b981; color:white; border:none; padding:8px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold;">Letto</button>
+        </div>
+    `;
+    
+    container.appendChild(t);
+    
+    document.getElementById(`btn-letto-${docId}`).addEventListener('click', async () => {
+        try {
+            document.getElementById(`btn-letto-${docId}`).innerText = "...";
+            await updateDoc(doc(db, "clienti", "DNR", "resi_e_ritiri", docId), { letto_da_ufficio: true });
+            t.remove();
+        } catch(e) {
+            console.error("Errore segna come letto", e);
+            document.getElementById(`btn-letto-${docId}`).innerText = "Letto";
+        }
+    });
 }
 
-// ─── CRUD PROGETTI ────────────────────────────────────────────────────────────
+function createToastContainer() {
+    const c = document.createElement("div");
+    c.id = "toast-container";
+    c.style.cssText = "position:fixed; top:70px; right:20px; z-index:99999;";
+    
+    const style = document.createElement("style");
+    style.innerHTML = "@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }";
+    document.head.appendChild(style);
+    
+    document.body.appendChild(c);
+    return c;
+}
+
+
+// âââ CRUD PROGETTI ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 window.saveProgetto = async function(id, data) {
     try {
         if (id) {
@@ -476,7 +550,7 @@ window.deleteProgetto = async function(id) {
     }
 };
 
-// ─── CRUD GIUSTIFICATIVI ───────────────────────────────────────────────────────
+// âââ CRUD GIUSTIFICATIVI âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 window.saveGiustificativo = async function(id, data) {
     try {
         if (id) {
@@ -501,7 +575,7 @@ window.deleteGiustificativo = async function(id) {
     }
 };
 
-// ─── ALTRI CRUD (mezzi, utenti, ecc.) ─────────────────────────────────────────
+// âââ ALTRI CRUD (mezzi, utenti, ecc.) âââââââââââââââââââââââââââââââââââââââââ
 
 window.deleteProgetto = async function(id) {
     try {
@@ -520,7 +594,7 @@ window.updateCustomer = async function(id, data) {
         let docId = id;
         
         if (!docId) {
-            // Se non c'� id creiamo il documento col codice frutta o latte (oppure usiamo addDoc ma setDoc � meglio)
+            // Se non c'è id creiamo il documento col codice frutta o latte (oppure usiamo addDoc ma setDoc è meglio)
             // Lavoriamo con doc() senza id per generarlo
             const docRef = doc(collection(db, "clienti", "DNR", "raccolta clienti"));
             await setDoc(docRef, updateData);

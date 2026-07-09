@@ -62,5 +62,13 @@ service firebase.storage {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated();
     }
+
+    // Cartella foto resi (upload da autisti non autenticati)
+    match /RESI/{allPaths=**} {
+      allow read: if isAuthenticated();
+      // L'autista non è autenticato. Permettiamo solo upload di immagini max 10MB
+      allow write: if request.resource.size < 10 * 1024 * 1024 
+                   && request.resource.contentType.matches('image/.*');
+    }
   }
 }

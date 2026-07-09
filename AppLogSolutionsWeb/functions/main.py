@@ -4769,16 +4769,7 @@ def invia_email_fattura(req: https_fn.CallableRequest):
 @https_fn.on_request(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=60,
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post", "options"]))
 def autista_aggiorna_sequenza(req: https_fn.Request) -> https_fn.Response:
-    if req.method == 'OPTIONS':
-        headers = {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Max-Age': '3600'
-        }
-        return https_fn.Response('', status=204, headers=headers)
-        
-    try:
+try:
         data = req.get_json()
         viaggio_id = data.get("viaggio_id")
         nuova_sequenza = data.get("sequenza") # list of indices, e.g. [2, 0, 1]
@@ -4787,7 +4778,7 @@ def autista_aggiorna_sequenza(req: https_fn.Request) -> https_fn.Response:
         doc_ref = db.collection("clienti").document("DNR").collection("viaggi ddt").document(viaggio_id)
         doc = doc_ref.get()
         if not doc.exists:
-            return https_fn.Response(json.dumps({"status": "errore", "message": "Viaggio non trovato"}), status=404, headers={'Access-Control-Allow-Origin': '*'})
+            return https_fn.Response(json.dumps({"status": "errore", "message": "Viaggio non trovato"}), status=404)
             
         viaggio = doc.to_dict()
         vecchi_punti = viaggio.get("punti_ottimizzati") or viaggio.get("punti", [])
@@ -4862,25 +4853,16 @@ def autista_aggiorna_sequenza(req: https_fn.Request) -> https_fn.Response:
             "ultimo_aggiornamento": firestore.SERVER_TIMESTAMP
         })
         
-        return https_fn.Response(json.dumps({"status": "ok"}), status=200, headers={'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'})
+        return https_fn.Response(json.dumps({"status": "ok"}), status=200, headers={'Content-Type': 'application/json'})
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return https_fn.Response(json.dumps({"status": "errore", "message": str(e)}), status=500, headers={'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'})
+        return https_fn.Response(json.dumps({"status": "errore", "message": str(e)}), status=500, headers={'Content-Type': 'application/json'})
 
 @https_fn.on_request(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=60,
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post", "options"]))
 def autista_salva_reso(req: https_fn.Request) -> https_fn.Response:
-    if req.method == 'OPTIONS':
-        headers = {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Max-Age': '3600'
-        }
-        return https_fn.Response('', status=204, headers=headers)
-        
-    try:
+try:
         data = req.get_json()
         viaggio_id = data.get("viaggio_id")
         codice_cliente = data.get("codice_cliente", "UNK")
@@ -4889,7 +4871,7 @@ def autista_salva_reso(req: https_fn.Request) -> https_fn.Response:
         base64_img = data.get("foto_base64", "")
         
         if not base64_img:
-            return https_fn.Response(json.dumps({"status": "errore", "message": "Nessuna foto fornita"}), status=400, headers={'Access-Control-Allow-Origin': '*'})
+            return https_fn.Response(json.dumps({"status": "errore", "message": "Nessuna foto fornita"}), status=400)
             
         # Pulisci header base64 se presente (es. data:image/jpeg;base64,....)
         if "," in base64_img:
@@ -4924,8 +4906,8 @@ def autista_salva_reso(req: https_fn.Request) -> https_fn.Response:
             "letto_da_ufficio": False
         })
         
-        return https_fn.Response(json.dumps({"status": "ok", "url_foto": url_foto}), status=200, headers={'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'})
+        return https_fn.Response(json.dumps({"status": "ok", "url_foto": url_foto}), status=200, headers={'Content-Type': 'application/json'})
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return https_fn.Response(json.dumps({"status": "errore", "message": str(e)}), status=500, headers={'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'})
+        return https_fn.Response(json.dumps({"status": "errore", "message": str(e)}), status=500, headers={'Content-Type': 'application/json'})

@@ -1165,8 +1165,10 @@ border: 2px solid black;
 <div id="map"></div>
 <div id="sidebar">
 <div class="header">
-<p class="trip-title">&#x1F69B; {viaggio_id}</p>
-<button onclick="apriModalEspansa()" style="width:100%; margin-top:10px; margin-bottom:10px; background:var(--p); color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; font-size:16px; cursor:pointer;">MODIFICA SEQUENZA VIAGGIO</button>
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<p class="trip-title" style="margin:0;">&#x1F69B; {viaggio_id}</p>
+<button onclick="apriModalEspansa()" style="background:#e2e8f0; color:#0f172a; border:none; padding:6px 12px; border-radius:20px; font-weight:bold; font-size:12px; display:flex; align-items:center; gap:4px; box-shadow:0 1px 3px rgba(0,0,0,0.1);"><span class="material-icons-round" style="font-size:16px;">swap_vert</span> Ordina</button>
+</div>
 <div class="stats-row">
 <div><div class="stat-val">&#x23F0; {ora_partenza_dep}</div><div class="stat-lbl">Partenza</div></div>
 <div><div class="stat-val">&#x1F6E3;&#xFE0F; {float(km or 0):.1f} km</div><div class="stat-lbl">Km Reali</div></div>

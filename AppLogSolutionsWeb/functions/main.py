@@ -4769,7 +4769,7 @@ def invia_email_fattura(req: https_fn.CallableRequest):
 @https_fn.on_request(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=60,
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post", "options"]))
 def autista_aggiorna_sequenza(req: https_fn.Request) -> https_fn.Response:
-try:
+    try:
         data = req.get_json()
         viaggio_id = data.get("viaggio_id")
         nuova_sequenza = data.get("sequenza") # list of indices, e.g. [2, 0, 1]
@@ -4862,7 +4862,7 @@ try:
 @https_fn.on_request(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=60,
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post", "options"]))
 def autista_salva_reso(req: https_fn.Request) -> https_fn.Response:
-try:
+    try:
         data = req.get_json()
         viaggio_id = data.get("viaggio_id")
         codice_cliente = data.get("codice_cliente", "UNK")

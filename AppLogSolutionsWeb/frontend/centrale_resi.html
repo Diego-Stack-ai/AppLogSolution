@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centrale Resi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.026">
+    <link rel="stylesheet" href="styles.css?v=6.027">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -71,22 +71,34 @@
         </h1>
 
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('tab-gestire', this)">
-                <span class="material-icons-round">notification_important</span> Da Gestire (<span id="countGestire">0</span>)
+            <button class="tab active" onclick="switchTab('tab-nuovi', this)">
+                <span class="material-icons-round">fiber_new</span> Nuovi (<span id="countNuovi">0</span>)
+            </button>
+            <button class="tab" onclick="switchTab('tab-gestire', this)">
+                <span class="material-icons-round">build_circle</span> Da Lavorare (<span id="countGestire">0</span>)
             </button>
             <button class="tab" onclick="switchTab('tab-storico', this)">
-                <span class="material-icons-round">history</span> Storico (Risolti)
+                <span class="material-icons-round">history</span> Storico
             </button>
         </div>
 
-        <div id="tab-gestire" class="tab-content active">
+        <div id="tab-nuovi" class="tab-content active">
+            <div id="gridNuovi" class="cards-grid">
+                <!-- Cards iniettate via JS -->
+            </div>
+            <div id="emptyNuovi" style="display:none; text-align:center; padding: 40px; color: #64748b;">
+                <span class="material-icons-round" style="font-size: 64px; color: #cbd5e1; margin-bottom: 16px;">task_alt</span>
+                <h3>Nessuna nuova segnalazione</h3>
+            </div>
+        </div>
+
+        <div id="tab-gestire" class="tab-content">
             <div id="gridGestire" class="cards-grid">
                 <!-- Cards iniettate via JS -->
             </div>
             <div id="emptyGestire" style="display:none; text-align:center; padding: 40px; color: #64748b;">
                 <span class="material-icons-round" style="font-size: 64px; color: #cbd5e1; margin-bottom: 16px;">task_alt</span>
-                <h3>Nessuna anomalia da gestire</h3>
-                <p>Tutte le segnalazioni sono state risolte!</p>
+                <h3>Nessuna anomalia in lavorazione</h3>
             </div>
         </div>
 
@@ -102,13 +114,13 @@
     </div>
 
     <!-- Modal per Zoom Foto -->
-    <div id="imgModal" class="modal-img">
-        <span class="modal-close" onclick="closeModal()">&times;</span>
-        <img class="modal-content" id="imgModalContent">
+    <div id="imgModal" class="modal-img" onclick="closeModal()">
+        <span class="modal-close">&times;</span>
+        <img class="modal-content" id="imgModalContent" onclick="event.stopPropagation()">
     </div>
 
-    <script src="script.js?v=6.026"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.026"></script>
+    <script src="script.js?v=6.027"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.027"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -162,22 +174,36 @@
             return `${d.toLocaleDateString('it-IT')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
         }
 
-        function createCardHTML(r, isStorico) {
+        function createCardHTML(r, listType) {
             const badgeClass = r.tipo_segnalazione === 'merce_rotta' ? 'badge-rotto' : 'badge-reso';
             const badgeText = r.tipo_segnalazione === 'merce_rotta' ? 'Rottura' : 'Reso';
             
-            const actionButtons = isStorico ? `
+            let actionButtons = '';
+            if (listType === 'storico') {
+                actionButtons = `
                 <button class="btn-delete" onclick="window.eliminaReso('${r.id}', '${r.url_foto}')" title="Elimina definitivamente" style="flex: 1;">
                     <span class="material-icons-round">delete_forever</span> Elimina Record e Foto
                 </button>
-            ` : `
+                `;
+            } else if (listType === 'nuovi') {
+                actionButtons = `
+                <button class="btn-resolve" onclick="window.segnaVisto('${r.id}')" style="background:#eab308;">
+                    <span class="material-icons-round">visibility</span> Visto
+                </button>
+                <button class="btn-delete" onclick="window.eliminaReso('${r.id}', '${r.url_foto}')" title="Elimina">
+                    <span class="material-icons-round">delete</span>
+                </button>
+                `;
+            } else if (listType === 'gestire') {
+                actionButtons = `
                 <button class="btn-resolve" onclick="window.risolviReso('${r.id}')">
                     <span class="material-icons-round">check_circle</span> Segna Risolto
                 </button>
                 <button class="btn-delete" onclick="window.eliminaReso('${r.id}', '${r.url_foto}')" title="Elimina">
                     <span class="material-icons-round">delete</span>
                 </button>
-            `;
+                `;
+            }
 
             return `
                 <div class="resi-card">
@@ -206,15 +232,27 @@
         }
 
         function renderResi() {
-            const daGestire = resiData.filter(r => !r.letto_da_ufficio);
+            const nuovi = resiData.filter(r => !r.letto_da_ufficio && !r.visto_da_ufficio);
+            const daGestire = resiData.filter(r => !r.letto_da_ufficio && r.visto_da_ufficio);
             const storico = resiData.filter(r => r.letto_da_ufficio);
 
+            document.getElementById('countNuovi').textContent = nuovi.length;
             document.getElementById('countGestire').textContent = daGestire.length;
+
+            const gridNuovi = document.getElementById('gridNuovi');
+            const emptyNuovi = document.getElementById('emptyNuovi');
+            if (nuovi.length > 0) {
+                gridNuovi.innerHTML = nuovi.map(r => createCardHTML(r, 'nuovi')).join('');
+                emptyNuovi.style.display = 'none';
+            } else {
+                gridNuovi.innerHTML = '';
+                emptyNuovi.style.display = 'block';
+            }
 
             const gridGestire = document.getElementById('gridGestire');
             const emptyGestire = document.getElementById('emptyGestire');
             if (daGestire.length > 0) {
-                gridGestire.innerHTML = daGestire.map(r => createCardHTML(r, false)).join('');
+                gridGestire.innerHTML = daGestire.map(r => createCardHTML(r, 'gestire')).join('');
                 emptyGestire.style.display = 'none';
             } else {
                 gridGestire.innerHTML = '';
@@ -224,13 +262,24 @@
             const gridStorico = document.getElementById('gridStorico');
             const emptyStorico = document.getElementById('emptyStorico');
             if (storico.length > 0) {
-                gridStorico.innerHTML = storico.map(r => createCardHTML(r, true)).join('');
+                gridStorico.innerHTML = storico.map(r => createCardHTML(r, 'storico')).join('');
                 emptyStorico.style.display = 'none';
             } else {
                 gridStorico.innerHTML = '';
                 emptyStorico.style.display = 'block';
             }
         }
+
+        window.segnaVisto = async (id) => {
+            const tenant = localStorage.getItem('activeTenant') || 'DNR';
+            const docRef = doc(db, "clienti", tenant, "resi_e_ritiri", id);
+            try {
+                await updateDoc(docRef, { visto_da_ufficio: true });
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Errore', 'Impossibile aggiornare lo stato', 'error');
+            }
+        };
 
         window.risolviReso = async (id) => {
             const tenant = localStorage.getItem('activeTenant') || 'DNR';

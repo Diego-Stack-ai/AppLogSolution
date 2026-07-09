@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.009">
+    <link rel="stylesheet" href="styles.css?v=6.012">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1534,35 +1534,44 @@ const db = getFirestore(app);
         ];
         const NOMI_GC_FALLBACK = NOMI_DNR_FALLBACK.map(n => 'GranChef ' + n);
 
-        function checkIsGC(z, zid) {
+        function getClienteZona(z, zid) {
             const id = (zid || (z && z.id_zona) || '').toLowerCase();
             const nome = (z && z.nome_giro || '').toLowerCase();
-            const isGcStats = (z && z._stats && z._stats.is_gc === true);
-            return id.includes('granchef') || nome.includes('granchef') || nome.includes('gran chef') || isGcStats;
+            if (z && z.cliente_zona) return z.cliente_zona;
+            if (z && z.is_cattel) return 'CATTEL';
+            if (z && z.is_bauer) return 'BAUER';
+            if (id.includes('cattel')) return 'CATTEL';
+            if (id.includes('bauer')) return 'BAUER';
+            if (z && z._stats && z._stats.is_gc === true) return 'GRAN CHEF';
+            if (id.includes('granchef') || nome.includes('granchef') || nome.includes('gran chef')) return 'GRAN CHEF';
+            return _CLIENTE_PROGETTO || 'PROGETTO SCUOLE';
         }
 
         // Recupera la lista nomi viaggi dinamicamente da Firestore (lista_progetti).
-        // Usa _CLIENTE_PROGETTO (letto dal JSON dei viaggi) come prima scelta,
-        // poi il prefisso del giro (isGC) come fallback, e infine gli array statici.
-        function getNomiViaggi(isGC) {
+        function getNomiViaggi(z, zid) {
             const progetti = (window.appData && window.appData.lista_progetti) || [];
             let progetto = null;
+            const cliente = getClienteZona(z, zid);
+            const isGC = cliente === 'GRAN CHEF';
 
-            if (isGC) {
-                // Se stiamo espressamente parlando di un giro Gran Chef, forziamo il progetto Gran Chef
+            const clienteUpper = cliente.toUpperCase();
+            
+            // Ricerca esatta o alias
+            if (clienteUpper === 'CATTEL' || clienteUpper === 'CIPE') {
+                progetto = progetti.find(p => {
+                    const n = (p.nome || '').toUpperCase();
+                    return n === 'CATTEL' || n === 'CIPE' || n === 'CATTEL CIPE' || n.includes('CATTEL');
+                });
+            } else if (clienteUpper.includes('GRAN') || clienteUpper.includes('CHEF')) {
                 progetto = progetti.find(p => (p.nome || '').toUpperCase().includes('GRAN') || (p.nome || '').toUpperCase().includes('CHEF'));
-            } else if (_CLIENTE_PROGETTO) {
-                // Metodo preciso: cerca per nome esatto del cliente dal JSON
-                const clienteUpper = _CLIENTE_PROGETTO.toUpperCase();
+            } else {
                 progetto = progetti.find(p => (p.nome || '').toUpperCase() === clienteUpper);
-                // Fallback: ricerca parziale
                 if (!progetto) {
                     progetto = progetti.find(p => clienteUpper.includes((p.nome || '').toUpperCase()) || (p.nome || '').toUpperCase().includes(clienteUpper));
                 }
             }
 
             if (!progetto) {
-                // Fallback: usa il prefisso del giro (isGC) come indizio
                 if (isGC) {
                     progetto = progetti.find(p => (p.nome || '').toUpperCase().includes('GRAN') || (p.nome || '').toUpperCase().includes('CHEF'));
                 } else {
@@ -1573,17 +1582,17 @@ const db = getFirestore(app);
             if (progetto && progetto.viaggi && progetto.viaggi.length > 0) {
                 return progetto.viaggi;
             }
-            // Fallback statici finali
             return isGC ? NOMI_GC_FALLBACK : NOMI_DNR_FALLBACK;
         }
 
         window.apriModal = (zid) => {
             modalZid = zid;
             const z = DATA_ZONE.find(x => x.id_zona === zid);
-            const isGC = checkIsGC(z, zid);
-            const nomi = getNomiViaggi(isGC);
+            const cliente = getClienteZona(z, zid);
+            const isGC = cliente === 'GRAN CHEF';
+            const nomi = getNomiViaggi(z, zid);
             
-            document.getElementById('modal-title').textContent = isGC ? '🍽️ Rinomina giro GranChef' : '🚚 Rinomina giro';
+            document.getElementById('modal-title').textContent = isGC ? '🍽️ Rinomina giro GranChef' : (cliente === 'CATTEL' ? '🚚 Rinomina giro Cattel' : '🚚 Rinomina giro');
             document.getElementById('modal-sub').textContent = `ID zona: ${zid}`;
             
             const sel = document.getElementById('modal-select');
@@ -1634,14 +1643,23 @@ const db = getFirestore(app);
             // --- NUOVA LOGICA AUTO-AGGIUNTA ---
             const isCustomInput = !!document.getElementById('modal-input').value.trim();
             if (isCustomInput && z) {
-                const isGC = checkIsGC(z, modalZid);
-                const currentList = getNomiViaggi(isGC);
+                const cliente = getClienteZona(z, modalZid);
+                const isGC = cliente === 'GRAN CHEF';
+                const currentList = getNomiViaggi(z, modalZid);
                 if (!currentList.includes(v)) {
                     // Trova il progetto
                     const progetti = (window.appData && window.appData.lista_progetti) || [];
                     let progetto = null;
-                    if (_CLIENTE_PROGETTO) {
-                        const clienteUpper = _CLIENTE_PROGETTO.toUpperCase();
+                    const clienteUpper = cliente.toUpperCase();
+                    
+                    if (clienteUpper === 'CATTEL' || clienteUpper === 'CIPE') {
+                        progetto = progetti.find(p => {
+                            const n = (p.nome || '').toUpperCase();
+                            return n === 'CATTEL' || n === 'CIPE' || n === 'CATTEL CIPE' || n.includes('CATTEL');
+                        });
+                    } else if (clienteUpper.includes('GRAN') || clienteUpper.includes('CHEF')) {
+                        progetto = progetti.find(p => (p.nome || '').toUpperCase().includes('GRAN') || (p.nome || '').toUpperCase().includes('CHEF'));
+                    } else {
                         progetto = progetti.find(p => (p.nome || '').toUpperCase() === clienteUpper);
                         if (!progetto) progetto = progetti.find(p => clienteUpper.includes((p.nome || '').toUpperCase()) || (p.nome || '').toUpperCase().includes(clienteUpper));
                     }
@@ -2503,7 +2521,14 @@ const db = getFirestore(app);
                             <div class="zc-pill" style="background:${resolvedColor}; color:${colorContrast(resolvedColor)};">${z.lista_punti.length}</div>
                             <div class="zc-info" style="flex: 1; min-width: 0;">
                                 <div class="zc-name" style="font-size:0.92rem; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:6px; flex-wrap: wrap; line-height: 1.2;">
-                                    <span>${isBloccato ? '🔒 ' : ''}${z.nome_giro || z.id_zona}${isSpeciale ? '<span class="badge-speciale-label">RIENTRI</span>' : ''}</span>
+                                    <span>${isBloccato ? '🔒 ' : ''}${(() => {
+                                        const c = getClienteZona(z, z.id_zona);
+                                        const n = z.nome_giro || z.id_zona;
+                                        if (c && !n.toUpperCase().includes(c.toUpperCase())) {
+                                            return c.toUpperCase() + ' - ' + n;
+                                        }
+                                        return n;
+                                    })()}${isSpeciale ? '<span class="badge-speciale-label">RIENTRI</span>' : ''}</span>
                                     ${badgeStato(isBloccato ? 'bloccato' : (z._stato || 'da_calcolare'))}
                                 </div>
                                 <div class="zc-sub" style="font-size:0.72rem; color:var(--text-muted); margin-top:3px; display:flex; align-items:center; gap:8px;">
@@ -3306,12 +3331,13 @@ const db = getFirestore(app);
             DATA_ZONE.forEach(z => {
                 if (z.id_zona === 'DDT_DA_INSERIRE' || z.lista_punti.length === 0) return;
                 
-                const isGC = checkIsGC(z);
-                const nomiAmmessi = getNomiViaggi(isGC);
+                const cliente = getClienteZona(z, z.id_zona);
+                const isGC = cliente === 'GRAN CHEF';
+                const nomiAmmessi = getNomiViaggi(z, z.id_zona);
                 const nomeAttuale = z.nome_giro || z.id_zona;
                 
                 if (!nomiAmmessi.includes(nomeAttuale)) {
-                    nomiErrati.push({ giro: nomeAttuale, cliente: isGC ? 'Gran Chef' : 'DNR' });
+                    nomiErrati.push({ giro: nomeAttuale, cliente: cliente });
                 }
             });
 

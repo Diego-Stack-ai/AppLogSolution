@@ -2425,7 +2425,8 @@ def core_genera_report_giornaliero(uid, data_consegna):
             "id_zona": zid,
             "nome_giro": f"V{idx_dnr:02d}",
             "color": palette[color_index % len(palette)],
-            "lista_punti": zone_dict[zid]
+            "lista_punti": zone_dict[zid],
+            "cliente_zona": "PROGETTO SCUOLE"
         })
         color_index += 1
         
@@ -2438,7 +2439,8 @@ def core_genera_report_giornaliero(uid, data_consegna):
             "nome_giro": f"Cattel {targa_label}",
             "color": palette[color_index % len(palette)],
             "lista_punti": zone_dict[zid],
-            "is_cattel": True
+            "is_cattel": True,
+            "cliente_zona": "CATTEL"
         })
         color_index += 1
         
@@ -2451,7 +2453,8 @@ def core_genera_report_giornaliero(uid, data_consegna):
             "nome_giro": f"Bauer {targa_label}",
             "color": palette[color_index % len(palette)],
             "lista_punti": zone_dict[zid],
-            "is_bauer": True
+            "is_bauer": True,
+            "cliente_zona": "BAUER"
         })
         color_index += 1
         
@@ -2462,7 +2465,8 @@ def core_genera_report_giornaliero(uid, data_consegna):
             "nome_giro": f"Viaggio {idx_gc} Grand Chef",
             "color": palette[color_index % len(palette)],
             "lista_punti": zone_dict[zid],
-            "is_gc": True
+            "is_gc": True,
+            "cliente_zona": "GRAN CHEF"
         })
         color_index += 1
         
@@ -3655,11 +3659,11 @@ def core_genera_completo_giornata(data_consegna):
         viaggio_id = f"{data_consegna}_{zid}"
         doc_ref = get_db().collection('clienti').document('DNR').collection('viaggi ddt').document(viaggio_id)
         try:
-            doc_ref.update({
+            doc_ref.set({
                 "distinta_light": distinta_light_url,
                 "distinta_completa": distinta_completa_url,
                 "_stats": zone.get("_stats", {})
-            })
+            }, merge=True)
         except Exception as e_fs:
             print(f"[ERROR] Impossibile aggiornare Firestore per {viaggio_id}: {e_fs}")
 
@@ -3676,7 +3680,14 @@ def core_genera_completo_giornata(data_consegna):
                 
         depot = _get_depot_for_points_cloud(punti_html)
         ora_partenza_calc = zone.get("_stats", {}).get("ora_partenza", "07:00")
-        html_map_content = _genera_html_mappa(f"Giro {nome_giro}", punti_html, km, sec_guida, polylines, depot=depot, distinta_url=distinta_light_url, ora_partenza_dep=ora_partenza_calc)
+        
+        cliente_zona = zone.get("cliente_zona", "")
+        if cliente_zona and cliente_zona.upper() not in nome_giro.upper():
+            titolo_giro = f"{cliente_zona.upper()} - {nome_giro}"
+        else:
+            titolo_giro = f"Giro {nome_giro}"
+            
+        html_map_content = _genera_html_mappa(titolo_giro, punti_html, km, sec_guida, polylines, depot=depot, distinta_url=distinta_light_url, ora_partenza_dep=ora_partenza_calc)
         
         map_blob = bucket.blob(f"REPORTS/{data_consegna}/MAPPE_AUTISTI/{nome_giro}.html")
         map_blob.upload_from_string(html_map_content.encode('utf-8'), content_type="text/html; charset=utf-8")
@@ -3684,6 +3695,7 @@ def core_genera_completo_giornata(data_consegna):
 
         links.append({
             "v_id": nome_giro,
+            "titolo_giro": titolo_giro,
             "date": data_consegna,
             "url": map_url,
             "zones": zone.get("zone", [zone.get("id_zona", "?")]),
@@ -3720,7 +3732,7 @@ def core_genera_completo_giornata(data_consegna):
     except Exception as e_master:
         print(f"[MASTER] Errore assemblaggio: {e_master}")
 
-    whatsapp_lines = [f"Giro {l['v_id']} - Mappa: {l['url']}" for l in links]
+    whatsapp_lines = [f"{l.get('titolo_giro', 'Giro ' + l['v_id'])} - Mappa: {l['url']}" for l in links]
     whatsapp_txt = "\n".join(whatsapp_lines)
     bucket.blob(f"REPORTS/{data_consegna}/LINK_WHATSAPP_AUTISTI.txt").upload_from_string(whatsapp_txt.encode('utf-8'), content_type="text/plain; charset=utf-8")
 

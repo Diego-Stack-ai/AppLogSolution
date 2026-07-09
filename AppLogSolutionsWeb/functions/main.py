@@ -1043,7 +1043,7 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, 
             
         fermate_html += (
             f'<div class="card" id="card-{idx}" onclick="selectCard({idx})" style="{card_style}">'
-            f'<div class="drag-handle" style="color:#94a3b8; cursor:grab; display:flex; align-items:center; justify-content:center;" onclick="event.stopPropagation()"><span class="material-icons-round" style="font-size:20px;">drag_indicator</span></div>'
+            f'<div class="drag-handle" style="color:#94a3b8; cursor:grab; display:flex; align-items:center; justify-content:center; touch-action:none;" onclick="event.stopPropagation()"><span class="material-icons-round" style="font-size:20px;">drag_indicator</span></div>'
             f'<div class="stop-num{warn_class}">{idx+1}</div>'
             f'<div class="stop-info">'
             f'<span class="name">{nome}</span>'
@@ -1218,6 +1218,9 @@ document.addEventListener("DOMContentLoaded", () => {{
         new Sortable(list, {{
             handle: ".drag-handle",
             animation: 150,
+            delay: 150,
+            delayOnTouchOnly: true,
+            fallbackTolerance: 3,
             onEnd: function(evt) {{
                 if(evt.oldIndex !== evt.newIndex) {{
                     sequenceChanged = true;

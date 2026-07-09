@@ -460,12 +460,14 @@ function startRealtimeSync(isAdmin) {
           );
           const unsubResi = onSnapshot(qResi, (snapshot) => {
               snapshot.docChanges().forEach((change) => {
+                  const data = change.doc.data();
                   if (change.type === "added") {
-                      showResoToast(change.doc.id, change.doc.data(), db);
+                      if (!data.visto_da_ufficio) {
+                          showResoToast(change.doc.id, data, db);
+                      }
                   }
                   if (change.type === "removed" || change.type === "modified") {
-                      const data = change.doc.data();
-                      if(data.letto_da_ufficio || change.type === "removed") {
+                      if(data.letto_da_ufficio || data.visto_da_ufficio || change.type === "removed") {
                           const toast = document.getElementById(`toast-${change.doc.id}`);
                           if(toast) toast.remove();
                       }
@@ -502,7 +504,7 @@ function showResoToast(docId, data, db) {
     document.getElementById(`btn-letto-${docId}`).addEventListener('click', async () => {
         try {
             document.getElementById(`btn-letto-${docId}`).innerText = "...";
-            await updateDoc(doc(db, "clienti", "DNR", "resi_e_ritiri", docId), { letto_da_ufficio: true });
+            await updateDoc(doc(db, "clienti", "DNR", "resi_e_ritiri", docId), { visto_da_ufficio: true });
             t.remove();
         } catch(e) {
             console.error("Errore segna come letto", e);

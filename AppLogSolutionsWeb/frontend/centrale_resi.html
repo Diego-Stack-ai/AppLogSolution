@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centrale Resi - Log Solution</title>
+    <link rel="stylesheet" href="styles.css?v=6.026">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <meta name="theme-color" content="#4f46e5">
+    <style>
+        .tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; overflow-x: auto; }
+        .tab { padding: 12px 24px; border: none; background: transparent; cursor: pointer; font-weight: 700; font-size: 16px; color: var(--text-muted); border-radius: 8px; transition: 0.2s; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+        .tab:hover { background: #f8fafc; color: var(--primary); }
+        .tab.active { background: var(--primary); color: white; box-shadow: 0 4px 12px -4px var(--primary-glow); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .resi-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; transition: 0.2s; }
+        .resi-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        
+        .resi-img-container { width: 100%; height: 200px; background: #f1f5f9; position: relative; cursor: pointer; }
+        .resi-img-container img { width: 100%; height: 100%; object-fit: cover; }
+        .resi-badge { position: absolute; top: 12px; left: 12px; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; text-transform: uppercase; color: white; }
+        .badge-reso { background: #eab308; }
+        .badge-rotto { background: #ef4444; }
+        
+        .resi-content { padding: 16px; display: flex; flex-direction: column; flex: 1; }
+        .resi-header { margin-bottom: 12px; }
+        .resi-title { font-size: 18px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0; }
+        .resi-subtitle { font-size: 14px; color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 4px;}
+        
+        .resi-info { background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; color: #334155; }
+        .resi-info div { margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .resi-info div span:first-child { font-weight: 700; color: #64748b; }
+        .resi-info div span:last-child { font-weight: 600; text-align: right; }
+
+        .resi-actions { display: flex; gap: 8px; margin-top: auto; }
+        .btn-resolve { flex: 1; background: var(--success); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; }
+        .btn-resolve:hover { filter: brightness(1.1); }
+        .btn-delete { background: #fee2e2; color: #ef4444; border: none; padding: 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-delete:hover { background: #fca5a5; color: white; }
+
+        /* Fullscreen modal for images */
+        .modal-img { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
+        .modal-img.active { display: flex; }
+        .modal-content { max-width: 90%; max-height: 90vh; object-fit: contain; border-radius: 8px; }
+        .modal-close { position: absolute; top: 20px; right: 30px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+
+<body>
+    <nav class="glass-nav">
+        <div class="nav-content">
+            <button id="dashboardBtn" class="logout-btn" title="Torna alla Dashboard"
+                onclick="window.navigateWithState('dashboard.html')"
+                style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
+                <span class="material-icons-round">arrow_back</span>
+            </button>
+            <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
+            <div class="nav-title" style="flex: 1;">Centrale Resi</div>
+        </div>
+    </nav>
+
+    <div class="main-container" style="padding-top: 80px;">
+        <h1 style="margin-bottom: 24px; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 12px;">
+            <span class="material-icons-round" style="font-size: 32px;">assignment_return</span>
+            Gestione Segnalazioni Autisti
+        </h1>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('tab-gestire', this)">
+                <span class="material-icons-round">notification_important</span> Da Gestire (<span id="countGestire">0</span>)
+            </button>
+            <button class="tab" onclick="switchTab('tab-storico', this)">
+                <span class="material-icons-round">history</span> Storico (Risolti)
+            </button>
+        </div>
+
+        <div id="tab-gestire" class="tab-content active">
+            <div id="gridGestire" class="cards-grid">
+                <!-- Cards iniettate via JS -->
+            </div>
+            <div id="emptyGestire" style="display:none; text-align:center; padding: 40px; color: #64748b;">
+                <span class="material-icons-round" style="font-size: 64px; color: #cbd5e1; margin-bottom: 16px;">task_alt</span>
+                <h3>Nessuna anomalia da gestire</h3>
+                <p>Tutte le segnalazioni sono state risolte!</p>
+            </div>
+        </div>
+
+        <div id="tab-storico" class="tab-content">
+            <div id="gridStorico" class="cards-grid">
+                <!-- Cards iniettate via JS -->
+            </div>
+            <div id="emptyStorico" style="display:none; text-align:center; padding: 40px; color: #64748b;">
+                <span class="material-icons-round" style="font-size: 64px; color: #cbd5e1; margin-bottom: 16px;">history_toggle_off</span>
+                <h3>Nessun reso nello storico</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal per Zoom Foto -->
+    <div id="imgModal" class="modal-img">
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="imgModalContent">
+    </div>
+
+    <script src="script.js?v=6.026"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.026"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getStorage, ref, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+        import { firebaseConfig } from "./firebase-config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        let resiData = [];
+
+        // Tab Switching function - global
+        window.switchTab = function(tabId, btnElement) {
+            document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+        };
+
+        // Modal Image - global
+        window.openModal = function(url) {
+            document.getElementById('imgModal').classList.add('active');
+            document.getElementById('imgModalContent').src = url;
+        };
+        window.closeModal = function() {
+            document.getElementById('imgModal').classList.remove('active');
+        };
+
+        // Setup Listener
+        function loadResi() {
+            const tenant = localStorage.getItem('activeTenant') || 'DNR';
+            const resiRef = collection(db, "clienti", tenant, "resi_e_ritiri");
+            const q = query(resiRef, orderBy("timestamp", "desc"));
+            
+            Swal.fire({ title: 'Caricamento...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            onSnapshot(q, (snapshot) => {
+                resiData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderResi();
+                Swal.close();
+            }, (error) => {
+                console.error("Errore lettura resi:", error);
+                Swal.fire('Errore', 'Impossibile caricare le segnalazioni', 'error');
+            });
+        }
+
+        function formatTime(timestamp) {
+            if (!timestamp) return "";
+            const d = new Date(timestamp);
+            return `${d.toLocaleDateString('it-IT')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+        }
+
+        function createCardHTML(r, isStorico) {
+            const badgeClass = r.tipo_segnalazione === 'merce_rotta' ? 'badge-rotto' : 'badge-reso';
+            const badgeText = r.tipo_segnalazione === 'merce_rotta' ? 'Rottura' : 'Reso';
+            
+            const actionButtons = isStorico ? `
+                <button class="btn-delete" onclick="window.eliminaReso('${r.id}', '${r.url_foto}')" title="Elimina definitivamente" style="flex: 1;">
+                    <span class="material-icons-round">delete_forever</span> Elimina Record e Foto
+                </button>
+            ` : `
+                <button class="btn-resolve" onclick="window.risolviReso('${r.id}')">
+                    <span class="material-icons-round">check_circle</span> Segna Risolto
+                </button>
+                <button class="btn-delete" onclick="window.eliminaReso('${r.id}', '${r.url_foto}')" title="Elimina">
+                    <span class="material-icons-round">delete</span>
+                </button>
+            `;
+
+            return `
+                <div class="resi-card">
+                    <div class="resi-img-container" onclick="window.openModal('${r.url_foto}')">
+                        <span class="resi-badge ${badgeClass}">${badgeText}</span>
+                        <img src="${r.url_foto}" alt="Foto Reso" loading="lazy">
+                    </div>
+                    <div class="resi-content">
+                        <div class="resi-header">
+                            <h3 class="resi-title">${r.codice_cliente || 'UNK'}</h3>
+                            <div class="resi-subtitle">
+                                <span class="material-icons-round" style="font-size:16px;">storefront</span>
+                                ${r.nome_cliente || 'Sconosciuto'}
+                            </div>
+                        </div>
+                        <div class="resi-info">
+                            <div><span>Data Evento</span> <span>${formatTime(r.timestamp)}</span></div>
+                            <div><span>Autista</span> <span>${r.autista || 'Sconosciuto'}</span></div>
+                        </div>
+                        <div class="resi-actions">
+                            ${actionButtons}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderResi() {
+            const daGestire = resiData.filter(r => !r.letto_da_ufficio);
+            const storico = resiData.filter(r => r.letto_da_ufficio);
+
+            document.getElementById('countGestire').textContent = daGestire.length;
+
+            const gridGestire = document.getElementById('gridGestire');
+            const emptyGestire = document.getElementById('emptyGestire');
+            if (daGestire.length > 0) {
+                gridGestire.innerHTML = daGestire.map(r => createCardHTML(r, false)).join('');
+                emptyGestire.style.display = 'none';
+            } else {
+                gridGestire.innerHTML = '';
+                emptyGestire.style.display = 'block';
+            }
+
+            const gridStorico = document.getElementById('gridStorico');
+            const emptyStorico = document.getElementById('emptyStorico');
+            if (storico.length > 0) {
+                gridStorico.innerHTML = storico.map(r => createCardHTML(r, true)).join('');
+                emptyStorico.style.display = 'none';
+            } else {
+                gridStorico.innerHTML = '';
+                emptyStorico.style.display = 'block';
+            }
+        }
+
+        window.risolviReso = async (id) => {
+            const tenant = localStorage.getItem('activeTenant') || 'DNR';
+            const docRef = doc(db, "clienti", tenant, "resi_e_ritiri", id);
+            try {
+                await updateDoc(docRef, { letto_da_ufficio: true });
+                // Note: sweetalert toast removed to avoid interrupting workflow, UI updates reactively via onSnapshot
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Errore', 'Impossibile aggiornare lo stato', 'error');
+            }
+        };
+
+        window.eliminaReso = async (id, fotoUrl) => {
+            const res = await Swal.fire({
+                title: 'Eliminare definitivamente?',
+                text: "Il record e la foto verranno cancellati dal database e dallo spazio di archiviazione. L'azione è irreversibile.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Sì, elimina'
+            });
+
+            if (res.isConfirmed) {
+                Swal.fire({ title: 'Eliminazione...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                try {
+                    const tenant = localStorage.getItem('activeTenant') || 'DNR';
+                    
+                    // 1. Delete Photo from Storage if URL exists
+                    if (fotoUrl && fotoUrl.includes('firebasestorage.googleapis.com')) {
+                        try {
+                            const photoRef = ref(storage, fotoUrl);
+                            await deleteObject(photoRef);
+                            console.log("Foto eliminata dallo storage.");
+                        } catch (sErr) {
+                            console.warn("Impossibile eliminare foto storage (forse già cancellata):", sErr);
+                        }
+                    }
+
+                    // 2. Delete Document from Firestore
+                    await deleteDoc(doc(db, "clienti", tenant, "resi_e_ritiri", id));
+                    
+                    Swal.fire('Eliminato!', 'Il record e la foto sono stati rimossi.', 'success');
+                } catch (err) {
+                    console.error(err);
+                    Swal.fire('Errore', 'Impossibile eliminare', 'error');
+                }
+            }
+        };
+
+        // Load data after auth
+        window.onUserProfileLoaded = (user) => {
+            loadResi();
+        };
+
+    </script>
+</body>
+</html>

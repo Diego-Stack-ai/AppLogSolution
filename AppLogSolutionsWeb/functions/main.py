@@ -1032,7 +1032,7 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, 
                 f'<button class="btn-cam" onclick="openCamera(event, {idx})"><span class="material-icons-round">photo_camera</span></button>'
                 f'</div>'
             )
-            card_style = 'grid-template-columns: 24px 42px 1fr auto;'
+            card_style = 'grid-template-columns: 42px 1fr auto;'
         else:
             action_col = (
                 f'<div class="nav-col">'
@@ -1040,11 +1040,10 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, 
                 f'<button class="btn-cam" onclick="openCamera(event, {idx})"><span class="material-icons-round">photo_camera</span></button>'
                 f'</div>'
             )
-            card_style = 'grid-template-columns: 24px 42px 1fr auto;'
+            card_style = 'grid-template-columns: 42px 1fr auto;'
             
         fermate_html += (
             f'<div class="card" id="card-{idx}" onclick="selectCard({idx})" style="{card_style}">'
-            f'<div class="drag-handle" style="color:#94a3b8; cursor:grab; display:flex; align-items:center; justify-content:center; touch-action:none;" onclick="event.stopPropagation()"><span class="material-icons-round" style="font-size:20px;">drag_indicator</span></div>'
             f'<div class="stop-num{warn_class}">{idx+1}</div>'
             f'<div class="stop-info">'
             f'<span class="name">{nome}</span>'

@@ -1115,7 +1115,7 @@ body,html{{margin:0;padding:0;height:100%;font-family:'Outfit',sans-serif;overfl
 .stat-val{{font-size:.85rem;font-weight:800;color:white}}
 .stat-lbl{{font-size:.52rem;color:#94a3b8;text-transform:uppercase}}
 #delivery-list{{flex:1;overflow-y:auto;padding:8px;background:#f1f5f9;padding-bottom:60px}}
-.card{{background:white;border-radius:12px;padding:10px;margin-bottom:8px;display:grid;gap:8px;align-items:center;border:1px solid #cbd5e1;cursor:pointer;transition:all .2s}}
+.card{{background:white;border-radius:12px;padding:10px;margin-bottom:8px;display:grid;gap:8px;align-items:center;border:1px solid #cbd5e1;cursor:pointer;transition:all .2s;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}}
 .card.active{{border-color:var(--p);border-left:5px solid var(--p);background:#eef2ff}}
 .stop-num{{width:32px;height:32px;background:var(--p);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}}
 .stop-num.warning {{

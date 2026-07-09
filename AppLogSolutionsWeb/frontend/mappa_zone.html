@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.008">
+    <link rel="stylesheet" href="styles.css?v=6.009">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -2076,11 +2076,20 @@ const db = getFirestore(app);
                     const isBauer = (channel === 'BAUER') || (p.tipo === 'BAUER') || (p.competenze && p.competenze.includes('BAUER'));
                     
                     if (isGC || isCattel || isBauer) {
-                        // Special layout: circle with emoji + sequence badge below
+                        // Special layout: circle (or drop) with emoji + sequence badge below
                         const circle = document.createElement('div');
                         circle.style.width = '28px';
                         circle.style.height = '28px';
-                        circle.style.borderRadius = '50%';
+                        
+                        if (isCattel) {
+                            // Forma a goccia (pin) per Cattel
+                            circle.style.borderRadius = '50% 50% 50% 0';
+                            circle.style.transform = 'rotate(-45deg)';
+                        } else {
+                            // Forma rotonda per GranChef e Bauer
+                            circle.style.borderRadius = '50%';
+                        }
+                        
                         circle.style.background = bgStyle;
                         circle.style.border = '2px solid white';
                         circle.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
@@ -2090,13 +2099,20 @@ const db = getFirestore(app);
                         circle.style.fontSize = '14px';
                         circle.style.flexShrink = '0';
                         
-                        if (isGC) {
-                            circle.innerHTML = '&#x1F468;&#x200D;&#x1F373;'; // Chef emoji
-                        } else if (isCattel) {
-                            circle.innerHTML = '&#x1F69A;'; // Truck emoji (🚚)
-                        } else if (isBauer) {
-                            circle.innerHTML = '&#x1F42E;'; // Cow emoji (🐮)
+                        const emojiSpan = document.createElement('span');
+                        if (isCattel) {
+                            emojiSpan.style.transform = 'rotate(45deg)';
+                            emojiSpan.style.display = 'inline-block';
                         }
+                        
+                        if (isGC) {
+                            emojiSpan.innerHTML = '&#x1F468;&#x200D;&#x1F373;'; // Chef emoji
+                        } else if (isCattel) {
+                            emojiSpan.innerHTML = '&#x1F69A;'; // Truck emoji
+                        } else if (isBauer) {
+                            emojiSpan.innerHTML = '&#x1F42E;'; // Cow emoji
+                        }
+                        circle.appendChild(emojiSpan);
                         
                         const numBadge = document.createElement('div');
                         numBadge.style.background = resolvedColor;

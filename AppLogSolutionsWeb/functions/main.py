@@ -1220,7 +1220,15 @@ def core_genera_mappa_autista(viaggio_id, distinta_url=None):
         distinta_url = viaggio.get("distinta_url") or viaggio.get("distinta_light")
 
     ora_partenza_calc = viaggio.get("_stats", {}).get("ora_partenza", "07:00")
-    html = _genera_html_mappa(viaggio_id, punti_norm, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc)
+    
+    cliente_zona = viaggio.get("cliente_zona", "")
+    nome_giro = viaggio.get("nome_giro", viaggio_id)
+    if cliente_zona and cliente_zona.upper() not in nome_giro.upper():
+        titolo_giro = f"{cliente_zona.upper()} - {nome_giro}"
+    else:
+        titolo_giro = nome_giro
+        
+    html = _genera_html_mappa(titolo_giro, punti_norm, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc)
 
     bucket = storage.bucket(name=BUCKET_NAME)
     data_viaggio = viaggio.get("data", "sconosciuta").replace("/", "-")
@@ -1344,7 +1352,15 @@ def core_ricalcola_percorso(viaggio_id, nuovi_punti, num_locked=0):
     viaggio = doc_viaggio.to_dict()
     distinta_url = viaggio.get("distinta_light")
     ora_partenza_calc = viaggio.get("_stats", {}).get("ora_partenza", "07:00")
-    html = _genera_html_mappa(viaggio_id, punti_finali, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc)
+    
+    cliente_zona = viaggio.get("cliente_zona", "")
+    nome_giro = viaggio.get("nome_giro", viaggio_id)
+    if cliente_zona and cliente_zona.upper() not in nome_giro.upper():
+        titolo_giro = f"{cliente_zona.upper()} - {nome_giro}"
+    else:
+        titolo_giro = nome_giro
+        
+    html = _genera_html_mappa(titolo_giro, punti_finali, km, sec_guida, polylines, depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc)
     bucket = storage.bucket(name=BUCKET_NAME)
     data_v = viaggio.get("data", "sconosciuta").replace("/", "-")
     html_path = f"CONSEGNE/CONSEGNE_{data_v}/MAPPE_AUTISTI/{viaggio_id}.html"
@@ -2970,6 +2986,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
             doc_ref.set({
                 "id_zona": zid,
                 "nome_giro": nome_giro_da_salvare,
+                "cliente_zona": zone.get("cliente_zona", ""),
                 "color": zone.get("color", "#4f46e5"),
                 "data_lavoro": data_consegna,
                 "data": data_consegna,
@@ -3293,16 +3310,22 @@ def _blocco_distinta_cloud(viaggio, articoli_viaggio, data_ddt, copia, n_ddt_tot
     st_body   = ParagraphStyle("body_c_l", parent=styles["Normal"],   fontSize=8,  leading=9)
     st_warn   = ParagraphStyle("warn_c",   parent=styles["Normal"],   fontSize=8, textColor=colors.red)
 
-    nome_giro = viaggio.get("nome_giro", "?")
+    nome_giro = viaggio.get("nome_giro", "Sconosciuto")
+    cliente_zona = viaggio.get("cliente_zona", "")
+    if cliente_zona and cliente_zona.upper() not in nome_giro.upper():
+        nome_giro_stampato = f"{cliente_zona.upper()} - {nome_giro}"
+    else:
+        nome_giro_stampato = nome_giro
+        
     zone_list = viaggio.get("zone", [])
-    if not zone_list:
-        zone_list = [viaggio.get("id_zona", "?")]
+    if not isinstance(zone_list, list):
+        zone_list = [viaggio.get("id_zona", "")]
     zone = ", ".join(zone_list)
     n_fermate = len(viaggio.get("lista_punti", []))
     label = f"{'COPIA AUTISTA' if copia == 1 else 'COPIA UFFICIO'}"
     elementi = []
 
-    elementi.append(Paragraph(f"DISTINTA DI CARICO — {nome_giro}  [{label}]", st_titolo))
+    elementi.append(Paragraph(f"DISTINTA DI CARICO - {nome_giro_stampato}  [{label}]", st_titolo))
     elementi.append(Paragraph(f"Zone: {zone}  |  Fermate Totali: {n_fermate}  |  DDT Totali: {n_ddt_totali}  |  Data: {data_ddt}", st_sub))
     
     if rientri_giro:

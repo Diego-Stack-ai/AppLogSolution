@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invio Mobile Autisti — Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.012">
+    <link rel="stylesheet" href="styles.css?v=6.013">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -193,8 +193,8 @@
         <div class="viaggi-grid" id="viaggiGrid"></div>
     </main>
 
-    <script src="script.js?v=6.012"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.012"></script>
+    <script src="script.js?v=6.013"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.013"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -366,7 +366,14 @@
             div.innerHTML = `
                 <div class="card-header">
                     <div class="zona-pill" style="background:${v.color||'#4f46e5'};"></div>
-                    <div class="card-title">${v.nome_giro || v.id_zona}</div>
+                    <div class="card-title">${(() => {
+                        const c = v.cliente_zona || '';
+                        const n = v.nome_giro || v.id_zona;
+                        if (c && !n.toUpperCase().includes(c.toUpperCase())) {
+                            return c.toUpperCase() + ' - ' + n;
+                        }
+                        return n;
+                    })()}</div>
                     <div class="card-badges">
                         ${v.is_recupero_rd ? '<span class="badge" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;">⚠️ VIAGGIO STORICO RECUPERATO</span>' : ''}
                         <span class="badge badge-info">${nPunti} fermate</span>

@@ -4834,7 +4834,6 @@ def autista_aggiorna_sequenza(req: https_fn.Request) -> https_fn.Response:
                 json_path = f"REPORTS/{data_consegna}/viaggi_giornalieri_Johnson.json"
                 json_blob = bucket.blob(json_path)
                 if json_blob.exists():
-                    import json
                     raw_json = json.loads(json_blob.download_as_string().decode('utf-8'))
                     if isinstance(raw_json, dict):
                         zone_list = raw_json.get("zone", [])

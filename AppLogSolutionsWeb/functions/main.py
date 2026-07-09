@@ -1145,20 +1145,20 @@ border: 2px solid black;
 .fab-save:active{{transform:scale(0.95);}}
 
 /* Stili Modale Riordino */
-#reorder-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#f8fafc;z-index:9999;flex-direction:column;}
-.rm-header{padding:16px;background:#1e293b;color:white;display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);}
-.rm-title{margin:0;font-size:1.1rem;font-weight:800;display:flex;align-items:center;gap:8px;}
-.rm-body{flex:1;overflow-y:auto;padding:12px;}
-.rm-footer{padding:16px;background:white;border-top:1px solid #e2e8f0;display:flex;gap:12px;}
-.rm-btn-cancel{flex:1;padding:14px;border:none;background:#f1f5f9;color:#475569;font-weight:700;border-radius:12px;cursor:pointer;}
-.rm-btn-save{flex:2;padding:14px;border:none;background:var(--accent);color:white;font-weight:800;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(16,185,129,0.3);}
-.rm-item{background:white;border:1px solid #cbd5e1;border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
-.rm-handle{color:#94a3b8;cursor:grab;padding:4px;}
-.rm-num{width:28px;height:28px;background:var(--p);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;}
-.rm-info{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2;}
-.rm-name{font-weight:800;color:#0f172a;font-size:0.9rem;}
-.rm-sub{font-size:0.75rem;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.sortable-ghost{opacity:0.4;}
+#reorder-modal{{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#f8fafc;z-index:9999;flex-direction:column;}}
+.rm-header{{padding:16px;background:#1e293b;color:white;display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);}}
+.rm-title{{margin:0;font-size:1.1rem;font-weight:800;display:flex;align-items:center;gap:8px;}}
+.rm-body{{flex:1;overflow-y:auto;padding:12px;}}
+.rm-footer{{padding:16px;background:white;border-top:1px solid #e2e8f0;display:flex;gap:12px;}}
+.rm-btn-cancel{{flex:1;padding:14px;border:none;background:#f1f5f9;color:#475569;font-weight:700;border-radius:12px;cursor:pointer;}}
+.rm-btn-save{{flex:2;padding:14px;border:none;background:var(--accent);color:white;font-weight:800;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(16,185,129,0.3);}}
+.rm-item{{background:white;border:1px solid #cbd5e1;border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}}
+.rm-handle{{color:#94a3b8;cursor:grab;padding:4px;}}
+.rm-num{{width:28px;height:28px;background:var(--p);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;}}
+.rm-info{{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2;}}
+.rm-name{{font-weight:800;color:#0f172a;font-size:0.9rem;}}
+.rm-sub{{font-size:0.75rem;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
+.sortable-ghost{{opacity:0.4;}}
 </style>
 </head>
 <body>

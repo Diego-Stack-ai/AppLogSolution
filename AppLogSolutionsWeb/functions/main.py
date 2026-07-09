@@ -983,6 +983,7 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, 
 
     for idx, p in enumerate(punti):
         nome = p.get("nome", p.get("codice_cliente", f"Tappa {idx+1}"))
+        rag_sociale = p.get("ragione_sociale", p.get("nome_cliente", ""))
         ind  = p.get("indirizzo", "")
         lat  = p.get("lat", "")
         lon  = p.get("lon", p.get("lng", ""))
@@ -1088,6 +1089,8 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, 
             "lng": float(p.get("lon", p.get("lng", 0))),
             "nome": p.get("nome", ""),
             "codice_cliente": p.get("codice_cliente", ""),
+            "ragione_sociale": p.get("ragione_sociale", p.get("nome_cliente", "")),
+            "indirizzo": p.get("indirizzo", ""),
             "is_parziale": is_parz
         })
     punti_js     = json.dumps(punti_js_list)
@@ -1140,6 +1143,22 @@ border: 2px solid black;
 .material-icons-round{{font-size:18px !important}}
 .fab-save{{position:fixed;bottom:20px;right:20px;background:var(--accent);color:white;border:none;border-radius:30px;padding:12px 20px;font-weight:800;font-family:'Outfit',sans-serif;box-shadow:0 4px 12px rgba(16,185,129,0.4);display:none;align-items:center;gap:8px;cursor:pointer;z-index:1000;font-size:1rem;transition:transform 0.2s;}}
 .fab-save:active{{transform:scale(0.95);}}
+
+/* Stili Modale Riordino */
+#reorder-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#f8fafc;z-index:9999;flex-direction:column;}
+.rm-header{padding:16px;background:#1e293b;color:white;display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);}
+.rm-title{margin:0;font-size:1.1rem;font-weight:800;display:flex;align-items:center;gap:8px;}
+.rm-body{flex:1;overflow-y:auto;padding:12px;}
+.rm-footer{padding:16px;background:white;border-top:1px solid #e2e8f0;display:flex;gap:12px;}
+.rm-btn-cancel{flex:1;padding:14px;border:none;background:#f1f5f9;color:#475569;font-weight:700;border-radius:12px;cursor:pointer;}
+.rm-btn-save{flex:2;padding:14px;border:none;background:var(--accent);color:white;font-weight:800;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(16,185,129,0.3);}
+.rm-item{background:white;border:1px solid #cbd5e1;border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.rm-handle{color:#94a3b8;cursor:grab;padding:4px;}
+.rm-num{width:28px;height:28px;background:var(--p);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;}
+.rm-info{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2;}
+.rm-name{font-weight:800;color:#0f172a;font-size:0.9rem;}
+.rm-sub{font-size:0.75rem;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sortable-ghost{opacity:0.4;}
 </style>
 </head>
 <body>
@@ -1345,6 +1364,108 @@ function handleFile(e) {{
         img.src = event.target.result;
     }}
     reader.readAsDataURL(file);
+}}
+</script>
+
+<!-- Modal Riordino -->
+<div id="reorder-modal">
+    <div class="rm-header">
+        <h2 class="rm-title"><span class="material-icons-round">low_priority</span> Riordina Tappe</h2>
+    </div>
+    <div class="rm-body" id="rm-list">
+        <!-- populated by JS -->
+    </div>
+    <div class="rm-footer">
+        <button class="rm-btn-cancel" onclick="chiudiModalRiordino()">Annulla</button>
+        <button class="rm-btn-save" id="rm-btn-save" onclick="applicaESalvaRiordino()">
+            <span class="material-icons-round">save</span> Salva Ordine
+        </button>
+    </div>
+</div>
+
+<script>
+let modalSortable = null;
+const puntiDati = {punti_js};
+
+function apriModalRiordino() {{
+    const list = document.getElementById("rm-list");
+    list.innerHTML = "";
+    puntiDati.forEach((p, idx) => {{
+        const div = document.createElement("div");
+        div.className = "rm-item";
+        div.dataset.index = idx;
+        const addressParts = (p.indirizzo || "").split(",");
+        const city = addressParts.length > 1 ? addressParts[1].trim() : (p.indirizzo || "");
+        div.innerHTML = `
+            <div class="material-icons-round rm-handle">drag_indicator</div>
+            <div class="rm-num">${{idx + 1}}</div>
+            <div class="rm-info">
+                <span class="rm-name">${{p.nome}}</span>
+                <span class="rm-sub">${{p.ragione_sociale || ''}}</span>
+            </div>
+            <div class="rm-sub" style="flex-shrink:0; text-align:right;">${{city}}</div>
+        `;
+        list.appendChild(div);
+    }});
+    
+    document.getElementById("reorder-modal").style.display = "flex";
+    
+    if (modalSortable) modalSortable.destroy();
+    modalSortable = new Sortable(list, {{
+        animation: 150,
+        handle: ".rm-handle",
+        ghostClass: "sortable-ghost"
+    }});
+}}
+
+function chiudiModalRiordino() {{
+    document.getElementById("reorder-modal").style.display = "none";
+}}
+
+async function applicaESalvaRiordino() {{
+    const list = document.getElementById("rm-list");
+    const items = list.querySelectorAll(".rm-item");
+    const nuovaSequenza = Array.from(items).map(item => parseInt(item.dataset.index));
+    
+    const changed = nuovaSequenza.some((val, i) => val !== i);
+    if (!changed) {{
+        chiudiModalRiordino();
+        return;
+    }}
+    
+    const btn = document.getElementById("rm-btn-save");
+    btn.innerHTML = '<span class="material-icons-round">autorenew</span> Salvataggio...';
+    btn.style.pointerEvents = "none";
+    
+    try {{
+        let realViaggioId = '{actual_viaggio_id if actual_viaggio_id else viaggio_id}';
+        if (realViaggioId.includes(" - ")) {{
+            realViaggioId = realViaggioId.split(" - ").pop();
+        }}
+        
+        const resp = await fetch("https://europe-west1-log-solution-60007.cloudfunctions.net/autista_aggiorna_sequenza", {{
+            method: "POST",
+            headers: {{ "Content-Type": "application/json" }},
+            body: JSON.stringify({{
+                viaggio_id: realViaggioId,
+                sequenza: nuovaSequenza
+            }})
+        }});
+        
+        const res = await resp.json();
+        if (res.status === "ok") {{
+            alert("Sequenza aggiornata con successo! La pagina si ricaricherà.");
+            window.location.reload();
+        }} else {{
+            alert("Errore nel salvataggio: " + res.message);
+            btn.innerHTML = '<span class="material-icons-round">save</span> Salva Ordine';
+            btn.style.pointerEvents = "auto";
+        }}
+    }} catch(err) {{
+        alert("Errore di rete: " + err.message);
+        btn.innerHTML = '<span class="material-icons-round">save</span> Salva Ordine';
+        btn.style.pointerEvents = "auto";
+    }}
 }}
 </script>
 </body></html>"""

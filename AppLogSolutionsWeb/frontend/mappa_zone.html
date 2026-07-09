@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.023">
+    <link rel="stylesheet" href="styles.css?v=6.024">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -3524,7 +3524,10 @@ const db = getFirestore(app);
                 div.innerHTML = `
                     <div class="material-icons-round drag-handle-map" style="cursor:grab;">drag_indicator</div>
                     <div class="compact-num" style="background:${resolvedColor};">${idx + 1}</div>
-                    <div class="compact-name" title="${p.nome}">${p.nome}</div>
+                    <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
+                        <div class="compact-name" title="${p.nome}" style="line-height:1.2;">${p.nome}</div>
+                        <div style="font-size: 0.7rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.ragione_sociale || ''}">${p.ragione_sociale || ''}</div>
+                    </div>
                     <div class="compact-city" title="${cityName}">${cityName}</div>
                     <div class="compact-time" style="color:${isLate ? 'var(--danger)' : '#10b981'};">${timeHtml}</div>
                     <button class="compact-delete" title="Elimina fermata dal viaggio" onclick="eliminaFermataEspansa(${idx}, event)">

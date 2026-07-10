@@ -1326,7 +1326,7 @@ function apriModalEspansa() {{
         if (!c.id.startsWith("card-")) return;
         
         const idxStr = c.id.replace("card-", "");
-        const pIndex = parseInt(idxStr, 10) - 1;
+        const pIndex = parseInt(idxStr, 10);
         const p = PUNTI[pIndex];
         if(!p) return;
         
@@ -1335,7 +1335,7 @@ function apriModalEspansa() {{
         div.id = "modal-" + c.id;
         
         const addressParts = (p.indirizzo || "").split(",");
-        const city = addressParts.length > 1 ? addressParts[1].trim() : (p.indirizzo || "");
+        const city = addressParts.length > 1 ? addressParts.slice(1).join(',').trim() : (p.indirizzo || "");
         
         div.innerHTML = `
             <div class="drag-handle-modal" style="touch-action: none;">

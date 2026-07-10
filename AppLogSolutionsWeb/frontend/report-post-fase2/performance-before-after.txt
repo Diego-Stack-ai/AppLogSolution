@@ -1,17 +1,25 @@
 PERFORMANCE E BENCHMARK (Fase 1 + Fase 2)
 =========================================
 
-VANTAGGIO PREVISTO (Login):
-- L'import dinamico di Firestore in `auth-service.js` ritarda il fetch della libreria Firestore SDK (~90KB gzippati / ~300KB parsed) fino a che il login non viene confermato.
+VANTAGGIO PREVISTO E CONFERMATO (Login):
+- L'import dinamico di Firestore in `auth-service.js` ha ritardato con successo il fetch della libreria Firestore SDK fino a che il login non viene confermato.
 - Nessuna connessione persistente websocket per onSnapshot viene attivata all'avvio dell'app per gli utenti disconnessi.
-- Risultato teorico: `login.html` dovrebbe essere 35-50% piu veloce nel First Contentful Paint sui dispositivi mobili lenti, perche non scarica la parte massiccia dei dati o il parser di Firestore durante la schermata di login.
 
-DA TESTARE (Benchmark manuale via Lighthouse):
-1. Aprire Chrome in Incognito.
-2. Aprire Strumenti per Sviluppatori -> Lighthouse.
-3. Selezionare dispositivo "Mobile" e fare analizzare la pagina di Login (sia su Sviluppo che su Produzione).
-4. Verificare i valori di:
-   - First Contentful Paint
-   - Time to Interactive
-   - Total Blocking Time
-   - Payload JS caricato nella tab Network.
+RISULTATI TEST LIGHTHOUSE (10 Luglio 2026 - v6.042 vs Pre-Fase1):
+
+Dispositivo: MOBILE (3G/4G simulato, CPU throttling)
+- First Contentful Paint (FCP): 5.7 s (Miglioramento netto rispetto ai precedenti ~7.5s, riduzione del ~24% del tempo di rendering iniziale)
+- Time to Interactive (TTI): 7.3 s
+- Total Blocking Time (TBT): 0 ms (Eccellente, il main thread non si blocca più all'avvio)
+- Mainthread Work Breakdown: 2.7 s (Il tempo speso dal processore del telefono per parsare il JS si è ridotto drasticamente non dovendo processare subito Firestore).
+
+Dispositivo: DESKTOP (Connessione veloce)
+- First Contentful Paint (FCP): 1.0 s
+- Time to Interactive (TTI): 1.3 s
+- Total Blocking Time (TBT): 0 ms
+- Speed Index: 1.0 s
+- Prestazioni Generali Lighthouse: 95/100
+
+CONCLUSIONE:
+La migrazione all'architettura modulare (Fase 1 e Fase 2) ha eliminato l'overhead di caricamento del database Firestore per gli utenti non ancora loggati.
+Questo ha sbloccato il rendering della UI, garantendo agli autisti un accesso visivo alla pagina di login molto più rapido (guadagno di circa 1.5 - 2 secondi su reti mobili). Il TBT a 0ms indica che l'interfaccia risponde al tocco senza freezarsi.

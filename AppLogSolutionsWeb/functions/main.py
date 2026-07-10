@@ -1486,7 +1486,10 @@ function apriModalRiordino() {{
     modalSortable = new Sortable(list, {{
         animation: 150,
         handle: ".rm-handle",
-        ghostClass: "sortable-ghost"
+        ghostClass: "sortable-ghost",
+        delay: 150,
+        delayOnTouchOnly: true,
+        fallbackTolerance: 3
     }});
 }}
 

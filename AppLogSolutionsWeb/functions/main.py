@@ -1170,7 +1170,8 @@ border: 2px solid black;
 <div class="main-container">
 <div id="map-wrapper">
 <div id="map"></div>
-<div id="custom-controls-container" style="position:absolute; right:10px; bottom:24px; z-index:10; pointer-events:none; display:flex; flex-direction:column; gap:10px; align-items:center;"></div>
+<div id="top-left-controls" style="position:absolute; left:10px; top:10px; z-index:10; pointer-events:none; display:flex; gap:8px; align-items:center;"></div>
+<div id="bottom-right-controls" style="position:absolute; right:10px; bottom:24px; z-index:10; pointer-events:none; display:flex; flex-direction:column; gap:10px; align-items:center;"></div>
 </div>
 <div id="sidebar">
 <div class="header">
@@ -1220,7 +1221,7 @@ let map,markers=[];
 function initMap(){{
 map=new google.maps.Map(document.getElementById("map"),{{
 center:PUNTI.length?{{lat:PUNTI[0].lat,lng:PUNTI[0].lng}}:DEPOT,
-zoom:11,mapTypeId:"roadmap",disableDefaultUI:true,zoomControl:false,mapTypeControl:true,controlSize:32}});
+zoom:11,mapTypeId:"roadmap",disableDefaultUI:true,zoomControl:false,mapTypeControl:false}});
 POLYLINES.forEach(enc=>{{
 const path=google.maps.geometry.encoding.decodePath(enc);
 new google.maps.Polyline({{path,geodesic:true,strokeColor:"#4f46e5",strokeOpacity:.85,strokeWeight:4,map}});
@@ -1246,22 +1247,39 @@ m.addListener("click",()=>selectCard(i));
 markers.push(m);
 }});
 
-const customControls = document.getElementById("custom-controls-container");
+const topLeftControls = document.getElementById("top-left-controls");
+const bottomRightControls = document.getElementById("bottom-right-controls");
+
+const mapTypeBtn = document.createElement("button");
+mapTypeBtn.innerText = "SATELLITE";
+mapTypeBtn.style.cssText = "background:white; border:none; border-radius:8px; padding:0 12px; height:34px; font-size:11px; font-weight:bold; box-shadow:0 2px 6px rgba(0,0,0,0.3); cursor:pointer; color:#0f172a; pointer-events:auto;";
+mapTypeBtn.onclick = () => {{
+    if(map.getMapTypeId() === "roadmap"){{
+        map.setMapTypeId("satellite");
+        mapTypeBtn.innerText = "MAPPA";
+    }} else {{
+        map.setMapTypeId("roadmap");
+        mapTypeBtn.innerText = "SATELLITE";
+    }}
+}};
 
 const toggleBtn = document.createElement("button");
-toggleBtn.innerHTML = '<span class="material-icons-round">unfold_less</span>';
+toggleBtn.innerHTML = '<span class="material-icons-round" style="font-size:20px;">unfold_less</span>';
 toggleBtn.style.cssText = "background:white;border:none;border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.3);cursor:pointer;color:#0f172a;pointer-events:auto;";
 toggleBtn.onclick = () => {{
     const mapWrapper = document.getElementById("map-wrapper");
     if(mapWrapper.classList.contains("collapsed")){{
         mapWrapper.classList.remove("collapsed");
-        toggleBtn.innerHTML = '<span class="material-icons-round">unfold_less</span>';
+        toggleBtn.innerHTML = '<span class="material-icons-round" style="font-size:20px;">unfold_less</span>';
     }} else {{
         mapWrapper.classList.add("collapsed");
-        toggleBtn.innerHTML = '<span class="material-icons-round">unfold_more</span>';
+        toggleBtn.innerHTML = '<span class="material-icons-round" style="font-size:20px;">unfold_more</span>';
     }}
     setTimeout(() => google.maps.event.trigger(map, "resize"), 300);
 }};
+
+topLeftControls.appendChild(mapTypeBtn);
+topLeftControls.appendChild(toggleBtn);
 
 const zoomContainer = document.createElement("div");
 zoomContainer.style.cssText = "display:flex; flex-direction:column; border-radius:8px; background:white; box-shadow:0 2px 6px rgba(0,0,0,0.3); overflow:hidden; pointer-events:auto;";
@@ -1279,8 +1297,7 @@ zoomOut.onclick = () => map.setZoom(map.getZoom() - 1);
 zoomContainer.appendChild(zoomIn);
 zoomContainer.appendChild(zoomOut);
 
-customControls.appendChild(toggleBtn);
-customControls.appendChild(zoomContainer);
+bottomRightControls.appendChild(zoomContainer);
 }}
 
 function selectCard(i){{

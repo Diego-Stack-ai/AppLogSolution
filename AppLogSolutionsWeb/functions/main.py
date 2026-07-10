@@ -1071,7 +1071,7 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, 
     rientro_badge = f'<span class="orario-badge" style="background:#1e293b; color:white; margin-top:4px;"><span class="material-icons-round">schedule</span>Rientro stimato: {ora_rientro_dep}</span>' if ora_rientro_dep else ''
     
     fermate_html += f'''
-        <div class="card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr; cursor: default;">
+        <div class="card" id="arrivo-card" style="background:#f1f5f9; border-color:#94a3b8; grid-template-columns: 42px 1fr; cursor: default;">
             <div class="stop-num" style="background:#475569;"><span class="material-icons-round">flag</span></div>
             <div class="stop-info">
                 <b class="name">ARRIVO</b>
@@ -1300,9 +1300,16 @@ function applicaOrdineEspanso() {{
     }}
     
     if(changed) {{
+        const arrivoCard = document.getElementById("arrivo-card");
         newOrderIds.forEach(id => {{
             const c = document.getElementById(id);
-            if(c) mainList.appendChild(c);
+            if(c) {{
+                if (arrivoCard) {{
+                    mainList.insertBefore(c, arrivoCard);
+                }} else {{
+                    mainList.appendChild(c);
+                }}
+            }}
         }});
         
         // Aggiorna i numeri visivi delle fermate originali

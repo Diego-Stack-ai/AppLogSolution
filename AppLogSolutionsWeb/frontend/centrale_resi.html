@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centrale Resi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.045">
+    <link rel="stylesheet" href="styles.css?v=6.049">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -135,6 +135,11 @@
             </h2>
             
             <div class="form-group" style="margin-top: 20px;">
+                <label style="font-weight:700; color:#334155; display:block; margin-bottom:8px;">Email Mittente Predefinita</label>
+                <input type="email" id="emailConfigMittente" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; box-sizing:border-box;" placeholder="es. amministrazione@azienda.it (lascia vuoto per default Outlook)">
+            </div>
+            
+            <div class="form-group" style="margin-top: 16px;">
                 <label style="font-weight:700; color:#334155; display:block; margin-bottom:8px;">Testo Base Predefinito</label>
                 <textarea id="emailConfigText" rows="4" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; box-sizing:border-box;"></textarea>
             </div>
@@ -146,9 +151,14 @@
             </div>
             
             <div class="form-group" style="margin-top: 16px;">
-                <label style="font-weight:700; color:#334155; display:block; margin-bottom:8px;">Email Clienti (JSON/Testo)</label>
-                <textarea id="emailConfigClients" rows="6" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-family:monospace; box-sizing:border-box;" placeholder='{ "DNR": "info@dnr.it" }'></textarea>
-                <small style="color:#64748b;">Mappatura Codice Cliente e Indirizzi Email (in formato JSON).</small>
+                <label style="font-weight:700; color:#334155; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                    Email Clienti
+                    <button onclick="window.addEmailClientRow()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:13px; font-weight:bold; display:flex; align-items:center;"><span class="material-icons-round" style="font-size:16px;">add</span> Aggiungi</button>
+                </label>
+                <div id="emailClientsList" style="display:flex; flex-direction:column; gap:8px;">
+                    <!-- Rows injected via JS -->
+                </div>
+                <small style="color:#64748b; margin-top:8px; display:block;">Inserisci il Codice Cliente (es. DNR) e l'indirizzo email a cui inviare in automatico i resi.</small>
             </div>
             
             <button onclick="window.saveEmailSettings()" style="width:100%; margin-top:20px; background:var(--primary); color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;">Salva Impostazioni</button>
@@ -184,8 +194,8 @@
         </div>
     </div>
 
-    <script src="script.js?v=6.045"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.045"></script>
+    <script src="script.js?v=6.049"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.049"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -414,6 +424,7 @@
 
         // --- GESTIONE IMPOSTAZIONI EMAIL ---
         let emailSettings = {
+            mittente: "",
             testoBase: "Buongiorno,\nIn allegato inviamo la documentazione relativa al reso/rottura in oggetto.",
             firma: "Diego Boschetto\nResponsabile Ufficio amministrativo\nCell: 3491825905\n\nVia A. Volta, 25/A - 35030 Veggiano (PD)\nTel: 0492272224\nP.IVA - CF - Reg. Imp: 04217090168\nREA PD - 446322 - SDI W7YVJK9",
             clienti: {}
@@ -430,10 +441,37 @@
             } catch (err) { console.error("Errore lettura impostazioni email:", err); }
         }
 
+        window.renderEmailClients = () => {
+            const list = document.getElementById('emailClientsList');
+            list.innerHTML = '';
+            const clients = emailSettings.clienti || {};
+            for (const [code, email] of Object.entries(clients)) {
+                list.insertAdjacentHTML('beforeend', window.createEmailClientRowHTML(code, email));
+            }
+            if (Object.keys(clients).length === 0) {
+                window.addEmailClientRow(); // always show at least one empty row
+            }
+        };
+
+        window.createEmailClientRowHTML = (code = "", email = "") => {
+            return `
+                <div class="email-client-row" style="display:flex; gap:8px; align-items:center;">
+                    <input type="text" class="client-code-input" placeholder="Codice Cliente (es. DNR)" value="${code}" style="flex:1; padding:8px; border-radius:6px; border:1px solid #cbd5e1;">
+                    <input type="email" class="client-email-input" placeholder="Email" value="${email}" style="flex:2; padding:8px; border-radius:6px; border:1px solid #cbd5e1;">
+                    <button onclick="this.parentElement.remove()" style="background:none; border:none; color:#ef4444; cursor:pointer; display:flex; align-items:center;" title="Rimuovi"><span class="material-icons-round">delete</span></button>
+                </div>
+            `;
+        };
+
+        window.addEmailClientRow = () => {
+            document.getElementById('emailClientsList').insertAdjacentHTML('beforeend', window.createEmailClientRowHTML());
+        };
+
         window.openEmailSettingsModal = () => {
+            document.getElementById('emailConfigMittente').value = emailSettings.mittente || "";
             document.getElementById('emailConfigText').value = emailSettings.testoBase || "";
             document.getElementById('emailConfigSignature').value = emailSettings.firma || "";
-            document.getElementById('emailConfigClients').value = JSON.stringify(emailSettings.clienti || {}, null, 2);
+            window.renderEmailClients();
             document.getElementById('emailSettingsModal').classList.add('active');
         };
 
@@ -448,16 +486,21 @@
         };
 
         window.saveEmailSettings = async () => {
+            const mittente = document.getElementById('emailConfigMittente').value;
             const text = document.getElementById('emailConfigText').value;
             const signature = document.getElementById('emailConfigSignature').value;
+            
             let clientiJson = {};
-            try {
-                clientiJson = JSON.parse(document.getElementById('emailConfigClients').value || "{}");
-            } catch(e) {
-                Swal.fire('Errore JSON', 'Il formato delle email clienti non è valido. Assicurati che sia un JSON corretto.', 'error');
-                return;
-            }
+            const rows = document.querySelectorAll('.email-client-row');
+            rows.forEach(row => {
+                const code = row.querySelector('.client-code-input').value.trim();
+                const email = row.querySelector('.client-email-input').value.trim();
+                if (code && email) {
+                    clientiJson[code] = email;
+                }
+            });
 
+            emailSettings.mittente = mittente;
             emailSettings.testoBase = text;
             emailSettings.firma = signature;
             emailSettings.clienti = clientiJson;
@@ -551,61 +594,65 @@
 
                 // Boundary MIME
                 const boundary = "----=_NextPart_" + Date.now().toString(16);
-                let eml = `To: ${to}
-Subject: ${subject}
-MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="${boundary}"
-X-Unsent: 1
-
---${boundary}
-Content-Type: text/html; charset="UTF-8"
-Content-Transfer-Encoding: base64
-
-${btoa(unescape(encodeURIComponent(bodyHtml)))}`;
+                
+                const emlLines = [];
+                if (emailSettings.mittente && emailSettings.mittente.trim() !== "") {
+                    emlLines.push(`From: ${emailSettings.mittente.trim()}`);
+                }
+                emlLines.push(`To: ${to}`);
+                emlLines.push(`Subject: =?utf-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`);
+                emlLines.push(`MIME-Version: 1.0`);
+                emlLines.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
+                emlLines.push(`X-Unsent: 1`);
+                emlLines.push(``);
+                
+                emlLines.push(`--${boundary}`);
+                emlLines.push(`Content-Type: text/html; charset="UTF-8"`);
+                emlLines.push(`Content-Transfer-Encoding: base64`);
+                emlLines.push(``);
+                emlLines.push(`${btoa(unescape(encodeURIComponent(bodyHtml)))}`);
 
                 // Aggiungi Logo Inline
                 if (logoBase64) {
-                    eml += `
-
---${boundary}
-Content-Type: image/png; name="logo.png"
-Content-ID: <logo_img>
-Content-Disposition: inline; filename="logo.png"
-Content-Transfer-Encoding: base64
-
-${logoBase64}`;
+                    emlLines.push(``);
+                    emlLines.push(`--${boundary}`);
+                    emlLines.push(`Content-Type: image/png; name="logo.png"`);
+                    emlLines.push(`Content-ID: <logo_img>`);
+                    emlLines.push(`Content-Disposition: inline; filename="logo.png"`);
+                    emlLines.push(`Content-Transfer-Encoding: base64`);
+                    emlLines.push(``);
+                    emlLines.push(`${logoBase64}`);
                 }
 
                 // Processa gli allegati (foto)
                 for (let i = 0; i < selectedDocs.length; i++) {
                     const doc = selectedDocs[i];
                     if (doc.url_foto) {
-                        // Da Storage potremmo avere problemi CORS se non proxy, proviamo fetch diretto
-                        // Se fallisce (es. CORS), proveremo un approccio alternativo
                         let b64 = await fetchBase64(doc.url_foto);
                         if (!b64) continue;
                         
                         const ext = doc.url_foto.toLowerCase().includes('.png') ? 'png' : 'jpeg';
                         const filename = `Reso_${doc.codice_cliente || i}_${i+1}.${ext}`;
                         
-                        eml += `
-
---${boundary}
-Content-Type: image/${ext}; name="${filename}"
-Content-Disposition: attachment; filename="${filename}"
-Content-Transfer-Encoding: base64
-
-${b64}`;
+                        emlLines.push(``);
+                        emlLines.push(`--${boundary}`);
+                        emlLines.push(`Content-Type: image/${ext}; name="${filename}"`);
+                        emlLines.push(`Content-Disposition: attachment; filename="${filename}"`);
+                        emlLines.push(`Content-Transfer-Encoding: base64`);
+                        emlLines.push(``);
+                        emlLines.push(`${b64}`);
                     }
                 }
 
                 // Chiudi MIME
-                eml += `
+                emlLines.push(``);
+                emlLines.push(`--${boundary}--`);
+                emlLines.push(``);
 
---${boundary}--`;
+                const emlStr = emlLines.join('\r\n');
 
                 // Download EML
-                const blob = new Blob([eml], { type: 'message/rfc822' });
+                const blob = new Blob([emlStr], { type: 'message/rfc822' });
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;

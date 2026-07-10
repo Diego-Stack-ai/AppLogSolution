@@ -1109,7 +1109,8 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, 
 :root{{--p:#4f46e5;--accent:#10b981;--call:#16a34a}}
 body,html{{margin:0;padding:0;height:100%;font-family:'Outfit',sans-serif;overflow:hidden}}
 .main-container{{display:flex;flex-direction:column;height:100vh}}
-#map{{height:42vh;width:100%;background:#dfe5eb}}
+#map{{height:42vh;width:100%;background:#dfe5eb;transition:height 0.3s ease}}
+#map.collapsed{{height:12vh}}
 #sidebar{{flex:1;display:flex;flex-direction:column;background:white;border-top:2px solid #cbd5e1;overflow:hidden}}
 .header{{padding:8px 12px;background:#1e293b;color:white;border-bottom:2px solid var(--accent)}}
 .trip-title{{margin:0;font-size:.65rem;font-weight:800;text-transform:uppercase;color:var(--accent)}}
@@ -1215,7 +1216,7 @@ let map,markers=[];
 function initMap(){{
 map=new google.maps.Map(document.getElementById("map"),{{
 center:PUNTI.length?{{lat:PUNTI[0].lat,lng:PUNTI[0].lng}}:DEPOT,
-zoom:11,mapTypeId:"roadmap",disableDefaultUI:true,zoomControl:true}});
+zoom:11,mapTypeId:"roadmap",disableDefaultUI:true,zoomControl:true,mapTypeControl:true}});
 POLYLINES.forEach(enc=>{{
 const path=google.maps.geometry.encoding.decodePath(enc);
 new google.maps.Polyline({{path,geodesic:true,strokeColor:"#4f46e5",strokeOpacity:.85,strokeWeight:4,map}});
@@ -1240,7 +1241,24 @@ label:{{text:String(i+1),color:labelColor,fontWeight:"bold",fontSize:"12px"}}}})
 m.addListener("click",()=>selectCard(i));
 markers.push(m);
 }});
+
+const toggleBtn = document.createElement("button");
+toggleBtn.innerHTML = '<span class="material-icons-round">unfold_less</span>';
+toggleBtn.style.cssText = "background:white;border:none;border-radius:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.3);cursor:pointer;margin-bottom:10px;color:#0f172a;";
+toggleBtn.onclick = () => {{
+    const mapDiv = document.getElementById("map");
+    if(mapDiv.classList.contains("collapsed")){{
+        mapDiv.classList.remove("collapsed");
+        toggleBtn.innerHTML = '<span class="material-icons-round">unfold_less</span>';
+    }} else {{
+        mapDiv.classList.add("collapsed");
+        toggleBtn.innerHTML = '<span class="material-icons-round">unfold_more</span>';
+    }}
+    setTimeout(() => google.maps.event.trigger(map, "resize"), 300);
+}};
+map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(toggleBtn);
 }}
+
 function selectCard(i){{
 document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
 const card=document.getElementById("card-"+i);

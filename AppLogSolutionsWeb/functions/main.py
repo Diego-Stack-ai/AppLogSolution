@@ -1162,8 +1162,13 @@ border: 2px solid black;
 .sortable-ghost{{opacity:0.4; background-color:#f1f5f9;}}
 #expand-modal-list .card {{ cursor: default; transition: none !important; }}
 .sortable-drag {{ transition: none !important; cursor: grabbing !important; opacity: 1 !important; }}
-.drag-handle-modal {{ cursor: grab; }}
+.drag-handle-modal {{ cursor: grab; padding: 4px; display: flex; align-items: center; color: #94a3b8; touch-action: none; }}
 .drag-handle-modal:active {{ cursor: grabbing; color: #3b82f6; }}
+.sortable-fallback {{ opacity: 1 !important; background: white !important; cursor: grabbing !important; box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important; transform: scale(1.02); z-index: 99999; }}
+.compact-stop-item {{ display: flex; align-items: center; gap: 12px; background: white; padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); user-select: none; margin-bottom: 8px; touch-action: none; }}
+.compact-num {{ font-weight: 800; color: white; background: var(--p); border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; min-width: 32px; text-align: center; }}
+.compact-name {{ font-weight: 700; color: #0f172a; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; line-height: 1.2; }}
+.compact-city {{ color: #64748b; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; text-align: right; line-height: 1.2; }}
 </style>
 </head>
 <body>
@@ -1310,32 +1315,50 @@ let sequenceChanged = false;
 function apriModalEspansa() {{
     const list = document.getElementById("expand-modal-list");
     list.innerHTML = "";
+    
+    let displayIndex = 1;
     document.querySelectorAll("#delivery-list .card").forEach(c => {{
         if (!c.id.startsWith("card-")) return;
-        const clone = c.cloneNode(true);
-        clone.id = "modal-" + c.id;
         
-        // Hide some elements in modal to keep it clean
-        const actions = clone.querySelector(".actions");
-        if(actions) actions.style.display = "none";
+        const idxStr = c.id.replace("card-", "");
+        const pIndex = parseInt(idxStr, 10) - 1;
+        const p = PUNTI[pIndex];
+        if(!p) return;
         
-        const stopNum = clone.querySelector(".stop-num");
-        if(stopNum) {{
-            stopNum.innerHTML = '<span class="material-icons-round" style="color:#94a3b8;">drag_indicator</span>';
-            stopNum.style.background = "transparent";
-            stopNum.style.color = "#94a3b8";
-            stopNum.style.boxShadow = "none";
-            stopNum.className = "stop-num drag-handle-modal"; // add handle class
-        }}
+        const div = document.createElement("div");
+        div.className = "compact-stop-item";
+        div.id = "modal-" + c.id;
         
-        list.appendChild(clone);
+        const addressParts = (p.indirizzo || "").split(",");
+        const city = addressParts.length > 1 ? addressParts[1].trim() : (p.indirizzo || "");
+        
+        div.innerHTML = `
+            <div class="drag-handle-modal" style="touch-action: none;">
+                <span class="material-icons-round">drag_indicator</span>
+            </div>
+            <div class="compact-num">${{displayIndex++}}</div>
+            <div class="compact-name">${{p.nome || p.ragione_sociale || ''}}</div>
+            <div class="compact-city">${{city}}</div>
+        `;
+        list.appendChild(div);
     }});
+
     document.getElementById("expand-trip-modal").style.display = "flex";
     
-    new Sortable(list, {{
+    if (window.expandSortable) window.expandSortable.destroy();
+    window.expandSortable = new Sortable(list, {{
         animation: 150,
         ghostClass: 'sortable-ghost',
-        handle: '.drag-handle-modal'
+        forceFallback: true,
+        fallbackClass: 'sortable-fallback',
+        handle: '.drag-handle-modal',
+        onEnd: function() {{
+            const items = list.querySelectorAll('.compact-stop-item');
+            items.forEach((item, i) => {{
+                const num = item.querySelector('.compact-num');
+                if(num) num.textContent = i + 1;
+            }});
+        }}
     }});
 }}
 
@@ -1345,7 +1368,7 @@ function chiudiModalEspansa() {{
 
 function applicaOrdineEspanso() {{
     const mainList = document.getElementById("delivery-list");
-    const modalCards = document.querySelectorAll("#expand-modal-list .card");
+    const modalCards = document.querySelectorAll("#expand-modal-list .compact-stop-item");
     const newOrderIds = Array.from(modalCards).map(mc => mc.id.replace("modal-", ""));
     
     const currentCards = Array.from(document.querySelectorAll("#delivery-list .card")).filter(c => c.id.startsWith("card-"));

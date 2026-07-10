@@ -2525,6 +2525,19 @@ def core_genera_report_giornaliero(uid, data_consegna):
 
     print(f"[INFO] Generazione report per il {data_consegna}")
     
+    # PRE-SALVATAGGIO: Leggi i viaggi esistenti prima di cancellarli, per mantenere i percorsi calcolati (Integrazione CATTEL/GC)
+    import json
+    mappa_zone_esistenti = {}
+    try:
+        blob_old_json = bucket.blob(f"REPORTS/{data_consegna}/viaggi_giornalieri_Johnson.json")
+        if blob_old_json.exists():
+            old_data = json.loads(blob_old_json.download_as_string().decode('utf-8'))
+            old_zones = old_data.get("zone", []) if isinstance(old_data, dict) else old_data
+            for z in old_zones:
+                mappa_zone_esistenti[z.get("id_zona")] = z
+    except Exception as e_old:
+        print(f"[WARN] Impossibile leggere il vecchio viaggi_giornalieri_Johnson.json: {e_old}")
+
     # 0. Svuota le vecchie cartelle nello Storage per evitare doppioni
     try:
         data_f = data_consegna.replace('/', '-')
@@ -2925,6 +2938,20 @@ def core_genera_report_giornaliero(uid, data_consegna):
             "color": "#f59e0b",
             "lista_punti": zone_dict["DDT_DA_INSERIRE"]
         })
+
+    # 3.5 MERGE CON ZONE ESISTENTI (Preservazione Polilinee e Percorsi Calcolati)
+    for z in zone_finali:
+        zid = z.get("id_zona")
+        old_z = mappa_zone_esistenti.get(zid)
+        if old_z and old_z.get("_stato") == "calcolato":
+            # Verifica che il numero di punti non sia cambiato.
+            # Se è identico, ripristiniamo ordine (lista_punti), stats e polylines
+            if len(z["lista_punti"]) == len(old_z.get("lista_punti", [])):
+                z["lista_punti"] = old_z["lista_punti"]
+                if "_polylines" in old_z: z["_polylines"] = old_z["_polylines"]
+                if "_stats" in old_z: z["_stats"] = old_z["_stats"]
+                z["_stato"] = "calcolato"
+                if "nome_giro" in old_z and old_z["nome_giro"]: z["nome_giro"] = old_z["nome_giro"]
 
     # 4. Salvataggio file JSON storici nello Storage (Standard Johnson)
     path_base = f"REPORTS/{data_consegna}"

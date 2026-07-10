@@ -1,0 +1,17 @@
+PERFORMANCE E BENCHMARK (Fase 1 + Fase 2)
+=========================================
+
+VANTAGGIO PREVISTO (Login):
+- L'import dinamico di Firestore in `auth-service.js` ritarda il fetch della libreria Firestore SDK (~90KB gzippati / ~300KB parsed) fino a che il login non viene confermato.
+- Nessuna connessione persistente websocket per onSnapshot viene attivata all'avvio dell'app per gli utenti disconnessi.
+- Risultato teorico: `login.html` dovrebbe essere 35-50% piu veloce nel First Contentful Paint sui dispositivi mobili lenti, perche non scarica la parte massiccia dei dati o il parser di Firestore durante la schermata di login.
+
+DA TESTARE (Benchmark manuale via Lighthouse):
+1. Aprire Chrome in Incognito.
+2. Aprire Strumenti per Sviluppatori -> Lighthouse.
+3. Selezionare dispositivo "Mobile" e fare analizzare la pagina di Login (sia su Sviluppo che su Produzione).
+4. Verificare i valori di:
+   - First Contentful Paint
+   - Time to Interactive
+   - Total Blocking Time
+   - Payload JS caricato nella tab Network.

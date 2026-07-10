@@ -1,4 +1,4 @@
-import "./core/firebase-init.js";
-import "./core/auth-service.js";
-import "./services/realtime-sync.js";
-import "./services/crud-service.js";
+import "./core/firebase-init.js?v=6.040";
+import "./core/auth-service.js?v=6.040";
+import "./services/realtime-sync.js?v=6.040";
+import "./services/crud-service.js?v=6.040";

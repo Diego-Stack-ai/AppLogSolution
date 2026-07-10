@@ -1,9 +1,9 @@
-import { app } from "../core/firebase-init.js";
+import { app } from "../core/firebase-init.js?v=6.039";
 import { getFirestore, collection, onSnapshot, query, where, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = getFirestore(app);
 // Inizializzazione Listener Realtime (Condizionali ai permessi)
-let window.activeListeners = window.activeListeners || [];
+window.activeListeners = window.activeListeners || [];
 function startRealtimeSync(isAdmin) {
     console.log(`Attivazione sincronizzazione realtime (Admin: ${isAdmin})...`);
 

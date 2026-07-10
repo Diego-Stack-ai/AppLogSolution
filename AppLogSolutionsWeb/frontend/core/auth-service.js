@@ -1,4 +1,4 @@
-import { app } from "./firebase-init.js";
+import { app } from "./firebase-init.js?v=6.039";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, browserLocalPersistence, setPersistence, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const auth = getAuth(app);

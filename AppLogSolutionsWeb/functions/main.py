@@ -1250,17 +1250,15 @@ markers.push(m);
 const topLeftControls = document.getElementById("top-left-controls");
 const bottomRightControls = document.getElementById("bottom-right-controls");
 
-const mapTypeBtn = document.createElement("button");
-mapTypeBtn.innerText = "SATELLITE";
-mapTypeBtn.style.cssText = "background:white; border:none; border-radius:8px; padding:0 12px; height:34px; font-size:11px; font-weight:bold; box-shadow:0 2px 6px rgba(0,0,0,0.3); cursor:pointer; color:#0f172a; pointer-events:auto;";
-mapTypeBtn.onclick = () => {{
-    if(map.getMapTypeId() === "roadmap"){{
-        map.setMapTypeId("satellite");
-        mapTypeBtn.innerText = "MAPPA";
-    }} else {{
-        map.setMapTypeId("roadmap");
-        mapTypeBtn.innerText = "SATELLITE";
-    }}
+const mapTypeSelect = document.createElement("select");
+mapTypeSelect.innerHTML = `
+    <option value="roadmap">Mappa</option>
+    <option value="hybrid">Satellite</option>
+    <option value="terrain">Rilievo</option>
+`;
+mapTypeSelect.style.cssText = "background:white; border:none; border-radius:8px; height:34px; font-size:12px; font-weight:bold; box-shadow:0 2px 6px rgba(0,0,0,0.3); color:#0f172a; padding:0 8px; cursor:pointer; pointer-events:auto; outline:none;";
+mapTypeSelect.onchange = (e) => {{
+    map.setMapTypeId(e.target.value);
 }};
 
 const toggleBtn = document.createElement("button");
@@ -1278,7 +1276,7 @@ toggleBtn.onclick = () => {{
     setTimeout(() => google.maps.event.trigger(map, "resize"), 300);
 }};
 
-topLeftControls.appendChild(mapTypeBtn);
+topLeftControls.appendChild(mapTypeSelect);
 topLeftControls.appendChild(toggleBtn);
 
 const zoomContainer = document.createElement("div");

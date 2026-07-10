@@ -1158,7 +1158,8 @@ border: 2px solid black;
 .rm-name{{font-weight:800;color:#0f172a;font-size:0.9rem;}}
 .rm-sub{{font-size:0.75rem;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
 .sortable-ghost{{opacity:0.4; background-color:#f1f5f9;}}
-#expand-modal-list .card {{ cursor: default; }}
+#expand-modal-list .card {{ cursor: default; transition: none !important; }}
+.sortable-drag {{ transition: none !important; cursor: grabbing !important; opacity: 1 !important; }}
 .drag-handle-modal {{ cursor: grab; }}
 .drag-handle-modal:active {{ cursor: grabbing; color: #3b82f6; }}
 </style>

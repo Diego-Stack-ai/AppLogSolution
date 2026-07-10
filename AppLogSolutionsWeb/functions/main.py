@@ -1027,6 +1027,7 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, 
         if phone_num:
             action_col = (
                 f'<div class="nav-col">'
+                f'<button class="btn-ok" onclick="toggleConsegnato(event, {idx})"><span class="material-icons-round">check</span></button>'
                 f'<a href="{nav}" target="_blank" class="btn-nav" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a>'
                 f'<a href="tel:{phone_num}" class="btn-call" onclick="event.stopPropagation()"><span class="material-icons-round">call</span></a>'
                 f'<button class="btn-cam" onclick="openCamera(event, {idx})"><span class="material-icons-round">photo_camera</span></button>'
@@ -1036,6 +1037,7 @@ def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, 
         else:
             action_col = (
                 f'<div class="nav-col">'
+                f'<button class="btn-ok" onclick="toggleConsegnato(event, {idx})"><span class="material-icons-round">check</span></button>'
                 f'<a href="{nav}" target="_blank" class="btn-nav" onclick="event.stopPropagation()"><span class="material-icons-round">navigation</span></a>'
                 f'<button class="btn-cam" onclick="openCamera(event, {idx})"><span class="material-icons-round">photo_camera</span></button>'
                 f'</div>'
@@ -1140,6 +1142,9 @@ border: 2px solid black;
 .btn-nav{{background:var(--accent);color:white;width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none}}
 .btn-call{{background:var(--call);color:white;width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none}}
 .btn-cam{{background:#f59e0b;color:white;width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer}}
+.btn-ok{{background:#10b981;color:white;width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer}}
+.card.consegnato{{opacity:0.5;filter:grayscale(1)}}
+.card.consegnato .btn-ok{{background:#64748b}}
 .nav-col{{display:flex;flex-direction:column;gap:5px;align-items:center}}
 .material-icons-round{{font-size:18px !important}}
 .fab-save{{position:fixed;bottom:20px;right:20px;background:var(--accent);color:white;border:none;border-radius:30px;padding:12px 20px;font-weight:800;font-family:'Outfit',sans-serif;box-shadow:0 4px 12px rgba(16,185,129,0.4);display:none;align-items:center;gap:8px;cursor:pointer;z-index:1000;font-size:1rem;transition:transform 0.2s;}}
@@ -1446,6 +1451,28 @@ async function saveSequence() {{
         btn.style.pointerEvents = "auto";
     }}
 }}
+
+const TRIP_ID = "{actual_viaggio_id or viaggio_id}";
+
+function toggleConsegnato(e, idx) {{
+    e.stopPropagation();
+    const card = document.getElementById('card-' + idx);
+    const isConsegnato = card.classList.toggle('consegnato');
+    
+    let stats = JSON.parse(localStorage.getItem('consegne_' + TRIP_ID) || '{{}}');
+    stats[idx] = isConsegnato;
+    localStorage.setItem('consegne_' + TRIP_ID, JSON.stringify(stats));
+}}
+
+document.addEventListener('DOMContentLoaded', () => {{
+    const stats = JSON.parse(localStorage.getItem('consegne_' + TRIP_ID) || '{{}}');
+    Object.keys(stats).forEach(idx => {{
+        if(stats[idx]) {{
+            const card = document.getElementById('card-' + idx);
+            if(card) card.classList.add('consegnato');
+        }}
+    }});
+}});
 
 let currentCamIdx = -1;
 let currentCamType = "";

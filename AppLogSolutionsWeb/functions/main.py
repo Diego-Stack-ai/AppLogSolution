@@ -4345,10 +4345,16 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
     """
     Funzione di Tabula Rasa o Soft Delete:
     - Se soft_delete == True: imposta solo archiviato_ui: True (mantenendo intatti i dati nel Cloud per i primi 2 mesi).
+    - Se passate tipologie_da_eliminare / tenant_da_eliminare: elimina solo quelle tipologie e tenant specifici (Sovrascrittura Parziale).
     - Altrimenti: elimina completamente una giornata (split_ddt, REPORTS, CONSEGNE e record Firestore).
     """
     data_consegna = req.data.get("data_consegna")
     soft_delete = req.data.get("soft_delete", False)
+    
+    # Parametri per eliminazione selettiva
+    tipologie_da_eliminare = req.data.get("tipologie_da_eliminare", [])
+    tenant_da_eliminare = req.data.get("tenant_da_eliminare", [])
+    cliente_zona_da_eliminare = req.data.get("cliente_zona_da_eliminare", [])
     
     if not data_consegna:
         return {"status": "errore", "message": "data_consegna mancante"}
@@ -4375,17 +4381,23 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
             traceback.print_exc()
             return {"status": "errore", "message": f"Errore Soft Delete: {str(e)}"}
 
-    print(f"[INFO] Inizio eliminazione completa per la giornata {data_consegna}")
+    print(f"[INFO] Inizio eliminazione per la giornata {data_consegna}. Parziale: {bool(tipologie_da_eliminare)}")
     bucket = storage.bucket(name=BUCKET_NAME)
     
     try:
         # 1. Elimina cartelle su Storage
         data_f = data_consegna.replace('/', '-')
-        prefixes_to_clean = [
-            f"split_ddt/{data_consegna}/",
-            f"REPORTS/{data_consegna}/",
-            f"CONSEGNE/CONSEGNE_{data_f}/"
-        ]
+        
+        if tipologie_da_eliminare:
+            prefixes_to_clean = []
+            for t in tipologie_da_eliminare:
+                prefixes_to_clean.append(f"split_ddt/{data_consegna}/{t.upper()}/")
+        else:
+            prefixes_to_clean = [
+                f"split_ddt/{data_consegna}/",
+                f"REPORTS/{data_consegna}/",
+                f"CONSEGNE/CONSEGNE_{data_f}/"
+            ]
         
         for pref in prefixes_to_clean:
             blobs = bucket.list_blobs(prefix=pref)
@@ -4395,25 +4407,42 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
                 except Exception as ex:
                     print(f"[WARN] Errore cancellazione {b.name}: {ex}")
                     
-        # 2. Elimina record da Firestore
-        print(f"[INFO] Eliminazione report logistico principale per {data_consegna}")
-        doc_ref = db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna)
-        doc_ref.delete()
+        # 2. Elimina record da Firestore (SOLO se eliminiamo tutta la giornata)
+        if not tipologie_da_eliminare:
+            print(f"[INFO] Eliminazione report logistico principale per {data_consegna}")
+            doc_ref = db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna)
+            doc_ref.delete()
         
-        # 3. Elimina i viaggi ddt orfani
+        # 3. Elimina i viaggi ddt
         print(f"[INFO] Eliminazione viaggi ddt per la giornata {data_consegna}")
         viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
         viaggi_da_eliminare = viaggi_ref.where("data_lavoro", "==", data_consegna).stream()
         for v in viaggi_da_eliminare:
-            try:
-                v.reference.delete()
-            except Exception as e:
-                print(f"[ERROR] Impossibile eliminare viaggio {v.id}: {str(e)}")
-                pass
+            v_data = v.to_dict()
+            v_cliente_zona = v_data.get("cliente_zona", "")
+            
+            # Se siamo in modalità selettiva, controlla se questo viaggio appartiene al cliente da eliminare
+            should_delete = False
+            if not tipologie_da_eliminare:
+                should_delete = True
+            else:
+                if v_cliente_zona in cliente_zona_da_eliminare:
+                    should_delete = True
+                elif ("PROGETTO SCUOLE" in cliente_zona_da_eliminare or "" in cliente_zona_da_eliminare) and (not v_cliente_zona or v_cliente_zona == "PROGETTO SCUOLE"):
+                    # Fallback logico per Frutta/Latte che spesso non hanno cliente_zona o hanno PROGETTO SCUOLE
+                    should_delete = True
+                    
+            if should_delete:
+                try:
+                    v.reference.delete()
+                except Exception as e:
+                    print(f"[ERROR] Impossibile eliminare viaggio {v.id}: {str(e)}")
+                    pass
                 
         # 4. Elimina eventuali processing_jobs rimasti
         print(f"[INFO] Eliminazione processing_jobs per la giornata {data_consegna}")
-        for t in ["GRAND_CHEF", "CATTEL", "DNR"]:
+        tenants_to_clean = tenant_da_eliminare if tenant_da_eliminare else ["GRAND_CHEF", "CATTEL", "DNR"]
+        for t in tenants_to_clean:
             tenant = "GRAN CHEF" if t == "GRAND_CHEF" else t
             jobs_ref = db.collection('clienti').document(tenant).collection('processing_jobs')
             old_jobs = jobs_ref.where('data_lavoro', '==', data_consegna).stream()

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centrale Resi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.042">
+    <link rel="stylesheet" href="styles.css?v=6.045">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -184,8 +184,8 @@
         </div>
     </div>
 
-    <script src="script.js?v=6.042"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.042"></script>
+    <script src="script.js?v=6.045"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.045"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -531,49 +531,49 @@
                 const subject = "Segnalazioni Logistiche - " + clientNames.join(", ");
                 
                 // Formatta il body HTML
-                const formattedBaseText = (emailSettings.testoBase || "").replace(/\\n/g, "<br>");
-                const formattedExtraText = extraText.replace(/\\n/g, "<br>");
-                const formattedSignature = (emailSettings.firma || "").replace(/\\n/g, "<br>");
+                const formattedBaseText = (emailSettings.testoBase || "").replace(/\n/g, "<br>");
+                const formattedExtraText = extraText.replace(/\n/g, "<br>");
+                const formattedSignature = (emailSettings.firma || "").replace(/\n/g, "<br>");
                 
                 // Fetch Logo
                 let logoBase64 = await fetchBase64('img/logo.png');
 
                 // Costruisci Body
-                let bodyHtml = \`<div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
-                    \${formattedExtraText ? \`<p>\${formattedExtraText}</p>\` : ''}
-                    <p>\${formattedBaseText}</p>
+                let bodyHtml = `<div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+                    ${formattedExtraText ? `<p>${formattedExtraText}</p>` : ''}
+                    <p>${formattedBaseText}</p>
                     <br><br>
                     <div style="color:#64748b; font-size: 13px;">
-                        \${formattedSignature}
-                        \${logoBase64 ? \`<br><br><img src="cid:logo_img" alt="Logo" style="max-height:60px;">\` : ''}
+                        ${formattedSignature}
+                        ${logoBase64 ? `<br><br><img src="cid:logo_img" alt="Logo" style="max-height:60px;">` : ''}
                     </div>
-                </div>\`;
+                </div>`;
 
                 // Boundary MIME
                 const boundary = "----=_NextPart_" + Date.now().toString(16);
-                let eml = \`To: \${to}
-Subject: \${subject}
+                let eml = `To: ${to}
+Subject: ${subject}
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="\${boundary}"
+Content-Type: multipart/mixed; boundary="${boundary}"
 X-Unsent: 1
 
---\${boundary}
+--${boundary}
 Content-Type: text/html; charset="UTF-8"
 Content-Transfer-Encoding: base64
 
-\${btoa(unescape(encodeURIComponent(bodyHtml)))}\`;
+${btoa(unescape(encodeURIComponent(bodyHtml)))}`;
 
                 // Aggiungi Logo Inline
                 if (logoBase64) {
-                    eml += \`
+                    eml += `
 
---\${boundary}
+--${boundary}
 Content-Type: image/png; name="logo.png"
 Content-ID: <logo_img>
 Content-Disposition: inline; filename="logo.png"
 Content-Transfer-Encoding: base64
 
-\${logoBase64}\`;
+${logoBase64}`;
                 }
 
                 // Processa gli allegati (foto)
@@ -586,30 +586,30 @@ Content-Transfer-Encoding: base64
                         if (!b64) continue;
                         
                         const ext = doc.url_foto.toLowerCase().includes('.png') ? 'png' : 'jpeg';
-                        const filename = \`Reso_\${doc.codice_cliente || i}_\${i+1}.\${ext}\`;
+                        const filename = `Reso_${doc.codice_cliente || i}_${i+1}.${ext}`;
                         
-                        eml += \`
+                        eml += `
 
---\${boundary}
-Content-Type: image/\${ext}; name="\${filename}"
-Content-Disposition: attachment; filename="\${filename}"
+--${boundary}
+Content-Type: image/${ext}; name="${filename}"
+Content-Disposition: attachment; filename="${filename}"
 Content-Transfer-Encoding: base64
 
-\${b64}\`;
+${b64}`;
                     }
                 }
 
                 // Chiudi MIME
-                eml += \`
+                eml += `
 
---\${boundary}--\`;
+--${boundary}--`;
 
                 // Download EML
                 const blob = new Blob([eml], { type: 'message/rfc822' });
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = \`Email_\${Date.now()}.eml\`;
+                a.download = `Email_${Date.now()}.eml`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);

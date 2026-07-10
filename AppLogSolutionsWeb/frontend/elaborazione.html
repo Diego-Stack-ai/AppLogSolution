@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.042">
+    <link rel="stylesheet" href="styles.css?v=6.045">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -369,8 +369,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.042"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.042"></script>
+    <script src="script.js?v=6.045"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.045"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
@@ -1141,18 +1141,99 @@
                 return;
             }
             const dateFormatted = dateInput.split('-').reverse().join('-');
+            let loadedClients = [];
+            let tipologie_caricate = [];
+            let tenant_caricati = [];
+            let cliente_zona_caricati = [];
+            
+            if (filesFrutta.length > 0) {
+                loadedClients.push('Frutta');
+                tipologie_caricate.push('FRUTTA');
+                tenant_caricati.push('DNR');
+                cliente_zona_caricati.push('PROGETTO SCUOLE');
+            }
+            if (filesLatte.length > 0) {
+                loadedClients.push('Latte');
+                tipologie_caricate.push('LATTE');
+                tenant_caricati.push('DNR');
+                cliente_zona_caricati.push('PROGETTO SCUOLE');
+            }
+            if (filesChef.length > 0) {
+                loadedClients.push('Gran Chef');
+                tipologie_caricate.push('GRAND_CHEF');
+                tenant_caricati.push('GRAND_CHEF');
+                cliente_zona_caricati.push('GRAN CHEF');
+            }
+            if (filesCattel.length > 0) {
+                loadedClients.push('Cattel');
+                tipologie_caricate.push('CATTEL');
+                tenant_caricati.push('CATTEL');
+                cliente_zona_caricati.push('CATTEL');
+            }
+            
+            if (loadedClients.length === 0) {
+                alert("Nessun file selezionato per il caricamento.");
+                return;
+            }
+            
+            const clientsStr = loadedClients.join(', ');
+
             const uploadConfirm = await Swal.fire({
-                title: 'Conferma Data',
-                html: `Stai per caricare i file per la data:<br><b style="font-size:1.4em; color:#4f46e5;">${dateFormatted}</b><br><br><span style="color:#ef4444; font-weight:700;">⚠️ Tutti i dati esistenti per questa data verranno eliminati</span> (mappe, distinte, file caricati in precedenza) e sostituiti con i nuovi.<br><br>La data è corretta?`,
-                icon: 'warning',
+                title: 'Opzioni di Caricamento',
+                html: `Stai caricando dati per: <b>${clientsStr}</b> (Data: <b>${dateFormatted}</b>).<br><br>Scegli un'opzione:<br><br>
+                       <ul style="text-align:left; font-size: 14px;">
+                         <li style="margin-bottom:8px;"><b>Sovrascrivi Solo [${clientsStr}]</b>: Elimina i vecchi viaggi di questi clienti e li ricarica, ignorando gli altri.</li>
+                         <li style="margin-bottom:8px;"><b>Integra Dati</b>: Aggiunge i nuovi dati senza cancellare assolutamente nulla.</li>
+                         <li><b style="color:red;">Tabula Rasa Totale</b>: Cancella TUTTO per la data selezionata (tutti i clienti) e riparte da zero.</li>
+                       </ul>`,
+                icon: 'question',
+                showDenyButton: true,
                 showCancelButton: true,
-                confirmButtonColor: '#4f46e5',
-                cancelButtonColor: '#64748b',
-                confirmButtonText: 'Sì, pulisci e carica',
-                cancelButtonText: 'No, annulla',
-                reverseButtons: true
+                showCloseButton: true,
+                confirmButtonColor: '#3b82f6',
+                denyButtonColor: '#10b981',
+                cancelButtonColor: '#ef4444',
+                confirmButtonText: '🔄 Sovrascrivi Solo Caricati',
+                denyButtonText: '➕ Integra Dati',
+                cancelButtonText: '🗑️ Tabula Rasa Totale',
+                width: 650
             });
-            if (!uploadConfirm.isConfirmed) return;
+
+            // Se l'utente clicca fuori o preme X
+            if (uploadConfirm.dismiss === Swal.DismissReason.backdrop || uploadConfirm.dismiss === Swal.DismissReason.close || uploadConfirm.dismiss === Swal.DismissReason.esc) {
+                return;
+            }
+            
+            let tipologie_da_eliminare = [];
+            let tenant_da_eliminare = [];
+            let cliente_zona_da_eliminare = [];
+            let esegui_pulizia = true;
+            
+            if (uploadConfirm.isConfirmed) {
+                // Sovrascrivi Solo Caricati
+                tipologie_da_eliminare = tipologie_caricate;
+                tenant_da_eliminare = tenant_caricati;
+                cliente_zona_da_eliminare = cliente_zona_caricati;
+            } else if (uploadConfirm.isDenied) {
+                // Integra Dati
+                esegui_pulizia = false;
+            } else if (uploadConfirm.dismiss === Swal.DismissReason.cancel) {
+                // Tabula Rasa Totale
+                const finalConfirm = await Swal.fire({
+                    title: "Attenzione",
+                    text: "Stai per eliminare TUTTI i dati logistici per la data selezionata, inclusi i clienti che non stai ricaricando in questo momento. Procedere?",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#ef4444",
+                    confirmButtonText: "Sì, Elimina Tutto"
+                });
+                if (!finalConfirm.isConfirmed) return;
+                
+                // Lasciamo array vuoti = Tabula Rasa totale
+                tipologie_da_eliminare = [];
+                tenant_da_eliminare = [];
+                cliente_zona_da_eliminare = [];
+            }
 
             document.getElementById('btn-avvia').style.display = 'none';
             document.getElementById('progress-area').style.display = 'block';
@@ -1165,31 +1246,38 @@
             const statText = document.getElementById('progress-status-text');
 
             try {
-                // Pulizia preventiva centralizzata per la data selezionata
-                statText.textContent = "Preparazione e pulizia cartelle in corso sul cloud...";
-                fillDiv.style.width = '0%';
-                percText.textContent = '0%';
-                
-                const dateInput = document.getElementById('master-date-selector').value;
-                const dateStr = dateInput.split('-').reverse().join('-');
-                
-                try {
-                    // Mostra clessidra bloccante durante la pulizia
-                    Swal.fire({
-                        title: 'Pulizia in corso...',
-                        html: `Sto eliminando i dati precedenti per il <b>${dateStr}</b>.<br>Attendere prego.`,
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        showConfirmButton: false,
-                        didOpen: () => { Swal.showLoading(); }
-                    });
-                    const eliminaFn = httpsCallable(functions, 'elimina_giornata_logistica');
-                    await eliminaFn({ data_consegna: dateStr });
-                    Swal.close();
-                    console.log('[Upload] Pulizia completa completata per', dateStr);
-                } catch (err_cleanup) {
-                    Swal.close();
-                    console.warn("Avviso durante la pulizia preventiva:", err_cleanup);
+                if (esegui_pulizia) {
+                    statText.textContent = "Preparazione e pulizia cartelle in corso sul cloud...";
+                    fillDiv.style.width = '0%';
+                    percText.textContent = '0%';
+                    
+                    const dateInput = document.getElementById('master-date-selector').value;
+                    const dateStr = dateInput.split('-').reverse().join('-');
+                    
+                    try {
+                        Swal.fire({
+                            title: 'Pulizia in corso...',
+                            html: `Sto eliminando i dati precedenti per il <b>${dateStr}</b>.<br>Attendere prego.`,
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showConfirmButton: false,
+                            didOpen: () => { Swal.showLoading(); }
+                        });
+                        const eliminaFn = httpsCallable(functions, 'elimina_giornata_logistica');
+                        await eliminaFn({ 
+                            data_consegna: dateStr,
+                            tipologie_da_eliminare: tipologie_da_eliminare,
+                            tenant_da_eliminare: tenant_da_eliminare,
+                            cliente_zona_da_eliminare: cliente_zona_da_eliminare
+                        });
+                        Swal.close();
+                        console.log('[Upload] Pulizia completata per', dateStr);
+                    } catch (err_cleanup) {
+                        Swal.close();
+                        console.warn("Avviso durante la pulizia preventiva:", err_cleanup);
+                    }
+                } else {
+                    console.log('[Upload] Modalità Integrazione: nessuna pulizia eseguita.');
                 }
 
                 // Upload Frutta

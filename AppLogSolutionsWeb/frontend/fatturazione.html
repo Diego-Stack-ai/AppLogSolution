@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.069">
+    <link rel="stylesheet" href="styles.css?v=6.070">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -232,7 +232,7 @@
         </div>
 
         <!-- MODALE RIEPILOGO PRESENZE -->
-        <div id="presenzeModal" class="modal-overlay" style="display: none;">
+        <div id="presenzeModal" class="modal-overlay">
             <div class="modal-content" style="max-width: 900px; width: 95%;">
                 <h3 style="margin-bottom: 20px; font-size: 18px; color: var(--primary);">Riepilogo Presenze <span id="presenzeModalMese"></span></h3>
                 
@@ -264,7 +264,7 @@
                 </div>
 
                 <div class="modal-actions" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('presenzeModal').style.display='none'">Chiudi</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('presenzeModal').classList.remove('active')">Chiudi</button>
                 </div>
             </div>
         </div>
@@ -306,8 +306,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.069"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.069"></script>
+    <script src="script.js?v=6.070"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.070"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -2072,7 +2072,7 @@
             
             document.getElementById('presenzeModalMese').textContent = `(${monthInput})`;
             document.getElementById('presenzeTableBody').innerHTML = `<tr><td colspan="7" style="text-align: center;">Caricamento in corso...</td></tr>`;
-            document.getElementById('presenzeModal').style.display = 'flex';
+            document.getElementById('presenzeModal').classList.add('active');
             
             try {
                 // Usa le variabili già importate nel modulo (collection, query, where, getDocs, db)

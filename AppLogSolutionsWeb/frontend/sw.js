@@ -1,4 +1,4 @@
-const CACHE_NAME = 'log-solution-v6.058';
+const CACHE_NAME = 'log-solution-v6.059';
 const ASSETS = [
     './',
     './index.html',

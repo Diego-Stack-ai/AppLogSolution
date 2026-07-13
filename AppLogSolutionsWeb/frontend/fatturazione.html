@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.073">
+    <link rel="stylesheet" href="styles.css?v=6.074">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -310,8 +310,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.073"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.073"></script>
+    <script src="script.js?v=6.074"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.074"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -2283,12 +2283,17 @@
         
         window.apriRiepilogoPresenze = async function() {
             const monthInput = document.getElementById('month-selector').value;
+            const clientSel = document.getElementById('client-selector').value;
             if (!monthInput) {
                 Swal.fire('Attenzione', 'Seleziona prima un mese di riferimento.', 'warning');
                 return;
             }
             
-            document.getElementById('presenzeModalMese').textContent = `(${monthInput})`;
+            let titleText = `(${monthInput})`;
+            if (clientSel && clientSel !== 'TUTTI') {
+                titleText += ` - ${clientSel}`;
+            }
+            document.getElementById('presenzeModalMese').textContent = titleText;
             document.getElementById('presenzeTableBody').innerHTML = `<tr><td colspan="7" style="text-align: center;">Caricamento in corso...</td></tr>`;
             document.getElementById('presenzeModal').classList.add('active');
             
@@ -2314,6 +2319,7 @@
         
         window.renderPresenzeTable = function() {
             const groupSelect = document.getElementById('presenzeGroupSelect').value;
+            const clientSel = document.getElementById('client-selector').value.toUpperCase();
             const theadGruppo = document.getElementById('presenzeColonnaGruppo');
             
             let groupLabel = "Autista";
@@ -2324,6 +2330,11 @@
             const grouped = {};
             
             window.presenzeDataCache.forEach(row => {
+                const rowCliente = (row.cliente || "").toUpperCase();
+                if (clientSel !== "TUTTI" && rowCliente !== clientSel) {
+                    return; // Filtra per cliente selezionato nella pagina
+                }
+                
                 let key = "Non specificato";
                 if (groupSelect === 'autista') {
                     key = row.nomeAutista || row.autistaId || "Sconosciuto";

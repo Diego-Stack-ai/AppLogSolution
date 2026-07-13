@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.064">
+    <link rel="stylesheet" href="styles.css?v=6.065">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -1390,8 +1390,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=6.064"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.064"></script>
+    <script src="script.js?v=6.065"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.065"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1654,9 +1654,7 @@ const functions = getFunctions(app, "europe-west1");
             const limKmC = document.getElementById('cattelLimKmC').value;
             const limPesoB = document.getElementById('cattelLimPesoB').value;
             const limPesoC = document.getElementById('cattelLimPesoC').value;
-            const vA = document.getElementById('progettoPatC').value; // Mappato su patente_c per retrocompatibilita
-            const vB = document.getElementById('progettoNavS').value; // Mappato su navS per retrocompatibilita
-            const ddt = document.getElementById('progettoCostoDDT').value;
+                                    const ddt = document.getElementById('progettoCostoDDT').value;
             const forfait = document.getElementById('progettoForfait').value;
             const ddt1 = document.getElementById('progettoDDTZona1').value;
             const ddt2 = document.getElementById('progettoDDTZona2').value;
@@ -1679,9 +1677,7 @@ const functions = getFunctions(app, "europe-west1");
                     cattel_username: document.getElementById('cattelUsername').value.trim(),
                     cattel_password: document.getElementById('cattelPassword').value.trim(),
                     cattel_url: document.getElementById('cattelUrl').value.trim(),
-                    viaggio_a: vA ? parseFloat(vA) : null,
-                    viaggio_b: vB ? parseFloat(vB) : null,
-                    costo_ddt_base: ddt ? parseFloat(ddt) : null,
+                                                            costo_ddt_base: ddt ? parseFloat(ddt) : null,
                     viaggio_forfait: forfait ? parseFloat(forfait) : null,
                     costo_ddt_zona1: ddt1 ? parseFloat(ddt1) : null,
                     costo_ddt_zona2: ddt2 ? parseFloat(ddt2) : null,
@@ -1738,8 +1734,8 @@ const functions = getFunctions(app, "europe-west1");
             }
             
             document.getElementById('progettoPatB').value = p.patente_b ?? '';
-            document.getElementById('progettoPatC').value = p.patente_c ?? p.viaggio_a ?? p.tariffa_viaggio ?? '';
-            document.getElementById('progettoNavS').value = p.navetta_sommacampagna ?? p.viaggio_b ?? '';
+            document.getElementById('progettoPatC').value = p.patente_c ?? '';
+            document.getElementById('progettoNavS').value = p.navetta_sommacampagna ?? '';
             document.getElementById('progettoNavC').value = p.navetta_cerea ?? '';
             document.getElementById('progettoCollo').value = p.cattel_collo ?? '';
             document.getElementById('cattelLimKmB').value = p.cattel_lim_km_b ?? '';

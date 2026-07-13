@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.056">
+    <link rel="stylesheet" href="styles.css?v=6.057">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -2877,7 +2877,11 @@ const db = getFirestore(app);
                 _stats: z._stats ? JSON.parse(JSON.stringify(z._stats)) : undefined,
                 veicolo: z.veicolo,
                 autista: z.autista,
-                _stato: 'modificato'
+                _stato: 'modificato',
+                cliente_zona: z.cliente_zona,
+                is_gc: z.is_gc,
+                is_cattel: z.is_cattel,
+                is_bauer: z.is_bauer
             };
 
             DATA_ZONE.push(newVoyage);

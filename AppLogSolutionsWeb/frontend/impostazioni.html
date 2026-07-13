@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.060">
+    <link rel="stylesheet" href="styles.css?v=6.061">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -1390,8 +1390,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=6.060"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.060"></script>
+    <script src="script.js?v=6.061"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.061"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1654,8 +1654,8 @@ const functions = getFunctions(app, "europe-west1");
             const limKmC = document.getElementById('cattelLimKmC').value;
             const limPesoB = document.getElementById('cattelLimPesoB').value;
             const limPesoC = document.getElementById('cattelLimPesoC').value;
-            const vA = document.getElementById('progettoViaggioA').value;
-            const vB = document.getElementById('progettoViaggioB').value;
+            const vA = document.getElementById('progettoPatC').value; // Mappato su patente_c per retrocompatibilita
+            const vB = document.getElementById('progettoNavS').value; // Mappato su navS per retrocompatibilita
             const ddt = document.getElementById('progettoCostoDDT').value;
             const forfait = document.getElementById('progettoForfait').value;
             const ddt1 = document.getElementById('progettoDDTZona1').value;
@@ -1702,7 +1702,7 @@ const functions = getFunctions(app, "europe-west1");
             ['progettoPatB','progettoPatC','progettoNavS','progettoNavC','progettoCollo',
              'cattelLimKmB','cattelLimKmC','cattelLimPesoB','cattelLimPesoC',
              'cattelUsername','cattelPassword','cattelUrl',
-             'progettoViaggioA','progettoViaggioB','progettoCostoDDT','progettoForfait',
+             'progettoCostoDDT','progettoForfait',
              'progettoDDTZona1','progettoDDTZona2','progettoDDTZona3'].forEach(id => document.getElementById(id).value = '');
             // Il tariffeContainerSTANDARD è già visibile da CSS
             btnSalva.textContent = 'Salva Cliente'; btnAnnulla.style.display = 'none';
@@ -1738,8 +1738,8 @@ const functions = getFunctions(app, "europe-west1");
             }
             
             document.getElementById('progettoPatB').value = p.patente_b ?? '';
-            document.getElementById('progettoPatC').value = p.patente_c ?? '';
-            document.getElementById('progettoNavS').value = p.navetta_sommacampagna ?? '';
+            document.getElementById('progettoPatC').value = p.patente_c ?? p.viaggio_a ?? p.tariffa_viaggio ?? '';
+            document.getElementById('progettoNavS').value = p.navetta_sommacampagna ?? p.viaggio_b ?? '';
             document.getElementById('progettoNavC').value = p.navetta_cerea ?? '';
             document.getElementById('progettoCollo').value = p.cattel_collo ?? '';
             document.getElementById('cattelLimKmB').value = p.cattel_lim_km_b ?? '';
@@ -1749,9 +1749,7 @@ const functions = getFunctions(app, "europe-west1");
             document.getElementById('cattelUsername').value = p.cattel_username ?? '';
             document.getElementById('cattelPassword').value = p.cattel_password ?? '';
             document.getElementById('cattelUrl').value = p.cattel_url ?? '';
-            document.getElementById('progettoViaggioA').value = p.viaggio_a ?? '';
-            document.getElementById('progettoViaggioB').value = p.viaggio_b ?? '';
-            document.getElementById('progettoCostoDDT').value = p.costo_ddt_base ?? '';
+                                    document.getElementById('progettoCostoDDT').value = p.costo_ddt_base ?? '';
             document.getElementById('progettoForfait').value = p.viaggio_forfait ?? '';
             document.getElementById('progettoDDTZona1').value = p.costo_ddt_zona1 ?? '';
             document.getElementById('progettoDDTZona2').value = p.costo_ddt_zona2 ?? '';

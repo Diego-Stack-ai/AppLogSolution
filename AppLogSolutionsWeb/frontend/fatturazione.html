@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.063">
+    <link rel="stylesheet" href="styles.css?v=6.064">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -305,8 +305,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.063"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.063"></script>
+    <script src="script.js?v=6.064"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.064"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -2055,7 +2055,7 @@
             ws['!cols'] = cols;
 
             XLSX.utils.book_append_sheet(wb, ws, `Modulo_${clientName}`);
-            let safeMonthLabel = window.currentMonthLabel ? window.currentMonthLabel.replace(/[\/\]/g, '_') : 'mese';
+            let safeMonthLabel = window.currentMonthLabel ? window.currentMonthLabel.replace(/[\\\\/\\\\]/g, '_') : 'mese';
             XLSX.writeFile(wb, `Fatturazione_${clientName}_${safeMonthLabel}.xlsx`);
         }
 

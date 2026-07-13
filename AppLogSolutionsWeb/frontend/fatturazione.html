@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.068">
+    <link rel="stylesheet" href="styles.css?v=6.069">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -100,15 +100,16 @@
                     <option value="TUTTI">Tutti i Clienti (Solo Riepilogo)</option>
                 </select>
             </div>
-            <button class="btn btn-primary" id="btn-calcola" onclick="if(window.elaboraDati) window.elaboraDati(); else alert('Attendere il caricamento...');">
-                <span class="material-icons-round" style="margin-right: 8px;">calculate</span>
-                Elabora Dati
-            </button>
-            <button class="btn btn-secondary" id="btn-riepilogo-presenze" onclick="apriRiepilogoPresenze()" style="margin-left: 10px;">
-                <span class="material-icons-round" style="margin-right: 8px;">assessment</span>
-                Riepilogo Presenze
-            </button>
-            
+            <div style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+                <button class="btn btn-primary" id="btn-calcola" onclick="if(window.elaboraDati) window.elaboraDati(); else alert('Attendere il caricamento...');">
+                    <span class="material-icons-round" style="margin-right: 8px;">calculate</span>
+                    Elabora Dati
+                </button>
+                <button class="btn btn-primary" id="btn-riepilogo-presenze" onclick="if(window.apriRiepilogoPresenze) window.apriRiepilogoPresenze(); else alert('Attendere il caricamento dei moduli...');" style="background-color: #8b5cf6; border-color: #8b5cf6; color: white;">
+                    <span class="material-icons-round" style="margin-right: 8px;">assessment</span>
+                    Riepilogo Presenze
+                </button>
+            </div>
             <div style="flex-basis: 100%; height: 0; margin: 0; padding: 0;"></div>
             
             <div class="action-group" id="cattel-upload-group" style="display: none; margin-top: 10px;">
@@ -305,8 +306,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.068"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.068"></script>
+    <script src="script.js?v=6.069"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.069"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>

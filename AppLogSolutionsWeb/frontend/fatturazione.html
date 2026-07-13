@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.060">
+    <link rel="stylesheet" href="styles.css?v=6.062">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -103,6 +103,10 @@
             <button class="btn btn-primary" id="btn-calcola" onclick="if(window.elaboraDati) window.elaboraDati(); else alert('Attendere il caricamento...');">
                 <span class="material-icons-round" style="margin-right: 8px;">calculate</span>
                 Elabora Dati
+            </button>
+            <button class="btn btn-secondary" id="btn-riepilogo-presenze" onclick="apriRiepilogoPresenze()" style="margin-left: 10px;">
+                <span class="material-icons-round" style="margin-right: 8px;">assessment</span>
+                Riepilogo Presenze
             </button>
             
             <div style="flex-basis: 100%; height: 0; margin: 0; padding: 0;"></div>
@@ -226,6 +230,44 @@
             </div>
         </div>
 
+        <!-- MODALE RIEPILOGO PRESENZE -->
+        <div id="presenzeModal" class="modal-overlay" style="display: none;">
+            <div class="modal-content" style="max-width: 900px; width: 95%;">
+                <h3 style="margin-bottom: 20px; font-size: 18px; color: var(--primary);">Riepilogo Presenze <span id="presenzeModalMese"></span></h3>
+                
+                <div class="input-group" style="margin-bottom: 20px;">
+                    <label style="font-size:11px; font-weight:bold; color:var(--primary); text-transform:uppercase;">Raggruppa per:</label>
+                    <select id="presenzeGroupSelect" class="file-input" onchange="renderPresenzeTable()">
+                        <option value="autista">Autista</option>
+                        <option value="data">Data</option>
+                        <option value="cliente">Cliente</option>
+                    </select>
+                </div>
+
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="data-table" id="presenzeTable">
+                        <thead>
+                            <tr>
+                                <th id="presenzeColonnaGruppo">Autista</th>
+                                <th>Turni / Record</th>
+                                <th>Ore Ord.</th>
+                                <th>Ore Stra.</th>
+                                <th>Ore Tot.</th>
+                                <th>Navette Extra</th>
+                                <th>Navette Pure</th>
+                            </tr>
+                        </thead>
+                        <tbody id="presenzeTableBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="modal-actions" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('presenzeModal').style.display='none'">Chiudi</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Popup / Modal Invio E-mail -->
         <div id="emailModal" class="modal-overlay">
             <div class="modal-content" style="max-width: 550px; width: 90%;">
@@ -263,8 +305,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.060"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.060"></script>
+    <script src="script.js?v=6.062"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.062"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -2016,5 +2058,134 @@
             let safeMonthLabel = window.currentMonthLabel ? window.currentMonthLabel.replace(/[\/\]/g, '_') : 'mese';
             XLSX.writeFile(wb, `Fatturazione_${clientName}_${safeMonthLabel}.xlsx`);
         }
+
+        // --- RIEPILOGO PRESENZE LOGIC ---
+        window.presenzeDataCache = [];
+        
+        async function apriRiepilogoPresenze() {
+            const monthInput = document.getElementById('month-selector').value;
+            if (!monthInput) {
+                Swal.fire('Attenzione', 'Seleziona prima un mese di riferimento.', 'warning');
+                return;
+            }
+            
+            document.getElementById('presenzeModalMese').textContent = `(${monthInput})`;
+            document.getElementById('presenzeTableBody').innerHTML = `<tr><td colspan="7" style="text-align: center;">Caricamento in corso...</td></tr>`;
+            document.getElementById('presenzeModal').style.display = 'flex';
+            
+            try {
+                const { collection, query, where, getDocs } = window.firebaseFirestore;
+                const db = window.db;
+                
+                const q = query(collection(db, 'presenze'), where('mese', '==', monthInput));
+                const snap = await getDocs(q);
+                
+                window.presenzeDataCache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                if (window.presenzeDataCache.length === 0) {
+                    document.getElementById('presenzeTableBody').innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b;">Nessun dato trovato per il mese selezionato.</td></tr>`;
+                } else {
+                    renderPresenzeTable();
+                }
+                
+            } catch (err) {
+                console.error("Errore caricamento presenze:", err);
+                document.getElementById('presenzeTableBody').innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">Errore nel caricamento dei dati.</td></tr>`;
+            }
+        }
+        
+        window.renderPresenzeTable = function() {
+            const groupSelect = document.getElementById('presenzeGroupSelect').value;
+            const theadGruppo = document.getElementById('presenzeColonnaGruppo');
+            
+            let groupLabel = "Autista";
+            if (groupSelect === 'data') groupLabel = "Data";
+            if (groupSelect === 'cliente') groupLabel = "Cliente";
+            theadGruppo.textContent = groupLabel;
+            
+            const grouped = {};
+            
+            window.presenzeDataCache.forEach(row => {
+                let key = "Non specificato";
+                if (groupSelect === 'autista') {
+                    key = row.nomeAutista || row.autistaId || "Sconosciuto";
+                } else if (groupSelect === 'data') {
+                    key = row.data || "Senza data";
+                } else if (groupSelect === 'cliente') {
+                    key = row.cliente || "Senza cliente";
+                }
+                
+                if (!grouped[key]) {
+                    grouped[key] = {
+                        count: 0,
+                        oreOrd: 0,
+                        oreStra: 0,
+                        oreTot: 0,
+                        navetteExtra: 0,
+                        navettePure: 0
+                    };
+                }
+                
+                grouped[key].count += 1;
+                grouped[key].oreOrd += (Number(row.oreOrdinarie) || 0);
+                grouped[key].oreStra += (Number(row.oreStraordinarie) || 0);
+                grouped[key].oreTot += (Number(row.oreTotali) || 0);
+                
+                // Contiamo navette extra (navetta) e navette pure (navettaMissione)
+                if (Array.isArray(row.attivitaAggiuntive)) {
+                    row.attivitaAggiuntive.forEach(att => {
+                        if (att.tipo === 'navetta') grouped[key].navetteExtra += 1;
+                        if (att.tipo === 'navettaMissione') grouped[key].navettePure += 1;
+                    });
+                }
+            });
+            
+            const tbody = document.getElementById('presenzeTableBody');
+            tbody.innerHTML = '';
+            
+            // Ordiniamo alfabeticamente
+            const sortedKeys = Object.keys(grouped).sort();
+            
+            let totTurni = 0, totOrd = 0, totStra = 0, totTot = 0, totNavExtra = 0, totNavPure = 0;
+            
+            sortedKeys.forEach(k => {
+                const data = grouped[k];
+                totTurni += data.count;
+                totOrd += data.oreOrd;
+                totStra += data.oreStra;
+                totTot += data.oreTot;
+                totNavExtra += data.navetteExtra;
+                totNavPure += data.navettePure;
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight: 600;">${k}</td>
+                    <td>${data.count}</td>
+                    <td>${data.oreOrd.toFixed(2)}</td>
+                    <td>${data.oreStra.toFixed(2)}</td>
+                    <td style="font-weight: 600; color: var(--primary);">${data.oreTot.toFixed(2)}</td>
+                    <td>${data.navetteExtra}</td>
+                    <td>${data.navettePure}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            // Riga totali
+            if (sortedKeys.length > 0) {
+                const trTot = document.createElement('tr');
+                trTot.style.backgroundColor = '#f1f5f9';
+                trTot.style.fontWeight = 'bold';
+                trTot.innerHTML = `
+                    <td>TOTALE</td>
+                    <td>${totTurni}</td>
+                    <td>${totOrd.toFixed(2)}</td>
+                    <td>${totStra.toFixed(2)}</td>
+                    <td style="color: var(--primary);">${totTot.toFixed(2)}</td>
+                    <td>${totNavExtra}</td>
+                    <td>${totNavPure}</td>
+                `;
+                tbody.appendChild(trTot);
+            }
+        };
 
 </script>

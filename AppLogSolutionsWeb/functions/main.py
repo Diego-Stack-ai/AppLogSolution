@@ -3333,8 +3333,10 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
         raw_json = json.loads(blob_json.download_as_string().decode('utf-8'))
         # Retrocompatibilità: nuovo formato { "cliente": "...", "zone": [...] }
         # oppure vecchio formato diretto: [...]
+        cliente_progetto = None
         if isinstance(raw_json, dict):
             zone_list = raw_json.get("zone", [])
+            cliente_progetto = raw_json.get("cliente")
         else:
             zone_list = raw_json
     except Exception as e:
@@ -3524,7 +3526,14 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
         modificato = True
 
     if modificato:
-        blob_json.upload_from_string(json.dumps(zone_list, indent=2), content_type='application/json')
+        if cliente_progetto:
+            payload_da_salvare = {
+                "cliente": cliente_progetto,
+                "zone": zone_list
+            }
+        else:
+            payload_da_salvare = zone_list
+        blob_json.upload_from_string(json.dumps(payload_da_salvare, indent=2), content_type='application/json')
         
     # === GHOST TRIP CLEANUP ===
     try:

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.075">
+    <link rel="stylesheet" href="styles.css?v=6.076">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -310,8 +310,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.075"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.075"></script>
+    <script src="script.js?v=6.076"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.076"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -1174,12 +1174,12 @@
 
                 if (clientSel === "TUTTI") {
                     document.getElementById('pivot-container').style.display = 'none';
-                    document.getElementById('btn-export-pivot').style.display = 'none';
+                    document.getElementById('export-actions').style.display = 'none';
                     document.getElementById('standard-summary-container').style.display = 'none';
                     document.getElementById('btn-export-standard').style.display = 'none';
                 } else {
                     document.getElementById('pivot-container').style.display = 'block';
-                    document.getElementById('btn-export-pivot').style.display = 'inline-flex';
+                    document.getElementById('export-actions').style.display = 'flex';
                     buildPivotTable(pivotData, parseInt(year), parseInt(month), configStandard);
                     
                     document.getElementById('standard-summary-container').style.display = 'block';

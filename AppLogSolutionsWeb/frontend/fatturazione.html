@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.076">
+    <link rel="stylesheet" href="styles.css?v=6.077">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -310,8 +310,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.076"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.076"></script>
+    <script src="script.js?v=6.077"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.077"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -641,9 +641,21 @@
             try {
                 // Leggiamo tutto dalla nuova collection "progetti" gestita in impostazioni.html
                 const progSnap = await getDocs(collection(db, "progetti"));
+                let clientNavetteMap = {};
                 progSnap.forEach(docSnap => {
                     const d = docSnap.data();
                     const nome = (d.nome || "").toUpperCase();
+                    
+                    if (d.navette_personalizzate && Array.isArray(d.navette_personalizzate)) {
+                        clientNavetteMap[nome] = d.navette_personalizzate;
+                    } else {
+                        // Fallback temporaneo per retrocompatibilità
+                        let fallbackNav = [];
+                        if (d.navetta_sommacampagna) fallbackNav.push({nome: "SOMMACAMPAGNA", tariffa: parseFloat(d.navetta_sommacampagna)});
+                        if (d.navetta_cerea) fallbackNav.push({nome: "BENCARNI", tariffa: parseFloat(d.navetta_cerea)});
+                        if (d.navetta_cerea === undefined && d.navetta_sommacampagna === undefined && d.viaggio_b) fallbackNav.push({nome: "SOMMACAMPAGNA", tariffa: parseFloat(d.viaggio_b)});
+                        clientNavetteMap[nome] = fallbackNav;
+                    }
                     
                     if (nome === "CATTEL") {
                         if (d.patente_b) CAT_B = parseFloat(d.patente_b);
@@ -712,6 +724,23 @@
                 let countBau = 0, totBau = 0;
                 let countDnr = 0, totDnr = 0;
 
+                function getNavettaInfo(clienteStr, nomeViaggioStr) {
+                    let fallbackTariff = clienteStr === "GRAN CHEF" ? TARIFFA_GC : (clienteStr === "CATTEL" ? CAT_NAV1 : 0);
+                    const navette = clientNavetteMap[clienteStr] || [];
+                    if (navette.length === 0) return { nome: "NAVETTA", tariffa: fallbackTariff };
+                    
+                    let matchedNav = null;
+                    for (let nav of navette) {
+                        if (nav.nome && nomeViaggioStr.toUpperCase().includes(nav.nome.toUpperCase())) {
+                            matchedNav = nav; break;
+                        }
+                    }
+                    if (!matchedNav) matchedNav = navette[0];
+                    
+                    let outNome = matchedNav.nome ? `NAVETTA ${matchedNav.nome}` : "NAVETTA";
+                    return { nome: outNome.toUpperCase(), tariffa: matchedNav.tariffa };
+                }
+
                 // Per la matrice (Pivot)
                 // pivotData: { "NOME GIRO": { day1: importo, day2: importo... } }
                 let pivotData = {};
@@ -767,14 +796,18 @@
                     let importo_colli = 0;
                     if (tripClient === "GRAN CHEF") {
                         if (nomeStr.includes("VIAGGIO B") || nomeStr.includes("SOMMACAMPAGNA") || nomeStr.includes("NAVETTA")) {
-                            importo = TARIFFA_GC_B;
+                            const navInfo = getNavettaInfo("GRAN CHEF", nomeStr);
+                            importo = navInfo.tariffa;
+                            finalNomeStr = navInfo.nome;
                         } else {
                             importo = TARIFFA_GC;
                         }
                         countGC++; totGC += importo;
                     } else if (tripClient === "CATTEL") {
                         if (nomeStr.includes("NAVETTA")) {
-                            importo = nomeStr.includes("CEREA") ? CAT_NAV2 : CAT_NAV1;
+                            const navInfo = getNavettaInfo("CATTEL", nomeStr);
+                            importo = navInfo.tariffa;
+                            finalNomeStr = navInfo.nome;
                         } else {
                             const targaStr = (t.targa || t.targa_mezzo || '').toUpperCase();
                             let patente = mezziMap[targaStr] || 'B';
@@ -926,12 +959,13 @@
                     // Generazione Matrice
                     document.getElementById('pivot-title').textContent = `Fatturazione ${clientSel} - ${currentMonthLabel}`;
                     
-                    if (clientSel === "CATTEL") {
-                        if (!pivotData["NAVETTA BENCARNI"]) pivotData["NAVETTA BENCARNI"] = {};
-                        if (!pivotData["NAVETTA SOMMACAMPAGNA"]) pivotData["NAVETTA SOMMACAMPAGNA"] = {};
-                    } else if (clientSel === "GRAN CHEF") {
-                        if (!pivotData["NAVETTA SOMMACAMPAGNA"]) pivotData["NAVETTA SOMMACAMPAGNA"] = {};
-                    }
+                    // Inizializza le chiavi delle navette dinamicamente per il cliente selezionato
+                    const navettePerPivot = clientNavetteMap[clientSel] || [];
+                    navettePerPivot.forEach(nav => {
+                        let nomeKey = nav.nome ? `NAVETTA ${nav.nome}` : "NAVETTA";
+                        nomeKey = nomeKey.toUpperCase();
+                        if (!pivotData[nomeKey]) pivotData[nomeKey] = {};
+                    });
                     
                     buildPivotTable(pivotData, parseInt(year), parseInt(month), configCattel);
                     
@@ -969,7 +1003,8 @@
                             };
                         }
                         
-                        buildStandardSummaryTable(trips, parseInt(year), parseInt(month), mezziMap, configStandard, clientSel);
+                        // Passiamo clientNavetteMap per la risoluzione
+                        buildStandardSummaryTable(trips, parseInt(year), parseInt(month), mezziMap, configStandard, clientSel, clientNavetteMap);
                     } else {
                         document.getElementById('standard-summary-container').style.display = 'none';
                         document.getElementById('btn-export-standard').style.display = 'none';
@@ -1896,24 +1931,33 @@
             if(recapRowTotale) recapRowTotale.style.display = showTotale ? '' : 'none';
         }
 
-        window.buildStandardSummaryTable = function(trips, year, month, mezziMap, config, clientName) {
+        window.buildStandardSummaryTable = function(trips, year, month, mezziMap, config, clientName, clientNavetteMap) {
             const daysInMonth = new Date(year, month, 0).getDate();
+            
+            const navetteConfigurate = (clientNavetteMap && clientNavetteMap[clientName]) || [];
+            if (navetteConfigurate.length === 0) {
+                // Fallback nel caso non ci siano navette
+                navetteConfigurate.push({nome: "SOMMACAMPAGNA", tariffa: config.TARIFFA_NAV1 || 0});
+                navetteConfigurate.push({nome: "BENCARNI", tariffa: config.TARIFFA_NAV2 || 0});
+            }
+            
             let tableData = {};
             for (let d = 1; d <= daysInMonth; d++) {
-                tableData[d] = {
+                let initialData = {
                     giriB: 0,
                     giriC: 0,
-                    navCerea: 0,
-                    navSomma: 0,
                     colli: 0,
-                    totale: 0
+                    totale: 0,
+                    navetteCounts: {}
                 };
+                navetteConfigurate.forEach(nav => {
+                    initialData.navetteCounts[nav.nome || "NAVETTA"] = 0;
+                });
+                tableData[d] = initialData;
             }
             
             const TARIFFA_B = config.TARIFFA_B || 0;
             const TARIFFA_C = config.TARIFFA_C || 0;
-            const TARIFFA_NAV1 = config.TARIFFA_NAV1 || 0; // Sommacampagna
-            const TARIFFA_NAV2 = config.TARIFFA_NAV2 || 0; // Bencarni/Altre
             const TARIFFA_COLLO = config.TARIFFA_COLLO || 0;
             const TARIFFA_DDT = config.TARIFFA_DDT || 0;
             const TARIFFA_FORFAIT = config.TARIFFA_FORFAIT || 0;
@@ -1941,10 +1985,16 @@
                 });
                 
                 if (nomeStr.includes("NAVETTA")) {
-                    if (nomeStr.includes("CEREA") || nomeStr.includes("BENCARNI")) {
-                        tableData[day].navCerea++;
-                    } else {
-                        tableData[day].navSomma++;
+                    let matchedNav = null;
+                    for (let nav of navetteConfigurate) {
+                        if (nav.nome && nomeStr.includes(nav.nome.toUpperCase())) {
+                            matchedNav = nav; break;
+                        }
+                    }
+                    if (!matchedNav && navetteConfigurate.length > 0) matchedNav = navetteConfigurate[0];
+                    let navNome = matchedNav ? (matchedNav.nome || "NAVETTA") : null;
+                    if (navNome && tableData[day].navetteCounts[navNome] !== undefined) {
+                        tableData[day].navetteCounts[navNome]++;
                     }
                 } else {
                     const targaStr = (t.targa || t.targa_mezzo || '').toUpperCase();
@@ -1958,13 +2008,16 @@
                 }
             }
             
+            let navetteHeadersHTML = '';
+            navetteConfigurate.forEach(nav => {
+                navetteHeadersHTML += `<th>NAV. ${nav.nome || "NAVETTA"}</th>`;
+            });
             const theadTr = document.getElementById('standard-summary-thead-tr');
             theadTr.innerHTML = `
                 <th>DATA</th>
                 <th>GIRI B</th>
                 <th>GIRI C</th>
-                <th>NAV. BENCARNI</th>
-                <th>NAV. SOMMA</th>
+                ${navetteHeadersHTML}
                 <th class="col-colli"></th>
                 <th class="col-colli">COLLI</th>
                 <th class="col-totale"></th>
@@ -1975,18 +2028,27 @@
             const tfoot = document.getElementById('standard-summary-tfoot');
             tbody.innerHTML = ''; tfoot.innerHTML = '';
             
-            let sumB = 0, sumC = 0, sumNavC = 0, sumNavS = 0, sumColli = 0, sumTot = 0;
+            let sumB = 0, sumC = 0, sumColli = 0, sumTot = 0;
+            let sumNavette = {};
+            navetteConfigurate.forEach(nav => { sumNavette[nav.nome || "NAVETTA"] = 0; });
             
             for (let d = 1; d <= daysInMonth; d++) {
                 const row = tableData[d];
-                // Includiamo DDT e Forfait? Attualmente usati in altri contesti, qui teniamo la logica standard
-                let rowTotal = (row.giriB * TARIFFA_B) + (row.giriC * TARIFFA_C) + (row.navCerea * TARIFFA_NAV2) + (row.navSomma * TARIFFA_NAV1) + (row.colli * TARIFFA_COLLO);
+                let rowNavTot = 0;
+                let navCells = '';
+                
+                navetteConfigurate.forEach(nav => {
+                    let count = row.navetteCounts[nav.nome || "NAVETTA"] || 0;
+                    rowNavTot += count * (nav.tariffa || 0);
+                    sumNavette[nav.nome || "NAVETTA"] += count;
+                    navCells += `<td style="text-align: center;">${count || ''}</td>`;
+                });
+                
+                let rowTotal = (row.giriB * TARIFFA_B) + (row.giriC * TARIFFA_C) + rowNavTot + (row.colli * TARIFFA_COLLO);
                 row.totale = rowTotal;
                 
                 sumB += row.giriB;
                 sumC += row.giriC;
-                sumNavC += row.navCerea;
-                sumNavS += row.navSomma;
                 sumColli += row.colli;
                 sumTot += row.totale;
                 
@@ -1996,8 +2058,7 @@
                     <td>${formattedDate}</td>
                     <td style="text-align: center;">${row.giriB || ''}</td>
                     <td style="text-align: center;">${row.giriC || ''}</td>
-                    <td style="text-align: center;">${row.navCerea || ''}</td>
-                    <td style="text-align: center;">${row.navSomma || ''}</td>
+                    ${navCells}
                     <td class="col-colli"></td>
                     <td class="col-colli" style="text-align: right;">${row.colli > 0 ? row.colli : ''}</td>
                     <td class="col-totale"></td>
@@ -2006,12 +2067,15 @@
                 tbody.innerHTML += tr;
             }
             
+            let navFootCells = '';
+            navetteConfigurate.forEach(nav => {
+                navFootCells += `<th style="text-align: center;">${sumNavette[nav.nome || "NAVETTA"]}</th>`;
+            });
             let trFoot = `<tr>
                 <th>TOTALE</th>
                 <th style="text-align: center;">${sumB}</th>
                 <th style="text-align: center;">${sumC}</th>
-                <th style="text-align: center;">${sumNavC}</th>
-                <th style="text-align: center;">${sumNavS}</th>
+                ${navFootCells}
                 <th class="col-colli"></th>
                 <th class="col-colli" style="text-align: right;">${sumColli}</th>
                 <th class="col-totale"></th>
@@ -2021,19 +2085,23 @@
             
             // Render Recap Table
             const recapTbody = document.getElementById('standard-recap-tbody');
+            let recapRows = '';
+            navetteConfigurate.forEach(nav => {
+                let name = nav.nome || "NAVETTA";
+                let t = nav.tariffa || 0;
+                let c = sumNavette[name];
+                recapRows += `
+                <tr>
+                    <td>NAVETTA ${name}</td>
+                    <td style="text-align: right;">€ ${t.toFixed(2)}</td>
+                    <td style="text-align: right;">${c}</td>
+                    <td style="text-align: right;">€ ${(t * c).toFixed(2)}</td>
+                </tr>
+                `;
+            });
+            
             recapTbody.innerHTML = `
-                <tr>
-                    <td>NAVETTA BENCARNI / ALTRE</td>
-                    <td style="text-align: right;">€ ${TARIFFA_NAV2.toFixed(2)}</td>
-                    <td style="text-align: right;">${sumNavC}</td>
-                    <td style="text-align: right;">€ ${(TARIFFA_NAV2 * sumNavC).toFixed(2)}</td>
-                </tr>
-                <tr>
-                    <td>NAVETTA SOMMACAMPAGNA</td>
-                    <td style="text-align: right;">€ ${TARIFFA_NAV1.toFixed(2)}</td>
-                    <td style="text-align: right;">${sumNavS}</td>
-                    <td style="text-align: right;">€ ${(TARIFFA_NAV1 * sumNavS).toFixed(2)}</td>
-                </tr>
+                ${recapRows}
                 <tr>
                     <td>TRASPORTO B</td>
                     <td style="text-align: right;">€ ${TARIFFA_B.toFixed(2)}</td>
@@ -2061,6 +2129,7 @@
             window.currentStandardConfig = config;
             window.currentStandardDays = daysInMonth;
             window.currentStandardClientName = clientName;
+            window.currentStandardNavetteConfigurate = navetteConfigurate;
             
             // Applica stato iniziale toggle
             window.toggleStandardColumns();
@@ -2075,11 +2144,10 @@
             const clientName = window.currentStandardClientName || 'Cliente';
             const config = window.currentStandardConfig || {};
             const daysInMonth = window.currentStandardDays || 31;
+            const navetteConfigurate = window.currentStandardNavetteConfigurate || [];
             
             const TARIFFA_B = config.TARIFFA_B || 0;
             const TARIFFA_C = config.TARIFFA_C || 0;
-            const TARIFFA_NAV1 = config.TARIFFA_NAV1 || 0; 
-            const TARIFFA_NAV2 = config.TARIFFA_NAV2 || 0; 
             const TARIFFA_COLLO = config.TARIFFA_COLLO || 0;
             
             const showColli = document.getElementById('toggle-colli').checked;
@@ -2087,7 +2155,10 @@
 
             const wb = XLSX.utils.book_new();
             
-            let headerRow = ["DATA", "GIRI B", "GIRI C", "NAV. BENCARNI", "NAV. SOMMACAMPAGNA"];
+            let headerRow = ["DATA", "GIRI B", "GIRI C"];
+            navetteConfigurate.forEach(nav => {
+                headerRow.push(`NAV. ${nav.nome || "NAVETTA"}`);
+            });
             if (showColli) { headerRow.push(""); headerRow.push("COLLI"); }
             if (showTotale) { headerRow.push(""); headerRow.push("totale /gg"); }
             
@@ -2103,12 +2174,16 @@
                 rowData.push(tds[0].innerText.trim());
                 rowData.push(parseFloat(tds[1].innerText.trim()) || null);
                 rowData.push(parseFloat(tds[2].innerText.trim()) || null);
-                rowData.push(parseFloat(tds[3].innerText.trim()) || null);
-                rowData.push(parseFloat(tds[4].innerText.trim()) || null);
+                
+                let tdIdx = 3;
+                navetteConfigurate.forEach(() => {
+                    rowData.push(parseFloat(tds[tdIdx].innerText.trim()) || null);
+                    tdIdx++;
+                });
                 
                 if (showColli) {
                     rowData.push(null);
-                    rowData.push(parseFloat(tds[6].innerText.trim()) || null);
+                    rowData.push(parseFloat(tds[tdIdx + 1].innerText.trim()) || null);
                 }
                 if (showTotale) {
                     rowData.push(null);
@@ -2123,68 +2198,109 @@
             let recapStartR = tfootStartR + 3; // Leave a few blank rows
             
             let rIdx = recapStartR;
-            let recapRowBencarni = rIdx++;
-            let recapRowSomma = rIdx++;
+            
+            // Mappa per salvare le righe di riepilogo
+            let recapRowsMap = {};
+            navetteConfigurate.forEach(nav => {
+                recapRowsMap[nav.nome || "NAVETTA"] = rIdx++;
+            });
             let recapRowB = rIdx++;
             let recapRowC = rIdx++;
             let recapRowColli = showColli ? rIdx++ : null;
             let recapRowTotal = showTotale ? rIdx++ : null;
 
             // Calculate sums in JS to pre-populate the .v field (improves compatibility with mobile/Sheets viewers)
-            let sumB = 0, sumC = 0, sumNavC = 0, sumNavS = 0, sumColli = 0, sumTot = 0;
+            let sumB = 0, sumC = 0, sumColli = 0, sumTot = 0;
+            let sumNavette = {};
+            navetteConfigurate.forEach((nav, idx) => {
+                sumNavette[nav.nome || "NAVETTA"] = 0;
+            });
+            
             let dailyTotals = [];
             for (let i = 1; i < ws_data.length; i++) {
                 const r = ws_data[i];
                 sumB += r[1] || 0;
                 sumC += r[2] || 0;
-                sumNavC += r[3] || 0;
-                sumNavS += r[4] || 0;
                 
-                let colliVal = showColli ? (r[6] || 0) : 0;
+                let rNavTot = 0;
+                let colIdx = 3;
+                navetteConfigurate.forEach((nav) => {
+                    let cVal = r[colIdx] || 0;
+                    sumNavette[nav.nome || "NAVETTA"] += cVal;
+                    rNavTot += cVal * (nav.tariffa || 0);
+                    colIdx++;
+                });
+                
+                let offset = navetteConfigurate.length;
+                let colliVal = showColli ? (r[3 + offset + 1] || 0) : 0;
                 sumColli += colliVal;
                 
-                let rTotal = ((r[1] || 0) * TARIFFA_B) + ((r[2] || 0) * TARIFFA_C) + ((r[3] || 0) * TARIFFA_NAV2) + ((r[4] || 0) * TARIFFA_NAV1) + (colliVal * TARIFFA_COLLO);
+                let rTotal = ((r[1] || 0) * TARIFFA_B) + ((r[2] || 0) * TARIFFA_C) + rNavTot + (colliVal * TARIFFA_COLLO);
                 sumTot += rTotal;
                 dailyTotals.push(rTotal);
             }
 
             if (showTotale) {
-                let totaleColIdx = showColli ? 8 : 6;
-                let colliFormulaPart = showColli ? `+(G${rIdx}*$C$${recapRowColli})` : ``; // G is always 7th column if present
+                let offset = navetteConfigurate.length;
+                let totaleColIdx = showColli ? (3 + offset + 2) : (3 + offset);
+                let colliFormulaPart = showColli ? `+(${String.fromCharCode(65 + 3 + offset)}`+`${rIdx}*$C$${recapRowColli})` : ``; 
+                
                 for (let i = 0; i < daysInMonth; i++) {
                     let r = i + 2; 
                     let cellAddress = XLSX.utils.encode_cell({c: totaleColIdx, r: i + 1});
+                    
+                    let fNav = "";
+                    let fCol = 3;
+                    navetteConfigurate.forEach(nav => {
+                        let cName = String.fromCharCode(65 + fCol);
+                        fNav += `+(${cName}${r}*$C$${recapRowsMap[nav.nome || "NAVETTA"]})`;
+                        fCol++;
+                    });
+                    
                     ws[cellAddress] = {
                         t: 'n', 
-                        f: `IFERROR((B${r}*$C$${recapRowB})+(C${r}*$C$${recapRowC})+(D${r}*$C$${recapRowBencarni})+(E${r}*$C$${recapRowSomma})${colliFormulaPart}, 0)`,
+                        f: `IFERROR((B${r}*$C$${recapRowB})+(C${r}*$C$${recapRowC})${fNav}${colliFormulaPart}, 0)`,
                         v: dailyTotals[i] || 0,
                         z: '"€"\ #,##0.00'
                     };
                 }
             }
 
-            let tfootArr = ["TOTALE", sumB || 0, sumC || 0, sumNavC || 0, sumNavS || 0];
+            let tfootArr = ["TOTALE", sumB || 0, sumC || 0];
+            navetteConfigurate.forEach(nav => {
+                tfootArr.push(sumNavette[nav.nome || "NAVETTA"] || 0);
+            });
             if(showColli) { tfootArr.push(null); tfootArr.push(sumColli || 0); }
             if(showTotale) { tfootArr.push(null); tfootArr.push(0); }
             
             ws_data.push(tfootArr);
             XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: tfootStartR - 1, c: 0}});
             
-            let sumCols = ['B', 'C', 'D', 'E'];
-            if(showColli) sumCols.push('G');
-            let totaleColChar = showColli ? 'I' : 'G';
+            let sumCols = ['B', 'C'];
+            let cL = 3;
+            navetteConfigurate.forEach(() => {
+                sumCols.push(String.fromCharCode(65 + cL));
+                cL++;
+            });
+            if(showColli) sumCols.push(String.fromCharCode(65 + cL + 1));
+            let totaleColChar = showColli ? String.fromCharCode(65 + cL + 3) : String.fromCharCode(65 + cL + 1);
             if(showTotale) sumCols.push(totaleColChar);
             
             sumCols.forEach((col) => {
                 let cIndex = col.charCodeAt(0) - 65; 
                 let cellAddress = XLSX.utils.encode_cell({c: cIndex, r: tfootStartR - 1});
+                
                 let val = 0;
                 if (col === 'B') val = sumB;
                 else if (col === 'C') val = sumC;
-                else if (col === 'D') val = sumNavC;
-                else if (col === 'E') val = sumNavS;
-                else if (col === 'G' && showColli) val = sumColli;
                 else if (col === totaleColChar && showTotale) val = sumTot;
+                else if (col === String.fromCharCode(65 + navetteConfigurate.length + 1) && showColli) val = sumColli;
+                else {
+                    let navIdx = col.charCodeAt(0) - 65 - 3;
+                    if (navIdx >= 0 && navIdx < navetteConfigurate.length) {
+                        val = sumNavette[navetteConfigurate[navIdx].nome || "NAVETTA"];
+                    }
+                }
 
                 ws[cellAddress] = {
                     t: 'n',
@@ -2201,17 +2317,19 @@
                 ["", "VOCE", "TARIFFA", "QUANTITA'", "IMPORTO"]
             ], {origin: {r: tfootStartR, c: 0}});
             
-            // NAVETTA BENCARNI
-            ws_data.push(["", "NAVETTA BENCARNI / ALTRE", TARIFFA_NAV2, 0, 0]);
-            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowBencarni - 1, c: 0}});
-            ws[XLSX.utils.encode_cell({c: 3, r: recapRowBencarni - 1})] = { t: 'n', f: `D${tfootStartR}`, v: sumNavC };
-            ws[XLSX.utils.encode_cell({c: 4, r: recapRowBencarni - 1})] = { t: 'n', f: `C${recapRowBencarni}*D${recapRowBencarni}`, v: TARIFFA_NAV2 * sumNavC, z: '"€"\ #,##0.00' };
-
-            // NAVETTA SOMMACAMPAGNA
-            ws_data.push(["", "NAVETTA SOMMACAMPAGNA", TARIFFA_NAV1, 0, 0]);
-            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowSomma - 1, c: 0}});
-            ws[XLSX.utils.encode_cell({c: 3, r: recapRowSomma - 1})] = { t: 'n', f: `E${tfootStartR}`, v: sumNavS };
-            ws[XLSX.utils.encode_cell({c: 4, r: recapRowSomma - 1})] = { t: 'n', f: `C${recapRowSomma}*D${recapRowSomma}`, v: TARIFFA_NAV1 * sumNavS, z: '"€"\ #,##0.00' };
+            // NAVETTE DYNAMIC
+            navetteConfigurate.forEach(nav => {
+                let name = nav.nome || "NAVETTA";
+                let t = nav.tariffa || 0;
+                let rowN = recapRowsMap[name];
+                let qty = sumNavette[name];
+                
+                ws_data.push(["", `NAVETTA ${name}`, t, 0, 0]);
+                XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: rowN - 1, c: 0}});
+                let fCol = String.fromCharCode(65 + 3 + navetteConfigurate.indexOf(nav));
+                ws[XLSX.utils.encode_cell({c: 3, r: rowN - 1})] = { t: 'n', f: `${fCol}${tfootStartR}`, v: qty };
+                ws[XLSX.utils.encode_cell({c: 4, r: rowN - 1})] = { t: 'n', f: `C${rowN}*D${rowN}`, v: t * qty, z: '"€"\ #,##0.00' };
+            });
 
             // GIRI B
             ws_data.push(["", "TRASPORTO B", TARIFFA_B, 0, 0]);
@@ -2229,7 +2347,8 @@
             if (showColli) {
                 ws_data.push(["", "HANDLING (COLLI)", TARIFFA_COLLO, 0, 0]);
                 XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowColli - 1, c: 0}});
-                ws[XLSX.utils.encode_cell({c: 3, r: recapRowColli - 1})] = { t: 'n', f: `G${tfootStartR}`, v: sumColli };
+                let colliCol = String.fromCharCode(65 + 3 + navetteConfigurate.length + 1);
+                ws[XLSX.utils.encode_cell({c: 3, r: recapRowColli - 1})] = { t: 'n', f: `${colliCol}${tfootStartR}`, v: sumColli };
                 ws[XLSX.utils.encode_cell({c: 4, r: recapRowColli - 1})] = { t: 'n', f: `C${recapRowColli}*D${recapRowColli}`, v: TARIFFA_COLLO * sumColli, z: '"€"\ #,##0.00' };
             }
             
@@ -2237,8 +2356,11 @@
             if (showTotale) {
                 ws_data.push(["", "", "", "", 0]);
                 XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowTotal - 1, c: 0}});
-                let sumRange = `SUM(E${recapRowBencarni}:E${recapRowC})`;
-                if(showColli) sumRange = `SUM(E${recapRowBencarni}:E${recapRowColli})`;
+                
+                let rFirstNav = recapRowsMap[navetteConfigurate[0].nome || "NAVETTA"];
+                let rLast = recapRowC;
+                if(showColli) rLast = recapRowColli;
+                let sumRange = `SUM(E${rFirstNav}:E${rLast})`;
                 ws[XLSX.utils.encode_cell({c: 4, r: recapRowTotal - 1})] = { t: 'n', f: sumRange, v: sumTot, z: '"€"\ #,##0.00' };
             }
 

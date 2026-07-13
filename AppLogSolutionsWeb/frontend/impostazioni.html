@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.076">
+    <link rel="stylesheet" href="styles.css?v=6.077">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -459,17 +459,35 @@
                 </div>
             </div>
 
+            <!-- Gestione Navette Dinamiche del cliente -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                <label style="font-size: 13px; font-weight: 600; color: #475569; display: block; margin-bottom: 10px;">Navette Personalizzate</label>
+                <div id="navetteTagList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;"></div>
+                <div style="display: flex; gap: 8px; align-items: flex-end;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 11px; font-weight: 700;">Destinazione (vuoto = Generica)</label>
+                        <input type="text" id="nuovaNavettaDest" list="navetteSuggestions" placeholder="Es. Sommacampagna, Bencarni, Treviso..." style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; margin-top: 4px;">
+                        <datalist id="navetteSuggestions">
+                            <option value="Sommacampagna"></option>
+                            <option value="Bencarni"></option>
+                            <option value="Cerea"></option>
+                            <option value="Treviso"></option>
+                        </datalist>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 11px; font-weight: 700;">Tariffa &euro;</label>
+                        <input type="number" id="nuovaNavettaTariffa" step="0.01" min="0" placeholder="Es. 340.00" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; margin-top: 4px;">
+                    </div>
+                    <button type="button" onclick="aggiungiNavetta()" class="btn-primary" style="width: auto; padding: 10px 16px; font-size: 13px; height: 42px;">+ Aggiungi</button>
+                </div>
+            </div>
+
             <!-- Tariffe Dinamiche Standard Universali -->
             <div id="tariffeContainerSTANDARD" style="background: #f8fafc; border: 1px dashed #64748b; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
                 <label style="font-size: 13px; font-weight: 700; color: #334155; display: block; margin-bottom: 10px;">&#x1F4B6; Tariffe Viaggio e Fatturazione Universali</label>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div><label style="font-size: 11px; font-weight: 700;">Viaggio / Pat. B (Furgone) &euro;</label><input type="number" step="0.01" min="0" id="progettoPatB" style="width:100%; margin-top:4px;"></div>
                     <div><label style="font-size: 11px; font-weight: 700;">Viaggio / Pat. C (Camion) &euro;</label><input type="number" step="0.01" min="0" id="progettoPatC" style="width:100%; margin-top:4px;"></div>
-                    
-                    <div><label style="font-size: 11px; font-weight: 700;">Navetta Sommacampagna &euro;</label><input type="number" step="0.01" min="0" id="progettoNavS" style="width:100%; margin-top:4px;"></div>
-                    <div><label style="font-size: 11px; font-weight: 700;">Navetta Bencarni / Altre &euro;</label><input type="number" step="0.01" min="0" id="progettoNavC" style="width:100%; margin-top:4px;"></div>
-                    
-                    <div style="grid-column: 1 / -1;"><label style="font-size: 11px; font-weight: 700; color:#334155;">Tariffa a Collo (Handling) &euro;</label><input type="number" step="0.001" min="0" id="progettoCollo" style="width:100%; margin-top:4px;"></div>
                     
                     <div style="grid-column: 1 / -1; margin-top: 8px; border-top: 1px solid #cbd5e1; padding-top: 8px;"><label style="font-size: 12px; font-weight: bold; color: #1d4ed8;">&#x1F4E6; Tariffe Extra (es. Scuole / DNR)</label></div>
                     <div><label style="font-size: 11px; font-weight: 700;">Costo a DDT &euro;</label><input type="number" step="0.01" min="0" id="progettoCostoDDT" style="width:100%; margin-top:4px;"></div>
@@ -1390,8 +1408,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=6.076"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.076"></script>
+    <script src="script.js?v=6.077"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.077"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1569,6 +1587,45 @@ const functions = getFunctions(app, "europe-west1");
 
         window.rimuoviViaggio = i => { currentViaggi.splice(i, 1); renderTagList(); };
 
+        // ================= NAVETTE =================
+        const navetteTagList = document.getElementById('navetteTagList');
+        const nuovaNavettaDest = document.getElementById('nuovaNavettaDest');
+        const nuovaNavettaTariffa = document.getElementById('nuovaNavettaTariffa');
+
+        window.aggiungiNavetta = () => {
+            const dest = nuovaNavettaDest.value.trim().toUpperCase();
+            const tariffa = parseFloat(nuovaNavettaTariffa.value);
+            if (isNaN(tariffa) || tariffa < 0) return alert('Inserisci una tariffa valida.');
+            
+            currentNavette.push({ nome: dest, tariffa: tariffa });
+            nuovaNavettaDest.value = '';
+            nuovaNavettaTariffa.value = '';
+            renderNavetteTagList();
+        };
+
+        function renderNavetteTagList() {
+            navetteTagList.innerHTML = '';
+            if (currentNavette.length === 0) {
+                navetteTagList.innerHTML = '<span style="font-size:12px;color:#94a3b8;">Nessuna navetta personalizzata.</span>';
+                return;
+            }
+            currentNavette.forEach((nav, i) => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#f1f5f9; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0;';
+                
+                let displayName = nav.nome ? `Navetta ${nav.nome}` : 'Navetta Generica';
+                
+                row.innerHTML = `
+                    <div style="font-weight:700; color:#334155; font-size:13px;">${displayName} <span style="margin-left:10px; color:#15803d; background:#dcfce7; padding:2px 6px; border-radius:6px;">&euro;${nav.tariffa.toFixed(2)}</span></div>
+                    <button type="button" onclick="rimuoviNavetta(${i})" style="background:none; border:none; color:#ef4444; font-weight:bold; cursor:pointer; font-size:18px; padding:0 4px;" title="Rimuovi Navetta">&times;</button>
+                `;
+                navetteTagList.appendChild(row);
+            });
+        }
+
+        window.rimuoviNavetta = i => { currentNavette.splice(i, 1); renderNavetteTagList(); };
+
+
         let currentContatti = [];
 
         window.aggiungiContatto = () => {
@@ -1647,9 +1704,10 @@ const functions = getFunctions(app, "europe-west1");
             btnSalva.disabled = true; btnSalva.textContent = 'Salvataggio...';
             const patB = document.getElementById('progettoPatB').value;
             const patC = document.getElementById('progettoPatC').value;
-            const navS = document.getElementById('progettoNavS').value;
-            const navC = document.getElementById('progettoNavC').value;
-            const collo = document.getElementById('progettoCollo').value;
+            // Manteniamo il check di vecchi campi per salvataggio ibrido
+            const navS = window.lastOpenedProject?.navetta_sommacampagna || '';
+            const navC = window.lastOpenedProject?.navetta_cerea || '';
+            const collo = document.getElementById('progettoCollo')?.value || '';
             const limKmB = document.getElementById('cattelLimKmB').value;
             const limKmC = document.getElementById('cattelLimKmC').value;
             const limPesoB = document.getElementById('cattelLimPesoB').value;
@@ -1665,8 +1723,10 @@ const functions = getFunctions(app, "europe-west1");
                     nome, 
                     viaggi: currentViaggi,
                     contatti: currentContatti,
+                    navette_personalizzate: currentNavette,
                     patente_b: patB ? parseFloat(patB) : null,
                     patente_c: patC ? parseFloat(patC) : null,
+                    // Manteniamo navetta_sommacampagna e navetta_cerea per compatibilità temporanea per chi non ha ancora resalvato
                     navetta_sommacampagna: navS ? parseFloat(navS) : null,
                     navetta_cerea: navC ? parseFloat(navC) : null,
                     cattel_collo: collo ? parseFloat(collo) : null,
@@ -1692,10 +1752,11 @@ const functions = getFunctions(app, "europe-west1");
         btnAnnulla.onclick = resetForm;
 
         function resetForm() {
-            editId = null; currentViaggi = []; currentContatti = []; nomeInput.value = ''; 
+            editId = null; window.lastOpenedProject = null; currentViaggi = []; currentContatti = []; currentNavette = []; nomeInput.value = ''; 
             nuovoContattoNome.value = ''; nuovoContattoRuolo.value = ''; nuovoContattoEmail.value = ''; nuovoContattoFisso.value = ''; nuovoContattoCellulare.value = ''; nuovoContattoReport.checked = false;
-            renderTagList(); renderContattiTagList();
-            ['progettoPatB','progettoPatC','progettoNavS','progettoNavC','progettoCollo',
+            renderTagList(); renderContattiTagList(); renderNavetteTagList();
+            window.lastOpenedProject = null;
+            ['progettoPatB','progettoPatC','progettoCollo',
              'cattelLimKmB','cattelLimKmC','cattelLimPesoB','cattelLimPesoC',
              'cattelUsername','cattelPassword','cattelUrl',
              'progettoCostoDDT','progettoForfait',
@@ -1716,6 +1777,7 @@ const functions = getFunctions(app, "europe-west1");
             editId = id; 
             nomeInput.value = p.nome || ''; 
             currentViaggi = [...(p.viaggi || [])];
+            currentNavette = [...(p.navette_personalizzate || [])];
             
             // Retrocompatibilità: se non c'è l'array contatti, crea da vecchi campi piatti
             if (p.contatti && Array.isArray(p.contatti)) {
@@ -1735,8 +1797,7 @@ const functions = getFunctions(app, "europe-west1");
             
             document.getElementById('progettoPatB').value = p.patente_b ?? '';
             document.getElementById('progettoPatC').value = p.patente_c ?? '';
-            document.getElementById('progettoNavS').value = p.navetta_sommacampagna ?? '';
-            document.getElementById('progettoNavC').value = p.navetta_cerea ?? '';
+            if (document.getElementById('progettoCollo')) document.getElementById('progettoCollo').value = p.cattel_collo ?? '';
             document.getElementById('progettoCollo').value = p.cattel_collo ?? '';
             document.getElementById('cattelLimKmB').value = p.cattel_lim_km_b ?? '';
             document.getElementById('cattelLimKmC').value = p.cattel_lim_km_c ?? '';
@@ -1753,7 +1814,7 @@ const functions = getFunctions(app, "europe-west1");
 
             // Il tariffeContainerSTANDARD è sempre visibile
 
-            renderTagList(); renderContattiTagList(); btnSalva.textContent = 'Aggiorna Cliente'; btnAnnulla.style.display = 'block';
+            renderTagList(); renderContattiTagList(); renderNavetteTagList(); btnSalva.textContent = 'Aggiorna Cliente'; btnAnnulla.style.display = 'block';
             contentDiv.scrollIntoView({ behavior: 'smooth' });
         };
 
@@ -1834,11 +1895,21 @@ const functions = getFunctions(app, "europe-west1");
                 contattiHtml = `<div style="margin-bottom:12px;">${cHtmlArr.join('')}</div>`;
             }
 
-            const tariffeExtraHtml = (p.patente_b||p.patente_c||p.navetta_sommacampagna||p.navetta_cerea||p.viaggio_a||p.viaggio_b||p.costo_ddt_base||p.viaggio_forfait||p.costo_ddt_zona1||p.costo_ddt_zona2||p.costo_ddt_zona3) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">
+            let navetteTagsHtml = '';
+            if (p.navette_personalizzate && p.navette_personalizzate.length > 0) {
+                navetteTagsHtml = p.navette_personalizzate.map(n => {
+                    let nName = n.nome ? `Navetta ${n.nome}` : 'Navetta Generica';
+                    return `<span style="background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">${nName}: &euro;${n.tariffa.toFixed(2)}</span>`;
+                }).join('');
+            } else {
+                if (p.navetta_sommacampagna) navetteTagsHtml += `<span style="background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Nav.S: &euro;${p.navetta_sommacampagna}</span>`;
+                if (p.navetta_cerea) navetteTagsHtml += `<span style="background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Nav.C: &euro;${p.navetta_cerea}</span>`;
+            }
+
+            const tariffeExtraHtml = (p.patente_b||p.patente_c||(p.navette_personalizzate && p.navette_personalizzate.length>0)||p.navetta_sommacampagna||p.navetta_cerea||p.viaggio_a||p.viaggio_b||p.costo_ddt_base||p.viaggio_forfait||p.costo_ddt_zona1||p.costo_ddt_zona2||p.costo_ddt_zona3) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">
                         ${p.patente_b ? '<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">B: &euro;'+p.patente_b+'</span>' : ''}
                         ${p.patente_c ? '<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">C: &euro;'+p.patente_c+'</span>' : ''}
-                        ${p.navetta_sommacampagna ? '<span style="background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Nav.S: &euro;'+p.navetta_sommacampagna+'</span>' : ''}
-                        ${p.navetta_cerea ? '<span style="background:#fdf4ff;color:#7e22ce;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Nav.Bencarni: &euro;'+p.navetta_cerea+'</span>' : ''}
+                        ${navetteTagsHtml}
                         ${p.viaggio_a ? '<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Viaggio A: &euro;'+p.viaggio_a+'</span>' : ''}
                         ${p.viaggio_b ? '<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Nav.Sommacampagna: &euro;'+p.viaggio_b+'</span>' : ''}
                         ${p.costo_ddt_base ? '<span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">DDT: &euro;'+p.costo_ddt_base+'</span>' : ''}

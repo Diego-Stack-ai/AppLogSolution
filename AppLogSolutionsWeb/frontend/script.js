@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "6.076";
+const APP_VERSION = "6.077";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;

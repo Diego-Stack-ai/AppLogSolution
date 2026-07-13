@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.072">
+    <link rel="stylesheet" href="styles.css?v=6.073">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -104,6 +104,10 @@
                 <button class="btn btn-primary" id="btn-calcola" onclick="if(window.elaboraDati) window.elaboraDati(); else alert('Attendere il caricamento...');">
                     <span class="material-icons-round" style="margin-right: 8px;">calculate</span>
                     Elabora Dati
+                </button>
+                <button class="btn btn-primary" id="btn-elabora-presenze" onclick="if(window.elaboraDatiDaPresenze) window.elaboraDatiDaPresenze(); else alert('Attendere il caricamento...');" style="background-color: #10b981; border-color: #10b981; color: white;">
+                    <span class="material-icons-round" style="margin-right: 8px;">calculate</span>
+                    Elabora Dati (Presenze)
                 </button>
                 <button class="btn btn-primary" id="btn-riepilogo-presenze" onclick="if(window.apriRiepilogoPresenze) window.apriRiepilogoPresenze(); else alert('Attendere il caricamento dei moduli...');" style="background-color: #8b5cf6; border-color: #8b5cf6; color: white;">
                     <span class="material-icons-round" style="margin-right: 8px;">assessment</span>
@@ -306,8 +310,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.072"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.072"></script>
+    <script src="script.js?v=6.073"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.073"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -977,6 +981,220 @@
             } catch (err) {
                 console.error("Errore lettura:", err);
                 Swal.fire('Errore', 'Impossibile leggere i dati: ' + err.message, 'error');
+            }
+        };
+
+        window.elaboraDatiDaPresenze = async function() {
+            const monthVal = document.getElementById('month-selector').value;
+            const clientSel = document.getElementById('client-selector').value;
+            
+            if (!monthVal) {
+                Swal.fire('Errore', 'Seleziona un mese', 'error');
+                return;
+            }
+
+            const [year, month] = monthVal.split('-');
+            const monthNames = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
+            window.currentMonthLabel = `${monthNames[parseInt(month)-1]} ${year}`;
+            window.currentClient = clientSel;
+
+            Swal.fire({
+                title: 'Lettura Presenze...',
+                text: 'Elaborazione dati in corso...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                // Leggiamo i progetti (tariffe)
+                const { getDocs, collection, query, where } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                const progSnap = await getDocs(collection(db, "progetti"));
+                
+                let configStandard = {
+                    TARIFFA_B: 0, TARIFFA_C: 0, TARIFFA_NAV1: 0, TARIFFA_NAV2: 0, TARIFFA_COLLO: 0, TARIFFA_DDT: 0, TARIFFA_FORFAIT: 0
+                };
+                
+                if (clientSel !== "TUTTI") {
+                    progSnap.forEach(docSnap => {
+                        const d = docSnap.data();
+                        if ((d.nome || "").toUpperCase() === clientSel.toUpperCase()) {
+                            configStandard = {
+                                TARIFFA_B: parseFloat(d.patente_b) || 0,
+                                TARIFFA_C: parseFloat(d.patente_c) || 0,
+                                TARIFFA_NAV1: parseFloat(d.navetta_sommacampagna) || 0,
+                                TARIFFA_NAV2: parseFloat(d.navetta_cerea) || 0,
+                                TARIFFA_COLLO: parseFloat(d.cattel_collo) || 0,
+                                TARIFFA_DDT: parseFloat(d.costo_ddt_base) || 0,
+                                TARIFFA_FORFAIT: parseFloat(d.viaggio_forfait) || 0,
+                            };
+                        }
+                    });
+                }
+
+                // Mappa mezzi
+                let mezziMap = {};
+                try {
+                    const mezziSnap = await getDocs(collection(db, "mezzi"));
+                    mezziSnap.forEach(d => {
+                        const m = d.data();
+                        if (m.targa) mezziMap[m.targa.toUpperCase()] = m.patente || 'B';
+                    });
+                } catch(e) {}
+
+                // Presenze
+                const presenzeRef = collection(db, "presenze");
+                const q = query(presenzeRef, where("mese", "==", monthVal));
+                const snap = await getDocs(q);
+
+                let pivotData = {};
+                let tripsMock = [];
+
+                snap.forEach(docSnap => {
+                    const d = docSnap.data();
+                    const clienteStr = (d.cliente || "").toUpperCase();
+                    
+                    if (clientSel !== "TUTTI" && clienteStr !== clientSel.toUpperCase()) return;
+                    
+                    let day = 1;
+                    if (d.data) {
+                        const parts = d.data.includes('-') ? d.data.split('-') : d.data.split('/');
+                        day = parseInt(parts.length > 2 ? parts[2] : parts[0]);
+                    }
+                    if (!day) return;
+
+                    let viaggioStr = (d.viaggio || "GENERICO").toUpperCase();
+                    let targaStr = (d.targa || "").toUpperCase();
+                    let autistaStr = (d.autistaNome || "").toUpperCase();
+                    let patenteVal = mezziMap[targaStr] || 'B';
+                    
+                    let importoBase = patenteVal === 'C' ? configStandard.TARIFFA_C : configStandard.TARIFFA_B;
+                    if (viaggioStr.includes("NAVETTA")) {
+                        importoBase = viaggioStr.includes("CEREA") ? configStandard.TARIFFA_NAV2 : configStandard.TARIFFA_NAV1;
+                        if (importoBase === 0) importoBase = patenteVal === 'C' ? configStandard.TARIFFA_C : configStandard.TARIFFA_B; // fallback se navetta non ha tariffa
+                    }
+                    
+                    tripsMock.push({
+                        id: docSnap.id,
+                        rawDate: d.data,
+                        nome_giro: viaggioStr,
+                        cliente: clienteStr,
+                        targa: targaStr,
+                        punti: []
+                    });
+
+                    let rowKey = viaggioStr;
+                    if (!pivotData[rowKey]) pivotData[rowKey] = {};
+                    
+                    if (clienteStr === "CATTEL") {
+                        let attempt = 1, currentKey = rowKey;
+                        while (pivotData[currentKey] && pivotData[currentKey][day] !== undefined) {
+                            attempt++; currentKey = `${rowKey} (${attempt})`;
+                        }
+                        if (!pivotData[currentKey]) pivotData[currentKey] = {};
+                        
+                        pivotData[currentKey][day] = {
+                            importo: importoBase, importo_viaggio: importoBase, importo_colli: 0,
+                            count: 1, quantita: 0, peso: 0, km: d.kmDelta || 0,
+                            targa: targaStr, nome: autistaStr, patente: patenteVal
+                        };
+                    } else if (clienteStr === "GRAN CHEF") {
+                        if (rowKey.includes("VIAGGIO B") || rowKey.includes("SOMMACAMPAGNA") || rowKey.includes("NAVETTA")) {
+                            rowKey = "NAVETTA SOMMACAMPAGNA";
+                        } else if (rowKey.includes("VIAGGIO A") || rowKey.includes("GRAN CHEF")) {
+                            rowKey = "VIAGGIO A";
+                        }
+                        if (!pivotData[rowKey]) pivotData[rowKey] = {};
+                        
+                        if (pivotData[rowKey][day] === undefined) {
+                            pivotData[rowKey][day] = {
+                                importo: importoBase, importo_viaggio: importoBase, importo_colli: 0,
+                                count: 1, quantita: 0, peso: 0, km: d.kmDelta || 0,
+                                consegne: 0, tempo_min: 0, targa: targaStr, nome: autistaStr, patente: patenteVal, isGC: true
+                            };
+                        } else {
+                            let obj = pivotData[rowKey][day];
+                            obj.importo += importoBase; obj.importo_viaggio += importoBase; obj.count += 1; obj.km += d.kmDelta || 0;
+                            if (targaStr && !obj.targa.includes(targaStr)) obj.targa += `, ${targaStr}`;
+                            if (autistaStr && !obj.nome.includes(autistaStr)) obj.nome += `, ${autistaStr}`;
+                        }
+                    } else {
+                        if (!pivotData[rowKey][day]) pivotData[rowKey][day] = 0;
+                        pivotData[rowKey][day] += importoBase;
+                    }
+                    
+                    // Gestione navette aggiuntive (array)
+                    if (d.attivitaAggiuntive && Array.isArray(d.attivitaAggiuntive)) {
+                        d.attivitaAggiuntive.forEach((nav, idx) => {
+                            let navettaStr = (nav.descrizione || "NAVETTA EXTRA").toUpperCase();
+                            let nImporto = navettaStr.includes("CEREA") ? configStandard.TARIFFA_NAV2 : (configStandard.TARIFFA_NAV1 || importoBase);
+                            if (nImporto === 0) nImporto = importoBase; // Fallback se non ci sono tariffe specifiche
+                            
+                            tripsMock.push({
+                                id: docSnap.id + "_nav_" + idx,
+                                rawDate: d.data,
+                                nome_giro: navettaStr,
+                                cliente: clienteStr,
+                                targa: targaStr,
+                                punti: []
+                            });
+
+                            if (clienteStr === "CATTEL") {
+                                let nAttempt = 1, nKey = navettaStr;
+                                while (pivotData[nKey] && pivotData[nKey][day] !== undefined) {
+                                    nAttempt++; nKey = `${navettaStr} (${nAttempt})`;
+                                }
+                                if (!pivotData[nKey]) pivotData[nKey] = {};
+                                pivotData[nKey][day] = {
+                                    importo: nImporto, importo_viaggio: nImporto, importo_colli: 0, count: 1,
+                                    quantita: 0, peso: 0, km: 0, targa: targaStr, nome: autistaStr, patente: patenteVal
+                                };
+                            } else if (clienteStr === "GRAN CHEF") {
+                                let nRowKey = "NAVETTA SOMMACAMPAGNA";
+                                if (!pivotData[nRowKey]) pivotData[nRowKey] = {};
+                                if (pivotData[nRowKey][day] === undefined) {
+                                    pivotData[nRowKey][day] = {
+                                        importo: nImporto, importo_viaggio: nImporto, importo_colli: 0, count: 1,
+                                        quantita: 0, peso: 0, km: 0, consegne: 0, tempo_min: 0,
+                                        targa: targaStr, nome: autistaStr, patente: patenteVal, isGC: true
+                                    };
+                                } else {
+                                    let obj = pivotData[nRowKey][day];
+                                    obj.importo += nImporto; obj.importo_viaggio += nImporto; obj.count += 1;
+                                    if (targaStr && !obj.targa.includes(targaStr)) obj.targa += `, ${targaStr}`;
+                                    if (autistaStr && !obj.nome.includes(autistaStr)) obj.nome += `, ${autistaStr}`;
+                                }
+                            } else {
+                                if (!pivotData[navettaStr]) pivotData[navettaStr] = {};
+                                if (!pivotData[navettaStr][day]) pivotData[navettaStr][day] = 0;
+                                pivotData[navettaStr][day] += nImporto;
+                            }
+                        });
+                    }
+                });
+
+                if (clientSel === "TUTTI") {
+                    document.getElementById('pivot-container').style.display = 'none';
+                    document.getElementById('btn-export-pivot').style.display = 'none';
+                    document.getElementById('standard-summary-container').style.display = 'none';
+                    document.getElementById('btn-export-standard').style.display = 'none';
+                } else {
+                    document.getElementById('pivot-container').style.display = 'block';
+                    document.getElementById('btn-export-pivot').style.display = 'inline-flex';
+                    buildPivotTable(pivotData, parseInt(year), parseInt(month), configStandard);
+                    
+                    document.getElementById('standard-summary-container').style.display = 'block';
+                    document.getElementById('btn-export-standard').style.display = 'inline-flex';
+                    document.getElementById('standard-summary-client-name').textContent = clientSel;
+                    document.getElementById('standard-summary-month').textContent = window.currentMonthLabel;
+                    
+                    buildStandardSummaryTable(tripsMock, parseInt(year), parseInt(month), mezziMap, configStandard, clientSel);
+                }
+
+                Swal.close();
+
+            } catch(e) {
+                console.error("Errore elaborazione presenze:", e);
+                Swal.fire('Errore', 'Impossibile elaborare i dati presenze: ' + e.message, 'error');
             }
         };
 

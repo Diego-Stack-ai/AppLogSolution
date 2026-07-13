@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.059">
+    <link rel="stylesheet" href="styles.css?v=6.060">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -124,13 +124,9 @@
                     <span class="material-icons-round" style="color: #16a34a; margin-right: 8px;">table_view</span>
                     Esporta Excel
                 </button>
-                <button class="btn btn-primary" id="btn-export-cattel" onclick="esportaModuloCattelExcel()" style="display: none; background-color: #0ea5e9; border-color: #0ea5e9;">
+                <button class="btn btn-primary" id="btn-export-standard" onclick="esportaModuloStandardExcel()" style="display: none; background-color: #0ea5e9; border-color: #0ea5e9;">
                     <span class="material-icons-round" style="color: white; margin-right: 8px;">download</span>
-                    Scarica Modulo Cattel
-                </button>
-                <button class="btn btn-primary" id="btn-export-granchef" onclick="esportaModuloGranChefExcel()" style="display: none; background-color: #f59e0b; border-color: #f59e0b;">
-                    <span class="material-icons-round" style="color: white; margin-right: 8px;">download</span>
-                    Fatturazione Gran Chef
+                    Scarica Modulo Standard
                 </button>
                 <button class="btn btn-primary" onclick="esportaPDF()">
                     <span class="material-icons-round" style="color: #dc2626; margin-right: 8px;">picture_as_pdf</span>
@@ -184,66 +180,39 @@
             </div>
         </div>
 
-        <!-- CATTEL SUMMARY MODULE -->
-        <div id="cattel-summary-container" style="display: none; margin-top: 32px;">
-            <h3 style="margin-bottom: 16px; color: var(--text-main);">Modulo Cattel - <span id="cattel-summary-month"></span></h3>
-            <div class="pivot-wrapper">
-                <table class="pivot-table" id="cattel-summary-table">
-                    <thead>
-                        <tr>
-                            <th>DATA</th>
-                            <th>GIRI B</th>
-                            <th>GIRI C</th>
-                            <th>NAVETTA BENCARNI</th>
-                            <th>NAVETTA SOMMACAMPAGNA</th>
-                            <th></th>
-                            <th>COLLI</th>
-                            <th></th>
-                            <th>totale /gg</th>
-                        </tr>
-                    </thead>
-                    <tbody id="cattel-summary-tbody"></tbody>
-                    <tfoot id="cattel-summary-tfoot"></tfoot>
-                </table>
+        <!-- MODULO FATTURAZIONE STANDARD UNIVERSALE -->
+        <div id="standard-summary-container" style="display: none; margin-top: 32px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                <h3 style="margin: 0; color: var(--text-main);">Fatturazione <span id="standard-summary-client-name"></span> - <span id="standard-summary-month"></span></h3>
+                
+                <!-- TOGGLES DI VISUALIZZAZIONE -->
+                <div style="display: flex; gap: 16px; background: #f8fafc; padding: 10px 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 600; color: #475569; user-select: none;">
+                        <input type="checkbox" id="toggle-colli" checked style="width: 16px; height: 16px; cursor: pointer;" onchange="window.toggleStandardColumns()">
+                        Mostra Dettaglio Colli
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 600; color: #475569; user-select: none;">
+                        <input type="checkbox" id="toggle-totale-gg" checked style="width: 16px; height: 16px; cursor: pointer;" onchange="window.toggleStandardColumns()">
+                        Mostra Totale Lordo Giornaliero
+                    </label>
+                </div>
             </div>
-            
-            <div id="cattel-recap-container" style="margin-top: 24px; max-width: 500px;">
-                <h4 style="color: var(--text-main); margin-bottom: 12px;">Riepilogo Dati</h4>
-                <table class="pivot-table" id="cattel-recap-table">
-                    <thead>
-                        <tr>
-                            <th>VOCE</th>
-                            <th>TARIFFA</th>
-                            <th>QUANTITA'</th>
-                            <th>IMPORTO</th>
-                        </tr>
-                    </thead>
-                    <tbody id="cattel-recap-tbody"></tbody>
-                </table>
-            </div>
-        </div>
 
-        <!-- GRAN CHEF SUMMARY MODULE -->
-        <div id="granchef-summary-container" style="display: none; margin-top: 32px;">
-            <h3 style="margin-bottom: 16px; color: var(--text-main);">Fatturazione Gran Chef - <span id="granchef-summary-month"></span></h3>
             <div class="pivot-wrapper">
-                <table class="pivot-table" id="granchef-summary-table">
+                <table class="pivot-table" id="standard-summary-table">
                     <thead>
-                        <tr>
-                            <th>DATA</th>
-                            <th>VIAGGIO A</th>
-                            <th>NAVETTA SOMMACAMPAGNA</th>
-                            <th>totale /gg</th>
+                        <tr id="standard-summary-thead-tr">
+                            <!-- Popolato da JS -->
                         </tr>
                     </thead>
-                    <tbody id="granchef-summary-tbody"></tbody>
-                    <tfoot id="granchef-summary-tfoot"></tfoot>
+                    <tbody id="standard-summary-tbody"></tbody>
+                    <tfoot id="standard-summary-tfoot"></tfoot>
                 </table>
             </div>
             
-            <div id="granchef-recap-container" style="margin-top: 24px; max-width: 500px;">
+            <div id="standard-recap-container" style="margin-top: 24px; max-width: 500px;">
                 <h4 style="color: var(--text-main); margin-bottom: 12px;">Riepilogo Dati</h4>
-                <table class="pivot-table" id="granchef-recap-table">
+                <table class="pivot-table" id="standard-recap-table">
                     <thead>
                         <tr>
                             <th>VOCE</th>
@@ -252,7 +221,7 @@
                             <th>IMPORTO</th>
                         </tr>
                     </thead>
-                    <tbody id="granchef-recap-tbody"></tbody>
+                    <tbody id="standard-recap-tbody"></tbody>
                 </table>
             </div>
         </div>
@@ -294,8 +263,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.059"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.059"></script>
+    <script src="script.js?v=6.060"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.060"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -919,27 +888,44 @@
                     
                     buildPivotTable(pivotData, parseInt(year), parseInt(month), configCattel);
                     
-                    if (clientSel === "CATTEL") {
-                        document.getElementById('cattel-summary-container').style.display = 'block';
-                        document.getElementById('btn-export-cattel').style.display = 'inline-flex';
-                        document.getElementById('cattel-summary-month').textContent = currentMonthLabel;
-                        buildCattelSummaryTable(trips, parseInt(year), parseInt(month), mezziMap, configCattel);
+                    if (clientSel && clientSel !== "TUTTI") {
+                        document.getElementById('standard-summary-container').style.display = 'block';
+                        document.getElementById('btn-export-standard').style.display = 'inline-flex';
+                        document.getElementById('standard-summary-client-name').textContent = clientSel;
+                        document.getElementById('standard-summary-month').textContent = currentMonthLabel;
                         
-                        document.getElementById('granchef-summary-container').style.display = 'none';
-                        document.getElementById('btn-export-granchef').style.display = 'none';
-                    } else if (clientSel === "GRAN CHEF") {
-                        document.getElementById('granchef-summary-container').style.display = 'block';
-                        document.getElementById('btn-export-granchef').style.display = 'inline-flex';
-                        document.getElementById('granchef-summary-month').textContent = currentMonthLabel;
-                        buildGranChefSummaryTable(trips, parseInt(year), parseInt(month), mezziMap, TARIFFA_GC, TARIFFA_GC_B);
+                        // We will pass the specific configuration later, for now we will get the config of the selected client
+                        let configStandard = {};
+                        const p = window.currentProgetti.find(x => (x.nome || '').toUpperCase() === clientSel);
+                        if (p) {
+                            configStandard = {
+                                TARIFFA_B: parseFloat(p.patente_b) || 0,
+                                TARIFFA_C: parseFloat(p.patente_c) || 0,
+                                TARIFFA_NAV1: parseFloat(p.navetta_sommacampagna) || 0,
+                                TARIFFA_NAV2: parseFloat(p.navetta_cerea) || 0,
+                                TARIFFA_COLLO: parseFloat(p.cattel_collo) || 0,
+                                TARIFFA_DDT: parseFloat(p.costo_ddt_base) || 0,
+                                TARIFFA_FORFAIT: parseFloat(p.viaggio_forfait) || 0,
+                                // Aggiungi eventuali altre variabili del progetto
+                            };
+                        } else if (clientSel === "CATTEL") {
+                            configStandard = configCattel; // Fallback per Cattel
+                        } else if (clientSel === "GRAN CHEF" || clientSel === "BAUER") {
+                            configStandard = {
+                                TARIFFA_B: TARIFFA_GC_B || 0,
+                                TARIFFA_C: TARIFFA_GC || 0,
+                                TARIFFA_NAV1: TARIFFA_GC || 0,
+                                TARIFFA_NAV2: 0,
+                                TARIFFA_COLLO: 0,
+                                TARIFFA_DDT: 0,
+                                TARIFFA_FORFAIT: 0
+                            };
+                        }
                         
-                        document.getElementById('cattel-summary-container').style.display = 'none';
-                        document.getElementById('btn-export-cattel').style.display = 'none';
+                        buildStandardSummaryTable(trips, parseInt(year), parseInt(month), mezziMap, configStandard, clientSel);
                     } else {
-                        document.getElementById('cattel-summary-container').style.display = 'none';
-                        document.getElementById('btn-export-cattel').style.display = 'none';
-                        document.getElementById('granchef-summary-container').style.display = 'none';
-                        document.getElementById('btn-export-granchef').style.display = 'none';
+                        document.getElementById('standard-summary-container').style.display = 'none';
+                        document.getElementById('btn-export-standard').style.display = 'none';
                     }
                 }
 
@@ -1632,11 +1618,28 @@
             window.currentGCMonthLabel = window.currentMonthLabel;
         }
 
-        window.buildCattelSummaryTable = function(trips, year, month, mezziMap, configCattel) {
+        
+        window.toggleStandardColumns = function() {
+            const showColli = document.getElementById('toggle-colli').checked;
+            const showTotale = document.getElementById('toggle-totale-gg').checked;
+            
+            // Toggle headers
+            document.querySelectorAll('.col-colli').forEach(el => el.style.display = showColli ? '' : 'none');
+            document.querySelectorAll('.col-totale').forEach(el => el.style.display = showTotale ? '' : 'none');
+            
+            // Toggle row in recap
+            const recapRowHandling = document.getElementById('recap-row-handling');
+            if(recapRowHandling) recapRowHandling.style.display = showColli ? '' : 'none';
+            
+            const recapRowTotale = document.getElementById('recap-row-totale');
+            if(recapRowTotale) recapRowTotale.style.display = showTotale ? '' : 'none';
+        }
+
+        window.buildStandardSummaryTable = function(trips, year, month, mezziMap, config, clientName) {
             const daysInMonth = new Date(year, month, 0).getDate();
-            let cattelData = {};
+            let tableData = {};
             for (let d = 1; d <= daysInMonth; d++) {
-                cattelData[d] = {
+                tableData[d] = {
                     giriB: 0,
                     giriC: 0,
                     navCerea: 0,
@@ -1646,24 +1649,27 @@
                 };
             }
             
-            const CAT_B = configCattel.TARIFFA_B || 340;
-            const CAT_C = configCattel.TARIFFA_C || 380;
-            const CAT_NAV1 = configCattel.TARIFFA_NAV1 || 380; 
-            const CAT_NAV2 = configCattel.TARIFFA_NAV2 || 350; 
-            const CAT_COLLO = configCattel.TARIFFA_COLLO || 0.40;
+            const TARIFFA_B = config.TARIFFA_B || 0;
+            const TARIFFA_C = config.TARIFFA_C || 0;
+            const TARIFFA_NAV1 = config.TARIFFA_NAV1 || 0; // Sommacampagna
+            const TARIFFA_NAV2 = config.TARIFFA_NAV2 || 0; // Bencarni/Altre
+            const TARIFFA_COLLO = config.TARIFFA_COLLO || 0;
+            const TARIFFA_DDT = config.TARIFFA_DDT || 0;
+            const TARIFFA_FORFAIT = config.TARIFFA_FORFAIT || 0;
             
             for (const t of trips) {
                 const p = t.punti || t.punti_ottimizzati || [];
                 const nomeStr = (t.nome_giro || t.id_zona || 'GENERICO').toUpperCase();
                 
                 const dbClient = (t.cliente || '').toUpperCase();
-                let isCat = dbClient === "CATTEL";
-                if (!isCat) {
-                    isCat = p.some(pt => (pt.zona || '').toUpperCase().includes("CATTEL") || (pt.codice_frutta || '').toUpperCase().includes("CATTEL"));
-                    if (!isCat && nomeStr.includes("CATTEL")) isCat = true;
+                let isClientMatch = dbClient === clientName.toUpperCase();
+                
+                if (!isClientMatch) {
+                    isClientMatch = p.some(pt => (pt.zona || '').toUpperCase().includes(clientName.toUpperCase()) || (pt.codice_frutta || '').toUpperCase().includes(clientName.toUpperCase()));
+                    if (!isClientMatch && nomeStr.includes(clientName.toUpperCase())) isClientMatch = true;
                 }
                 
-                if (!isCat) continue; 
+                if (!isClientMatch) continue; 
                 
                 let day = window.getDayFromDateString ? window.getDayFromDateString(t.rawDate) : null;
                 if (!day) continue;
@@ -1675,31 +1681,45 @@
                 
                 if (nomeStr.includes("NAVETTA")) {
                     if (nomeStr.includes("CEREA") || nomeStr.includes("BENCARNI")) {
-                        cattelData[day].navCerea++;
+                        tableData[day].navCerea++;
                     } else {
-                        cattelData[day].navSomma++;
+                        tableData[day].navSomma++;
                     }
                 } else {
                     const targaStr = (t.targa || t.targa_mezzo || '').toUpperCase();
                     let patente = mezziMap[targaStr] || 'B';
                     if (patente === 'C') {
-                        cattelData[day].giriC++;
+                        tableData[day].giriC++;
                     } else {
-                        cattelData[day].giriB++;
+                        tableData[day].giriB++;
                     }
-                    cattelData[day].colli += q;
+                    tableData[day].colli += q;
                 }
             }
             
-            const tbody = document.getElementById('cattel-summary-tbody');
-            const tfoot = document.getElementById('cattel-summary-tfoot');
+            const theadTr = document.getElementById('standard-summary-thead-tr');
+            theadTr.innerHTML = `
+                <th>DATA</th>
+                <th>GIRI B</th>
+                <th>GIRI C</th>
+                <th>NAV. BENCARNI</th>
+                <th>NAV. SOMMA</th>
+                <th class="col-colli"></th>
+                <th class="col-colli">COLLI</th>
+                <th class="col-totale"></th>
+                <th class="col-totale">totale /gg</th>
+            `;
+
+            const tbody = document.getElementById('standard-summary-tbody');
+            const tfoot = document.getElementById('standard-summary-tfoot');
             tbody.innerHTML = ''; tfoot.innerHTML = '';
             
             let sumB = 0, sumC = 0, sumNavC = 0, sumNavS = 0, sumColli = 0, sumTot = 0;
             
             for (let d = 1; d <= daysInMonth; d++) {
-                const row = cattelData[d];
-                let rowTotal = (row.giriB * CAT_B) + (row.giriC * CAT_C) + (row.navCerea * CAT_NAV2) + (row.navSomma * CAT_NAV1) + (row.colli * CAT_COLLO);
+                const row = tableData[d];
+                // Includiamo DDT e Forfait? Attualmente usati in altri contesti, qui teniamo la logica standard
+                let rowTotal = (row.giriB * TARIFFA_B) + (row.giriC * TARIFFA_C) + (row.navCerea * TARIFFA_NAV2) + (row.navSomma * TARIFFA_NAV1) + (row.colli * TARIFFA_COLLO);
                 row.totale = rowTotal;
                 
                 sumB += row.giriB;
@@ -1717,10 +1737,10 @@
                     <td style="text-align: center;">${row.giriC || ''}</td>
                     <td style="text-align: center;">${row.navCerea || ''}</td>
                     <td style="text-align: center;">${row.navSomma || ''}</td>
-                    <td></td>
-                    <td style="text-align: right;">${row.colli > 0 ? row.colli : ''}</td>
-                    <td></td>
-                    <td style="text-align: right;">€ ${row.totale.toFixed(2)}</td>
+                    <td class="col-colli"></td>
+                    <td class="col-colli" style="text-align: right;">${row.colli > 0 ? row.colli : ''}</td>
+                    <td class="col-totale"></td>
+                    <td class="col-totale" style="text-align: right;">€ ${row.totale.toFixed(2)}</td>
                 </tr>`;
                 tbody.innerHTML += tr;
             }
@@ -1731,216 +1751,88 @@
                 <th style="text-align: center;">${sumC}</th>
                 <th style="text-align: center;">${sumNavC}</th>
                 <th style="text-align: center;">${sumNavS}</th>
-                <th></th>
-                <th style="text-align: right;">${sumColli}</th>
-                <th></th>
-                <th style="text-align: right;">€ ${sumTot.toFixed(2)}</th>
+                <th class="col-colli"></th>
+                <th class="col-colli" style="text-align: right;">${sumColli}</th>
+                <th class="col-totale"></th>
+                <th class="col-totale" style="text-align: right;">€ ${sumTot.toFixed(2)}</th>
             </tr>`;
             tfoot.innerHTML = trFoot;
             
             // Render Recap Table
-            const recapTbody = document.getElementById('cattel-recap-tbody');
+            const recapTbody = document.getElementById('standard-recap-tbody');
             recapTbody.innerHTML = `
                 <tr>
-                    <td>NAVETTA CEREA</td>
-                    <td style="text-align: right;">€ ${CAT_NAV2.toFixed(2)}</td>
+                    <td>NAVETTA BENCARNI / ALTRE</td>
+                    <td style="text-align: right;">€ ${TARIFFA_NAV2.toFixed(2)}</td>
                     <td style="text-align: right;">${sumNavC}</td>
-                    <td style="text-align: right;">€ ${(CAT_NAV2 * sumNavC).toFixed(2)}</td>
+                    <td style="text-align: right;">€ ${(TARIFFA_NAV2 * sumNavC).toFixed(2)}</td>
                 </tr>
                 <tr>
                     <td>NAVETTA SOMMACAMPAGNA</td>
-                    <td style="text-align: right;">€ ${CAT_NAV1.toFixed(2)}</td>
+                    <td style="text-align: right;">€ ${TARIFFA_NAV1.toFixed(2)}</td>
                     <td style="text-align: right;">${sumNavS}</td>
-                    <td style="text-align: right;">€ ${(CAT_NAV1 * sumNavS).toFixed(2)}</td>
+                    <td style="text-align: right;">€ ${(TARIFFA_NAV1 * sumNavS).toFixed(2)}</td>
                 </tr>
                 <tr>
                     <td>TRASPORTO B</td>
-                    <td style="text-align: right;">€ ${CAT_B.toFixed(2)}</td>
+                    <td style="text-align: right;">€ ${TARIFFA_B.toFixed(2)}</td>
                     <td style="text-align: right;">${sumB}</td>
-                    <td style="text-align: right;">€ ${(CAT_B * sumB).toFixed(2)}</td>
+                    <td style="text-align: right;">€ ${(TARIFFA_B * sumB).toFixed(2)}</td>
                 </tr>
                 <tr>
                     <td>TRASPORTO C</td>
-                    <td style="text-align: right;">€ ${CAT_C.toFixed(2)}</td>
+                    <td style="text-align: right;">€ ${TARIFFA_C.toFixed(2)}</td>
                     <td style="text-align: right;">${sumC}</td>
-                    <td style="text-align: right;">€ ${(CAT_C * sumC).toFixed(2)}</td>
+                    <td style="text-align: right;">€ ${(TARIFFA_C * sumC).toFixed(2)}</td>
                 </tr>
-                <tr>
-                    <td>HANDLING</td>
-                    <td style="text-align: right;">€ ${CAT_COLLO.toFixed(2)}</td>
+                <tr id="recap-row-handling" class="col-colli">
+                    <td>HANDLING (COLLI)</td>
+                    <td style="text-align: right;">€ ${TARIFFA_COLLO.toFixed(2)}</td>
                     <td style="text-align: right;">${sumColli}</td>
-                    <td style="text-align: right;">€ ${(CAT_COLLO * sumColli).toFixed(2)}</td>
+                    <td style="text-align: right;">€ ${(TARIFFA_COLLO * sumColli).toFixed(2)}</td>
                 </tr>
-                <tr>
+                <tr id="recap-row-totale" class="col-totale">
                     <td colspan="3"></td>
                     <td style="text-align: right; font-weight: bold; background: #f8fafc;">€ ${sumTot.toFixed(2)}</td>
                 </tr>
             `;
             
-            window.currentCattelConfig = configCattel;
-            window.currentCattelDays = daysInMonth;
-            window.currentCattelMonthLabel = currentMonthLabel;
+            window.currentStandardConfig = config;
+            window.currentStandardDays = daysInMonth;
+            window.currentStandardClientName = clientName;
+            
+            // Applica stato iniziale toggle
+            window.toggleStandardColumns();
         }
 
-        window.esportaModuloGranChefExcel = function() {
+        window.esportaModuloStandardExcel = function() {
             if (typeof XLSX === 'undefined') {
                 Swal.fire('Errore', 'Libreria XLSX non trovata.', 'error');
                 return;
             }
-            const config = window.currentGCConfig || {};
-            const daysInMonth = window.currentGCDays || 31;
-            const TARIFFA_GC = config.TARIFFA_GC || 350;
-            const TARIFFA_GC_B = config.TARIFFA_GC_B || 150;
+            
+            const clientName = window.currentStandardClientName || 'Cliente';
+            const config = window.currentStandardConfig || {};
+            const daysInMonth = window.currentStandardDays || 31;
+            
+            const TARIFFA_B = config.TARIFFA_B || 0;
+            const TARIFFA_C = config.TARIFFA_C || 0;
+            const TARIFFA_NAV1 = config.TARIFFA_NAV1 || 0; 
+            const TARIFFA_NAV2 = config.TARIFFA_NAV2 || 0; 
+            const TARIFFA_COLLO = config.TARIFFA_COLLO || 0;
+            
+            const showColli = document.getElementById('toggle-colli').checked;
+            const showTotale = document.getElementById('toggle-totale-gg').checked;
 
             const wb = XLSX.utils.book_new();
             
-            const ws_data = [
-                ["DATA", "VIAGGIO A", "NAVETTA SOMMACAMPAGNA", "", "totale /gg"]
-            ];
-
-            const tbody = document.getElementById('granchef-summary-tbody');
-            const rows = tbody.querySelectorAll('tr');
+            let headerRow = ["DATA", "GIRI B", "GIRI C", "NAV. BENCARNI", "NAV. SOMMACAMPAGNA"];
+            if (showColli) { headerRow.push(""); headerRow.push("COLLI"); }
+            if (showTotale) { headerRow.push(""); headerRow.push("totale /gg"); }
             
-            rows.forEach((tr) => {
-                let rowData = [];
-                const tds = tr.querySelectorAll('td');
-                
-                rowData.push(tds[0].innerText.trim());
-                rowData.push(parseFloat(tds[1].innerText.trim()) || null);
-                rowData.push(parseFloat(tds[2].innerText.trim()) || null);
-                rowData.push(null);
-                rowData.push(0); 
-                ws_data.push(rowData);
-            });
+            const ws_data = [headerRow];
 
-            const ws = XLSX.utils.aoa_to_sheet(ws_data);
-
-            let tfootStartR = daysInMonth + 2; 
-            let recapStartR = tfootStartR + 3; // Leave a few blank rows
-            let recapRowA = recapStartR + 1;
-            let recapRowSomma = recapStartR + 2;
-            let recapRowTotal = recapStartR + 3;
-
-            // Calculate sums in JS to pre-populate the .v field
-            let sumA = 0, sumS = 0, sumTot = 0;
-            let dailyTotals = [];
-            for (let i = 1; i < ws_data.length; i++) {
-                const r = ws_data[i];
-                sumA += r[1] || 0;
-                sumS += r[2] || 0;
-                let rTotal = ((r[1] || 0) * TARIFFA_GC) + ((r[2] || 0) * TARIFFA_GC_B);
-                sumTot += rTotal;
-                dailyTotals.push(rTotal);
-            }
-
-            for (let i = 0; i < daysInMonth; i++) {
-                let r = i + 2; 
-                let cellAddress = XLSX.utils.encode_cell({c: 4, r: i + 1});
-                ws[cellAddress] = {
-                    t: 'n', 
-                    f: `IFERROR((B${r}*$C$${recapRowA})+(C${r}*$C$${recapRowSomma}), 0)`,
-                    v: dailyTotals[i] || 0,
-                    z: '"€"\\ #,##0.00'
-                };
-            }
-
-            ws_data.push(["TOTALE", 0, 0, null, 0]);
-            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: tfootStartR - 1, c: 0}});
-            
-            let sumCols = ['B', 'C', 'E'];
-            sumCols.forEach((col) => {
-                let cIndex = col.charCodeAt(0) - 65; 
-                let cellAddress = XLSX.utils.encode_cell({c: cIndex, r: tfootStartR - 1});
-                let val = 0;
-                if (col === 'B') val = sumA;
-                else if (col === 'C') val = sumS;
-                else if (col === 'E') val = sumTot;
-
-                ws[cellAddress] = {
-                    t: 'n',
-                    f: `SUM(${col}2:${col}${tfootStartR - 1})`,
-                    v: val
-                };
-                if (col === 'E') ws[cellAddress].z = '"€"\\ #,##0.00';
-            });
-            
-            // Add Recap Data
-            XLSX.utils.sheet_add_aoa(ws, [
-                [],
-                [],
-                ["", "VOCE", "TARIFFA", "QUANTITA'", "IMPORTO"]
-            ], {origin: {r: tfootStartR, c: 0}});
-            
-            // VIAGGIO A
-            ws_data.push(["", "VIAGGIO A", TARIFFA_GC, 0, 0]);
-            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowA - 1, c: 0}});
-            ws[XLSX.utils.encode_cell({c: 3, r: recapRowA - 1})] = { t: 'n', f: `B${tfootStartR}`, v: sumA };
-            ws[XLSX.utils.encode_cell({c: 4, r: recapRowA - 1})] = { t: 'n', f: `C${recapRowA}*D${recapRowA}`, v: TARIFFA_GC * sumA, z: '"€"\\ #,##0.00' };
-
-            // NAVETTA SOMMACAMPAGNA
-            ws_data.push(["", "NAVETTA SOMMACAMPAGNA", TARIFFA_GC_B, 0, 0]);
-            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowSomma - 1, c: 0}});
-            ws[XLSX.utils.encode_cell({c: 3, r: recapRowSomma - 1})] = { t: 'n', f: `C${tfootStartR}`, v: sumS };
-            ws[XLSX.utils.encode_cell({c: 4, r: recapRowSomma - 1})] = { t: 'n', f: `C${recapRowSomma}*D${recapRowSomma}`, v: TARIFFA_GC_B * sumS, z: '"€"\\ #,##0.00' };
-
-            // RECAP TOTAL
-            ws_data.push(["", "", "", "", 0]);
-            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowTotal - 1, c: 0}});
-            ws[XLSX.utils.encode_cell({c: 4, r: recapRowTotal - 1})] = { t: 'n', f: `SUM(E${recapRowA}:E${recapRowSomma})`, v: sumTot, z: '"€"\\ #,##0.00' };
-
-            const range = XLSX.utils.decode_range(ws['!ref']);
-            for(let R = range.s.r; R <= range.e.r; ++R) {
-                for(let C = range.s.c; C <= range.e.c; ++C) {
-                    let cellAddress = XLSX.utils.encode_cell({r: R, c: C});
-                    if(!ws[cellAddress]) continue;
-                    if(!ws[cellAddress].s) ws[cellAddress].s = {};
-                    
-                    ws[cellAddress].s.font = { name: "Arial", sz: 11 };
-                    ws[cellAddress].s.border = {
-                        top: {style: 'thin', color: {auto: 1}},
-                        bottom: {style: 'thin', color: {auto: 1}},
-                        left: {style: 'thin', color: {auto: 1}},
-                        right: {style: 'thin', color: {auto: 1}}
-                    };
-                    
-                    if (R === 0) {
-                        ws[cellAddress].s.fill = { fgColor: { rgb: "FFE2EFDA" } };
-                        ws[cellAddress].s.font.bold = true;
-                        ws[cellAddress].s.alignment = { horizontal: "center", vertical: "center" };
-                    } else if (R === tfootStartR - 1) {
-                        ws[cellAddress].s.fill = { fgColor: { rgb: "FFD9E1F2" } };
-                        ws[cellAddress].s.font.bold = true;
-                    }
-                }
-            }
-            
-            ws['!cols'] = [{wch:15}, {wch:15}, {wch:25}, {wch:15}, {wch:15}];
-
-            XLSX.utils.book_append_sheet(wb, ws, "Fatturazione Gran Chef");
-            let safeMonthLabel = window.currentGCMonthLabel ? window.currentGCMonthLabel.replace(/[\/\\]/g, '_') : 'mese';
-            XLSX.writeFile(wb, `Fatturazione_GranChef_${safeMonthLabel}.xlsx`);
-        }
-
-        window.esportaModuloCattelExcel = function() {
-            if (typeof XLSX === 'undefined') {
-                Swal.fire('Errore', 'Libreria XLSX non trovata.', 'error');
-                return;
-            }
-            const config = window.currentCattelConfig || {};
-            const daysInMonth = window.currentCattelDays || 31;
-            const CAT_B = config.TARIFFA_B || 340;
-            const CAT_C = config.TARIFFA_C || 380;
-            const CAT_NAV1 = config.TARIFFA_NAV1 || 380; 
-            const CAT_NAV2 = config.TARIFFA_NAV2 || 350; 
-            const CAT_COLLO = config.TARIFFA_COLLO || 0.40;
-
-            const wb = XLSX.utils.book_new();
-            
-            const ws_data = [
-                ["DATA", "GIRI B", "GIRI C", "NAVETTA BENCARNI", "NAVETTA SOMMACAMPAGNA", "", "COLLI", "", "totale /gg"]
-            ];
-
-            const tbody = document.getElementById('cattel-summary-tbody');
+            const tbody = document.getElementById('standard-summary-tbody');
             const rows = tbody.querySelectorAll('tr');
             
             rows.forEach((tr) => {
@@ -1952,10 +1844,15 @@
                 rowData.push(parseFloat(tds[2].innerText.trim()) || null);
                 rowData.push(parseFloat(tds[3].innerText.trim()) || null);
                 rowData.push(parseFloat(tds[4].innerText.trim()) || null);
-                rowData.push(null);
-                rowData.push(parseFloat(tds[6].innerText.trim()) || null);
-                rowData.push(null);
-                rowData.push(0); 
+                
+                if (showColli) {
+                    rowData.push(null);
+                    rowData.push(parseFloat(tds[6].innerText.trim()) || null);
+                }
+                if (showTotale) {
+                    rowData.push(null);
+                    rowData.push(0); // Verrà calcolato in Excel
+                }
                 ws_data.push(rowData);
             });
 
@@ -1963,12 +1860,14 @@
 
             let tfootStartR = daysInMonth + 2; 
             let recapStartR = tfootStartR + 3; // Leave a few blank rows
-            let recapRowCerea = recapStartR + 1;
-            let recapRowSomma = recapStartR + 2;
-            let recapRowB = recapStartR + 3;
-            let recapRowC = recapStartR + 4;
-            let recapRowColli = recapStartR + 5;
-            let recapRowTotal = recapStartR + 6;
+            
+            let rIdx = recapStartR;
+            let recapRowBencarni = rIdx++;
+            let recapRowSomma = rIdx++;
+            let recapRowB = rIdx++;
+            let recapRowC = rIdx++;
+            let recapRowColli = showColli ? rIdx++ : null;
+            let recapRowTotal = showTotale ? rIdx++ : null;
 
             // Calculate sums in JS to pre-populate the .v field (improves compatibility with mobile/Sheets viewers)
             let sumB = 0, sumC = 0, sumNavC = 0, sumNavS = 0, sumColli = 0, sumTot = 0;
@@ -1979,28 +1878,42 @@
                 sumC += r[2] || 0;
                 sumNavC += r[3] || 0;
                 sumNavS += r[4] || 0;
-                sumColli += r[6] || 0;
-                // Calculate total per day in JS for value pre-population
-                let rTotal = ((r[1] || 0) * CAT_B) + ((r[2] || 0) * CAT_C) + ((r[3] || 0) * CAT_NAV2) + ((r[4] || 0) * CAT_NAV1) + ((r[6] || 0) * CAT_COLLO);
+                
+                let colliVal = showColli ? (r[6] || 0) : 0;
+                sumColli += colliVal;
+                
+                let rTotal = ((r[1] || 0) * TARIFFA_B) + ((r[2] || 0) * TARIFFA_C) + ((r[3] || 0) * TARIFFA_NAV2) + ((r[4] || 0) * TARIFFA_NAV1) + (colliVal * TARIFFA_COLLO);
                 sumTot += rTotal;
                 dailyTotals.push(rTotal);
             }
 
-            for (let i = 0; i < daysInMonth; i++) {
-                let r = i + 2; 
-                let cellAddress = XLSX.utils.encode_cell({c: 8, r: i + 1});
-                ws[cellAddress] = {
-                    t: 'n', 
-                    f: `IFERROR((B${r}*$C$${recapRowB})+(C${r}*$C$${recapRowC})+(D${r}*$C$${recapRowCerea})+(E${r}*$C$${recapRowSomma})+(G${r}*$C$${recapRowColli}), 0)`,
-                    v: dailyTotals[i] || 0,
-                    z: '"€"\\ #,##0.00'
-                };
+            if (showTotale) {
+                let totaleColIdx = showColli ? 8 : 6;
+                let colliFormulaPart = showColli ? `+(G${rIdx}*$C$${recapRowColli})` : ``; // G is always 7th column if present
+                for (let i = 0; i < daysInMonth; i++) {
+                    let r = i + 2; 
+                    let cellAddress = XLSX.utils.encode_cell({c: totaleColIdx, r: i + 1});
+                    ws[cellAddress] = {
+                        t: 'n', 
+                        f: `IFERROR((B${r}*$C$${recapRowB})+(C${r}*$C$${recapRowC})+(D${r}*$C$${recapRowBencarni})+(E${r}*$C$${recapRowSomma})${colliFormulaPart}, 0)`,
+                        v: dailyTotals[i] || 0,
+                        z: '"€"\ #,##0.00'
+                    };
+                }
             }
 
-            ws_data.push(["TOTALE", 0, 0, 0, 0, null, 0, null, 0]);
+            let tfootArr = ["TOTALE", sumB || 0, sumC || 0, sumNavC || 0, sumNavS || 0];
+            if(showColli) { tfootArr.push(null); tfootArr.push(sumColli || 0); }
+            if(showTotale) { tfootArr.push(null); tfootArr.push(0); }
+            
+            ws_data.push(tfootArr);
             XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: tfootStartR - 1, c: 0}});
             
-            let sumCols = ['B', 'C', 'D', 'E', 'G', 'I'];
+            let sumCols = ['B', 'C', 'D', 'E'];
+            if(showColli) sumCols.push('G');
+            let totaleColChar = showColli ? 'I' : 'G';
+            if(showTotale) sumCols.push(totaleColChar);
+            
             sumCols.forEach((col) => {
                 let cIndex = col.charCodeAt(0) - 65; 
                 let cellAddress = XLSX.utils.encode_cell({c: cIndex, r: tfootStartR - 1});
@@ -2009,19 +1922,18 @@
                 else if (col === 'C') val = sumC;
                 else if (col === 'D') val = sumNavC;
                 else if (col === 'E') val = sumNavS;
-                else if (col === 'G') val = sumColli;
-                else if (col === 'I') val = sumTot;
+                else if (col === 'G' && showColli) val = sumColli;
+                else if (col === totaleColChar && showTotale) val = sumTot;
 
                 ws[cellAddress] = {
                     t: 'n',
                     f: `SUM(${col}2:${col}${tfootStartR - 1})`,
                     v: val
                 };
-                if (col === 'I') ws[cellAddress].z = '"€"\\ #,##0.00';
+                if (col === totaleColChar && showTotale) ws[cellAddress].z = '"€"\ #,##0.00';
             });
             
             // Add Recap Data
-            recapStartR = tfootStartR + 3; // Leave a few blank rows
             XLSX.utils.sheet_add_aoa(ws, [
                 [],
                 [],
@@ -2029,45 +1941,45 @@
             ], {origin: {r: tfootStartR, c: 0}});
             
             // NAVETTA BENCARNI
-            recapRowCerea = recapStartR + 1;
-            ws_data.push(["", "NAVETTA BENCARNI", CAT_NAV2, 0, 0]);
-            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowCerea - 1, c: 0}});
-            ws[XLSX.utils.encode_cell({c: 3, r: recapRowCerea - 1})] = { t: 'n', f: `D${tfootStartR}`, v: sumNavC };
-            ws[XLSX.utils.encode_cell({c: 4, r: recapRowCerea - 1})] = { t: 'n', f: `C${recapRowCerea}*D${recapRowCerea}`, v: CAT_NAV2 * sumNavC, z: '"€"\\ #,##0.00' };
+            ws_data.push(["", "NAVETTA BENCARNI / ALTRE", TARIFFA_NAV2, 0, 0]);
+            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowBencarni - 1, c: 0}});
+            ws[XLSX.utils.encode_cell({c: 3, r: recapRowBencarni - 1})] = { t: 'n', f: `D${tfootStartR}`, v: sumNavC };
+            ws[XLSX.utils.encode_cell({c: 4, r: recapRowBencarni - 1})] = { t: 'n', f: `C${recapRowBencarni}*D${recapRowBencarni}`, v: TARIFFA_NAV2 * sumNavC, z: '"€"\ #,##0.00' };
 
             // NAVETTA SOMMACAMPAGNA
-            recapRowSomma = recapStartR + 2;
-            ws_data.push(["", "NAVETTA SOMMACAMPAGNA", CAT_NAV1, 0, 0]);
+            ws_data.push(["", "NAVETTA SOMMACAMPAGNA", TARIFFA_NAV1, 0, 0]);
             XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowSomma - 1, c: 0}});
             ws[XLSX.utils.encode_cell({c: 3, r: recapRowSomma - 1})] = { t: 'n', f: `E${tfootStartR}`, v: sumNavS };
-            ws[XLSX.utils.encode_cell({c: 4, r: recapRowSomma - 1})] = { t: 'n', f: `C${recapRowSomma}*D${recapRowSomma}`, v: CAT_NAV1 * sumNavS, z: '"€"\\ #,##0.00' };
+            ws[XLSX.utils.encode_cell({c: 4, r: recapRowSomma - 1})] = { t: 'n', f: `C${recapRowSomma}*D${recapRowSomma}`, v: TARIFFA_NAV1 * sumNavS, z: '"€"\ #,##0.00' };
 
-            // TRASPORTO B
-            recapRowB = recapStartR + 3;
-            ws_data.push(["", "TRASPORTO B", CAT_B, 0, 0]);
+            // GIRI B
+            ws_data.push(["", "TRASPORTO B", TARIFFA_B, 0, 0]);
             XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowB - 1, c: 0}});
             ws[XLSX.utils.encode_cell({c: 3, r: recapRowB - 1})] = { t: 'n', f: `B${tfootStartR}`, v: sumB };
-            ws[XLSX.utils.encode_cell({c: 4, r: recapRowB - 1})] = { t: 'n', f: `C${recapRowB}*D${recapRowB}`, v: CAT_B * sumB, z: '"€"\\ #,##0.00' };
-
-            // TRASPORTO C
-            recapRowC = recapStartR + 4;
-            ws_data.push(["", "TRASPORTO C", CAT_C, 0, 0]);
+            ws[XLSX.utils.encode_cell({c: 4, r: recapRowB - 1})] = { t: 'n', f: `C${recapRowB}*D${recapRowB}`, v: TARIFFA_B * sumB, z: '"€"\ #,##0.00' };
+            
+            // GIRI C
+            ws_data.push(["", "TRASPORTO C", TARIFFA_C, 0, 0]);
             XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowC - 1, c: 0}});
             ws[XLSX.utils.encode_cell({c: 3, r: recapRowC - 1})] = { t: 'n', f: `C${tfootStartR}`, v: sumC };
-            ws[XLSX.utils.encode_cell({c: 4, r: recapRowC - 1})] = { t: 'n', f: `C${recapRowC}*D${recapRowC}`, v: CAT_C * sumC, z: '"€"\\ #,##0.00' };
+            ws[XLSX.utils.encode_cell({c: 4, r: recapRowC - 1})] = { t: 'n', f: `C${recapRowC}*D${recapRowC}`, v: TARIFFA_C * sumC, z: '"€"\ #,##0.00' };
 
-            // HANDLING (COLLI)
-            recapRowColli = recapStartR + 5;
-            ws_data.push(["", "HANDLING", CAT_COLLO, 0, 0]);
-            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowColli - 1, c: 0}});
-            ws[XLSX.utils.encode_cell({c: 3, r: recapRowColli - 1})] = { t: 'n', f: `G${tfootStartR}`, v: sumColli };
-            ws[XLSX.utils.encode_cell({c: 4, r: recapRowColli - 1})] = { t: 'n', f: `C${recapRowColli}*D${recapRowColli}`, v: CAT_COLLO * sumColli, z: '"€"\\ #,##0.00' };
-
+            // COLLI
+            if (showColli) {
+                ws_data.push(["", "HANDLING (COLLI)", TARIFFA_COLLO, 0, 0]);
+                XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowColli - 1, c: 0}});
+                ws[XLSX.utils.encode_cell({c: 3, r: recapRowColli - 1})] = { t: 'n', f: `G${tfootStartR}`, v: sumColli };
+                ws[XLSX.utils.encode_cell({c: 4, r: recapRowColli - 1})] = { t: 'n', f: `C${recapRowColli}*D${recapRowColli}`, v: TARIFFA_COLLO * sumColli, z: '"€"\ #,##0.00' };
+            }
+            
             // RECAP TOTAL
-            recapRowTotal = recapStartR + 6;
-            ws_data.push(["", "", "", "", 0]);
-            XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowTotal - 1, c: 0}});
-            ws[XLSX.utils.encode_cell({c: 4, r: recapRowTotal - 1})] = { t: 'n', f: `SUM(E${recapRowCerea}:E${recapRowColli})`, v: sumTot, z: '"€"\\ #,##0.00' };
+            if (showTotale) {
+                ws_data.push(["", "", "", "", 0]);
+                XLSX.utils.sheet_add_aoa(ws, [ws_data[ws_data.length - 1]], {origin: {r: recapRowTotal - 1, c: 0}});
+                let sumRange = `SUM(E${recapRowBencarni}:E${recapRowC})`;
+                if(showColli) sumRange = `SUM(E${recapRowBencarni}:E${recapRowColli})`;
+                ws[XLSX.utils.encode_cell({c: 4, r: recapRowTotal - 1})] = { t: 'n', f: sumRange, v: sumTot, z: '"€"\ #,##0.00' };
+            }
 
             const range = XLSX.utils.decode_range(ws['!ref']);
             for(let R = range.s.r; R <= range.e.r; ++R) {
@@ -2095,13 +2007,14 @@
                 }
             }
             
-            ws['!cols'] = [{wch:15}, {wch:10}, {wch:10}, {wch:18}, {wch:15}, {wch:15}, {wch:10}, {wch:15}, {wch:15}];
+            let cols = [{wch:15}, {wch:15}, {wch:15}, {wch:20}, {wch:25}];
+            if (showColli) { cols.push({wch:5}); cols.push({wch:15}); }
+            if (showTotale) { cols.push({wch:5}); cols.push({wch:15}); }
+            ws['!cols'] = cols;
 
-            XLSX.utils.book_append_sheet(wb, ws, "CATTEL");
-            let safeMonthLabel = window.currentCattelMonthLabel ? window.currentCattelMonthLabel.replace(/[\/\\]/g, '_') : 'mese';
-            XLSX.writeFile(wb, `Riepilogo_Cattel_${safeMonthLabel}.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, `Modulo_${clientName}`);
+            let safeMonthLabel = window.currentMonthLabel ? window.currentMonthLabel.replace(/[\/\]/g, '_') : 'mese';
+            XLSX.writeFile(wb, `Fatturazione_${clientName}_${safeMonthLabel}.xlsx`);
         }
 
-    </script>
-</body>
-</html>
+</script>

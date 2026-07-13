@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rientri DDT - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.066">
+    <link rel="stylesheet" href="styles.css?v=6.067">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <style>
@@ -113,7 +113,7 @@
         .btn-edit  { background: #4f46e5; color: white; }
         .btn-del   { background: #ef4444; color: white; }
 
-        /* Modal campo Note più alto */
+        /* Modal campo Note piÃ¹ alto */
         #f_Note { min-height: 80px; resize: vertical; }
     </style>
 </head>
@@ -162,7 +162,7 @@
                 <div style="display:flex; flex-direction:column; gap:5px;">
                     <label style="font-size:12px; font-weight:bold; color:var(--primary); text-transform:uppercase;">Tipo</label>
                     <select id="f_Tipo" style="padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:14px; background:white;">
-                        <option value="">— completo —</option>
+                        <option value="">Â— completo Â—</option>
                         <option value="parziale">parziale</option>
                     </select>
                 </div>
@@ -212,7 +212,7 @@ const db  = getFirestore(app);
             }
 
             const html = filtered.map(item => {
-                const codice = item['Codice consegna'] || '—';
+                const codice = item['Codice consegna'] || 'Â—';
                 const ddt    = item['Data e Num DDT']  || '';
                 const stato  = item['Stato']            || '';
                 const tipo   = (item['Tipo'] || '').toLowerCase();

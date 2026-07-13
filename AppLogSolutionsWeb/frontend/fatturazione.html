@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.066">
+    <link rel="stylesheet" href="styles.css?v=6.067">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -305,8 +305,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.066"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.066"></script>
+    <script src="script.js?v=6.067"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.067"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -938,7 +938,7 @@
                         
                         // We will pass the specific configuration later, for now we will get the config of the selected client
                         let configStandard = {};
-                        const p = window.currentProgetti.find(x => (x.nome || '').toUpperCase() === clientSel);
+                        const p = (window.appData && window.appData.lista_progetti || []).find(x => (x.nome || '').toUpperCase() === clientSel);
                         if (p) {
                             configStandard = {
                                 TARIFFA_B: parseFloat(p.patente_b) || 0,
@@ -2074,8 +2074,7 @@
             document.getElementById('presenzeModal').style.display = 'flex';
             
             try {
-                const { collection, query, where, getDocs } = window.firebaseFirestore;
-                const db = window.db;
+                // Usa le variabili già importate nel modulo (collection, query, where, getDocs, db)
                 
                 const q = query(collection(db, 'presenze'), where('mese', '==', monthInput));
                 const snap = await getDocs(q);

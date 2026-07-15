@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.093">
+    <link rel="stylesheet" href="styles.css?v=6.094">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -369,8 +369,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.093"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.093"></script>
+    <script src="script.js?v=6.094"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.094"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
@@ -861,23 +861,88 @@
             
             const formattedDate = dateInput.split('-').reverse().join('-');
             
-            // CONTROLLO VIAGGI ESISTENTI
+            // CONTROLLO DATI DISPONIBILI
+            let disponibili = {};
+            try {
+                Swal.fire({ title: 'Controllo dati...', didOpen: () => Swal.showLoading() });
+                const checkDatiFn = httpsCallable(functions, 'check_dati_disponibili');
+                const checkRes = await checkDatiFn({ data_consegna: formattedDate });
+                Swal.close();
+                if (checkRes.data.status === 'ok') {
+                    disponibili = checkRes.data.dati_disponibili;
+                }
+            } catch (err) {
+                Swal.close();
+                console.warn("Impossibile controllare dati disponibili", err);
+            }
+
+            // CONTROLLO VIAGGI ESISTENTI E POPUP SEQUENZIALI
+            let azioni = {};
             try {
                 const checkRef = doc(db, 'clienti', 'DNR', 'reports_logistici', formattedDate);
                 const checkSnap = await getDoc(checkRef);
-                if (checkSnap.exists()) {
-                    const integraResult = await Swal.fire({
-                        title: 'Integrazione Dati',
-                        html: `Sono già presenti dei viaggi per il <b>${formattedDate}</b>.<br><br>Vuoi <b>integrare</b> le novità rigenerando la mappa e la lista punti?<br><span style="color:#10b981; font-size:0.9em;">I percorsi esistenti e le modifiche manuali verranno preservati.</span>`,
-                        icon: 'info',
-                        showCancelButton: true,
-                        confirmButtonColor: '#3b82f6',
-                        cancelButtonColor: '#64748b',
-                        confirmButtonText: 'Sì, Integra',
-                        cancelButtonText: 'Annulla',
-                        reverseButtons: true
-                    });
-                    if (!integraResult.isConfirmed) return;
+                const viaggiEsistenti = checkSnap.exists();
+                
+                if (viaggiEsistenti) {
+                    if (disponibili["CATTEL"]) {
+                        const res = await Swal.fire({
+                            title: 'Dati CATTEL Rilevati',
+                            html: `Sono presenti dati grezzi per <b>Cattel</b> e i viaggi sono già presenti in mappa.<br>Vuoi preservare i giri attuali (aggiungendo eventuali novità) o cancellarli e ripartire da zero per Cattel?`,
+                            icon: 'question',
+                            showDenyButton: true,
+                            showCancelButton: true,
+                            confirmButtonColor: '#3b82f6',
+                            denyButtonColor: '#ef4444',
+                            cancelButtonColor: '#64748b',
+                            confirmButtonText: 'Integra (Mantieni Giri)',
+                            denyButtonText: 'Sovrascrivi (Tabula Rasa Cattel)',
+                            cancelButtonText: 'Annulla tutto'
+                        });
+                        if (res.isConfirmed) azioni["CATTEL"] = "integra";
+                        else if (res.isDenied) azioni["CATTEL"] = "sovrascrivi";
+                        else return; 
+                    }
+                    if (disponibili["GRAN_CHEF"]) {
+                        const res = await Swal.fire({
+                            title: 'Dati GRAN CHEF Rilevati',
+                            html: `Sono presenti dati grezzi per <b>Gran Chef</b>.<br>Vuoi preservare i giri attuali o cancellarli per ripartire da zero con Gran Chef?`,
+                            icon: 'question',
+                            showDenyButton: true,
+                            showCancelButton: true,
+                            confirmButtonColor: '#3b82f6',
+                            denyButtonColor: '#ef4444',
+                            cancelButtonColor: '#64748b',
+                            confirmButtonText: 'Integra (Mantieni Giri)',
+                            denyButtonText: 'Sovrascrivi (Tabula Rasa Gran Chef)',
+                            cancelButtonText: 'Annulla tutto'
+                        });
+                        if (res.isConfirmed) azioni["GRAN_CHEF"] = "integra";
+                        else if (res.isDenied) azioni["GRAN_CHEF"] = "sovrascrivi";
+                        else return;
+                    }
+                    if (disponibili["DNR"]) {
+                        const res = await Swal.fire({
+                            title: 'Dati DNR (Frutta/Latte) Rilevati',
+                            html: `Sono presenti dati grezzi per <b>DNR (Frutta e/o Latte)</b>.<br>Ricorda che Frutta e Latte condividono gli stessi viaggi (V01, V02...).<br>Vuoi preservare i giri o sovrascrivere tutto il blocco DNR?`,
+                            icon: 'question',
+                            showDenyButton: true,
+                            showCancelButton: true,
+                            confirmButtonColor: '#3b82f6',
+                            denyButtonColor: '#ef4444',
+                            cancelButtonColor: '#64748b',
+                            confirmButtonText: 'Integra (Mantieni Giri)',
+                            denyButtonText: 'Sovrascrivi (Tabula Rasa DNR)',
+                            cancelButtonText: 'Annulla tutto'
+                        });
+                        if (res.isConfirmed) azioni["DNR"] = "integra";
+                        else if (res.isDenied) azioni["DNR"] = "sovrascrivi";
+                        else return;
+                    }
+                } else {
+                    // Prima generazione, le azioni sono ininfluenti (equivale a sovrascrivere)
+                    if (disponibili["CATTEL"]) azioni["CATTEL"] = "sovrascrivi";
+                    if (disponibili["GRAN_CHEF"]) azioni["GRAN_CHEF"] = "sovrascrivi";
+                    if (disponibili["DNR"]) azioni["DNR"] = "sovrascrivi";
                 }
             } catch (err) {
                 console.log("Errore nel controllo viaggi esistenti:", err);
@@ -889,7 +954,7 @@
             
             try {
                 const generaReportFn = httpsCallable(functions, 'genera_report_giornaliero', { timeout: 300000 });
-                const result = await generaReportFn({ data_consegna: formattedDate });
+                const result = await generaReportFn({ data_consegna: formattedDate, azioni: azioni });
                 
                 if (result.data.status === 'ok') {
                     console.log("Report generato con successo!");
@@ -1178,63 +1243,6 @@
             
             const clientsStr = loadedClients.join(', ');
 
-            const uploadConfirm = await Swal.fire({
-                title: 'Opzioni di Caricamento',
-                html: `Stai caricando dati per: <b>${clientsStr}</b> (Data: <b>${dateFormatted}</b>).<br><br>Scegli un'opzione:<br><br>
-                       <ul style="text-align:left; font-size: 14px;">
-                         <li style="margin-bottom:8px;"><b>Sovrascrivi Solo [${clientsStr}]</b>: Elimina i vecchi viaggi di questi clienti e li ricarica, ignorando gli altri.</li>
-                         <li style="margin-bottom:8px;"><b>Integra Dati</b>: Aggiunge i nuovi dati senza cancellare assolutamente nulla.</li>
-                         <li><b style="color:red;">Tabula Rasa Totale</b>: Cancella TUTTO per la data selezionata (tutti i clienti) e riparte da zero.</li>
-                       </ul>`,
-                icon: 'question',
-                showDenyButton: true,
-                showCancelButton: true,
-                showCloseButton: true,
-                confirmButtonColor: '#3b82f6',
-                denyButtonColor: '#10b981',
-                cancelButtonColor: '#ef4444',
-                confirmButtonText: '🔄 Sovrascrivi Solo Caricati',
-                denyButtonText: '➕ Integra Dati',
-                cancelButtonText: '🗑️ Tabula Rasa Totale',
-                width: 650
-            });
-
-            // Se l'utente clicca fuori o preme X
-            if (uploadConfirm.dismiss === Swal.DismissReason.backdrop || uploadConfirm.dismiss === Swal.DismissReason.close || uploadConfirm.dismiss === Swal.DismissReason.esc) {
-                return;
-            }
-            
-            let tipologie_da_eliminare = [];
-            let tenant_da_eliminare = [];
-            let cliente_zona_da_eliminare = [];
-            let esegui_pulizia = true;
-            
-            if (uploadConfirm.isConfirmed) {
-                // Sovrascrivi Solo Caricati
-                tipologie_da_eliminare = tipologie_caricate;
-                tenant_da_eliminare = tenant_caricati;
-                cliente_zona_da_eliminare = cliente_zona_caricati;
-            } else if (uploadConfirm.isDenied) {
-                // Integra Dati
-                esegui_pulizia = false;
-            } else if (uploadConfirm.dismiss === Swal.DismissReason.cancel) {
-                // Tabula Rasa Totale
-                const finalConfirm = await Swal.fire({
-                    title: "Attenzione",
-                    text: "Stai per eliminare TUTTI i dati logistici per la data selezionata, inclusi i clienti che non stai ricaricando in questo momento. Procedere?",
-                    icon: "warning",
-                    showCancelButton: true,
-                    confirmButtonColor: "#ef4444",
-                    confirmButtonText: "Sì, Elimina Tutto"
-                });
-                if (!finalConfirm.isConfirmed) return;
-                
-                // Lasciamo array vuoti = Tabula Rasa totale
-                tipologie_da_eliminare = [];
-                tenant_da_eliminare = [];
-                cliente_zona_da_eliminare = [];
-            }
-
             document.getElementById('btn-avvia').style.display = 'none';
             document.getElementById('progress-area').style.display = 'block';
             
@@ -1246,39 +1254,7 @@
             const statText = document.getElementById('progress-status-text');
 
             try {
-                if (esegui_pulizia) {
-                    statText.textContent = "Preparazione e pulizia cartelle in corso sul cloud...";
-                    fillDiv.style.width = '0%';
-                    percText.textContent = '0%';
-                    
-                    const dateInput = document.getElementById('master-date-selector').value;
-                    const dateStr = dateInput.split('-').reverse().join('-');
-                    
-                    try {
-                        Swal.fire({
-                            title: 'Pulizia in corso...',
-                            html: `Sto eliminando i dati precedenti per il <b>${dateStr}</b>.<br>Attendere prego.`,
-                            allowOutsideClick: false,
-                            allowEscapeKey: false,
-                            showConfirmButton: false,
-                            didOpen: () => { Swal.showLoading(); }
-                        });
-                        const eliminaFn = httpsCallable(functions, 'elimina_giornata_logistica');
-                        await eliminaFn({ 
-                            data_consegna: dateStr,
-                            tipologie_da_eliminare: tipologie_da_eliminare,
-                            tenant_da_eliminare: tenant_da_eliminare,
-                            cliente_zona_da_eliminare: cliente_zona_da_eliminare
-                        });
-                        Swal.close();
-                        console.log('[Upload] Pulizia completata per', dateStr);
-                    } catch (err_cleanup) {
-                        Swal.close();
-                        console.warn("Avviso durante la pulizia preventiva:", err_cleanup);
-                    }
-                } else {
-                    console.log('[Upload] Modalità Integrazione: nessuna pulizia eseguita.');
-                }
+                console.log('[Upload] Inizio upload in modalità solo append. Nessuna pulizia preventiva.');
 
                 // Upload Frutta
                 for (let file of filesFrutta) {

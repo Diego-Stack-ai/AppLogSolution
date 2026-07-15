@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.090">
+    <link rel="stylesheet" href="styles.css?v=6.091">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -77,79 +77,6 @@
         <div
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
             <h2 style="margin: 0; color: var(--primary);">Gestione Sistema</h2>
-        </div>
-
-        <!-- Sezione Gestione Targhe -->
-        <div id="toggleMezziBtn"
-            style="display: flex; justify-content: space-between; align-items: center; margin: 32px 0 0 0; cursor: pointer; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
-            <h3 class="section-title" style="margin: 0;">Gestione Targhe e Mezzi</h3>
-            <span class="material-icons-round" id="toggleMezziIcon"
-                style="color: var(--primary); transition: transform 0.3s ease;">expand_more</span>
-        </div>
-
-        <div id="mezziContent" style="display: none; padding-top: 20px;">
-            <button type="button" class="btn-primary" style="margin-bottom:20px; width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="const f = document.getElementById('formMezziContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">add_box</span>Aggiungi Nuova Targa</button>
-            <div id="formMezziContainer" style="display: none; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:24px;">
-            <div class="form-grid">
-                <div class="input-group">
-                    <label for="targaInput">Targa *</label>
-                    <input type="text" id="targaInput" placeholder="es. AA000BB" style="text-transform: uppercase;">
-                </div>
-                <div class="input-group">
-                    <label for="modelloInput">Nome / Modello Vettura (Opzionale)</label>
-                    <input type="text" id="modelloInput" placeholder="es. Fiat Ducato">
-                </div>
-                <div class="input-group">
-                    <label for="patenteInput">Tipo Patente Richiesta</label>
-                    <select id="patenteInput" style="height:45px; border-radius:12px; border:1px solid var(--border); padding:0 12px; font-size:14px; font-family:inherit; color:var(--text);">
-                        <option value="B">Patente B (Furgone)</option>
-                        <option value="C">Patente C (Camion)</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Upload File Mezzi -->
-            <div style="margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
-                <div style="background: white; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                    <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 12px; display: block;">📷 Foto Camion / Furgone</label>
-                    <div style="position: relative; width: 100%; margin-bottom: 12px;">
-                        <input type="file" id="fotoMezzoInput" multiple accept="image/*" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2;">
-                        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px; color: #64748b; font-size: 13px; transition: all 0.2s ease;"
-                             onmouseover="this.style.borderColor='var(--primary)'; this.style.color='var(--primary)'; this.style.background='#eff6ff';"
-                             onmouseout="this.style.borderColor='#cbd5e1'; this.style.color='#64748b'; this.style.background='#f8fafc';">
-                            <span class="material-icons-round" style="font-size: 20px;">add_photo_alternate</span>
-                            <span style="font-weight: 500;">Clicca o trascina le foto qui</span>
-                        </div>
-                    </div>
-                    <div id="fotoMezzoPreview" style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto;"></div>
-                </div>
-                
-                <div style="background: white; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                    <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 12px; display: block;">📄 Documenti (Libretto, Assicurazione...)</label>
-                    <div style="position: relative; width: 100%; margin-bottom: 12px;">
-                        <input type="file" id="documentiMezzoInput" multiple accept=".pdf,image/*" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2;">
-                        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px; color: #64748b; font-size: 13px; transition: all 0.2s ease;"
-                             onmouseover="this.style.borderColor='var(--primary)'; this.style.color='var(--primary)'; this.style.background='#eff6ff';"
-                             onmouseout="this.style.borderColor='#cbd5e1'; this.style.color='#64748b'; this.style.background='#f8fafc';">
-                            <span class="material-icons-round" style="font-size: 20px;">file_upload</span>
-                            <span style="font-weight: 500;">Clicca o trascina i documenti qui</span>
-                        </div>
-                    </div>
-                    <div id="documentiMezzoPreview" style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto;"></div>
-                </div>
-            </div>
-
-            <div style="display:flex; gap:12px; margin-top:20px;">
-                <button type="button" id="btnSalvaMezzo" class="btn-primary" style="flex:1;">Salva Mezzo</button>
-                <button type="button" id="btnAnnullaMezzo" class="btn-primary"
-                    style="flex:1; background:#f1f5f9; color:#334155; box-shadow:none; display:none;">Annulla</button>
-            </div>
-            </div>
-
-            <h3 class="section-title" style="margin-top: 24px;">Mezzi Esistenti</h3>
-            <div id="listaMezzi" style="display: flex; flex-direction: column; gap: 8px;">
-                <!-- Popolato da JS -->
-            </div>
         </div>
 
         <!-- Sezione Gestione Credenziali (Solo per Amministrazione) -->
@@ -727,209 +654,6 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const DEFAULT_MEZZI = [
-            { targa: 'FJ638LN', modello: '' }, { targa: 'FD788RT', modello: '' },
-            { targa: 'GB969FN', modello: '' }, { targa: 'GF929KT', modello: '' },
-            { targa: 'EK832AW', modello: '' }, { targa: 'EN201DB', modello: '' },
-            { targa: 'EN364DB', modello: '' }, { targa: 'DS224AD', modello: '' },
-            { targa: 'DS423SNF', modello: '' }, { targa: 'N481YL', modello: '' },
-            { targa: 'EN155RJ', modello: '' }, { targa: 'FF809PM', modello: '' },
-            { targa: 'FL142GN', modello: '' }, { targa: 'GH876XK', modello: '' },
-            { targa: 'GH877XK', modello: '' }, { targa: 'GH878XK', modello: '' },
-            { targa: 'GJ328KZ', modello: '' }, { targa: 'HB712NN', modello: '' },
-            { targa: 'HB713NN', modello: '' }
-        ];
-
-        let mezzi = (window.appData && window.appData.lista_mezzi && window.appData.lista_mezzi.length > 0) ? window.appData.lista_mezzi : DEFAULT_MEZZI;
-
-        const targaInput = document.getElementById('targaInput');
-        const modelloInput = document.getElementById('modelloInput');
-        const patenteInput = document.getElementById('patenteInput');
-        const btnSalva = document.getElementById('btnSalvaMezzo');
-        const btnAnnulla = document.getElementById('btnAnnullaMezzo');
-        const listaDiv = document.getElementById('listaMezzi');
-        const toggleBtn = document.getElementById('toggleMezziBtn');
-        const contentDiv = document.getElementById('mezziContent');
-        const iconSpan = document.getElementById('toggleMezziIcon');
-
-        toggleBtn.addEventListener('click', () => {
-            if (contentDiv.style.display !== 'none' && editIndex !== -1) {
-                if (!confirm("Hai una targa in modifica. Sicuro di voler chiudere senza salvare?")) return;
-                btnAnnulla.onclick();
-            }
-            if (contentDiv.style.display === 'none') {
-                contentDiv.style.display = 'block';
-                iconSpan.style.transform = 'rotate(180deg)';
-            } else {
-                contentDiv.style.display = 'none';
-                iconSpan.style.transform = 'rotate(0deg)';
-            }
-        });
-
-        let editIndex = -1;
-
-        window.renderLista = function () {
-            const currentMezzi = (window.appData && window.appData.lista_mezzi && window.appData.lista_mezzi.length > 0) ? window.appData.lista_mezzi : DEFAULT_MEZZI;
-            mezzi = currentMezzi; // Update local reference
-
-            listaDiv.innerHTML = '';
-            currentMezzi.forEach((m, idx) => {
-                const r = document.createElement('div');
-                r.className = 'list-row';
-                r.style.marginBottom = '8px';
-                const title = m.modello ? `${m.targa} - <span style="font-weight:400; color:#64748b;">${m.modello}</span>` : m.targa;
-                const patenteLabel = m.patente === 'C' ? '<span style="background:#fef3c7;color:#d97706;padding:1px 7px;border-radius:6px;font-size:11px;font-weight:700;margin-left:6px;">CAT C</span>' : '<span style="background:#e0e7ff;color:#4f46e5;padding:1px 7px;border-radius:6px;font-size:11px;font-weight:700;margin-left:6px;">CAT B</span>';
-                r.innerHTML = `
-                    <div style="font-weight:600; color:#334155; display:flex; align-items:center;">${title}${patenteLabel}</div>
-                    <div style="display:flex; gap:8px;">
-                        <button onclick="editMezzo(${idx})" class="action-btn edit-btn" title="Modifica">
-                            <span class="material-icons-round" style="font-size:20px;">edit</span>
-                        </button>
-                        <button onclick="deleteMezzo(${idx})" class="action-btn delete-btn" title="Elimina">
-                            <span class="material-icons-round" style="font-size:20px;">delete</span>
-                        </button>
-                    </div>
-                `;
-                listaDiv.appendChild(r);
-            });
-        }
-
-        window.filesToDeleteFromStorage = [];
-
-        window.renderMezzoFiles = function(mezzo) {
-            const fotoContainer = document.getElementById('fotoMezzoPreview');
-            const docContainer = document.getElementById('documentiMezzoPreview');
-            if (fotoContainer) fotoContainer.innerHTML = '';
-            if (docContainer) docContainer.innerHTML = '';
-            if (mezzo && mezzo.fotoUrls && mezzo.fotoUrls.length > 0) {
-                mezzo.fotoUrls.forEach((f, idx) => {
-                    const div = document.createElement('div');
-                    div.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px; border-radius:6px; font-size:12px; border:1px solid #e2e8f0;";
-                    div.innerHTML = `<a href="${f.url}" target="_blank" style="color:var(--primary); text-decoration:none; display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:85%;"><span class="material-icons-round" style="font-size:16px;">image</span> ${f.name}</a><button type="button" class="action-btn delete-btn" style="padding:2px; min-width:24px; min-height:24px; border:none;" onclick="removeMezzoFile('fotoUrls', ${idx})"><span class="material-icons-round" style="font-size:14px; color:#ef4444;">close</span></button>`;
-                    fotoContainer.appendChild(div);
-                });
-            }
-            if (mezzo && mezzo.documentiUrls && mezzo.documentiUrls.length > 0) {
-                mezzo.documentiUrls.forEach((f, idx) => {
-                    const div = document.createElement('div');
-                    div.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px; border-radius:6px; font-size:12px; border:1px solid #e2e8f0;";
-                    div.innerHTML = `<a href="${f.url}" target="_blank" style="color:var(--primary); text-decoration:none; display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:85%;"><span class="material-icons-round" style="font-size:16px;">description</span> ${f.name}</a><button type="button" class="action-btn delete-btn" style="padding:2px; min-width:24px; min-height:24px; border:none;" onclick="removeMezzoFile('documentiUrls', ${idx})"><span class="material-icons-round" style="font-size:14px; color:#ef4444;">close</span></button>`;
-                    docContainer.appendChild(div);
-                });
-            }
-        };
-
-        window.removeMezzoFile = function(arrayName, idx) {
-            if (!confirm("Sicuro di voler rimuovere questo file? La rimozione sarà definitiva dopo il salvataggio.")) return;
-            const mezzo = mezzi[editIndex];
-            const fileItem = mezzo[arrayName][idx];
-            if (fileItem.path) window.filesToDeleteFromStorage.push(fileItem.path);
-            mezzo[arrayName].splice(idx, 1);
-            window.renderMezzoFiles(mezzo);
-        };
-
-        window.editMezzo = function (idx) {
-            if (editIndex !== -1 && editIndex !== idx) {
-                if (!confirm("Hai una targa in modifica. Vuoi abbandonarla per modificare questa?")) return;
-            }
-            document.getElementById('formMezziContainer').style.display = 'block';
-            editIndex = idx;
-            const mezzo = mezzi[idx];
-            targaInput.value = mezzo.targa;
-            modelloInput.value = mezzo.modello || '';
-            patenteInput.value = mezzo.patente || 'B';
-            document.getElementById('fotoMezzoInput').value = '';
-            document.getElementById('documentiMezzoInput').value = '';
-            window.filesToDeleteFromStorage = [];
-            window.renderMezzoFiles(mezzo);
-            btnSalva.textContent = "Aggiorna Mezzo";
-            btnAnnulla.style.display = "block";
-            targaInput.focus();
-        };
-
-        window.deleteMezzo = async function (idx) {
-            const m = mezzi[idx];
-            if (confirm('Eliminare ' + m.targa + '? (I file su Storage non verranno eliminati automaticamente)')) {
-                try {
-                    if (window.deleteFromFirebase && m.id) {
-                        await window.deleteFromFirebase("mezzi", m.id);
-                    }
-                    alert("Mezzo eliminato dal Cloud!");
-                } catch (e) {
-                    alert("Errore eliminazione: " + e.message);
-                }
-            }
-        };
-
-        btnAnnulla.onclick = () => {
-            editIndex = -1;
-            targaInput.value = '';
-            modelloInput.value = '';
-            patenteInput.value = 'B';
-            document.getElementById('fotoMezzoInput').value = '';
-            document.getElementById('documentiMezzoInput').value = '';
-            window.renderMezzoFiles(null);
-            btnSalvaMezzo.textContent = "Salva Mezzo";
-            btnAnnulla.style.display = "none";
-        };
-
-        btnSalvaMezzo.onclick = async () => {
-            const targa = targaInput.value.trim().toUpperCase();
-            const modello = modelloInput.value.trim();
-            const patente = patenteInput.value || 'B';
-            if (!targa) return alert("Inserire la targa");
-
-            btnSalvaMezzo.disabled = true;
-            btnSalvaMezzo.textContent = "Upload e Salvataggio...";
-
-            const mezzoData = { targa: targa, modello: modello, patente: patente };
-            const id = editIndex >= 0 ? mezzi[editIndex].id : null;
-            mezzoData.fotoUrls = (editIndex >= 0 && mezzi[editIndex].fotoUrls) ? [...mezzi[editIndex].fotoUrls] : [];
-            mezzoData.documentiUrls = (editIndex >= 0 && mezzi[editIndex].documentiUrls) ? [...mezzi[editIndex].documentiUrls] : [];
-
-            try {
-                const storage = window.firebaseStorage || (typeof firebaseStorage !== 'undefined' ? firebaseStorage : null);
-                if (storage) {
-                    const { ref: sRef, uploadBytes, getDownloadURL, deleteObject } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js");
-                    const uploadFiles = async (inputId, arrayRef, folder) => {
-                        const files = document.getElementById(inputId).files;
-                        for (let i = 0; i < files.length; i++) {
-                            const file = files[i];
-                            const safeName = file.name.replace(/\s+/g, '_');
-                            const path = `MEZZI/${targa}/${folder}/${Date.now()}_${safeName}`;
-                            const snap = await uploadBytes(sRef(storage, path), file);
-                            const url = await getDownloadURL(snap.ref);
-                            arrayRef.push({ name: file.name, url, path });
-                        }
-                    };
-                    await uploadFiles('fotoMezzoInput', mezzoData.fotoUrls, 'foto');
-                    await uploadFiles('documentiMezzoInput', mezzoData.documentiUrls, 'documenti');
-                    if (window.filesToDeleteFromStorage && window.filesToDeleteFromStorage.length > 0) {
-                        for (const p of window.filesToDeleteFromStorage) {
-                            try { await deleteObject(sRef(storage, p)); } catch(e) { console.warn('[Storage] Errore eliminazione', p, e); }
-                        }
-                        window.filesToDeleteFromStorage = [];
-                    }
-                } else {
-                    console.warn('[Storage] Firebase Storage non disponibile.');
-                }
-                if (window.updateMezzo) await window.updateMezzo(id, mezzoData);
-                alert("Mezzo salvato correttamente su Firebase!");
-                btnAnnulla.onclick();
-            } catch (err) {
-                alert("Errore durante il salvataggio: " + err.message);
-            } finally {
-                btnSalvaMezzo.disabled = false;
-                btnSalvaMezzo.textContent = editIndex >= 0 ? "Aggiorna Mezzo" : "Salva Mezzo";
-            }
-        };
-
-        // --- GESTIONE AUTISTI (MODIFICATA) ---
-        const driverNomeInput = document.getElementById('driverNomeInput');
-        const driverCognomeInput = document.getElementById('driverCognomeInput');
-        const driverRuoloInput = document.getElementById('driverRuoloInput');
-        const driverTurnoInput = document.getElementById('driverTurnoInput');
-        const driverEmailInput = document.getElementById('driverEmailInput');
         const driverEmailPersonaleInput = document.getElementById('driverEmailPersonaleInput');
         const driverCellulareInput = document.getElementById('driverCellulareInput');
         const adminExtraFields = document.getElementById('adminExtraFields');
@@ -1505,8 +1229,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=6.090"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.090"></script>
+    <script src="script.js?v=6.091"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.091"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────

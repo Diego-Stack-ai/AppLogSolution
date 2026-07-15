@@ -2560,7 +2560,8 @@ def _ordina_job_ids_gc(job_ids, tenant="GRAN CHEF"):
     jobs_info.sort(key=lambda x: x[1])
     return [x[0] for x in jobs_info]
 
-def core_genera_report_giornaliero(uid, data_consegna):
+def core_genera_report_giornaliero(uid, data_consegna, azioni=None):
+    if azioni is None: azioni = {}
     """
     Implementa gli step 2, 3 e 4 del workflow locale:
     - Aggrega i DDT per la data indicata (Step 2)
@@ -2574,6 +2575,24 @@ def core_genera_report_giornaliero(uid, data_consegna):
         return {"status": "errore", "message": "Data mancante"}
 
     print(f"[INFO] Generazione report per il {data_consegna}")
+    
+    # 0.5. Sovrascrittura Selettiva (Elimina i viaggi Firestore per i tenant che vogliamo sovrascrivere)
+    for tenant_key, azione in azioni.items():
+        if azione == "sovrascrivi":
+            print(f"[INFO] Sovrascrittura richiesta per {tenant_key}. Eliminazione vecchi viaggi...")
+            try:
+                viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
+                viaggi = viaggi_ref.where("data_lavoro", "==", data_consegna).stream()
+                for v in viaggi:
+                    cz = v.to_dict().get("cliente_zona", "")
+                    should_delete = False
+                    if tenant_key == "CATTEL" and cz == "CATTEL": should_delete = True
+                    elif tenant_key == "GRAN_CHEF" and cz == "GRAN CHEF": should_delete = True
+                    elif tenant_key == "DNR" and (cz == "PROGETTO SCUOLE" or not cz): should_delete = True
+                    if should_delete:
+                        v.reference.delete()
+            except Exception as e:
+                print(f"[ERROR] Sovrascrittura {tenant_key} fallita: {e}")
     
     # PRE-SALVATAGGIO: Leggi i viaggi esistenti prima di cancellarli, per mantenere i percorsi calcolati (Integrazione CATTEL/GC)
     import json
@@ -2876,7 +2895,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
                         "codice_latte": cliente_info.get('codice_latte', 'p00000') if cliente_info else 'p00000',
                         "codici_ddt_frutta": [],
                         "codici_ddt_latte": [],
-                        "zona": "DDT_DA_INSERIRE",
+                        "zona": "PUNTI_DI_CONSEGNA",
                         "lat": float(cliente_info.get('lat', 0)) if cliente_info and cliente_info.get('lat') else 0,
                         "lon": float(cliente_info.get('lon', 0)) if cliente_info and cliente_info.get('lon') else 0,
                         "rientri_alert": [],
@@ -2897,111 +2916,142 @@ def core_genera_report_giornaliero(uid, data_consegna):
     except Exception as e_r:
         print(f"[ERROR] Errore integrazione rientri: {e_r}")
 
-    # 3. Organizza per Zone (Step 4 locale)
-    zone_dict = defaultdict(list)
-    for p in punti_map.values():
-        zone_dict[p['zona']].append(p)
-        
-    # Colori per le zone (palette dello script 4, escludendo arancione per DDT_DA_INSERIRE)
-    palette = ["#4f46e5", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#14b8a6", "#6366f1", "#a855f7", "#3b82f6", "#22c55e", "#d946ef", "#84cc16"]
+    # 3. Organizza per Zone (Step 4 locale) e Smart Diff
+    zone_finali = []
     
-    # Dividiamo le zone in categorie
-    dnr_keys = sorted([k for k in zone_dict.keys() if k not in ("DDT_DA_INSERIRE", "0000", "SENZA_ZONA") and not k.startswith("GC_") and not k.startswith("CATTEL_") and not k.startswith("BAUER_")])
+    # 3.1. Costruisci mappa di lookup per le chiavi
+    punti_lookup = {}
+    for k, p_raw in punti_map.items():
+        tc = _build_tripla_chiave(p_raw.get("codice_frutta", "p00000"), p_raw.get("codice_latte", "p00000"), p_raw.get("nome", ""))
+        punti_lookup[tc] = k
+        p_raw["_assegnato_integrazione"] = False
+
+    color_index = 0
+    palette = ["#4f46e5", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#14b8a6", "#6366f1", "#a855f7", "#3b82f6", "#22c55e", "#d946ef", "#84cc16"]
+
+    # 3.2. Integrazione Viaggi Esistenti
+    for zid, old_z in mappa_zone_esistenti.items():
+        cz = old_z.get("cliente_zona", "")
+        tenant_key = "DNR" if (cz == "PROGETTO SCUOLE" or not cz) else cz
+        if tenant_key == "GRAN CHEF": tenant_key = "GRAN_CHEF"
+        
+        azione = azioni.get(tenant_key, "sovrascrivi")
+        if azione == "sovrascrivi":
+            continue # Salta i viaggi da sovrascrivere (saranno ricreati da zero)
+            
+        # INTEGRAZIONE SMART DIFF
+        nuova_lista_punti = []
+        for p in old_z.get("lista_punti", []):
+            tc_old = p.get("tripla_chiave") or _build_tripla_chiave(p.get("codice_frutta", "p00000"), p.get("codice_latte", "p00000"), p.get("nome", ""))
+            real_key = punti_lookup.get(tc_old)
+            if real_key:
+                # Il punto esiste ancora nei dati odierni
+                dati_freschi = punti_map[real_key]
+                p_aggiornato = dict(p) # copia
+                # Trasferisci i dati freschi che potrebbero essere cambiati (DDT, colli, etc)
+                p_aggiornato["codici_ddt_frutta"] = dati_freschi.get("codici_ddt_frutta", [])
+                p_aggiornato["codici_ddt_latte"] = dati_freschi.get("codici_ddt_latte", [])
+                p_aggiornato["gc_colli"] = dati_freschi.get("gc_colli", "")
+                p_aggiornato["gc_peso_kg"] = dati_freschi.get("gc_peso_kg", "")
+                p_aggiornato["gc_num_cartone"] = dati_freschi.get("gc_num_cartone", "")
+                
+                nuova_lista_punti.append(p_aggiornato)
+                dati_freschi["_assegnato_integrazione"] = True
+
+        if nuova_lista_punti:
+            old_z_copy = dict(old_z)
+            old_z_copy["lista_punti"] = nuova_lista_punti
+            zone_finali.append(old_z_copy)
+            color_index += 1
+
+    # 3.3. Raggruppa i punti rimanenti (NON assegnati in integrazione)
+    zone_dict = defaultdict(list)
+    punti_di_consegna_list = []
+    
+    for p in punti_map.values():
+        if p.get("_assegnato_integrazione"):
+            continue # Già piazzato in un viaggio integrato
+            
+        # Determina il tenant per capire se è un punto nuovo di una zona integrata
+        tipo = p.get("tipo", "")
+        cz = p.get("cliente_zona", "")
+        tenant_key = "DNR"
+        if cz == "CATTEL" or p.get("is_cattel"): tenant_key = "CATTEL"
+        elif tipo == "GRAND_CHEF" or p.get("is_gc"): tenant_key = "GRAN_CHEF"
+        
+        azione = azioni.get(tenant_key, "sovrascrivi")
+        
+        if azione == "integra":
+            # È un punto NUOVO in un tenant che stiamo integrando -> Va in PUNTI DI CONSEGNA
+            punti_di_consegna_list.append(p)
+        else:
+            # È un punto di un tenant da sovrascrivere (o default) -> Raggruppa normalmente
+            z_id = p.get("zona", "0000")
+            if not z_id: z_id = "0000"
+            zone_dict[z_id].append(p)
+
+    # 3.4. Costruisci Zone Normali per i punti NON integrati (Sovrascrivi)
+    dnr_keys = sorted([k for k in zone_dict.keys() if k not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA", "0000", "SENZA_ZONA") and not k.startswith("GC_") and not k.startswith("CATTEL_") and not k.startswith("BAUER_")])
     cattel_keys = sorted([k for k in zone_dict.keys() if k.startswith("CATTEL_")])
     bauer_keys = sorted([k for k in zone_dict.keys() if k.startswith("BAUER_")])
     gc_keys = [k for k in zone_dict.keys() if k.startswith("GC_")]
     
-    # Ordina le zone GC per timestamp di creazione del job
     gc_job_ids = [k[3:] for k in gc_keys]
     sorted_job_ids = _ordina_job_ids_gc(gc_job_ids)
     sorted_gc_keys = [f"GC_{jid}" for jid in sorted_job_ids]
     
-    zone_finali = []
-    color_index = 0
-    
-    # Aggiungi zone DNR
     for idx_dnr, zid in enumerate(dnr_keys, start=1):
         zone_finali.append({
-            "id_zona": zid,
-            "nome_giro": f"V{idx_dnr:02d}",
-            "color": palette[color_index % len(palette)],
-            "lista_punti": zone_dict[zid],
-            "cliente_zona": "PROGETTO SCUOLE"
+            "id_zona": zid, "nome_giro": f"V{idx_dnr:02d}", "color": palette[color_index % len(palette)],
+            "lista_punti": zone_dict[zid], "cliente_zona": "PROGETTO SCUOLE"
         })
         color_index += 1
         
-    # Aggiungi zone Cattel
     for idx_cattel, zid in enumerate(cattel_keys, start=1):
         parts = zid.split('_')
         targa_label = parts[1] if len(parts) > 2 else f"Viaggio {idx_cattel}"
         zone_finali.append({
-            "id_zona": zid,
-            "nome_giro": f"Cattel {targa_label}",
-            "color": palette[color_index % len(palette)],
-            "lista_punti": zone_dict[zid],
-            "is_cattel": True,
-            "cliente_zona": "CATTEL"
+            "id_zona": zid, "nome_giro": f"Cattel {targa_label}", "color": palette[color_index % len(palette)],
+            "lista_punti": zone_dict[zid], "is_cattel": True, "cliente_zona": "CATTEL"
         })
         color_index += 1
         
-    # Aggiungi zone Bauer
     for idx_bauer, zid in enumerate(bauer_keys, start=1):
         parts = zid.split('_')
         targa_label = parts[1] if len(parts) > 2 else f"Viaggio {idx_bauer}"
         zone_finali.append({
-            "id_zona": zid,
-            "nome_giro": f"Bauer {targa_label}",
-            "color": palette[color_index % len(palette)],
-            "lista_punti": zone_dict[zid],
-            "is_bauer": True,
-            "cliente_zona": "BAUER"
+            "id_zona": zid, "nome_giro": f"Bauer {targa_label}", "color": palette[color_index % len(palette)],
+            "lista_punti": zone_dict[zid], "is_bauer": True, "cliente_zona": "BAUER"
         })
         color_index += 1
         
-    # Aggiungi zone Grand Chef
     for idx_gc, zid in enumerate(sorted_gc_keys, start=1):
         zone_finali.append({
-            "id_zona": zid,
-            "nome_giro": f"Viaggio {idx_gc} Grand Chef",
-            "color": palette[color_index % len(palette)],
-            "lista_punti": zone_dict[zid],
-            "is_gc": True,
-            "cliente_zona": "GRAN CHEF"
+            "id_zona": zid, "nome_giro": f"Viaggio {idx_gc} Grand Chef", "color": palette[color_index % len(palette)],
+            "lista_punti": zone_dict[zid], "is_gc": True, "cliente_zona": "GRAN CHEF"
         })
         color_index += 1
         
-    # Aggiungi SENZA_ZONA (0000 o SENZA_ZONA) alla fine
     for zid in ["0000", "SENZA_ZONA"]:
         if zid in zone_dict:
             zone_finali.append({
-                "id_zona": zid,
-                "nome_giro": "SENZA ZONA",
-                "color": "#9ca3af",
+                "id_zona": zid, "nome_giro": "SENZA ZONA", "color": "#9ca3af",
                 "lista_punti": zone_dict[zid]
             })
             
-    # Aggiungi DDT_DA_INSERIRE alla fine
+    # Aggiungi eventuali punti PUNTI DI CONSEGNA derivanti dall'integrazione o vecchi DDT_DA_INSERIRE
     if "DDT_DA_INSERIRE" in zone_dict:
+        punti_di_consegna_list.extend(zone_dict["DDT_DA_INSERIRE"])
+    if "PUNTI_DI_CONSEGNA" in zone_dict:
+        punti_di_consegna_list.extend(zone_dict["PUNTI_DI_CONSEGNA"])
+        
+    if punti_di_consegna_list:
         zone_finali.append({
-            "id_zona": "DDT_DA_INSERIRE",
-            "nome_giro": "⚠️ DDT DA INSERIRE",
+            "id_zona": "PUNTI_DI_CONSEGNA",
+            "nome_giro": "⚠️ PUNTI DI CONSEGNA",
             "color": "#f59e0b",
-            "lista_punti": zone_dict["DDT_DA_INSERIRE"]
+            "lista_punti": punti_di_consegna_list
         })
-
-    # 3.5 MERGE CON ZONE ESISTENTI (Preservazione Polilinee e Percorsi Calcolati)
-    for z in zone_finali:
-        zid = z.get("id_zona")
-        old_z = mappa_zone_esistenti.get(zid)
-        if old_z and old_z.get("_stato") == "calcolato":
-            # Verifica che il numero di punti non sia cambiato.
-            # Se è identico, ripristiniamo ordine (lista_punti), stats e polylines
-            if len(z["lista_punti"]) == len(old_z.get("lista_punti", [])):
-                z["lista_punti"] = old_z["lista_punti"]
-                if "_polylines" in old_z: z["_polylines"] = old_z["_polylines"]
-                if "_stats" in old_z: z["_stats"] = old_z["_stats"]
-                z["_stato"] = "calcolato"
-                if "nome_giro" in old_z and old_z["nome_giro"]: z["nome_giro"] = old_z["nome_giro"]
 
     # 4. Salvataggio file JSON storici nello Storage (Standard Johnson)
     path_base = f"REPORTS/{data_consegna}"
@@ -3362,7 +3412,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
             elif isinstance(id_zona, str) and zid != id_zona:
                 continue
         
-        if zid == "DDT_DA_INSERIRE":
+        if zid in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA"):
             continue
             
         is_bloccato = zone.get("_bloccato") or zone.get("_stato") == "bloccato"
@@ -4111,7 +4161,7 @@ def core_genera_completo_giornata(data_consegna):
     
     for zone in zone_list:
         zid = zone.get("id_zona")
-        if zid == "DDT_DA_INSERIRE":
+        if zid in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA"):
             continue
             
         punti = zone.get("lista_punti", [])
@@ -4250,7 +4300,7 @@ def core_genera_completo_giornata(data_consegna):
             
         for zone in zone_list:
             zid = zone.get("id_zona")
-            if zid == "DDT_DA_INSERIRE": continue
+            if zid in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA"): continue
             nome_giro = zone.get("nome_giro")
             giro_blob = bucket.blob(f"REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_{nome_giro}.pdf")
             if giro_blob.exists():
@@ -4279,8 +4329,8 @@ def core_genera_completo_giornata(data_consegna):
         manifest_data["master_distinte_url"] = master_distinte_url
     bucket.blob(f"REPORTS/{data_consegna}/manifest_link_viaggi.json").upload_from_string(json.dumps(manifest_data, indent=2), content_type='application/json')
 
-    punti_totali = sum(len(z.get("lista_punti", [])) for z in zone_list if z.get("id_zona") != "DDT_DA_INSERIRE")
-    zone_totali = len([z for z in zone_list if z.get("id_zona") != "DDT_DA_INSERIRE"])
+    punti_totali = sum(len(z.get("lista_punti", [])) for z in zone_list if z.get("id_zona") not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA"))
+    zone_totali = len([z for z in zone_list if z.get("id_zona") not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA")])
     
     report_meta = {
         "data_consegna": data_consegna,
@@ -4420,9 +4470,11 @@ def chiudi_giornata(req: https_fn.CallableRequest):
 def genera_report_giornaliero(req: https_fn.CallableRequest):
     try:
         data_consegna = req.data.get("data_consegna") if isinstance(req.data, dict) else None
+        azioni = req.data.get("azioni", {}) if isinstance(req.data, dict) else {}
         return core_genera_report_giornaliero(
             req.auth.uid if req.auth else None,
-            data_consegna
+            data_consegna,
+            azioni
         )
     except Exception as e:
         import traceback
@@ -4654,6 +4706,40 @@ def aggiorna_traffico_serale(req: https_fn.CallableRequest):
         traceback.print_exc()
         return {"status": "errore", "message": f"Global exception: {str(e)}"}
 
+@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.MB_256, timeout_sec=60,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def check_dati_disponibili(req: https_fn.CallableRequest):
+    """
+    Rileva quali blocchi (CATTEL, GRAN_CHEF, DNR) hanno file raw ddt_estratti 
+    presenti nello Storage per una certa data.
+    Restituisce un dictionary: {"CATTEL": bool, "GRAN_CHEF": bool, "DNR": bool}
+    """
+    data_consegna = req.data.get("data_consegna")
+    if not data_consegna:
+        return {"status": "errore", "message": "data_consegna mancante"}
+        
+    bucket = storage.bucket(name=BUCKET_NAME)
+    
+    risultato = {
+        "CATTEL": False,
+        "GRAN_CHEF": False,
+        "DNR": False
+    }
+    
+    # Controlliamo CATTEL
+    if list(bucket.list_blobs(prefix=f"split_ddt/{data_consegna}/CATTEL/ddt_estratti")):
+        risultato["CATTEL"] = True
+        
+    # Controlliamo GRAN_CHEF
+    if list(bucket.list_blobs(prefix=f"split_ddt/{data_consegna}/GRAND_CHEF/ddt_estratti")):
+        risultato["GRAN_CHEF"] = True
+        
+    # Controlliamo DNR (FRUTTA o LATTE)
+    if list(bucket.list_blobs(prefix=f"split_ddt/{data_consegna}/FRUTTA/ddt_estratti")) or \
+       list(bucket.list_blobs(prefix=f"split_ddt/{data_consegna}/LATTE/ddt_estratti")):
+        risultato["DNR"] = True
+        
+    return {"status": "ok", "dati_disponibili": risultato}
 
 # ─── GESTIONE E RIPRISTINO BACKUP CACHE DISTANZE (R&D / SICUREZZA) ─────────────
 

@@ -722,7 +722,9 @@
             box-shadow: 0 24px 64px rgba(0,0,0,0.45);
             border: 1.5px solid rgba(255,255,255,0.08);
             overflow: hidden;
-            width: 400px !important;
+            width: 75% !important;
+            max-width: 1200px;
+            left: 12.5% !important;
         }
         #sidebar.floating #header {
             cursor: grab;
@@ -1114,7 +1116,68 @@
         .compact-city { color: #64748b; font-size: 0.85rem; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .compact-time { color: #10b981; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 4px; width: 180px; }
         .compact-delete { color: #ef4444; background: #fef2f2; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; transition: all 0.2s; }
-        .compact-delete:hover { background: #fee2e2; }
+        /* Ottimizzazione Layout Orizzontale (PC/Tablet) */
+        @media (min-width: 768px) {
+            /* Header in linea */
+            #header {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                padding: 12px 24px;
+            }
+            .header-title-row {
+                margin-bottom: 0;
+                flex: 1 1 auto;
+            }
+            .summary-stats {
+                margin-top: 0;
+                margin-right: auto;
+            }
+            .controls-grid {
+                display: flex;
+                margin-top: 0;
+                align-items: center;
+                gap: 12px;
+            }
+            .btn-save-all { padding: 8px 12px; }
+
+            /* Zone Card Layout */
+            #zone-list {
+                display: flex;
+                flex-direction: column;
+            }
+            .zone-card {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 16px;
+            }
+            .zone-header {
+                flex: 1 1 30%;
+                min-width: 300px;
+            }
+            .zc-stats {
+                flex: 1 1 30%;
+                min-width: 250px;
+                margin-top: 0;
+                border: none;
+                background: transparent;
+                padding: 0;
+            }
+            .zone-meta-right {
+                flex: 1 1 auto;
+                justify-content: flex-end;
+            }
+            .stops-container {
+                flex: 1 1 100%; /* force break */
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 8px;
+                margin-top: 16px;
+            }
+        }
     </style>
 </head>
 <body>

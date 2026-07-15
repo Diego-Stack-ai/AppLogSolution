@@ -1,6 +1,7 @@
 import os
 import firebase_admin
 from firebase_admin import credentials, firestore, storage
+from datetime import datetime
 
 def copia_collezione(db_prod, db_dev, tenant, coll_name):
     print(f"[{tenant}] Sincronizzazione collezione: {coll_name}")
@@ -30,16 +31,16 @@ def main():
 
     print("Inizializzazione Produzione (log-solution-60007)...")
     cred_prod = credentials.Certificate("prod_key.json")
-    app_prod = firebase_admin.initialize_app(cred_prod, name='prod_mirata_2', options={
-        'storageBucket': 'log-solution-60007.firebasestorage.app'
+    app_prod = firebase_admin.initialize_app(cred_prod, name='prod_mirata', options={
+        'storageBucket': 'log-solution-60007.appspot.com'
     })
     db_prod = firestore.client(app=app_prod)
     bucket_prod = storage.bucket(app=app_prod)
 
     print("Inizializzazione Sviluppo (log-solutions-sviluppo)...")
     cred_dev = credentials.Certificate("dev_key.json")
-    app_dev = firebase_admin.initialize_app(cred_dev, name='dev_mirata_2', options={
-        'storageBucket': 'log-solutions-sviluppo.firebasestorage.app'
+    app_dev = firebase_admin.initialize_app(cred_dev, name='dev_mirata', options={
+        'storageBucket': 'log-solutions-sviluppo.appspot.com'
     })
     db_dev = firestore.client(app=app_dev)
     bucket_dev = storage.bucket(app=app_dev)
@@ -72,18 +73,16 @@ def main():
         prefixes = [f"REPORTS/{date_str}/", f"split_ddt/{date_str}/"]
         for prefix in prefixes:
             print(f"Analisi Storage Prefix Produzione: {prefix}")
-            try:
-                blobs_prod = bucket_prod.list_blobs(prefix=prefix)
-                copiati = 0
-                for blob in blobs_prod:
-                    data = blob.download_as_bytes()
-                    dev_blob = bucket_dev.blob(blob.name)
-                    dev_blob.upload_from_string(data, content_type=blob.content_type)
-                    copiati += 1
-                if copiati > 0:
-                    print(f"  - Copiati {copiati} file da {prefix}")
-            except Exception as e:
-                print(f"  - ERRORE in {prefix}: {e}")
+            blobs_prod = bucket_prod.list_blobs(prefix=prefix)
+            copiati = 0
+            for blob in blobs_prod:
+                # Copia da un bucket all'altro scaricando in memoria (i JSON sono leggeri)
+                data = blob.download_as_bytes()
+                dev_blob = bucket_dev.blob(blob.name)
+                dev_blob.upload_from_string(data, content_type=blob.content_type)
+                copiati += 1
+            if copiati > 0:
+                print(f"  - Copiati {copiati} file da {prefix}")
 
     print("\n=====================================================")
     print("MIGRAZIONE COMPLETATA CON SUCCESSO")

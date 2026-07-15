@@ -5,10 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.095">
+    <link rel="stylesheet" href="styles.css?v=6.098">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
@@ -147,8 +150,8 @@
     </div>
 </main>
 
-<script src="script.js?v=6.095"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.095"></script>
+<script src="script.js?v=6.098"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.098"></script>
 
 <script type="module">
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -195,7 +198,55 @@ document.addEventListener("DOMContentLoaded", () => {
         window.toggleDetails = function(idx) {
             const el = document.getElementById('mezzo-details-' + idx);
             if (el) {
-                el.style.display = el.style.display === 'none' ? 'block' : 'none';
+                const isOpening = el.style.display === 'none';
+                el.style.display = isOpening ? 'block' : 'none';
+                
+                // Progressive Enhancement: Render PDF thumbnails on desktop only
+                if (isOpening && window.innerWidth > 768) {
+                    renderPDFThumbnails(idx);
+                }
+            }
+        };
+
+        window.renderPDFThumbnails = async function(mezzoIdx) {
+            const el = document.getElementById('mezzo-details-' + mezzoIdx);
+            if (!el) return;
+            const canvases = el.querySelectorAll('.pdf-thumbnail-canvas');
+            
+            for (let i = 0; i < canvases.length; i++) {
+                const canvas = canvases[i];
+                if (canvas.dataset.rendered === 'true') continue;
+                
+                const url = canvas.dataset.pdfUrl;
+                const iconContainer = document.getElementById(canvas.dataset.iconId);
+                
+                try {
+                    const loadingTask = pdfjsLib.getDocument(url);
+                    const pdf = await loadingTask.promise;
+                    const page = await pdf.getPage(1);
+                    
+                    const viewport = page.getViewport({ scale: 1.0 });
+                    // Scale to roughly fit 120px width for the thumbnail
+                    const scale = 120 / viewport.width;
+                    const scaledViewport = page.getViewport({ scale: scale });
+                    
+                    canvas.height = scaledViewport.height;
+                    canvas.width = scaledViewport.width;
+                    
+                    const renderContext = {
+                        canvasContext: canvas.getContext('2d'),
+                        viewport: scaledViewport
+                    };
+                    
+                    await page.render(renderContext).promise;
+                    
+                    // Show canvas, hide icon
+                    if (iconContainer) iconContainer.style.display = 'none';
+                    canvas.style.display = 'block';
+                    canvas.dataset.rendered = 'true';
+                } catch (error) {
+                    console.error('Error rendering PDF thumbnail for', url, error);
+                }
             }
         };
 
@@ -217,18 +268,39 @@ document.addEventListener("DOMContentLoaded", () => {
                 let detailsHtml = '<div style="font-size:13px; color:#64748b; margin-bottom:8px;">Nessun documento o foto presente.</div>';
                 
                 let hasDocs = false;
-                let filesHtml = '<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:8px;">';
+                let filesHtml = '<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap:12px;">';
                 
                 if (m.fotoUrls && m.fotoUrls.length > 0) {
                     hasDocs = true;
                     m.fotoUrls.forEach(f => {
-                        filesHtml += `<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="display:flex; align-items:center; gap:6px; padding:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; text-decoration:none; color:var(--primary); font-size:12px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;" title="${f.name}"><span class="material-icons-round" style="font-size:16px;">image</span> ${f.name}</a>`;
+                        filesHtml += `<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="display:flex; flex-direction:column; align-items:center; padding:8px; background:rgba(255, 255, 255, 0.5); border:1px solid rgba(255, 255, 255, 0.4); border-radius:12px; text-decoration:none; color:#1e293b; font-size:11px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.03); backdrop-filter:blur(8px); transition:transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.03)';" title="${f.name}">
+                            <img src="${f.url}" alt="${f.name}" style="width:100%; height:80px; object-fit:cover; border-radius:6px; margin-bottom:6px;">
+                            <span style="overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; width:100%; word-break:break-word; line-height:1.2;">${f.name}</span>
+                        </a>`;
                     });
                 }
                 if (m.documentiUrls && m.documentiUrls.length > 0) {
                     hasDocs = true;
-                    m.documentiUrls.forEach(f => {
-                        filesHtml += `<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="display:flex; align-items:center; gap:6px; padding:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; text-decoration:none; color:var(--primary); font-size:12px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;" title="${f.name}"><span class="material-icons-round" style="font-size:16px;">description</span> ${f.name}</a>`;
+                    m.documentiUrls.forEach((f, fileIdx) => {
+                        const isPdf = f.name.toLowerCase().endsWith('.pdf');
+                        const iconName = isPdf ? 'picture_as_pdf' : 'description';
+                        const iconColor = isPdf ? '#ef4444' : '#3b82f6';
+                        const uniqueId = `pdf-${idx}-${fileIdx}`;
+                        
+                        let visualElement = `
+                            <div id="icon-${uniqueId}" style="width:100%; height:80px; display:flex; align-items:center; justify-content:center; background:rgba(241, 245, 249, 0.7); border-radius:6px; margin-bottom:6px;">
+                                <span class="material-icons-round" style="font-size:36px; color:${iconColor};">${iconName}</span>
+                            </div>`;
+                            
+                        if (isPdf) {
+                            visualElement += `
+                            <canvas id="canvas-${uniqueId}" class="pdf-thumbnail-canvas" style="display:none; width:100%; height:80px; object-fit:contain; border-radius:6px; margin-bottom:6px;" data-pdf-url="${f.url}" data-icon-id="icon-${uniqueId}"></canvas>`;
+                        }
+
+                        filesHtml += `<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px; background:rgba(255, 255, 255, 0.5); border:1px solid rgba(255, 255, 255, 0.4); border-radius:12px; text-decoration:none; color:#1e293b; font-size:11px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.03); backdrop-filter:blur(8px); transition:transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.03)';" title="${f.name}">
+                            ${visualElement}
+                            <span style="overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; width:100%; word-break:break-word; line-height:1.2;">${f.name}</span>
+                        </a>`;
                     });
                 }
                 filesHtml += '</div>';

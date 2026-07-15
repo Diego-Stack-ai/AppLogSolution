@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.089">
+    <link rel="stylesheet" href="styles.css?v=6.090">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -369,8 +369,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.089"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.089"></script>
+    <script src="script.js?v=6.090"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.090"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
@@ -866,18 +866,18 @@
                 const checkRef = doc(db, 'clienti', 'DNR', 'reports_logistici', formattedDate);
                 const checkSnap = await getDoc(checkRef);
                 if (checkSnap.exists()) {
-                    const sovraResult = await Swal.fire({
-                        title: 'Viaggi gia esistenti',
-                        html: `Sono gia presenti dei viaggi per il <b>${formattedDate}</b>.<br><br>Vuoi <b>sovrascrivere</b> e rigenerare la mappa e la lista punti?`,
-                        icon: 'warning',
+                    const integraResult = await Swal.fire({
+                        title: 'Integrazione Dati',
+                        html: `Sono già presenti dei viaggi per il <b>${formattedDate}</b>.<br><br>Vuoi <b>integrare</b> le novità rigenerando la mappa e la lista punti?<br><span style="color:#10b981; font-size:0.9em;">I percorsi esistenti e le modifiche manuali verranno preservati.</span>`,
+                        icon: 'info',
                         showCancelButton: true,
-                        confirmButtonColor: '#f59e0b',
+                        confirmButtonColor: '#3b82f6',
                         cancelButtonColor: '#64748b',
-                        confirmButtonText: 'Si, sovrascrivi',
-                        cancelButtonText: 'No, annulla',
+                        confirmButtonText: 'Sì, Integra',
+                        cancelButtonText: 'Annulla',
                         reverseButtons: true
                     });
-                    if (!sovraResult.isConfirmed) return;
+                    if (!integraResult.isConfirmed) return;
                 }
             } catch (err) {
                 console.log("Errore nel controllo viaggi esistenti:", err);

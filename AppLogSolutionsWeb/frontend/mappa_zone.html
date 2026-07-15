@@ -972,7 +972,7 @@
             background: #fff;
             border-radius: 20px;
             padding: 28px;
-            max-width: 380px;
+            max-width: 700px;
             width: 90%;
             box-shadow: 0 24px 64px rgba(0,0,0,0.25);
         }
@@ -1631,7 +1631,16 @@ const db = getFirestore(app);
                 return;
             }
             
-            const duplicato = DATA_ZONE.find(x => x.id_zona !== modalZid && (x.nome_giro || x.id_zona) === v);
+            const z = DATA_ZONE.find(x => x.id_zona === modalZid);
+            if (!z) return;
+            const clienteCorrente = getClienteZona(z, modalZid);
+            
+            const duplicato = DATA_ZONE.find(x => {
+                if (x.id_zona === modalZid) return false;
+                if ((x.nome_giro || x.id_zona) !== v) return false;
+                const clienteAltro = getClienteZona(x, x.id_zona);
+                return clienteAltro === clienteCorrente;
+            });
             if (duplicato) {
                 Swal.fire({
                     icon: 'error',
@@ -1641,8 +1650,7 @@ const db = getFirestore(app);
                 return;
             }
             
-            const z = DATA_ZONE.find(x => x.id_zona === modalZid);
-            if (z) z.nome_giro = v;
+            z.nome_giro = v;
             
             // --- SYNC FIRESTORE ---
             if (targetFileDate && modalZid) {
@@ -3028,11 +3036,33 @@ const db = getFirestore(app);
             }
             
             const chips = document.getElementById('sposta-chips');
-            chips.innerHTML = destinazioni.map(x => `
-                <div class="sposta-chip" style="border-color: ${x.color || '#4f46e5'}" onclick="window.eseguiSposta('${x.id_zona}')">
-                    <span style="color: ${x.color || '#4f46e5'}">●</span> ${x.nome_giro || x.id_zona}
-                </div>
-            `).join('');
+            // Raggruppa per cliente
+            const groups = {};
+            destinazioni.forEach(x => {
+                const clientName = getClienteZona(x, x.id_zona);
+                if (!groups[clientName]) groups[clientName] = [];
+                groups[clientName].push(x);
+            });
+            
+            let html = '<div style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 10px; width: 100%;">';
+            for (const clientName of Object.keys(groups).sort()) {
+                html += `<div style="flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 8px;">`;
+                html += `<div style="font-size:0.85rem; font-weight:800; color:var(--text); border-bottom: 2px solid rgba(15, 23, 42, 0.1); padding-bottom:4px; text-align:center;">${clientName}</div>`;
+                
+                groups[clientName].sort((a,b) => (a.nome_giro || a.id_zona).localeCompare(b.nome_giro || b.id_zona));
+                
+                groups[clientName].forEach(x => {
+                    html += `
+                    <div class="sposta-chip" style="border-color: ${x.color || '#4f46e5'}" onclick="window.eseguiSposta('${x.id_zona}')">
+                        <span style="color: ${x.color || '#4f46e5'}">●</span> <span style="font-weight:600;">${x.nome_giro || x.id_zona}</span>
+                    </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+            html += '</div>';
+            
+            chips.innerHTML = html;
             
             document.getElementById('sposta-overlay').classList.add('open');
         };

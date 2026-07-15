@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.091">
+    <link rel="stylesheet" href="styles.css?v=6.092">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -77,17 +77,10 @@
         <div
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
             <h2 style="margin: 0; color: var(--primary);">Gestione Targhe e Mezzi</h2>
-        </div>
-        <!-- Sezione Gestione Targhe -->
-        <div id="toggleMezziBtn"
-            style="display: flex; justify-content: space-between; align-items: center; margin: 32px 0 0 0;  background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
-            <h3 class="section-title" style="margin: 0;">Gestione Targhe e Mezzi</h3>
-            <span class="material-icons-round" id="toggleMezziIcon"
-                style="color: var(--primary); transition: transform 0.3s ease;">expand_more</span>
+            <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="const f = document.getElementById('formMezziContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">add_box</span>Aggiungi Nuova Targa</button>
         </div>
 
-        <div id="mezziContent" style="display: block; padding-top: 20px;">
-            <button type="button" class="btn-primary" style="margin-bottom:20px; width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="const f = document.getElementById('formMezziContainer'); f.style.display = f.style.display==='none'?'block':'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">add_box</span>Aggiungi Nuova Targa</button>
+        <div id="mezziContent" style="display: block;">
             <div id="formMezziContainer" style="display: none; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:24px;">
             <div class="form-grid">
                 <div class="input-group">
@@ -183,6 +176,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let editIndex = -1;
 
+        window.toggleDetails = function(idx) {
+            const el = document.getElementById('mezzo-details-' + idx);
+            if (el) {
+                el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            }
+        };
+
         window.renderLista = function () {
             const currentMezzi = (window.appData && window.appData.lista_mezzi && window.appData.lista_mezzi.length > 0) ? window.appData.lista_mezzi : DEFAULT_MEZZI;
             mezzi = currentMezzi; // Update local reference
@@ -192,17 +192,47 @@ document.addEventListener("DOMContentLoaded", () => {
                 const r = document.createElement('div');
                 r.className = 'list-row';
                 r.style.marginBottom = '8px';
+                r.style.flexDirection = 'column';
+                r.style.alignItems = 'stretch';
+                
                 const title = m.modello ? `${m.targa} - <span style="font-weight:400; color:#64748b;">${m.modello}</span>` : m.targa;
                 const patenteLabel = m.patente === 'C' ? '<span style="background:#fef3c7;color:#d97706;padding:1px 7px;border-radius:6px;font-size:11px;font-weight:700;margin-left:6px;">CAT C</span>' : '<span style="background:#e0e7ff;color:#4f46e5;padding:1px 7px;border-radius:6px;font-size:11px;font-weight:700;margin-left:6px;">CAT B</span>';
+                
+                let detailsHtml = '<div style="font-size:13px; color:#64748b; margin-bottom:8px;">Nessun documento o foto presente.</div>';
+                
+                let hasDocs = false;
+                let filesHtml = '<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:8px;">';
+                
+                if (m.fotoUrls && m.fotoUrls.length > 0) {
+                    hasDocs = true;
+                    m.fotoUrls.forEach(f => {
+                        filesHtml += `<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="display:flex; align-items:center; gap:6px; padding:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; text-decoration:none; color:var(--primary); font-size:12px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;" title="${f.name}"><span class="material-icons-round" style="font-size:16px;">image</span> ${f.name}</a>`;
+                    });
+                }
+                if (m.documentiUrls && m.documentiUrls.length > 0) {
+                    hasDocs = true;
+                    m.documentiUrls.forEach(f => {
+                        filesHtml += `<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="display:flex; align-items:center; gap:6px; padding:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; text-decoration:none; color:var(--primary); font-size:12px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;" title="${f.name}"><span class="material-icons-round" style="font-size:16px;">description</span> ${f.name}</a>`;
+                    });
+                }
+                filesHtml += '</div>';
+                
+                if (hasDocs) detailsHtml = filesHtml;
+
                 r.innerHTML = `
-                    <div style="font-weight:600; color:#334155; display:flex; align-items:center;">${title}${patenteLabel}</div>
-                    <div style="display:flex; gap:8px;">
-                        <button onclick="editMezzo(${idx})" class="action-btn edit-btn" title="Modifica">
-                            <span class="material-icons-round" style="font-size:20px;">edit</span>
-                        </button>
-                        <button onclick="deleteMezzo(${idx})" class="action-btn delete-btn" title="Elimina">
-                            <span class="material-icons-round" style="font-size:20px;">delete</span>
-                        </button>
+                    <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleDetails(${idx})">
+                        <div style="font-weight:600; color:#334155; display:flex; align-items:center;">${title}${patenteLabel}</div>
+                        <div style="display:flex; gap:8px;">
+                            <button onclick="editMezzo(${idx}); event.stopPropagation();" class="action-btn edit-btn" title="Modifica">
+                                <span class="material-icons-round" style="font-size:20px;">edit</span>
+                            </button>
+                            <button onclick="deleteMezzo(${idx}); event.stopPropagation();" class="action-btn delete-btn" title="Elimina">
+                                <span class="material-icons-round" style="font-size:20px;">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="mezzo-details-${idx}" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #e2e8f0;">
+                        ${detailsHtml}
                     </div>
                 `;
                 listaDiv.appendChild(r);

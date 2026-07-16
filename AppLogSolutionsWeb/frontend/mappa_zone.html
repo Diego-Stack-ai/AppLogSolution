@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.132">
+    <link rel="stylesheet" href="styles.css?v=6.134">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1871,6 +1871,16 @@ const db = getFirestore(app);
                 _CLIENTE_PROGETTO = unparsedData.cliente || null;
                 console.log(`[Mappa] Cliente rilevato dal JSON: "${_CLIENTE_PROGETTO}"`);
             }
+            
+            // Normalizzazione: assicuriamo che ogni zona abbia 'lista_punti'
+            DATA_ZONE.forEach(z => {
+                if (z.stops && !z.lista_punti) {
+                    z.lista_punti = z.stops;
+                } else if (!z.lista_punti) {
+                    z.lista_punti = [];
+                }
+            });
+
             
             updateTotals();
             if (!IS_POPUP) {

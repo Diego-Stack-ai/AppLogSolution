@@ -4384,12 +4384,36 @@ def core_genera_completo_giornata(data_consegna):
 
     punti_totali = sum(len(z.get("lista_punti", [])) for z in zone_list if z.get("id_zona") not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA"))
     zone_totali = len([z for z in zone_list if z.get("id_zona") not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA")])
-    
+
+    # === MAPPA GENERALE con selettore giri ===
+    mappa_generale_url = ""
+    try:
+        # Costruisce la lista zone per la mappa riepilogativa (esclude zone speciali)
+        zone_per_mappa = [
+            {
+                "nome_giro": z.get("nome_giro", z.get("id_zona", "?")),
+                "color": z.get("color", "#4f46e5"),
+                "lista_punti": [
+                    {**p, "lat": float(p["lat"]), "lon": float(p.get("lon", p.get("lng", 0)))}
+                    for p in z.get("lista_punti", []) if p.get("lat")
+                ]
+            }
+            for z in zone_list if z.get("id_zona") not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA")
+        ]
+        html_mappa_gen = _genera_html_mappa_generale(data_consegna, zone_per_mappa)
+        mappa_gen_blob = bucket.blob(f"REPORTS/{data_consegna}/MAPPA_GENERALE_{data_consegna}.html")
+        mappa_gen_blob.upload_from_string(html_mappa_gen.encode("utf-8"), content_type="text/html; charset=utf-8")
+        mappa_generale_url = _genera_url_storage_token(mappa_gen_blob)
+        print(f"[MAPPA GENERALE] Generata con {len(zone_per_mappa)} giri.")
+    except Exception as e_mg:
+        print(f"[MAPPA GENERALE ERROR] {e_mg}")
+        mappa_generale_url = links[0]["url"] if links else ""
+
     report_meta = {
         "data_consegna": data_consegna,
         "punti_totali": punti_totali,
         "zone_totali": zone_totali,
-        "mappa_url": links[0]["url"] if links else "",
+        "mappa_url": mappa_generale_url,
         "created_at": firestore.SERVER_TIMESTAMP,
         "tipo": "REPORT_GENERALE"
     }
@@ -5520,8 +5544,8 @@ def genera_riepiloghi_aziendali_light(req: https_fn.CallableRequest) -> typing.A
         if not docs:
             return {"status": "errore", "message": f"Nessun viaggio trovato per il {data_consegna}"}
             
-        # Per unire i PDF, usiamo PyPDF2
-        from PyPDF2 import PdfReader, PdfWriter
+        # Per unire i PDF, usiamo pypdf (già presente in requirements.txt)
+        from pypdf import PdfReader, PdfWriter
         import requests
         import io
         

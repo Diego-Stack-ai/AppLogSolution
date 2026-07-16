@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.101">
+    <link rel="stylesheet" href="styles.css?v=6.104">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1289,8 +1289,6 @@
         </div>
     </div>
 
-    <!-- Google Map Panel -->
-    <div id="map"></div>
 
     <script>
         window.navigateWithState = (url) => window.location.href = url;
@@ -2763,24 +2761,29 @@ const db = getFirestore(app);
                                     }
 
                                     return `
-                                        <div class="point-card" style="${pointStyle}">
-                                            <div class="point-header">
-                                                <div style="display:flex; align-items:center; flex:1; min-width:0;">
-                                                    ${(!isBloccato && !activeAction && !isSpeciale) ? '<span class="material-icons-round drag-handle-map" title="Trascina per riordinare">drag_indicator</span>' : ''}
-                                                    <span class="point-num" style="${numBgStyle}">${idx + 1}</span>
-                                                    <span class="point-name" style="cursor:pointer;" title="${p.nome}" onclick="window.panToPoint(${p.lat || 0}, ${p.lon || 0})">${p.nome}</span>
-                                                </div>
-                                                ${_arrowHtml}
-                                                ${activeAction === 'dividi' ? controlHtml : ''}
+                                        <div class="compact-stop-item" style="${pointStyle}; position:relative; background:#f8fafc;">
+                                            ${(!isBloccato && !activeAction && !isSpeciale) ? '<span class="material-icons-round drag-handle-map" style="cursor:grab; font-size:16px; color:#cbd5e1;" title="Trascina per riordinare">drag_indicator</span>' : ''}
+                                            <span class="compact-num" style="${numBgStyle}">${idx + 1}</span>
+                                            
+                                            <div style="flex: 2; display:flex; flex-direction:column; min-width:0;">
+                                                <span class="compact-name" style="cursor:pointer;" title="${p.nome}" onclick="window.panToPoint(${p.lat || 0}, ${p.lon || 0})">${p.nome}</span>
+                                                ${p.codice_cliente ? `<span style="font-size: 0.65rem; color: #4f46e5; font-weight: 700;">Cod: ${p.codice_cliente}</span>` : ''}
                                             </div>
-                                            ${p.codice_cliente ? `<div class="point-addr" style="margin-top: 2px; color: #4f46e5; font-weight: 700;">Codice: ${p.codice_cliente}</div>` : ''}
-                                            <div class="point-addr" style="margin-top: 2px;">
-                                                <span>${streetName}</span>
-                                                ${cityName ? `<span style="font-weight:700; color:#334155; display:block;">${cityName}</span>` : ''}
+
+                                            <div class="compact-city" style="flex: 2;">
+                                                ${streetName} ${cityName ? `<strong style="color:#334155;">${cityName}</strong>` : ''}
                                             </div>
-                                            ${fasciaHtml}
-                                            ${etaHtml}
+
+                                            <div style="display:flex; flex-direction:column; gap:2px; flex: 1; min-width: 140px;">
+                                                ${etaHtml ? etaHtml : ''}
+                                                ${fasciaHtml ? fasciaHtml : ''}
+                                            </div>
+                                            
+                                            ${activeAction === 'dividi' ? controlHtml : ''}
                                             ${noteHtml}
+                                            <div style="display:flex; flex-direction:column; gap:2px;">
+                                                ${_arrowHtml}
+                                            </div>
                                         </div>
                                     `;
                                 }).join('')}

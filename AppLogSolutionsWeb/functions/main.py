@@ -892,6 +892,8 @@ def core_genera_distinta_viaggio(viaggio_id):
         data_formattata = data_viaggio.replace('/', '-')
         pdf_path = f"CONSEGNE/CONSEGNE_{data_formattata}/DISTINTE_VIAGGIO/{viaggio_id}.pdf"
         distinta_blob = bucket.blob(pdf_path)
+        if distinta_blob.exists():
+            distinta_blob.delete()
         distinta_blob.upload_from_file(out_pdf, content_type="application/pdf")
         pdf_url = f"gs://{BUCKET_NAME}/{pdf_path}"
         
@@ -4235,10 +4237,14 @@ def core_genera_completo_giornata(data_consegna):
         full_stream, light_stream = _genera_distinta_pdf_cloud(zone, articoli_viaggio, data_consegna, pdf_ddt_streams, rientri_giro, pdf_non_trovati_giro)
         
         full_blob = bucket.blob(f"REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_{nome_giro}.pdf")
+        if full_blob.exists():
+            full_blob.delete()
         full_blob.upload_from_file(full_stream, content_type="application/pdf")
         distinta_completa_url = _genera_url_storage_token(full_blob)
         
         light_blob = bucket.blob(f"REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_LIGHT_{nome_giro}.pdf")
+        if light_blob.exists():
+            light_blob.delete()
         light_blob.upload_from_file(light_stream, content_type="application/pdf")
         distinta_light_url = _genera_url_storage_token(light_blob)
 
@@ -4313,6 +4319,8 @@ def core_genera_completo_giornata(data_consegna):
         master_stream.seek(0)
         
         master_blob = bucket.blob(f"REPORTS/{data_consegna}/MASTER_DISTINTE_{data_consegna}.pdf")
+        if master_blob.exists():
+            master_blob.delete()
         master_blob.upload_from_file(master_stream, content_type="application/pdf")
         master_distinte_url = _genera_url_storage_token(master_blob)
         print(f"[MASTER] Generato MASTER_DISTINTE_{data_consegna}.pdf con successo.")

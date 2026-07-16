@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.108">
+    <link rel="stylesheet" href="styles.css?v=6.109">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -2781,6 +2781,13 @@ const db = getFirestore(app);
                                     return `
                                         <div class="compact-stop-item" style="${pointStyle}; position:relative; background:#f8fafc; flex-wrap:wrap;">
                                             ${(!isBloccato && !activeAction && !isSpeciale) ? '<span class="material-icons-round drag-handle-map" style="cursor:grab; font-size:16px; color:#cbd5e1;" title="Trascina per riordinare">drag_indicator</span>' : ''}
+                                            
+                                            <div style="display:flex; flex-direction:column; gap:2px; justify-content:center;">
+                                                ${_arrowHtml}
+                                            </div>
+                                            
+                                            ${activeAction === 'dividi' ? controlHtml : ''}
+                                            
                                             <span class="compact-num" style="${numBgStyle}">${idx + 1}</span>
                                             
                                             <div class="stop-col stop-col-name">
@@ -2798,11 +2805,7 @@ const db = getFirestore(app);
                                                 ${fasciaHtml ? fasciaHtml : ''}
                                             </div>
                                             
-                                            ${activeAction === 'dividi' ? controlHtml : ''}
                                             ${noteHtml}
-                                            <div style="display:flex; flex-direction:column; gap:2px;">
-                                                ${_arrowHtml}
-                                            </div>
                                         </div>
                                     `;
                                 }).join('')}

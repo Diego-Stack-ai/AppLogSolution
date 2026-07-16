@@ -1,0 +1,12 @@
+PrimeFaces.widget.Dialog.prototype.applyFocus = function(){
+	var firstInput = this.jq.find(':not(:submit):not(:button):input:visible:enabled:first');
+	if (!firstInput.hasClass('hasDatepicker')) {
+		firstInput.focus();
+	}
+}
+
+var _originalDatePickerInit = PrimeFaces.widget.DatePicker.prototype.init;
+PrimeFaces.widget.DatePicker.prototype.init = function(cfg) {
+	_originalDatePickerInit.call(this, cfg);
+	this.input.attr('autocomplete', 'off');
+}

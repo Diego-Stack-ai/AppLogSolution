@@ -1,0 +1,473 @@
+var mymap;
+
+function initSubTripsMap(mapUrl, apiKey, mapAttr, predefinedSubTrips, effectiveSubTrips,
+		customerFrom, customerTo, effectiveKm, predefinedKm, effectiveTime,
+		predefinedTime, routePolyline, departureCoords, destinationCoords) {
+	try {
+		mymap.remove();
+	} catch (Exception) {
+	}
+	var normalLayer = L.tileLayer(mapUrl + apiKey, {
+	    maxZoom: 18,
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+	});
+	var satelliteLayer = L.tileLayer(
+	    'https://maps.hereapi.com/v3/base/mc/{z}/{x}/{y}/jpeg?size=256&style=explore.satellite.day&apiKey=' + apiKey, {
+	        maxZoom: 18,
+			attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+	    }
+	);
+	mymap = L.map('subTripsMapDiv', {
+	    layers: [normalLayer],
+	    zoomControl: true
+	});
+	mymap.setView(new L.LatLng(lat, lon), 5);
+	mymap.createPane('restrictionsPane');
+	mymap.getPane('restrictionsPane').style.zIndex = 450;
+	var restrictionsDay = makeRestrictionsLayer('explore.day', apiKey, mapAttr);
+	var restrictionsSat = makeRestrictionsLayer('explore.satellite.day', apiKey, mapAttr);
+	var restrictionsProxy = L.layerGroup();
+	var currentBase = 'day';
+	var restrictionsOn = false;
+	var baseMaps = {
+	    "Normale": normalLayer,
+	    "Satellitare": satelliteLayer,
+	};
+	var overlays = {
+	    "Restrizioni camion": restrictionsProxy
+	};
+	L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(mymap);
+	mymap.on('baselayerchange', function (e) {
+	    currentBase = (e.name === 'Normale') ? 'day' : 'sat';
+	    refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	});
+	mymap.on('overlayadd', function (e) {
+	    if (e.layer === restrictionsProxy) {
+	        restrictionsOn = true;
+	        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	    }
+	});
+	mymap.on('overlayremove', function (e) {
+	    if (e.layer === restrictionsProxy) {
+	        restrictionsOn = false;
+	        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	    }
+	});
+	if (predefinedSubTrips) {
+		var markersDetail = JSON.parse(predefinedSubTrips);
+		var markerArray = [];
+		var waypointArray = [];
+		for (var index = 0; index < markersDetail.length; index++) {
+			var md = markersDetail[index];
+			waypointArray[index] = [ md.lat, md.lon ];
+		}
+		if (waypointArray.length != 0) {
+			var polyline = L.polyline(waypointArray, {
+				color : '#08457e'
+			}).addTo(mymap);
+			var decorator = L.polylineDecorator(polyline, {
+				patterns : [ {
+					offset : 25,
+					repeat : 30,
+					symbol : L.Symbol.arrowHead({
+						pixelSize : 10,
+						pathOptions : {
+							fillOpacity : 1,
+							weight : 0,
+							color : '#08457e'
+						}
+					})
+				} ]
+			}).addTo(mymap);
+			mymap.fitBounds(polyline.getBounds());
+		}
+	}
+	if (effectiveSubTrips) {
+		var markersDetailEff = JSON.parse(effectiveSubTrips);
+		var markerArrayEff = [];
+		var waypointArrayEff = [];
+		for (var index = 0; index < markersDetailEff.length; index++) {
+			var md = markersDetailEff[index];
+			waypointArrayEff[index] = [ md.lat, md.lon ];
+		}
+		if (waypointArrayEff.length != 0) {
+			var polylineEff = L.polyline(waypointArrayEff, {
+				color : '#628c3e'
+			}).addTo(mymap);
+			var decorator = L.polylineDecorator(polylineEff, {
+				patterns : [ {
+					offset : 25,
+					repeat : 30,
+					symbol : L.Symbol.arrowHead({
+						pixelSize : 10,
+						pathOptions : {
+							fillOpacity : 1,
+							weight : 0,
+							color : '#628c3e'
+						}
+					})
+				} ]
+			}).addTo(mymap);
+			mymap.fitBounds(polylineEff.getBounds());
+		}
+	}
+	if (routePolyline != null) {
+		var coords = JSON.parse(routePolyline);
+		var polyline = L.polyline(coords, {
+			color : 'blue',
+			weight : 3,
+			smoothFactor : 1
+		}).addTo(mymap);
+		var decorator = L.polylineDecorator(polyline, {
+			patterns : [ {
+				offset : 25,
+				repeat : 250,
+				symbol : L.Symbol.arrowHead({
+					pixelSize : 10,
+					pathOptions : {
+						fillOpacity : 1,
+						weight : 0,
+						color : 'blue'
+					}
+				})
+			} ]
+		}).addTo(mymap);
+		mymap.fitBounds(polyline.getBounds());
+	}
+	$("[id$='subTripsDialogCustomerFrom']").text(customerFrom + ' ' + departureCoords);
+	$("[id$='subTripsDialogCustomerTo']").text(customerTo + ' ' + destinationCoords);
+	$("[id$='subTripsDialogPredefinedKm']").text(predefinedKm);
+	$("[id$='subTripsDialogActualKm']").text(effectiveKm);
+	$("[id$='subTripsDialogPredefinedTime']").text(predefinedTime);
+	$("[id$='subTripsDialogActualTime']").text(effectiveTime);
+}
+
+function initSubTripsMapVector(mapUrl, apiKey, mapAttr, predefinedSubTrips, effectiveSubTrips,
+		customerFrom, customerTo, effectiveKm, predefinedKm, effectiveTime,
+		predefinedTime, routePolyline, departureCoords, destinationCoords) {
+	try {
+		mymap.remove();
+	} catch (Exception) {
+	}
+	const buildTransformRequest = (url, resourceType) => {
+		if (resourceType === 'Tile' && url.startsWith('https://api.myptv.com')) {
+			return { url, headers: { 'ApiKey': apiKey } };
+		}
+		return { url };
+	};
+	var normalLayer = L.maplibreGL({
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+		maxZoom: 18,
+		style: mapUrl,
+		transformRequest: buildTransformRequest
+	});
+	var satelliteLayer = L.maplibreGL({
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+		maxZoom: 18,
+		style: 'scripts/ptv_hybrid_truckrestrictions_style.json',
+		transformRequest: buildTransformRequest
+	});
+	mymap = L.map('subTripsMapDiv', {
+	    layers: [normalLayer],
+	    zoomControl: true
+	});
+	mymap.setView(new L.LatLng(lat, lon), 5);
+	mymap.createPane('restrictionsPane');
+	mymap.getPane('restrictionsPane').style.zIndex = 450;
+	var restrictionsProxy = L.layerGroup();
+	var lowEmissionsProxy = L.layerGroup();
+	var baseMaps = {
+	    "Normale": normalLayer,
+	    "Satellitare": satelliteLayer,
+	};
+	var overlays = {
+	    "Restrizioni camion": restrictionsProxy,
+		"Zone basse emissioni": lowEmissionsProxy
+	};
+	L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(mymap);
+	mymap.on('overlayadd', function (e) {
+	    if (e.layer === restrictionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+	    } else if (e.layer === lowEmissionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+		}
+	});
+	mymap.on('overlayremove', function (e) {
+	    if (e.layer === restrictionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+		} else if (e.layer === lowEmissionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+	    }
+	});
+	if (predefinedSubTrips) {
+		var markersDetail = JSON.parse(predefinedSubTrips);
+		var markerArray = [];
+		var waypointArray = [];
+		for (var index = 0; index < markersDetail.length; index++) {
+			var md = markersDetail[index];
+			waypointArray[index] = [ md.lat, md.lon ];
+		}
+		if (waypointArray.length != 0) {
+			var polyline = L.polyline(waypointArray, {
+				color : '#08457e'
+			}).addTo(mymap);
+			var decorator = L.polylineDecorator(polyline, {
+				patterns : [ {
+					offset : 25,
+					repeat : 30,
+					symbol : L.Symbol.arrowHead({
+						pixelSize : 10,
+						pathOptions : {
+							fillOpacity : 1,
+							weight : 0,
+							color : '#08457e'
+						}
+					})
+				} ]
+			}).addTo(mymap);
+			mymap.fitBounds(polyline.getBounds());
+		}
+	}
+	if (effectiveSubTrips) {
+		var markersDetailEff = JSON.parse(effectiveSubTrips);
+		var markerArrayEff = [];
+		var waypointArrayEff = [];
+		for (var index = 0; index < markersDetailEff.length; index++) {
+			var md = markersDetailEff[index];
+			waypointArrayEff[index] = [ md.lat, md.lon ];
+		}
+		if (waypointArrayEff.length != 0) {
+			var polylineEff = L.polyline(waypointArrayEff, {
+				color : '#628c3e'
+			}).addTo(mymap);
+			var decorator = L.polylineDecorator(polylineEff, {
+				patterns : [ {
+					offset : 25,
+					repeat : 30,
+					symbol : L.Symbol.arrowHead({
+						pixelSize : 10,
+						pathOptions : {
+							fillOpacity : 1,
+							weight : 0,
+							color : '#628c3e'
+						}
+					})
+				} ]
+			}).addTo(mymap);
+			mymap.fitBounds(polylineEff.getBounds());
+		}
+	}
+	if (routePolyline != null) {
+		var coords = JSON.parse(routePolyline);
+		var polyline = L.polyline(coords, {
+			color : 'blue',
+			weight : 3,
+			smoothFactor : 1
+		}).addTo(mymap);
+		var decorator = L.polylineDecorator(polyline, {
+			patterns : [ {
+				offset : 25,
+				repeat : 250,
+				symbol : L.Symbol.arrowHead({
+					pixelSize : 10,
+					pathOptions : {
+						fillOpacity : 1,
+						weight : 0,
+						color : 'blue'
+					}
+				})
+			} ]
+		}).addTo(mymap);
+		mymap.fitBounds(polyline.getBounds());
+	}
+	$("[id$='subTripsDialogCustomerFrom']").text(customerFrom + ' ' + departureCoords);
+	$("[id$='subTripsDialogCustomerTo']").text(customerTo + ' ' + destinationCoords);
+	$("[id$='subTripsDialogPredefinedKm']").text(predefinedKm);
+	$("[id$='subTripsDialogActualKm']").text(effectiveKm);
+	$("[id$='subTripsDialogPredefinedTime']").text(predefinedTime);
+	$("[id$='subTripsDialogActualTime']").text(effectiveTime);
+}
+
+function initTripsMap(mapUrl, apiKey, mapAttr, routePolyline) {
+	try {
+		mymap.remove();
+	} catch (Exception) {
+	}
+	var normalLayer = L.tileLayer(mapUrl + apiKey, {
+	    maxZoom: 18,
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+	});
+	var satelliteLayer = L.tileLayer(
+	    'https://maps.hereapi.com/v3/base/mc/{z}/{x}/{y}/jpeg?size=256&style=explore.satellite.day&apiKey=' + apiKey, {
+	        maxZoom: 18,
+			attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+	    }
+	);
+	mymap = L.map('subTripsMapDiv', {
+	    layers: [normalLayer],
+	    zoomControl: true
+	});
+	mymap.setView(new L.LatLng(lat, lon), 5);
+	mymap.createPane('restrictionsPane');
+	mymap.getPane('restrictionsPane').style.zIndex = 450;
+	var restrictionsDay = makeRestrictionsLayer('explore.day', apiKey, mapAttr);
+	var restrictionsSat = makeRestrictionsLayer('explore.satellite.day', apiKey, mapAttr);
+	var restrictionsProxy = L.layerGroup();
+	var currentBase = 'day';
+	var restrictionsOn = false;
+	var baseMaps = {
+	    "Normale": normalLayer,
+	    "Satellitare": satelliteLayer,
+	};
+	var overlays = {
+	    "Restrizioni camion": restrictionsProxy
+	};
+	L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(mymap);
+	mymap.on('baselayerchange', function (e) {
+	    currentBase = (e.name === 'Normale') ? 'day' : 'sat';
+	    refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	});
+	mymap.on('overlayadd', function (e) {
+	    if (e.layer === restrictionsProxy) {
+	        restrictionsOn = true;
+	        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	    }
+	});
+	mymap.on('overlayremove', function (e) {
+	    if (e.layer === restrictionsProxy) {
+	        restrictionsOn = false;
+	        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	    }
+	});
+	if (routePolyline != null) {
+		var coords = JSON.parse(routePolyline);
+		var waypointArrayEff = [];
+		for (var index = 0; index < coords.length; index++) {
+			var md = coords[index];
+			waypointArrayEff[index] = [ md.latitude, md.longitude ];
+		}
+		var polyline = L.polyline(waypointArrayEff, {
+			color : 'blue',
+			weight : 3,
+			smoothFactor : 1
+		}).addTo(mymap);
+		var decorator = L.polylineDecorator(polyline, {
+			patterns : [ {
+				offset : 25,
+				repeat : 250,
+				symbol : L.Symbol.arrowHead({
+					pixelSize : 10,
+					pathOptions : {
+						fillOpacity : 1,
+						weight : 0,
+						color : 'blue'
+					}
+				})
+			} ]
+		}).addTo(mymap);
+		mymap.fitBounds(polyline.getBounds());
+	}
+	L.control.browserPrint({
+		printLayer: null,
+		printModes: ["Landscape"],
+		manualMode: false
+	}).addTo(mymap);
+}
+
+function initTripsMapVector(mapUrl, apiKey, mapAttr, routePolyline) {
+	try {
+		mymap.remove();
+	} catch (Exception) {
+	}
+	const buildTransformRequest = (url, resourceType) => {
+		if (resourceType === 'Tile' && url.startsWith('https://api.myptv.com')) {
+			return { url, headers: { 'ApiKey': apiKey } };
+		}
+		return { url };
+	};
+	var normalLayer = L.maplibreGL({
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+		maxZoom: 18,
+		style: mapUrl,
+		transformRequest: buildTransformRequest
+	});
+	var satelliteLayer = L.maplibreGL({
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+		maxZoom: 18,
+		style: 'scripts/ptv_hybrid_truckrestrictions_style.json',
+		transformRequest: buildTransformRequest
+	});
+	mymap = L.map('subTripsMapDiv', {
+	    layers: [normalLayer],
+	    zoomControl: true
+	});
+	mymap.setView(new L.LatLng(lat, lon), 5);
+	mymap.createPane('restrictionsPane');
+	mymap.getPane('restrictionsPane').style.zIndex = 450;
+	var restrictionsProxy = L.layerGroup();
+	var lowEmissionsProxy = L.layerGroup();
+	var baseMaps = {
+	    "Normale": normalLayer,
+	    "Satellitare": satelliteLayer,
+	};
+	var overlays = {
+	    "Restrizioni camion": restrictionsProxy,
+		"Zone basse emissioni": lowEmissionsProxy
+	};
+	L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(mymap);
+	mymap.on('overlayadd', function (e) {
+	    if (e.layer === restrictionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+	    } else if (e.layer === lowEmissionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+		}
+	});
+	mymap.on('overlayremove', function (e) {
+	    if (e.layer === restrictionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+		} else if (e.layer === lowEmissionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+	    }
+	});
+	if (routePolyline != null) {
+		var coords = JSON.parse(routePolyline);
+		var waypointArrayEff = [];
+		for (var index = 0; index < coords.length; index++) {
+			var md = coords[index];
+			waypointArrayEff[index] = [ md.latitude, md.longitude ];
+		}
+		var polyline = L.polyline(waypointArrayEff, {
+			color : 'blue',
+			weight : 3,
+			smoothFactor : 1
+		}).addTo(mymap);
+		var decorator = L.polylineDecorator(polyline, {
+			patterns : [ {
+				offset : 25,
+				repeat : 250,
+				symbol : L.Symbol.arrowHead({
+					pixelSize : 10,
+					pathOptions : {
+						fillOpacity : 1,
+						weight : 0,
+						color : 'blue'
+					}
+				})
+			} ]
+		}).addTo(mymap);
+		mymap.fitBounds(polyline.getBounds());
+	}
+	L.control.browserPrint({
+		printLayer: null,
+		printModes: ["Landscape"],
+		manualMode: false
+	}).addTo(mymap);
+}

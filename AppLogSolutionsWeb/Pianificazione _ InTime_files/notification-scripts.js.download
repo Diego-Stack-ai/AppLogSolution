@@ -1,0 +1,37 @@
+
+if ('serviceWorker' in navigator) {
+	  window.addEventListener('load', function() {
+	    navigator.serviceWorker.register('/webClient/sw.js').then(function(registration) {
+	      // Registration was successful
+	      console.log('ServiceWorker registration successful with scope: ', registration.scope);
+	    }, function(err) {
+	      // registration failed :(
+	      console.log('ServiceWorker registration failed: ', err);
+	    });
+	  });
+	}
+
+function showPopup(title, message) {
+	const options = {
+		body : message,
+		icon : '/webClient/images/favicon.png',
+		vibrate : [ 100, 50, 100 ],
+		data : {
+			primaryKey : 1
+		}
+	};
+	if (Notification.permission === "granted") {
+		navigator.serviceWorker.getRegistration().then(reg => {
+			reg.showNotification(title, options);
+		});
+	}
+	else {
+		Notification.requestPermission(permission => {
+			if (permission === "granted") {
+				navigator.serviceWorker.getRegistration().then(reg => {
+					reg.showNotification(title, options);
+				});
+			}
+		});
+	}
+}

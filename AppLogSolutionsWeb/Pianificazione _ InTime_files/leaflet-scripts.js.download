@@ -1,0 +1,2724 @@
+const PANEL_PAGE_SIZE = 10;
+var map;
+var currentFeatureGroup;
+var driverMap;
+var truckMarker;
+var monitoringMap;
+var geoFencingMap;
+var itinerariesMap;
+var trucksMap;
+var lon = 12.469;
+var lat = 41.894;
+var defaultPoint = {
+	lat: 44.70,
+	lon: 10.63
+};
+var defaultZoom = 7;
+var lapLayers = new Map();
+var scrollContainer;
+var scrollTop;
+var blockUIObserver = null;
+let totalFiles = 0;
+let uploadedFiles = 0;
+const SUBTRIP_COLORS = [
+    '#0554A6', // blu
+    '#D9534F', // rosso
+    '#5CB85C', // verde
+    '#F0AD4E', // arancione
+    '#9B59B6', // viola
+    '#17A2B8', // ciano
+    '#E83E8C', // rosa
+    '#6C757D'  // grigio
+];
+
+function addLastLocation(latitude, longitude, code) {
+	truckMarker = L.marker([latitude, longitude], {
+		icon: L.icon({
+			iconUrl: 'images/truck.png',
+			iconSize: [34, 28]
+		}),
+		title: code
+	}).addTo(map);
+}
+
+function initMarker(md, markerArray, index, color) {
+	var isSelected = md.selected;
+	const icon = new L.DivIcon({
+		className: 'icon-div',
+		html: `<div style="background-color: #` + (isSelected ? `001F3F !important; border-color: #943A19` : color) + ` !important; color: white !important; text-align: center; vertical-align: middle; border-style: solid; border-width: 1px; border-radius: 100px; font-size: ` + (isSelected ? 20 : 10) + `px;">` + md.index + `</div>`,
+		iconSize: [isSelected ? 34 : 17, isSelected ? 34 : 17]
+	});
+	markerArray[index] = L
+		.marker([md.latitude, md.longitude]).setIcon(icon).setZIndexOffset(isSelected ? 1000 : 100).bindTooltip(md.name, {
+			className: 'leaflet-tooltip'
+		}).addTo(map);
+	markerArray[index].on('click', L.bind(onPlantSelect, null, md.rowId));
+}
+
+function makeRestrictionsLayer(style, apiKey, mapAttr, opacity, size) {
+	size = size || 256;
+	var url = 'https://maps.hereapi.com/v3/base/mc/{z}/{x}/{y}/png?size=' + size + '&style=' + style
+			+ '&features=vehicle_restrictions:active_and_inactive&apiKey=' + apiKey;
+	return L.tileLayer(url, {
+		maxZoom: 18,
+		pane: 'restrictionsPane',
+		tileSize: 256,
+		opacity: (opacity != null ? opacity : 1),
+		attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+	});
+}
+
+function refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, restrictions) {
+	restrictionsProxy.clearLayers();
+	if (!restrictionsOn) return;
+	restrictionsProxy.addLayer(restrictions);
+}
+
+function groupByLap(markersDetail) {
+	const laps = new Map();
+	markersDetail.forEach((md, i) => {
+		const lap = md.tmpNbLap;
+		if (lap != null) {
+			if (!laps.has(lap)) {
+				laps.set(lap, []);
+			}
+			laps.get(lap).push(i);
+		}
+	});
+	return laps;
+}
+
+function getLapColor(lap) {
+	const idx = Math.max(0, lap - 1);
+	return SUBTRIP_COLORS[idx % SUBTRIP_COLORS.length];
+}
+
+function mapWaypointsToPolyline(markersDetail, coords) {
+	var result = [];
+	var startFrom = 0;
+	var THRESHOLD_SQ = 1e-6;
+	for (var i = 0; i < markersDetail.length; i++) {
+		var md = markersDetail[i];
+		var foundIdx = -1;
+		var bestDist = Infinity, bestIdx = startFrom;
+		for (var j = startFrom; j < coords.length; j++) {
+			const dLat = coords[j][0] - md.latitude;
+			const dLon = coords[j][1] - md.longitude;
+			var d = dLat * dLat + dLon * dLon;
+			if (d < bestDist) {
+				bestDist = d;
+				bestIdx = j;
+			}
+			if (d < THRESHOLD_SQ) {
+				foundIdx = j;
+				break;
+			}
+		}
+		result[i] = foundIdx !== -1 ? foundIdx : bestIdx;
+		startFrom = result[i];
+	}
+	return result;
+}
+
+function toggleLapVisibility(lap, visible) {
+	var layers = lapLayers.get(lap);
+	if (!layers) return;
+	layers.markers.forEach(m => {
+		if (visible) {
+			m.addTo(map);
+		} else {
+			map.removeLayer(m);
+		}
+	});
+	layers.polylines.forEach(p => {
+		if (visible) {
+			p.addTo(map);
+		} else {
+			map.removeLayer(p);
+		}
+	});
+}
+
+function addSubtripsLegend(laps, markersDetail) {
+	var legend = L.control({ position: 'bottomleft' });
+	legend.onAdd = function () {
+		var container = L.DomUtil.create('div', 'leaflet-bar subtrips-legend-container');
+		container.style.cssText = 'background: white; cursor: pointer; overflow: hidden;';
+		L.DomEvent.disableClickPropagation(container);
+		L.DomEvent.disableScrollPropagation(container);
+		var collapsed = L.DomUtil.create('div', 'subtrips-legend-collapsed', container);
+		collapsed.style.cssText = 'width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px;';
+		collapsed.innerHTML = '🚚';
+		collapsed.title = 'Viaggi';
+		var expanded = L.DomUtil.create('div', 'subtrips-legend-expanded', container);
+		expanded.style.cssText = 'padding: 8px; 10px; font-size: 12px; line-height: 1.6; display: none;';
+		var html = '<strong>Viaggi</strong><br>';
+		var sortedLaps = Array.from(laps.entries()).sort((a, b) => a[0] - b[0]);
+		sortedLaps.forEach(([lap, indices]) => {
+			var color = getLapColor(lap);
+			var count = indices.filter(idx => markersDetail[idx].type != null).length;
+			html += `<div style="display: flex; align-items: center; gap: 6px;">
+				<input type="checkbox" class="lap-toggle" data-lap="${lap}" checked style="margin: 0; cursor: pointer;" />
+				<span style="display: inline-block; width: 14px; height: 14px; background: ${color}; border-radius: 2px; vertical-align: middle;"></span>
+				<span>Viaggio ${lap} (${count} tappe)</span></div>`;
+		});
+		expanded.innerHTML = html;
+		container.addEventListener('mouseenter', function () {
+			collapsed.style.display = 'none';
+			expanded.style.display = 'block';
+		});
+		container.addEventListener('mouseleave', function () {
+			expanded.style.display = 'none';
+			collapsed.style.display = 'flex';
+		});
+		expanded.querySelectorAll('.lap-toggle').forEach(cb => {
+			cb.addEventListener('change', function () {
+				var lap = parseInt(this.dataset.lap, 10);
+				toggleLapVisibility(lap, this.checked);
+			});
+		});
+		return container;
+	};
+	legend.addTo(map);
+}
+
+function initResponseDetailMapLeaflet(mapUrl, apiKey, mapAttr, route, routePolyline) {
+	try {
+		map.remove();
+	} catch (Exception) {
+	}
+	var normalLayer = L.tileLayer(mapUrl + apiKey, {
+		maxZoom: 18,
+		attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+	});
+	var satelliteLayer = L.tileLayer(
+		'https://maps.hereapi.com/v3/base/mc/{z}/{x}/{y}/jpeg?size=256&style=explore.satellite.day&apiKey=' + apiKey, {
+			maxZoom: 18,
+		    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+		}
+	);
+	map = L.map('itineraryMapDiv', {
+	    layers: [normalLayer],
+	    zoomControl: true
+	});
+	map.createPane('restrictionsPane');
+	var restrictionsDay = makeRestrictionsLayer('explore.day', apiKey, mapAttr);
+	var restrictionsSat = makeRestrictionsLayer('explore.satellite.day', apiKey, mapAttr);
+	map.getPane('restrictionsPane').style.zIndex = 450;
+	var restrictionsProxy = L.layerGroup();
+	var currentBase = 'day';
+	var restrictionsOn = false;
+	var baseMaps = {
+	    "Normale": normalLayer,
+	    "Satellitare": satelliteLayer
+	};
+	var overlays = {
+	    "Restrizioni camion": restrictionsProxy
+	};
+	L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(map);
+	map.on('baselayerchange', function (e) {
+		currentBase = (e.name === 'Normale') ? 'day' : 'sat';
+		refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase);
+	})
+	map.on('overlayadd', function (e) {
+	    if (e.layer === restrictionsProxy) {
+	        restrictionsOn = true;
+	        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, restrictionsLayer);
+		}
+	});
+	map.on('overlayremove', function (e) {
+	    if (e.layer === restrictionsProxy) {
+	        restrictionsOn = false;
+			refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, restrictionsLayer);
+	    }
+	});
+	if (route == null || route.length < 3) {
+		map.setView(defaultPoint, defaultZoom);
+	}
+	var markersDetail = JSON.parse(route);
+	var markerArray = [];
+	var waypointArray = [];
+	var laps = groupByLap(markersDetail);
+	lapLayers.clear();
+	laps.forEach((_, lap) => lapLayers.set(lap, { markers: [], polylines: [] }));
+	for (var index = 0; index < markersDetail.length; index++) {
+	    var md = markersDetail[index];
+		waypointArray[index] = L.latLng(md.latitude, md.longitude);
+		var lapColor = md.tmpNbLap != null ? getLapColor(md.tmpNbLap).substring(1) : '0554A6';
+	    initMarker(md, markerArray, index, lapColor + '; border-color: #E6EAF0');
+		if (md.tmpNbLap != null && lapLayers.has(md.tmpNbLap)) {
+			lapLayers.get(md.tmpNbLap).markers.push(markerArray[index]);
+		}
+	}
+	if (routePolyline != null) {
+	    try {
+	        var coords = JSON.parse(routePolyline);
+			var waypointSplitIdx = mapWaypointsToPolyline(markersDetail, coords);
+			var sortedLaps = Array.from(laps.entries()).sort((a, b) => a[0] - b[0]);
+			sortedLaps.forEach(([lap, indices], i) => {
+				if (indices.length < 1) return;
+				var from;
+				var to = waypointSplitIdx[indices[indices.length - 1]];
+				if (i > 0) {
+					var prevLapIndices = sortedLaps[i - 1][1];
+					from = waypointSplitIdx[prevLapIndices[prevLapIndices.length - 1]];
+				} else {
+					from = waypointSplitIdx[indices[0]];
+				}
+				if (to <= from) return;
+				var segCoords = coords.slice(from, to + 1);
+				var color = getLapColor(lap);
+				var polyline = L.polyline(segCoords, {
+				    color: color,
+				    weight: 4,
+					opacity: 0.85,
+				    smoothFactor: 1
+				}).addTo(map);
+				var decorator = L.polylineDecorator(polyline, {
+				    patterns: [{
+				        offset: 25,
+				        repeat: 250,
+				        symbol: L.Symbol.arrowHead({
+				            pixelSize: 10,
+				            pathOptions: {
+				                fillOpacity: 1,
+				                weight: 0,
+				                color: color
+				            }
+				        })
+				    }]
+				}).addTo(map);
+				if (lapLayers.has(lap)) {
+					lapLayers.get(lap).polylines.push(polyline, decorator);
+				}
+			});
+	    } catch (e) {
+			console.error('Errore disegno polyline', e);
+		}
+	}
+	addSubtripsLegend(laps, markersDetail);
+	if (markerArray.length > 0) {
+		var featureGroup = L.featureGroup(markerArray).addTo(map);
+		map.fitBounds(featureGroup.getBounds());
+	}
+	L.control.browserPrint({
+		printLayer: null,
+		printModes: ["Landscape"],
+		manualMode: false
+	}).addTo(map);
+}
+
+function setLayerVisible(maplibreMap, source, visible) {
+	if (!maplibreMap || !maplibreMap.getStyle()) return;
+	const visibility = visible ? 'visible' : 'none';
+	maplibreMap.getStyle().layers.forEach(layer => {
+		if (layer.source === source) {
+			maplibreMap.setLayoutProperty(layer.id, 'visibility', visibility);
+		}
+	});
+}
+
+function initResponseDetailMapVector(mapUrl, apiKey, mapAttr, route, routePolyline) {
+	try {
+		map.remove();
+	} catch (Exception) {
+	}
+	const buildTransformRequest = (url, resourceType) => {
+		if (resourceType === 'Tile' && url.startsWith('https://api.myptv.com')) {
+			return { url, headers: { 'ApiKey': apiKey } };
+		}
+		return { url };
+	};
+	var normalLayer = L.maplibreGL({
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+		maxZoom: 18,
+		style: mapUrl,
+		transformRequest: buildTransformRequest
+	});
+	var satelliteLayer = L.maplibreGL({
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+		maxZoom: 18,
+		style: 'scripts/ptv_hybrid_truckrestrictions_style.json',
+		transformRequest: buildTransformRequest
+	});
+	map = L.map('itineraryMapDiv', {
+	    layers: [normalLayer],
+	    zoomControl: true
+	});
+	map.createPane('restrictionsPane');
+	map.getPane('restrictionsPane').style.zIndex = 450;
+	var restrictionsProxy = L.layerGroup();
+	var lowEmissionsProxy = L.layerGroup();
+	var baseMaps = {
+	    "Normale": normalLayer,
+	    "Satellitare": satelliteLayer,
+	};
+	var overlays = {
+	    "Restrizioni camion": restrictionsProxy,
+		"Zone basse emissioni": lowEmissionsProxy
+	};
+	L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(map);
+	map.on('overlayadd', function (e) {
+	    if (e.layer === restrictionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+	    } else if (e.layer === lowEmissionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+		}
+	});
+	map.on('overlayremove', function (e) {
+	    if (e.layer === restrictionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+		} else if (e.layer === lowEmissionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+	    }
+	});
+	if (route == null || route.length < 3) {
+		map.setView(defaultPoint, defaultZoom);
+	}
+	var markersDetail = JSON.parse(route);
+	var markerArray = [];
+	var waypointArray = [];
+	var laps = groupByLap(markersDetail);
+	lapLayers.clear();
+	laps.forEach((_, lap) => lapLayers.set(lap, { markers: [], polylines: [] }));
+	for (var index = 0; index < markersDetail.length; index++) {
+	    var md = markersDetail[index];
+		waypointArray[index] = L.latLng(md.latitude, md.longitude);
+		var lapColor = md.tmpNbLap != null ? getLapColor(md.tmpNbLap).substring(1) : '0554A6';
+	    initMarker(md, markerArray, index, lapColor + '; border-color: #E6EAF0');
+		if (md.tmpNbLap != null && lapLayers.has(md.tmpNbLap)) {
+			lapLayers.get(md.tmpNbLap).markers.push(markerArray[index]);
+		}
+	}
+	if (routePolyline != null) {
+	    try {
+	        var coords = JSON.parse(routePolyline);
+			var waypointSplitIdx = mapWaypointsToPolyline(markersDetail, coords);
+			var sortedLaps = Array.from(laps.entries()).sort((a, b) => a[0] - b[0]);
+			sortedLaps.forEach(([lap, indices], i) => {
+				if (indices.length < 1) return;
+				var from;
+				var to = waypointSplitIdx[indices[indices.length - 1]];
+				if (i > 0) {
+					var prevLapIndices = sortedLaps[i - 1][1];
+					from = waypointSplitIdx[prevLapIndices[prevLapIndices.length - 1]];
+				} else {
+					from = waypointSplitIdx[indices[0]];
+				}
+				if (to <= from) return;
+				var segCoords = coords.slice(from, to + 1);
+				var color = getLapColor(lap);
+				var polyline = L.polyline(segCoords, {
+					color: color,
+					weight: 4,
+					opacity: 0.85,
+					smoothFactor: 1
+				}).addTo(map);
+				var decorator = L.polylineDecorator(polyline, {
+					patterns: [{
+						offset: 25,
+						repeat: 250,
+						symbol: L.Symbol.arrowHead({
+							pixelSize: 10,
+							pathOptions: {
+								fillOpacity: 1,
+								weight: 0,
+								color: color
+							}
+						})
+					}]
+				}).addTo(map);
+				if (lapLayers.has(lap)) {
+					lapLayers.get(lap).polylines.push(polyline, decorator);
+				}
+			});
+	    } catch (e) {
+			console.error('Errore disegno polyline', e);
+		}
+	}
+	addSubtripsLegend(laps, markersDetail);
+	if (markerArray.length > 0) {
+		var featureGroup = L.featureGroup(markerArray).addTo(map);
+		map.fitBounds(featureGroup.getBounds());
+	}
+	L.control.browserPrint({
+		printLayer: null,
+		printModes: ["Landscape"],
+		manualMode: false
+	}).addTo(map);
+}
+
+function precise_round(num, decimals) {
+	return Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals);
+}
+
+function updateInputText(latLng) {
+	var inputs = document.getElementsByTagName("input");
+	for (var i = 0; i < inputs.length; i++) {
+		if (endsWith(inputs[i].name, "itemLat")) {
+			inputs[i].value = precise_round(latLng.lat, 7);
+		}
+		if (endsWith(inputs[i].name, "itemLon")) {
+			inputs[i].value = precise_round(latLng.lng, 7);
+		}
+	}
+}
+
+function initMapLeaflet(mapUrl, apiKey, mapAttr, json) {
+	try {
+		map.remove();
+	} catch (Exception) {
+	}
+	var coords = JSON.parse(json);
+	var hasPoint = coords.lat != null && coords.lon != null;
+	var center = hasPoint ? coords : defaultPoint;
+	var zoom = hasPoint ? 15 : defaultZoom;
+	var centerLatLng = Array.isArray(center) ? center : [center.lat, center.lon];
+	var normalLayer = L.tileLayer(mapUrl + apiKey, {
+	    maxZoom: 18,
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+	});
+	var satelliteLayer = L.tileLayer(
+	    'https://maps.hereapi.com/v3/base/mc/{z}/{x}/{y}/jpeg?size=256&style=explore.satellite.day&apiKey=' + apiKey, {
+	        maxZoom: 18,
+			attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+	    }
+	);
+	map = L
+		.map(
+			'itineraryMapDiv',
+			{
+				center: centerLatLng,
+				zoom: zoom,
+				layers: normalLayer,
+				zoomControl: true
+			});
+	map.doubleClickZoom.disable();
+	map.createPane('restrictionsPane');
+	map.getPane('restrictionsPane').style.zIndex = 450;
+	var restrictionsDay = makeRestrictionsLayer('explore.day', apiKey, mapAttr);
+	var restrictionsSat = makeRestrictionsLayer('explore.satellite.day', apiKey, mapAttr);
+	var restrictionsProxy = L.layerGroup();
+	var currentBase = 'day';
+	var restrictionsOn = false;
+	var baseMaps = {
+	    "Normale": normalLayer,
+	    "Satellitare": satelliteLayer,
+	};
+	var overlays = {
+	    "Restrizioni camion": restrictionsProxy
+	};
+	L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(map);
+	map.on('baselayerchange', function (e) {
+	    currentBase = (e.name === 'Normale') ? 'day' : 'sat';
+	    refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	});
+	map.on('overlayadd', function (e) {
+	    if (e.layer === restrictionsProxy) {
+	        restrictionsOn = true;
+	        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	    }
+	});
+	map.on('overlayremove', function (e) {
+	    if (e.layer === restrictionsProxy) {
+	        restrictionsOn = false;
+	        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	    }
+	});
+	var marker;
+	if (coords.lat != null && coords.lon != null) {
+		marker = L.marker([center.lat, center.lon], {
+			draggable: true
+		}).addTo(map);
+		marker.on('drag', function(e) {
+			updateInputText(marker.getLatLng());
+		});
+	}
+	map.on('dblclick', function(e) {
+		if (marker != null) {
+			map.removeLayer(marker);
+		}
+		marker = L.marker([e.latlng.lat, e.latlng.lng], {
+			draggable: true
+		}).addTo(map);
+		marker.on('drag', function(e) {
+			updateInputText(marker.getLatLng());
+		});
+		updateInputText(e.latlng);
+	});
+}
+
+function initMapLeafletVector(mapUrl, apiKey, mapAttr, json) {
+	try {
+		map.remove();
+	} catch (Exception) {
+	}
+	const buildTransformRequest = (url, resourceType) => {
+		if (resourceType === 'Tile' && url.startsWith('https://api.myptv.com')) {
+			return { url, headers: { 'ApiKey': apiKey } };
+		}
+		return { url };
+	};
+	var normalLayer = L.maplibreGL({
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+		maxZoom: 18,
+		style: mapUrl,
+		transformRequest: buildTransformRequest
+	});
+	var satelliteLayer = L.maplibreGL({
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+		maxZoom: 18,
+		style: 'scripts/ptv_hybrid_truckrestrictions_style.json',
+		transformRequest: buildTransformRequest
+	});
+	var coords = JSON.parse(json);
+	var hasPoint = coords.lat != null && coords.lon != null;
+	var center = hasPoint ? coords : defaultPoint;
+	var zoom = hasPoint ? 15 : defaultZoom;
+	var centerLatLng = Array.isArray(center) ? center : [center.lat, center.lon];
+	map = L
+		.map(
+			'itineraryMapDiv',
+			{
+				center: centerLatLng,
+				zoom: zoom,
+				layers: normalLayer,
+				zoomControl: true
+			});
+	map.doubleClickZoom.disable();
+	map.createPane('restrictionsPane');
+	map.getPane('restrictionsPane').style.zIndex = 450;
+	var restrictionsProxy = L.layerGroup();
+	var lowEmissionsProxy = L.layerGroup();
+	var baseMaps = {
+	    "Normale": normalLayer,
+	    "Satellitare": satelliteLayer,
+	};
+	var overlays = {
+	    "Restrizioni camion": restrictionsProxy,
+		"Zone basse emissioni": lowEmissionsProxy
+	};
+	L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(map);
+	map.on('overlayadd', function (e) {
+	    if (e.layer === restrictionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+	    } else if (e.layer === lowEmissionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+		}
+	});
+	map.on('overlayremove', function (e) {
+	    if (e.layer === restrictionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+		} else if (e.layer === lowEmissionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+	    }
+	});
+	var marker;
+	if (coords.lat != null && coords.lon != null) {
+		marker = L.marker([center.lat, center.lon], {
+			draggable: true
+		}).addTo(map);
+		marker.on('drag', function(e) {
+			updateInputText(marker.getLatLng());
+		});
+	}
+	map.on('dblclick', function(e) {
+		if (marker != null) {
+			map.removeLayer(marker);
+		}
+		marker = L.marker([e.latlng.lat, e.latlng.lng], {
+			draggable: true
+		}).addTo(map);
+		marker.on('drag', function(e) {
+			updateInputText(marker.getLatLng());
+		});
+		updateInputText(e.latlng);
+	});
+}
+
+function initPositionMapLeaflet(mapUrl, apiKey, mapAttr, json) {
+	try {
+		map.remove();
+	} catch (Exception) {
+	}
+	var coords = JSON.parse(json);
+	var hasPoint = coords.lat != null && coords.lon != null;
+	var center = hasPoint ? coords : defaultPoint;
+	var zoom = hasPoint ? 15 : defaultZoom;
+	var centerLatLng = Array.isArray(center) ? center : [center.lat, center.lon];
+	var normalLayer = L.tileLayer(mapUrl + apiKey, {
+	    maxZoom: 18,
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+	});
+	var satelliteLayer = L.tileLayer(
+	    'https://maps.hereapi.com/v3/base/mc/{z}/{x}/{y}/jpeg?size=256&style=explore.satellite.day&apiKey=' + apiKey, {
+	        maxZoom: 18,
+			attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+	    }
+	);
+	map = L
+		.map(
+			'positionMap',
+			{
+				center: centerLatLng,
+				zoom: zoom,
+				layers: normalLayer,
+				zoomControl: true
+			});
+	map.doubleClickZoom.disable();
+	map.createPane('restrictionsPane');
+	map.getPane('restrictionsPane').style.zIndex = 450;
+	var restrictionsDay = makeRestrictionsLayer('explore.day', apiKey, mapAttr);
+	var restrictionsSat = makeRestrictionsLayer('explore.satellite.day', apiKey, mapAttr);
+	var restrictionsProxy = L.layerGroup();
+	var currentBase = 'day';
+	var restrictionsOn = false;
+	var baseMaps = {
+	    "Normale": normalLayer,
+	    "Satellitare": satelliteLayer,
+	};
+	var overlays = {
+	    "Restrizioni camion": restrictionsProxy
+	};
+	L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(map);
+	map.on('baselayerchange', function (e) {
+	    currentBase = (e.name === 'Normale') ? 'day' : 'sat';
+	    refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	});
+	map.on('overlayadd', function (e) {
+	    if (e.layer === restrictionsProxy) {
+	        restrictionsOn = true;
+	        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	    }
+	});
+	map.on('overlayremove', function (e) {
+	    if (e.layer === restrictionsProxy) {
+	        restrictionsOn = false;
+	        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	    }
+	});
+	var marker;
+	if (coords.lat != null && coords.lon != null) {
+		marker = L.marker([center.lat, center.lon]).addTo(map);
+	}
+}
+
+function initPositionMapLeafletVector(mapUrl, apiKey, mapAttr, json) {
+	try {
+		map.remove();
+	} catch (Exception) {
+	}
+	const buildTransformRequest = (url, resourceType) => {
+		if (resourceType === 'Tile' && url.startsWith('https://api.myptv.com')) {
+			return { url, headers: { 'ApiKey': apiKey } };
+		}
+		return { url };
+	};
+	var normalLayer = L.maplibreGL({
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+		maxZoom: 18,
+		style: mapUrl,
+		transformRequest: buildTransformRequest
+	});
+	var satelliteLayer = L.maplibreGL({
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+		maxZoom: 18,
+		style: 'scripts/ptv_hybrid_truckrestrictions_style.json',
+		transformRequest: buildTransformRequest
+	});
+	var coords = JSON.parse(json);
+	var hasPoint = coords.lat != null && coords.lon != null;
+	var center = hasPoint ? coords : defaultPoint;
+	var zoom = hasPoint ? 15 : defaultZoom;
+	var centerLatLng = Array.isArray(center) ? center : [center.lat, center.lon];
+	map = L
+		.map(
+			'positionMap',
+			{
+				center: centerLatLng,
+				zoom: zoom,
+				layers: normalLayer,
+				zoomControl: true
+			});
+	map.doubleClickZoom.disable();
+	map.createPane('restrictionsPane');
+	map.getPane('restrictionsPane').style.zIndex = 450;
+	var restrictionsProxy = L.layerGroup();
+	var lowEmissionsProxy = L.layerGroup();
+	var baseMaps = {
+	    "Normale": normalLayer,
+	    "Satellitare": satelliteLayer,
+	};
+	var overlays = {
+	    "Restrizioni camion": restrictionsProxy,
+		"Zone basse emissioni": lowEmissionsProxy
+	};
+	L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(map);
+	map.on('overlayadd', function (e) {
+	    if (e.layer === restrictionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+	    } else if (e.layer === lowEmissionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+		}
+	});
+	map.on('overlayremove', function (e) {
+	    if (e.layer === restrictionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+		} else if (e.layer === lowEmissionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+	    }
+	});
+	var marker;
+	if (coords.lat != null && coords.lon != null) {
+		marker = L.marker([center.lat, center.lon]).addTo(map);
+	}
+}
+
+function centerMapOnMarker(lat, lon, route) {
+	if (map != null) {
+		map.panTo(new L.LatLng(lat, lon));
+		if (currentFeatureGroup) {
+			map.removeLayer(currentFeatureGroup);
+		}
+		var markerArray = [];
+
+		for (var index = 0; index < route.length; index++) {
+			var md = route[index];
+			initMarker(md, markerArray, index);
+		}
+		currentFeatureGroup = L.featureGroup(markerArray).addTo(map);
+	}
+}
+
+function nextFocus(elementName) {
+	reg = /\d/;
+	num = reg.exec(elementName);
+	if (num) {
+		elementName = elementName.replace(num, parseInt(num) + 1);
+		element = document.getElementById(elementName);
+		element.focus();
+	}
+}
+
+function onPlantSelect(rowId) {
+	var txtField = document
+		.getElementById("response-detail-form:markerIdHiddenInput");
+	txtField.value = rowId;
+	selectTruckFromMarker();
+}
+
+// function initMonitoringMap(markersDetail) {
+// try {
+// monitoringMap.remove();
+// } catch (Exception) {
+// }
+// // set up the map
+// monitoringMap = new L.Map('monitoringMap');
+//
+// // create the tile layer with correct attribution
+// var osmUrl = 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+// var osmAttrib = 'Map data © <a
+// href="http://openstreetmap.org">OpenStreetMap</a> contributors';
+// var osm = new L.TileLayer(osmUrl, {
+// minZoom : 8,
+// maxZoom : 12,
+// attribution : osmAttrib
+// });
+//
+// // start the map in South-East England
+// monitoringMap.setView(new L.LatLng(51.3, 0.7), 9);
+// monitoringMap.addLayer(osm);
+//
+// }
+
+function initGeoFencingAreasMap(mapUrl, apiKey, mapAttr, json, coordsJson) {
+	try {
+		geoFencingMap.remove();
+	} catch (Exception) {
+	}
+	var normalLayer = L.tileLayer(mapUrl + apiKey, {
+	    maxZoom: 18,
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+	});
+	var satelliteLayer = L.tileLayer(
+	    'https://maps.hereapi.com/v3/base/mc/{z}/{x}/{y}/jpeg?size=256&style=explore.satellite.day&apiKey=' + apiKey, {
+	        maxZoom: 18,
+			attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+	    }
+	);
+	geoFencingMap = L.map('boundingBoxMap', {
+	    layers: [normalLayer],
+	    zoomControl: true
+	});
+	geoFencingMap.setView(new L.LatLng(lat, lon), 5);
+	geoFencingMap.createPane('restrictionsPane');
+	geoFencingMap.getPane('restrictionsPane').style.zIndex = 450;
+	var restrictionsDay = makeRestrictionsLayer('explore.day', apiKey, mapAttr);
+	var restrictionsSat = makeRestrictionsLayer('explore.satellite.day', apiKey, mapAttr);
+	var restrictionsProxy = L.layerGroup();
+	var currentBase = 'day';
+	var restrictionsOn = false;
+	var baseMaps = {
+	    "Normale": normalLayer,
+	    "Satellitare": satelliteLayer,
+	};
+	var overlays = {
+	    "Restrizioni camion": restrictionsProxy
+	};
+	L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(geoFencingMap);
+	geoFencingMap.on('baselayerchange', function (e) {
+	    currentBase = (e.name === 'Normale') ? 'day' : 'sat';
+	    refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	});
+	geoFencingMap.on('overlayadd', function (e) {
+	    if (e.layer === restrictionsProxy) {
+	        restrictionsOn = true;
+	        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	    }
+	});
+	geoFencingMap.on('overlayremove', function (e) {
+	    if (e.layer === restrictionsProxy) {
+	        restrictionsOn = false;
+	        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	    }
+	});
+	var bbox = JSON.parse(json);
+	var bboxArray = [];
+	var index = 0;
+	for (var i = 0; i < bbox.length; i++) {
+		var bb = bbox[i];
+		for (var j = 0; j < bb.length; j++) {
+			var bboxCoords = bb[j];
+			bboxArray[index + j] = L.latLng(bboxCoords[0], bboxCoords[1]);
+		}
+		L.rectangle(bb, { color: "#ff7800", weight: 1 }).addTo(geoFencingMap);
+		index = index + bb.length;
+	}
+	var bounds = L.latLngBounds(bboxArray);
+	if (bboxArray != null && bboxArray.length != 0) {
+		geoFencingMap.fitBounds(bounds);
+	}
+	var coords = JSON.parse(coordsJson);
+	var coordsArray = [];
+	index = 0;
+	for (var i = 0; i < coords.length; i++) {
+		var coord = coords[i];
+		const icon = new L.DivIcon({
+			className: 'icon-div',
+			html: `<div style="background-color: rgb(109, 156, 189); color: rgb(109, 156, 189); border-radius: 50px; text-align: center; vertical-align: middle; font-size: 8px;">0</div>`,
+			iconSize: [12, 12]
+		});
+		coordsArray[index++] = L.marker([coord.latitude, coord.longitude]).setIcon(icon).bindTooltip(coord.latitude + ", " + coord.longitude, {
+			className: 'leaflet-tooltip'
+		}).addTo(geoFencingMap);
+	}
+	bounds = L.latLngBounds(coordsArray);
+	if (coordsArray != null && coordsArray.length != 0) {
+		geoFencingMap.fitBounds(bounds);
+	}
+}
+
+function initGeoFencingAreasMapVector(mapUrl, apiKey, mapAttr, json, coordsJson) {
+	try {
+		geoFencingMap.remove();
+	} catch (Exception) {
+	}
+	const buildTransformRequest = (url, resourceType) => {
+		if (resourceType === 'Tile' && url.startsWith('https://api.myptv.com')) {
+			return { url, headers: { 'ApiKey': apiKey } };
+		}
+		return { url };
+	};
+	var normalLayer = L.maplibreGL({
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+		maxZoom: 18,
+		style: mapUrl,
+		transformRequest: buildTransformRequest
+	});
+	var satelliteLayer = L.maplibreGL({
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+		maxZoom: 18,
+		style: 'scripts/ptv_hybrid_truckrestrictions_style.json',
+		transformRequest: buildTransformRequest
+	});
+	geoFencingMap = L.map('boundingBoxMap', {
+	    layers: [normalLayer],
+	    zoomControl: true
+	});
+	geoFencingMap.setView(new L.LatLng(lat, lon), 5);
+	geoFencingMap.createPane('restrictionsPane');
+	geoFencingMap.getPane('restrictionsPane').style.zIndex = 450;
+	var restrictionsProxy = L.layerGroup();
+	var lowEmissionsProxy = L.layerGroup();
+	var baseMaps = {
+	    "Normale": normalLayer,
+	    "Satellitare": satelliteLayer,
+	};
+	var overlays = {
+	    "Restrizioni camion": restrictionsProxy,
+		"Zone basse emissioni": lowEmissionsProxy
+	};
+	L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(geoFencingMap);
+	geoFencingMap.on('overlayadd', function (e) {
+	    if (e.layer === restrictionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+	    } else if (e.layer === lowEmissionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+		}
+	});
+	geoFencingMap.on('overlayremove', function (e) {
+	    if (e.layer === restrictionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+		} else if (e.layer === lowEmissionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+	    }
+	});
+	var bbox = JSON.parse(json);
+	var bboxArray = [];
+	var index = 0;
+	for (var i = 0; i < bbox.length; i++) {
+		var bb = bbox[i];
+		for (var j = 0; j < bb.length; j++) {
+			var bboxCoords = bb[j];
+			bboxArray[index + j] = L.latLng(bboxCoords[0], bboxCoords[1]);
+		}
+		L.rectangle(bb, { color: "#0554A6", weight: 1 }).addTo(geoFencingMap);
+		index = index + bb.length;
+	}
+	var bounds = L.latLngBounds(bboxArray);
+	if (bboxArray != null && bboxArray.length != 0) {
+		geoFencingMap.fitBounds(bounds);
+	}
+	var coords = JSON.parse(coordsJson);
+	var coordsArray = [];
+	index = 0;
+	for (var i = 0; i < coords.length; i++) {
+		var coord = coords[i];
+		const icon = new L.DivIcon({
+			className: 'icon-div',
+			html: `<div style="background-color: #0554A6; color: #0554A6; border-radius: 50px; text-align: center; vertical-align: middle; font-size: 8px;">0</div>`,
+			iconSize: [12, 12]
+		});
+		coordsArray[index++] = L.marker([coord.latitude, coord.longitude]).setIcon(icon).bindTooltip(coord.latitude + ", " + coord.longitude, {
+			className: 'leaflet-tooltip'
+		}).addTo(geoFencingMap);
+	}
+	bounds = L.latLngBounds(coordsArray);
+	if (coordsArray != null && coordsArray.length != 0) {
+		geoFencingMap.fitBounds(bounds);
+	}
+}
+
+function buildRow(coord, md, marker, buildIcon, selectedIds, updateHiddenInput, syncCheckboxes) {
+	const row = document.createElement('div');
+	row.style.cssText = `display: flex; align-items: center; gap: 8px; padding: 5px 10px; cursor: pointer;
+	 border-bottom: 1px solid #f0f0f0; transition: background .15s;`;
+	row.onmouseenter = () => row.style.background = '#f9f9f9';
+	row.onmouseleave = () => row.style.background = '';
+	const dot = document.createElement('span');
+	dot.style.cssText = `width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+	 background-color: ${md.color}; border: 1px solid ${md.borderColor};`;
+	const label = document.createElement('span');
+	label.style.cssText = 'flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+	const seq = (coord.index != null && coord.index !== '') ? '[' + coord.index + '] ' : '';
+	label.title = seq + (md.truck ? md.truck + ' - ' : '') + coord.name + (coord.productCategory ? ' - ' + coord.productCategory + ' ' + coord.quantity : '');
+	label.textContent = label.title;
+	const chk = document.createElement('input');
+	chk.type = 'checkbox';
+	chk.checked = selectedIds.has(coord.id);
+	chk.style.cursor = 'pointer';
+	chk.dataset.coordId = coord.id;
+	const toggle = () => {
+		if (selectedIds.has(coord.id)) {
+			selectedIds.delete(coord.id);
+			chk.checked = false;
+			marker.setIcon(buildIcon(false));
+		} else {
+			selectedIds.add(coord.id);
+			chk.checked = true;
+			marker.setIcon(buildIcon(true));
+		}
+		updateHiddenInput();
+	};
+	row.onclick = (e) => {
+		e.stopPropagation();
+		toggle();
+	}
+	chk.onclick = e => e.stopPropagation();
+	chk.onchange = toggle;
+	row.append(dot, label, chk);
+	return row;
+}
+
+function initClusterPanel(itinerariesMap, json, selectedIds, updateHiddenInput, layersControl, opts) {
+	opts = opts || {};
+	const enhanced = !!opts.enhanced;
+	const drawArrows = enhanced && opts.arrows !== false;
+	const legendTitle = opts.legendTitle || 'Mezzi';
+	const panel = document.createElement('div');
+	panel.id = 'cluster-select-panel';
+	panel.style.cssText = `display: none; position: absolute; z-index: 1000;
+	 background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+	 min-width: 220px; max-width: 300px; font-family: san-serif; font-size: 13px; overflow: hidden;`;
+ 	const panelHeader = document.createElement('div');
+	panelHeader.style.cssText = `display: flex; justify-content: space-between; align-items: center;
+	 padding: 6px 10px; background: #f5f5f5; border-bottom: 1px solid #ddd; font-weight: bold;`;
+	const panelTitle = document.createElement('span');
+	const panelClose = document.createElement('button');
+	panelClose.textContent = '✕';
+	panelClose.style.cssText = 'border: none; background: none; cursor: pointer; font-size: 14px; padding: 0;';
+	panelClose.onclick = (e) => {
+		e.stopPropagation();
+		e.preventDefault();
+		panel.style.display = 'none';
+	};
+	panelHeader.append(panelTitle, panelClose);
+	const panelList = document.createElement('div');
+	panelList.style.cssText = 'max-height: 220px; overflow-y: auto; padding: 4px 0;';
+	panel.append(panelHeader, panelList);
+	const mapContainer = document.getElementById('itinerariesMap');
+	mapContainer.style.position = 'relative';
+	mapContainer.appendChild(panel);
+	panelList.addEventListener('wheel', e => e.stopPropagation(), { passive: true });
+	itinerariesMap.on('click', () => panel.style.display = 'none');
+	function syncCheckboxes() {
+		panelList.querySelectorAll('input[type="checkbox"][data-coord-id]').forEach(chk => {
+			const id = chk.dataset.coordId;
+			chk.checked = selectedIds.has(id) || selectedIds.has(Number(id));
+		});
+	}
+	function showClusterPanel(containerPoint, markerInfos) {
+		panelTitle.textContent = `${markerInfos.length} destinazioni`;
+		panelList.innerHTML = '';
+		markerInfos.forEach(({ coord, md, marker, buildIcon }) =>
+			panelList.appendChild(buildRow(coord, md, marker, buildIcon, selectedIds, updateHiddenInput, syncCheckboxes)));
+		let left = containerPoint.x + 10;
+		let top = containerPoint.y + 10;
+		panel.style.display = 'block';
+		requestAnimationFrame(() => {
+			if (left + panel.offsetWidth > mapContainer.offsetWidth - 10) left = containerPoint.x - panel.offsetWidth - 10;
+			if (top + panel.offsetHeight > mapContainer.offsetHeight - 10) top = containerPoint.y - panel.offsetHeight - 10;
+			panel.style.left = left + 'px';
+			panel.style.top = top + 'px';
+		});
+	}
+	function buildSectorIcon(colorCounts, total, size) {
+		const r = size / 2;
+		const borderW = 2;
+		const cx = r, cy = r;
+		let startAngle = -Math.PI / 2;
+		let fillPaths = '';
+		let borderArcs = '';
+		for (const { color, borderColor, count } of colorCounts) {
+			const slice = (count / total) * 2 * Math.PI;
+			const endAngle = startAngle + slice;
+			const cosStart = Math.cos(startAngle), sinStart = Math.sin(startAngle);
+			const cosEnd = Math.cos(endAngle), sinEnd = Math.sin(endAngle);
+			const largeArc = slice > Math.PI ? 1 : 0;
+			fillPaths += `<path d="M${cx},${cy} L${cx + r * cosStart},${cy + r * sinStart} A${r},${r} 0 ${largeArc}, 1 ${cx + r * cosEnd},${cy + r * sinEnd} Z" fill="${color}" />`;
+			borderArcs += `<path d="M${cx + r * cosStart},${cy + r * sinStart} A${r},${r} 0 ${largeArc}, 1 ${cx + r * cosEnd},${cy + r * sinEnd}" fill="none" stroke="${borderColor}" stroke-width="${borderW}" />`;
+			startAngle = endAngle;
+		}
+		const fontSize = size < 38 ? 9 : 11;
+		const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg"
+			style="border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.3); display: block;">${fillPaths}${borderArcs}
+			<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="${fontSize}"
+			font-weight="bold" fill="white" style="text-shadow: 0 0 3px rgba(0,0,0,0.9), 0 0 3px rgba(0,0,0,0.9);">x${total}</text></svg>`;
+		return new L.DivIcon({
+			html: svg,
+			className: 'marker-cluster-custom',
+			iconSize: [size, size],
+			iconAnchor: [size / 2, size / 2]
+		});
+	}
+	var markersDetail = JSON.parse(json);
+	var waypointArray = [];
+	document.querySelectorAll('style[data-pulse]').forEach(s => s.remove());
+	const injectedPulseColors = new Set();
+	const markerInfoMap = new Map();
+	const markerColorMap = new Map();
+	const sequenceLayer = L.layerGroup();
+	if (drawArrows) {
+		if (!itinerariesMap.getPane('sequencePane')) {
+			itinerariesMap.createPane('sequencePane');
+		}
+		itinerariesMap.getPane('sequencePane').style.zIndex = 460;
+		itinerariesMap.getPane('sequencePane').style.pointerEvents = 'none';
+	}
+	const vehicleEntries = [];
+	const clusterGroup = L.markerClusterGroup({
+		maxClusterRadius: enhanced ? function (zoom) {
+			if (zoom <= 7) return 24;
+			if (zoom <= 11) return 16;
+			if (zoom <= 15) return 10;
+			return 4;
+		} : 40,
+		showCoverageOnHover: !!enhanced,
+		spiderfyOnMaxZoom: true,
+		iconCreateFunction(cluster) {
+			const childMarkers = cluster.getAllChildMarkers();
+			const total = childMarkers.length;
+			const size = total < 10 ? 22 : total < 100 ? 26 : 30;
+			const countByColor = new Map();
+			childMarkers.forEach(m => {
+				const { color, borderColor } = markerColorMap.get(m) || { color: '#888888', borderColor: '#555555' };
+				const key = color + '|' + borderColor;
+				if (!countByColor.has(key)) countByColor.set(key, { color, borderColor, count: 0 });
+                countByColor.get(key).count++;
+			});
+			if (countByColor.size === 1) {
+				const { color, borderColor } = countByColor.values().next().value;
+				return new L.DivIcon({
+					html: `<div style="width: ${size}px; height: ${size}px; background: ${color}; color: #fff;
+					 border-radius: 50%; border: 2px solid ${borderColor}; display: flex; align-items: center;
+					 justify-content: center; font-size: ${size < 38 ? 9 : 11}px; font-weight: bold;
+					 box-shadow: 0 1px 4px rgba(0,0,0,0.3); text-shadow: 0 0 3px rgba(0,0,0,0.9), 0 0 3px rgba(0,0,0,0.9)">x${total}</div>`,
+					 className: 'marker-cluster-custom',
+					 iconSize: [size, size],
+					 iconAnchor: [size / 2, size / 2]
+				});
+			}
+//			const colorCounts = Array.from(countByColor.entries()).map(([color, count]) => ({ color, count }));
+			return buildSectorIcon(Array.from(countByColor.values()), total, size);
+		}
+	});
+	for (var i = 0; i < markersDetail.length; i++) {
+		var md = markersDetail[i];
+		const routePoints = [];
+		const vehicleEntry = { md: md, label: (md.truck != null && md.truck !== '') ? md.truck : ('Mezzo ' + (i + 1)), markers: [], routeLayers: [], visible: true };
+		const pulseClass = 'pulse' + md.borderColor.replace(/[^a-zA-Z0-9]/g, '');
+		if (!injectedPulseColors.has(pulseClass)) {
+			injectedPulseColors.add(pulseClass);
+			const style = document.createElement('style');
+			style.setAttribute('data-pulse', pulseClass);
+			style.textContent = `@keyframes ${pulseClass} {
+				0% { box-shadow: 0 0 0 2px ${md.borderColor}, 0 0 0 2px ${md.borderColor}; }
+				70% { box-shadow: 0 0 0 2px ${md.borderColor}, 0 0 0 8px transparent; }
+				100% { box-shadow: 0 0 0 2px ${md.borderColor}, 0 0 0 8px transparent; }
+			}`;
+			document.head.appendChild(style);
+		}
+		for (var j = 0; j < md.coords.length; j++) {
+			var coord = md.coords[j];
+			const buildIcon = (function(mdRef, coordRef, pc) {
+				return function(selected) {
+					const size = selected ? 18 : 12;
+					return new L.DivIcon({
+						className: 'icon-div',
+						html: '<div style="'
+							+ 'width: ' + size + 'px; height: ' + size + 'px; '
+							+ 'display: flex; align-items: center; justify-content: center; '
+							+ 'background-color: ' + mdRef.color
+							+ (coordRef.isProposal ? '; opacity: 0.4' : '')
+							+ '; color: ' + mdRef.fontColor
+							+ '; border-style: solid; border-width: ' + (selected ? '2px' : '1px')
+							+ '; border-color: ' + mdRef.borderColor
+							+ (coordRef.noBorderRadius || coordRef.isProposal ? '' : '; border-radius: 50%')
+							+ '; font-size: 7px'
+							+ (coordRef.isProposal ? '; transform: rotate(45deg)' : '')
+							+ (selected ? '; animation: ' + pc + ' 1.2s infinite;' : '')
+							+ '"><span'
+							+ (coordRef.isProposal ? ' style="display: block; transform: rotate(-45deg);"' : '')
+							+ '>' + (coordRef.index != null ? coordRef.index : '')
+							+ '</span></div>',
+						iconSize: [size, size],
+						iconAnchor: [size / 2, size / 2]
+					});
+				};
+			})(md, coord, pulseClass);
+			const currentCoord = coord;
+			const marker = L.marker([coord.lat, coord.lon]).setIcon(buildIcon(false))
+				.bindTooltip(
+					((enhanced && coord.index != null) ? '[' + coord.index + '] ' : '') +
+					(md.truck != null ? md.truck + ' - ' : '') + coord.name +
+					(coord.productCategory ? '<br />' + coord.productCategory + ' ' + coord.quantity : '') +
+					((coord.deliveryFrom || coord.deliveryTo) ? '<br />Consegna: ' + (coord.deliveryFrom || '') + ' - ' + (coord.deliveryTo || '') : '') +
+					((coord.breakFrom || coord.breakTo) && coord.breakFrom !== coord.breakTo ? '<br />Pausa: ' + (coord.breakFrom || '') + ' - ' + (coord.breakTo || '') : '') +
+					(coord.notes ? '<br />Note: ' + coord.notes : ''),
+					{ className: 'leaflet-tooltip' }
+				);
+			marker.on('click', function(e) {
+				L.DomEvent.stopPropagation(e);
+				if (selectedIds.has(currentCoord.id)) {
+					selectedIds.delete(currentCoord.id);
+					marker.setIcon(buildIcon(false));
+				} else {
+					selectedIds.add(currentCoord.id);
+					marker.setIcon(buildIcon(true));
+				}
+				updateHiddenInput();
+				syncCheckboxes();
+			});
+			markerInfoMap.set(marker, { coord: currentCoord, md, buildIcon });
+			markerColorMap.set(marker, { color: md.color, borderColor: md.borderColor });
+			clusterGroup.addLayer(marker);
+			vehicleEntry.markers.push(marker);
+			waypointArray.push(L.latLng(coord.lat, coord.lon));
+			if (drawArrows && coord.index != null && !coord.isProposal) {
+				routePoints.push({ idx: Number(coord.index), latlng: L.latLng(coord.lat, coord.lon) });
+			}
+		}
+		if (drawArrows && routePoints.length > 1) {
+			routePoints.sort(function (a, b) { return a.idx - b.idx; });
+			const latlngs = routePoints.map(function (p) { return p.latlng; });
+			const casing = L.polyline(latlngs, { pane: 'sequencePane', color: '#ffffff', weight: 4, opacity: 0.6 });
+			const line = L.polyline(latlngs, { pane: 'sequencePane', color: md.color, weight: 2, opacity: 0.9 });
+			const arrows = L.polylineDecorator(line, {
+				pane: 'sequencePane',
+				patterns: [{
+					offset: 12,
+					repeat: 70,
+					symbol: L.Symbol.arrowHead({
+						pixelSize: 11,
+						polygon: false,
+						pathOptions: { pane: 'sequencePane', stroke: true, color: md.color, weight: 2, opacity: 0.95 }
+					})
+				}]
+			});
+			sequenceLayer.addLayer(casing);
+			sequenceLayer.addLayer(line);
+			sequenceLayer.addLayer(arrows);
+			vehicleEntry.routeLayers.push(casing, line, arrows);
+		}
+		vehicleEntries.push(vehicleEntry);
+	}
+	clusterGroup.on('clustermouseover', function(e) {
+		const childMarkers = e.layer.getAllChildMarkers();
+		const tooltipLines = childMarkers.map(m => {
+			const tt = m.getTooltip();
+			return tt ? tt.getContent() : null;
+		}).filter(Boolean);
+		if (tooltipLines.length === 0) return;
+		const visible = tooltipLines.slice(0, PANEL_PAGE_SIZE);
+		const hiddenCount = tooltipLines.length - visible.length;
+		let content = visible.join('<hr style="margin: 3px 0; border-color: #ddd">');
+		if (hiddenCount > 0) {
+			content += '<hr style="margin: 3px 0; border-color: #ddd">'
+				+ '<span style="color: #5578c8; font-size: 11px;">e altri ' + hiddenCount + '...</span>';
+		}
+		e.layer.bindTooltip(content, {
+			className: 'leaflet-tooltip',
+			sticky: true
+		}).openTooltip();
+	});
+	clusterGroup.on('clustermouseout', function(e) {
+		e.layer.closeTooltip();
+		e.layer.unbindTooltip();
+	});
+	clusterGroup.on('clusterclick', function(e) {
+		L.DomEvent.stopPropagation(e);
+		panel.style.display = 'none';
+		const childMarkers = e.layer.getAllChildMarkers();
+		const infos = childMarkers.map(m => {
+			const info = markerInfoMap.get(m);
+			return info ? { marker: m, ...info } : null;
+		}).filter(Boolean);
+		const cp = itinerariesMap.latLngToContainerPoint(e.layer.getLatLng());
+		showClusterPanel(cp, infos);
+	});
+	itinerariesMap.addLayer(clusterGroup);
+	if (enhanced && layersControl && sequenceLayer.getLayers().length > 0) {
+		layersControl.addOverlay(sequenceLayer, 'Sequenza consegne');
+	}
+	if (enhanced) {
+	function setVehicleVisible(entry, visible) {
+		if (entry.visible === visible) return;
+		entry.visible = visible;
+		if (visible) {
+			clusterGroup.addLayers(entry.markers);
+			entry.routeLayers.forEach(function (l) { sequenceLayer.addLayer(l); });
+		} else {
+			clusterGroup.removeLayers(entry.markers);
+			entry.routeLayers.forEach(function (l) { sequenceLayer.removeLayer(l); });
+		}
+	}
+	if (vehicleEntries.length > 0) {
+		function legendText(md) {
+			const seen = {}, uniq = [];
+			[md.dayString, md.drivingTruckPlate, md.truckCode, md.truckPlate, md.driver].forEach(function (v) {
+				if (v != null && String(v).trim() !== '' && !seen[v]) { seen[v] = 1; uniq.push(v); }
+			});
+			const idx = (md.truckIndex != null ? md.truckIndex + ' - ' : '');
+			return idx + (uniq.length ? uniq.join(' - ') : (md.truck || ''));
+		}
+		const legend = L.control({ position: 'topright' });
+		legend.onAdd = function () {
+			const box = L.DomUtil.create('div', 'leaflet-bar itineraries-legend');
+			box.style.cssText = 'background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.3); font-size:12px; line-height:1.4; max-width:260px; box-sizing:border-box;';
+			const head = L.DomUtil.create('a', '', box);
+			head.href = '#';
+			head.style.cssText = 'display:block; width:auto; height:auto; line-height:normal; padding:5px 10px; font-weight:bold; white-space:nowrap; cursor:pointer; color:#333;';
+			const list = L.DomUtil.create('div', '', box);
+			list.style.cssText = 'display:none; max-height:300px; overflow:auto; padding:4px 8px; border-top:1px solid #eee; min-width:160px; box-sizing:border-box;';
+			let open = false;
+			function renderHead() { head.textContent = (open ? '▾ ' : '▸ ') + legendTitle + ' (' + vehicleEntries.length + ')'; }
+			renderHead();
+			L.DomEvent.on(head, 'click', function (e) { L.DomEvent.stop(e); open = !open; list.style.display = open ? 'block' : 'none'; renderHead(); });
+			const allLink = L.DomUtil.create('a', '', list);
+			allLink.href = '#'; allLink.textContent = 'mostra tutti'; allLink.style.cssText = 'display:inline-block; width:auto; height:auto; line-height:normal; font-size:11px; color:#5578c8; margin-bottom:4px;';
+			const rows = [];
+			vehicleEntries.forEach(function (entry) {
+				const row = document.createElement('label');
+				row.style.cssText = 'display:flex; align-items:center; gap:6px; cursor:pointer; white-space:nowrap; padding:1px 0;';
+				const chk = document.createElement('input');
+				chk.type = 'checkbox'; chk.checked = true; chk.style.cursor = 'pointer'; chk.style.flexShrink = '0';
+				chk.onchange = function () { setVehicleVisible(entry, chk.checked); };
+				const dot = document.createElement('span');
+				dot.style.cssText = 'width:11px; height:11px; border-radius:50%; flex-shrink:0; background:' + entry.md.color + '; border:1px solid ' + entry.md.borderColor + ';';
+				const txt = document.createElement('span');
+				txt.textContent = (entry.md.legendLabel || legendText(entry.md)) + ' (' + entry.markers.length + ')';
+				txt.title = txt.textContent + ' — clic per isolare';
+				txt.style.cssText = 'flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;';
+				txt.onclick = function (e) {
+					e.preventDefault(); e.stopPropagation();
+					vehicleEntries.forEach(function (other, k) { const vis = (other === entry); setVehicleVisible(other, vis); rows[k].checked = vis; });
+				};
+				row.append(chk, dot, txt);
+				list.appendChild(row);
+				rows.push(chk);
+			});
+			allLink.onclick = function (e) { e.preventDefault(); e.stopPropagation(); vehicleEntries.forEach(function (entry, k) { setVehicleVisible(entry, true); rows[k].checked = true; }); };
+			L.DomEvent.disableClickPropagation(box);
+			L.DomEvent.disableScrollPropagation(box);
+			return box;
+		};
+		legend.addTo(itinerariesMap);
+	}
+	let selecting = false, selPoints = [], selPolygon = null, onSelToggle = null, selHintControl = null;
+	function pointInPolygon(latlng, vertices) {
+		let x = latlng.lng, y = latlng.lat, inside = false;
+		for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+			const xi = vertices[i].lng, yi = vertices[i].lat;
+			const xj = vertices[j].lng, yj = vertices[j].lat;
+			const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+			if (intersect) inside = !inside;
+		}
+		return inside;
+	}
+	function onSelMove(e) {
+		if (!selPolygon || selPoints.length === 0) return;
+		selPolygon.setLatLngs(selPoints.concat([e.latlng]));
+	}
+	function onSelClick(e) {
+		selPoints.push(e.latlng);
+		if (!selPolygon) {
+			selPolygon = L.polygon(selPoints, { color: '#3388ff', weight: 1, dashArray: '4', fillOpacity: 0.1 }).addTo(itinerariesMap);
+		} else {
+			selPolygon.setLatLngs(selPoints);
+		}
+	}
+	function onSelDblClick(e) {
+		L.DomEvent.stop(e);
+		finishAreaSelect();
+	}
+	function onSelKeyDown(e) {
+		if (e.key === 'Escape') { stopAreaSelect(); }
+	}
+	function finishAreaSelect() {
+		if (selPoints.length > 1 && selPoints[selPoints.length - 1].equals(selPoints[selPoints.length - 2])) {
+			selPoints.pop();
+		}
+		if (selPoints.length >= 3) {
+			let changed = false;
+			markerInfoMap.forEach(function (info, marker) {
+				if (info.coord.id == null) return;
+				if (pointInPolygon(marker.getLatLng(), selPoints) && !selectedIds.has(info.coord.id)) {
+					selectedIds.add(info.coord.id);
+					marker.setIcon(info.buildIcon(true));
+					changed = true;
+				}
+			});
+			if (changed) { updateHiddenInput(); syncCheckboxes(); }
+		}
+		stopAreaSelect();
+	}
+	function showSelHint() {
+		if (selHintControl) return;
+		selHintControl = L.control({ position: 'bottomleft' });
+		selHintControl.onAdd = function () {
+			const box = L.DomUtil.create('div', 'leaflet-bar');
+			box.style.cssText = 'background:#fff; padding:6px 10px; font-size:12px; color:#333; box-shadow:0 1px 4px rgba(0,0,0,.3);';
+			box.textContent = "Clicca per aggiungere i vertici dell'area, doppio click per chiuderla, Esc per annullare";
+			return box;
+		};
+		selHintControl.addTo(itinerariesMap);
+	}
+	function hideSelHint() {
+		if (selHintControl) { itinerariesMap.removeControl(selHintControl); selHintControl = null; }
+	}
+	function startAreaSelect() {
+		selecting = true;
+		selPoints = [];
+		itinerariesMap.dragging.disable();
+		itinerariesMap.doubleClickZoom.disable();
+		itinerariesMap.getContainer().style.cursor = 'crosshair';
+		itinerariesMap.on('click', onSelClick);
+		itinerariesMap.on('mousemove', onSelMove);
+		itinerariesMap.on('dblclick', onSelDblClick);
+		document.addEventListener('keydown', onSelKeyDown);
+		showSelHint();
+		if (onSelToggle) onSelToggle(true);
+	}
+	function stopAreaSelect() {
+		selecting = false;
+		if (selPolygon) { itinerariesMap.removeLayer(selPolygon); selPolygon = null; }
+		selPoints = [];
+		itinerariesMap.dragging.enable();
+		itinerariesMap.doubleClickZoom.enable();
+		itinerariesMap.getContainer().style.cursor = '';
+		itinerariesMap.off('click', onSelClick);
+		itinerariesMap.off('mousemove', onSelMove);
+		itinerariesMap.off('dblclick', onSelDblClick);
+		document.removeEventListener('keydown', onSelKeyDown);
+		hideSelHint();
+		if (onSelToggle) onSelToggle(false);
+	}
+	function toggleFullscreen() {
+		const target = itinerariesMap.getContainer();
+		if (!document.fullscreenElement) {
+			(target.requestFullscreen || target.webkitRequestFullscreen || function () {}).call(target);
+		} else {
+			(document.exitFullscreen || document.webkitExitFullscreen || function () {}).call(document);
+		}
+	}
+	if (window._itinFsHandler) { document.removeEventListener('fullscreenchange', window._itinFsHandler); }
+	window._itinFsHandler = function () { try { itinerariesMap.invalidateSize(); } catch (ex) {} };
+	document.addEventListener('fullscreenchange', window._itinFsHandler);
+	let printer = null;
+	function printMap() {
+		try {
+			if (!printer) { printer = L.browserPrint(itinerariesMap, { documentTitle: 'Itinerari', printLayer: null }); }
+			printer.print(L.BrowserPrint.Mode.Landscape());
+		} catch (ex) { console.error('Errore stampa mappa', ex); }
+	}
+	const tools = L.control({ position: 'topleft' });
+	tools.onAdd = function () {
+		const wrap = L.DomUtil.create('div', 'leaflet-bar itin-tools');
+		wrap.style.position = 'relative';
+		const btn = L.DomUtil.create('a', '', wrap);
+		btn.href = '#'; btn.title = 'Strumenti';
+		btn.innerHTML = '<i class="pi pi-bars"></i>';
+		const menu = L.DomUtil.create('div', '', wrap);
+		menu.style.cssText = 'position:absolute; top:0; left:34px; display:none; background:#fff; border:1px solid #bbb; border-radius:4px; box-shadow:0 1px 5px rgba(0,0,0,.4); min-width:170px; overflow:hidden; z-index:1000;';
+		function makeItem(iconClass, label) {
+			const a = L.DomUtil.create('a', '', menu);
+			a.href = '#';
+			a.innerHTML = '<i class="pi ' + iconClass + '" style="margin-right:8px; width:14px; text-align:center;"></i>' + label;
+			a.style.cssText = 'display:flex; align-items:center; width:auto; height:auto; line-height:normal; padding:8px 12px; white-space:nowrap; font-size:13px; color:#333; text-align:left; border-bottom:1px solid #eee;';
+			a.onmouseenter = function () { a.style.background = '#f3f6fb'; };
+			a.onmouseleave = function () { a.style.background = a._active ? '#cfe3ff' : ''; };
+			return a;
+		}
+		const fsItem = makeItem('pi-window-maximize', 'Schermo intero');
+		const selItem = makeItem('pi-stop', 'Seleziona area');
+		const printItem = makeItem('pi-print', 'Stampa');
+		printItem.style.borderBottom = 'none';
+		onSelToggle = function (active) {
+			selItem._active = active;
+			selItem.style.background = active ? '#cfe3ff' : '';
+			selItem.innerHTML = '<i class="pi pi-stop" style="margin-right:8px; width:14px; text-align:center;"></i>' + (active ? 'Annulla selezione' : 'Seleziona area');
+		};
+		function closeMenu() { menu.style.display = 'none'; }
+		L.DomEvent.on(btn, 'click', function (e) { L.DomEvent.stop(e); menu.style.display = (menu.style.display === 'none' ? 'block' : 'none'); });
+		L.DomEvent.on(fsItem, 'click', function (e) { L.DomEvent.stop(e); closeMenu(); toggleFullscreen(); });
+		L.DomEvent.on(selItem, 'click', function (e) { L.DomEvent.stop(e); closeMenu(); if (selecting) { stopAreaSelect(); } else { startAreaSelect(); } });
+		L.DomEvent.on(printItem, 'click', function (e) { L.DomEvent.stop(e); closeMenu(); printMap(); });
+		L.DomEvent.disableClickPropagation(wrap);
+		return wrap;
+	};
+	tools.addTo(itinerariesMap);
+	}
+
+	if (waypointArray != null && waypointArray.length > 0) {
+		itinerariesMap.fitBounds(L.latLngBounds(waypointArray));
+	}
+}
+
+function initItinerariesMap(mapUrl, apiKey, mapAttr, json, opts) {
+	opts = opts || {};
+	const useRetina = !!opts.enhanced && opts.retina !== false;
+	try {
+		itinerariesMap.remove();
+	} catch (Exception) {
+	}
+	const oldPanel = document.getElementById('cluster-select-panel');
+    if (oldPanel) {
+        oldPanel.remove();
+    }
+	const selectedIds = new Set();
+	function updateHiddenInput() {
+		var input = document.getElementById('response-detail-form:selectedDestinationsInput');
+		if (input) {
+			input.value = JSON.stringify(Array.from(selectedIds));
+		}
+		updateItinerariesSelectedRows();
+	}
+	const toRetina = u => /[?&]size=/.test(u) ? u.replace(/([?&]size=)\d+/, '$1512') : u + (u.indexOf('?') >= 0 ? '&' : '?') + 'size=512';
+	var normalLayer = L.tileLayer(useRetina ? toRetina(mapUrl + apiKey) : (mapUrl + apiKey), {
+	    maxZoom: 18,
+	    tileSize: 256,
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+	});
+	var satelliteLayer = L.tileLayer(
+	    'https://maps.hereapi.com/v3/base/mc/{z}/{x}/{y}/jpeg?size=' + (useRetina ? '512' : '256') + '&style=explore.satellite.day&apiKey=' + apiKey, {
+	        maxZoom: 18,
+	        tileSize: 256,
+			attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+	    }
+	);
+	itinerariesMap = L.map('itinerariesMap', {
+	    layers: [normalLayer],
+	    zoomControl: true,
+	    zoomSnap: 0.5,
+	    zoomDelta: 0.5,
+	    wheelPxPerZoomLevel: 120
+	});
+	itinerariesMap.setView(new L.LatLng(lat, lon), 5);
+	itinerariesMap.createPane('restrictionsPane');
+	itinerariesMap.getPane('restrictionsPane').style.zIndex = 450;
+	var restrictionsDay = makeRestrictionsLayer('explore.day', apiKey, mapAttr, 1, useRetina ? 512 : 256);
+	var restrictionsSat = makeRestrictionsLayer('explore.satellite.day', apiKey, mapAttr, 1, useRetina ? 512 : 256);
+	var restrictionsProxy = L.layerGroup();
+	var currentBase = 'day', restrictionsOn = false;
+	var baseMaps = {
+	    "Normale": normalLayer,
+	    "Satellitare": satelliteLayer,
+	};
+	var overlays = {
+	    "Restrizioni camion": restrictionsProxy
+	};
+	var layersControl = L.control.layers(baseMaps, overlays, { position: 'topright' });
+	layersControl.addTo(itinerariesMap);
+	itinerariesMap.on('baselayerchange', function (e) {
+	    currentBase = (e.name === 'Normale') ? 'day' : 'sat';
+	    refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	});
+	itinerariesMap.on('overlayadd', function (e) {
+	    if (e.layer === restrictionsProxy) {
+	        restrictionsOn = true;
+	        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	    }
+	});
+	itinerariesMap.on('overlayremove', function (e) {
+	    if (e.layer === restrictionsProxy) {
+	        restrictionsOn = false;
+	        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	    }
+	});
+	initClusterPanel(itinerariesMap, json, selectedIds, updateHiddenInput, layersControl, opts);
+}
+
+function initItinerariesMapVector(mapUrl, apiKey, mapAttr, json, opts) {
+	try {
+		itinerariesMap.remove();
+	} catch (Exception) {
+	}
+	const selectedIds = new Set();
+	function updateHiddenInput() {
+		var input = document.getElementById('response-detail-form:selectedDestinationsInput');
+		if (input) {
+			input.value = JSON.stringify(Array.from(selectedIds));
+		}
+		updateItinerariesSelectedRows();
+	}
+	const buildTransformRequest = (url, resourceType) => {
+		if (resourceType === 'Tile' && url.startsWith('https://api.myptv.com')) {
+			return { url, headers: { 'ApiKey': apiKey } };
+		}
+		return { url };
+	};
+	var normalLayer = L.maplibreGL({
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+		maxZoom: 18,
+		style: mapUrl,
+		transformRequest: buildTransformRequest
+	});
+	var satelliteLayer = L.maplibreGL({
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+		maxZoom: 18,
+		style: 'scripts/ptv_hybrid_truckrestrictions_style.json',
+		transformRequest: buildTransformRequest
+	});
+	itinerariesMap = L.map('itinerariesMap', {
+	    layers: [normalLayer],
+	    zoomControl: true,
+		maxZoom: 18,
+		zoomSnap: 0.5,
+		zoomDelta: 0.5,
+		wheelPxPerZoomLevel: 120
+	});
+	itinerariesMap.setView(new L.LatLng(lat, lon), 5);
+	itinerariesMap.createPane('restrictionsPane');
+	itinerariesMap.getPane('restrictionsPane').style.zIndex = 450;
+	var restrictionsProxy = L.layerGroup();
+	var lowEmissionsProxy = L.layerGroup();
+	var baseMaps = {
+	    "Normale": normalLayer,
+	    "Satellitare": satelliteLayer,
+	};
+	var overlays = {
+	    "Restrizioni camion": restrictionsProxy,
+		"Zone basse emissioni": lowEmissionsProxy
+	};
+	var layersControl = L.control.layers(baseMaps, overlays, { position: 'topright' });
+	layersControl.addTo(itinerariesMap);
+	itinerariesMap.on('overlayadd', function (e) {
+	    if (e.layer === restrictionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+	    } else if (e.layer === lowEmissionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+		}
+	});
+	itinerariesMap.on('overlayremove', function (e) {
+	    if (e.layer === restrictionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+	    } else if (e.layer === lowEmissionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+		}
+	});
+	initClusterPanel(itinerariesMap, json, selectedIds, updateHiddenInput, layersControl, opts);
+}
+
+function initItinerariesMapVectorHere(styleUrl, apiKey, mapAttr, json, opts) {
+	opts = opts || {};
+	try {
+		itinerariesMap.remove();
+	} catch (Exception) {
+	}
+	const oldPanel = document.getElementById('cluster-select-panel');
+	if (oldPanel) {
+		oldPanel.remove();
+	}
+	const selectedIds = new Set();
+	function updateHiddenInput() {
+		var input = document.getElementById('response-detail-form:selectedDestinationsInput');
+		if (input) {
+			input.value = JSON.stringify(Array.from(selectedIds));
+		}
+		updateItinerariesSelectedRows();
+	}
+	const transformRequest = function (url) {
+		if (url.indexOf('hereapi.com') >= 0 && url.indexOf('apikey=') < 0 && url.indexOf('apiKey=') < 0) {
+			return { url: url + (url.indexOf('?') >= 0 ? '&' : '?') + 'apikey=' + apiKey };
+		}
+		return { url: url };
+	};
+	var normalLayer = L.maplibreGL({
+		attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+		maxZoom: 18,
+		style: styleUrl,
+		transformRequest: transformRequest
+	});
+	var satelliteLayer = L.tileLayer(
+		'https://maps.hereapi.com/v3/base/mc/{z}/{x}/{y}/jpeg?size=512&style=explore.satellite.day&apiKey=' + apiKey, {
+			maxZoom: 18,
+			tileSize: 256,
+			attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+		}
+	);
+	itinerariesMap = L.map('itinerariesMap', {
+		layers: [normalLayer],
+		zoomControl: true,
+		maxZoom: 18,
+		zoomSnap: 0.5,
+		zoomDelta: 0.5,
+		wheelPxPerZoomLevel: 120
+	});
+	itinerariesMap.setView(new L.LatLng(lat, lon), 5);
+	var restrictionsBase = L.tileLayer(
+		'https://maps.hereapi.com/v3/base/mc/{z}/{x}/{y}/png?size=512&style=explore.day' +
+		'&features=vehicle_restrictions:active_and_inactive&apiKey=' + apiKey, {
+			maxZoom: 18,
+			tileSize: 256,
+			attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+		}
+	);
+	var baseMaps = {
+		"Normale (vettoriale)": normalLayer,
+		"Satellitare": satelliteLayer,
+		"Restrizioni camion": restrictionsBase
+	};
+	var layersControl = L.control.layers(baseMaps, {}, { position: 'topright' });
+	layersControl.addTo(itinerariesMap);
+	initClusterPanel(itinerariesMap, json, selectedIds, updateHiddenInput, layersControl, opts);
+}
+
+function initTrucksMap(mapUrl, apiKey, mapAttr, json) {
+	try {
+		trucksMap.remove();
+	} catch (Exception) {
+	}
+	var normalLayer = L.tileLayer(mapUrl + apiKey, {
+	    maxZoom: 18,
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+	});
+	var satelliteLayer = L.tileLayer(
+	    'https://maps.hereapi.com/v3/base/mc/{z}/{x}/{y}/jpeg?size=256&style=explore.satellite.day&apiKey=' + apiKey, {
+	        maxZoom: 18,
+			attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+	    }
+	);
+	trucksMap = L.map('trucksMap', {
+	    layers: [normalLayer],
+	    zoomControl: true
+	});
+	trucksMap.setView(new L.LatLng(lat, lon), 5);
+	trucksMap.createPane('restrictionsPane');
+	trucksMap.getPane('restrictionsPane').style.zIndex = 450;
+	var restrictionsDay = makeRestrictionsLayer('explore.day', apiKey, mapAttr);
+	var restrictionsSat = makeRestrictionsLayer('explore.satellite.day', apiKey, mapAttr);
+	var restrictionsProxy = L.layerGroup();
+	var currentBase = 'day';
+	var restrictionsOn = false;
+	var baseMaps = {
+	    "Normale": normalLayer,
+	    "Satellitare": satelliteLayer,
+	};
+	var overlays = {
+	    "Restrizioni camion": restrictionsProxy
+	};
+	L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(trucksMap);
+	trucksMap.on('baselayerchange', function (e) {
+	    currentBase = (e.name === 'Normale') ? 'day' : 'sat';
+	    refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	});
+	trucksMap.on('overlayadd', function (e) {
+	    if (e.layer === restrictionsProxy) {
+	        restrictionsOn = true;
+	        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	    }
+	});
+	trucksMap.on('overlayremove', function (e) {
+	    if (e.layer === restrictionsProxy) {
+	        restrictionsOn = false;
+	        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+	    }
+	});
+	var markersDetail = JSON.parse(json);
+	var markerArray = [];
+	var waypointArray = [];
+	var index = 0;
+	for (var i = 0; i < markersDetail.length; i++) {
+		var md = markersDetail[i];
+		const icon = new L.DivIcon({
+			className: 'icon-div',
+			html: `<div style="background-color: ` + md.color + `; color: ` + md.fontColor + `; text-align: center; vertical-align: middle; border-style: solid; border-width: 1px; border-color: ` + md.borderColor + `; border-radius: 50px; ` + `font-size: 7px;"><span>` + (md.truckIndex != null ? md.truckIndex : ``) + `</span></div>`,
+			iconSize: [12, 12]
+		});
+		markerArray[index] = L
+			.marker([md.lat, md.lon]).setIcon(icon).bindTooltip(md.code + ' - ' + md.plate, {
+				className: 'leaflet-tooltip'
+			}).addTo(trucksMap);
+		waypointArray[index] = L.latLng(md.lat, md.lon);
+		index++;
+	}
+	var bounds = L.latLngBounds(waypointArray);
+	if (waypointArray != null && waypointArray.length != 0) {
+		trucksMap.fitBounds(bounds);
+	}
+}
+
+function initTrucksMapVector(mapUrl, apiKey, mapAttr, json) {
+	try {
+		trucksMap.remove();
+	} catch (Exception) {
+	}
+	const buildTransformRequest = (url, resourceType) => {
+		if (resourceType === 'Tile' && url.startsWith('https://api.myptv.com')) {
+			return { url, headers: { 'ApiKey': apiKey } };
+		}
+		return { url };
+	};
+	var normalLayer = L.maplibreGL({
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+		maxZoom: 18,
+		style: mapUrl,
+		transformRequest: buildTransformRequest
+	});
+	var satelliteLayer = L.maplibreGL({
+	    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+		maxZoom: 18,
+		style: 'scripts/ptv_hybrid_truckrestrictions_style.json',
+		transformRequest: buildTransformRequest
+	});
+	trucksMap = L.map('trucksMap', {
+	    layers: [normalLayer],
+	    zoomControl: true
+	});
+	trucksMap.setView(new L.LatLng(lat, lon), 5);
+	trucksMap.createPane('restrictionsPane');
+	trucksMap.getPane('restrictionsPane').style.zIndex = 450;
+	var restrictionsProxy = L.layerGroup();
+	var lowEmissionsProxy = L.layerGroup();
+	var baseMaps = {
+	    "Normale": normalLayer,
+	    "Satellitare": satelliteLayer,
+	};
+	var overlays = {
+	    "Restrizioni camion": restrictionsProxy,
+		"Zone basse emissioni": lowEmissionsProxy
+	};
+	L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(trucksMap);
+	trucksMap.on('overlayadd', function (e) {
+	    if (e.layer === restrictionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+	    } else if (e.layer === lowEmissionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+		}
+	});
+	trucksMap.on('overlayremove', function (e) {
+	    if (e.layer === restrictionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+		} else if (e.layer === lowEmissionsProxy) {
+			setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+			setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+	    }
+	});
+	var markersDetail = JSON.parse(json);
+	var markerArray = [];
+	var waypointArray = [];
+	var index = 0;
+	for (var i = 0; i < markersDetail.length; i++) {
+		var md = markersDetail[i];
+		const icon = new L.DivIcon({
+			className: 'icon-div',
+			html: `<div style="background-color: ` + md.color + `; color: ` + md.fontColor + `; text-align: center; vertical-align: middle; border-style: solid; border-width: 1px; border-color: ` + md.borderColor + `; border-radius: 50px; ` + `font-size: 7px;"><span>` + (md.truckIndex != null ? md.truckIndex : ``) + `</span></div>`,
+			iconSize: [12, 12]
+		});
+		markerArray[index] = L
+			.marker([md.lat, md.lon]).setIcon(icon).bindTooltip(md.code + ' - ' + md.plate, {
+				className: 'leaflet-tooltip'
+			}).addTo(trucksMap);
+		waypointArray[index] = L.latLng(md.lat, md.lon);
+		index++;
+	}
+	var bounds = L.latLngBounds(waypointArray);
+	if (waypointArray != null && waypointArray.length != 0) {
+		trucksMap.fitBounds(bounds);
+	}
+}
+
+function initFullMonitoringMap(mapUrl, apiKey, mapAttr, markersDetail, isPoll) {
+	if (!isPoll) {
+		try {
+			monitoringMap.remove();
+		} catch (Exception) {
+		}
+		var normalLayer = L.tileLayer(mapUrl + apiKey, {
+		    maxZoom: 18,
+		    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+		});
+		var satelliteLayer = L.tileLayer(
+		    'https://maps.hereapi.com/v3/base/mc/{z}/{x}/{y}/jpeg?size=256&style=explore.satellite.day&apiKey=' + apiKey, {
+		        maxZoom: 18,
+				attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+		    }
+		);
+		monitoringMap = L.map('monitoringMap', {
+		    layers: [normalLayer],
+		    zoomControl: true
+		});
+		monitoringMap.setView(new L.LatLng(lat, lon), 5);
+		monitoringMap.createPane('restrictionsPane');
+		monitoringMap.getPane('restrictionsPane').style.zIndex = 450;
+		var restrictionsDay = makeRestrictionsLayer('explore.day', apiKey, mapAttr);
+		var restrictionsSat = makeRestrictionsLayer('explore.satellite.day', apiKey, mapAttr);
+		var restrictionsProxy = L.layerGroup();
+		var currentBase = 'day';
+		var restrictionsOn = false;
+		var baseMaps = {
+		    "Normale": normalLayer,
+		    "Satellitare": satelliteLayer,
+		};
+		var overlays = {
+		    "Restrizioni camion": restrictionsProxy
+		};
+		L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(monitoringMap);
+		monitoringMap.on('baselayerchange', function (e) {
+		    currentBase = (e.name === 'Normale') ? 'day' : 'sat';
+		    refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+		});
+		monitoringMap.on('overlayadd', function (e) {
+		    if (e.layer === restrictionsProxy) {
+		        restrictionsOn = true;
+		        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+		    }
+		});
+		monitoringMap.on('overlayremove', function (e) {
+		    if (e.layer === restrictionsProxy) {
+		        restrictionsOn = false;
+		        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+		    }
+		});
+	}
+	var markersDetail = JSON.parse(markersDetail);
+	var markerArray = [];
+	var waypointArray = [];
+	for (var index = 0; index < markersDetail.length; index++) {
+		var md = markersDetail[index];
+		const icon = new L.DivIcon({
+			className: 'icon-div',
+			html: `<div style="background-color: ` + md.color + `; color: ` + md.fontColor + `; text-align: center; vertical-align: middle; border-style: solid; border-width: 1px; border-color: ` + md.borderColor + `; border-radius: 50px; font-size: 8px;">` + md.truckIndex + `</div>`,
+			iconSize: [14, 14]
+		});
+		markerArray[index] = L
+			.marker([md.lat, md.lon]).setIcon(icon).bindTooltip(md.code + ' - ' + md.plate, {
+				className: 'leaflet-tooltip'
+			}).addTo(monitoringMap);
+		waypointArray[index] = L.latLng(md.lat, md.lon);
+	}
+	if (!isPoll) {
+		var bounds = L.latLngBounds(waypointArray);
+		if (waypointArray != null && waypointArray.length != 0) {
+			monitoringMap.fitBounds(bounds);
+		}
+	}
+}
+
+function initFullMonitoringMapVector(mapUrl, apiKey, mapAttr, markersDetail, isPoll) {
+	if (!isPoll) {
+		try {
+			monitoringMap.remove();
+		} catch (Exception) {
+		}
+		const buildTransformRequest = (url, resourceType) => {
+			if (resourceType === 'Tile' && url.startsWith('https://api.myptv.com')) {
+				return { url, headers: { 'ApiKey': apiKey } };
+			}
+			return { url };
+		};
+		var normalLayer = L.maplibreGL({
+		    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+			maxZoom: 18,
+			style: mapUrl,
+			transformRequest: buildTransformRequest
+		});
+		var satelliteLayer = L.maplibreGL({
+		    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+			maxZoom: 18,
+			style: 'scripts/ptv_hybrid_truckrestrictions_style.json',
+			transformRequest: buildTransformRequest
+		});
+		monitoringMap = L.map('monitoringMap', {
+		    layers: [normalLayer],
+		    zoomControl: true
+		});
+		monitoringMap.setView(new L.LatLng(lat, lon), 5);
+		monitoringMap.createPane('restrictionsPane');
+		monitoringMap.getPane('restrictionsPane').style.zIndex = 450;
+		var restrictionsProxy = L.layerGroup();
+		var lowEmissionsProxy = L.layerGroup();
+		var baseMaps = {
+		    "Normale": normalLayer,
+		    "Satellitare": satelliteLayer,
+		};
+		var overlays = {
+		    "Restrizioni camion": restrictionsProxy,
+			"Zone basse emissioni": lowEmissionsProxy
+		};
+		L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(monitoringMap);
+		monitoringMap.on('overlayadd', function (e) {
+		    if (e.layer === restrictionsProxy) {
+				setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+				setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+		    } else if (e.layer === lowEmissionsProxy) {
+				setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+				setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+			}
+		});
+		monitoringMap.on('overlayremove', function (e) {
+		    if (e.layer === restrictionsProxy) {
+				setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+				setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+			} else if (e.layer === lowEmissionsProxy) {
+				setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+				setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+		    }
+		});
+	}
+	var markersDetail = JSON.parse(markersDetail);
+	var markerArray = [];
+	var waypointArray = [];
+	for (var index = 0; index < markersDetail.length; index++) {
+		var md = markersDetail[index];
+		const icon = new L.DivIcon({
+			className: 'icon-div',
+			html: `<div style="background-color: ` + md.color + `; color: ` + md.fontColor + `; text-align: center; vertical-align: middle; border-style: solid; border-width: 1px; border-color: ` + md.borderColor + `; border-radius: 50px; font-size: 8px;">` + md.truckIndex + `</div>`,
+			iconSize: [14, 14]
+		});
+		markerArray[index] = L
+			.marker([md.lat, md.lon]).setIcon(icon).bindTooltip(md.code + ' - ' + md.plate, {
+				className: 'leaflet-tooltip'
+			}).addTo(monitoringMap);
+		waypointArray[index] = L.latLng(md.lat, md.lon);
+	}
+	if (!isPoll) {
+		var bounds = L.latLngBounds(waypointArray);
+		if (waypointArray != null && waypointArray.length != 0) {
+			monitoringMap.fitBounds(bounds);
+		}
+	}
+}
+
+function initSingleTruckMonitoringMap(mapUrl, apiKey, mapAttr, markersDetail, isPoll) {
+	if (!isPoll) {
+		try {
+			monitoringMap.remove();
+		} catch (Exception) {
+		}
+		var normalLayer = L.tileLayer(mapUrl + apiKey, {
+		    maxZoom: 18,
+		    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+		});
+		var satelliteLayer = L.tileLayer(
+		    'https://maps.hereapi.com/v3/base/mc/{z}/{x}/{y}/jpeg?size=256&style=explore.satellite.day&apiKey=' + apiKey, {
+		        maxZoom: 18,
+				attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear()
+		    }
+		);
+		monitoringMap = L.map('monitoringMap', {
+		    layers: [normalLayer],
+		    zoomControl: true
+		});
+		monitoringMap.setView(new L.LatLng(lat, lon), 5);
+		monitoringMap.createPane('restrictionsPane');
+		monitoringMap.getPane('restrictionsPane').style.zIndex = 450;
+		var restrictionsDay = makeRestrictionsLayer('explore.day', apiKey, mapAttr);
+		var restrictionsSat = makeRestrictionsLayer('explore.satellite.day', apiKey, mapAttr);
+		var restrictionsProxy = L.layerGroup();
+		var currentBase = 'day';
+		var restrictionsOn = false;
+		var baseMaps = {
+		    "Normale": normalLayer,
+		    "Satellitare": satelliteLayer,
+		};
+		var overlays = {
+		    "Restrizioni camion": restrictionsProxy
+		};
+		L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(monitoringMap);
+		monitoringMap.on('baselayerchange', function (e) {
+		    currentBase = (e.name === 'Normale') ? 'day' : 'sat';
+		    refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+		});
+		monitoringMap.on('overlayadd', function (e) {
+		    if (e.layer === restrictionsProxy) {
+		        restrictionsOn = true;
+		        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+		    }
+		});
+		monitoringMap.on('overlayremove', function (e) {
+		    if (e.layer === restrictionsProxy) {
+		        restrictionsOn = false;
+		        refreshRestrictionsProxy(restrictionsProxy, restrictionsOn, currentBase === 'day' ? restrictionsDay : restrictionsSat);
+		    }
+		});
+	}
+	var fullJsonData = JSON.parse(markersDetail);
+	var markersDetail = fullJsonData.events;
+	var markerArray = [];
+	var waypointArray = [];
+	for (var index = 0; index < markersDetail.length; index++) {
+		var md = markersDetail[index];
+		const icon = new L.DivIcon({
+			className: 'icon-div',
+			html: `<div style="background-color: ` + fullJsonData.color + `; color: ` + fullJsonData.fontColor + `; text-align: center; vertical-align: middle; border-style: solid; border-width: 1px; border-color: ` + fullJsonData.borderColor + `; font-size: 8px;">` + (index + 1) + `</div>`,
+			iconSize: [14, 14]
+		});
+		markerArray[index] = L
+			.marker([md.lat, md.lon]).setIcon(icon).bindTooltip(fullJsonData.code + ' - ' + fullJsonData.plate, {
+				className: 'leaflet-tooltip'
+			}).addTo(monitoringMap);
+		waypointArray[index] = L.latLng(md.lat, md.lon);
+	}
+	// aggiungo singolo marker per il mezzo
+	if (!isPoll) {
+		if (fullJsonData.tLat != null && fullJsonData.tLon != null) {
+			const icon = new L.DivIcon({
+				className: 'icon-div',
+				html: `<div style="background-color: ` + fullJsonData.color + `; color: ` + fullJsonData.fontColor + `; text-align: center; vertical-align: middle; border-style: solid; border-width: 1px; border-color: ` + fullJsonData.borderColor + `; border-radius: 50px; font-size: 8px;">` + fullJsonData.tIndex + `</div>`,
+				iconSize: [14, 14]
+			});
+			markerArray[index] = L
+				.marker([fullJsonData.tLat, fullJsonData.tLon]).setIcon(icon).bindTooltip(fullJsonData.code + ' - ' + fullJsonData.plate, {
+					className: 'leaflet-tooltip'
+				}).addTo(monitoringMap);
+			waypointArray[index] = L.latLng(fullJsonData.tLat, fullJsonData.tLon);
+		}
+		if (waypointArray != null && waypointArray.length != 0) {
+			var bounds = L.latLngBounds(waypointArray);
+			monitoringMap.fitBounds(bounds);
+		}
+	}
+}
+
+function initSingleTruckMonitoringMapVector(mapUrl, apiKey, mapAttr, markersDetail, isPoll) {
+	if (!isPoll) {
+		try {
+			monitoringMap.remove();
+		} catch (Exception) {
+		}
+		const buildTransformRequest = (url, resourceType) => {
+			if (resourceType === 'Tile' && url.startsWith('https://api.myptv.com')) {
+				return { url, headers: { 'ApiKey': apiKey } };
+			}
+			return { url };
+		};
+		var normalLayer = L.maplibreGL({
+		    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+			maxZoom: 18,
+			style: mapUrl,
+			transformRequest: buildTransformRequest
+		});
+		var satelliteLayer = L.maplibreGL({
+		    attribution: '&copy; ' + mapAttr + ' ' + new Date().getFullYear(),
+			maxZoom: 18,
+			style: 'scripts/ptv_hybrid_truckrestrictions_style.json',
+			transformRequest: buildTransformRequest
+		});
+		monitoringMap = L.map('monitoringMap', {
+		    layers: [normalLayer],
+		    zoomControl: true
+		});
+		monitoringMap.setView(new L.LatLng(lat, lon), 5);
+		monitoringMap.createPane('restrictionsPane');
+		monitoringMap.getPane('restrictionsPane').style.zIndex = 450;
+		var restrictionsProxy = L.layerGroup();
+		var lowEmissionsProxy = L.layerGroup();
+		var baseMaps = {
+		    "Normale": normalLayer,
+		    "Satellitare": satelliteLayer,
+		};
+		var overlays = {
+		    "Restrizioni camion": restrictionsProxy,
+			"Zone basse emissioni": lowEmissionsProxy
+		};
+		L.control.layers(baseMaps, overlays, { position: 'topright' }).addTo(monitoringMap);
+		monitoringMap.on('overlayadd', function (e) {
+		    if (e.layer === restrictionsProxy) {
+				setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+				setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', true);
+		    } else if (e.layer === lowEmissionsProxy) {
+				setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+				setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', true);
+			}
+		});
+		monitoringMap.on('overlayremove', function (e) {
+		    if (e.layer === restrictionsProxy) {
+				setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+				setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-tr', false);
+			} else if (e.layer === lowEmissionsProxy) {
+				setLayerVisible(normalLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+				setLayerVisible(satelliteLayer.getMaplibreMap(), 'ptv-overlays-lez', false);
+		    }
+		});
+	}
+	var fullJsonData = JSON.parse(markersDetail);
+	var markersDetail = fullJsonData.events;
+	var markerArray = [];
+	var waypointArray = [];
+	for (var index = 0; index < markersDetail.length; index++) {
+		var md = markersDetail[index];
+		const icon = new L.DivIcon({
+			className: 'icon-div',
+			html: `<div style="background-color: ` + fullJsonData.color + `; color: ` + fullJsonData.fontColor + `; text-align: center; vertical-align: middle; border-style: solid; border-width: 1px; border-color: ` + fullJsonData.borderColor + `; font-size: 8px;">` + (index + 1) + `</div>`,
+			iconSize: [14, 14]
+		});
+		markerArray[index] = L
+			.marker([md.lat, md.lon]).setIcon(icon).bindTooltip(fullJsonData.code + ' - ' + fullJsonData.plate, {
+				className: 'leaflet-tooltip'
+			}).addTo(monitoringMap);
+		waypointArray[index] = L.latLng(md.lat, md.lon);
+	}
+	// aggiungo singolo marker per il mezzo
+	if (!isPoll) {
+		if (fullJsonData.tLat != null && fullJsonData.tLon != null) {
+			const icon = new L.DivIcon({
+				className: 'icon-div',
+				html: `<div style="background-color: ` + fullJsonData.color + `; color: ` + fullJsonData.fontColor + `; text-align: center; vertical-align: middle; border-style: solid; border-width: 1px; border-color: ` + fullJsonData.borderColor + `; border-radius: 50px; font-size: 8px;">` + fullJsonData.tIndex + `</div>`,
+				iconSize: [14, 14]
+			});
+			markerArray[index] = L
+				.marker([fullJsonData.tLat, fullJsonData.tLon]).setIcon(icon).bindTooltip(fullJsonData.code + ' - ' + fullJsonData.plate, {
+					className: 'leaflet-tooltip'
+				}).addTo(monitoringMap);
+			waypointArray[index] = L.latLng(fullJsonData.tLat, fullJsonData.tLon);
+		}
+		if (waypointArray != null && waypointArray.length != 0) {
+			var bounds = L.latLngBounds(waypointArray);
+			monitoringMap.fitBounds(bounds);
+		}
+	}
+}
+
+function findComponentValueFromInput(id_input, index) {
+	return document.querySelectorAll("[id$=" + id_input + "]")[index].value;
+}
+
+function handleEditArrivalTime(e, rowId, index) {
+	if (e.keyCode == 13) {
+		editRowArrivalTime([{ name: 'row_id', value: rowId }, { name: 'new_val', value: findComponentValueFromInput('at-input', index) }]);
+		jQuery('#update-response-detail-table').click();
+		return false;
+	}
+}
+
+function findComponentValueFromAutocomplete(id_input, index) {
+	return document.querySelectorAll("[id$=" + id_input + "]")[index].children[0].value;
+}
+
+(function() {
+	'use strict';
+
+	var defaultOptions = function(options) {
+		if (typeof options === 'number') {
+			// Legacy
+			options = {
+				precision: options
+			};
+		} else {
+			options = options || {};
+		}
+
+		options.precision = options.precision || 5;
+		options.factor = options.factor || Math.pow(10, options.precision);
+		options.dimension = options.dimension || 2;
+		return options;
+	};
+
+	var PolylineUtil = {
+		encode: function(points, options) {
+			options = defaultOptions(options);
+
+			var flatPoints = [];
+			for (var i = 0, len = points.length; i < len; ++i) {
+				var point = points[i];
+
+				if (options.dimension === 2) {
+					flatPoints.push(point.lat || point[0]);
+					flatPoints.push(point.lng || point[1]);
+				} else {
+					for (var dim = 0; dim < options.dimension; ++dim) {
+						flatPoints.push(point[dim]);
+					}
+				}
+			}
+
+			return this.encodeDeltas(flatPoints, options);
+		},
+
+		decode: function(encoded, options) {
+			options = defaultOptions(options);
+
+			var flatPoints = this.decodeDeltas(encoded, options);
+
+			var points = [];
+			for (var i = 0, len = flatPoints.length; i
+				+ (options.dimension - 1) < len;) {
+				var point = [];
+
+				for (var dim = 0; dim < options.dimension; ++dim) {
+					point.push(flatPoints[i++]);
+				}
+
+				points.push(point);
+			}
+
+			return points;
+		},
+
+		encodeDeltas: function(numbers, options) {
+			options = defaultOptions(options);
+
+			var lastNumbers = [];
+
+			for (var i = 0, len = numbers.length; i < len;) {
+				for (var d = 0; d < options.dimension; ++d, ++i) {
+					var num = numbers[i];
+					var delta = num - (lastNumbers[d] || 0);
+					lastNumbers[d] = num;
+
+					numbers[i] = delta;
+				}
+			}
+
+			return this.encodeFloats(numbers, options);
+		},
+
+		decodeDeltas: function(encoded, options) {
+			options = defaultOptions(options);
+
+			var lastNumbers = [];
+
+			var numbers = this.decodeFloats(encoded, options);
+			for (var i = 0, len = numbers.length; i < len;) {
+				for (var d = 0; d < options.dimension; ++d, ++i) {
+					numbers[i] = Math.round((lastNumbers[d] = numbers[i]
+						+ (lastNumbers[d] || 0))
+						* options.factor)
+						/ options.factor;
+				}
+			}
+
+			return numbers;
+		},
+
+		encodeFloats: function(numbers, options) {
+			options = defaultOptions(options);
+
+			for (var i = 0, len = numbers.length; i < len; ++i) {
+				numbers[i] = Math.round(numbers[i] * options.factor);
+			}
+
+			return this.encodeSignedIntegers(numbers);
+		},
+
+		decodeFloats: function(encoded, options) {
+			options = defaultOptions(options);
+
+			var numbers = this.decodeSignedIntegers(encoded);
+			for (var i = 0, len = numbers.length; i < len; ++i) {
+				numbers[i] /= options.factor;
+			}
+
+			return numbers;
+		},
+
+		encodeSignedIntegers: function(numbers) {
+			for (var i = 0, len = numbers.length; i < len; ++i) {
+				var num = numbers[i];
+				numbers[i] = (num < 0) ? ~(num << 1) : (num << 1);
+			}
+
+			return this.encodeUnsignedIntegers(numbers);
+		},
+
+		decodeSignedIntegers: function(encoded) {
+			var numbers = this.decodeUnsignedIntegers(encoded);
+
+			for (var i = 0, len = numbers.length; i < len; ++i) {
+				var num = numbers[i];
+				numbers[i] = (num & 1) ? ~(num >> 1) : (num >> 1);
+			}
+
+			return numbers;
+		},
+
+		encodeUnsignedIntegers: function(numbers) {
+			var encoded = '';
+			for (var i = 0, len = numbers.length; i < len; ++i) {
+				encoded += this.encodeUnsignedInteger(numbers[i]);
+			}
+			return encoded;
+		},
+
+		decodeUnsignedIntegers: function(encoded) {
+			var numbers = [];
+
+			var current = 0;
+			var shift = 0;
+
+			for (var i = 0, len = encoded.length; i < len; ++i) {
+				var b = encoded.charCodeAt(i) - 63;
+
+				current |= (b & 0x1f) << shift;
+
+				if (b < 0x20) {
+					numbers.push(current);
+					current = 0;
+					shift = 0;
+				} else {
+					shift += 5;
+				}
+			}
+
+			return numbers;
+		},
+
+		encodeSignedInteger: function(num) {
+			num = (num < 0) ? ~(num << 1) : (num << 1);
+			return this.encodeUnsignedInteger(num);
+		},
+
+		// This function is very similar to Google's, but I added
+		// some stuff to deal with the double slash issue.
+		encodeUnsignedInteger: function(num) {
+			var value, encoded = '';
+			while (num >= 0x20) {
+				value = (0x20 | (num & 0x1f)) + 63;
+				encoded += (String.fromCharCode(value));
+				num >>= 5;
+			}
+			value = num + 63;
+			encoded += (String.fromCharCode(value));
+
+			return encoded;
+		}
+	};
+
+	// Export Node module
+	if (typeof module === 'object' && typeof module.exports === 'object') {
+		module.exports = PolylineUtil;
+	}
+
+	// Inject functionality into Leaflet
+	if (typeof L === 'object') {
+		if (!(L.Polyline.prototype.fromEncoded)) {
+			L.Polyline.fromEncoded = function(encoded, options) {
+				return L.polyline(PolylineUtil.decode(encoded), options);
+			};
+		}
+		if (!(L.Polygon.prototype.fromEncoded)) {
+			L.Polygon.fromEncoded = function(encoded, options) {
+				return L.polygon(PolylineUtil.decode(encoded), options);
+			};
+		}
+
+		var encodeMixin = {
+			encodePath: function() {
+				return PolylineUtil.encode(this.getLatLngs());
+			}
+		};
+
+		if (!L.Polyline.prototype.encodePath) {
+			L.Polyline.include(encodeMixin);
+		}
+		if (!L.Polygon.prototype.encodePath) {
+			L.Polygon.include(encodeMixin);
+		}
+
+		L.PolylineUtil = PolylineUtil;
+	}
+})();
+
+function hideLastColumn(selector) {
+	$(`[id$="${selector}"] .ui-datatable-tablewrapper table`).each(function() {
+		$(this).find('tr').each(function() {
+			$(this).find('th:last-child, td:last-child').hide();
+		});
+	});
+}
+
+function showLastColumn(selector) {
+	$(`[id$="${selector}"] .ui-datatable-tablewrapper table`).each(function() {
+		$(this).find('tr').each(function() {
+			$(this).find('th:last-child, td:last-child').show();
+		});
+	});
+}
+
+function adjustTableScrollColumns() {
+	$('.ui-datatable-scrollable-body').each(function(index, body) {
+		var $body = $(body);
+		var hasScroll = body.scrollHeight > body.clientHeight;
+		if (!hasScroll) {
+			$body.closest('.ui-datatable-scrollable')
+				.find('.ui-datatable-scrollable-header-box').attr('style', 'margin-right: -1px !important');
+			if (index === 0) {
+				hideLastColumn('summary-table-totals');
+				hideLastColumn('dailyRouteTotalTable');
+				hideLastColumn('fcTotalTable');
+			}
+		} else {
+			$body.closest('.ui-datatable-scrollable')
+				.find('.ui-datatable-scrollable-header-box').css('margin-right', '');
+			if (index === 0) {
+				showLastColumn('summary-table-totals');
+				showLastColumn('dailyRouteTotalTable');
+				showLastColumn('fcTotalTable');
+			}
+		}
+	});
+}
+
+function doAdjustItinerariesDialog(dlg) {
+	setTimeout(() => {
+		const navbar = document.querySelector(".navbar-fixed-top");
+		const overlay = document.getElementById("response-detail-form:" + dlg + "_modal");
+		const dialog = document.getElementById("response-detail-form:" + dlg);
+		const blockUI = document.getElementById("response-detail-form:blockUI");
+		let baseZ = 1000;
+		if (navbar) {
+			const computedZ = window.getComputedStyle(navbar).zIndex;
+			baseZ = isNaN(parseInt(computedZ)) ? baseZ : parseInt(computedZ);
+		}
+		const isChildDialog = dlg !== 'itinerariesDialog';
+		const dialogZ = isChildDialog ? baseZ + 4 : baseZ + 2;
+		const overlayZ = isChildDialog ? baseZ + 3 : baseZ + 1;
+		if (overlay) {
+			overlay.style.zIndex = overlayZ.toString();
+		}
+		if (dialog) {
+			dialog.style.zIndex = dialogZ.toString();
+			const observer = new MutationObserver(() => {
+				const currentZ = parseInt(window.getComputedStyle(dialog).zIndex);
+				if (currentZ !== dialogZ) {
+					dialog.style.zIndex = dialogZ.toString();
+				}
+			});
+			observer.observe(dialog, { attributes: true, attributeFilter: ['style'] });
+			for (const key in PrimeFaces.widgets) {
+				const widget = PrimeFaces.widgets[key];
+				if (widget && widget.jq && widget.jq.closest("#response-detail-form\\:" + dlg).length > 0 && widget.panel && widget.panel.hasClass("ui-autocomplete-panel") && typeof widget.show === "function") {
+					const originalShow = widget.show;
+					widget.show = function() {
+						originalShow.apply(this, arguments);
+						setTimeout(() => {
+							if (this.panel) {
+								this.panel.css("z-index", dialogZ + 5);
+							}
+						}, 0);
+					};
+				}
+			}
+		}
+	}, 100);
+}
+
+function doAdjustPrivacyDialog() {
+    setTimeout(() => {
+        const navbar = document.querySelector(".navbar-fixed-top");
+        const overlay = document.querySelector(".ui-widget-overlay");
+        const dialog = document.getElementById("privacyDialog");
+        let baseZ = 1000;
+        if (navbar) {
+            const computedZ = window.getComputedStyle(navbar).zIndex;
+            baseZ = isNaN(parseInt(computedZ)) ? baseZ : parseInt(computedZ);
+        }
+        const overlayZ = baseZ + 1;
+        const dialogZ = baseZ + 2;
+        if (overlay) {
+            overlay.style.zIndex = overlayZ.toString();
+        }
+        if (dialog) {
+            dialog.style.zIndex = dialogZ.toString();
+            // difesa extra: PrimeFaces potrebbe ritoccare lo style
+            const observer = new MutationObserver(() => {
+                const currentZ = parseInt(window.getComputedStyle(dialog).zIndex);
+                if (currentZ !== dialogZ) {
+                    dialog.style.zIndex = dialogZ.toString();
+                }
+            });
+            observer.observe(dialog, {
+                attributes: true,
+                attributeFilter: ['style']
+            });
+        }
+    }, 100);
+}
+
+function doAdjustTableScrollColumns() {
+	adjustTableScrollColumns();
+	scrollContainer.scrollTop = scrollTop;
+}
+
+function initScrollTop() {
+	scrollTop = scrollContainer.scrollTop;
+}
+
+function startUpload() {
+	const widget = PF('importOrders');
+	totalFiles = widget.files.length;
+	uploadedFiles = 0;
+	PF('blockBodyUIWidget').show();
+}
+
+function fileUploaded() {
+	uploadedFiles++;
+	if (uploadedFiles === totalFiles) {
+		PF('blockBodyUIWidget').hide();
+		PF('importOrdersDlg').hide();
+	}
+}
+
+function resizeMap() {
+	if (itinerariesMap) {
+		itinerariesMap.invalidateSize();
+	}
+}
+
+function patchBlockUI(targetZ) {
+	if (blockUIObserver) return;
+	const forceZ = () => {
+		document.querySelectorAll('.ui-blockui').forEach(el => {
+			const current = parseInt(el.style.zIndex);
+			if (current < targetZ) {
+				el.style.setProperty('z-index', targetZ.toString(), 'important');
+			}
+		});
+	};
+	let forceInterval = null;
+	const scheduleForce = () => {
+		if (forceInterval) clearInterval(forceInterval);
+		let count = 0;
+		forceInterval = setInterval(() => {
+			forceZ();
+            count++;
+			if (count >= 10) {
+				clearInterval(forceInterval);
+				forceInterval = null;
+			}
+		}, 50);
+	};
+	blockUIObserver = new MutationObserver((mutations) => {
+		let needsForce = false;
+		for (const m of mutations) {
+			if (m.type === 'childList') {
+				m.addedNodes.forEach(node => {
+					if (node.nodeType === 1) {
+						if (node.classList && node.classList.contains('ui-blockui')) needsForce = true;
+						if (node.querySelector && node.querySelector('.ui-blockui')) needsForce = true;
+					}
+				});
+			}
+			if (m.type === 'attributes' && m.attributeName === 'style') {
+				if (m.target.classList && m.target.classList.contains('ui-blockui')) {
+					needsForce = true;
+				}
+			}
+		}
+		if (needsForce) {
+			scheduleForce();
+		}
+	});
+	blockUIObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+}
+
+$(document).ready(function() {
+	$('body').on('keypress', 'input', function(e) {
+		if (e.keyCode == 13) {
+			return false;
+		}
+	});
+	scrollContainer = document.getElementById('content');
+	adjustTableScrollColumns();
+	const navbar = document.querySelector(".navbar-fixed-top");
+	let baseZ = 1000;
+	if (navbar) {
+		const computedZ = window.getComputedStyle(navbar).zIndex;
+		baseZ = isNaN(parseInt(computedZ)) ? baseZ : parseInt(computedZ);
+	}
+	patchBlockUI(baseZ + 10);
+});

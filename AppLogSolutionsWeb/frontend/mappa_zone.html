@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.104">
+    <link rel="stylesheet" href="styles.css?v=6.108">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1117,6 +1117,15 @@
             user-select: none;
         }
         .compact-stop-item:active { cursor: grabbing; }
+        .stop-col {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+        .stop-col-name { flex: 2; }
+        .stop-col-addr { flex: 2; }
+        .stop-col-time { flex: 1; min-width: 140px; }
         .compact-num { font-weight: 800; color: white; border-radius: 4px; padding: 2px 8px; font-size: 0.85rem; min-width: 32px; text-align: center; }
         .compact-name { font-weight: 700; color: #0f172a; flex: 2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .compact-city { color: #64748b; font-size: 0.85rem; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1126,6 +1135,15 @@
 
         /* Ottimizzazione Layout Orizzontale (PC/Tablet) */
         @media (min-width: 768px) {
+            .stop-col {
+                flex-direction: row;
+                align-items: center;
+                gap: 8px;
+            }
+            .point-note {
+                margin-top: 0 !important;
+            }
+            
             /* Header in linea e più compatto */
             #header {
                 display: flex;
@@ -2761,20 +2779,21 @@ const db = getFirestore(app);
                                     }
 
                                     return `
-                                        <div class="compact-stop-item" style="${pointStyle}; position:relative; background:#f8fafc;">
+                                        <div class="compact-stop-item" style="${pointStyle}; position:relative; background:#f8fafc; flex-wrap:wrap;">
                                             ${(!isBloccato && !activeAction && !isSpeciale) ? '<span class="material-icons-round drag-handle-map" style="cursor:grab; font-size:16px; color:#cbd5e1;" title="Trascina per riordinare">drag_indicator</span>' : ''}
                                             <span class="compact-num" style="${numBgStyle}">${idx + 1}</span>
                                             
-                                            <div style="flex: 2; display:flex; flex-direction:column; min-width:0;">
+                                            <div class="stop-col stop-col-name">
                                                 <span class="compact-name" style="cursor:pointer;" title="${p.nome}" onclick="window.panToPoint(${p.lat || 0}, ${p.lon || 0})">${p.nome}</span>
                                                 ${p.codice_cliente ? `<span style="font-size: 0.65rem; color: #4f46e5; font-weight: 700;">Cod: ${p.codice_cliente}</span>` : ''}
                                             </div>
 
-                                            <div class="compact-city" style="flex: 2;">
-                                                ${streetName} ${cityName ? `<strong style="color:#334155;">${cityName}</strong>` : ''}
+                                            <div class="stop-col stop-col-addr">
+                                                <span>${streetName}</span>
+                                                ${cityName ? `<strong style="color:#334155;">${cityName}</strong>` : ''}
                                             </div>
 
-                                            <div style="display:flex; flex-direction:column; gap:2px; flex: 1; min-width: 140px;">
+                                            <div class="stop-col stop-col-time">
                                                 ${etaHtml ? etaHtml : ''}
                                                 ${fasciaHtml ? fasciaHtml : ''}
                                             </div>

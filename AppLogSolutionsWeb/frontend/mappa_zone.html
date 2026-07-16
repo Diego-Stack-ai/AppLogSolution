@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.099">
+    <link rel="stylesheet" href="styles.css?v=6.102">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -30,6 +30,7 @@
             height: 100vh;
             height: 100dvh;
             display: flex;
+            flex-direction: column;
             background-color: var(--bg-dark);
             overflow: hidden;
             color: #1e293b;
@@ -37,16 +38,17 @@
 
         /* Sidebar Glassmorphism */
         #sidebar {
-            width: var(--sidebar-width);
-            height: 100%;
+            width: 100%;
+            flex: 1;
+            order: 1;
             background: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             z-index: 1000;
-            box-shadow: 10px 0 40px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
             transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
         }
@@ -526,8 +528,10 @@
 
         /* Google Maps */
         #map {
-            flex: 1;
-            height: 100%;
+            width: 100%;
+            height: 55vh;
+            flex: none;
+            order: -1;
         }
 
         /* Custom Marker shapes in Map */
@@ -724,7 +728,9 @@
             overflow: hidden;
             width: 75% !important;
             max-width: 1200px;
+            height: 85vh !important;
             left: 12.5% !important;
+            top: 7.5% !important;
         }
         #sidebar.floating #header {
             cursor: grab;
@@ -1172,9 +1178,9 @@
             }
             .stops-container {
                 flex: 1 1 100%; /* force break */
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-                gap: 8px;
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
                 margin-top: 16px;
             }
         }
@@ -1464,12 +1470,11 @@ const db = getFirestore(app);
             const sb = document.getElementById('sidebar');
             const btn = document.getElementById('btn-sgancia');
             if (!_sganciato) {
-                // Sgancia: posizionamento fisso trascinabile
-                const rect = sb.getBoundingClientRect();
-                sb.style.left = rect.left + 'px';
-                sb.style.top = rect.top + 'px';
-                sb.style.width = rect.width + 'px';
-                sb.style.height = rect.height + 'px';
+                // Sgancia: posizionamento fisso
+                sb.style.left = '';
+                sb.style.top = '';
+                sb.style.width = '';
+                sb.style.height = '';
                 sb.classList.add('floating');
                 document.body.style.overflow = 'visible';
                 btn.innerHTML = '<span class="material-icons-round" style="font-size: 16px;">unfold_less</span>';

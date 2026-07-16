@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.110">
+    <link rel="stylesheet" href="styles.css?v=6.112">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -588,7 +588,9 @@
                 const currentVal = select.value || tr.dataset.pendingTarga || "";
                 
                 select.innerHTML = '<option value="">-- Seleziona --</option>';
-                mezzi.sort((a,b) => a.targa.localeCompare(b.targa)).forEach(m => {
+                mezzi.filter(m => m.attivo !== false && (m.stato ? m.stato.toLowerCase() === 'attivo' : true))
+                     .sort((a,b) => a.targa.localeCompare(b.targa))
+                     .forEach(m => {
                     const targa = (m.targa || "").trim().toUpperCase();
                     const pat = m.patente ? ` - ${m.patente}` : '';
                     const modelloPulito = m.modello && m.modello !== 'undefined' && m.modello !== 'null' ? m.modello.trim() : '';
@@ -777,7 +779,10 @@
             html += `</datalist>`;
 
             appState.dipendenti.forEach(d => {
-                const targheSortate = Object.entries(appState.affinityData[d.id].targhe).sort((a,b) => b[1] - a[1]);
+                const mezziAttivi = window.appData?.lista_mezzi?.filter(m => m.attivo !== false && (m.stato ? m.stato.toLowerCase() === 'attivo' : true)).map(m => (m.targa || "").trim().toUpperCase()) || [];
+                const targheSortate = Object.entries(appState.affinityData[d.id].targhe)
+                                            .filter(t => mezziAttivi.includes(t[0].toUpperCase()))
+                                            .sort((a,b) => b[1] - a[1]);
 
                 // Datalist dinamico per viaggi di questa riga (inizialmente vuoto)
                 html += `<datalist id="viaggi_dinamici_${d.id}"></datalist>`;
@@ -1201,7 +1206,7 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=6.110"></script>
-    <script src="script.js?v=6.110"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.112"></script>
+    <script src="script.js?v=6.112"></script>
 </body>
 </html>

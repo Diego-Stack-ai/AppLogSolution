@@ -3061,8 +3061,8 @@ def core_genera_report_giornaliero(uid, data_consegna):
         except Exception as e_s:
             print(f"[ERROR] Salvataggio {doc_id} in Firestore fallito: {e_s}")
 
-    # Genera report PDF/HTML
-    res_links = _genera_link_per_tutti_i_giri(master_json, data_consegna, db, bucket)
+    # Generazione report delegata al frontend
+    res_links = {}
     
     elapsed = time.time() - start_time
     print(f"[INFO] Report giornaliero generato in {elapsed:.2f}s")
@@ -3092,7 +3092,7 @@ def _genera_kml_zone(data, zone_list):
     return "\n".join(kml)
 
 def _genera_html_mappa_generale(data, zone_list):
-    """Template semplificato della mappa generale (Step 4 locale)"""
+    """Template della mappa generale con selettore a tendina per il giro"""
     zone_json = json.dumps(zone_list)
     return f"""<!DOCTYPE html>
 <html lang="it">
@@ -3103,83 +3103,174 @@ def _genera_html_mappa_generale(data, zone_list):
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key={GOOGLE_MAPS_API_KEY}&libraries=marker"></script>
     <style>
-        :root {{ --p: #4f46e5; --bg: #f8fafc; }}
-        body {{ margin: 0; font-family: 'Outfit', sans-serif; display: flex; height: 100vh; }}
-        #sidebar {{ width: 350px; background: white; border-right: 1px solid #e2e8f0; overflow-y: auto; padding: 20px; }}
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        body {{ font-family: 'Outfit', sans-serif; display: flex; height: 100vh; overflow: hidden; background: #f8fafc; }}
+        #sidebar {{ width: 400px; background: white; border-right: 1px solid #e2e8f0; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: 2px 0 12px rgba(0,0,0,0.06); z-index: 10; }}
         #map {{ flex: 1; }}
-        .zone-card {{ border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; margin-bottom: 10px; cursor: pointer; }}
-        .zone-header {{ display: flex; align-items: center; gap: 10px; font-weight: 800; }}
-        .color-pill {{ width: 15px; height: 15px; border-radius: 4px; }}
-        .point-item {{ font-size: 0.8rem; margin-top: 5px; color: #64748b; }}
+        .sidebar-title {{ font-size: 20px; font-weight: 800; color: #1e293b; }}
+        .sidebar-subtitle {{ font-size: 13px; color: #64748b; margin-top: 2px; }}
+        #giroSelector {{ width: 100%; height: 46px; border: 2px solid #e2e8f0; border-radius: 12px; padding: 0 14px; font-size: 14px; font-weight: 700; color: #1e293b; background: #f8fafc; outline: none; cursor: pointer; font-family: inherit; transition: border-color 0.2s; }}
+        #giroSelector:focus {{ border-color: #4f46e5; }}
+        #zone-list {{ overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px; }}
+        .zone-card {{ border: 2px solid #e2e8f0; border-radius: 14px; padding: 14px; background: #fff; transition: all 0.2s; cursor: pointer; }}
+        .zone-card.active {{ border-color: var(--zone-color, #4f46e5); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }}
+        .zone-card:hover {{ border-color: #cbd5e1; }}
+        .zone-header {{ display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 14px; }}
+        .color-pill {{ width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }}
+        .zone-meta {{ font-size: 12px; color: #64748b; margin-top: 6px; margin-left: 24px; }}
+        .point-list {{ margin-top: 10px; display: none; max-height: 260px; overflow-y: auto; border-top: 1px solid #f1f5f9; padding-top: 10px; }}
+        .point-item {{ font-size: 12px; color: #475569; padding: 4px 0 4px 8px; border-left: 3px solid transparent; }}
+        .point-item.highlight {{ border-left-color: var(--zone-color, #4f46e5); font-weight: 700; color: #1e293b; }}
         .badge-parziale {{ background: #f59e0b; color: black; font-weight: 800; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px; }}
+        .expand-btn {{ font-size: 11px; color: #94a3b8; float: right; }}
     </style>
 </head>
 <body>
     <div id="sidebar">
-        <h2>Zone del {data}</h2>
+        <div>
+            <div class="sidebar-title">🗺️ Mappa Zone — {data}</div>
+            <div class="sidebar-subtitle">Seleziona un giro per evidenziarlo sulla mappa</div>
+        </div>
+        <select id="giroSelector" onchange="selezionaGiro(this.value)">
+            <option value="__all__">📍 Tutti i giri</option>
+        </select>
         <div id="zone-list"></div>
     </div>
     <div id="map"></div>
     <script>
         const ZONE = {zone_json};
         let map;
+        // Struttura: [{{ zone, markers: [] }}]
+        let zoneData = [];
+        let selectedIdx = null;
+
         function initMap() {{
             map = new google.maps.Map(document.getElementById("map"), {{
-                center: {{ lat: 45.44, lng: 11.71 }}, zoom: 10
+                center: {{ lat: 45.44, lng: 11.71 }}, zoom: 9,
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: true
             }});
-            
+
+            const select = document.getElementById("giroSelector");
             const list = document.getElementById("zone-list");
-            ZONE.forEach(z => {{
-                // Sidebar
-                const div = document.createElement("div");
-                div.className = "zone-card";
-                div.innerHTML = `<div class="zone-header">
+
+            ZONE.forEach((z, idx) => {{
+                // Aggiungi option al dropdown
+                const opt = document.createElement("option");
+                opt.value = idx;
+                opt.textContent = `${{z.nome_giro}} (${{z.lista_punti.length}} tappe)`;
+                select.appendChild(opt);
+
+                // Crea card nel pannello
+                const card = document.createElement("div");
+                card.className = "zone-card";
+                card.style.setProperty("--zone-color", z.color);
+                card.id = `card-${{idx}}`;
+                card.onclick = (e) => {{
+                    if (e.target.tagName === "INPUT") return;
+                    document.getElementById("giroSelector").value = idx;
+                    selezionaGiro(idx);
+                }};
+
+                const header = document.createElement("div");
+                header.className = "zone-header";
+                header.innerHTML = `
                     <div class="color-pill" style="background:${{z.color}}"></div>
-                    ${{z.nome_giro}} (${{z.lista_punti.length}} tappe)
-                </div>`;
-                list.appendChild(div);
-                
-                // Markers
-                z.lista_punti.forEach(p => {{
-                    if(p.lat && p.lon) {{
-                        let isParziale = false;
-                        if (p.rientri_alert && Array.isArray(p.rientri_alert)) {{
-                            isParziale = p.rientri_alert.some(r => r.is_parziale);
-                        }}
-                        
-                        let fillColor = z.color;
-                        let strokeColor = "white";
-                        let strokeWeight = 2;
-                        let scale = 8;
-                        
-                        if (isParziale) {{
-                            fillColor = "#f59e0b";
-                            strokeColor = "#000000";
-                            strokeWeight = 3;
-                            scale = 10;
-                            const badge = document.createElement("div");
-                            badge.className = "point-item";
-                            badge.innerHTML = `• ${{p.nome}} <span class="badge-parziale">PARZIALE</span>`;
-                            div.appendChild(badge);
-                        }}
-                        
-                        new google.maps.Marker({{
-                            position: {{lat: p.lat, lng: p.lon}},
+                    <span style="flex:1">${{z.nome_giro}}</span>
+                    <span class="expand-btn" id="expand-${{idx}}">▼</span>
+                `;
+                card.appendChild(header);
+
+                const meta = document.createElement("div");
+                meta.className = "zone-meta";
+                meta.textContent = `${{z.lista_punti.length}} tappe`;
+                card.appendChild(meta);
+
+                const ptContainer = document.createElement("div");
+                ptContainer.className = "point-list";
+                ptContainer.id = `pts-${{idx}}`;
+
+                // Costruisci markers e lista punti
+                let markers = [];
+                z.lista_punti.forEach((p, i) => {{
+                    if (p.lat && p.lon) {{
+                        let isParziale = p.rientri_alert && Array.isArray(p.rientri_alert) && p.rientri_alert.some(r => r.is_parziale);
+                        const fillColor = isParziale ? "#f59e0b" : z.color;
+                        const strokeColor = isParziale ? "#000" : "white";
+                        const scale = isParziale ? 10 : 8;
+
+                        const marker = new google.maps.Marker({{
+                            position: {{ lat: p.lat, lng: p.lon }},
                             map: map,
                             title: p.nome,
-                            icon: {{
-                                path: google.maps.SymbolPath.CIRCLE,
-                                scale: scale,
-                                fillColor: fillColor,
-                                fillOpacity: 1,
-                                strokeWeight: strokeWeight,
-                                strokeColor: strokeColor
-                            }}
+                            icon: {{ path: google.maps.SymbolPath.CIRCLE, scale, fillColor, fillOpacity: 1, strokeWeight: isParziale ? 3 : 2, strokeColor }}
                         }});
+
+                        const iw = new google.maps.InfoWindow({{
+                            content: `<div style="font-family:'Outfit';padding:6px;min-width:150px"><strong>${{p.nome}}</strong><br><span style="color:#64748b;font-size:12px">Giro: ${{z.nome_giro}}</span></div>`
+                        }});
+                        marker.addListener('click', () => iw.open(map, marker));
+
+                        markers.push(marker);
+
+                        const ptItem = document.createElement("div");
+                        ptItem.className = "point-item";
+                        ptItem.innerHTML = `<strong>${{i+1}}.</strong> ${{p.nome}}${{isParziale ? ' <span class="badge-parziale">PARZIALE</span>' : ''}}`;
+                        ptContainer.appendChild(ptItem);
                     }}
                 }});
+
+                card.appendChild(ptContainer);
+                list.appendChild(card);
+                zoneData.push({{ zone: z, markers, card, ptContainer }});
+
+                // Click sul titolo per espandere lista punti
+                header.querySelector("span:first-child + span").onclick = (e) => {{
+                    e.stopPropagation();
+                    document.getElementById("giroSelector").value = idx;
+                    selezionaGiro(idx);
+                }};
             }});
         }}
+
+        window.selezionaGiro = function(val) {{
+            const all = val === "__all__" || val === "" || val === null;
+            const idx = all ? null : parseInt(val);
+            selectedIdx = idx;
+
+            zoneData.forEach((zd, i) => {{
+                const show = all || i === idx;
+                zd.markers.forEach(m => m.setMap(show ? map : null));
+                zd.card.classList.toggle("active", i === idx);
+                const ptsEl = document.getElementById(`pts-${{i}}`);
+                const expandEl = document.getElementById(`expand-${{i}}`);
+                if (i === idx) {{
+                    ptsEl.style.display = "block";
+                    if (expandEl) expandEl.innerHTML = "▲";
+                }} else {{
+                    ptsEl.style.display = "none";
+                    if (expandEl) expandEl.innerHTML = "▼";
+                }}
+            }});
+
+            // Zoom sulla zona selezionata
+            if (!all && zoneData[idx]) {{
+                const bounds = new google.maps.LatLngBounds();
+                zoneData[idx].markers.forEach(m => bounds.extend(m.getPosition()));
+                if (!bounds.isEmpty()) {{
+                    map.fitBounds(bounds, {{ top: 60, right: 60, bottom: 60, left: 60 }});
+                }}
+                // Scroll alla card
+                zoneData[idx].card.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
+            }} else if (all) {{
+                // Zoom su tutti i punti
+                const bounds = new google.maps.LatLngBounds();
+                zoneData.forEach(zd => zd.markers.forEach(m => bounds.extend(m.getPosition())));
+                if (!bounds.isEmpty()) map.fitBounds(bounds);
+            }}
+        }};
+
         window.onload = initMap;
     </script>
 </body>
@@ -3187,6 +3278,7 @@ def _genera_html_mappa_generale(data, zone_list):
 
 
 # --- CODICE MIGRAZIONE MAPPE INTERATTIVE 3B E PIPELINE 5, 6, 7B SU WEB ---
+
 
 import hashlib
 import uuid
@@ -4434,8 +4526,7 @@ def genera_report_giornaliero(req: https_fn.CallableRequest):
         azioni = req.data.get("azioni", {}) if isinstance(req.data, dict) else {}
         return core_genera_report_giornaliero(
             req.auth.uid if req.auth else None,
-            data_consegna,
-            azioni
+            data_consegna
         )
     except Exception as e:
         import traceback
@@ -4683,76 +4774,88 @@ def preflight_elaborazione_mappe(req: https_fn.CallableRequest):
     hanno contaminazioni (fornitori misti).
     Restituisce un dizionario con i dati necessari al frontend per decidere lo scenario (A, B o C).
     """
-    import json
-    data_consegna = req.data.get("data_consegna")
-    if not data_consegna:
-        return {"status": "errore", "message": "data_consegna mancante"}
-        
-    bucket = storage.bucket(name=BUCKET_NAME)
-    
-    in_elaborazione = {
-        "CATTEL": False,
-        "GRAN_CHEF": False,
-        "DNR": False
-    }
-    
-    # Controlliamo CATTEL
-    if list(bucket.list_blobs(prefix=f"split_ddt/{data_consegna}/CATTEL/ddt_estratti")):
-        in_elaborazione["CATTEL"] = True
-        
-    # Controlliamo GRAN_CHEF
-    if list(bucket.list_blobs(prefix=f"split_ddt/{data_consegna}/GRAND_CHEF/ddt_estratti")):
-        in_elaborazione["GRAN_CHEF"] = True
-        
-    # Controlliamo DNR (FRUTTA o LATTE)
-    if list(bucket.list_blobs(prefix=f"split_ddt/{data_consegna}/FRUTTA/ddt_estratti")) or \
-       list(bucket.list_blobs(prefix=f"split_ddt/{data_consegna}/LATTE/ddt_estratti")):
-        in_elaborazione["DNR"] = True
-        
-    # Troviamo quali file ddt_estratti causano l'elaborazione per usarli nel calcolo contaminazione
-    ddt_presenti = []
-    for k, v in in_elaborazione.items():
-        if v:
-            ddt_presenti.append(k)
-
-    # Adesso leggiamo i viaggi vecchi (cassaforte) per vedere se ci sono viaggi contaminati
-    elaborati_esistenti = {"CATTEL": False, "GRAN_CHEF": False, "DNR": False}
-    contaminati = False
-    
     try:
-        blob_old_json = bucket.blob(f"REPORTS/{data_consegna}/viaggi_giornalieri_Johnson.json")
-        if blob_old_json.exists():
-            old_data = json.loads(blob_old_json.download_as_string().decode('utf-8'))
-            old_zones = old_data.get("zone", []) if isinstance(old_data, dict) else old_data
+        import json
+        data_consegna = req.data.get("data_consegna")
+        if not data_consegna:
+            return {"status": "errore", "message": "data_consegna mancante"}
             
-            for zona in old_zones:
-                stops = zona.get("stops", [])
-                
-                # Quali tenant sono presenti in questo viaggio?
-                tenants_in_trip = set()
-                for stop in stops:
-                    cz = stop.get("cliente_zona", "")
-                    tenants_in_trip.add(get_tenant_from_cz(cz))
-                    
-                for t in tenants_in_trip:
-                    if t in elaborati_esistenti:
-                        elaborati_esistenti[t] = True
-                        
-                # Controllo contaminazione:
-                tenants_da_aggiornare = tenants_in_trip.intersection(set(ddt_presenti))
-                tenants_da_preservare = tenants_in_trip - set(ddt_presenti)
-                
-                if len(tenants_da_aggiornare) > 0 and len(tenants_da_preservare) > 0:
-                    contaminati = True
-    except Exception as e:
-        print(f"[WARN] preflight: Impossibile leggere viaggi_giornalieri_Johnson.json: {e}")
+        bucket = storage.bucket(name=BUCKET_NAME)
+        
+        in_elaborazione = {
+            "CATTEL": False,
+            "GRAN_CHEF": False,
+            "DNR": False
+        }
+        
+        # Controlliamo CATTEL
+        if list(bucket.list_blobs(prefix=f"split_ddt/{data_consegna}/CATTEL/ddt_estratti")):
+            in_elaborazione["CATTEL"] = True
+            
+        # Controlliamo GRAN_CHEF
+        if list(bucket.list_blobs(prefix=f"split_ddt/{data_consegna}/GRAND_CHEF/ddt_estratti")):
+            in_elaborazione["GRAN_CHEF"] = True
+            
+        # Controlliamo DNR (FRUTTA o LATTE)
+        if list(bucket.list_blobs(prefix=f"split_ddt/{data_consegna}/FRUTTA/ddt_estratti")) or \
+           list(bucket.list_blobs(prefix=f"split_ddt/{data_consegna}/LATTE/ddt_estratti")):
+            in_elaborazione["DNR"] = True
+            
+        # Troviamo quali file ddt_estratti causano l'elaborazione per usarli nel calcolo contaminazione
+        ddt_presenti = []
+        for k, v in in_elaborazione.items():
+            if v:
+                ddt_presenti.append(k)
 
-    return {
-        "status": "ok",
-        "in_elaborazione": in_elaborazione,
-        "elaborati_esistenti": elaborati_esistenti,
-        "contaminazione": contaminati
-    }
+        # Adesso leggiamo i viaggi vecchi (cassaforte) per vedere se ci sono viaggi contaminati
+        elaborati_esistenti = {"CATTEL": False, "GRAN_CHEF": False, "DNR": False}
+        contaminati = False
+        
+        def get_tenant_from_cz(cz):
+            if not cz: return "DNR"
+            cz = cz.upper().strip()
+            if cz == "CATTEL": return "CATTEL"
+            if cz == "GRAN CHEF": return "GRAN_CHEF"
+            return "DNR"
+        
+        try:
+            blob_old_json = bucket.blob(f"REPORTS/{data_consegna}/viaggi_giornalieri_Johnson.json")
+            if blob_old_json.exists():
+                old_data = json.loads(blob_old_json.download_as_string().decode('utf-8'))
+                old_zones = old_data.get("zone", []) if isinstance(old_data, dict) else old_data
+                
+                for zona in old_zones:
+                    stops = zona.get("stops", [])
+                    
+                    # Quali tenant sono presenti in questo viaggio?
+                    tenants_in_trip = set()
+                    for stop in stops:
+                        cz = stop.get("cliente_zona", "")
+                        tenants_in_trip.add(get_tenant_from_cz(cz))
+                        
+                    for t in tenants_in_trip:
+                        if t in elaborati_esistenti:
+                            elaborati_esistenti[t] = True
+                            
+                    # Controllo contaminazione:
+                    tenants_da_aggiornare = tenants_in_trip.intersection(set(ddt_presenti))
+                    tenants_da_preservare = tenants_in_trip - set(ddt_presenti)
+                    
+                    if len(tenants_da_aggiornare) > 0 and len(tenants_da_preservare) > 0:
+                        contaminati = True
+        except Exception as e:
+            print(f"[WARN] preflight: Impossibile leggere viaggi_giornalieri_Johnson.json: {e}")
+
+        return {
+            "status": "ok",
+            "in_elaborazione": in_elaborazione,
+            "elaborati_esistenti": elaborati_esistenti,
+            "contaminazione": contaminati
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"status": "errore", "message": f"Errore interno preflight: {str(e)}"}
 
 # ─── GESTIONE E RIPRISTINO BACKUP CACHE DISTANZE (R&D / SICUREZZA) ─────────────
 
@@ -5396,7 +5499,7 @@ def autista_salva_reso(req: https_fn.Request) -> https_fn.Response:
         return https_fn.Response(json.dumps({"status": "errore", "message": str(e)}), status=500, headers={'Content-Type': 'application/json'})
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=120)
-def genera_master_pdf(req: https_fn.CallableRequest) -> typing.Any:
+def genera_riepiloghi_aziendali_light(req: https_fn.CallableRequest) -> typing.Any:
     try:
         # Verifica auth
         if not req.auth or not req.auth.uid:
@@ -5406,13 +5509,13 @@ def genera_master_pdf(req: https_fn.CallableRequest) -> typing.Any:
         if not data_consegna:
             return {"status": "errore", "message": "Data consegna mancante"}
             
-        tenant = _get_tenant_from_auth(req.auth.uid)
+        tenant = "DNR" # Default tenant per AppLogSolutions
         db = get_db()
         bucket = storage.bucket(name=BUCKET_NAME)
         
         # Recupera viaggi del giorno
         viaggi_ref = db.collection("clienti").document(tenant).collection("viaggi ddt")
-        docs = viaggi_ref.where("data_consegna", "==", data_consegna).get()
+        docs = viaggi_ref.where("data_lavoro", "==", data_consegna).get()
         
         if not docs:
             return {"status": "errore", "message": f"Nessun viaggio trovato per il {data_consegna}"}
@@ -5422,41 +5525,87 @@ def genera_master_pdf(req: https_fn.CallableRequest) -> typing.Any:
         import requests
         import io
         
-        writer = PdfWriter()
-        pdfs_trovati = 0
-        
-        # Ordiniamo i documenti per id viaggio (V01, V02...)
+        # Ordiniamo i documenti per id viaggio
         docs = sorted(docs, key=lambda d: d.id)
+        
+        # Gruppi per azienda
+        gruppi = {
+            "DNR": [],
+            "CATTEL": [],
+            "GRANCHEF": [],
+            "BAUER": []
+        }
         
         for doc in docs:
             v_data = doc.to_dict()
             url_light = v_data.get("distinta_light")
-            if url_light:
+            if not url_light:
+                continue
+                
+            if v_data.get("is_cattel"):
+                gruppi["CATTEL"].append(url_light)
+            elif v_data.get("is_gc"):
+                gruppi["GRANCHEF"].append(url_light)
+            elif v_data.get("is_bauer"):
+                gruppi["BAUER"].append(url_light)
+            else:
+                # Se non ha flag specifici, è DNR / Progetto Scuole
+                gruppi["DNR"].append(url_light)
+                
+        risultati_urls = {}
+        tot_uniti = 0
+        
+        for azienda, urls in gruppi.items():
+            if not urls:
+                continue
+                
+            writer = PdfWriter()
+            pdfs_trovati_az = 0
+            
+            for url_light in urls:
                 try:
                     resp = requests.get(url_light, timeout=15)
                     if resp.status_code == 200:
                         reader = PdfReader(io.BytesIO(resp.content))
                         for page in reader.pages:
                             writer.add_page(page)
-                        pdfs_trovati += 1
+                        pdfs_trovati_az += 1
                 except Exception as e:
-                    print(f"Errore download {url_light}: {e}")
+                    print(f"Errore download {url_light} per {azienda}: {e}")
                     
-        if pdfs_trovati == 0:
-            return {"status": "errore", "message": "Nessuna distinta light trovata per questi viaggi"}
+            if pdfs_trovati_az > 0:
+                master_stream = io.BytesIO()
+                writer.write(master_stream)
+                master_stream.seek(0)
+                
+                file_name = f"REPORTS/{data_consegna}/Riepilogo_Generale_{azienda}_{data_consegna}.pdf"
+                master_blob = bucket.blob(file_name)
+                master_blob.upload_from_file(master_stream, content_type="application/pdf")
+                
+                master_url = _genera_url_storage_token(master_blob)
+                risultati_urls[azienda] = master_url
+                tot_uniti += pdfs_trovati_az
+                
+        if not risultati_urls:
+            return {"status": "errore", "message": "Nessuna distinta light trovata da unire per le aziende."}
             
-        # Salva su Storage
-        master_stream = io.BytesIO()
-        writer.write(master_stream)
-        master_stream.seek(0)
-        
-        master_blob = bucket.blob(f"REPORTS/{data_consegna}/DISTINTA_GLOBALE_LIGHT_{data_consegna}.pdf")
-        master_blob.upload_from_file(master_stream, content_type="application/pdf")
-        
-        # Genera url
-        master_url = _genera_url_storage_token(master_blob)
-        
-        return {"status": "ok", "url": master_url, "messaggio": f"Unite {pdfs_trovati} distinte light."}
+        # Salva le URL generate nel documento generale della giornata
+        report_ref = db.collection("clienti").document(tenant).collection("reports_logistici").document(data_consegna)
+        if report_ref.get().exists:
+            report_ref.update({"riepiloghi_urls": risultati_urls})
+        else:
+            report_ref.set({
+                "data_consegna": data_consegna,
+                "riepiloghi_urls": risultati_urls,
+                "tipo": "REPORT_GENERALE",
+                "created_at": firestore.SERVER_TIMESTAMP
+            })
+            
+        return {
+            "status": "ok", 
+            "urls": risultati_urls, 
+            "messaggio": f"Unite {tot_uniti} distinte light divise per {len(risultati_urls)} aziende."
+        }
         
     except Exception as e:
         import traceback

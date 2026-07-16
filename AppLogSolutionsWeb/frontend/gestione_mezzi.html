@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.112">
+    <link rel="stylesheet" href="styles.css?v=6.132">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -146,9 +146,16 @@
 
 <main class="main-container">
     <div class="glass-panel form-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap:wrap; gap:16px;">
             <h2 style="margin: 0; color: var(--primary);">Gestione Targhe e Mezzi</h2>
-            <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="apriNuovoMezzo()"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">add_box</span>Aggiungi Nuova Targa</button>
+            <div style="display:flex; gap:12px; align-items:center;">
+                <div style="display:flex; background:#f1f5f9; padding:4px; border-radius:10px; border:1px solid #e2e8f0;">
+                    <button id="btnViewList" onclick="setViewMode('list')" style="display:flex; align-items:center; gap:6px; padding:6px 12px; border:none; background:white; color:var(--primary); border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; box-shadow:0 1px 3px rgba(0,0,0,0.1);"><span class="material-icons-round" style="font-size:18px;">view_list</span> Dettagli</button>
+                    <button id="btnViewGrid" onclick="setViewMode('grid')" style="display:flex; align-items:center; gap:6px; padding:6px 12px; border:none; background:transparent; color:#64748b; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px;"><span class="material-icons-round" style="font-size:18px;">grid_view</span> Griglia (Foto)</button>
+                    <button id="btnViewHistory" onclick="setViewMode('history')" style="display:flex; align-items:center; gap:6px; padding:6px 12px; border:none; background:transparent; color:#64748b; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px;"><span class="material-icons-round" style="font-size:18px;">history</span> Storico (Inattivi)</button>
+                </div>
+                <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="apriNuovoMezzo()"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">add_box</span>Aggiungi Nuova Targa</button>
+            </div>
         </div>
 
         <div id="mezziContent" style="display: block;">
@@ -323,8 +330,8 @@
     </div>
 </main>
 
-<script src="script.js?v=6.112"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.112"></script>
+<script src="script.js?v=6.132"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.132"></script>
 
 <script type="module">
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -344,6 +351,38 @@ document.addEventListener("DOMContentLoaded", () => {
         let editIndex = -1;
         window.storico_corrente = [];
         let editStoricoIndex = -1;
+        
+        let viewMode = localStorage.getItem('ls_mezzi_view_mode') || 'list';
+
+        window.setViewMode = function(mode) {
+            viewMode = mode;
+            localStorage.setItem('ls_mezzi_view_mode', mode);
+            const btnList = document.getElementById('btnViewList');
+            const btnGrid = document.getElementById('btnViewGrid');
+            const btnHist = document.getElementById('btnViewHistory');
+            
+            const activeStyle = { bg: 'white', col: 'var(--primary)', shadow: '0 1px 3px rgba(0,0,0,0.1)' };
+            const inactiveStyle = { bg: 'transparent', col: '#64748b', shadow: 'none' };
+            
+            btnList.style.background = mode === 'list' ? activeStyle.bg : inactiveStyle.bg;
+            btnList.style.color = mode === 'list' ? activeStyle.col : inactiveStyle.col;
+            btnList.style.boxShadow = mode === 'list' ? activeStyle.shadow : inactiveStyle.shadow;
+            
+            btnGrid.style.background = mode === 'grid' ? activeStyle.bg : inactiveStyle.bg;
+            btnGrid.style.color = mode === 'grid' ? activeStyle.col : inactiveStyle.col;
+            btnGrid.style.boxShadow = mode === 'grid' ? activeStyle.shadow : inactiveStyle.shadow;
+
+            if (btnHist) {
+                btnHist.style.background = mode === 'history' ? activeStyle.bg : inactiveStyle.bg;
+                btnHist.style.color = mode === 'history' ? activeStyle.col : inactiveStyle.col;
+                btnHist.style.boxShadow = mode === 'history' ? activeStyle.shadow : inactiveStyle.shadow;
+            }
+
+            if (typeof window.renderLista === "function") window.renderLista();
+        };
+
+        // Initialize button UI state
+        window.setViewMode(viewMode);
 
         // Campi form
         const targaInput = document.getElementById('targaInput');
@@ -437,15 +476,43 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         window.renderLista = function () {
-            const currentMezzi = (window.appData && window.appData.lista_mezzi) ? window.appData.lista_mezzi : [];
+            let currentMezzi = (window.appData && window.appData.lista_mezzi) ? window.appData.lista_mezzi : [];
+            
+            if (viewMode === 'history') {
+                currentMezzi = currentMezzi.filter(m => m.attivo === false || (m.stato && m.stato.toLowerCase() !== 'attivo'));
+            } else {
+                currentMezzi = currentMezzi.filter(m => m.attivo !== false && (!m.stato || m.stato.toLowerCase() === 'attivo'));
+            }
+            
             mezzi = currentMezzi;
 
             const listaDiv = document.getElementById('listaMezzi');
             listaDiv.innerHTML = '';
             
+            if (viewMode === 'grid') {
+                listaDiv.style.display = 'grid';
+                listaDiv.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))';
+                listaDiv.style.gap = '20px';
+            } else {
+                listaDiv.style.display = 'flex';
+                listaDiv.style.flexDirection = 'column';
+                listaDiv.style.gap = '0';
+            }
+            
             currentMezzi.sort((a,b) => a.targa.localeCompare(b.targa)).forEach((m, idx) => {
                 const r = document.createElement('div');
                 r.className = 'mezzo-card';
+                if (viewMode === 'grid') {
+                    r.style.marginBottom = '0';
+                    r.style.display = 'flex';
+                    r.style.flexDirection = 'column';
+                    r.style.background = 'rgba(255, 255, 255, 0.6)';
+                    r.style.backdropFilter = 'blur(12px)';
+                    r.style.WebkitBackdropFilter = 'blur(12px)';
+                    r.style.border = '1px solid rgba(255, 255, 255, 0.8)';
+                    r.style.boxShadow = '0 8px 32px rgba(31, 38, 135, 0.07)';
+                    r.style.borderRadius = '16px';
+                }
                 
                 const title = m.modello ? `${m.targa} <span style="font-weight:400; color:#64748b; font-size:15px; margin-left:8px;">${m.modello}</span>` : m.targa;
                 const patenteLabel = m.patente === 'C' ? '<span class="badge badge-yellow">CAT C</span>' : '<span class="badge badge-blue">CAT B</span>';
@@ -492,25 +559,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     htmlStorico += `</tbody></table>`;
                 }
 
-                r.innerHTML = `
-                    <div class="mezzo-header" onclick="toggleDetails(${idx})">
-                        <div>
-                            <div style="font-size:20px; font-weight:700; color:#1e293b; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
-                                ${title} ${statusBadge} ${patenteLabel}
-                            </div>
-                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                                <span class="badge ${getBadgeColor(m.scadenza_assicurazione)}">🛡️ Ass: ${formattaData(m.scadenza_assicurazione)}</span>
-                                <span class="badge ${getBadgeColor(m.scadenza_revisione)}">🔧 Rev: ${formattaData(m.scadenza_revisione)}</span>
-                                <span class="badge ${getBadgeColor(m.scadenza_atp)}">❄️ ATP: ${formattaData(m.scadenza_atp)}</span>
-                                <span class="badge ${getBadgeColor(m.scadenza_tachigrafo)}">⏱️ Tach: ${formattaData(m.scadenza_tachigrafo)}</span>
-                            </div>
-                        </div>
-                        <div style="display:flex; gap:8px;">
-                            <button onclick="editMezzo(${idx}); event.stopPropagation();" class="action-btn" title="Modifica"><span class="material-icons-round">edit</span></button>
-                            <button onclick="deleteMezzo(${idx}); event.stopPropagation();" class="action-btn delete-btn" title="Elimina"><span class="material-icons-round">delete</span></button>
-                        </div>
-                    </div>
-                    <div id="mezzo-details-${idx}" style="display:none; padding:20px; background:rgba(255,255,255,0.4);">
+                let detailsHtml = `
                         <div class="details-grid">
                             <div class="detail-item"><span class="detail-label">Proprietà</span><span class="detail-value">${m.proprietario || '-'}</span></div>
                             <div class="detail-item"><span class="detail-label">Tipologia</span><span class="detail-value">${m.tipologia || '-'}</span></div>
@@ -519,17 +568,146 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="detail-item"><span class="detail-label">Tessera Carburante</span><span class="detail-value">${m.tessera_carburante || '-'} (PIN: ${m.pin_tessera || '-'})</span></div>
                             <div class="detail-item"><span class="detail-label">Note</span><span class="detail-value" style="color:#ef4444;">${m.note || '-'}</span></div>
                         </div>
-                        
-                        <h4 style="margin:20px 0 10px; color:#475569; font-size:14px; border-bottom:1px solid rgba(0,0,0,0.1); padding-bottom:4px;">Storico Manutenzioni</h4>
-                        ${htmlStorico}
-
-                        <h4 style="margin:20px 0 10px; color:#475569; font-size:14px; border-bottom:1px solid rgba(0,0,0,0.1); padding-bottom:4px;">Media e Documenti</h4>
                         ${htmlFiles}
-                    </div>
+                        <h4 style="margin:20px 0 10px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+                            <span>Storico Manutenzioni</span>
+                            <button type="button" class="action-btn" style="padding:4px 8px; font-size:12px; color:var(--primary); border-color:var(--primary);" onclick="apriFormManutenzione(${idx})">
+                                <span class="material-icons-round" style="font-size:14px; margin-right:4px;">build</span> Aggiungi Intervento
+                            </button>
+                        </h4>
+                        ${htmlStorico}
                 `;
+
+                const coverUrl = m.copertinaUrl || (m.fotoUrls && m.fotoUrls.length > 0 ? m.fotoUrls[0].url : null);
+                
+                if (viewMode === 'grid') {
+                    r.style.background = 'radial-gradient(circle at 0% 10%, rgba(14, 165, 233, 0.3) 0%, transparent 60%), linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(2, 6, 23, 1) 100%)';
+                    r.style.backdropFilter = 'blur(16px)';
+                    r.style.WebkitBackdropFilter = 'blur(16px)';
+                    r.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+                    r.style.boxShadow = '0 15px 35px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)';
+                    r.style.borderRadius = '24px';
+                    r.style.color = '#fff';
+                    r.style.overflow = 'hidden';
+                    r.style.position = 'relative';
+
+                    let heroImage = `<div style="width:100%; height:240px; display:flex; align-items:center; justify-content:center; border-bottom:1px solid rgba(6,182,212,0.3); box-shadow:0 2px 15px rgba(6,182,212,0.15);">
+                        <span class="material-icons-round" style="color:rgba(255,255,255,0.2); font-size:80px;">local_shipping</span>
+                    </div>`;
+                    
+                    if (coverUrl) {
+                        heroImage = `<div style="width:100%; height:240px; overflow:hidden; border-bottom:1px solid rgba(6,182,212,0.4); box-shadow:0 2px 15px rgba(6,182,212,0.2); position:relative; display:flex; align-items:center; justify-content:center;">
+                            <img src="${coverUrl}" style="width:100%; height:100%; object-fit:cover; opacity:0.9;" alt="Foto mezzo">
+                            <div style="position:absolute; inset:0; background:linear-gradient(to top, rgba(10,15,25,0.9) 0%, transparent 40%, rgba(10,15,25,0.5) 100%); pointer-events:none;"></div>
+                        </div>`;
+                    }
+                    
+                    const getScadenzaStyle = (dateStr, defaultColor, defaultBg) => {
+                        if(!dateStr) return { color: defaultColor, bg: defaultBg, border: defaultColor, shadow: defaultColor, alert: false };
+                        const d = new Date(dateStr);
+                        if(isNaN(d)) return { color: defaultColor, bg: defaultBg, border: defaultColor, shadow: defaultColor, alert: false };
+                        const diffDays = Math.ceil((d - new Date()) / (1000 * 60 * 60 * 24));
+                        if (diffDays <= 30) {
+                            return { color: '#fca5a5', bg: 'rgba(239,68,68,0.2)', border: '#ef4444', shadow: 'rgba(239,68,68,0.8)', alert: true };
+                        }
+                        return { color: defaultColor, bg: defaultBg, border: defaultColor, shadow: defaultColor, alert: false };
+                    };
+
+                    const styleAss = getScadenzaStyle(m.scadenza_assicurazione, '#93c5fd', 'rgba(59,130,246,0.1)');
+                    const styleRev = getScadenzaStyle(m.scadenza_revisione, '#d8b4fe', 'rgba(168,85,247,0.1)');
+                    const styleAtp = getScadenzaStyle(m.scadenza_atp, '#86efac', 'rgba(34,197,94,0.1)');
+                    const styleTach = getScadenzaStyle(m.scadenza_tachigrafo, '#fcd34d', 'rgba(251,191,36,0.1)');
+
+                    const badgeAss = `<span style="border: 1px solid ${styleAss.border}; box-shadow: 0 0 ${styleAss.alert ? '15px' : '10px'} ${styleAss.shadow}; color: ${styleAss.color}; padding:6px 12px; font-size:12px; border-radius:12px; font-weight:600; background:${styleAss.bg}; animation: ${styleAss.alert ? 'pulse 2s infinite' : 'none'};"><span class="material-icons-round" style="font-size:14px; vertical-align:text-bottom; margin-right:4px;">calendar_month</span>Assic: ${formattaData(m.scadenza_assicurazione)}</span>`;
+                    const badgeRev = `<span style="border: 1px solid ${styleRev.border}; box-shadow: 0 0 ${styleRev.alert ? '15px' : '10px'} ${styleRev.shadow}; color: ${styleRev.color}; padding:6px 12px; font-size:12px; border-radius:12px; font-weight:600; background:${styleRev.bg}; animation: ${styleRev.alert ? 'pulse 2s infinite' : 'none'};"><span class="material-icons-round" style="font-size:14px; vertical-align:text-bottom; margin-right:4px;">build</span>Rev: ${formattaData(m.scadenza_revisione)}</span>`;
+                    const badgeAtp = `<span style="border: 1px solid ${styleAtp.border}; box-shadow: 0 0 ${styleAtp.alert ? '15px' : '10px'} ${styleAtp.shadow}; color: ${styleAtp.color}; padding:6px 12px; font-size:12px; border-radius:12px; font-weight:600; background:${styleAtp.bg}; animation: ${styleAtp.alert ? 'pulse 2s infinite' : 'none'};"><span class="material-icons-round" style="font-size:14px; vertical-align:text-bottom; margin-right:4px;">ac_unit</span>ATP: ${formattaData(m.scadenza_atp)}</span>`;
+                    const badgeTach = (!m.patente || m.patente === 'B') ? '' : `<span style="border: 1px solid ${styleTach.border}; box-shadow: 0 0 ${styleTach.alert ? '15px' : '10px'} ${styleTach.shadow}; color: ${styleTach.color}; padding:6px 12px; font-size:12px; border-radius:12px; font-weight:600; background:${styleTach.bg}; animation: ${styleTach.alert ? 'pulse 2s infinite' : 'none'};"><span class="material-icons-round" style="font-size:14px; vertical-align:text-bottom; margin-right:4px;">speed</span>Tachigrafo: ${formattaData(m.scadenza_tachigrafo)}</span>`;
+                    
+                    r.innerHTML = `
+                        <div style="cursor:pointer; position:relative; z-index:1;" onclick="toggleDetails(${idx})">
+                            <div style="position:absolute; top:20px; left:20px; right:20px; display:flex; justify-content:space-between; align-items:flex-start; z-index:10; pointer-events:none;">
+                                <div>
+                                    <div style="font-size:12px; color:${m.patente === 'C' || m.patente === 'CE' ? '#fde047' : '#93c5fd'}; text-transform:uppercase; letter-spacing:1px; margin-bottom:2px; text-shadow:0 1px 5px rgba(0,0,0,0.5);">Targa</div>
+                                    <div style="font-size:32px; font-weight:900; color:${m.patente === 'C' || m.patente === 'CE' ? '#fde047' : '#93c5fd'}; text-shadow:0 2px 10px rgba(0,0,0,0.8); letter-spacing:1px; line-height:1; display:flex; align-items:center; gap:12px;">
+                                        ${m.targa}
+                                    </div>
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+                                    ${badgeAss}
+                                    ${badgeRev}
+                                    ${badgeAtp}
+                                    ${badgeTach}
+                                </div>
+                            </div>
+                            
+                            ${heroImage}
+                            
+                            <div style="padding:24px;">
+                                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px; margin-bottom:24px;">
+                                    <div style="border-right:1px solid rgba(255,255,255,0.1); padding-right:16px;">
+                                        <div style="display:flex; align-items:center; gap:6px; color:#67e8f9; font-weight:600; font-size:14px; margin-bottom:4px;">
+                                            <span class="material-icons-round" style="font-size:18px;">business</span> Proprietà
+                                        </div>
+                                        <div style="font-size:13px; color:rgba(255,255,255,0.7); line-height:1.4;">${m.proprietario || 'N/D'}</div>
+                                    </div>
+                                    <div style="border-right:1px solid rgba(255,255,255,0.1); padding-right:16px;">
+                                        <div style="display:flex; align-items:center; gap:6px; color:#67e8f9; font-weight:600; font-size:14px; margin-bottom:4px;">
+                                            <span class="material-icons-round" style="font-size:18px;">check_circle</span> Stato
+                                        </div>
+                                        <div style="font-size:13px; color:rgba(255,255,255,0.7); line-height:1.4;">${(m.attivo===false)?'Inattivo':'Attivo'}</div>
+                                    </div>
+                                    <div>
+                                        <div style="display:flex; align-items:center; gap:6px; color:#67e8f9; font-weight:600; font-size:14px; margin-bottom:4px;">
+                                            <span class="material-icons-round" style="font-size:18px;">local_shipping</span> Tipologia
+                                        </div>
+                                        <div style="font-size:13px; color:rgba(255,255,255,0.7); line-height:1.4;">${m.tipologia || 'N/D'}</div>
+                                    </div>
+                                </div>
+                                
+                                <div style="display:flex; gap:16px;">
+                                    <button onclick="editMezzo(${idx}); event.stopPropagation();" style="flex:1; padding:12px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:12px; color:white; font-weight:600; font-size:14px; cursor:pointer; display:flex; justify-content:center; align-items:center; gap:8px; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><span class="material-icons-round" style="font-size:18px;">edit</span> Modifica Mezzo</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    let thumbnailHtml = `<div style="width:56px; height:56px; border-radius:12px; background:rgba(0,0,0,0.04); display:flex; align-items:center; justify-content:center; margin-right:16px; flex-shrink:0; border:1px dashed rgba(0,0,0,0.1);">
+                        <span class="material-icons-round" style="color:#cbd5e1; font-size:28px;">local_shipping</span>
+                    </div>`;
+                    if (m.fotoUrls && m.fotoUrls.length > 0) {
+                        thumbnailHtml = `<div style="width:56px; height:56px; border-radius:12px; margin-right:16px; flex-shrink:0; overflow:hidden; border:1px solid rgba(0,0,0,0.05); box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+                            <img src="${m.fotoUrls[0].url}" style="width:100%; height:100%; object-fit:cover;" alt="Foto mezzo">
+                        </div>`;
+                    }
+                    r.innerHTML = `
+                        <div class="mezzo-header" onclick="toggleDetails(${idx})">
+                            <div style="display:flex; align-items:center; width:100%;">
+                                ${thumbnailHtml}
+                                <div style="flex:1;">
+                                    <div style="font-size:18px; font-weight:700; color:#1e293b; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+                                        ${title} ${statusBadge} ${patenteLabel}
+                                    </div>
+                                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                        <span class="badge ${getBadgeColor(m.scadenza_assicurazione)}">🛡️ Ass: ${formattaData(m.scadenza_assicurazione)}</span>
+                                        <span class="badge ${getBadgeColor(m.scadenza_revisione)}">🔧 Rev: ${formattaData(m.scadenza_revisione)}</span>
+                                        <span class="badge ${getBadgeColor(m.scadenza_atp)}">❄️ ATP: ${formattaData(m.scadenza_atp)}</span>
+                                        ${(!m.patente || m.patente === 'B') ? '' : `<span class="badge ${getBadgeColor(m.scadenza_tachigrafo)}">⏱️ Tach: ${formattaData(m.scadenza_tachigrafo)}</span>`}
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <button onclick="editMezzo(${idx}); event.stopPropagation();" class="action-btn" title="Modifica"><span class="material-icons-round">edit</span></button>
+                                <button onclick="deleteMezzo(${idx}); event.stopPropagation();" class="action-btn delete-btn" title="Elimina"><span class="material-icons-round">delete</span></button>
+                            </div>
+                        </div>
+                        <div id="mezzo-details-${idx}" style="display:none; padding:20px; background:rgba(255,255,255,0.4);">
+                            ${detailsHtml}
+                        </div>
+                    `;
+                }
                 listaDiv.appendChild(r);
             });
-        }
+        };
 
         window.renderMezzoFiles = function(mezzo) {
             const fotoContainer = document.getElementById('fotoMezzoPreview');
@@ -540,7 +718,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 mezzo.fotoUrls.forEach((f, idx) => {
                     const div = document.createElement('div');
                     div.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px; border-radius:6px; font-size:12px; border:1px solid #e2e8f0;";
-                    div.innerHTML = `<a href="${f.url}" target="_blank" style="color:var(--primary); text-decoration:none; display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:85%;"><span class="material-icons-round" style="font-size:16px;">image</span> ${f.name}</a><button type="button" class="action-btn delete-btn" style="padding:2px; min-width:24px; min-height:24px; border:none;" onclick="removeMezzoFile('fotoUrls', ${idx})"><span class="material-icons-round" style="font-size:14px; color:#ef4444;">close</span></button>`;
+                    div.innerHTML = `<a href="${f.url}" target="_blank" style="color:var(--primary); text-decoration:none; display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;"><span class="material-icons-round" style="font-size:16px;">image</span> ${f.name}</a>
+                    <div style="display:flex; gap:4px;">
+                        <button type="button" class="action-btn" style="padding:2px; min-width:24px; min-height:24px; border:none; color:#eab308;" onclick="setCopertina('${mezzo.targa}', '${f.url}')" title="Imposta come foto del front"><span class="material-icons-round" style="font-size:16px;">star</span></button>
+                        <button type="button" class="action-btn delete-btn" style="padding:2px; min-width:24px; min-height:24px; border:none;" onclick="removeMezzoFile('fotoUrls', ${idx})"><span class="material-icons-round" style="font-size:14px; color:#ef4444;">close</span></button>
+                    </div>`;
                     fotoContainer.appendChild(div);
                 });
             }
@@ -556,12 +738,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
         window.removeMezzoFile = function(arrayName, idx) {
             if (!confirm("Sicuro di voler rimuovere questo file? La rimozione sarà definitiva dopo il salvataggio.")) return;
-            const mezzo = mezzi[editIndex];
+            const mezzo = (editIndex >= 0) ? mezzi[editIndex] : null;
             if(mezzo && mezzo[arrayName]) {
                 const fileItem = mezzo[arrayName][idx];
                 if (fileItem.path) window.filesToDeleteFromStorage.push(fileItem.path);
                 mezzo[arrayName].splice(idx, 1);
                 window.renderMezzoFiles(mezzo);
+            }
+        };
+
+        window.setCopertina = async function(targa, url) {
+            try {
+                const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                const m = mezzi.find(x => x.targa === targa);
+                if (!m) throw new Error("Mezzo non trovato in memoria");
+                
+                const docId = m.id || targa;
+                const db = window.db; // inizializzato globalmente in script.js / realtime-sync.js
+                
+                await updateDoc(doc(db, 'mezzi', docId), { copertinaUrl: url });
+                
+                m.copertinaUrl = url;
+                if (typeof window.appData !== 'undefined' && window.appData.lista_mezzi) {
+                    const globalM = window.appData.lista_mezzi.find(x => x.targa === targa);
+                    if (globalM) globalM.copertinaUrl = url;
+                }
+                Swal.fire({ title: 'Foto del front impostata', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+                window.renderLista();
+            } catch (error) {
+                console.error("Errore impostazione foto del front:", error);
+                Swal.fire({ title: 'Errore', text: 'Impossibile impostare la foto del front.', icon: 'error' });
             }
         };
 

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invio Mobile Autisti — Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.110">
+    <link rel="stylesheet" href="styles.css?v=6.134">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -189,12 +189,27 @@
                 Torna all'elaborazione
             </button>
         </div>
+        <div id="documentiGenerali" style="display:none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                <h2 style="margin:0; font-size: 18px; display: flex; align-items: center; gap: 8px; color: #1e293b;">
+                    <span class="material-icons-round" style="color: #3b82f6;">folder_shared</span>
+                    Documenti Generali della Giornata
+                </h2>
+                <button id="btnGeneraRiepiloghi" onclick="window.generaRiepiloghiAziendali()" style="background: #3b82f6; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);">
+                    <span class="material-icons-round" style="font-size: 18px;">picture_as_pdf</span> GENERA RIEPILOGHI AZIENDALI
+                </button>
+            </div>
+            
+            <div id="generalLinksContainer" style="display: flex; flex-wrap: wrap; gap: 12px;">
+                <!-- Link verranno iniettati via JS -->
+            </div>
+        </div>
 
         <div class="viaggi-grid" id="viaggiGrid"></div>
     </main>
 
-    <script src="script.js?v=6.110"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.110"></script>
+    <script src="script.js?v=6.134"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.134"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -331,11 +346,86 @@
                 if (document.getElementById('countBadgeRecupero')) {
                     document.getElementById('countBadgeRecupero').textContent = viaggi.length;
                 }
+                
+                // Fetch info da reports_logistici
+                let reportMeta = null;
+                try {
+                    const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                    const reportRef = doc(db, 'clienti', 'DNR', 'reports_logistici', dataLavoro);
+                    const reportSnap = await getDoc(reportRef);
+                    if (reportSnap.exists()) {
+                        reportMeta = reportSnap.data();
+                    }
+                } catch (er) {
+                    console.log('Errore lettura report_logistici:', er);
+                }
+                
+                renderDocumentiGenerali(reportMeta);
                 renderViaggi();
             } catch (e) {
                 showError("Errore Firestore: " + e.message);
             }
         }
+        
+        function renderDocumentiGenerali(reportMeta) {
+            const container = document.getElementById('documentiGenerali');
+            const linksContainer = document.getElementById('generalLinksContainer');
+            linksContainer.innerHTML = '';
+            
+            if (!reportMeta) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            let hasContent = false;
+            
+            if (reportMeta.mappa_url) {
+                hasContent = true;
+                linksContainer.innerHTML += `
+                    <a href="${reportMeta.mappa_url}" target="_blank" style="background: #10b981; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+                        <span class="material-icons-round" style="font-size: 18px;">map</span> APRI MAPPA GENERALE
+                    </a>
+                `;
+            }
+            
+            if (reportMeta.riepiloghi_urls && Object.keys(reportMeta.riepiloghi_urls).length > 0) {
+                hasContent = true;
+                for (const [azienda, url] of Object.entries(reportMeta.riepiloghi_urls)) {
+                    linksContainer.innerHTML += `
+                        <a href="${url}" target="_blank" style="background: #f59e0b; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);">
+                            <span class="material-icons-round" style="font-size: 18px;">picture_as_pdf</span> RIEPILOGO ${azienda}
+                        </a>
+                    `;
+                }
+            }
+            
+            container.style.display = hasContent ? 'block' : 'none';
+        }
+
+        window.generaRiepiloghiAziendali = async function() {
+            if (!dataLavoro) return;
+            const btn = document.getElementById('btnGeneraRiepiloghi');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<span class="material-icons-round spinning" style="font-size: 18px;">sync</span> GENERAZIONE...`;
+            btn.style.opacity = '0.7';
+            btn.disabled = true;
+            
+            try {
+                const fn = httpsCallable(functions, 'genera_riepiloghi_aziendali_light', { timeout: 120000 });
+                const res = (await fn({ data_consegna: dataLavoro })).data;
+                if (res.status === 'errore') throw new Error(res.message);
+                
+                // Aggiorniamo la UI richiamando caricaViaggi per estrarre di nuovo i metadati
+                await caricaViaggi();
+                alert(res.messaggio || "Riepiloghi generati con successo!");
+            } catch (e) {
+                alert("Errore generazione riepiloghi: " + e.message);
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.style.opacity = '1';
+                btn.disabled = false;
+            }
+        };
 
         function renderViaggi() {
             const grid = document.getElementById('viaggiGrid');

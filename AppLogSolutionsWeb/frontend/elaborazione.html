@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.110">
+    <link rel="stylesheet" href="styles.css?v=6.134">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -369,8 +369,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.110"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.110"></script>
+    <script src="script.js?v=6.134"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.134"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
@@ -861,91 +861,67 @@
             
             const formattedDate = dateInput.split('-').reverse().join('-');
             
-            // CONTROLLO DATI DISPONIBILI
-            let disponibili = {};
+            // ANALISI PRE-VOLO
             try {
-                Swal.fire({ title: 'Controllo dati...', didOpen: () => Swal.showLoading() });
-                const checkDatiFn = httpsCallable(functions, 'check_dati_disponibili');
-                const checkRes = await checkDatiFn({ data_consegna: formattedDate });
+                Swal.fire({ title: 'Analisi pre-volo in corso...', didOpen: () => Swal.showLoading() });
+                const preflightFn = httpsCallable(functions, 'preflight_elaborazione_mappe');
+                const preflightRes = await preflightFn({ data_consegna: formattedDate });
                 Swal.close();
-                if (checkRes.data.status === 'ok') {
-                    disponibili = checkRes.data.dati_disponibili;
-                }
-            } catch (err) {
-                Swal.close();
-                console.warn("Impossibile controllare dati disponibili", err);
-            }
-
-            // CONTROLLO VIAGGI ESISTENTI E POPUP SEQUENZIALI
-            let azioni = {};
-            try {
-                const checkRef = doc(db, 'clienti', 'DNR', 'reports_logistici', formattedDate);
-                const checkSnap = await getDoc(checkRef);
-                const viaggiEsistenti = checkSnap.exists();
                 
-                if (viaggiEsistenti) {
-                    if (disponibili["CATTEL"]) {
-                        const res = await Swal.fire({
-                            title: 'Dati CATTEL Rilevati',
-                            html: `Sono presenti dati grezzi per <b>Cattel</b> e i viaggi sono già presenti in mappa.<br>Vuoi preservare i giri attuali (aggiungendo eventuali novità) o cancellarli e ripartire da zero per Cattel?`,
-                            icon: 'question',
-                            showDenyButton: true,
-                            showCancelButton: true,
-                            confirmButtonColor: '#3b82f6',
-                            denyButtonColor: '#ef4444',
-                            cancelButtonColor: '#64748b',
-                            confirmButtonText: 'Integra (Mantieni Giri)',
-                            denyButtonText: 'Sovrascrivi (Tabula Rasa Cattel)',
-                            cancelButtonText: 'Annulla tutto'
-                        });
-                        if (res.isConfirmed) azioni["CATTEL"] = "integra";
-                        else if (res.isDenied) azioni["CATTEL"] = "sovrascrivi";
-                        else return; 
-                    }
-                    if (disponibili["GRAN_CHEF"]) {
-                        const res = await Swal.fire({
-                            title: 'Dati GRAN CHEF Rilevati',
-                            html: `Sono presenti dati grezzi per <b>Gran Chef</b>.<br>Vuoi preservare i giri attuali o cancellarli per ripartire da zero con Gran Chef?`,
-                            icon: 'question',
-                            showDenyButton: true,
-                            showCancelButton: true,
-                            confirmButtonColor: '#3b82f6',
-                            denyButtonColor: '#ef4444',
-                            cancelButtonColor: '#64748b',
-                            confirmButtonText: 'Integra (Mantieni Giri)',
-                            denyButtonText: 'Sovrascrivi (Tabula Rasa Gran Chef)',
-                            cancelButtonText: 'Annulla tutto'
-                        });
-                        if (res.isConfirmed) azioni["GRAN_CHEF"] = "integra";
-                        else if (res.isDenied) azioni["GRAN_CHEF"] = "sovrascrivi";
-                        else return;
-                    }
-                    if (disponibili["DNR"]) {
-                        const res = await Swal.fire({
-                            title: 'Dati DNR (Frutta/Latte) Rilevati',
-                            html: `Sono presenti dati grezzi per <b>DNR (Frutta e/o Latte)</b>.<br>Ricorda che Frutta e Latte condividono gli stessi viaggi (V01, V02...).<br>Vuoi preservare i giri o sovrascrivere tutto il blocco DNR?`,
-                            icon: 'question',
-                            showDenyButton: true,
-                            showCancelButton: true,
-                            confirmButtonColor: '#3b82f6',
-                            denyButtonColor: '#ef4444',
-                            cancelButtonColor: '#64748b',
-                            confirmButtonText: 'Integra (Mantieni Giri)',
-                            denyButtonText: 'Sovrascrivi (Tabula Rasa DNR)',
-                            cancelButtonText: 'Annulla tutto'
-                        });
-                        if (res.isConfirmed) azioni["DNR"] = "integra";
-                        else if (res.isDenied) azioni["DNR"] = "sovrascrivi";
-                        else return;
-                    }
-                } else {
-                    // Prima generazione, le azioni sono ininfluenti (equivale a sovrascrivere)
-                    if (disponibili["CATTEL"]) azioni["CATTEL"] = "sovrascrivi";
-                    if (disponibili["GRAN_CHEF"]) azioni["GRAN_CHEF"] = "sovrascrivi";
-                    if (disponibili["DNR"]) azioni["DNR"] = "sovrascrivi";
+                const data = preflightRes.data;
+                if (data.status !== 'ok') {
+                    return Swal.fire('Errore', data.message || 'Errore durante il pre-volo', 'error');
                 }
+                
+                const in_elab = data.in_elaborazione || {};
+                const esist = data.elaborati_esistenti || {};
+                const dati_disponibili = esist;
+                const nuovi_da_elaborare = Object.keys(in_elab).filter(k => in_elab[k]);
+                const fornitori_misti = Object.keys(esist).filter(k => esist[k]);
+                const viaggi_esistenti = fornitori_misti.length > 0;
+                const contaminazione = data.contaminazione || false;
+                
+                if (nuovi_da_elaborare.length === 0) {
+                     return Swal.fire('Nessun Dato', 'Non ci sono nuovi file di dati (in split_ddt) da elaborare per questa giornata.', 'info');
+                }
+                
+                let title = "Elaborazione Mappe";
+                let htmlMsg = "";
+                
+                // Scenario C: Contaminazione
+                if (contaminazione) {
+                     title = "ATTENZIONE: Possibile Perdita Dati!";
+                     htmlMsg = `Hai caricato i dati per <b>${nuovi_da_elaborare.join(", ")}</b>.<br><br>Tuttavia, i viaggi attuali contengono fornitori misti: <b>${fornitori_misti.join(", ")}</b> nello stesso giro.<br>Dato che la procedura andrà a cancellare e sovrascrivere l'intero viaggio, <span style="color:#ef4444;font-weight:bold;">perderai anche i dati degli altri fornitori</span> presenti in quei viaggi mischiati!<br><br><b>Ti consigliamo vivamente di ANNULLARE e ricaricare insieme tutti i file dei fornitori coinvolti.</b>`;
+                } 
+                // Scenario A e B
+                else {
+                    if (!viaggi_esistenti) {
+                        htmlMsg = `Stai per elaborare i dati di: <b>${nuovi_da_elaborare.join(", ")}</b>.<br>Verranno generate nuove mappe da zero.`;
+                    } else {
+                        const untouched = Object.keys(dati_disponibili).filter(k => dati_disponibili[k] && !nuovi_da_elaborare.includes(k));
+                        let untouchedMsg = untouched.length > 0 ? `<br><br><span style="color:#10b981;font-weight:bold;">I giri di ${untouched.join(", ")} già elaborati rimarranno intatti.</span>` : "";
+                        
+                        htmlMsg = `Hai già dei viaggi elaborati per questa data.<br><br>I giri di <b>${nuovi_da_elaborare.join(", ")}</b> verranno <b>sovrascritti completamente</b> (tabula rasa) con i nuovi dati appena caricati.${untouchedMsg}`;
+                    }
+                }
+                
+                const confirmRes = await Swal.fire({
+                    title: title,
+                    html: htmlMsg,
+                    icon: contaminazione ? 'warning' : 'info',
+                    showCancelButton: true,
+                    confirmButtonColor: contaminazione ? '#ef4444' : '#3b82f6',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Avvia Elaborazione',
+                    cancelButtonText: 'Annulla'
+                });
+                
+                if (!confirmRes.isConfirmed) return;
+                
             } catch (err) {
-                console.log("Errore nel controllo viaggi esistenti:", err);
+                Swal.close();
+                console.error("Errore nel preflight:", err);
+                return Swal.fire('Errore', 'Si è verificato un errore durante l\'analisi pre-volo.', 'error');
             }
 
             const originalHtml = btn.innerHTML;
@@ -954,7 +930,7 @@
             
             try {
                 const generaReportFn = httpsCallable(functions, 'genera_report_giornaliero', { timeout: 300000 });
-                const result = await generaReportFn({ data_consegna: formattedDate, azioni: azioni });
+                const result = await generaReportFn({ data_consegna: formattedDate });
                 
                 if (result.data.status === 'ok') {
                     console.log("Report generato con successo!");
@@ -971,8 +947,7 @@
             }
         };
 
-        
-                window.cancellaGiornata = async function(data_consegna) {
+        window.cancellaGiornata = async function(data_consegna) {
             const result = await Swal.fire({
                 title: 'TABULA RASA',
                 html: `Stai per eliminare <b>completamente</b> la giornata del <b>${data_consegna}</b>.<br><br>Verranno cancellati tutti i file, le mappe e i giri generati.<br><span style="color:#10b981;font-weight:700;">Clienti e articoli NON verranno toccati.</span>`,
@@ -1242,6 +1217,21 @@
             }
             
             const clientsStr = loadedClients.join(', ');
+
+            const confirmDateRes = await Swal.fire({
+                title: 'Conferma Data Caricamento',
+                html: `Stai caricando i dati di <b>${clientsStr}</b> per la giornata del:<br><br><span style="font-size: 24px; font-weight: bold; color: #ef4444;">${dateFormatted}</span><br><br>Sei sicuro che la data sia corretta?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3b82f6',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Sì, carica dati',
+                cancelButtonText: 'Annulla'
+            });
+
+            if (!confirmDateRes.isConfirmed) {
+                return;
+            }
 
             document.getElementById('btn-avvia').style.display = 'none';
             document.getElementById('progress-area').style.display = 'block';

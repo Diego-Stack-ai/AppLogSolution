@@ -1126,32 +1126,35 @@
 
         /* Ottimizzazione Layout Orizzontale (PC/Tablet) */
         @media (min-width: 768px) {
-            /* Header in linea */
+            /* Header in linea e più compatto */
             #header {
                 display: flex;
-                flex-wrap: wrap;
+                flex-wrap: nowrap;
                 align-items: center;
                 justify-content: space-between;
-                gap: 16px;
-                padding: 12px 24px;
+                gap: 12px;
+                padding: 10px 16px;
+                overflow-x: auto;
             }
             .header-title-row {
                 margin-bottom: 0;
-                flex: 1 1 auto;
+                flex: 0 0 auto;
             }
             .summary-stats {
                 margin-top: 0;
-                margin-right: auto;
+                flex: 0 0 auto;
             }
             .controls-grid {
                 display: flex;
                 margin-top: 0;
                 align-items: center;
-                gap: 12px;
+                gap: 8px;
+                flex: 0 0 auto;
             }
-            .btn-save-all { padding: 8px 12px; }
+            .btn-save-all { padding: 6px 12px; }
+            .btn-control { padding: 8px 12px; font-size: 0.75rem; } /* Riduci i pulsanti per guadagnare altezza */
 
-            /* Zone Card Layout */
+            /* Zone Card Layout: Tutto sulla prima riga */
             #zone-list {
                 display: flex;
                 flex-direction: column;
@@ -1160,30 +1163,53 @@
                 display: flex;
                 flex-wrap: wrap;
                 align-items: center;
-                gap: 16px;
+                gap: 12px;
+                padding: 12px;
             }
             .zone-header {
-                flex: 1 1 30%;
-                min-width: 300px;
+                flex: 0 0 auto;
+                min-width: max-content;
+            }
+            .card-fase-bar {
+                flex: 0 0 auto;
+                margin: 0;
+            }
+            .zc-card-btns {
+                flex: 0 0 auto;
+                margin: 0;
+                display: flex;
+                gap: 6px;
             }
             .zc-stats {
-                flex: 1 1 30%;
-                min-width: 250px;
+                flex: 1 1 auto;
                 margin-top: 0;
                 border: none;
                 background: transparent;
                 padding: 0;
+                display: flex;
+                justify-content: flex-end; /* Allinea le statistiche a destra */
+                gap: 12px;
             }
+            .zc-stats .stat-item {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 10px;
+                margin-bottom: 0;
+            }
+            .zc-stats .stat-val { font-size: 1rem; }
+            .zc-stats .stat-lbl { margin-top: 0; font-size: 0.7rem; }
             .zone-meta-right {
-                flex: 1 1 auto;
+                flex: 0 0 auto;
                 justify-content: flex-end;
             }
             .stops-container {
-                flex: 1 1 100%; /* force break */
+                flex: 1 1 100%; /* Forza a capo per le fermate */
                 display: flex;
                 flex-direction: column;
                 gap: 4px;
-                margin-top: 16px;
+                margin-top: 8px;
             }
         }
     </style>

@@ -4,6 +4,8 @@ import json
 import time
 import math
 import gc
+import typing
+import uuid
 from datetime import datetime, date
 from collections import defaultdict
 import firebase_admin
@@ -5381,3 +5383,71 @@ def autista_salva_reso(req: https_fn.Request) -> https_fn.Response:
         import traceback
         traceback.print_exc()
         return https_fn.Response(json.dumps({"status": "errore", "message": str(e)}), status=500, headers={'Content-Type': 'application/json'})
+
+@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=120)
+def genera_master_pdf(req: https_fn.CallableRequest) -> typing.Any:
+    try:
+        # Verifica auth
+        if not req.auth or not req.auth.uid:
+            return {"status": "errore", "message": "Non autorizzato"}
+            
+        data_consegna = req.data.get("data_consegna")
+        if not data_consegna:
+            return {"status": "errore", "message": "Data consegna mancante"}
+            
+        tenant = _get_tenant_from_auth(req.auth.uid)
+        db = get_db()
+        bucket = storage.bucket(name=BUCKET_NAME)
+        
+        # Recupera viaggi del giorno
+        viaggi_ref = db.collection("clienti").document(tenant).collection("viaggi ddt")
+        docs = viaggi_ref.where("data_consegna", "==", data_consegna).get()
+        
+        if not docs:
+            return {"status": "errore", "message": f"Nessun viaggio trovato per il {data_consegna}"}
+            
+        # Per unire i PDF, usiamo PyPDF2
+        from PyPDF2 import PdfReader, PdfWriter
+        import requests
+        import io
+        
+        writer = PdfWriter()
+        pdfs_trovati = 0
+        
+        # Ordiniamo i documenti per id viaggio (V01, V02...)
+        docs = sorted(docs, key=lambda d: d.id)
+        
+        for doc in docs:
+            v_data = doc.to_dict()
+            url_light = v_data.get("distinta_light")
+            if url_light:
+                try:
+                    resp = requests.get(url_light, timeout=15)
+                    if resp.status_code == 200:
+                        reader = PdfReader(io.BytesIO(resp.content))
+                        for page in reader.pages:
+                            writer.add_page(page)
+                        pdfs_trovati += 1
+                except Exception as e:
+                    print(f"Errore download {url_light}: {e}")
+                    
+        if pdfs_trovati == 0:
+            return {"status": "errore", "message": "Nessuna distinta light trovata per questi viaggi"}
+            
+        # Salva su Storage
+        master_stream = io.BytesIO()
+        writer.write(master_stream)
+        master_stream.seek(0)
+        
+        master_blob = bucket.blob(f"REPORTS/{data_consegna}/DISTINTA_GLOBALE_LIGHT_{data_consegna}.pdf")
+        master_blob.upload_from_file(master_stream, content_type="application/pdf")
+        
+        # Genera url
+        master_url = _genera_url_storage_token(master_blob)
+        
+        return {"status": "ok", "url": master_url, "messaggio": f"Unite {pdfs_trovati} distinte light."}
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"status": "errore", "message": str(e)}

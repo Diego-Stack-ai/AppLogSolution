@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.150">
+    <link rel="stylesheet" href="styles.css?v=6.151">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -109,7 +109,7 @@
                     <label for="driverEmailInput">Nome Utente Login *</label>
                     <input type="text" id="driverEmailInput" placeholder="Es: mario.rossi" autocomplete="off" autocapitalize="none" autocorrect="off">
                 </div>
-                <div class="input-group">
+                <div class="input-group" id="containerEmailPersonale">
                     <label for="driverEmailPersonaleInput">E-mail Personale (Contatto)</label>
                     <input type="email" id="driverEmailPersonaleInput" placeholder="Es: mario.rossi@gmail.com">
                 </div>
@@ -121,10 +121,11 @@
                     <label for="driverCellulareInput">Cellulare</label>
                     <input type="tel" id="driverCellulareInput" placeholder="Es: 3401234567">
                 </div>
-                <div class="input-group">
+                <div class="input-group" id="containerRuoloSistema">
                     <label for="driverRuoloInput">Ruolo Sistema</label>
                     <select id="driverRuoloInput">
                         <option value="autista">Autista</option>
+                        <option value="fornitore">Fornitore</option>
                         <option value="impiegata">Impiegata (Amministrativo)</option>
                         <option id="optAdmin" value="amministratore">Amministratore</option>
                         <option value="soel">Soel</option>
@@ -936,6 +937,12 @@
             
             const extraDatiDipendenteContainer = document.getElementById('extraDatiDipendenteContainer');
             if (extraDatiDipendenteContainer) extraDatiDipendenteContainer.style.display = isFornitore ? 'none' : 'block';
+
+            const containerEmailPersonale = document.getElementById('containerEmailPersonale');
+            if (containerEmailPersonale) containerEmailPersonale.style.display = isFornitore ? 'none' : 'block';
+
+            const containerRuoloSistema = document.getElementById('containerRuoloSistema');
+            if (containerRuoloSistema) containerRuoloSistema.style.display = isFornitore ? 'none' : 'block';
         });
 
         window.editAutista = function (idx) {
@@ -1241,8 +1248,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=6.150"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.150"></script>
+    <script src="script.js?v=6.151"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.151"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.140">
+    <link rel="stylesheet" href="styles.css?v=6.144">
     <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"></noscript>
     <!-- PWA & Mobile Optimization -->
@@ -138,8 +138,8 @@
     </main>
 
 
-    <script src="script.js?v=6.140"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.140"></script>
+    <script src="script.js?v=6.144"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.144"></script>
     <script>
         // Quando il profilo e i permessi sono caricati
         window.onUserProfileLoaded = (user) => {
@@ -150,20 +150,26 @@
 
             // Nascondi le card a cui l'utente non ha accesso
             const permessi = window.appData ? window.appData.permessiDashboard : null;
-            if (permessi) {
-                const ruolo = user.ruolo || 'autista';
-                document.querySelectorAll('.nav-card').forEach(card => {
-                    const page = card.getAttribute('data-page');
-                    if (page) {
-                        const pageKey = page.replace('.html', '');
-                        // Se c'è la configurazione per questa pagina, controlliamo il ruolo
-                        const val = permessi[pageKey] ? permessi[pageKey][ruolo] : undefined;
-                        if (val === false || val === 'none') {
-                            card.style.display = 'none';
-                        }
+            const ruolo = user.ruolo || 'autista';
+            
+            document.querySelectorAll('.nav-card').forEach(card => {
+                const page = card.getAttribute('data-page');
+                if (page) {
+                    const pageKey = page.replace('.html', '');
+                    let val = undefined;
+                    
+                    if (permessi && permessi[pageKey]) {
+                        val = permessi[pageKey][ruolo];
                     }
-                });
-            }
+                    
+                    // Il fornitore può vedere solo la gestione mezzi
+                    if (ruolo === 'fornitore' && page !== 'gestione_mezzi.html') {
+                        card.style.display = 'none';
+                    } else if (val === false || val === 'none') {
+                        card.style.display = 'none';
+                    }
+                }
+            });
             
             // Ora che abbiamo nascosto le card vietate, mostriamo la griglia
             const grid = document.querySelector('.dashboard-grid');

@@ -157,6 +157,8 @@ onAuthStateChanged(auth, async (user) => {
                         } else {
                             if (role === 'impiegata') {
                                 permLevel = 'write';
+                            } else if (role === 'fornitore') {
+                                permLevel = (page === 'gestione_mezzi.html') ? 'write' : 'none';
                             } else {
                                 permLevel = (page === 'inserimento.html' || page === 'presenze.html') ? 'write' : 'none';
                             }

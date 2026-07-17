@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.140">
+    <link rel="stylesheet" href="styles.css?v=6.144">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -88,7 +88,10 @@
         </div>
 
         <div id="autistiContent" style="display: none; padding-top: 20px;">
-            <button type="button" class="btn-primary" style="margin-bottom:20px; width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="const f = document.getElementById('formAutistiContainer'); if(f.style.display==='none') { document.getElementById('btnAnnullaAutista').onclick(); f.style.display='block'; } else { f.style.display='none'; }"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">person_add</span>Aggiungi Nuovo Dipendente</button>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="const f = document.getElementById('formAutistiContainer'); if(f.style.display==='none') { document.getElementById('btnAnnullaAutista').onclick(); f.style.display='block'; document.getElementById('driverRuoloInput').value='autista'; document.getElementById('driverRuoloInput').dispatchEvent(new Event('change')); } else { f.style.display='none'; }"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">person_add</span>Aggiungi Nuovo Dipendente</button>
+                <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px; background-color: #475569;" onclick="const f = document.getElementById('formAutistiContainer'); if(f.style.display==='none') { document.getElementById('btnAnnullaAutista').onclick(); f.style.display='block'; document.getElementById('driverRuoloInput').value='fornitore'; document.getElementById('driverRuoloInput').dispatchEvent(new Event('change')); } else { f.style.display='none'; }"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">storefront</span>Aggiungi Nuovo Fornitore</button>
+            </div>
             <div id="formAutistiContainer" style="display: none; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:24px;">
             <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
                 💡 <b>Nuovo Accesso:</b> Inserisci l'<b>Email di Accesso completa</b> (es. <code>mario.rossi@logsolution.app</code>). Questo sarà il login ufficiale. L'Email Personale invece è facoltativa e serve solo per inviare comunicazioni.
@@ -127,7 +130,7 @@
                         <option value="soel">Soel</option>
                     </select>
                 </div>
-                <div class="input-group">
+                <div class="input-group" id="turnoBaseContainer">
                     <label for="driverTurnoInput">Turno Base</label>
                     <select id="driverTurnoInput">
                         <option value="giornata">Giornata</option>
@@ -136,6 +139,7 @@
                 </div>
             </div>
 
+            <div id="extraDatiDipendenteContainer">
             <h4 style="margin: 24px 0 12px 0; color: var(--primary); font-size: 14px; font-weight: 600; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">Dati Anagrafici & Assunzione</h4>
             <div class="form-grid" style="margin-bottom: 20px;">
                 <div class="input-group">
@@ -211,6 +215,7 @@
                     <label for="driverPatenteScadenza">Scadenza Patente</label>
                     <input type="date" id="driverPatenteScadenza">
                 </div>
+            </div>
             </div>
 
             <div id="adminExtraFields" style="display:none; grid-template-columns: 1fr; gap: 20px; margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">
@@ -722,7 +727,7 @@
         });
 
         window.renderAutisti = function () {
-            const currentAutisti = window.appData.lista_autisti || [];
+            const currentAutisti = window.appData.lista_dipendenti_completa || window.appData.lista_autisti || [];
             const currentUser = window.appData.currentUser;
             const userRole = (currentUser.ruolo || '').toLowerCase();
             const isImpiegata = userRole === 'impiegata';
@@ -908,7 +913,7 @@
                 // Amministratore
                 if (isSelf) {
                     // Non può cambiarsi ruolo se è l'unico amministratore configurato
-                    const autisti = window.appData.lista_autisti || [];
+                    const autisti = window.appData.lista_dipendenti_completa || window.appData.lista_autisti || [];
                     const adminCount = autisti.filter(a => (a.ruolo || '').toLowerCase() === 'amministratore').length;
                     if (adminCount <= 1) {
                         driverRuoloInput.disabled = true;
@@ -924,6 +929,13 @@
 
             adminExtraFields.style.display = (role === 'amministratore' || role === 'impiegata') ? 'grid' : 'none';
             elevazioneGroup.style.display = (isAdmin && role === 'impiegata') ? 'flex' : 'none';
+            
+            const isFornitore = (role === 'fornitore');
+            const turnoBaseContainer = document.getElementById('turnoBaseContainer');
+            if (turnoBaseContainer) turnoBaseContainer.style.display = isFornitore ? 'none' : 'block';
+            
+            const extraDatiDipendenteContainer = document.getElementById('extraDatiDipendenteContainer');
+            if (extraDatiDipendenteContainer) extraDatiDipendenteContainer.style.display = isFornitore ? 'none' : 'block';
         });
 
         window.editAutista = function (idx) {
@@ -932,7 +944,7 @@
             }
             document.getElementById('formAutistiContainer').style.display = 'block';
             editIndexAutista = idx;
-            const autisti = window.appData.lista_autisti || [];
+            const autisti = window.appData.lista_dipendenti_completa || window.appData.lista_autisti || [];
             const targetUser = autisti[idx];
             
             gestisciAbilitazioneForm(targetUser);
@@ -981,7 +993,7 @@
         };
 
         window.deleteAutista = async function (idx) {
-            const autisti = window.appData.lista_autisti || [];
+            const autisti = window.appData.lista_dipendenti_completa || window.appData.lista_autisti || [];
             const a = autisti[idx];
             if (confirm('Eliminare ' + a.nome + '? Questa operazione rimuove il profilo Firestore ma NON l\'utente da Firebase Auth.')) {
                 try {
@@ -1077,7 +1089,7 @@
             const isImpiegata = logRuolo === 'impiegata';
             const isAdmin = logRuolo === 'amministratore';
 
-            const autisti = window.appData.lista_autisti || [];
+            const autisti = window.appData.lista_dipendenti_completa || window.appData.lista_autisti || [];
             const targetOriginale = editIndexAutista >= 0 ? autisti[editIndexAutista] : null;
             const originalRuolo = targetOriginale ? (targetOriginale.ruolo || '').toLowerCase() : '';
             const isSelf = targetOriginale && targetOriginale.id === currentUser.uid;
@@ -1229,8 +1241,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=6.140"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.140"></script>
+    <script src="script.js?v=6.144"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.144"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────

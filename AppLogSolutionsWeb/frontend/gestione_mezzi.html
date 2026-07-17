@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.140">
+    <link rel="stylesheet" href="styles.css?v=6.144">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -330,8 +330,8 @@
     </div>
 </main>
 
-<script src="script.js?v=6.140"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.140"></script>
+<script src="script.js?v=6.144"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.144"></script>
 
 <script type="module">
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -477,7 +477,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         window.renderLista = function () {
             let currentMezzi = (window.appData && window.appData.lista_mezzi) ? window.appData.lista_mezzi : [];
+            const isFornitore = window.appData && window.appData.currentUser && window.appData.currentUser.ruolo === 'fornitore';
             
+            // Nascondi pulsante aggiungi se fornitore
+            const addBtn = document.querySelector('button[onclick="apriNuovoMezzo()"]');
+            if (isFornitore && addBtn) addBtn.style.display = 'none';
+
             if (viewMode === 'history') {
                 currentMezzi = currentMezzi.filter(m => m.attivo === false || (m.stato && m.stato.toLowerCase() !== 'attivo'));
             } else {
@@ -564,9 +569,15 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="detail-item"><span class="detail-label">Proprietà</span><span class="detail-value">${m.proprietario || '-'}</span></div>
                             <div class="detail-item"><span class="detail-label">Tipologia</span><span class="detail-value">${m.tipologia || '-'}</span></div>
                             <div class="detail-item"><span class="detail-label">Immatricolazione</span><span class="detail-value">${formattaData(m.immatricolazione)}</span></div>
+                `;
+                if (!isFornitore) {
+                    detailsHtml += `
                             <div class="detail-item"><span class="detail-label">Compagnia Assic.</span><span class="detail-value">${m.assicurazione || '-'}</span></div>
                             <div class="detail-item"><span class="detail-label">Tessera Carburante</span><span class="detail-value">${m.tessera_carburante || '-'} (PIN: ${m.pin_tessera || '-'})</span></div>
                             <div class="detail-item"><span class="detail-label">Note</span><span class="detail-value" style="color:#ef4444;">${m.note || '-'}</span></div>
+                    `;
+                }
+                detailsHtml += `
                         </div>
                         ${htmlFiles}
                         <h4 style="margin:20px 0 10px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
@@ -890,6 +901,7 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('formMezziContainer').style.display = 'block';
             editIndex = idx;
             const mezzo = mezzi[idx];
+            const isFornitore = window.appData && window.appData.currentUser && window.appData.currentUser.ruolo === 'fornitore';
             
             targaInput.value = mezzo.targa;
             modelloInput.value = mezzo.modello || '';
@@ -906,6 +918,42 @@ document.addEventListener("DOMContentLoaded", () => {
             tesseraInput.value = mezzo.tessera_carburante || '';
             pinInput.value = mezzo.pin_tessera || '';
             noteInput.value = mezzo.note || '';
+
+            if (isFornitore) {
+                targaInput.disabled = true;
+                modelloInput.disabled = true;
+                patenteInput.disabled = true;
+                attivoInput.disabled = true;
+                tipologiaInput.disabled = true;
+                proprietarioInput.disabled = true;
+                
+                const h4s = document.querySelectorAll('#formMezziContainer h4');
+                h4s.forEach(h4 => {
+                    if (h4.textContent.includes('Scadenze') || h4.textContent.includes('Carburante')) {
+                        h4.style.display = 'none';
+                        if (h4.nextElementSibling && h4.nextElementSibling.classList.contains('form-grid')) {
+                            h4.nextElementSibling.style.display = 'none';
+                        }
+                    }
+                });
+            } else {
+                targaInput.disabled = false;
+                modelloInput.disabled = false;
+                patenteInput.disabled = false;
+                attivoInput.disabled = false;
+                tipologiaInput.disabled = false;
+                proprietarioInput.disabled = false;
+                
+                const h4s = document.querySelectorAll('#formMezziContainer h4');
+                h4s.forEach(h4 => {
+                    if (h4.textContent.includes('Scadenze') || h4.textContent.includes('Carburante')) {
+                        h4.style.display = 'block';
+                        if (h4.nextElementSibling && h4.nextElementSibling.classList.contains('form-grid')) {
+                            h4.nextElementSibling.style.display = 'grid';
+                        }
+                    }
+                });
+            }
 
             window.storico_corrente = mezzo.storico_manutenzioni ? [...mezzo.storico_manutenzioni] : [];
             window.renderStoricoTable();
@@ -945,22 +993,23 @@ document.addEventListener("DOMContentLoaded", () => {
             btnSalvaMezzo.disabled = true;
             btnSalvaMezzo.textContent = "Upload e Salvataggio...";
 
+            const isFornitore = window.appData && window.appData.currentUser && window.appData.currentUser.ruolo === 'fornitore';
             const mezzoData = { 
                 targa: targa, 
-                modello: modelloInput.value.trim(), 
-                patente: patenteInput.value || 'B',
-                attivo: attivoInput.checked,
-                tipologia: tipologiaInput.value.trim(),
-                proprietario: proprietarioInput.value.trim(),
-                assicurazione: assicInput.value.trim(),
-                scadenza_assicurazione: scAssicInput.value,
-                scadenza_revisione: scRevInput.value,
-                scadenza_atp: scAtpInput.value,
-                scadenza_tachigrafo: scTachInput.value,
-                immatricolazione: immInput.value,
-                tessera_carburante: tesseraInput.value.trim(),
-                pin_tessera: pinInput.value.trim(),
-                note: noteInput.value.trim(),
+                modello: isFornitore && editIndex >= 0 ? mezzi[editIndex].modello : modelloInput.value.trim(), 
+                patente: isFornitore && editIndex >= 0 ? mezzi[editIndex].patente : (patenteInput.value || 'B'),
+                attivo: isFornitore && editIndex >= 0 ? mezzi[editIndex].attivo : attivoInput.checked,
+                tipologia: isFornitore && editIndex >= 0 ? mezzi[editIndex].tipologia : tipologiaInput.value.trim(),
+                proprietario: isFornitore && editIndex >= 0 ? mezzi[editIndex].proprietario : proprietarioInput.value.trim(),
+                assicurazione: isFornitore && editIndex >= 0 ? mezzi[editIndex].assicurazione : assicInput.value.trim(),
+                scadenza_assicurazione: isFornitore && editIndex >= 0 ? mezzi[editIndex].scadenza_assicurazione : scAssicInput.value,
+                scadenza_revisione: isFornitore && editIndex >= 0 ? mezzi[editIndex].scadenza_revisione : scRevInput.value,
+                scadenza_atp: isFornitore && editIndex >= 0 ? mezzi[editIndex].scadenza_atp : scAtpInput.value,
+                scadenza_tachigrafo: isFornitore && editIndex >= 0 ? mezzi[editIndex].scadenza_tachigrafo : scTachInput.value,
+                immatricolazione: isFornitore && editIndex >= 0 ? mezzi[editIndex].immatricolazione : immInput.value,
+                tessera_carburante: isFornitore && editIndex >= 0 ? mezzi[editIndex].tessera_carburante : tesseraInput.value.trim(),
+                pin_tessera: isFornitore && editIndex >= 0 ? mezzi[editIndex].pin_tessera : pinInput.value.trim(),
+                note: isFornitore && editIndex >= 0 ? mezzi[editIndex].note : noteInput.value.trim(),
                 storico_manutenzioni: [...window.storico_corrente]
             };
             

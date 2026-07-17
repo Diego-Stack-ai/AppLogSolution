@@ -50,11 +50,15 @@ function startRealtimeSync(isAdmin) {
     // Se Admin scarica tutti, altrimenti NON scarica nulla (o solo se stesso, già  fatto in Auth)
     if (isAdmin) {
         const unsubUsers = onSnapshot(collection(db, "dipendenti"), (snapshot) => {
-            const autisti = [];
+            const tuttiDipendenti = [];
             snapshot.forEach((d) => {
-                autisti.push({ id: d.id, ...d.data() });
+                tuttiDipendenti.push({ id: d.id, ...d.data() });
             });
-            window.appData.lista_autisti = autisti;
+            
+            window.appData.lista_dipendenti_completa = tuttiDipendenti;
+            // I fornitori non devono apparire in presenze, pianificazione, fatturazione, ecc.
+            window.appData.lista_autisti = tuttiDipendenti.filter(d => (d.ruolo || '').toLowerCase() !== 'fornitore');
+            
             if (typeof window.renderAutisti === 'function') window.renderAutisti();
             if (typeof window.renderAutistiDropdown === 'function') window.renderAutistiDropdown();
         });

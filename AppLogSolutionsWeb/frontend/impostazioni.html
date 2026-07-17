@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.154">
+    <link rel="stylesheet" href="styles.css?v=6.155">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -650,21 +650,43 @@
                             <th style="padding: 12px; text-align: center; font-weight: 600; color: #475569;">Amministratore</th>
                             <th style="padding: 12px; text-align: center; font-weight: 600; color: #475569;">Impiegata</th>
                             <th style="padding: 12px; text-align: center; font-weight: 600; color: #475569;">Autista</th>
-                            <th style="padding: 12px; text-align: center; font-weight: 600; color: #475569;">Soel</th>
-                            <th style="padding: 12px; text-align: center; font-weight: 600; color: #475569;">Fornitore</th>
+                            <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0;">SOEL</th>
+                            <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; width: 220px;">Fornitore</th>
                         </tr>
                     </thead>
                     <tbody id="permessiTableBody">
-                        <tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--text-muted);">Caricamento moduli in corso...</td></tr>
+                        <tr><td colspan="6" style="padding: 20px; text-align: center;">Caricamento permessi...</td></tr>
                     </tbody>
                 </table>
             </div>
             
-            <button type="button" id="btnSalvaPermessi" class="btn-primary" style="margin-top: 20px; width: 100%;">
-                <span class="material-icons-round" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">save</span>
-                Salva Permessi
-            </button>
+            <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
+                <button type="button" class="btn-primary" id="btnSalvaPermessi">
+                    <span class="material-icons-round" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">save</span> Salva Permessi
+                </button>
+            </div>
         </div>
+    </div>
+</div>
+
+<!-- Modal Permessi Moduli -->
+<div id="modalPermessiModuli" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+    <div style="background:white; border-radius:16px; padding:24px; width:450px; max-width:90%; box-shadow:0 10px 25px rgba(0,0,0,0.1);">
+        <h3 style="margin-top:0; color:var(--primary); margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+            <span class="material-icons-round">settings</span> Permessi Moduli
+        </h3>
+        <p style="font-size:12px; color:#64748b; margin-bottom:16px;">Configura i permessi per ciascun modulo. Questo sovrascriverà i permessi standard per questo ruolo sulla pagina.</p>
+        
+        <div style="display:flex; flex-direction:column; gap:12px;" id="moduliConfigForm">
+            <!-- Popolato via JS -->
+        </div>
+        
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px; padding-top:16px; border-top:1px solid #e2e8f0;">
+            <button type="button" class="btn-secondary" onclick="chiudiModalModuli()" style="padding:8px 16px;">Annulla</button>
+            <button type="button" class="btn-primary" onclick="confermaModalModuli()" style="padding:8px 16px;">Conferma</button>
+        </div>
+    </div>
+</div>
 
     </div>
 </main>
@@ -1285,8 +1307,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=6.154"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.154"></script>
+    <script src="script.js?v=6.155"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.155"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -2179,23 +2201,17 @@ const functions = getFunctions(app, "europe-west1");
 
             // 4. Carica la configurazione da Firestore
             const permessiDoc = await getDoc(doc(db, "config", "permessi_dashboard"));
-            const currentPermessi = permessiDoc.exists() ? permessiDoc.data() : {};
+            window.appData.permessiDashboard = permessiDoc.exists() ? permessiDoc.data() : {};
 
             // 5. Costruisci la tabella
             permessiTableBody.innerHTML = '';
             
             cardModules.forEach(mod => {
-                const conf = currentPermessi[mod.page] || {};
-                
-                // Helper per recuperare il valore, gestendo anche la retrocompatibilità (true = write, false = none)
-                const getPermVal = (role, def) => {
-                    const val = conf[role];
-                    if (val === 'read' || val === 'write' || val === 'none') return val;
-                    if (val === true) return 'write';
-                    if (val === false) return 'none';
-                    return def;
+                const getPermVal = (role, defaultVal) => {
+                    const p = window.appData.permessiDashboard[mod.page] && window.appData.permessiDashboard[mod.page][role];
+                    return p || defaultVal;
                 };
-
+                
                 const valImpiegata = getPermVal('impiegata', 'write');
                 const valAutista = getPermVal('autista', (mod.page === 'inserimento' || mod.page === 'presenze') ? 'write' : 'none');
                 const valSoel = getPermVal('soel', 'none');
@@ -2241,6 +2257,74 @@ const functions = getFunctions(app, "europe-west1");
         }
     }
 
+    // Logica Modale Permessi Moduli
+    let currentConfigSelect = null;
+    
+    window.handlePermSelectChange = function(select) {
+        const configBtn = select.nextElementSibling;
+        if (configBtn && configBtn.classList.contains('config-btn')) {
+            if (select.value === 'advanced') {
+                configBtn.style.display = 'flex';
+                // Apri subito il modale per configurare
+                apriModalModuli(configBtn);
+            } else {
+                configBtn.style.display = 'none';
+            }
+        }
+    };
+
+    window.apriModalModuli = function(btn) {
+        currentConfigSelect = btn.previousElementSibling;
+        const currentData = JSON.parse(currentConfigSelect.getAttribute('data-modules') || '{}');
+        
+        const moduli = [
+            { id: 'anagrafica', label: 'Anagrafica Base (fino a proprietario)' },
+            { id: 'scadenze', label: 'Scadenze e Assicurazioni' },
+            { id: 'carburante', label: 'Carburante e Note' },
+            { id: 'manutenzioni', label: 'Storico Manutenzioni' },
+            { id: 'media', label: 'Media e Documenti' }
+        ];
+
+        const form = document.getElementById('moduliConfigForm');
+        form.innerHTML = '';
+
+        moduli.forEach(m => {
+            const val = currentData[m.id] || 'none';
+            form.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <div style="font-weight:500; font-size:13px; color:#1e293b;">${m.label}</div>
+                    <select id="mod_${m.id}" style="padding:4px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; outline:none;">
+                        <option value="none" ${val === 'none' ? 'selected' : ''}>🚫 Non visibile</option>
+                        <option value="read" ${val === 'read' ? 'selected' : ''}>👁️ Solo Lettura</option>
+                        <option value="write" ${val === 'write' ? 'selected' : ''}>✍️ Modificabile</option>
+                    </select>
+                </div>
+            `;
+        });
+
+        document.getElementById('modalPermessiModuli').style.display = 'flex';
+    };
+
+    window.chiudiModalModuli = function() {
+        document.getElementById('modalPermessiModuli').style.display = 'none';
+        currentConfigSelect = null;
+    };
+
+    window.confermaModalModuli = function() {
+        if (!currentConfigSelect) return;
+        
+        const newModules = {
+            anagrafica: document.getElementById('mod_anagrafica').value,
+            scadenze: document.getElementById('mod_scadenze').value,
+            carburante: document.getElementById('mod_carburante').value,
+            manutenzioni: document.getElementById('mod_manutenzioni').value,
+            media: document.getElementById('mod_media').value
+        };
+        
+        currentConfigSelect.setAttribute('data-modules', JSON.stringify(newModules));
+        chiudiModalModuli();
+    };
+
     if (btnSalvaPermessi) {
         btnSalvaPermessi.addEventListener('click', async () => {
             try {
@@ -2253,7 +2337,15 @@ const functions = getFunctions(app, "europe-west1");
                     const page = sel.getAttribute('data-page');
                     const role = sel.getAttribute('data-role');
                     if (!newPermessi[page]) newPermessi[page] = { amministratore: 'write' };
-                    newPermessi[page][role] = sel.value;
+                    
+                    if (sel.value === 'advanced') {
+                        newPermessi[page][role] = {
+                            access: 'advanced',
+                            modules: JSON.parse(sel.getAttribute('data-modules') || '{}')
+                        };
+                    } else {
+                        newPermessi[page][role] = sel.value;
+                    }
                 });
 
                 await setDoc(doc(db, "config", "permessi_dashboard"), newPermessi);

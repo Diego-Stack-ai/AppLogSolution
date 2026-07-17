@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.154">
+    <link rel="stylesheet" href="styles.css?v=6.155">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -164,91 +164,98 @@
             <div id="formMezziContainer" style="display: none; background:rgba(255,255,255,0.9); padding:24px; border-radius:16px; border:1px solid #e2e8f0; margin-bottom:24px; box-shadow:0 10px 25px rgba(0,0,0,0.05); backdrop-filter:blur(10px);">
                 <h3 id="formTitle" style="margin-top:0; color:var(--primary); margin-bottom:16px;">Modifica Mezzo</h3>
                 
-                <div class="form-grid">
-                    <div class="input-group">
-                        <label for="targaInput">Targa *</label>
-                        <input type="text" id="targaInput" placeholder="es. AA000BB" style="text-transform: uppercase;">
-                    </div>
-                    <div class="input-group" style="display:flex; flex-direction:column; justify-content:center;">
-                        <label>Stato Operativo</label>
-                        <div style="display:flex; align-items:center; gap:8px; height:100%;">
-                            <input type="checkbox" id="attivoInput" checked style="width:20px; height:20px; accent-color:var(--primary);">
-                            <span style="font-weight:500;">Mezzo Attivo (visibile in Pianificazione)</span>
+                <div id="sec-anagrafica-container">
+                    <div class="form-grid" id="sec-anagrafica">
+                        <div class="input-group">
+                            <label for="targaInput">Targa *</label>
+                            <input type="text" id="targaInput" placeholder="es. AA000BB" style="text-transform: uppercase;">
+                        </div>
+                        <div class="input-group" style="display:flex; flex-direction:column; justify-content:center;">
+                            <label>Stato Operativo</label>
+                            <div style="display:flex; align-items:center; gap:8px; height:100%;">
+                                <input type="checkbox" id="attivoInput" checked style="width:20px; height:20px; accent-color:var(--primary);">
+                                <span style="font-weight:500;">Mezzo Attivo (visibile in Pianificazione)</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="modelloInput">Modello / Dettaglio</label>
+                            <input type="text" id="modelloInput" placeholder="es. DAF 460 XF">
+                        </div>
+                        <div class="input-group">
+                            <label for="tipologiaInput">Tipologia</label>
+                            <input type="text" id="tipologiaInput" placeholder="es. Trattore stradale">
+                        </div>
+                        <div class="input-group">
+                            <label for="patenteInput">Tipo Patente</label>
+                            <select id="patenteInput" style="height:45px; border-radius:12px; border:1px solid var(--border); padding:0 12px; font-size:14px; font-family:inherit; color:var(--text);">
+                                <option value="B">Patente B (Furgone)</option>
+                                <option value="C">Patente C (Camion)</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="proprietarioInput">Proprietario</label>
+                            <input type="text" id="proprietarioInput" placeholder="es. LOG.SOLUTIONS">
                         </div>
                     </div>
-                    <div class="input-group">
-                        <label for="modelloInput">Modello / Dettaglio</label>
-                        <input type="text" id="modelloInput" placeholder="es. DAF 460 XF">
-                    </div>
-                    <div class="input-group">
-                        <label for="tipologiaInput">Tipologia</label>
-                        <input type="text" id="tipologiaInput" placeholder="es. Trattore stradale">
-                    </div>
-                    <div class="input-group">
-                        <label for="patenteInput">Tipo Patente</label>
-                        <select id="patenteInput" style="height:45px; border-radius:12px; border:1px solid var(--border); padding:0 12px; font-size:14px; font-family:inherit; color:var(--text);">
-                            <option value="B">Patente B (Furgone)</option>
-                            <option value="C">Patente C (Camion)</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label for="proprietarioInput">Proprietario</label>
-                        <input type="text" id="proprietarioInput" placeholder="es. LOG.SOLUTIONS">
+                </div>
+
+                <div id="sec-scadenze-container">
+                    <h4 style="margin:20px 0 10px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Scadenze e Assicurazione</h4>
+                    <div class="form-grid" id="sec-scadenze">
+                        <div class="input-group">
+                            <label for="assicurazioneInput">Compagnia Assic.</label>
+                            <input type="text" id="assicurazioneInput">
+                        </div>
+                        <div class="input-group">
+                            <label for="scadenzaAssicurazioneInput">Scadenza Assic.</label>
+                            <input type="date" id="scadenzaAssicurazioneInput">
+                        </div>
+                        <div class="input-group">
+                            <label for="scadenzaRevisionInput">Scadenza Revisione</label>
+                            <input type="date" id="scadenzaRevisioneInput">
+                        </div>
+                        <div class="input-group">
+                            <label for="scadenzaATPInput">Scadenza ATP</label>
+                            <input type="date" id="scadenzaATPInput">
+                        </div>
+                        <div class="input-group">
+                            <label for="scadenzaTachigrafoInput">Scadenza Tachigrafo</label>
+                            <input type="date" id="scadenzaTachigrafoInput">
+                        </div>
+                        <div class="input-group">
+                            <label for="immatricolazioneInput">Immatricolazione</label>
+                            <input type="date" id="immatricolazioneInput">
+                        </div>
                     </div>
                 </div>
 
-                <h4 style="margin:20px 0 10px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Scadenze e Assicurazione</h4>
-                <div class="form-grid">
-                    <div class="input-group">
-                        <label for="assicurazioneInput">Compagnia Assic.</label>
-                        <input type="text" id="assicurazioneInput">
-                    </div>
-                    <div class="input-group">
-                        <label for="scadenzaAssicurazioneInput">Scadenza Assic.</label>
-                        <input type="date" id="scadenzaAssicurazioneInput">
-                    </div>
-                    <div class="input-group">
-                        <label for="scadenzaRevisioneInput">Scadenza Revisione</label>
-                        <input type="date" id="scadenzaRevisioneInput">
-                    </div>
-                    <div class="input-group">
-                        <label for="scadenzaATPInput">Scadenza ATP</label>
-                        <input type="date" id="scadenzaATPInput">
-                    </div>
-                    <div class="input-group">
-                        <label for="scadenzaTachigrafoInput">Scadenza Tachigrafo</label>
-                        <input type="date" id="scadenzaTachigrafoInput">
-                    </div>
-                    <div class="input-group">
-                        <label for="immatricolazioneInput">Immatricolazione</label>
-                        <input type="date" id="immatricolazioneInput">
-                    </div>
-                </div>
-
-                <h4 style="margin:20px 0 10px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Carburante e Note</h4>
-                <div class="form-grid">
-                    <div class="input-group">
-                        <label for="tesseraCarburanteInput">Tessera Carburante</label>
-                        <input type="text" id="tesseraCarburanteInput">
-                    </div>
-                    <div class="input-group">
-                        <label for="pinTesseraInput">PIN Tessera</label>
-                        <input type="text" id="pinTesseraInput">
-                    </div>
-                    <div class="input-group" style="grid-column: span 2;">
-                        <label for="noteInput">Note / Anomalie</label>
-                        <input type="text" id="noteInput" placeholder="es. Vetro lesionato">
+                <div id="sec-carburante-container">
+                    <h4 style="margin:20px 0 10px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Carburante e Note</h4>
+                    <div class="form-grid" id="sec-carburante">
+                        <div class="input-group">
+                            <label for="tesseraCarburanteInput">Tessera Carburante</label>
+                            <input type="text" id="tesseraCarburanteInput">
+                        </div>
+                        <div class="input-group">
+                            <label for="pinTesseraInput">PIN Tessera</label>
+                            <input type="text" id="pinTesseraInput">
+                        </div>
+                        <div class="input-group" style="grid-column: span 2;">
+                            <label for="noteInput">Note / Anomalie</label>
+                            <input type="text" id="noteInput" placeholder="es. Vetro lesionato">
+                        </div>
                     </div>
                 </div>
 
                 <!-- STORICO MANUTENZIONI CRUD -->
-                <h4 style="margin:20px 0 10px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
-                    Storico Manutenzioni
-                    <button type="button" class="btn-primary" style="padding:6px 12px; font-size:12px; height:auto;" onclick="apriFormManutenzione()">+ Aggiungi Intervento</button>
-                </h4>
-                
-                <div style="overflow-x:auto; margin-bottom:16px;">
-                    <table class="storico-table">
+                <div id="sec-manutenzioni-container">
+                    <h4 style="margin:20px 0 10px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+                        Storico Manutenzioni
+                        <button type="button" class="btn-primary" id="btnAggiungiManutenzioneForm" style="padding:6px 12px; font-size:12px; height:auto;" onclick="apriFormManutenzione()">+ Aggiungi Intervento</button>
+                    </h4>
+                    
+                    <div style="overflow-x:auto; margin-bottom:16px;">
+                        <table class="storico-table">
                         <thead>
                             <tr>
                                 <th>Data</th>
@@ -283,9 +290,12 @@
                     </div>
                 </div>
 
+                </div>
+
                 <!-- Upload File Mezzi (Immagini e Documenti) -->
-                <h4 style="margin:20px 0 10px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Media e Documenti</h4>
-                <div style="margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+                <div id="sec-media-container">
+                    <h4 style="margin:20px 0 10px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Media e Documenti</h4>
+                    <div style="margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;" id="sec-media">
                     <div style="background: white; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
                         <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 12px; display: block;">📷 Foto Camion / Furgone</label>
                         <div style="position: relative; width: 100%; margin-bottom: 12px;">
@@ -315,7 +325,7 @@
                     </div>
                 </div>
 
-                <div style="display:flex; gap:12px; margin-top:24px; padding-top:16px; border-top:1px solid #e2e8f0;">
+                <div style="display:flex; gap:12px; margin-top:24px; padding-top:16px; border-top:1px solid #e2e8f0;" id="sec-footer-btn">
                     <button type="button" id="btnSalvaMezzo" class="btn-primary" style="flex:1; font-size:15px;">Salva Mezzo</button>
                     <button type="button" id="btnAnnullaMezzo" class="btn-primary"
                         style="flex:1; background:#f1f5f9; color:#334155; box-shadow:none;" onclick="chiudiForm()">Annulla</button>
@@ -330,8 +340,8 @@
     </div>
 </main>
 
-<script src="script.js?v=6.154"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.154"></script>
+<script src="script.js?v=6.155"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.155"></script>
 
 <script type="module">
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -478,7 +488,27 @@ document.addEventListener("DOMContentLoaded", () => {
         window.renderLista = function () {
             let currentMezzi = (window.appData && window.appData.lista_mezzi) ? window.appData.lista_mezzi : [];
             const isFornitore = window.appData && window.appData.currentUser && window.appData.currentUser.ruolo === 'fornitore';
-            const permFornitore = window.appData && window.appData.permessiDashboard && window.appData.permessiDashboard['mezzi'] && window.appData.permessiDashboard['mezzi']['fornitore'] ? window.appData.permessiDashboard['mezzi']['fornitore'] : 'none';
+            let permFornitoreRaw = window.appData && window.appData.permessiDashboard && window.appData.permessiDashboard['mezzi'] && window.appData.permessiDashboard['mezzi']['fornitore'] ? window.appData.permessiDashboard['mezzi']['fornitore'] : 'none';
+            let permFornitore = permFornitoreRaw;
+            let advModules = null;
+            if (typeof permFornitoreRaw === 'object' && permFornitoreRaw.access === 'advanced') {
+                permFornitore = 'advanced';
+                advModules = permFornitoreRaw.modules || {};
+            }
+
+            const getModPerm = (modName) => {
+                if (!isFornitore) return 'write'; // Default x admin/impiegata (gestito altrove)
+                if (permFornitore === 'write') return 'write';
+                if (permFornitore === 'read' || permFornitore === 'read_docs') return 'read';
+                if (permFornitore === 'advanced' && advModules) return advModules[modName] || 'none';
+                return 'none';
+            };
+
+            const permAnagrafica = getModPerm('anagrafica');
+            const permScadenze = getModPerm('scadenze');
+            const permCarburante = getModPerm('carburante');
+            const permManutenzioni = getModPerm('manutenzioni');
+            const permMedia = getModPerm('media');
             
             // Nascondi pulsante aggiungi se fornitore
             const addBtn = document.querySelector('button[onclick="apriNuovoMezzo()"]');
@@ -562,34 +592,36 @@ document.addEventListener("DOMContentLoaded", () => {
                 let hasDocs = false;
                 let filesGrid = '<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap:12px;">';
                 
-                if (m.fotoUrls && m.fotoUrls.length > 0) {
-                    hasDocs = true;
-                    m.fotoUrls.forEach(f => {
-                        filesGrid += `<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="display:flex; flex-direction:column; align-items:center; padding:8px; background:rgba(255, 255, 255, 0.5); border:1px solid rgba(255, 255, 255, 0.4); border-radius:12px; text-decoration:none; color:#1e293b; font-size:11px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.03); transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-3px)';" onmouseout="this.style.transform='translateY(0)';">
-                            <img src="${f.url}" alt="${f.name}" style="width:100%; height:80px; object-fit:cover; border-radius:6px; margin-bottom:6px;">
-                            <span style="overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${f.name}</span>
-                        </a>`;
-                    });
-                }
-                if (m.documentiUrls && m.documentiUrls.length > 0) {
-                    hasDocs = true;
-                    m.documentiUrls.forEach((f, fileIdx) => {
-                        const isPdf = f.name.toLowerCase().endsWith('.pdf');
-                        const uniqueId = `pdf-${idx}-${fileIdx}`;
-                        let visualElement = `<div id="icon-${uniqueId}" style="width:100%; height:80px; display:flex; align-items:center; justify-content:center; background:rgba(241, 245, 249, 0.7); border-radius:6px; margin-bottom:6px;"><span class="material-icons-round" style="font-size:36px; color:${isPdf?'#ef4444':'#3b82f6'};">${isPdf?'picture_as_pdf':'description'}</span></div>`;
-                        if (isPdf) visualElement += `<canvas id="canvas-${uniqueId}" class="pdf-thumbnail-canvas" style="display:none; width:100%; height:80px; object-fit:contain; border-radius:6px; margin-bottom:6px;" data-pdf-url="${f.url}" data-icon-id="icon-${uniqueId}"></canvas>`;
+                if (permMedia !== 'none') {
+                    if (m.fotoUrls && m.fotoUrls.length > 0) {
+                        hasDocs = true;
+                        m.fotoUrls.forEach(f => {
+                            filesGrid += `<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="display:flex; flex-direction:column; align-items:center; padding:8px; background:rgba(255, 255, 255, 0.5); border:1px solid rgba(255, 255, 255, 0.4); border-radius:12px; text-decoration:none; color:#1e293b; font-size:11px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.03); transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-3px)';" onmouseout="this.style.transform='translateY(0)';">
+                                <img src="${f.url}" alt="${f.name}" style="width:100%; height:80px; object-fit:cover; border-radius:6px; margin-bottom:6px;">
+                                <span style="overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${f.name}</span>
+                            </a>`;
+                        });
+                    }
+                    if (m.documentiUrls && m.documentiUrls.length > 0) {
+                        hasDocs = true;
+                        m.documentiUrls.forEach((f, fileIdx) => {
+                            const isPdf = f.name.toLowerCase().endsWith('.pdf');
+                            const uniqueId = `pdf-${idx}-${fileIdx}`;
+                            let visualElement = `<div id="icon-${uniqueId}" style="width:100%; height:80px; display:flex; align-items:center; justify-content:center; background:rgba(241, 245, 249, 0.7); border-radius:6px; margin-bottom:6px;"><span class="material-icons-round" style="font-size:36px; color:${isPdf?'#ef4444':'#3b82f6'};">${isPdf?'picture_as_pdf':'description'}</span></div>`;
+                            if (isPdf) visualElement += `<canvas id="canvas-${uniqueId}" class="pdf-thumbnail-canvas" style="display:none; width:100%; height:80px; object-fit:contain; border-radius:6px; margin-bottom:6px;" data-pdf-url="${f.url}" data-icon-id="icon-${uniqueId}"></canvas>`;
 
-                        filesGrid += `<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px; background:rgba(255, 255, 255, 0.5); border:1px solid rgba(255, 255, 255, 0.4); border-radius:12px; text-decoration:none; color:#1e293b; font-size:11px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.03); transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-3px)';" onmouseout="this.style.transform='translateY(0)';">
-                            ${visualElement}
-                            <span style="overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${f.name}</span>
-                        </a>`;
-                    });
+                            filesGrid += `<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px; background:rgba(255, 255, 255, 0.5); border:1px solid rgba(255, 255, 255, 0.4); border-radius:12px; text-decoration:none; color:#1e293b; font-size:11px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.03); transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-3px)';" onmouseout="this.style.transform='translateY(0)';">
+                                ${visualElement}
+                                <span style="overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${f.name}</span>
+                            </a>`;
+                        });
+                    }
                 }
                 filesGrid += '</div>';
                 if (hasDocs) htmlFiles = filesGrid;
 
                 let htmlStorico = '<div style="font-size:13px; color:#64748b;">Nessuna manutenzione registrata.</div>';
-                if (m.storico_manutenzioni && m.storico_manutenzioni.length > 0) {
+                if (permManutenzioni !== 'none' && m.storico_manutenzioni && m.storico_manutenzioni.length > 0) {
                     htmlStorico = `<table class="storico-table" style="background:white; border-radius:8px; overflow:hidden;">
                         <thead><tr><th>Data</th><th>KM</th><th>Interventi</th></tr></thead><tbody>`;
                     m.storico_manutenzioni.sort((a,b)=> new Date(b.data || 0) - new Date(a.data || 0)).forEach(s => {
@@ -599,8 +631,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     htmlStorico += `</tbody></table>`;
                 }
 
-                    let detailsHtml = `
-                        <div class="details-grid">
+                let detailsHtml = `<div class="details-grid">`;
+                
+                if (permAnagrafica !== 'none') {
+                    detailsHtml += `
                             <div class="detail-item"><span class="detail-label">Targa</span><span class="detail-value">${m.targa || '-'}</span></div>
                             <div class="detail-item"><span class="detail-label">Modello</span><span class="detail-value">${m.modello || '-'}</span></div>
                             <div class="detail-item"><span class="detail-label">Proprietà</span><span class="detail-value">${m.proprietario || '-'}</span></div>
@@ -608,34 +642,43 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="detail-item"><span class="detail-label">Patente</span><span class="detail-value">${m.patente === 'C' ? 'C (Camion)' : 'B (Furgone)'}</span></div>
                             <div class="detail-item"><span class="detail-label">Immatricolazione</span><span class="detail-value">${formattaData(m.immatricolazione)}</span></div>
                             <div class="detail-item"><span class="detail-label">Stato</span><span class="detail-value">${(m.attivo===false || (m.stato && m.stato.toLowerCase() !== 'attivo')) ? 'Inattivo' : 'Attivo'}</span></div>
-                `;
-                if (!isFornitore) {
+                    `;
+                }
+                
+                if (permScadenze !== 'none') {
                     detailsHtml += `
                             <div class="detail-item"><span class="detail-label">Compagnia Assic.</span><span class="detail-value">${m.assicurazione || '-'}</span></div>
                             <div class="detail-item"><span class="detail-label">Scad. Assicurazione</span><span class="detail-value">${formattaData(m.scadenza_assicurazione)}</span></div>
                             <div class="detail-item"><span class="detail-label">Scad. Revisione</span><span class="detail-value">${formattaData(m.scadenza_revisione)}</span></div>
                             <div class="detail-item"><span class="detail-label">Scad. ATP</span><span class="detail-value">${formattaData(m.scadenza_atp)}</span></div>
                             ${m.patente === 'C' ? `<div class="detail-item"><span class="detail-label">Scad. Tachigrafo</span><span class="detail-value">${formattaData(m.scadenza_tachigrafo)}</span></div>` : ''}
+                    `;
+                }
+
+                if (permCarburante !== 'none') {
+                    detailsHtml += `
                             <div class="detail-item"><span class="detail-label">Tessera Carburante</span><span class="detail-value">${m.tessera_carburante || '-'} (PIN: ${m.pin_tessera || '-'})</span></div>
                             <div class="detail-item" style="grid-column: span 2;"><span class="detail-label">Note</span><span class="detail-value" style="color:#ef4444;">${m.note || '-'}</span></div>
                     `;
                 }
-                detailsHtml += `
-                        </div>
-                `;
                 
-                if (!isFornitore || permFornitore === 'read_docs' || permFornitore === 'write') {
+                detailsHtml += `</div>`;
+                
+                if (permMedia !== 'none' || (permFornitore === 'read_docs' && permMedia === 'none')) {
                     detailsHtml += htmlFiles;
                 }
-                detailsHtml += `
-                        <h4 style="margin:20px 0 10px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
-                            <span>Storico Manutenzioni</span>
-                            <button type="button" class="action-btn" style="padding:4px 8px; font-size:12px; color:var(--primary); border-color:var(--primary);" onclick="apriFormManutenzione(${idx})">
-                                <span class="material-icons-round" style="font-size:14px; margin-right:4px;">build</span> Aggiungi Intervento
-                            </button>
-                        </h4>
-                        ${htmlStorico}
-                `;
+                
+                if (permManutenzioni !== 'none') {
+                    detailsHtml += `
+                            <h4 style="margin:20px 0 10px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+                                <span>Storico Manutenzioni</span>
+                                ${permManutenzioni === 'write' ? `<button type="button" class="action-btn" style="padding:4px 8px; font-size:12px; color:var(--primary); border-color:var(--primary);" onclick="apriFormManutenzione(${idx})">
+                                    <span class="material-icons-round" style="font-size:14px; margin-right:4px;">build</span> Aggiungi Intervento
+                                </button>` : ''}
+                            </h4>
+                            ${htmlStorico}
+                    `;
+                }
 
                 const coverUrl = m.copertinaUrl || (m.fotoUrls && m.fotoUrls.length > 0 ? m.fotoUrls[0].url : null);
                 
@@ -911,6 +954,78 @@ document.addEventListener("DOMContentLoaded", () => {
         };
         // ----------------------------------
 
+        window.applyFormPermissions = function() {
+            const isFornitore = window.appData && window.appData.currentUser && window.appData.currentUser.ruolo === 'fornitore';
+            let permFornitoreRaw = window.appData && window.appData.permessiDashboard && window.appData.permessiDashboard['mezzi'] && window.appData.permessiDashboard['mezzi']['fornitore'] ? window.appData.permessiDashboard['mezzi']['fornitore'] : 'none';
+            let permFornitore = permFornitoreRaw;
+            let advModules = null;
+            if (typeof permFornitoreRaw === 'object' && permFornitoreRaw.access === 'advanced') {
+                permFornitore = 'advanced';
+                advModules = permFornitoreRaw.modules || {};
+            }
+
+            const getModPerm = (modName) => {
+                if (!isFornitore) return 'write';
+                if (permFornitore === 'write') return 'write';
+                if (permFornitore === 'read' || permFornitore === 'read_docs') return 'read';
+                if (permFornitore === 'advanced' && advModules) return advModules[modName] || 'none';
+                return 'none';
+            };
+
+            const toggleSection = (containerId, contentId, perm) => {
+                const container = document.getElementById(containerId);
+                const content = document.getElementById(contentId);
+                if (!container || !content) return;
+                
+                container.style.display = (perm === 'none') ? 'none' : 'block';
+                
+                const inputs = content.querySelectorAll('input, select, textarea, button');
+                inputs.forEach(input => {
+                    input.disabled = (perm === 'read');
+                    if(perm === 'read') {
+                        if (input.tagName === 'BUTTON' && !input.classList.contains('action-btn')) {
+                            input.style.display = 'none'; // hide generic buttons like upload if readonly
+                        }
+                    } else {
+                        if (input.tagName === 'BUTTON' && input.style.display === 'none') {
+                            input.style.display = ''; 
+                        }
+                    }
+                });
+            };
+
+            const permAnagrafica = getModPerm('anagrafica');
+            const permScadenze = getModPerm('scadenze');
+            const permCarburante = getModPerm('carburante');
+            const permManutenzioni = getModPerm('manutenzioni');
+            const permMedia = getModPerm('media');
+
+            toggleSection('sec-anagrafica-container', 'sec-anagrafica', permAnagrafica);
+            toggleSection('sec-scadenze-container', 'sec-scadenze', permScadenze);
+            toggleSection('sec-carburante-container', 'sec-carburante', permCarburante);
+            toggleSection('sec-manutenzioni-container', 'sec-manutenzioni-container', permManutenzioni);
+            toggleSection('sec-media-container', 'sec-media', permMedia);
+
+            const btnAggiungiManut = document.getElementById('btnAggiungiManutenzioneForm');
+            if (btnAggiungiManut) btnAggiungiManut.style.display = (permManutenzioni === 'write') ? 'inline-flex' : 'none';
+
+            // nascondiamo tutti i bottoni action-btn della tabella storico se readonly
+            const actionBtns = document.querySelectorAll('#storicoTbody .action-btn');
+            actionBtns.forEach(b => b.style.display = (permManutenzioni === 'write') ? 'inline-flex' : 'none');
+
+            // nascondiamo bottoni upload/cancella foto e documenti se readonly
+            const hideMediaBtns = (permMedia !== 'write');
+            document.getElementById('fotoMezzoInput').disabled = hideMediaBtns;
+            document.getElementById('documentiMezzoInput').disabled = hideMediaBtns;
+            
+            const actionMediaBtns = document.querySelectorAll('#fotoMezzoPreview .action-btn, #documentiMezzoPreview .action-btn');
+            actionMediaBtns.forEach(b => b.style.display = hideMediaBtns ? 'none' : 'inline-flex');
+
+            // Hide the main save button if absolutely EVERYTHING is read-only or none
+            const canWriteAnything = [permAnagrafica, permScadenze, permCarburante, permManutenzioni, permMedia].includes('write');
+            document.getElementById('btnSalvaMezzo').style.display = canWriteAnything ? 'inline-flex' : 'none';
+        };
+
         window.apriNuovoMezzo = function() {
             editIndex = -1;
             document.getElementById('formTitle').textContent = "Aggiungi Nuovo Mezzo";
@@ -940,6 +1055,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             btnSalvaMezzo.textContent = "Salva Nuovo Mezzo";
             document.getElementById('formMezziContainer').style.display = 'block';
+            window.applyFormPermissions();
             targaInput.focus();
         };
 
@@ -951,7 +1067,6 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('formMezziContainer').style.display = 'block';
             editIndex = idx;
             const mezzo = mezzi[idx];
-            const isFornitore = window.appData && window.appData.currentUser && window.appData.currentUser.ruolo === 'fornitore';
             
             targaInput.value = mezzo.targa;
             modelloInput.value = mezzo.modello || '';
@@ -969,43 +1084,7 @@ document.addEventListener("DOMContentLoaded", () => {
             pinInput.value = mezzo.pin_tessera || '';
             noteInput.value = mezzo.note || '';
 
-            if (isFornitore) {
-                targaInput.disabled = true;
-                modelloInput.disabled = true;
-                patenteInput.disabled = true;
-                attivoInput.disabled = true;
-                tipologiaInput.disabled = true;
-                proprietarioInput.disabled = true;
-                
-                const h4s = document.querySelectorAll('#formMezziContainer h4');
-                h4s.forEach(h4 => {
-                    if (h4.textContent.includes('Scadenze') || h4.textContent.includes('Carburante')) {
-                        h4.style.display = 'none';
-                        if (h4.nextElementSibling && h4.nextElementSibling.classList.contains('form-grid')) {
-                            h4.nextElementSibling.style.display = 'none';
-                        }
-                    }
-                });
-            } else {
-                targaInput.disabled = false;
-                modelloInput.disabled = false;
-                patenteInput.disabled = false;
-                attivoInput.disabled = false;
-                tipologiaInput.disabled = false;
-                proprietarioInput.disabled = false;
-                
-                const h4s = document.querySelectorAll('#formMezziContainer h4');
-                h4s.forEach(h4 => {
-                    if (h4.textContent.includes('Scadenze') || h4.textContent.includes('Carburante')) {
-                        h4.style.display = 'block';
-                        if (h4.nextElementSibling && h4.nextElementSibling.classList.contains('form-grid')) {
-                            h4.nextElementSibling.style.display = 'grid';
-                        }
-                    }
-                });
-            }
-
-            window.storico_corrente = mezzo.storico_manutenzioni ? [...mezzo.storico_manutenzioni] : [];
+            window.storico_corrente = Array.isArray(mezzo.storico_manutenzioni) ? JSON.parse(JSON.stringify(mezzo.storico_manutenzioni)) : [];
             window.renderStoricoTable();
 
             document.getElementById('fotoMezzoInput').value = '';
@@ -1014,6 +1093,7 @@ document.addEventListener("DOMContentLoaded", () => {
             window.renderMezzoFiles(mezzo);
             
             btnSalvaMezzo.textContent = "Aggiorna Mezzo";
+            window.applyFormPermissions();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 

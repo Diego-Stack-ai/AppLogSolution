@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.170">
+    <link rel="stylesheet" href="styles.css?v=6.171">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -337,25 +337,15 @@
                 <!-- Popolato da JS -->
             </div>
 
-            <!-- MODAL DETTAGLI MEZZO -->
-            <div class="modal-overlay" id="modalDettagliMezzo" style="display: none; align-items: center; justify-content: center; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 9999; padding: 20px;" onclick="if(event.target === this) chiudiModalDettagli()">
-                <div class="modal-content" style="background: white; border-radius: 24px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 32px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); position: relative; color: #1e293b;">
-                    <button type="button" onclick="chiudiModalDettagli()" style="position: absolute; top: 20px; right: 20px; border: none; background: transparent; cursor: pointer; color: #64748b;" title="Chiudi">
-                        <span class="material-icons-round" style="font-size: 24px;">close</span>
-                    </button>
-                    <div id="dettagliMezzoContent">
-                        <!-- Popolato dinamicamente da JS -->
-                    </div>
-                </div>
-            </div>
+
 
         </div>
 
     </div>
 </main>
 
-<script src="script.js?v=6.170"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.170"></script>
+<script src="script.js?v=6.171"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.171"></script>
 
 <script type="module">
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -1304,10 +1294,22 @@ document.addEventListener("DOMContentLoaded", () => {
                         ${htmlStorico}
                 `;
             }
-
             return detailsHtml;
         };
 });
         </script>
+
+    <!-- MODAL DETTAGLI MEZZO -->
+    <div class="modal-overlay" id="modalDettagliMezzo" style="display: none; align-items: center; justify-content: center; position: fixed; inset: 0; background: rgba(255, 255, 255, 0.45) !important; backdrop-filter: blur(18px) !important; -webkit-backdrop-filter: blur(18px) !important; z-index: 99999; padding: 20px;" onclick="if(event.target === this) chiudiModalDettagli()">
+        <div class="modal-content" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 24px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 32px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); position: relative; color: #0f172a;">
+            <button type="button" onclick="chiudiModalDettagli()" style="position: absolute; top: 20px; right: 20px; border: none; background: transparent; cursor: pointer; color: #475569;" title="Chiudi">
+                <span class="material-icons-round" style="font-size: 24px;">close</span>
+            </button>
+            <div id="dettagliMezzoContent">
+                <!-- Popolato dinamicamente da JS -->
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

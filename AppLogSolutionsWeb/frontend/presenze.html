@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=6.139">
+    <link rel="stylesheet" href="styles.css?v=6.140">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .navetta-details-row {
@@ -515,13 +515,13 @@ tr.weekend:hover
         </div>
     </main>
 
-    <script src="script.js?v=6.139"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.139"></script>
+    <script src="script.js?v=6.140"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.140"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=6.139";
+        import { calculateHours } from "./firestore-service.js?v=6.140";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
           window.db = getFirestore(app);
@@ -1245,10 +1245,12 @@ const db = getFirestore(app);
                             </select>
                         </td>
                         <td title="${rTarga.toUpperCase()}">
-                            <select class="edit-input" data-field="targa" title="${rTarga.toUpperCase()}" disabled>
+                            <select class="edit-input" data-field="targa" title="${rTarga.toUpperCase()}" disabled onchange="window.aggiornaDisponibilitaTarghePresenze('${dateStr}')">
                                 <option value="">-</option>
                                 ${rTarga ? `<option value="${rTarga.toUpperCase()}" selected>${rTarga.toUpperCase()}</option>` : ''}
-                                ${(window.appData?.lista_mezzi || []).map(m => {
+                                ${(window.appData?.lista_mezzi || [])
+                                    .filter(m => m.attivo !== false && (m.stato ? m.stato.toLowerCase() === 'attivo' : true))
+                                    .map(m => {
                                     const mStr = (m.targa || m.nome || "").toUpperCase();
                                     return `<option value="${mStr}" ${mStr === rTarga.toUpperCase() ? 'selected' : ''}>${mStr}</option>`;
                                 }).join('')}
@@ -1315,6 +1317,16 @@ const db = getFirestore(app);
             if (tfootSpazioOre) {
                 tfootSpazioOre.colSpan = forceFourCols ? 4 : 2;
             }
+            
+            // Alla fine del rendering di tutti gli autisti, applica le regole di univocità targhe
+            const allDateStrs = new Set();
+            document.querySelectorAll("#presenzeTable tbody tr[data-date]").forEach(tr => allDateStrs.add(tr.dataset.date));
+            allDateStrs.forEach(dateStr => {
+                if (typeof window.aggiornaDisponibilitaTarghePresenze === 'function') {
+                    window.aggiornaDisponibilitaTarghePresenze(dateStr);
+                }
+            });
+
             document.getElementById('totDeltaKm').innerText = totalDeltaKm.toFixed(2);
             document.getElementById('totOre').innerText = totalOre.toFixed(2);
             document.getElementById('totOrd').innerText = totalOrd.toFixed(2);
@@ -1434,6 +1446,42 @@ const db = getFirestore(app);
             }
             const tr = input.closest('tr');
             recalculateRowHours(tr);
+        };
+
+        // Gestione disponibilità targhe per giorno (univocità giornaliera)
+        window.aggiornaDisponibilitaTarghePresenze = function(dateStr) {
+            const table = document.getElementById('presenzeTable');
+            if (!table || !dateStr) return;
+            
+            const righeDelGiorno = table.querySelectorAll(`tbody tr[data-date="${dateStr}"]`);
+            const targheUsate = new Set();
+            
+            // 1. Raccogli targhe attualmente selezionate per questo giorno
+            righeDelGiorno.forEach(tr => {
+                const select = tr.querySelector('select[data-field="targa"]');
+                if (select && select.value && select.value.trim() !== '') {
+                    targheUsate.add(select.value.trim().toUpperCase());
+                }
+            });
+            
+            // 2. Disabilita opzioni già scelte (tranne per se stesso)
+            righeDelGiorno.forEach(tr => {
+                const select = tr.querySelector('select[data-field="targa"]');
+                if (select) {
+                    Array.from(select.options).forEach(opt => {
+                        if (!opt.value) return; // Salta opzione vuota
+                        
+                        // Se la targa è usata nel set ED non è quella attualmente scelta in questo select
+                        if (targheUsate.has(opt.value) && opt.value !== select.value) {
+                            opt.style.display = 'none';
+                            opt.disabled = true;
+                        } else {
+                            opt.style.display = '';
+                            opt.disabled = false;
+                        }
+                    });
+                }
+            });
         };
 
         function recalculateRowHours(tr) {
@@ -2477,7 +2525,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=6.139"></script>
+    <script type="module" src="cedolini-splitter.js?v=6.140"></script>
 
 </body>
 </html>

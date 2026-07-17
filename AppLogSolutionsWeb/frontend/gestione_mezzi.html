@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.167">
+    <link rel="stylesheet" href="styles.css?v=6.168">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -340,13 +340,26 @@
             <div id="listaMezzi" style="display: flex; flex-direction: column;">
                 <!-- Popolato da JS -->
             </div>
+
+            <!-- MODAL DETTAGLI MEZZO -->
+            <div class="modal-overlay" id="modalDettagliMezzo" style="display: none; align-items: center; justify-content: center; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 9999; padding: 20px;" onclick="if(event.target === this) chiudiModalDettagli()">
+                <div class="modal-content" style="background: white; border-radius: 24px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 32px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); position: relative; color: #1e293b;">
+                    <button type="button" onclick="chiudiModalDettagli()" style="position: absolute; top: 20px; right: 20px; border: none; background: transparent; cursor: pointer; color: #64748b;" title="Chiudi">
+                        <span class="material-icons-round" style="font-size: 24px;">close</span>
+                    </button>
+                    <div id="dettagliMezzoContent">
+                        <!-- Popolato dinamicamente da JS -->
+                    </div>
+                </div>
+            </div>
+
         </div>
 
     </div>
 </main>
 
-<script src="script.js?v=6.167"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.167"></script>
+<script src="script.js?v=6.168"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.168"></script>
 
 <script type="module">
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -619,98 +632,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         const patenteLabel = m.patente === 'C' ? '<span class="badge badge-yellow">CAT C</span>' : '<span class="badge badge-blue">CAT B</span>';
                         const statusBadge = (m.attivo === false || (m.stato && m.stato.toLowerCase() !== 'attivo')) ? '<span class="badge badge-gray">Non Attivo</span>' : '<span class="badge badge-green">Attivo</span>';
                         
-                        let htmlFiles = '<div style="font-size:13px; color:#64748b; margin-bottom:8px;">Nessun media presente.</div>';
-                        let hasDocs = false;
-                        let filesGrid = '<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap:12px;">';
-                        
-                        if (permMedia !== 'none') {
-                            if (m.fotoUrls && m.fotoUrls.length > 0) {
-                                hasDocs = true;
-                                m.fotoUrls.forEach(f => {
-                                    filesGrid += `<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="display:flex; flex-direction:column; align-items:center; padding:8px; background:rgba(255, 255, 255, 0.5); border:1px solid rgba(255, 255, 255, 0.4); border-radius:12px; text-decoration:none; color:#1e293b; font-size:11px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.03); transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-3px)';" onmouseout="this.style.transform='translateY(0)';">
-                                        <img src="${f.url}" alt="${f.name}" style="width:100%; height:80px; object-fit:cover; border-radius:6px; margin-bottom:6px;">
-                                        <span style="overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${f.name}</span>
-                                    </a>`;
-                                });
-                            }
-                            if (m.documentiUrls && m.documentiUrls.length > 0) {
-                                hasDocs = true;
-                                m.documentiUrls.forEach((f, fileIdx) => {
-                                    const isPdf = f.name.toLowerCase().endsWith('.pdf');
-                                    const uniqueId = `pdf-${idx}-${fileIdx}`;
-                                    let visualElement = `<div id="icon-${uniqueId}" style="width:100%; height:80px; display:flex; align-items:center; justify-content:center; background:rgba(241, 245, 249, 0.7); border-radius:6px; margin-bottom:6px;"><span class="material-icons-round" style="font-size:36px; color:${isPdf?'#ef4444':'#3b82f6'};">${isPdf?'picture_as_pdf':'description'}</span></div>`;
-                                    if (isPdf) visualElement += `<canvas id="canvas-${uniqueId}" class="pdf-thumbnail-canvas" style="display:none; width:100%; height:80px; object-fit:contain; border-radius:6px; margin-bottom:6px;" data-pdf-url="${f.url}" data-icon-id="icon-${uniqueId}"></canvas>`;
-
-                                    filesGrid += `<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px; background:rgba(255, 255, 255, 0.5); border:1px solid rgba(255, 255, 255, 0.4); border-radius:12px; text-decoration:none; color:#1e293b; font-size:11px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.03); transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-3px)';" onmouseout="this.style.transform='translateY(0)';">
-                                        ${visualElement}
-                                        <span style="overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${f.name}</span>
-                                    </a>`;
-                                });
-                            }
-                        }
-                        filesGrid += '</div>';
-                        if (hasDocs) htmlFiles = filesGrid;
-
-                        let htmlStorico = '<div style="font-size:13px; color:#64748b;">Nessuna manutenzione registrata.</div>';
-                        if (permManutenzioni !== 'none' && m.storico_manutenzioni && m.storico_manutenzioni.length > 0) {
-                            htmlStorico = `<table class="storico-table" style="background:white; border-radius:8px; overflow:hidden;">
-                                <thead><tr><th>Data</th><th>KM</th><th>Interventi</th></tr></thead><tbody>`;
-                            m.storico_manutenzioni.sort((a,b)=> new Date(b.data || 0) - new Date(a.data || 0)).forEach(s => {
-                                const info = [s.lavorazioni, s.freni, s.batteria, s.pneumatici].filter(x => x).join(' | ');
-                                htmlStorico += `<tr><td>${formattaData(s.data)}</td><td>${s.km || '-'}</td><td>${info}</td></tr>`;
-                            });
-                            htmlStorico += `</tbody></table>`;
-                        }
-
-                        let detailsHtml = `<div class="details-grid">`;
-                        
-                        if (permAnagrafica !== 'none') {
-                            detailsHtml += `
-                                    <div class="detail-item"><span class="detail-label">Targa</span><span class="detail-value">${m.targa || '-'}</span></div>
-                                    <div class="detail-item"><span class="detail-label">Modello</span><span class="detail-value">${m.modello || '-'}</span></div>
-                                    <div class="detail-item"><span class="detail-label">Proprietà</span><span class="detail-value">${m.proprietario || '-'}</span></div>
-                                    <div class="detail-item"><span class="detail-label">Tipologia</span><span class="detail-value">${m.tipologia || '-'}</span></div>
-                                    <div class="detail-item"><span class="detail-label">Patente</span><span class="detail-value">${m.patente === 'C' ? 'C (Camion)' : 'B (Furgone)'}</span></div>
-                                    <div class="detail-item"><span class="detail-label">Immatricolazione</span><span class="detail-value">${formattaData(m.immatricolazione)}</span></div>
-                                    <div class="detail-item"><span class="detail-label">Stato</span><span class="detail-value">${(m.attivo===false || (m.stato && m.stato.toLowerCase() !== 'attivo')) ? 'Inattivo' : 'Attivo'}</span></div>
-                            `;
-                        }
-                        
-                        if (permScadenze !== 'none') {
-                            detailsHtml += `
-                                    <div class="detail-item"><span class="detail-label">Compagnia Assic.</span><span class="detail-value">${m.assicurazione || '-'}</span></div>
-                                    <div class="detail-item"><span class="detail-label">Scad. Assicurazione</span><span class="detail-value">${formattaData(m.scadenza_assicurazione)}</span></div>
-                                    <div class="detail-item"><span class="detail-label">Scad. Revisione</span><span class="detail-value">${formattaData(m.scadenza_revisione)}</span></div>
-                                    <div class="detail-item"><span class="detail-label">Scad. ATP</span><span class="detail-value">${formattaData(m.scadenza_atp)}</span></div>
-                                    ${m.patente === 'C' ? `<div class="detail-item"><span class="detail-label">Scad. Tachigrafo</span><span class="detail-value">${formattaData(m.scadenza_tachigrafo)}</span></div>` : ''}
-                            `;
-                        }
-
-                        if (permCarburante !== 'none') {
-                            detailsHtml += `
-                                    <div class="detail-item"><span class="detail-label">Tessera Carburante</span><span class="detail-value">${m.tessera_carburante || '-'} (PIN: ${m.pin_tessera || '-'})</span></div>
-                                    <div class="detail-item" style="grid-column: span 2;"><span class="detail-label">Note</span><span class="detail-value" style="color:#ef4444;">${m.note || '-'}</span></div>
-                            `;
-                        }
-                        
-                        detailsHtml += `</div>`;
-                        
-                        if (permMedia !== 'none' || (permFornitore === 'read_docs' && permMedia === 'none')) {
-                            detailsHtml += htmlFiles;
-                        }
-                        
-                        if (permManutenzioni !== 'none') {
-                            detailsHtml += `
-                                    <h4 style="margin:20px 0 10px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
-                                        <span>Storico Manutenzioni</span>
-                                        ${permManutenzioni === 'write' ? `<button type="button" class="action-btn" style="padding:4px 8px; font-size:12px; color:var(--primary); border-color:var(--primary);" onclick="apriFormManutenzione(${idx})">
-                                            <span class="material-icons-round" style="font-size:14px; margin-right:4px;">build</span> Aggiungi Intervento
-                                        </button>` : ''}
-                                    </h4>
-                                    ${htmlStorico}
-                            `;
-                        }
-
+                        // Generazione dettagli spostata on-demand nel modal popup
                         const coverUrl = m.copertinaUrl || (m.fotoUrls && m.fotoUrls.length > 0 ? m.fotoUrls[0].url : null);
                         
                         if (viewMode === 'grid') {
@@ -801,9 +723,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                             <button onclick="editMezzo(${idx}); event.stopPropagation();" style="flex:1; padding:12px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:12px; color:white; font-weight:600; font-size:14px; cursor:pointer; display:flex; justify-content:center; align-items:center; gap:8px; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><span class="material-icons-round" style="font-size:18px;">edit</span> Modifica Mezzo</button>
                                         </div>
                                     </div>
-                                    <div id="mezzo-details-${idx}" style="display:none; padding:20px; background:rgba(255,255,255,0.05); border-top:1px solid rgba(255,255,255,0.1);">
-                                        ${detailsHtml}
-                                    </div>
                                 </div>
                             `;
                         } else {
@@ -835,9 +754,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <button onclick="editMezzo(${idx}); event.stopPropagation();" class="action-btn" title="Modifica"><span class="material-icons-round">edit</span></button>
                                         <button onclick="deleteMezzo(${idx}); event.stopPropagation();" class="action-btn delete-btn" title="Elimina"><span class="material-icons-round">delete</span></button>
                                     </div>
-                                </div>
-                                <div id="mezzo-details-${idx}" style="display:none; padding:20px; background:rgba(255,255,255,0.4);">
-                                    ${detailsHtml}
                                 </div>
                             `;
                         }
@@ -1102,6 +1018,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         window.editMezzo = function (idx) {
+            if (typeof chiudiModalDettagli === 'function') chiudiModalDettagli();
             if (editIndex !== -1 && editIndex !== idx) {
                 if (!confirm("Hai una targa in modifica. Vuoi abbandonarla per modificare questa?")) return;
             }
@@ -1235,15 +1152,175 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
         window.toggleDetails = function(idx) {
-            const el = document.getElementById('mezzo-details-' + idx);
-            if (!el) return;
-            if (el.style.display === 'none') {
-                el.style.display = 'block';
-                el.style.animation = 'fadeIn 0.3s ease-in-out';
-            } else {
-                el.style.display = 'none';
+            const mezzo = mezzi[idx];
+            if (!mezzo) return;
+            
+            const contentDiv = document.getElementById('dettagliMezzoContent');
+            if (!contentDiv) return;
+            
+            contentDiv.innerHTML = window.generaDettagliHtmlPerModal(mezzo, idx);
+            document.getElementById('modalDettagliMezzo').style.display = 'flex';
+            
+            // Inizializza i canvas PDF se presenti nel modal
+            setTimeout(() => {
+                if (typeof window.renderPDFThumbnails === 'function') {
+                    window.renderPDFThumbnails(idx);
+                }
+            }, 100);
+        };
+
+        window.chiudiModalDettagli = function() {
+            document.getElementById('modalDettagliMezzo').style.display = 'none';
+        };
+
+        window.apriFormManutenzionePerModal = function(idx) {
+            window.chiudiModalDettagli();
+            window.editMezzo(idx);
+            setTimeout(() => {
+                if (typeof window.apriFormManutenzione === 'function') {
+                    window.apriFormManutenzione();
+                }
+            }, 150);
+        };
+
+        window.generaDettagliHtmlPerModal = function(m, idx) {
+            const isFornitore = window.appData && window.appData.currentUser && window.appData.currentUser.ruolo === 'fornitore';
+            let permFornitoreRaw = window.appData && window.appData.permessiDashboard && window.appData.permessiDashboard['gestione_mezzi'] && window.appData.permessiDashboard['gestione_mezzi']['fornitore'] ? window.appData.permessiDashboard['gestione_mezzi']['fornitore'] : 'none';
+            let permFornitore = permFornitoreRaw;
+            let advModules = null;
+            if (typeof permFornitoreRaw === 'object' && permFornitoreRaw.access === 'advanced') {
+                permFornitore = 'advanced';
+                advModules = permFornitoreRaw.modules || {};
             }
-        }
+
+            const getModPerm = (modName) => {
+                if (!isFornitore) return 'write';
+                if (permFornitore === 'write') return 'write';
+                if (permFornitore === 'read' || permFornitore === 'read_docs') return 'read';
+                if (permFornitore === 'advanced' && advModules) return advModules[modName] || 'none';
+                return 'none';
+            };
+
+            const permAnagrafica = getModPerm('anagrafica');
+            const permScadenze = getModPerm('scadenze');
+            const permCarburante = getModPerm('carburante');
+            const permManutenzioni = getModPerm('manutenzioni');
+            const permMedia = getModPerm('media');
+
+            // Generazione dei file
+            let htmlFiles = '<div style="font-size:13px; color:#64748b; margin-bottom:8px;">Nessun media presente.</div>';
+            let hasDocs = false;
+            let filesGrid = '<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap:12px;">';
+            
+            if (permMedia !== 'none') {
+                if (m.fotoUrls && m.fotoUrls.length > 0) {
+                    hasDocs = true;
+                    m.fotoUrls.forEach(f => {
+                        filesGrid += `<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="display:flex; flex-direction:column; align-items:center; padding:8px; background:rgba(0, 0, 0, 0.03); border:1px solid #e2e8f0; border-radius:12px; text-decoration:none; color:#1e293b; font-size:11px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.02); transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-3px)';" onmouseout="this.style.transform='translateY(0)';">
+                            <img src="${f.url}" alt="${f.name}" style="width:100%; height:80px; object-fit:cover; border-radius:6px; margin-bottom:6px;">
+                            <span style="overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${f.name}</span>
+                        </a>`;
+                    });
+                }
+                if (m.documentiUrls && m.documentiUrls.length > 0) {
+                    hasDocs = true;
+                    m.documentiUrls.forEach((f, fileIdx) => {
+                        const isPdf = f.name.toLowerCase().endsWith('.pdf');
+                        const uniqueId = `pdf-${idx}-${fileIdx}`;
+                        let visualElement = `<div id="icon-${uniqueId}" style="width:100%; height:80px; display:flex; align-items:center; justify-content:center; background:rgba(241, 245, 249, 0.7); border-radius:6px; margin-bottom:6px;"><span class="material-icons-round" style="font-size:36px; color:${isPdf?'#ef4444':'#3b82f6'};">${isPdf?'picture_as_pdf':'description'}</span></div>`;
+                        if (isPdf) visualElement += `<canvas id="canvas-${uniqueId}" class="pdf-thumbnail-canvas" style="display:none; width:100%; height:80px; object-fit:contain; border-radius:6px; margin-bottom:6px;" data-pdf-url="${f.url}" data-icon-id="icon-${uniqueId}"></canvas>`;
+
+                        filesGrid += `<a href="${f.url}" target="_blank" onclick="event.stopPropagation();" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px; background:rgba(0, 0, 0, 0.03); border:1px solid #e2e8f0; border-radius:12px; text-decoration:none; color:#1e293b; font-size:11px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.02); transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-3px)';" onmouseout="this.style.transform='translateY(0)';">
+                            ${visualElement}
+                            <span style="overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${f.name}</span>
+                        </a>`;
+                    });
+                }
+            }
+            filesGrid += '</div>';
+            if (hasDocs) htmlFiles = filesGrid;
+
+            // Generazione storico manutenzioni
+            let htmlStorico = '<div style="font-size:13px; color:#64748b;">Nessuna manutenzione registrata.</div>';
+            if (permManutenzioni !== 'none' && m.storico_manutenzioni && m.storico_manutenzioni.length > 0) {
+                htmlStorico = `<table class="storico-table" style="background:white; border-radius:8px; overflow:hidden; width:100%;">
+                    <thead><tr><th>Data</th><th>KM</th><th>Interventi</th></tr></thead><tbody>`;
+                m.storico_manutenzioni.sort((a,b)=> new Date(b.data || 0) - new Date(a.data || 0)).forEach(s => {
+                    const info = [s.lavorazioni, s.freni, s.batteria, s.pneumatici].filter(x => x).join(' | ');
+                    htmlStorico += `<tr><td>${formattaData(s.data)}</td><td>${s.km || '-'}</td><td>${info}</td></tr>`;
+                });
+                htmlStorico += `</tbody></table>`;
+            }
+
+            // Intestazione modal con targa e modello
+            const title = m.modello ? `${m.targa} <span style="font-weight:400; color:#64748b; font-size:16px; margin-left:8px;">${m.modello}</span>` : m.targa;
+            const patenteLabel = m.patente === 'C' ? '<span class="badge badge-yellow">CAT C</span>' : '<span class="badge badge-blue">CAT B</span>';
+            const statusBadge = (m.attivo === false || (m.stato && m.stato.toLowerCase() !== 'attivo')) ? '<span class="badge badge-gray">Non Attivo</span>' : '<span class="badge badge-green">Attivo</span>';
+
+            let detailsHtml = `
+                <div style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+                    <div style="font-size: 24px; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <span>🚚 ${title}</span>
+                        ${statusBadge}
+                        ${patenteLabel}
+                    </div>
+                </div>
+                
+                <div class="details-grid" style="margin-bottom: 24px;">
+            `;
+            
+            if (permAnagrafica !== 'none') {
+                detailsHtml += `
+                        <div class="detail-item"><span class="detail-label">Targa</span><span class="detail-value">${m.targa || '-'}</span></div>
+                        <div class="detail-item"><span class="detail-label">Modello</span><span class="detail-value">${m.modello || '-'}</span></div>
+                        <div class="detail-item"><span class="detail-label">Proprietà</span><span class="detail-value">${m.proprietario || '-'}</span></div>
+                        <div class="detail-item"><span class="detail-label">Tipologia</span><span class="detail-value">${m.tipologia || '-'}</span></div>
+                        <div class="detail-item"><span class="detail-label">Patente</span><span class="detail-value">${m.patente === 'C' ? 'C (Camion)' : 'B (Furgone)'}</span></div>
+                        <div class="detail-item"><span class="detail-label">Immatricolazione</span><span class="detail-value">${formattaData(m.immatricolazione)}</span></div>
+                        <div class="detail-item"><span class="detail-label">Stato</span><span class="detail-value">${(m.attivo===false || (m.stato && m.stato.toLowerCase() !== 'attivo')) ? 'Inattivo' : 'Attivo'}</span></div>
+                `;
+            }
+            
+            if (permScadenze !== 'none') {
+                detailsHtml += `
+                        <div class="detail-item"><span class="detail-label">Compagnia Assic.</span><span class="detail-value">${m.assicurazione || '-'}</span></div>
+                        <div class="detail-item"><span class="detail-label">Scad. Assicurazione</span><span class="detail-value">${formattaData(m.scadenza_assicurazione)}</span></div>
+                        <div class="detail-item"><span class="detail-label">Scad. Revisione</span><span class="detail-value">${formattaData(m.scadenza_revisione)}</span></div>
+                        <div class="detail-item"><span class="detail-label">Scad. ATP</span><span class="detail-value">${formattaData(m.scadenza_atp)}</span></div>
+                        ${m.patente === 'C' ? `<div class="detail-item"><span class="detail-label">Scad. Tachigrafo</span><span class="detail-value">${formattaData(m.scadenza_tachigrafo)}</span></div>` : ''}
+                `;
+            }
+
+            if (permCarburante !== 'none') {
+                detailsHtml += `
+                        <div class="detail-item"><span class="detail-label">Tessera Carburante</span><span class="detail-value">${m.tessera_carburante || '-'} (PIN: ${m.pin_tessera || '-'})</span></div>
+                        <div class="detail-item" style="grid-column: span 2;"><span class="detail-label">Note</span><span class="detail-value" style="color:#ef4444;">${m.note || '-'}</span></div>
+                `;
+            }
+            
+            detailsHtml += `</div>`;
+            
+            if (permMedia !== 'none' || (permFornitore === 'read_docs' && permMedia === 'none')) {
+                detailsHtml += `
+                    <h4 style="margin:20px 0 10px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Media e Documenti</h4>
+                    ${htmlFiles}
+                `;
+            }
+            
+            if (permManutenzioni !== 'none') {
+                detailsHtml += `
+                        <h4 style="margin:20px 0 10px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+                            <span>Storico Manutenzioni</span>
+                            ${permManutenzioni === 'write' ? `<button type="button" class="action-btn" style="padding:4px 8px; font-size:12px; color:var(--primary); border-color:var(--primary);" onclick="apriFormManutenzionePerModal(${idx})">
+                                <span class="material-icons-round" style="font-size:14px; margin-right:4px;">build</span> Aggiungi Intervento
+                            </button>` : ''}
+                        </h4>
+                        ${htmlStorico}
+                `;
+            }
+
+            return detailsHtml;
+        };
         </script>
 </body>
 </html>

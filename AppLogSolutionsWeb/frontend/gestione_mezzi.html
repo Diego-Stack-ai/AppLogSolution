@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.174">
+    <link rel="stylesheet" href="styles.css?v=6.175">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -279,7 +279,7 @@
                     <div class="form-grid">
                         <div class="input-group"><label for="manutData">Data</label><input type="date" id="manutData"></div>
                         <div class="input-group"><label for="manutKm">KM</label><input type="text" id="manutKm"></div>
-                        <div class="input-group"><label for="manutLavorazioni">Lavorazioni</label><input type="text" id="manutLavorazioni"></div>
+                        <div class="input-group" style="grid-column: 1 / -1;"><label for="manutLavorazioni">Lavorazioni (Note Intervento)</label><textarea id="manutLavorazioni" style="width: 100%; min-height: 80px; max-height: 200px; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 13px; resize: vertical; overflow-y: auto; background: white;" placeholder="Descrivi qui l'intervento di manutenzione effettuato..."></textarea></div>
                         <div class="input-group"><label for="manutFreni">Freni</label><input type="text" id="manutFreni"></div>
                         <div class="input-group"><label for="manutBatteria">Batteria</label><input type="text" id="manutBatteria"></div>
                         <div class="input-group"><label for="manutPneumatici">Pneumatici</label><input type="text" id="manutPneumatici"></div>
@@ -344,8 +344,8 @@
     </div>
 </main>
 
-<script src="script.js?v=6.174"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.174"></script>
+<script src="script.js?v=6.175"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.175"></script>
 
 <script type="module">
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";

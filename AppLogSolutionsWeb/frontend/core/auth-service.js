@@ -153,6 +153,7 @@ onAuthStateChanged(auth, async (user) => {
                             const val = permessiData[pageKey][role];
                             if (val === 'write' || val === true) permLevel = 'write';
                             else if (val === 'read') permLevel = 'read';
+                            else if (typeof val === 'object' && val.access === 'advanced') permLevel = 'write';
                             else permLevel = 'none';
                         } else {
                             if (role === 'impiegata') {

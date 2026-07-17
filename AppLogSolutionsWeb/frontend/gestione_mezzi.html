@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.152">
+    <link rel="stylesheet" href="styles.css?v=6.153">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -330,8 +330,8 @@
     </div>
 </main>
 
-<script src="script.js?v=6.152"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.152"></script>
+<script src="script.js?v=6.153"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.153"></script>
 
 <script type="module">
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -478,6 +478,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.renderLista = function () {
             let currentMezzi = (window.appData && window.appData.lista_mezzi) ? window.appData.lista_mezzi : [];
             const isFornitore = window.appData && window.appData.currentUser && window.appData.currentUser.ruolo === 'fornitore';
+            const permFornitore = window.appData && window.appData.permessiDashboard && window.appData.permessiDashboard['mezzi'] && window.appData.permessiDashboard['mezzi']['fornitore'] ? window.appData.permessiDashboard['mezzi']['fornitore'] : 'none';
             
             // Nascondi pulsante aggiungi se fornitore
             const addBtn = document.querySelector('button[onclick="apriNuovoMezzo()"]');
@@ -494,17 +495,51 @@ document.addEventListener("DOMContentLoaded", () => {
             const listaDiv = document.getElementById('listaMezzi');
             listaDiv.innerHTML = '';
             
-            if (viewMode === 'grid') {
-                listaDiv.style.display = 'grid';
-                listaDiv.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))';
-                listaDiv.style.gap = '20px';
-            } else {
-                listaDiv.style.display = 'flex';
-                listaDiv.style.flexDirection = 'column';
-                listaDiv.style.gap = '0';
+            // Definisco le categorie
+            const categorie = [
+                { id: 'patenteB', titolo: 'Mezzi Patente B' },
+                { id: 'patenteC', titolo: 'Mezzi Patente C' },
+                { id: 'treAssi', titolo: 'Mezzi Tre Assi' },
+                { id: 'trattori', titolo: 'Trattori' },
+                { id: 'rimorchi', titolo: 'Semirimorchi o Rimorchi' },
+                { id: 'altri', titolo: 'Altri Mezzi' }
+            ];
+
+            function getCategoria(m) {
+                let tipo = (m.tipologia || '').toLowerCase();
+                if (tipo.includes('rimorchio') || tipo.includes('semi')) return 'rimorchi';
+                if (tipo.includes('trattore')) return 'trattori';
+                if (tipo.includes('tre assi') || tipo.includes('3 assi')) return 'treAssi';
+                if (m.patente === 'B') return 'patenteB';
+                if (m.patente === 'C') return 'patenteC';
+                return 'altri';
             }
-            
-            currentMezzi.sort((a,b) => a.targa.localeCompare(b.targa)).forEach((m, idx) => {
+
+            categorie.forEach(cat => {
+                let mezziInCat = currentMezzi.filter(m => getCategoria(m) === cat.id);
+                if (mezziInCat.length === 0) return;
+
+                mezziInCat.sort((a,b) => a.targa.localeCompare(b.targa));
+
+                const titleEl = document.createElement('h3');
+                titleEl.textContent = cat.titolo;
+                titleEl.style.cssText = 'color: var(--primary); margin: 32px 0 16px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; font-size: 18px; width: 100%;';
+                listaDiv.appendChild(titleEl);
+
+                const containerCat = document.createElement('div');
+                if (viewMode === 'grid') {
+                    containerCat.style.display = 'grid';
+                    containerCat.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))';
+                    containerCat.style.gap = '20px';
+                } else {
+                    containerCat.style.display = 'flex';
+                    containerCat.style.flexDirection = 'column';
+                    containerCat.style.gap = '0';
+                }
+                
+                mezziInCat.forEach(m => {
+                    const globalIdx = mezzi.indexOf(m);
+                    const idx = globalIdx; // alias per mantenere il codice sottostante invariato
                 const r = document.createElement('div');
                 r.className = 'mezzo-card';
                 if (viewMode === 'grid') {
@@ -564,22 +599,34 @@ document.addEventListener("DOMContentLoaded", () => {
                     htmlStorico += `</tbody></table>`;
                 }
 
-                let detailsHtml = `
+                    let detailsHtml = `
                         <div class="details-grid">
+                            <div class="detail-item"><span class="detail-label">Targa</span><span class="detail-value">${m.targa || '-'}</span></div>
+                            <div class="detail-item"><span class="detail-label">Modello</span><span class="detail-value">${m.modello || '-'}</span></div>
                             <div class="detail-item"><span class="detail-label">Proprietà</span><span class="detail-value">${m.proprietario || '-'}</span></div>
                             <div class="detail-item"><span class="detail-label">Tipologia</span><span class="detail-value">${m.tipologia || '-'}</span></div>
+                            <div class="detail-item"><span class="detail-label">Patente</span><span class="detail-value">${m.patente === 'C' ? 'C (Camion)' : 'B (Furgone)'}</span></div>
                             <div class="detail-item"><span class="detail-label">Immatricolazione</span><span class="detail-value">${formattaData(m.immatricolazione)}</span></div>
+                            <div class="detail-item"><span class="detail-label">Stato</span><span class="detail-value">${(m.attivo===false || (m.stato && m.stato.toLowerCase() !== 'attivo')) ? 'Inattivo' : 'Attivo'}</span></div>
                 `;
                 if (!isFornitore) {
                     detailsHtml += `
                             <div class="detail-item"><span class="detail-label">Compagnia Assic.</span><span class="detail-value">${m.assicurazione || '-'}</span></div>
+                            <div class="detail-item"><span class="detail-label">Scad. Assicurazione</span><span class="detail-value">${formattaData(m.scadenza_assicurazione)}</span></div>
+                            <div class="detail-item"><span class="detail-label">Scad. Revisione</span><span class="detail-value">${formattaData(m.scadenza_revisione)}</span></div>
+                            <div class="detail-item"><span class="detail-label">Scad. ATP</span><span class="detail-value">${formattaData(m.scadenza_atp)}</span></div>
+                            ${m.patente === 'C' ? `<div class="detail-item"><span class="detail-label">Scad. Tachigrafo</span><span class="detail-value">${formattaData(m.scadenza_tachigrafo)}</span></div>` : ''}
                             <div class="detail-item"><span class="detail-label">Tessera Carburante</span><span class="detail-value">${m.tessera_carburante || '-'} (PIN: ${m.pin_tessera || '-'})</span></div>
-                            <div class="detail-item"><span class="detail-label">Note</span><span class="detail-value" style="color:#ef4444;">${m.note || '-'}</span></div>
+                            <div class="detail-item" style="grid-column: span 2;"><span class="detail-label">Note</span><span class="detail-value" style="color:#ef4444;">${m.note || '-'}</span></div>
                     `;
                 }
                 detailsHtml += `
                         </div>
-                        ${htmlFiles}
+                `;
+                
+                if (!isFornitore || permFornitore === 'read_docs' || permFornitore === 'write') {
+                    detailsHtml += htmlFiles;
+                }
                         <h4 style="margin:20px 0 10px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
                             <span>Storico Manutenzioni</span>
                             <button type="button" class="action-btn" style="padding:4px 8px; font-size:12px; color:var(--primary); border-color:var(--primary);" onclick="apriFormManutenzione(${idx})">
@@ -716,7 +763,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                     `;
                 }
-                listaDiv.appendChild(r);
+                containerCat.appendChild(r);
+                });
+                listaDiv.appendChild(containerCat);
             });
         };
 

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.152">
+    <link rel="stylesheet" href="styles.css?v=6.153">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -232,9 +232,19 @@
             </div>
             </div>
 
-            <h3 class="section-title" style="margin-top: 24px;">Elenco Utenti Firestore</h3>
-            <div id="listaAutisti" style="display: flex; flex-direction: column; gap: 12px;">
-                <!-- Popolato da JS -->
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 300px;">
+                    <h3 class="section-title" style="margin-top: 24px; color: var(--primary);">Elenco Utenti (Dipendenti)</h3>
+                    <div id="listaDipendenti" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+                        <!-- Popolato da JS -->
+                    </div>
+                </div>
+                <div style="flex: 1; min-width: 300px;">
+                    <h3 class="section-title" style="margin-top: 24px; color: #10b981;">Elenco Fornitori</h3>
+                    <div id="listaFornitori" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+                        <!-- Popolato da JS -->
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -634,17 +644,18 @@
             
             <div style="overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-size: 14px;">
-                    <thead style="background: var(--bg-color); border-bottom: 2px solid #e2e8f0;">
+                    <thead style="background: var(--light-bg);">
                         <tr>
-                            <th style="padding: 12px; text-align: left; color: var(--text-muted); font-weight: 600;">Modulo / Card</th>
-                            <th style="padding: 12px; text-align: center; color: var(--text-muted); font-weight: 600;">Amministratore</th>
-                            <th style="padding: 12px; text-align: center; color: var(--text-muted); font-weight: 600;">Impiegata</th>
-                            <th style="padding: 12px; text-align: center; color: var(--text-muted); font-weight: 600;">Autista</th>
-                            <th style="padding: 12px; text-align: center; color: var(--text-muted); font-weight: 600;">Soel</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600; color: #475569;">Sezione / Scheda</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600; color: #475569;">Amministratore</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600; color: #475569;">Impiegata</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600; color: #475569;">Autista</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600; color: #475569;">Soel</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600; color: #475569;">Fornitore</th>
                         </tr>
                     </thead>
                     <tbody id="permessiTableBody">
-                        <tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--text-muted);">Caricamento moduli in corso...</td></tr>
+                        <tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--text-muted);">Caricamento moduli in corso...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -666,7 +677,10 @@
         const btnSalvaAutista = document.getElementById('btnSalvaAutista');
         const btnAnnullaAutista = document.getElementById('btnAnnullaAutista');
         const driverElevazione = document.getElementById('driverElevazione');
-        const listaAutistiDiv = document.getElementById('listaAutisti');
+
+        const listaDipendentiDiv = document.getElementById('listaDipendenti');
+        const listaFornitoriDiv = document.getElementById('listaFornitori');
+        const searchUtenti = document.getElementById('searchUtenti');
         const toggleAutistiBtn = document.getElementById('toggleAutistiBtn');
         const autistiContent = document.getElementById('autistiContent');
         const toggleAutistiIcon = document.getElementById('toggleAutistiIcon');
@@ -739,11 +753,17 @@
                 if (optAdmin) optAdmin.style.display = 'none';
             }
 
-            listaAutistiDiv.innerHTML = '';
+            listaDipendentiDiv.innerHTML = '';
+            listaFornitoriDiv.innerHTML = '';
+            
             if (currentAutisti.length === 0) {
-                listaAutistiDiv.innerHTML = '<p style="text-align:center; color:#64748b; font-size:14px;">Nessun utente registrato.</p>';
+                listaDipendentiDiv.innerHTML = '<p style="text-align:center; color:#64748b; font-size:14px;">Nessun utente registrato.</p>';
+                listaFornitoriDiv.innerHTML = '<p style="text-align:center; color:#64748b; font-size:14px;">Nessun fornitore registrato.</p>';
                 return;
             }
+
+            let countDipendenti = 0;
+            let countFornitori = 0;
 
             currentAutisti.forEach((a, idx) => {
                 // Filtro: Impiegata non vede gli Amministratori
@@ -865,9 +885,22 @@
                     }
                 });
 
-                listaAutistiDiv.appendChild(r);
+                if (a.ruolo === 'fornitore') {
+                    listaFornitoriDiv.appendChild(r);
+                    countFornitori++;
+                } else {
+                    listaDipendentiDiv.appendChild(r);
+                    countDipendenti++;
+                }
             });
-        }
+            
+            if (countDipendenti === 0) {
+                listaDipendentiDiv.innerHTML = '<p style="text-align:center; color:#64748b; font-size:14px;">Nessun dipendente trovato.</p>';
+            }
+            if (countFornitori === 0) {
+                listaFornitoriDiv.innerHTML = '<p style="text-align:center; color:#64748b; font-size:14px;">Nessun fornitore trovato.</p>';
+            }
+        };
 
         function gestisciAbilitazioneForm(targetUser) {
             const currentUser = window.appData.currentUser || {};
@@ -1252,8 +1285,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=6.152"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.152"></script>
+    <script src="script.js?v=6.153"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.153"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -2166,12 +2199,14 @@ const functions = getFunctions(app, "europe-west1");
                 const valImpiegata = getPermVal('impiegata', 'write');
                 const valAutista = getPermVal('autista', (mod.page === 'inserimento' || mod.page === 'presenze') ? 'write' : 'none');
                 const valSoel = getPermVal('soel', 'none');
+                const valFornitore = getPermVal('fornitore', 'none');
 
                 const createSelect = (role, val) => `
                     <select class="input-field perm-select" data-page="${mod.page}" data-role="${role}" style="padding: 4px 8px; font-size: 12px; height: auto;">
                         <option value="none" ${val === 'none' ? 'selected' : ''}>🚫 Nessun Accesso</option>
                         <option value="read" ${val === 'read' ? 'selected' : ''}>👁️ Solo Lettura</option>
                         <option value="write" ${val === 'write' ? 'selected' : ''}>✍️ Modifica</option>
+                        ${(mod.page === 'mezzi' && role === 'fornitore') ? `<option value="read_docs" ${val === 'read_docs' ? 'selected' : ''}>👁️ Lettura + Documenti</option>` : ''}
                     </select>
                 `;
 
@@ -2192,6 +2227,9 @@ const functions = getFunctions(app, "europe-west1");
                     </td>
                     <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0;">
                         ${createSelect('soel', valSoel)}
+                    </td>
+                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                        ${createSelect('fornitore', valFornitore)}
                     </td>
                 `;
                 permessiTableBody.appendChild(tr);

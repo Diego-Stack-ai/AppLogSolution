@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.160">
+    <link rel="stylesheet" href="styles.css?v=6.161">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -332,6 +332,10 @@
                 </div>
             </div>
 
+            <div id="debugPanel" style="display:none; padding:12px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; margin-bottom:20px; font-family:monospace; font-size:12px; color:#1e3a8a; line-height:1.5; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
+                <!-- Popolato da JS per diagnostica -->
+            </div>
+
             <div id="listaMezzi" style="display: flex; flex-direction: column;">
                 <!-- Popolato da JS -->
             </div>
@@ -340,8 +344,8 @@
     </div>
 </main>
 
-<script src="script.js?v=6.160"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.160"></script>
+<script src="script.js?v=6.161"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.161"></script>
 
 <script type="module">
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -524,6 +528,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const listaDiv = document.getElementById('listaMezzi');
             listaDiv.innerHTML = '';
+
+            const debugPanel = document.getElementById('debugPanel');
+            if (debugPanel) {
+                const isAdmin = window.appData && window.appData.currentUser && window.appData.currentUser.ruolo === 'amministratore';
+                debugPanel.style.display = isAdmin ? 'block' : 'none';
+                
+                let catCounts = {};
+                currentMezzi.forEach(m => {
+                    let c = getCategoria(m);
+                    catCounts[c] = (catCounts[c] || 0) + 1;
+                });
+                
+                debugPanel.innerHTML = `
+                    <strong>🔧 DIAGNOSTICA MEZZI (Visibile solo agli Admin):</strong><br>
+                    • Totale in appData: ${window.appData && window.appData.lista_mezzi ? window.appData.lista_mezzi.length : 0}<br>
+                    • Filtrati attivi/inattivi: ${currentMezzi.length}<br>
+                    • Categorie rilevate nel browser: ${JSON.stringify(catCounts)}<br>
+                    • Ruolo utente: ${window.appData && window.appData.currentUser ? window.appData.currentUser.ruolo : 'non definito'}<br>
+                    • View mode: ${viewMode}<br>
+                    <div id="debugErrors" style="margin-top:8px; border-top:1px solid #fca5a5; padding-top:4px; display:none; color:#ef4444;"></div>
+                `;
+            }
             
             // Definisco le categorie
             const categorie = [
@@ -812,6 +838,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         containerCat.appendChild(r);
                     } catch (e) {
                         console.error('Errore durante il rendering del mezzo:', e);
+                        const errDiv = document.getElementById('debugErrors');
+                        if (errDiv) {
+                            errDiv.style.display = 'block';
+                            errDiv.innerHTML += `⚠️ Errore rendering ${m.targa || 'targa N/D'}: ${e.message}<br>`;
+                        }
                     }
                 });
                 listaDiv.appendChild(containerCat);

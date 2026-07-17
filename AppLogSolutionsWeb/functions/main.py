@@ -2926,9 +2926,13 @@ def core_genera_report_giornaliero(uid, data_consegna):
         if not stops: stops = old_z.get("stops", [])
         
         for stop in stops:
-            cz = stop.get("cliente_zona", "")
-            stop_tenant = get_tenant_from_cz(cz)
-            if stop_tenant in tenant_con_ddt:
+            stop_comp = stop.get("competenze", [])
+            if stop_comp:
+                stop_tenants = [get_tenant_from_cz(comp) for comp in stop_comp]
+            else:
+                stop_tenants = [get_tenant_from_cz(old_z.get("cliente_zona", ""))]
+                
+            if any(t in tenant_con_ddt for t in stop_tenants):
                 da_scartare = True
                 break
                 
@@ -3091,6 +3095,17 @@ def _genera_kml_zone(data, zone_list):
     kml.append('</Document></kml>')
     return "\n".join(kml)
 
+def _safe_float(val):
+    try:
+        if val is None:
+            return None
+        s = str(val).strip().replace(",", ".")
+        if not s:
+            return None
+        return float(s)
+    except (ValueError, TypeError):
+        return None
+
 def _genera_html_mappa_generale(data, zone_list):
     """Template della mappa generale con selettore a tendina per il giro"""
     zone_json = json.dumps(zone_list)
@@ -3101,7 +3116,7 @@ def _genera_html_mappa_generale(data, zone_list):
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>Mappa Zone - {data}</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://maps.googleapis.com/maps/api/js?key={GOOGLE_MAPS_API_KEY}&libraries=marker"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={GOOGLE_MAPS_API_KEY}&libraries=marker,geometry"></script>
     <style>
         * {{ box-sizing: border-box; margin: 0; padding: 0; }}
         body {{ font-family: 'Outfit', sans-serif; display: flex; height: 100vh; overflow: hidden; background: #f8fafc; }}
@@ -3140,14 +3155,14 @@ def _genera_html_mappa_generale(data, zone_list):
     <script>
         const ZONE = {zone_json};
         let map;
-        // Struttura: [{{ zone, markers: [] }}]
+        // Struttura: [{{ zone, markers: [], polylines: [] }}]
         let zoneData = [];
         let selectedIdx = null;
 
         function initMap() {{
             map = new google.maps.Map(document.getElementById("map"), {{
                 center: {{ lat: 45.44, lng: 11.71 }}, zoom: 9,
-                mapTypeControl: false,
+                mapTypeControl: true,
                 streetViewControl: false,
                 fullscreenControl: true
             }});
@@ -3198,13 +3213,27 @@ def _genera_html_mappa_generale(data, zone_list):
                         let isParziale = p.rientri_alert && Array.isArray(p.rientri_alert) && p.rientri_alert.some(r => r.is_parziale);
                         const fillColor = isParziale ? "#f59e0b" : z.color;
                         const strokeColor = isParziale ? "#000" : "white";
-                        const scale = isParziale ? 10 : 8;
+                        const strokeWeight = isParziale ? 3 : 2;
+                        const labelColor = isParziale ? "#000" : "white";
 
                         const marker = new google.maps.Marker({{
                             position: {{ lat: p.lat, lng: p.lon }},
                             map: map,
                             title: p.nome,
-                            icon: {{ path: google.maps.SymbolPath.CIRCLE, scale, fillColor, fillOpacity: 1, strokeWeight: isParziale ? 3 : 2, strokeColor }}
+                            icon: {{ 
+                                path: google.maps.SymbolPath.CIRCLE, 
+                                scale: isParziale ? 13 : 11, 
+                                fillColor: fillColor, 
+                                fillOpacity: 1, 
+                                strokeWeight: strokeWeight, 
+                                strokeColor: strokeColor 
+                            }},
+                            label: {{
+                                text: String(i + 1),
+                                color: labelColor,
+                                fontWeight: "bold",
+                                fontSize: "11px"
+                            }}
                         }});
 
                         const iw = new google.maps.InfoWindow({{
@@ -3221,12 +3250,33 @@ def _genera_html_mappa_generale(data, zone_list):
                     }}
                 }});
 
+                // Costruisci polylines
+                let polylines = [];
+                if (z._polylines && Array.isArray(z._polylines)) {{
+                    z._polylines.forEach(enc => {{
+                        try {{
+                            const path = google.maps.geometry.encoding.decodePath(enc);
+                            const poly = new google.maps.Polyline({{
+                                path: path,
+                                geodesic: true,
+                                strokeColor: z.color || "#4f46e5",
+                                strokeOpacity: 0.8,
+                                strokeWeight: 4,
+                                map: map
+                            }});
+                            polylines.push(poly);
+                        }} catch (e_poly) {{
+                            console.error("Errore decodifica polyline:", e_poly);
+                        }}
+                    }});
+                }}
+
                 card.appendChild(ptContainer);
                 list.appendChild(card);
-                zoneData.push({{ zone: z, markers, card, ptContainer }});
+                zoneData.push({{ zone: z, markers, polylines, card, ptContainer }});
 
                 // Click sul titolo per espandere lista punti
-                header.querySelector("span:first-child + span").onclick = (e) => {{
+                header.querySelector("span").onclick = (e) => {{
                     e.stopPropagation();
                     document.getElementById("giroSelector").value = idx;
                     selezionaGiro(idx);
@@ -3242,6 +3292,7 @@ def _genera_html_mappa_generale(data, zone_list):
             zoneData.forEach((zd, i) => {{
                 const show = all || i === idx;
                 zd.markers.forEach(m => m.setMap(show ? map : null));
+                zd.polylines.forEach(p => p.setMap(show ? map : null));
                 zd.card.classList.toggle("active", i === idx);
                 const ptsEl = document.getElementById(`pts-${{i}}`);
                 const expandEl = document.getElementById(`expand-${{i}}`);
@@ -4393,9 +4444,10 @@ def core_genera_completo_giornata(data_consegna):
             {
                 "nome_giro": z.get("nome_giro", z.get("id_zona", "?")),
                 "color": z.get("color", "#4f46e5"),
+                "_polylines": z.get("_polylines", []),
                 "lista_punti": [
-                    {**p, "lat": float(p["lat"]), "lon": float(p.get("lon", p.get("lng", 0)))}
-                    for p in z.get("lista_punti", []) if p.get("lat")
+                    {**p, "lat": _safe_float(p.get("lat")), "lon": _safe_float(p.get("lon", p.get("lng", 0)))}
+                    for p in z.get("lista_punti", []) if _safe_float(p.get("lat")) is not None
                 ]
             }
             for z in zone_list if z.get("id_zona") not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA")
@@ -4854,8 +4906,12 @@ def preflight_elaborazione_mappe(req: https_fn.CallableRequest):
                     # Quali tenant sono presenti in questo viaggio?
                     tenants_in_trip = set()
                     for stop in stops:
-                        cz = stop.get("cliente_zona", "")
-                        tenants_in_trip.add(get_tenant_from_cz(cz))
+                        stop_comp = stop.get("competenze", [])
+                        if stop_comp:
+                            for comp in stop_comp:
+                                tenants_in_trip.add(get_tenant_from_cz(comp))
+                        else:
+                            tenants_in_trip.add(get_tenant_from_cz(zona.get("cliente_zona", "")))
                         
                     for t in tenants_in_trip:
                         if t in elaborati_esistenti:
@@ -5566,14 +5622,16 @@ def genera_riepiloghi_aziendali_light(req: https_fn.CallableRequest) -> typing.A
             if not url_light:
                 continue
                 
-            if v_data.get("is_cattel"):
+            cz = (v_data.get("cliente_zona") or "").upper().strip()
+            
+            if v_data.get("is_cattel") or cz == "CATTEL":
                 gruppi["CATTEL"].append(url_light)
-            elif v_data.get("is_gc"):
+            elif v_data.get("is_gc") or cz in ("GRAN CHEF", "GRAN_CHEF", "GRANCHEF"):
                 gruppi["GRANCHEF"].append(url_light)
-            elif v_data.get("is_bauer"):
+            elif v_data.get("is_bauer") or cz == "BAUER":
                 gruppi["BAUER"].append(url_light)
             else:
-                # Se non ha flag specifici, è DNR / Progetto Scuole
+                # Progetto Scuole / DNR
                 gruppi["DNR"].append(url_light)
                 
         risultati_urls = {}

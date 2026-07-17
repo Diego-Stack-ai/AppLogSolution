@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.159">
+    <link rel="stylesheet" href="styles.css?v=6.160">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -1307,8 +1307,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=6.159"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.159"></script>
+    <script src="script.js?v=6.160"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.160"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -2228,13 +2228,16 @@ const functions = getFunctions(app, "europe-west1");
                     let extraOptions = '';
                     let onChange = '';
                     let extraBtn = '';
+                    let hideWrite = false;
 
                     if (mod.page === 'gestione_mezzi' && role === 'fornitore') {
-                        extraOptions = `<option value="advanced" ${val === 'advanced' ? 'selected' : ''}>⚙️ Personalizzati (Moduli)</option>`;
+                        if (val === 'write') { val = 'advanced'; } // Se aveva vecchio write, passa ad advanced
+                        extraOptions = `<option value="advanced" ${val === 'advanced' ? 'selected' : ''}>✍️ Modifica (Scegli Moduli)</option>`;
                         onChange = `onchange="handlePermSelectChange(this)"`;
                         extraBtn = `<button type="button" class="config-btn" onclick="apriModalModuli(this)" style="display: ${val === 'advanced' ? 'inline-flex' : 'none'}; padding: 4px; margin-left: 4px; background: #e0e7ff; color: #4f46e5; border: 1px solid #c7d2fe; border-radius: 6px; cursor: pointer; align-items: center;" title="Configura Moduli">
                                         <span class="material-icons-round" style="font-size: 14px;">settings</span>
                                     </button>`;
+                        hideWrite = true;
                     }
 
                     return `
@@ -2242,7 +2245,7 @@ const functions = getFunctions(app, "europe-west1");
                             <select class="input-field perm-select" data-page="${mod.page}" data-role="${role}" data-modules='${advData}' style="padding: 4px 8px; font-size: 12px; height: auto; min-width: 140px;" ${onChange}>
                                 <option value="none" ${val === 'none' ? 'selected' : ''}>🚫 Nessun Accesso</option>
                                 <option value="read" ${val === 'read' ? 'selected' : ''}>👁️ Solo Lettura</option>
-                                <option value="write" ${val === 'write' ? 'selected' : ''}>✍️ Modifica Globale</option>
+                                ${hideWrite ? '' : `<option value="write" ${val === 'write' ? 'selected' : ''}>✍️ Modifica</option>`}
                                 ${extraOptions}
                             </select>
                             ${extraBtn}

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.165">
+    <link rel="stylesheet" href="styles.css?v=6.167">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -345,8 +345,8 @@
     </div>
 </main>
 
-<script src="script.js?v=6.165"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.165"></script>
+<script src="script.js?v=6.167"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.167"></script>
 
 <script type="module">
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -801,6 +801,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                             <button onclick="editMezzo(${idx}); event.stopPropagation();" style="flex:1; padding:12px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:12px; color:white; font-weight:600; font-size:14px; cursor:pointer; display:flex; justify-content:center; align-items:center; gap:8px; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><span class="material-icons-round" style="font-size:18px;">edit</span> Modifica Mezzo</button>
                                         </div>
                                     </div>
+                                    <div id="mezzo-details-${idx}" style="display:none; padding:20px; background:rgba(255,255,255,0.05); border-top:1px solid rgba(255,255,255,0.1);">
+                                        ${detailsHtml}
+                                    </div>
                                 </div>
                             `;
                         } else {
@@ -1231,7 +1234,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (typeof window.renderLista === "function") window.renderLista();
 });
 
-        function toggleDetails(idx) {
+        window.toggleDetails = function(idx) {
             const el = document.getElementById('mezzo-details-' + idx);
             if (!el) return;
             if (el.style.display === 'none') {

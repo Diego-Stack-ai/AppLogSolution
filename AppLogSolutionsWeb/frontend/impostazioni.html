@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.147">
+    <link rel="stylesheet" href="styles.css?v=6.148">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -89,8 +89,8 @@
 
         <div id="autistiContent" style="display: none; padding-top: 20px;">
             <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-                <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="const f = document.getElementById('formAutistiContainer'); if(f.style.display==='none') { document.getElementById('btnAnnullaAutista').onclick(); f.style.display='block'; document.getElementById('driverRuoloInput').value='autista'; document.getElementById('driverRuoloInput').dispatchEvent(new Event('change')); } else { f.style.display='none'; }"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">person_add</span>Aggiungi Nuovo Dipendente</button>
-                <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px; background-color: #475569;" onclick="const f = document.getElementById('formAutistiContainer'); if(f.style.display==='none') { document.getElementById('btnAnnullaAutista').onclick(); f.style.display='block'; document.getElementById('driverRuoloInput').value='fornitore'; document.getElementById('driverRuoloInput').dispatchEvent(new Event('change')); } else { f.style.display='none'; }"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">storefront</span>Aggiungi Nuovo Fornitore</button>
+                <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="document.getElementById('btnAnnullaAutista').onclick(); const f = document.getElementById('formAutistiContainer'); f.style.display='block'; document.getElementById('driverRuoloInput').value='autista'; document.getElementById('driverRuoloInput').dispatchEvent(new Event('change'));"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">person_add</span>Aggiungi Nuovo Dipendente</button>
+                <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px; background-color: #475569;" onclick="document.getElementById('btnAnnullaAutista').onclick(); const f = document.getElementById('formAutistiContainer'); f.style.display='block'; document.getElementById('driverRuoloInput').value='fornitore'; document.getElementById('driverRuoloInput').dispatchEvent(new Event('change'));"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">storefront</span>Aggiungi Nuovo Fornitore</button>
             </div>
             <div id="formAutistiContainer" style="display: none; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:24px;">
             <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
@@ -1241,8 +1241,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=6.147"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.147"></script>
+    <script src="script.js?v=6.148"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.148"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────

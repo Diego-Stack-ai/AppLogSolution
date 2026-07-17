@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.161">
+    <link rel="stylesheet" href="styles.css?v=6.162">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -171,7 +171,7 @@
                             <input type="text" id="targaInput" placeholder="es. AA000BB" style="text-transform: uppercase;">
                         </div>
                         <div class="input-group" style="display:flex; flex-direction:column; justify-content:center;">
-                            <label>Stato Operativo</label>
+                            <label for="attivoInput">Stato Operativo</label>
                             <div style="display:flex; align-items:center; gap:8px; height:100%;">
                                 <input type="checkbox" id="attivoInput" checked style="width:20px; height:20px; accent-color:var(--primary);">
                                 <span style="font-weight:500;">Mezzo Attivo (visibile in Pianificazione)</span>
@@ -277,12 +277,12 @@
                 <div id="formManutenzioneContainer" style="display:none; background:#f1f5f9; padding:16px; border-radius:12px; margin-bottom:16px; border:1px dashed #cbd5e1;">
                     <h5 id="manutenzioneTitle" style="margin-top:0; margin-bottom:12px;">Nuovo Intervento</h5>
                     <div class="form-grid">
-                        <div class="input-group"><label>Data</label><input type="date" id="manutData"></div>
-                        <div class="input-group"><label>KM</label><input type="text" id="manutKm"></div>
-                        <div class="input-group"><label>Lavorazioni</label><input type="text" id="manutLavorazioni"></div>
-                        <div class="input-group"><label>Freni</label><input type="text" id="manutFreni"></div>
-                        <div class="input-group"><label>Batteria</label><input type="text" id="manutBatteria"></div>
-                        <div class="input-group"><label>Pneumatici</label><input type="text" id="manutPneumatici"></div>
+                        <div class="input-group"><label for="manutData">Data</label><input type="date" id="manutData"></div>
+                        <div class="input-group"><label for="manutKm">KM</label><input type="text" id="manutKm"></div>
+                        <div class="input-group"><label for="manutLavorazioni">Lavorazioni</label><input type="text" id="manutLavorazioni"></div>
+                        <div class="input-group"><label for="manutFreni">Freni</label><input type="text" id="manutFreni"></div>
+                        <div class="input-group"><label for="manutBatteria">Batteria</label><input type="text" id="manutBatteria"></div>
+                        <div class="input-group"><label for="manutPneumatici">Pneumatici</label><input type="text" id="manutPneumatici"></div>
                     </div>
                     <div style="margin-top:12px; display:flex; gap:8px;">
                         <button type="button" class="btn-primary" style="padding:8px 16px; height:auto; font-size:13px;" onclick="salvaManutenzione()">Salva Intervento</button>
@@ -297,7 +297,7 @@
                     <h4 style="margin:20px 0 10px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Media e Documenti</h4>
                     <div style="margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;" id="sec-media">
                     <div style="background: white; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                        <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 12px; display: block;">📷 Foto Camion / Furgone</label>
+                        <label for="fotoMezzoInput" style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 12px; display: block;">📷 Foto Camion / Furgone</label>
                         <div style="position: relative; width: 100%; margin-bottom: 12px;">
                             <input type="file" id="fotoMezzoInput" multiple accept="image/*" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0;  z-index: 2;">
                             <div style="display: flex; align-items: center; justify-content: center; gap: 8px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px; color: #64748b; font-size: 13px; transition: all 0.2s ease;"
@@ -311,7 +311,7 @@
                     </div>
                     
                     <div style="background: white; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                        <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 12px; display: block;">📄 Documenti (Libretto, Assicurazione...)</label>
+                        <label for="documentiMezzoInput" style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 12px; display: block;">📄 Documenti (Libretto, Assicurazione...)</label>
                         <div style="position: relative; width: 100%; margin-bottom: 12px;">
                             <input type="file" id="documentiMezzoInput" multiple accept=".pdf,image/*" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0;  z-index: 2;">
                             <div style="display: flex; align-items: center; justify-content: center; gap: 8px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px; color: #64748b; font-size: 13px; transition: all 0.2s ease;"
@@ -344,8 +344,8 @@
     </div>
 </main>
 
-<script src="script.js?v=6.161"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.161"></script>
+<script src="script.js?v=6.162"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.162"></script>
 
 <script type="module">
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";

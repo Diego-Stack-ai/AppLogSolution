@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.188">
+    <link rel="stylesheet" href="styles.css?v=6.189">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -252,7 +252,14 @@
 
             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 300px;">
-                    <h3 class="section-title" style="margin-top: 24px; color: var(--primary);">Elenco Utenti (Dipendenti)</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; margin-bottom: 12px; flex-wrap: wrap; gap: 12px;">
+                        <h3 class="section-title" style="margin: 0; color: var(--primary);">Elenco Utenti (Dipendenti)</h3>
+                        <select id="filtroStatoDipendenti" class="form-input" style="width: auto; max-width: 250px; padding: 6px 12px; margin: 0; height: auto;" onchange="window.renderAutisti()">
+                            <option value="tutti">Tutti (In Forza + Licenziati)</option>
+                            <option value="in_forza">Solo In Forza</option>
+                            <option value="licenziati">Solo Licenziati</option>
+                        </select>
+                    </div>
                     <div id="listaDipendenti" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
                         <!-- Popolato da JS -->
                     </div>
@@ -802,10 +809,55 @@
                 return;
             }
 
+            const filtroStato = document.getElementById('filtroStatoDipendenti') ? document.getElementById('filtroStatoDipendenti').value : 'tutti';
+
+            let dipendenti = [];
+            let fornitori = [];
+            currentAutisti.forEach((a, indexInOriginal) => {
+                a._originalIdx = indexInOriginal;
+                if (a.ruolo === 'fornitore') {
+                    fornitori.push(a);
+                } else {
+                    dipendenti.push(a);
+                }
+            });
+
+            let inForza = [];
+            let licenziati = [];
+            dipendenti.forEach(a => {
+                const isLicenziato = (a.data_licenziamento && a.data_licenziamento.trim() !== '') || a.attivo === false;
+                if (isLicenziato) {
+                    licenziati.push(a);
+                } else {
+                    inForza.push(a);
+                }
+            });
+
+            const sortAlfabetico = (x, y) => {
+                const nomeX = `${x.nome || ''} ${x.cognome || ''}`.toUpperCase().trim();
+                const nomeY = `${y.nome || ''} ${y.cognome || ''}`.toUpperCase().trim();
+                return nomeX.localeCompare(nomeY);
+            };
+            inForza.sort(sortAlfabetico);
+            licenziati.sort(sortAlfabetico);
+            fornitori.sort(sortAlfabetico);
+
+            let dipendentiDaMostrare = [];
+            if (filtroStato === 'in_forza') {
+                dipendentiDaMostrare = inForza;
+            } else if (filtroStato === 'licenziati') {
+                dipendentiDaMostrare = licenziati;
+            } else {
+                dipendentiDaMostrare = inForza.concat(licenziati);
+            }
+
+            let listaCompleta = dipendentiDaMostrare.concat(fornitori);
+
             let countDipendenti = 0;
             let countFornitori = 0;
 
-            currentAutisti.forEach((a, idx) => {
+            listaCompleta.forEach((a) => {
+                const idx = a._originalIdx;
                 // Filtro: Impiegata non vede gli Amministratori
                 if (isImpiegata && a.ruolo === 'amministratore') return;
 
@@ -1357,8 +1409,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=6.188"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.188"></script>
+    <script src="script.js?v=6.189"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.189"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────

@@ -76,7 +76,9 @@ function startRealtimeSync(isAdmin) {
     const unsubMezzi = onSnapshot(collection(db, "mezzi"), (snapshot) => {
         const mezzi = [];
         snapshot.forEach((d) => {
-            mezzi.push({ id: d.id, ...d.data() });
+            if (!d.id.startsWith('_')) {
+                mezzi.push({ id: d.id, ...d.data() });
+            }
         });
         window.appData.lista_mezzi = mezzi;
         if (typeof window.renderLista === 'function') window.renderLista();

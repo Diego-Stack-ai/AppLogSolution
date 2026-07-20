@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.179">
+    <link rel="stylesheet" href="styles.css?v=6.180">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -387,11 +387,11 @@
     </div>
 </main>
 
-<script src="script.js?v=6.179"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.179"></script>
+<script src="script.js?v=6.180"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.180"></script>
 
 <script type="module">
-    import { getFirestore, doc, setDoc, collection, onSnapshot, query, orderBy, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getStorage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
     import { firebaseConfig } from "./firebase-config.js";
@@ -405,55 +405,82 @@
     window.appData = window.appData || {};
     window.appData.lista_tipologie_mezzi = [];
 
-    const tipologieCol = collection(db, "tipologie_mezzi");
-    const qTipologie = query(tipologieCol, orderBy("nome"));
-
-    onSnapshot(qTipologie, (snapshot) => {
-        const list = [];
-        snapshot.forEach(d => {
-            list.push({ id: d.id, ...d.data() });
-        });
-        window.appData.lista_tipologie_mezzi = list;
-        
-        // Popola la tendina del form
-        popolaTendinaTipologie(list);
-        
-        // Se il modale è aperto, aggiorna la lista nel modale
-        const mod = document.getElementById('modalTipologie');
-        if (mod && mod.style.display === 'flex') {
-            renderListaTipologieModale(list);
-        }
-    });
-
-    function popolaTendinaTipologie(list) {
-        const select = document.getElementById('tipologiaInput');
-        if (!select) return;
-        
-        const currentVal = select.value;
-        select.innerHTML = '<option value="">-- Seleziona Tipologia --</option>';
-        list.forEach(t => {
-            const opt = document.createElement('option');
-            opt.value = t.nome;
-            opt.textContent = t.nome;
-            select.appendChild(opt);
-        });
-        
-        if (currentVal && !list.some(t => t.nome === currentVal)) {
-            const opt = document.createElement('option');
-            opt.value = currentVal;
-            opt.textContent = currentVal + " (Non più attiva)";
-            select.appendChild(opt);
-        }
-        select.value = currentVal;
-    }
-
+    // Definiamo subito le funzioni globali su window per prevenire errori di caricamento asincrono
     window.apriGestioneTipologie = function() {
-        document.getElementById('modalTipologie').style.display = 'flex';
+        const mod = document.getElementById('modalTipologie');
+        if (mod) mod.style.display = 'flex';
         renderListaTipologieModale(window.appData.lista_tipologie_mezzi);
     };
 
     window.chiudiGestioneTipologie = function() {
-        document.getElementById('modalTipologie').style.display = 'none';
+        const mod = document.getElementById('modalTipologie');
+        if (mod) mod.style.display = 'none';
+    };
+
+    window.aggiungiTipologia = async function() {
+        const input = document.getElementById('nuovaTipologiaInput');
+        if (!input) return;
+        const nome = input.value.trim();
+        if (!nome) return alert("Inserire un nome per la tipologia.");
+        
+        const duplicato = window.appData.lista_tipologie_mezzi.some(t => t.nome.toLowerCase() === nome.toLowerCase());
+        if (duplicato) return alert("Questa tipologia esiste già.");
+        
+        const nuoveTipologie = [...window.appData.lista_tipologie_mezzi, { id: Date.now().toString(), nome: nome }];
+        try {
+            await setDoc(doc(db, "mezzi", "_tipologie"), { valori: nuoveTipologie }, { merge: true });
+            input.value = '';
+        } catch (e) {
+            console.error("Errore aggiunta tipologia:", e);
+            alert("Errore durante l'inserimento: " + e.message);
+        }
+    };
+
+    window.eliminaTipologia = async function(id, nome) {
+        const mezziList = (window.appData && window.appData.lista_mezzi) ? window.appData.lista_mezzi : [];
+        const mezziConTipo = mezziList.filter(m => (m.tipologia || '').toLowerCase().trim() === nome.toLowerCase().trim());
+        
+        if (mezziConTipo.length > 0) {
+            const targhe = mezziConTipo.map(m => m.targa).join(', ');
+            alert(`Impossibile eliminare la tipologia "${nome}" perché è attualmente utilizzata dai seguenti mezzi: ${targhe}`);
+            return;
+        }
+
+        if (!confirm(`Sei sicuro di voler eliminare la tipologia "${nome}"?`)) return;
+
+        const nuoveTipologie = window.appData.lista_tipologie_mezzi.filter(t => t.id !== id);
+        try {
+            await setDoc(doc(db, "mezzi", "_tipologie"), { valori: nuoveTipologie }, { merge: true });
+        } catch (e) {
+            console.error("Errore eliminazione tipologia:", e);
+            alert("Errore durante l'eliminazione: " + e.message);
+        }
+    };
+
+    window.modificaTipologia = async function(id, vecchioNome) {
+        const mezziList = (window.appData && window.appData.lista_mezzi) ? window.appData.lista_mezzi : [];
+        const mezziConTipo = mezziList.filter(m => (m.tipologia || '').toLowerCase().trim() === vecchioNome.toLowerCase().trim());
+        
+        if (mezziConTipo.length > 0) {
+            const targhe = mezziConTipo.map(m => m.targa).join(', ');
+            alert(`Impossibile modificare la tipologia "${vecchioNome}" perché è attualmente utilizzata dai seguenti mezzi: ${targhe}`);
+            return;
+        }
+
+        const nuovoNome = prompt(`Rinomina la tipologia "${vecchioNome}" in:`, vecchioNome);
+        if (!nuovoNome || nuovoNome.trim() === vecchioNome) return;
+        
+        const nomeTrim = nuovoNome.trim();
+        const duplicato = window.appData.lista_tipologie_mezzi.some(t => t.nome.toLowerCase() === nomeTrim.toLowerCase() && t.id !== id);
+        if (duplicato) return alert("Una tipologia con questo nome esiste già.");
+
+        const nuoveTipologie = window.appData.lista_tipologie_mezzi.map(t => t.id === id ? { ...t, nome: nomeTrim } : t);
+        try {
+            await setDoc(doc(db, "mezzi", "_tipologie"), { valori: nuoveTipologie }, { merge: true });
+        } catch (e) {
+            console.error("Errore modifica tipologia:", e);
+            alert("Errore durante la modifica: " + e.message);
+        }
     };
 
     function renderListaTipologieModale(list) {
@@ -484,64 +511,55 @@
         });
     }
 
-    window.aggiungiTipologia = async function() {
-        const input = document.getElementById('nuovaTipologiaInput');
-        const nome = input.value.trim();
-        if (!nome) return alert("Inserire un nome per la tipologia.");
+    function popolaTendinaTipologie(list) {
+        const select = document.getElementById('tipologiaInput');
+        if (!select) return;
         
-        const duplicato = window.appData.lista_tipologie_mezzi.some(t => t.nome.toLowerCase() === nome.toLowerCase());
-        if (duplicato) return alert("Questa tipologia esiste già.");
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">-- Seleziona Tipologia --</option>';
+        list.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.nome;
+            opt.textContent = t.nome;
+            select.appendChild(opt);
+        });
         
-        try {
-            await addDoc(tipologieCol, { nome: nome });
-            input.value = '';
-        } catch (e) {
-            alert("Errore durante l'inserimento: " + e.message);
+        if (currentVal && !list.some(t => t.nome === currentVal)) {
+            const opt = document.createElement('option');
+            opt.value = currentVal;
+            opt.textContent = currentVal + " (Non più attiva)";
+            select.appendChild(opt);
         }
-    };
+        select.value = currentVal;
+    }
 
-    window.eliminaTipologia = async function(id, nome) {
-        const mezziList = (window.appData && window.appData.lista_mezzi) ? window.appData.lista_mezzi : [];
-        const mezziConTipo = mezziList.filter(m => (m.tipologia || '').toLowerCase().trim() === nome.toLowerCase().trim());
-        
-        if (mezziConTipo.length > 0) {
-            const targhe = mezziConTipo.map(m => m.targa).join(', ');
-            alert(`Impossibile eliminare la tipologia "${nome}" perché è attualmente utilizzata dai seguenti mezzi: ${targhe}`);
-            return;
-        }
-
-        if (!confirm(`Sei sicuro di voler eliminare la tipologia "${nome}"?`)) return;
-
-        try {
-            await deleteDoc(doc(db, "tipologie_mezzi", id));
-        } catch (e) {
-            alert("Errore durante l'eliminazione: " + e.message);
-        }
-    };
-
-    window.modificaTipologia = async function(id, vecchioNome) {
-        const mezziList = (window.appData && window.appData.lista_mezzi) ? window.appData.lista_mezzi : [];
-        const mezziConTipo = mezziList.filter(m => (m.tipologia || '').toLowerCase().trim() === vecchioNome.toLowerCase().trim());
-        
-        if (mezziConTipo.length > 0) {
-            const targhe = mezziConTipo.map(m => m.targa).join(', ');
-            alert(`Impossibile modificare la tipologia "${vecchioNome}" perché è attualmente utilizzata dai seguenti mezzi: ${targhe}`);
-            return;
-        }
-
-        const nuovoNome = prompt(`Rinomina la tipologia "${vecchioNome}" in:`, vecchioNome);
-        if (!nuovoNome || nuovoNome.trim() === vecchioNome) return;
-        
-        const nomeTrim = nuovoNome.trim();
-        const duplicato = window.appData.lista_tipologie_mezzi.some(t => t.nome.toLowerCase() === nomeTrim.toLowerCase() && t.id !== id);
-        if (duplicato) return alert("Una tipologia con questo nome esiste già.");
-
-        try {
-            await updateDoc(doc(db, "tipologie_mezzi", id), { nome: nomeTrim });
-        } catch (e) {
-            alert("Errore durante la modifica: " + e.message);
-        }
-    };
+    // Listener realtime sul documento speciale /mezzi/_tipologie
+    try {
+        const docRef = doc(db, "mezzi", "_tipologie");
+        onSnapshot(docRef, (docSnap) => {
+            let list = [];
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (Array.isArray(data.valori)) {
+                    list = data.valori;
+                }
+            }
+            // ordina per nome
+            list.sort((a, b) => a.nome.localeCompare(b.nome));
+            window.appData.lista_tipologie_mezzi = list;
+            
+            popolaTendinaTipologie(list);
+            
+            const mod = document.getElementById('modalTipologie');
+            if (mod && mod.style.display === 'flex') {
+                renderListaTipologieModale(list);
+            }
+        }, (error) => {
+            console.error("Errore caricamento tipologie da document _tipologie:", error);
+        });
+    } catch (err) {
+        console.error("Errore inizializzazione listener tipologie:", err);
+    }
 </script>
 
 <script>

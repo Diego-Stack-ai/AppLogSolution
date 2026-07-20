@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.177">
+    <link rel="stylesheet" href="styles.css?v=6.178">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -171,10 +171,16 @@
                             <input type="text" id="targaInput" placeholder="es. AA000BB" style="text-transform: uppercase;">
                         </div>
                         <div class="input-group" style="display:flex; flex-direction:column; justify-content:center;">
-                            <label for="attivoInput">Stato Operativo</label>
-                            <div style="display:flex; align-items:center; gap:8px; height:100%;">
-                                <input type="checkbox" id="attivoInput" checked style="width:20px; height:20px; accent-color:var(--primary);">
-                                <span style="font-weight:500;">Mezzo Attivo (visibile in Pianificazione)</span>
+                            <label for="attivoInput">Stato e Visibilità</label>
+                            <div style="display:flex; flex-direction:column; gap:8px; justify-content:center; height:100%;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <input type="checkbox" id="inUsoInput" checked style="width:20px; height:20px; accent-color:var(--primary);">
+                                    <span style="font-weight:500; font-size:13px;">Mezzo in Uso / Di Proprietà</span>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <input type="checkbox" id="attivoInput" checked style="width:20px; height:20px; accent-color:var(--primary);">
+                                    <span style="font-weight:500; font-size:13px;">Abilita in Pianificazione Viaggi</span>
+                                </div>
                             </div>
                         </div>
                         <div class="input-group">
@@ -344,8 +350,8 @@
     </div>
 </main>
 
-<script src="script.js?v=6.177"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.177"></script>
+<script src="script.js?v=6.178"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.178"></script>
 
 <script type="module">
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -529,9 +535,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (isFornitore && addBtn) addBtn.style.display = 'none';
 
             if (viewMode === 'history') {
-                currentMezzi = currentMezzi.filter(m => m.attivo === false || (m.stato && m.stato.toLowerCase() !== 'attivo'));
+                // Storico contiene solo mezzi non più in uso
+                currentMezzi = currentMezzi.filter(m => m.inUso === false || (m.inUso === undefined && m.attivo === false));
             } else {
-                currentMezzi = currentMezzi.filter(m => m.attivo !== false && (!m.stato || m.stato.toLowerCase() === 'attivo'));
+                // Dettagli e Griglia contengono tutti i mezzi in uso, indipendentemente dalla pianificazione
+                currentMezzi = currentMezzi.filter(m => m.inUso !== false && (m.inUso === true || m.attivo !== false));
             }
             
             mezzi = currentMezzi;
@@ -595,7 +603,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         
                         const title = m.modello ? `${m.targa} <span style="font-weight:400; color:#64748b; font-size:15px; margin-left:8px;">${m.modello}</span>` : m.targa;
                         const patenteLabel = m.patente === 'C' ? '<span class="badge badge-yellow">CAT C</span>' : '<span class="badge badge-blue">CAT B</span>';
-                        const statusBadge = (m.attivo === false || (m.stato && m.stato.toLowerCase() !== 'attivo')) ? '<span class="badge badge-gray">Non Attivo</span>' : '<span class="badge badge-green">Attivo</span>';
+                        let statusBadge = '';
+                        if (m.inUso === false) {
+                            statusBadge = '<span class="badge badge-gray">Inattivo/Venduto</span>';
+                        } else if (m.attivo === false) {
+                            statusBadge = '<span class="badge badge-yellow">Fuori Pianif.</span>';
+                        } else {
+                            statusBadge = '<span class="badge badge-green">In Pianif.</span>';
+                        }
                         
                         // Generazione dettagli spostata on-demand nel modal popup
                         const coverUrl = m.copertinaUrl || (m.fotoUrls && m.fotoUrls.length > 0 ? m.fotoUrls[0].url : null);
@@ -955,6 +970,7 @@ document.addEventListener("DOMContentLoaded", () => {
             targaInput.value = '';
             modelloInput.value = '';
             patenteInput.value = 'B';
+            document.getElementById('inUsoInput').checked = true;
             attivoInput.checked = true;
             tipologiaInput.value = '';
             proprietarioInput.value = '';
@@ -995,6 +1011,7 @@ document.addEventListener("DOMContentLoaded", () => {
             targaInput.value = mezzo.targa;
             modelloInput.value = mezzo.modello || '';
             patenteInput.value = mezzo.patente || 'B';
+            document.getElementById('inUsoInput').checked = mezzo.inUso !== false;
             attivoInput.checked = mezzo.attivo !== false;
             tipologiaInput.value = mezzo.tipologia || '';
             proprietarioInput.value = mezzo.proprietario || '';
@@ -1052,6 +1069,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 targa: targa, 
                 modello: isFornitore && editIndex >= 0 ? mezzi[editIndex].modello : modelloInput.value.trim(), 
                 patente: isFornitore && editIndex >= 0 ? mezzi[editIndex].patente : (patenteInput.value || 'B'),
+                inUso: isFornitore && editIndex >= 0 ? (mezzi[editIndex].inUso !== false) : document.getElementById('inUsoInput').checked,
                 attivo: isFornitore && editIndex >= 0 ? mezzi[editIndex].attivo : attivoInput.checked,
                 tipologia: isFornitore && editIndex >= 0 ? mezzi[editIndex].tipologia : tipologiaInput.value.trim(),
                 proprietario: isFornitore && editIndex >= 0 ? mezzi[editIndex].proprietario : proprietarioInput.value.trim(),

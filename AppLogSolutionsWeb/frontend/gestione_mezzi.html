@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.178">
+    <link rel="stylesheet" href="styles.css?v=6.179">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -189,7 +189,14 @@
                         </div>
                         <div class="input-group">
                             <label for="tipologiaInput">Tipologia</label>
-                            <input type="text" id="tipologiaInput" placeholder="es. Trattore stradale">
+                            <div style="display:flex; gap:8px; align-items:center; width:100%;">
+                                <select id="tipologiaInput" style="flex:1; height:45px; border-radius:12px; border:1px solid var(--border); padding:0 12px; font-size:14px; font-family:inherit; color:var(--text);">
+                                    <option value="">Caricamento...</option>
+                                </select>
+                                <button type="button" onclick="apriGestioneTipologie()" class="action-btn" title="Gestisci Tipologie" style="padding:10px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:12px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                                    <span class="material-icons-round" style="font-size:20px; color:#475569;">settings</span>
+                                </button>
+                            </div>
                         </div>
                         <div class="input-group">
                             <label for="patenteInput">Tipo Patente</label>
@@ -345,23 +352,196 @@
 
 
 
+    <!-- Modale Gestione Tipologie Mezzi -->
+    <div id="modalTipologie" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+        <div style="background:white; padding:24px; border-radius:16px; width:100%; max-width:480px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); border:1px solid #e2e8f0; display:flex; flex-direction:column; gap:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:12px;">
+                <h3 style="margin:0; color:var(--primary); font-size:16px; font-weight:600; display:flex; align-items:center; gap:6px;">
+                    <span class="material-icons-round" style="font-size:20px;">settings</span>
+                    Gestisci Tipologie Mezzi
+                </h3>
+                <button type="button" onclick="chiudiGestioneTipologie()" style="background:none; border:none; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+            
+            <!-- Inserimento Nuova Tipologia -->
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="nuovaTipologiaInput" placeholder="Nuova tipologia (es. Trattore stradale)" style="flex:1; height:40px; border-radius:8px; border:1px solid #cbd5e1; padding:0 12px; font-size:13px; font-family:inherit;">
+                <button type="button" onclick="aggiungiTipologia()" class="btn-primary" style="width:auto; height:40px; padding:0 16px; font-size:13px; border-radius:8px; display:flex; align-items:center; justify-content:center; box-shadow:none;">
+                    <span class="material-icons-round" style="font-size:18px; margin-right:4px;">add</span> Aggiungi
+                </button>
+            </div>
+            
+            <!-- Lista delle Tipologie -->
+            <div id="listaTipologieContainer" style="display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto; padding-right:4px;">
+                <!-- Righe dinamiche popolate da JS -->
+            </div>
+            
+            <div style="border-top:1px solid #e2e8f0; padding-top:12px; display:flex; justify-content:flex-end;">
+                <button type="button" onclick="chiudiGestioneTipologie()" class="btn-primary" style="width:auto; background:#f1f5f9; color:#334155; box-shadow:none; padding:8px 16px; font-size:13px; border-radius:8px;">Chiudi</button>
+            </div>
         </div>
-
+    </div>
+        </div>
     </div>
 </main>
 
-<script src="script.js?v=6.178"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.178"></script>
+<script src="script.js?v=6.179"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.179"></script>
 
 <script type="module">
-    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, collection, onSnapshot, query, orderBy, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getStorage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
     import { firebaseConfig } from "./firebase-config.js";
 
     const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
-    window.db = getFirestore(app);
+    const db = getFirestore(app);
+    window.db = db;
     window.firebaseStorage = getStorage(app);
+
+    // Gestione realtime tipologie
+    window.appData = window.appData || {};
+    window.appData.lista_tipologie_mezzi = [];
+
+    const tipologieCol = collection(db, "tipologie_mezzi");
+    const qTipologie = query(tipologieCol, orderBy("nome"));
+
+    onSnapshot(qTipologie, (snapshot) => {
+        const list = [];
+        snapshot.forEach(d => {
+            list.push({ id: d.id, ...d.data() });
+        });
+        window.appData.lista_tipologie_mezzi = list;
+        
+        // Popola la tendina del form
+        popolaTendinaTipologie(list);
+        
+        // Se il modale è aperto, aggiorna la lista nel modale
+        const mod = document.getElementById('modalTipologie');
+        if (mod && mod.style.display === 'flex') {
+            renderListaTipologieModale(list);
+        }
+    });
+
+    function popolaTendinaTipologie(list) {
+        const select = document.getElementById('tipologiaInput');
+        if (!select) return;
+        
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">-- Seleziona Tipologia --</option>';
+        list.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.nome;
+            opt.textContent = t.nome;
+            select.appendChild(opt);
+        });
+        
+        if (currentVal && !list.some(t => t.nome === currentVal)) {
+            const opt = document.createElement('option');
+            opt.value = currentVal;
+            opt.textContent = currentVal + " (Non più attiva)";
+            select.appendChild(opt);
+        }
+        select.value = currentVal;
+    }
+
+    window.apriGestioneTipologie = function() {
+        document.getElementById('modalTipologie').style.display = 'flex';
+        renderListaTipologieModale(window.appData.lista_tipologie_mezzi);
+    };
+
+    window.chiudiGestioneTipologie = function() {
+        document.getElementById('modalTipologie').style.display = 'none';
+    };
+
+    function renderListaTipologieModale(list) {
+        const container = document.getElementById('listaTipologieContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (list.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#64748b; font-size:12px; margin: 10px 0;">Nessuna tipologia definita.</p>';
+            return;
+        }
+
+        list.forEach(t => {
+            const row = document.createElement('div');
+            row.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; color:#334155; margin-bottom:6px;";
+            row.innerHTML = `
+                <span style="font-weight:500;">${t.nome}</span>
+                <div style="display:flex; gap:8px;">
+                    <button type="button" onclick="modificaTipologia('${t.id}', '${t.nome.replace(/'/g, "\\'")}')" style="background:none; border:none; color:var(--primary); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:4px;" title="Modifica">
+                        <span class="material-icons-round" style="font-size:18px;">edit</span>
+                    </button>
+                    <button type="button" onclick="eliminaTipologia('${t.id}', '${t.nome.replace(/'/g, "\\'")}')" style="background:none; border:none; color:#ef4444; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:4px;" title="Elimina">
+                        <span class="material-icons-round" style="font-size:18px;">delete</span>
+                    </button>
+                </div>
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    window.aggiungiTipologia = async function() {
+        const input = document.getElementById('nuovaTipologiaInput');
+        const nome = input.value.trim();
+        if (!nome) return alert("Inserire un nome per la tipologia.");
+        
+        const duplicato = window.appData.lista_tipologie_mezzi.some(t => t.nome.toLowerCase() === nome.toLowerCase());
+        if (duplicato) return alert("Questa tipologia esiste già.");
+        
+        try {
+            await addDoc(tipologieCol, { nome: nome });
+            input.value = '';
+        } catch (e) {
+            alert("Errore durante l'inserimento: " + e.message);
+        }
+    };
+
+    window.eliminaTipologia = async function(id, nome) {
+        const mezziList = (window.appData && window.appData.lista_mezzi) ? window.appData.lista_mezzi : [];
+        const mezziConTipo = mezziList.filter(m => (m.tipologia || '').toLowerCase().trim() === nome.toLowerCase().trim());
+        
+        if (mezziConTipo.length > 0) {
+            const targhe = mezziConTipo.map(m => m.targa).join(', ');
+            alert(`Impossibile eliminare la tipologia "${nome}" perché è attualmente utilizzata dai seguenti mezzi: ${targhe}`);
+            return;
+        }
+
+        if (!confirm(`Sei sicuro di voler eliminare la tipologia "${nome}"?`)) return;
+
+        try {
+            await deleteDoc(doc(db, "tipologie_mezzi", id));
+        } catch (e) {
+            alert("Errore durante l'eliminazione: " + e.message);
+        }
+    };
+
+    window.modificaTipologia = async function(id, vecchioNome) {
+        const mezziList = (window.appData && window.appData.lista_mezzi) ? window.appData.lista_mezzi : [];
+        const mezziConTipo = mezziList.filter(m => (m.tipologia || '').toLowerCase().trim() === vecchioNome.toLowerCase().trim());
+        
+        if (mezziConTipo.length > 0) {
+            const targhe = mezziConTipo.map(m => m.targa).join(', ');
+            alert(`Impossibile modificare la tipologia "${vecchioNome}" perché è attualmente utilizzata dai seguenti mezzi: ${targhe}`);
+            return;
+        }
+
+        const nuovoNome = prompt(`Rinomina la tipologia "${vecchioNome}" in:`, vecchioNome);
+        if (!nuovoNome || nuovoNome.trim() === vecchioNome) return;
+        
+        const nomeTrim = nuovoNome.trim();
+        const duplicato = window.appData.lista_tipologie_mezzi.some(t => t.nome.toLowerCase() === nomeTrim.toLowerCase() && t.id !== id);
+        if (duplicato) return alert("Una tipologia con questo nome esiste già.");
+
+        try {
+            await updateDoc(doc(db, "tipologie_mezzi", id), { nome: nomeTrim });
+        } catch (e) {
+            alert("Errore durante la modifica: " + e.message);
+        }
+    };
 </script>
 
 <script>
@@ -1013,7 +1193,25 @@ document.addEventListener("DOMContentLoaded", () => {
             patenteInput.value = mezzo.patente || 'B';
             document.getElementById('inUsoInput').checked = mezzo.inUso !== false;
             attivoInput.checked = mezzo.attivo !== false;
-            tipologiaInput.value = mezzo.tipologia || '';
+            // Assicuriamoci che se il mezzo ha una tipologia non inclusa nella lista attuale, venga comunque mostrata nel select
+            const valTipo = mezzo.tipologia || '';
+            const selectTipo = document.getElementById('tipologiaInput');
+            if (valTipo && selectTipo) {
+                let optionExists = false;
+                for (let i = 0; i < selectTipo.options.length; i++) {
+                    if (selectTipo.options[i].value === valTipo) {
+                        optionExists = true;
+                        break;
+                    }
+                }
+                if (!optionExists) {
+                    const opt = document.createElement('option');
+                    opt.value = valTipo;
+                    opt.textContent = valTipo + " (Non più attiva)";
+                    selectTipo.appendChild(opt);
+                }
+            }
+            tipologiaInput.value = valTipo;
             proprietarioInput.value = mezzo.proprietario || '';
             assicInput.value = mezzo.assicurazione || '';
             scAssicInput.value = mezzo.scadenza_assicurazione || '';

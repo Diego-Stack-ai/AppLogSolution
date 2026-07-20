@@ -7,14 +7,21 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
 /**
- * Ascolta in tempo reale la lista degli ultimi 15 Reports Logistici (DDT) del tenant DNR.
- * @param {function} callback - Funzione eseguita ogni volta che i dati cambiano. Riceve lo snapshot di Firestore.
+ * Ascolta in tempo reale la lista degli ultimi 15 Reports Logistici (DDT) del tenant.
+ * @param {string|function} tenantId - L'ID del tenant (es. 'DNR', 'GRAN CHEF', 'CATTEL') o callback se omesso.
+ * @param {function} [callback] - Funzione eseguita ogni volta che i dati cambiano.
  * @returns {function} unsubscribe - Funzione per fermare l'ascolto.
  */
-export function subscribeToReportsLogistici(callback) {
-    const reportsRef = collection(db, 'clienti', 'DNR', 'reports_logistici');
+export function subscribeToReportsLogistici(tenantId, callback) {
+    let finalTenant = tenantId;
+    let finalCallback = callback;
+    if (typeof tenantId === 'function') {
+        finalCallback = tenantId;
+        finalTenant = 'DNR';
+    }
+    const reportsRef = collection(db, 'clienti', finalTenant, 'reports_logistici');
     const q = query(reportsRef, orderBy('created_at', 'desc'), limit(15));
-    return onSnapshot(q, callback);
+    return onSnapshot(q, finalCallback);
 }
 
 /**

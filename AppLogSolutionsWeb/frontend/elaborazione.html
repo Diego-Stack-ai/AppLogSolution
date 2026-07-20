@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.187">
+    <link rel="stylesheet" href="styles.css?v=6.188">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -369,8 +369,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.187"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.187"></script>
+    <script src="script.js?v=6.188"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.188"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
@@ -1067,8 +1067,8 @@
                 } catch (e) { console.warn("Archiviazione mensile automatica check:", e); }
             }, 3000);
 
-            // Sostituito con chiamata al Service Layer (Fase 2)
-            subscribeToReportsLogistici((snapshot) => {
+            const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
+            subscribeToReportsLogistici(activeTenant, (snapshot) => {
                 const reportsList = document.getElementById('reports-list');
                 let docsData = [];
                 snapshot.forEach(doc => {

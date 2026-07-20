@@ -18,6 +18,19 @@ from infrastructure.firebase_setup import (
     get_dynamic_project_id, PROJECT_ID, BUCKET_NAME, get_db, get_bucket,
     load_storage_cache, save_storage_cache
 )
+
+def get_tenant_from_viaggio_id(viaggio_id):
+    if not viaggio_id:
+        return "DNR"
+    viaggio_id_upper = str(viaggio_id).upper()
+    if "CATTEL" in viaggio_id_upper:
+        return "CATTEL"
+    if "_GC_" in viaggio_id_upper or "GRAND_CHEF" in viaggio_id_upper or "GRAN_CHEF" in viaggio_id_upper:
+        return "GRAN CHEF"
+    if "BAUER" in viaggio_id_upper:
+        return "BAUER"
+    return "DNR"
+
 from infrastructure.google_maps_api import (
     GOOGLE_MAPS_API_KEY, AVG_SPEED_KMH,
     _haversine, _cache_key, _leggi_cache_firestore, _scrivi_cache_firestore,
@@ -682,7 +695,9 @@ def core_ottimizza_viaggio(viaggio_id):
     if not viaggio_id:
         return {"status": "errore", "message": "viaggio_id mancante", "errori": ["viaggio_id mancante"], "data": {}}
         
-    doc_ref = get_db().collection('clienti').document('DNR').collection('viaggi ddt').document(viaggio_id)
+        
+    tenant_viaggio = get_tenant_from_viaggio_id(viaggio_id)
+    doc_ref = get_db().collection('clienti').document(tenant_viaggio).collection('viaggi ddt').document(viaggio_id)
     doc_viaggio = doc_ref.get()
     if not doc_viaggio.exists:
         return {"status": "errore", "message": "Viaggio non trovato", "errori": ["Viaggio non trovato"], "data": {}}
@@ -779,7 +794,8 @@ def core_genera_distinta_viaggio(viaggio_id):
     if not viaggio_id:
         return {"status": "errore", "message": "viaggio_id mancante", "errori": ["viaggio_id mancante"], "data": {}}
 
-    doc_ref = get_db().collection('clienti').document('DNR').collection('viaggi ddt').document(viaggio_id)
+    tenant_viaggio = get_tenant_from_viaggio_id(viaggio_id)
+    doc_ref = get_db().collection('clienti').document(tenant_viaggio).collection('viaggi ddt').document(viaggio_id)
     doc_viaggio = doc_ref.get()
     if not doc_viaggio.exists:
         return {"status": "errore", "message": "Viaggio non trovato", "errori": ["Viaggio non trovato"], "data": {}}
@@ -1671,7 +1687,8 @@ def core_genera_mappa_autista(viaggio_id, distinta_url=None):
     if not viaggio_id:
         return {"status": "errore", "message": "viaggio_id mancante", "errori": ["viaggio_id mancante"], "data": {}}
 
-    doc_ref = get_db().collection('clienti').document('DNR').collection('viaggi ddt').document(viaggio_id)
+    tenant_viaggio = get_tenant_from_viaggio_id(viaggio_id)
+    doc_ref = get_db().collection('clienti').document(tenant_viaggio).collection('viaggi ddt').document(viaggio_id)
     doc_viaggio = doc_ref.get()
     if not doc_viaggio.exists:
         return {"status": "errore", "message": "Viaggio non trovato", "errori": ["Viaggio non trovato"], "data": {}}
@@ -1707,7 +1724,7 @@ def core_genera_mappa_autista(viaggio_id, distinta_url=None):
 
     bucket = storage.bucket(name=BUCKET_NAME)
     data_viaggio = viaggio.get("data", "sconosciuta").replace("/", "-")
-    html_path = f"CONSEGNE/CONSEGNE_{data_viaggio}/MAPPE_AUTISTI/{viaggio_id}.html"
+    html_path = f"{tenant_viaggio}/CONSEGNE/CONSEGNE_{data_viaggio}/MAPPE_AUTISTI/{viaggio_id}.html"
     blob = bucket.blob(html_path)
     blob.upload_from_string(html.encode("utf-8"), content_type="text/html; charset=utf-8")
     url_pubblica = _genera_url_storage_token(blob)
@@ -1751,7 +1768,8 @@ def core_ricalcola_percorso(viaggio_id, nuovi_punti, num_locked=0):
     if not viaggio_id or not nuovi_punti:
         return {"status": "errore", "message": "viaggio_id o punti mancanti", "errori": [], "data": {}}
 
-    doc_ref = get_db().collection('clienti').document('DNR').collection('viaggi ddt').document(viaggio_id)
+    tenant_viaggio = get_tenant_from_viaggio_id(viaggio_id)
+    doc_ref = get_db().collection('clienti').document(tenant_viaggio).collection('viaggi ddt').document(viaggio_id)
     doc_viaggio = doc_ref.get()
     if not doc_viaggio.exists:
         return {"status": "errore", "message": "Viaggio non trovato", "errori": [], "data": {}}
@@ -2650,17 +2668,11 @@ def core_genera_report_giornaliero(uid, data_consegna):
     # 0.5. Sovrascrittura Selettiva (Elimina i viaggi Firestore per i tenant che vogliamo sovrascrivere)
     if tenant_con_ddt:
         try:
-            viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
-            viaggi = viaggi_ref.where("data_lavoro", "==", data_consegna).stream()
-            for v in viaggi:
-                cz = v.to_dict().get("cliente_zona", "")
-                
-                # Check se il viaggio appartiene a un tenant da sovrascrivere
-                v_tenant = "DNR"
-                if cz == "CATTEL": v_tenant = "CATTEL"
-                elif cz == "GRAN CHEF": v_tenant = "GRAN_CHEF"
-                
-                if v_tenant in tenant_con_ddt:
+            for t_sov in tenant_con_ddt:
+                tenant_folder = "GRAN CHEF" if t_sov == "GRAN_CHEF" else t_sov
+                viaggi_ref = db.collection('clienti').document(tenant_folder).collection('viaggi ddt')
+                viaggi = viaggi_ref.where("data_lavoro", "==", data_consegna).stream()
+                for v in viaggi:
                     v.reference.delete()
         except Exception as e:
             print(f"[ERROR] Eliminazione vecchi viaggi fallita: {e}")
@@ -3030,16 +3042,38 @@ def core_genera_report_giornaliero(uid, data_consegna):
         }
         master_json.append(z_dict)
 
-    # Scrittura JSON Master nello Storage
+    # Scrittura JSON Master nello Storage (Globale per retrocompatibilità + Specifico per ciascun Tenant attivo)
     output_str = json.dumps({"data_consegna": data_consegna, "zone": master_json}, indent=2)
     bucket.blob(f"REPORTS/{data_consegna}/viaggi_giornalieri_Johnson.json").upload_from_string(
         output_str, content_type='application/json'
     )
     
-    # Scrittura su Firestore (Salvataggio Viaggi)
+    tenants_con_viaggi = set()
+    for z in master_json:
+        cz = z.get('cliente_zona') or ''
+        tenant_v = "CATTEL" if cz.upper() == "CATTEL" else ("GRAN CHEF" if cz.upper() in ("GRAN CHEF", "GRAND CHEF", "GRANCHEF") else ("BAUER" if cz.upper() == "BAUER" else "DNR"))
+        tenants_con_viaggi.add(tenant_v)
+        
+    for t_v in tenants_con_viaggi:
+        # Filtriamo le zone di competenza di questo tenant
+        master_json_t = []
+        for z in master_json:
+            cz_z = z.get('cliente_zona') or ''
+            t_z = "CATTEL" if cz_z.upper() == "CATTEL" else ("GRAN CHEF" if cz_z.upper() in ("GRAN CHEF", "GRAND CHEF", "GRANCHEF") else ("BAUER" if cz_z.upper() == "BAUER" else "DNR"))
+            if t_z == t_v:
+                master_json_t.append(z)
+                
+        output_str_t = json.dumps({"data_consegna": data_consegna, "zone": master_json_t, "tenant": t_v}, indent=2)
+        bucket.blob(f"{t_v}/REPORTS/{data_consegna}/viaggi_giornalieri_Johnson.json").upload_from_string(
+            output_str_t, content_type='application/json'
+        )
+    
+    # Scrittura su Firestore (Salvataggio Viaggi divisi per Tenant)
     for z in master_json:
         doc_id = f"{data_consegna}_{z['id_zona']}"
-        viaggio_ref = db.collection('clienti').document('DNR').collection('viaggi ddt').document(doc_id)
+        cz = z.get('cliente_zona') or ''
+        tenant_viaggio = "CATTEL" if cz.upper() == "CATTEL" else ("GRAN CHEF" if cz.upper() in ("GRAN CHEF", "GRAND CHEF", "GRANCHEF") else ("BAUER" if cz.upper() == "BAUER" else "DNR"))
+        viaggio_ref = db.collection('clienti').document(tenant_viaggio).collection('viaggi ddt').document(doc_id)
         
         # Manteniamo t_guida_min, t_tot_min, km_reali, autista se erano presenti nella cassaforte
         old_viaggio_data = {}
@@ -3467,12 +3501,12 @@ def _ottimizza_singolo_viaggio_cloud(punti, depot, use_time_windows):
 
 
 
-def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=False, usa_or_tools=True):
+def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=False, usa_or_tools=True, tenant="DNR"):
     start_time = time.time()
     db = get_db()
     bucket = storage.bucket(name=BUCKET_NAME)
     
-    path_base = f"REPORTS/{data_consegna}"
+    path_base = f"{tenant}/REPORTS/{data_consegna}" if tenant != "DNR" else f"REPORTS/{data_consegna}"
     blob_json = bucket.blob(f"{path_base}/viaggi_giornalieri_Johnson.json")
     if not blob_json.exists():
         return {"status": "errore", "message": f"Nessun file viaggi_giornalieri_Johnson.json trovato per il {data_consegna}."}
@@ -3605,7 +3639,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
                     if c_latte and c_latte != "p00000":
                         ddt_ids.append(f"{data_consegna}_{c_latte}")
             
-            doc_ref = db.collection('clienti').document('DNR').collection('viaggi ddt').document(viaggio_id)
+            doc_ref = db.collection('clienti').document(tenant).collection('viaggi ddt').document(viaggio_id)
             
             # Preserva lo stato esistente (es. se è già completato/stampato) e i link
             existing_doc = doc_ref.get()
@@ -3686,7 +3720,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
     # === GHOST TRIP CLEANUP ===
     try:
         active_viaggio_ids = {f"{data_consegna}_{z.get('id_zona')}" for z in zone_list if z.get('id_zona')}
-        viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
+        viaggi_ref = db.collection('clienti').document(tenant).collection('viaggi ddt')
         query_viaggi = viaggi_ref.where('data_lavoro', '==', data_consegna).stream()
         for doc in query_viaggi:
             if doc.id not in active_viaggio_ids:
@@ -4201,12 +4235,12 @@ def _genera_distinta_pdf_cloud(viaggio, articoli_viaggio, data_ddt, pdf_ddt_stre
         try: os.unlink(tmp_path)
         except: pass
 
-def core_genera_completo_giornata(data_consegna):
+def core_genera_completo_giornata(data_consegna, tenant="DNR"):
     start_time = time.time()
     db = get_db()
     bucket = storage.bucket(name=BUCKET_NAME)
     
-    path_base = f"REPORTS/{data_consegna}"
+    path_base = f"{tenant}/REPORTS/{data_consegna}" if tenant != "DNR" else f"REPORTS/{data_consegna}"
     blob_json = bucket.blob(f"{path_base}/viaggi_giornalieri_Johnson.json")
     if not blob_json.exists():
         return {"status": "errore", "message": f"Nessun file viaggi_giornalieri_Johnson.json trovato per il {data_consegna}."}
@@ -4376,7 +4410,7 @@ def core_genera_completo_giornata(data_consegna):
             
         html_map_content = _genera_html_mappa(titolo_giro, punti_html, km, sec_guida, polylines, depot=depot, distinta_url=distinta_light_url, ora_partenza_dep=ora_partenza_calc)
         
-        map_blob = bucket.blob(f"REPORTS/{data_consegna}/MAPPE_AUTISTI/{nome_giro}.html")
+        map_blob = bucket.blob(f"{path_base}/MAPPE_AUTISTI/{nome_giro}.html")
         map_blob.upload_from_string(html_map_content.encode('utf-8'), content_type="text/html; charset=utf-8")
         map_url = _genera_url_storage_token(map_blob)
 
@@ -4404,7 +4438,7 @@ def core_genera_completo_giornata(data_consegna):
             zid = zone.get("id_zona")
             if zid in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA"): continue
             nome_giro = zone.get("nome_giro")
-            giro_blob = bucket.blob(f"REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_{nome_giro}.pdf")
+            giro_blob = bucket.blob(f"{path_base}/DISTINTE_VIAGGIO/DISTINTA_{nome_giro}.pdf")
             if giro_blob.exists():
                 master_writer.append(io.BytesIO(giro_blob.download_as_bytes()))
                 
@@ -4412,7 +4446,7 @@ def core_genera_completo_giornata(data_consegna):
         master_writer.write(master_stream)
         master_stream.seek(0)
         
-        master_blob = bucket.blob(f"REPORTS/{data_consegna}/MASTER_DISTINTE_{data_consegna}.pdf")
+        master_blob = bucket.blob(f"{path_base}/MASTER_DISTINTE_{data_consegna}.pdf")
         if master_blob.exists():
             master_blob.delete()
         master_blob.upload_from_file(master_stream, content_type="application/pdf")
@@ -4423,7 +4457,7 @@ def core_genera_completo_giornata(data_consegna):
 
     whatsapp_lines = [f"{l.get('titolo_giro', 'Giro ' + l['v_id'])} - Mappa: {l['url']}" for l in links]
     whatsapp_txt = "\n".join(whatsapp_lines)
-    bucket.blob(f"REPORTS/{data_consegna}/LINK_WHATSAPP_AUTISTI.txt").upload_from_string(whatsapp_txt.encode('utf-8'), content_type="text/plain; charset=utf-8")
+    bucket.blob(f"{path_base}/LINK_WHATSAPP_AUTISTI.txt").upload_from_string(whatsapp_txt.encode('utf-8'), content_type="text/plain; charset=utf-8")
 
     manifest_data = {
         "date": data_consegna,
@@ -4431,7 +4465,7 @@ def core_genera_completo_giornata(data_consegna):
     }
     if master_distinte_url:
         manifest_data["master_distinte_url"] = master_distinte_url
-    bucket.blob(f"REPORTS/{data_consegna}/manifest_link_viaggi.json").upload_from_string(json.dumps(manifest_data, indent=2), content_type='application/json')
+    bucket.blob(f"{path_base}/manifest_link_viaggi.json").upload_from_string(json.dumps(manifest_data, indent=2), content_type='application/json')
 
     punti_totali = sum(len(z.get("lista_punti", [])) for z in zone_list if z.get("id_zona") not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA"))
     zone_totali = len([z for z in zone_list if z.get("id_zona") not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA")])
@@ -4453,7 +4487,7 @@ def core_genera_completo_giornata(data_consegna):
             for z in zone_list if z.get("id_zona") not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA")
         ]
         html_mappa_gen = _genera_html_mappa_generale(data_consegna, zone_per_mappa)
-        mappa_gen_blob = bucket.blob(f"REPORTS/{data_consegna}/MAPPA_GENERALE_{data_consegna}.html")
+        mappa_gen_blob = bucket.blob(f"{path_base}/MAPPA_GENERALE_{data_consegna}.html")
         mappa_gen_blob.upload_from_string(html_mappa_gen.encode("utf-8"), content_type="text/html; charset=utf-8")
         mappa_generale_url = _genera_url_storage_token(mappa_gen_blob)
         print(f"[MAPPA GENERALE] Generata con {len(zone_per_mappa)} giri.")
@@ -4469,7 +4503,7 @@ def core_genera_completo_giornata(data_consegna):
         "created_at": firestore.SERVER_TIMESTAMP,
         "tipo": "REPORT_GENERALE"
     }
-    db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna).set(report_meta)
+    db.collection('clienti').document(tenant).collection('reports_logistici').document(data_consegna).set(report_meta)
 
     elapsed = time.time() - start_time
     _registra_statistica("genera_completo_giornata", elapsed)
@@ -4490,7 +4524,8 @@ def web_calcola_percorsi(req: https_fn.CallableRequest):
         id_zona = req.data.get("id_zona") or req.data.get("target_zones")
         aggiorna_traffico = bool(req.data.get("aggiorna_traffico", False))
         usa_or_tools = bool(req.data.get("usa_or_tools", True))
-        return core_web_calcola_percorsi(data_consegna, id_zona, aggiorna_traffico, usa_or_tools)
+        tenant = req.data.get("tenant", "DNR")
+        return core_web_calcola_percorsi(data_consegna, id_zona, aggiorna_traffico, usa_or_tools, tenant)
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -4501,7 +4536,8 @@ def web_calcola_percorsi(req: https_fn.CallableRequest):
 def genera_completo_giornata(req: https_fn.CallableRequest):
     try:
         data_consegna = req.data.get("data_consegna")
-        return core_genera_completo_giornata(data_consegna)
+        tenant = req.data.get("tenant", "DNR")
+        return core_genera_completo_giornata(data_consegna, tenant)
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -4635,15 +4671,16 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
     if soft_delete:
         print(f"[INFO] Richiesta Soft Delete (pulizia UI) per la giornata {data_consegna}")
         try:
-            doc_ref = db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna)
-            if doc_ref.get().exists:
-                doc_ref.update({"archiviato_ui": True, "archiviato_at": datetime.now().isoformat()})
-            
-            # Aggiorna anche i viaggi ddt per coerenza
-            viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
-            viaggi = viaggi_ref.where("data_lavoro", "==", data_consegna).stream()
-            for v in viaggi:
-                viaggi_ref.document(v.id).update({"archiviato_ui": True})
+            for tenant in ["DNR", "CATTEL", "GRAN CHEF", "BAUER"]:
+                doc_ref = db.collection('clienti').document(tenant).collection('reports_logistici').document(data_consegna)
+                if doc_ref.get().exists:
+                    doc_ref.update({"archiviato_ui": True, "archiviato_at": datetime.now().isoformat()})
+                
+                # Aggiorna anche i viaggi ddt per coerenza
+                viaggi_ref = db.collection('clienti').document(tenant).collection('viaggi ddt')
+                viaggi = viaggi_ref.where("data_lavoro", "==", data_consegna).stream()
+                for v in viaggi:
+                    viaggi_ref.document(v.id).update({"archiviato_ui": True})
                 
             print(f"[INFO] Soft Delete completato con successo per {data_consegna}")
             return {"status": "ok", "message": "Giornata rimossa dalla schermata attiva (dati conservati su Cloud)"}
@@ -4669,6 +4706,9 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
                 f"REPORTS/{data_consegna}/",
                 f"CONSEGNE/CONSEGNE_{data_f}/"
             ]
+            for tenant in ["CATTEL", "GRAN CHEF", "BAUER"]:
+                prefixes_to_clean.append(f"{tenant}/REPORTS/{data_consegna}/")
+                prefixes_to_clean.append(f"{tenant}/CONSEGNE/CONSEGNE_{data_f}/")
         
         for pref in prefixes_to_clean:
             blobs = bucket.list_blobs(prefix=pref)
@@ -4681,34 +4721,36 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
         # 2. Elimina record da Firestore (SOLO se eliminiamo tutta la giornata)
         if not tipologie_da_eliminare:
             print(f"[INFO] Eliminazione report logistico principale per {data_consegna}")
-            doc_ref = db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna)
-            doc_ref.delete()
+            for tenant in ["DNR", "CATTEL", "GRAN CHEF", "BAUER"]:
+                doc_ref = db.collection('clienti').document(tenant).collection('reports_logistici').document(data_consegna)
+                doc_ref.delete()
         
         # 3. Elimina i viaggi ddt
         print(f"[INFO] Eliminazione viaggi ddt per la giornata {data_consegna}")
-        viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
-        viaggi_da_eliminare = viaggi_ref.where("data_lavoro", "==", data_consegna).stream()
-        for v in viaggi_da_eliminare:
-            v_data = v.to_dict()
-            v_cliente_zona = v_data.get("cliente_zona", "")
-            
-            # Se siamo in modalità selettiva, controlla se questo viaggio appartiene al cliente da eliminare
-            should_delete = False
-            if not tipologie_da_eliminare:
-                should_delete = True
-            else:
-                if v_cliente_zona in cliente_zona_da_eliminare:
+        for tenant in ["DNR", "CATTEL", "GRAN CHEF", "BAUER"]:
+            viaggi_ref = db.collection('clienti').document(tenant).collection('viaggi ddt')
+            viaggi_da_eliminare = viaggi_ref.where("data_lavoro", "==", data_consegna).stream()
+            for v in viaggi_da_eliminare:
+                v_data = v.to_dict()
+                v_cliente_zona = v_data.get("cliente_zona", "")
+                
+                # Se siamo in modalità selettiva, controlla se questo viaggio appartiene al cliente da eliminare
+                should_delete = False
+                if not tipologie_da_eliminare:
                     should_delete = True
-                elif ("PROGETTO SCUOLE" in cliente_zona_da_eliminare or "" in cliente_zona_da_eliminare) and (not v_cliente_zona or v_cliente_zona == "PROGETTO SCUOLE"):
-                    # Fallback logico per Frutta/Latte che spesso non hanno cliente_zona o hanno PROGETTO SCUOLE
-                    should_delete = True
-                    
-            if should_delete:
-                try:
-                    v.reference.delete()
-                except Exception as e:
-                    print(f"[ERROR] Impossibile eliminare viaggio {v.id}: {str(e)}")
-                    pass
+                else:
+                    if v_cliente_zona in cliente_zona_da_eliminare:
+                        should_delete = True
+                    elif ("PROGETTO SCUOLE" in cliente_zona_da_eliminare or "" in cliente_zona_da_eliminare) and (not v_cliente_zona or v_cliente_zona == "PROGETTO SCUOLE"):
+                        # Fallback logico per Frutta/Latte che spesso non hanno cliente_zona o hanno PROGETTO SCUOLE
+                        should_delete = True
+                        
+                if should_delete:
+                    try:
+                        v.reference.delete()
+                    except Exception as e:
+                        print(f"[ERROR] Impossibile eliminare viaggio {v.id}: {str(e)}")
+                        pass
                 
         # 4. Elimina eventuali processing_jobs rimasti
         print(f"[INFO] Eliminazione processing_jobs per la giornata {data_consegna}")
@@ -5589,7 +5631,7 @@ def genera_riepiloghi_aziendali_light(req: https_fn.CallableRequest) -> typing.A
         if not data_consegna:
             return {"status": "errore", "message": "Data consegna mancante"}
             
-        tenant = "DNR" # Default tenant per AppLogSolutions
+        tenant = req.data.get("tenant", "DNR")
         db = get_db()
         bucket = storage.bucket(name=BUCKET_NAME)
         

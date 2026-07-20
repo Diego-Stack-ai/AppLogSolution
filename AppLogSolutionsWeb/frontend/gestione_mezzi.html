@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.182">
+    <link rel="stylesheet" href="styles.css?v=6.183">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -387,8 +387,8 @@
     </div>
 </main>
 
-<script src="script.js?v=6.182"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.182"></script>
+<script src="script.js?v=6.183"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.183"></script>
 
 <script type="module">
     import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -739,14 +739,19 @@ document.addEventListener("DOMContentLoaded", () => {
         window.renderLista = function () {
             let currentMezzi = (window.appData && window.appData.lista_mezzi) ? window.appData.lista_mezzi : [];
 
-            function getCategoria(m) {
-                let tipo = (m.tipologia || '').toLowerCase();
-                if (tipo.includes('rimorchio') || tipo.includes('semi')) return 'rimorchi';
-                if (tipo.includes('trattore')) return 'trattori';
-                if (tipo.includes('tre assi') || tipo.includes('3 assi')) return 'treAssi';
-                if (m.patente === 'B') return 'patenteB';
-                if (m.patente === 'C') return 'patenteC';
-                return 'altri';
+            function getCategoriaDinamica(m) {
+                const patente = m.patente ? m.patente.trim().toUpperCase() : '';
+                const tipologia = m.tipologia ? m.tipologia.trim() : '';
+                
+                if (patente && tipologia) {
+                    return `Mezzi Patente ${patente} - ${tipologia}`;
+                } else if (patente) {
+                    return `Mezzi Patente ${patente}`;
+                } else if (tipologia) {
+                    return `Altri Mezzi - ${tipologia}`;
+                } else {
+                    return 'Altri Mezzi';
+                }
             }
             const isFornitore = window.appData && window.appData.currentUser && window.appData.currentUser.ruolo === 'fornitore';
             let permFornitoreRaw = window.appData && window.appData.permessiDashboard && window.appData.permessiDashboard['gestione_mezzi'] && window.appData.permessiDashboard['gestione_mezzi']['fornitore'] ? window.appData.permessiDashboard['gestione_mezzi']['fornitore'] : 'none';
@@ -789,26 +794,38 @@ document.addEventListener("DOMContentLoaded", () => {
             listaDiv.innerHTML = '';
 
             
-            // Definisco le categorie
-            const categorie = [
-                { id: 'patenteB', titolo: 'Mezzi Patente B' },
-                { id: 'patenteC', titolo: 'Mezzi Patente C' },
-                { id: 'treAssi', titolo: 'Mezzi Tre Assi' },
-                { id: 'trattori', titolo: 'Trattori' },
-                { id: 'rimorchi', titolo: 'Semirimorchi o Rimorchi' },
-                { id: 'altri', titolo: 'Altri Mezzi' }
-            ];
+            // Raggruppamento dinamico dei mezzi in categorie
+            const categorieMappa = {};
+            currentMezzi.forEach(m => {
+                const titolo = getCategoriaDinamica(m);
+                if (!categorieMappa[titolo]) {
+                    categorieMappa[titolo] = [];
+                }
+                categorieMappa[titolo].push(m);
+            });
 
+            // Ordina le categorie in modo coerente
+            const chiaviOrdinate = Object.keys(categorieMappa).sort((a, b) => {
+                const getScore = (str) => {
+                    if (str.startsWith('Mezzi Patente B')) return 1;
+                    if (str.startsWith('Mezzi Patente C')) return 2;
+                    if (str.startsWith('Altri Mezzi')) return 3;
+                    return 4;
+                };
+                const scoreA = getScore(a);
+                const scoreB = getScore(b);
+                if (scoreA !== scoreB) return scoreA - scoreB;
+                return a.localeCompare(b);
+            });
 
-
-            categorie.forEach(cat => {
-                let mezziInCat = currentMezzi.filter(m => getCategoria(m) === cat.id);
+            chiaviOrdinate.forEach(titoloCat => {
+                let mezziInCat = categorieMappa[titoloCat];
                 if (mezziInCat.length === 0) return;
                 
                 mezziInCat.sort((a,b) => (a.targa || '').localeCompare(b.targa || ''));
 
                 const titleEl = document.createElement('h3');
-                titleEl.textContent = cat.titolo;
+                titleEl.textContent = titoloCat;
                 titleEl.style.cssText = 'color: var(--primary); margin: 32px 0 16px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; font-size: 18px; width: 100%;';
                 listaDiv.appendChild(titleEl);
 

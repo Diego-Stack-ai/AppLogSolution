@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.183">
+    <link rel="stylesheet" href="styles.css?v=6.184">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -200,10 +200,14 @@
                         </div>
                         <div class="input-group">
                             <label for="patenteInput">Tipo Patente</label>
-                            <select id="patenteInput" style="height:45px; border-radius:12px; border:1px solid var(--border); padding:0 12px; font-size:14px; font-family:inherit; color:var(--text);">
-                                <option value="B">Patente B (Furgone)</option>
-                                <option value="C">Patente C (Camion)</option>
-                            </select>
+                            <div style="display:flex; gap:8px; align-items:center; width:100%;">
+                                <select id="patenteInput" style="flex:1; height:45px; border-radius:12px; border:1px solid var(--border); padding:0 12px; font-size:14px; font-family:inherit; color:var(--text);">
+                                    <option value="">Caricamento...</option>
+                                </select>
+                                <button type="button" id="btnApriGestionePatenti" class="action-btn" title="Gestisci Patenti" style="padding:10px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:12px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                                    <span class="material-icons-round" style="font-size:20px; color:#475569;">settings</span>
+                                </button>
+                            </div>
                         </div>
                         <div class="input-group">
                             <label for="proprietarioInput">Proprietario</label>
@@ -383,27 +387,49 @@
             </div>
         </div>
     </div>
+
+    <!-- Modale Gestione Patenti Mezzi -->
+    <div id="modalPatenti" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+        <div style="background:white; padding:24px; border-radius:16px; width:100%; max-width:480px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); border:1px solid #e2e8f0; display:flex; flex-direction:column; gap:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:12px;">
+                <h3 style="margin:0; color:var(--primary); font-size:16px; font-weight:600; display:flex; align-items:center; gap:6px;">
+                    <span class="material-icons-round" style="font-size:20px;">settings</span>
+                    Gestisci Tipi Patente
+                </h3>
+                <button type="button" id="btnChiudiGestionePatenti" style="background:none; border:none; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+            
+            <!-- Inserimento Nuova Patente -->
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="nuovaPatenteInput" placeholder="Nuova patente (es. B, C, CE)" style="flex:1; height:40px; border-radius:8px; border:1px solid #cbd5e1; padding:0 12px; font-size:13px; font-family:inherit; text-transform:uppercase;">
+                <button type="button" id="btnAggiungiPatente" class="btn-primary" style="width:auto; height:40px; padding:0 16px; font-size:13px; border-radius:8px; display:flex; align-items:center; justify-content:center; box-shadow:none;">
+                    <span class="material-icons-round" style="font-size:18px; margin-right:4px;">add</span> Aggiungi
+                </button>
+            </div>
+            
+            <!-- Lista delle Patenti -->
+            <div id="listaPatentiContainer" style="display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto; padding-right:4px;">
+                <!-- Righe dinamiche popolate da JS -->
+            </div>
+            
+            <div style="border-top:1px solid #e2e8f0; padding-top:12px; display:flex; justify-content:flex-end;">
+                <button type="button" id="btnChiudiGestionePatenti2" class="btn-primary" style="width:auto; background:#f1f5f9; color:#334155; box-shadow:none; padding:8px 16px; font-size:13px; border-radius:8px;">Chiudi</button>
+            </div>
+        </div>
+    </div>
         </div>
     </div>
 </main>
 
-<script src="script.js?v=6.183"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.183"></script>
-
-<script type="module">
-    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getStorage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-    import { firebaseConfig } from "./firebase-config.js";
-
-    const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    window.db = db;
-    window.firebaseStorage = getStorage(app);
+<script src="script.js?v=6.184"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.184"></script>
 
     // Gestione realtime tipologie
     window.appData = window.appData || {};
     window.appData.lista_tipologie_mezzi = [];
+    window.appData.lista_patenti_mezzi = [];
 
     // Definiamo subito le funzioni globali su window per prevenire errori di caricamento asincrono
     window.apriGestioneTipologie = function() {
@@ -561,6 +587,162 @@
         select.value = currentVal;
     }
 
+    // Gestione dinamica delle Patenti
+    window.apriGestionePatenti = function() {
+        const mod = document.getElementById('modalPatenti');
+        if (mod) {
+            mod.style.display = 'flex';
+            setTimeout(() => {
+                mod.classList.add('active');
+            }, 10);
+        }
+        renderListaPatentiModale(window.appData.lista_patenti_mezzi);
+    };
+
+    window.chiudiGestionePatenti = function() {
+        const mod = document.getElementById('modalPatenti');
+        if (mod) {
+            mod.classList.remove('active');
+            setTimeout(() => {
+                mod.style.display = 'none';
+            }, 300);
+        }
+    };
+
+    window.aggiungiPatente = async function() {
+        const input = document.getElementById('nuovaPatenteInput');
+        if (!input) return;
+        const nome = input.value.trim().toUpperCase();
+        if (!nome) return alert("Inserire un nome per il tipo patente.");
+        
+        const duplicato = window.appData.lista_patenti_mezzi.some(p => p.nome.toLowerCase() === nome.toLowerCase());
+        if (duplicato) return alert("Questo tipo patente esiste già.");
+        
+        const nuovePatenti = [...window.appData.lista_patenti_mezzi, { id: Date.now().toString(), nome: nome }];
+        try {
+            await setDoc(doc(db, "mezzi", "_patenti"), { valori: nuovePatenti }, { merge: true });
+            input.value = '';
+        } catch (e) {
+            console.error("Errore aggiunta patente:", e);
+            alert("Errore durante l'inserimento: " + e.message);
+        }
+    };
+
+    window.eliminaPatente = async function(id, nome) {
+        const mezziList = (window.appData && window.appData.lista_mezzi) ? window.appData.lista_mezzi : [];
+        const mezziConPatente = mezziList.filter(m => (m.patente || '').toLowerCase().trim() === nome.toLowerCase().trim());
+        
+        if (mezziConPatente.length > 0) {
+            const targhe = mezziConPatente.map(m => m.targa).join(', ');
+            alert(`Impossibile eliminare la patente "${nome}" perché è attualmente utilizzata dai seguenti mezzi: ${targhe}`);
+            return;
+        }
+
+        if (!confirm(`Sei sicuro di voler eliminare la patente "${nome}"?`)) return;
+
+        const nuovePatenti = window.appData.lista_patenti_mezzi.filter(p => p.id !== id);
+        try {
+            await setDoc(doc(db, "mezzi", "_patenti"), { valori: nuovePatenti }, { merge: true });
+        } catch (e) {
+            console.error("Errore eliminazione patente:", e);
+            alert("Errore durante l'eliminazione: " + e.message);
+        }
+    };
+
+    window.modificaPatente = async function(id, vecchioNome) {
+        const mezziList = (window.appData && window.appData.lista_mezzi) ? window.appData.lista_mezzi : [];
+        const mezziConPatente = mezziList.filter(m => (m.patente || '').toLowerCase().trim() === vecchioNome.toLowerCase().trim());
+        
+        if (mezziConPatente.length > 0) {
+            const targhe = mezziConPatente.map(m => m.targa).join(', ');
+            alert(`Impossibile modificare la patente "${vecchioNome}" perché è attualmente utilizzata dai seguenti mezzi: ${targhe}`);
+            return;
+        }
+
+        const nuovoNome = prompt(`Rinomina il tipo patente "${vecchioNome}" in:`, vecchioNome);
+        if (!nuovoNome || nuovoNome.trim() === vecchioNome) return;
+        
+        const nomeTrim = nuovoNome.trim().toUpperCase();
+        const duplicato = window.appData.lista_patenti_mezzi.some(p => p.nome.toLowerCase() === nomeTrim.toLowerCase() && p.id !== id);
+        if (duplicato) return alert("Un tipo patente con questo nome esiste già.");
+
+        const nuovePatenti = window.appData.lista_patenti_mezzi.map(p => p.id === id ? { ...p, nome: nomeTrim } : p);
+        try {
+            await setDoc(doc(db, "mezzi", "_patenti"), { valori: nuovePatenti }, { merge: true });
+        } catch (e) {
+            console.error("Errore modifica patente:", e);
+            alert("Errore durante la modifica: " + e.message);
+        }
+    };
+
+    function renderListaPatentiModale(list) {
+        const container = document.getElementById('listaPatentiContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (list.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#64748b; font-size:12px; margin: 10px 0;">Nessun tipo patente definito.</p>';
+            return;
+        }
+
+        list.forEach(p => {
+            const row = document.createElement('div');
+            row.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; color:#334155; margin-bottom:6px;";
+            
+            const span = document.createElement('span');
+            span.style.fontWeight = '500';
+            span.textContent = p.nome;
+            row.appendChild(span);
+            
+            const actionsDiv = document.createElement('div');
+            actionsDiv.style.display = 'flex';
+            actionsDiv.style.gap = '8px';
+            
+            // Bottone Modifica
+            const btnMod = document.createElement('button');
+            btnMod.type = 'button';
+            btnMod.style.cssText = "background:none; border:none; color:var(--primary); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:4px;";
+            btnMod.title = "Modifica";
+            btnMod.innerHTML = '<span class="material-icons-round" style="font-size:18px;">edit</span>';
+            btnMod.onclick = () => window.modificaPatente(p.id, p.nome);
+            actionsDiv.appendChild(btnMod);
+            
+            // Bottone Elimina
+            const btnDel = document.createElement('button');
+            btnDel.type = 'button';
+            btnDel.style.cssText = "background:none; border:none; color:#ef4444; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:4px;";
+            btnDel.title = "Elimina";
+            btnDel.innerHTML = '<span class="material-icons-round" style="font-size:18px;">delete</span>';
+            btnDel.onclick = () => window.eliminaPatente(p.id, p.nome);
+            actionsDiv.appendChild(btnDel);
+            
+            row.appendChild(actionsDiv);
+            container.appendChild(row);
+        });
+    }
+
+    function popolaTendinaPatenti(list) {
+        const select = document.getElementById('patenteInput');
+        if (!select) return;
+        
+        const currentVal = select.value;
+        select.innerHTML = '';
+        list.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.nome;
+            opt.textContent = `Patente ${p.nome}`;
+            select.appendChild(opt);
+        });
+        
+        if (currentVal && !list.some(p => p.nome === currentVal)) {
+            const opt = document.createElement('option');
+            opt.value = currentVal;
+            opt.textContent = currentVal + " (Non più attiva)";
+            select.appendChild(opt);
+        }
+        select.value = currentVal;
+    }
+
     // Listener realtime sul documento speciale /mezzi/_tipologie
     try {
         const docRef = doc(db, "mezzi", "_tipologie");
@@ -589,6 +771,38 @@
         console.error("Errore inizializzazione listener tipologie:", err);
     }
 
+    // Listener realtime sul documento speciale /mezzi/_patenti
+    try {
+        const docPatRef = doc(db, "mezzi", "_patenti");
+        onSnapshot(docPatRef, (docSnap) => {
+            let list = [];
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (Array.isArray(data.valori)) {
+                    list = data.valori;
+                }
+            }
+            // Fallback se il documento non esiste ancora (impostiamo B e C come default)
+            if (list.length === 0) {
+                list = [{ id: '1', nome: 'B' }, { id: '2', nome: 'C' }];
+            }
+            // ordina per nome
+            list.sort((a, b) => a.nome.localeCompare(b.nome));
+            window.appData.lista_patenti_mezzi = list;
+            
+            popolaTendinaPatenti(list);
+            
+            const mod = document.getElementById('modalPatenti');
+            if (mod && mod.style.display === 'flex') {
+                renderListaPatentiModale(list);
+            }
+        }, (error) => {
+            console.error("Errore caricamento patenti da document _patenti:", error);
+        });
+    } catch (err) {
+        console.error("Errore inizializzazione listener patenti:", err);
+    }
+
     // Registriamo i click handler per i pulsanti tramite codice JavaScript, per robustezza
     setTimeout(() => {
         const btnApri = document.getElementById('btnApriGestioneTipologie');
@@ -602,6 +816,18 @@
 
         const btnAdd = document.getElementById('btnAggiungiTipologia');
         if (btnAdd) btnAdd.onclick = window.aggiungiTipologia;
+
+        const btnApriPat = document.getElementById('btnApriGestionePatenti');
+        if (btnApriPat) btnApriPat.onclick = window.apriGestionePatenti;
+
+        const btnChiudiPat = document.getElementById('btnChiudiGestionePatenti');
+        if (btnChiudiPat) btnChiudiPat.onclick = window.chiudiGestionePatenti;
+
+        const btnChiudiPat2 = document.getElementById('btnChiudiGestionePatenti2');
+        if (btnChiudiPat2) btnChiudiPat2.onclick = window.chiudiGestionePatenti;
+
+        const btnAddPat = document.getElementById('btnAggiungiPatente');
+        if (btnAddPat) btnAddPat.onclick = window.aggiungiPatente;
     }, 100);
 </script>
 
@@ -1268,7 +1494,25 @@ document.addEventListener("DOMContentLoaded", () => {
             
             targaInput.value = mezzo.targa;
             modelloInput.value = mezzo.modello || '';
-            patenteInput.value = mezzo.patente || 'B';
+            // Assicuriamoci che se il mezzo ha una patente non inclusa nella lista attuale, venga comunque mostrata nel select
+            const valPatente = mezzo.patente || 'B';
+            const selectPatente = document.getElementById('patenteInput');
+            if (valPatente && selectPatente) {
+                let optionExists = false;
+                for (let i = 0; i < selectPatente.options.length; i++) {
+                    if (selectPatente.options[i].value === valPatente) {
+                        optionExists = true;
+                        break;
+                    }
+                }
+                if (!optionExists) {
+                    const opt = document.createElement('option');
+                    opt.value = valPatente;
+                    opt.textContent = valPatente + " (Non più attiva)";
+                    selectPatente.appendChild(opt);
+                }
+            }
+            patenteInput.value = valPatente;
             document.getElementById('inUsoInput').checked = mezzo.inUso !== false;
             attivoInput.checked = mezzo.attivo !== false;
             // Assicuriamoci che se il mezzo ha una tipologia non inclusa nella lista attuale, venga comunque mostrata nel select

@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.192">
+    <link rel="stylesheet" href="styles.css?v=6.193">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -720,17 +720,17 @@
 
         /* --- STILI 3B INTERATTIVI --- */
         #sidebar.floating {
-            position: fixed !important;
+            position: fixed;
             z-index: 9999;
             border-radius: 16px;
             box-shadow: 0 24px 64px rgba(0,0,0,0.45);
             border: 1.5px solid rgba(255,255,255,0.08);
             overflow: hidden;
-            width: 75% !important;
+            width: 75%;
             max-width: 1200px;
-            height: 85vh !important;
-            left: 12.5% !important;
-            top: 7.5% !important;
+            height: 85vh;
+            left: 12.5%;
+            top: 7.5%;
         }
         #sidebar.floating #header {
             cursor: grab;
@@ -1549,31 +1549,48 @@ const db = getFirestore(app);
         function initFloatDrag() {
             const hdr = document.getElementById('header');
             if (!hdr) return;
-            hdr.addEventListener('mousedown', function(e) {
+
+            const startDrag = (clientX, clientY, e) => {
                 if (!_sganciato) return;
                 if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) return;
                 
                 const sb = document.getElementById('sidebar');
                 const rect = sb.getBoundingClientRect();
-                _dragOX = e.clientX - rect.left;
-                _dragOY = e.clientY - rect.top;
+                _dragOX = clientX - rect.left;
+                _dragOY = clientY - rect.top;
                 hdr.classList.add('dragging');
-                e.preventDefault();
                 
-                function onMove(ev) {
-                    sb.style.left = (ev.clientX - _dragOX) + 'px';
-                    sb.style.top = (ev.clientY - _dragOY) + 'px';
+                if (e.type === 'mousedown') {
+                    e.preventDefault();
                 }
-                
-                function onUp() {
+
+                const onMove = (ev) => {
+                    const curX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+                    const curY = ev.touches ? ev.touches[0].clientY : ev.clientY;
+                    sb.style.left = (curX - _dragOX) + 'px';
+                    sb.style.top = (curY - _dragOY) + 'px';
+                };
+
+                const onEnd = () => {
                     hdr.classList.remove('dragging');
                     document.removeEventListener('mousemove', onMove);
-                    document.removeEventListener('mouseup', onUp);
-                }
-                
+                    document.removeEventListener('mouseup', onEnd);
+                    document.removeEventListener('touchmove', onMove);
+                    document.removeEventListener('touchend', onEnd);
+                };
+
                 document.addEventListener('mousemove', onMove);
-                document.addEventListener('mouseup', onUp);
-            });
+                document.addEventListener('mouseup', onEnd);
+                document.addEventListener('touchmove', onMove, { passive: true });
+                document.addEventListener('touchend', onEnd);
+            };
+
+            hdr.addEventListener('mousedown', (e) => startDrag(e.clientX, e.clientY, e));
+            hdr.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    startDrag(e.touches[0].clientX, e.touches[0].clientY, e);
+                }
+            }, { passive: true });
         }
 
         // --- GESTIONE SECONDO MONITOR (POPUP) ---

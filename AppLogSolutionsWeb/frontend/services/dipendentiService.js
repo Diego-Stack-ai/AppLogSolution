@@ -16,7 +16,10 @@ export async function getAutistiAttivi() {
     dipendentiSnap.forEach(d => {
         const data = d.data();
         const ruolo = (data.ruolo || "").toLowerCase().trim();
-        const isStaff = ruolo === 'amministratore' || ruolo === 'impiegata';
+        
+        // Verifica del flag inPianificazioneViaggi con fallback retrocompatibile per i record esistenti
+        const fallbackViaggi = ruolo !== 'amministratore' && ruolo !== 'impiegata' && ruolo !== 'fornitore';
+        const mostraInViaggi = data.inPianificazioneViaggi !== undefined ? data.inPianificazioneViaggi : fallbackViaggi;
         
         const stato = (data.stato || data.Stato || "").toLowerCase();
         let isFired = stato.includes('licenziat') || stato.includes('inattiv');
@@ -32,8 +35,8 @@ export async function getAutistiAttivi() {
             }
         }
 
-        // Escludiamo lo staff e i licenziati
-        if (data.attivo !== false && !isStaff && !isFired) {
+        // Escludiamo chi ha attivo == false, chi è licenziato, e chi non ha il flag di pianificazione attivo
+        if (data.attivo !== false && !isFired && mostraInViaggi) {
             dipendenti.push({ id: d.id, ...data });
         }
     });

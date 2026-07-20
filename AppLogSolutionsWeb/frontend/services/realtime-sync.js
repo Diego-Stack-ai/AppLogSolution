@@ -59,8 +59,12 @@ function startRealtimeSync(isAdmin) {
             });
             
             window.appData.lista_dipendenti_completa = tuttiDipendenti;
-            // I fornitori non devono apparire in presenze, pianificazione, fatturazione, ecc.
-            window.appData.lista_autisti = tuttiDipendenti.filter(d => (d.ruolo || '').toLowerCase() !== 'fornitore');
+            // Sostituito filtro statico con flag inRegistroPresenze dinamico (con fallback retrocompatibile sui ruoli per vecchi record)
+            window.appData.lista_autisti = tuttiDipendenti.filter(d => {
+                const ruolo = (d.ruolo || '').toLowerCase();
+                const fallbackPresenze = (ruolo !== 'fornitore' && ruolo !== 'amministratore' && ruolo !== 'impiegata');
+                return d.inRegistroPresenze !== undefined ? d.inRegistroPresenze : fallbackPresenze;
+            });
             
             if (typeof window.renderAutisti === 'function') window.renderAutisti();
             if (typeof window.renderAutistiDropdown === 'function') window.renderAutistiDropdown();
@@ -313,7 +317,7 @@ window.updateUser = async function(id, data) {
 }
 
 // Funzione per creare un nuovo utente tramite istanza Auth temporanea
-window.registerNewUserCloud = async function(email, password, nome, cognome, ruolo, turno, canElevate) {
+window.registerNewUserCloud = async function(email, password, nome, cognome, ruolo, turno, canElevate, inRegistroPresenze = false, inPianificazioneViaggi = false) {
     const tempApp = getApps().find(a => a.name === "UserCreationApp") || initializeApp(firebaseConfig, "UserCreationApp");
     const tempAuth = getAuth(tempApp);
 
@@ -331,6 +335,8 @@ window.registerNewUserCloud = async function(email, password, nome, cognome, ruo
             ruolo: ruolo,
             tipoTurno: turno,
             canElevate: canElevate,
+            inRegistroPresenze: inRegistroPresenze,
+            inPianificazioneViaggi: inPianificazioneViaggi,
             needsPasswordChange: false,
             createdAt: new Date()
         });

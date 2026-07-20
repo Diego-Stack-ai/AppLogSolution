@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.176">
+    <link rel="stylesheet" href="styles.css?v=6.177">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -89,8 +89,8 @@
 
         <div id="autistiContent" style="display: none; padding-top: 20px;">
             <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-                <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="document.getElementById('btnAnnullaAutista').onclick(); const f = document.getElementById('formAutistiContainer'); f.style.display='block'; document.getElementById('driverRuoloInput').value='autista'; document.getElementById('driverRuoloInput').dispatchEvent(new Event('change'));"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">person_add</span>Aggiungi Nuovo Dipendente</button>
-                <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px; background-color: #475569;" onclick="document.getElementById('btnAnnullaAutista').onclick(); const f = document.getElementById('formAutistiContainer'); f.style.display='block'; document.getElementById('driverRuoloInput').value='fornitore'; document.getElementById('driverRuoloInput').dispatchEvent(new Event('change'));"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">storefront</span>Aggiungi Nuovo Fornitore</button>
+                <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px;" onclick="document.getElementById('btnAnnullaAutista').onclick(); const f = document.getElementById('formAutistiContainer'); f.style.display='block'; document.getElementById('driverRuoloInput').value='autista'; document.getElementById('driverRuoloInput').dispatchEvent(new Event('change')); document.getElementById('driverInRegistroPresenze').checked=true; document.getElementById('driverInPianificazioneViaggi').checked=true; const optFornitore = document.getElementById('driverRuoloInput').querySelector('option[value=&quot;fornitore&quot;]'); if (optFornitore) optFornitore.style.display = 'none';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">person_add</span>Aggiungi Nuovo Dipendente</button>
+                <button type="button" class="btn-primary" style="width:auto; box-shadow:none; font-size:13px; padding:10px 16px; background-color: #475569;" onclick="document.getElementById('btnAnnullaAutista').onclick(); const f = document.getElementById('formAutistiContainer'); f.style.display='block'; document.getElementById('driverRuoloInput').value='fornitore'; document.getElementById('driverRuoloInput').dispatchEvent(new Event('change')); document.getElementById('driverInRegistroPresenze').checked=false; document.getElementById('driverInPianificazioneViaggi').checked=false; const optFornitore = document.getElementById('driverRuoloInput').querySelector('option[value=&quot;fornitore&quot;]'); if (optFornitore) optFornitore.style.display = '';"><span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">storefront</span>Aggiungi Nuovo Fornitore</button>
             </div>
             <div id="formAutistiContainer" style="display: none; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:24px;">
             <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; border-left: 3px solid var(--primary); padding-left: 10px;">
@@ -137,6 +137,24 @@
                         <option value="giornata">Giornata</option>
                         <option value="notturno">Notturno</option>
                     </select>
+                </div>
+            </div>
+
+            <!-- Flag di visibilità e utilizzo dinamici -->
+            <div style="margin-top: 20px; margin-bottom: 24px; padding: 15px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 12px;">
+                <span style="font-size: 13px; font-weight: 600; color: #334155; display: flex; align-items: center; gap: 6px;">
+                    <span class="material-icons-round" style="font-size: 18px; color: var(--primary);">visibility</span>
+                    Opzioni di Visibilità e Utilizzo
+                </span>
+                <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                    <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #475569; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="driverInRegistroPresenze" style="width: 18px; height: 18px; cursor: pointer; border-radius: 4px; border: 1px solid #cbd5e1;">
+                        Includi nel Registro Presenze
+                    </label>
+                    <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #475569; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="driverInPianificazioneViaggi" style="width: 18px; height: 18px; cursor: pointer; border-radius: 4px; border: 1px solid #cbd5e1;">
+                        Includi nella Pianificazione Viaggi
+                    </label>
                 </div>
             </div>
 
@@ -1021,6 +1039,25 @@
             driverTurnoInput.value = targetUser.tipoTurno || 'giornata';
             driverElevazione.checked = targetUser.canElevate || false;
 
+            // Carica flag di visibilità e utilizzo dinamici con fallback retrocompatibile
+            const checkPresenze = document.getElementById('driverInRegistroPresenze');
+            const checkViaggi = document.getElementById('driverInPianificazioneViaggi');
+            const ruoloLower = (targetUser.ruolo || '').toLowerCase();
+            if (checkPresenze) {
+                const fallbackPresenze = (ruoloLower !== 'fornitore' && ruoloLower !== 'amministratore' && ruoloLower !== 'impiegata');
+                checkPresenze.checked = targetUser.inRegistroPresenze !== undefined ? targetUser.inRegistroPresenze : fallbackPresenze;
+            }
+            if (checkViaggi) {
+                const fallbackViaggi = (ruoloLower !== 'fornitore' && ruoloLower !== 'amministratore' && ruoloLower !== 'impiegata');
+                checkViaggi.checked = targetUser.inPianificazioneViaggi !== undefined ? targetUser.inPianificazioneViaggi : fallbackViaggi;
+            }
+
+            // Mostra/Nascondi l'opzione Fornitore per evitare selezioni errate
+            const optFornitore = driverRuoloInput.querySelector('option[value="fornitore"]');
+            if (optFornitore) {
+                optFornitore.style.display = (ruoloLower === 'fornitore') ? '' : 'none';
+            }
+
             // Nuovi campi anagrafici e patente
             driverCodiceFiscale.value = targetUser.codice_fiscale || '';
             driverSesso.value = targetUser.sesso || '';
@@ -1093,6 +1130,14 @@
             driverTrasformazione.value = '';
             driverDataTrasformazione.value = '';
             driverTipoTrasformazione.value = '';
+            
+            const checkPresenze = document.getElementById('driverInRegistroPresenze');
+            const checkViaggi = document.getElementById('driverInPianificazioneViaggi');
+            if (checkPresenze) checkPresenze.checked = false;
+            if (checkViaggi) checkViaggi.checked = false;
+            
+            const optFornitore = driverRuoloInput.querySelector('option[value="fornitore"]');
+            if (optFornitore) optFornitore.style.display = '';
             const pwdInput = document.getElementById('driverPasswordInput');
             if (pwdInput) {
                 pwdInput.value = '';
@@ -1126,6 +1171,9 @@
             const r = driverRuoloInput.value.toLowerCase();
             const t = driverTurnoInput.value;
             const e = driverElevazione.checked;
+            
+            const inRegistroPresenze = document.getElementById('driverInRegistroPresenze') ? document.getElementById('driverInRegistroPresenze').checked : false;
+            const inPianificazioneViaggi = document.getElementById('driverInPianificazioneViaggi') ? document.getElementById('driverInPianificazioneViaggi').checked : false;
             
             // Dati nuovi
             const cf = driverCodiceFiscale.value.trim().toUpperCase();
@@ -1210,7 +1258,7 @@
                 
                 try {
                     if (window.registerNewUserCloud) {
-                        const uid = await window.registerNewUserCloud(email, pwd, n, cognome, r, t, e);
+                        const uid = await window.registerNewUserCloud(email, pwd, n, cognome, r, t, e, inRegistroPresenze, inPianificazioneViaggi);
                         
                         // Per i nuovi utenti registrati dal pannello, salviamo subito anche i campi extra
                         if (uid && window.updateUser) {
@@ -1260,6 +1308,8 @@
                         ruolo: r, 
                         tipoTurno: t, 
                         canElevate: e, 
+                        inRegistroPresenze: inRegistroPresenze,
+                        inPianificazioneViaggi: inPianificazioneViaggi,
                         codice_fiscale: cf,
                         sesso: sesso,
                         data_nascita: dn,
@@ -1307,8 +1357,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=6.176"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.176"></script>
+    <script src="script.js?v=6.177"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.177"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────

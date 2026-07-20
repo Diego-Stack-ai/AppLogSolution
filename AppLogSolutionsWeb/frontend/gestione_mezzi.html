@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.180">
+    <link rel="stylesheet" href="styles.css?v=6.181">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -193,7 +193,7 @@
                                 <select id="tipologiaInput" style="flex:1; height:45px; border-radius:12px; border:1px solid var(--border); padding:0 12px; font-size:14px; font-family:inherit; color:var(--text);">
                                     <option value="">Caricamento...</option>
                                 </select>
-                                <button type="button" onclick="apriGestioneTipologie()" class="action-btn" title="Gestisci Tipologie" style="padding:10px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:12px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                                <button type="button" id="btnApriGestioneTipologie" class="action-btn" title="Gestisci Tipologie" style="padding:10px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:12px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                                     <span class="material-icons-round" style="font-size:20px; color:#475569;">settings</span>
                                 </button>
                             </div>
@@ -360,7 +360,7 @@
                     <span class="material-icons-round" style="font-size:20px;">settings</span>
                     Gestisci Tipologie Mezzi
                 </h3>
-                <button type="button" onclick="chiudiGestioneTipologie()" style="background:none; border:none; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">
+                <button type="button" id="btnChiudiGestioneTipologie" style="background:none; border:none; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">
                     <span class="material-icons-round">close</span>
                 </button>
             </div>
@@ -368,7 +368,7 @@
             <!-- Inserimento Nuova Tipologia -->
             <div style="display:flex; gap:8px;">
                 <input type="text" id="nuovaTipologiaInput" placeholder="Nuova tipologia (es. Trattore stradale)" style="flex:1; height:40px; border-radius:8px; border:1px solid #cbd5e1; padding:0 12px; font-size:13px; font-family:inherit;">
-                <button type="button" onclick="aggiungiTipologia()" class="btn-primary" style="width:auto; height:40px; padding:0 16px; font-size:13px; border-radius:8px; display:flex; align-items:center; justify-content:center; box-shadow:none;">
+                <button type="button" id="btnAggiungiTipologia" class="btn-primary" style="width:auto; height:40px; padding:0 16px; font-size:13px; border-radius:8px; display:flex; align-items:center; justify-content:center; box-shadow:none;">
                     <span class="material-icons-round" style="font-size:18px; margin-right:4px;">add</span> Aggiungi
                 </button>
             </div>
@@ -379,7 +379,7 @@
             </div>
             
             <div style="border-top:1px solid #e2e8f0; padding-top:12px; display:flex; justify-content:flex-end;">
-                <button type="button" onclick="chiudiGestioneTipologie()" class="btn-primary" style="width:auto; background:#f1f5f9; color:#334155; box-shadow:none; padding:8px 16px; font-size:13px; border-radius:8px;">Chiudi</button>
+                <button type="button" id="btnChiudiGestioneTipologie2" class="btn-primary" style="width:auto; background:#f1f5f9; color:#334155; box-shadow:none; padding:8px 16px; font-size:13px; border-radius:8px;">Chiudi</button>
             </div>
         </div>
     </div>
@@ -387,8 +387,8 @@
     </div>
 </main>
 
-<script src="script.js?v=6.180"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.180"></script>
+<script src="script.js?v=6.181"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.181"></script>
 
 <script type="module">
     import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -496,17 +496,35 @@
         list.forEach(t => {
             const row = document.createElement('div');
             row.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; color:#334155; margin-bottom:6px;";
-            row.innerHTML = `
-                <span style="font-weight:500;">${t.nome}</span>
-                <div style="display:flex; gap:8px;">
-                    <button type="button" onclick="modificaTipologia('${t.id}', '${t.nome.replace(/'/g, "\\'")}')" style="background:none; border:none; color:var(--primary); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:4px;" title="Modifica">
-                        <span class="material-icons-round" style="font-size:18px;">edit</span>
-                    </button>
-                    <button type="button" onclick="eliminaTipologia('${t.id}', '${t.nome.replace(/'/g, "\\'")}')" style="background:none; border:none; color:#ef4444; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:4px;" title="Elimina">
-                        <span class="material-icons-round" style="font-size:18px;">delete</span>
-                    </button>
-                </div>
-            `;
+            
+            const span = document.createElement('span');
+            span.style.fontWeight = '500';
+            span.textContent = t.nome;
+            row.appendChild(span);
+            
+            const actionsDiv = document.createElement('div');
+            actionsDiv.style.display = 'flex';
+            actionsDiv.style.gap = '8px';
+            
+            // Bottone Modifica
+            const btnMod = document.createElement('button');
+            btnMod.type = 'button';
+            btnMod.style.cssText = "background:none; border:none; color:var(--primary); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:4px;";
+            btnMod.title = "Modifica";
+            btnMod.innerHTML = '<span class="material-icons-round" style="font-size:18px;">edit</span>';
+            btnMod.onclick = () => window.modificaTipologia(t.id, t.nome);
+            actionsDiv.appendChild(btnMod);
+            
+            // Bottone Elimina
+            const btnDel = document.createElement('button');
+            btnDel.type = 'button';
+            btnDel.style.cssText = "background:none; border:none; color:#ef4444; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:4px;";
+            btnDel.title = "Elimina";
+            btnDel.innerHTML = '<span class="material-icons-round" style="font-size:18px;">delete</span>';
+            btnDel.onclick = () => window.eliminaTipologia(t.id, t.nome);
+            actionsDiv.appendChild(btnDel);
+            
+            row.appendChild(actionsDiv);
             container.appendChild(row);
         });
     }
@@ -560,6 +578,21 @@
     } catch (err) {
         console.error("Errore inizializzazione listener tipologie:", err);
     }
+
+    // Registriamo i click handler per i pulsanti tramite codice JavaScript, per robustezza
+    setTimeout(() => {
+        const btnApri = document.getElementById('btnApriGestioneTipologie');
+        if (btnApri) btnApri.onclick = window.apriGestioneTipologie;
+
+        const btnChiudi = document.getElementById('btnChiudiGestioneTipologie');
+        if (btnChiudi) btnChiudi.onclick = window.chiudiGestioneTipologie;
+
+        const btnChiudi2 = document.getElementById('btnChiudiGestioneTipologie2');
+        if (btnChiudi2) btnChiudi2.onclick = window.chiudiGestioneTipologie;
+
+        const btnAdd = document.getElementById('btnAggiungiTipologia');
+        if (btnAdd) btnAdd.onclick = window.aggiungiTipologia;
+    }, 100);
 </script>
 
 <script>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.187">
+    <link rel="stylesheet" href="styles.css?v=6.188">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -310,8 +310,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.187"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.187"></script>
+    <script src="script.js?v=6.188"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.188"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -480,7 +480,8 @@
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
                 const batch = writeBatch(db);
-                const viaggiRef = collection(db, 'clienti', 'DNR', 'viaggi ddt');
+                const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
+                const viaggiRef = collection(db, 'clienti', activeTenant, 'viaggi ddt');
                 
                 // --- PULIZIA VECCHI DATI KPI DEL MESE ---
                 const targetSuffix = `-${monthVal.split('-')[1]}-${monthVal.split('-')[0]}`; // es. "-06-2026"
@@ -706,7 +707,8 @@
                 } catch(e) {}
 
                 // Recuperiamo TUTTI i viaggi
-                const viaggiRef = collection(db, 'clienti', 'DNR', 'viaggi ddt');
+                const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
+                const viaggiRef = collection(db, 'clienti', activeTenant, 'viaggi ddt');
                 const snap = await getDocs(viaggiRef);
 
                 let trips = [];

@@ -317,8 +317,10 @@ def _get_depot_for_points_cloud(punti):
         return DEPOT_CASTENEDOLO
     elif sommacampagna_tot > castenedolo_tot and sommacampagna_tot > veggiano_tot:
         return DEPOT_SOMMACAMPAGNA
+    elif veggiano_tot > castenedolo_tot and veggiano_tot > sommacampagna_tot:
+        return DEPOT_VEGGIANO
 
-    return None
+    return DEPOT_SOMMACAMPAGNA
 
 def _get_directions_and_simulate_cloud(percorso, depot, is_grand_chef, data_consegna, aggiorna_traffico, target_arr_time_min=390):
     punti_pieni = [depot] + percorso + [depot]

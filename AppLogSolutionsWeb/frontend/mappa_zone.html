@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.187">
+    <link rel="stylesheet" href="styles.css?v=6.188">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1486,7 +1486,8 @@ const db = getFirestore(app);
                 _updateLockUI();
                               // --- CARICAMENTO TIMESTAMP VIAGGI ---
               try {
-                  const q = query(collection(db, 'clienti/DNR/viaggi ddt'), where('data_lavoro', '==', targetFileDate));
+                  const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
+                  const q = query(collection(db, 'clienti', activeTenant, 'viaggi ddt'), where('data_lavoro', '==', targetFileDate));
                   const snap = await getDocs(q);
                   snap.forEach(doc => {
                       const id_zona = doc.id.split('_')[1];
@@ -1771,7 +1772,8 @@ const db = getFirestore(app);
             if (targetFileDate && modalZid) {
                 const viaggio_id = `${targetFileDate}_${modalZid}`;
                 try {
-                    const docRef = doc(db, 'clienti/DNR/viaggi ddt', viaggio_id);
+                    const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
+                    const docRef = doc(db, 'clienti', activeTenant, 'viaggi ddt', viaggio_id);
                     await updateDoc(docRef, { nome_giro: v });
                     console.log(`[Firestore] Updated nome_giro in viaggi ddt for ${viaggio_id}`);
                 } catch (e) {
@@ -1848,7 +1850,8 @@ const db = getFirestore(app);
         // Helper: Reload daily voyage data from storage
         async function reloadVoyageData() {
             setLoaderMsg("Aggiornamento dati viaggi...");
-            const path = `REPORTS/${targetFileDate}/viaggi_giornalieri_Johnson.json`;
+            const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
+            const path = activeTenant !== 'DNR' ? `${activeTenant}/REPORTS/${targetFileDate}/viaggi_giornalieri_Johnson.json` : `REPORTS/${targetFileDate}/viaggi_giornalieri_Johnson.json`;
             const fileRef = ref(storage, path);
             const downloadUrl = await getDownloadURL(fileRef);
             
@@ -3096,7 +3099,8 @@ const db = getFirestore(app);
                 const res = await webCalcolaPercorsiFn({
                     data_consegna: targetFileDate,
                     id_zona: zid,
-                    aggiorna_traffico: false // Single giro calculation defaults to false for speed
+                    aggiorna_traffico: false, // Single giro calculation defaults to false for speed
+                    tenant: localStorage.getItem('activeTenant') || 'DNR'
                 });
                 
                 console.log("[Calcolo Cloud Singolo] Risultato:", res.data);
@@ -3257,7 +3261,8 @@ const db = getFirestore(app);
                     });
                 });
 
-                const pathBase = `REPORTS/${targetFileDate}`;
+                const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
+                const pathBase = activeTenant !== 'DNR' ? `${activeTenant}/REPORTS/${targetFileDate}` : `REPORTS/${targetFileDate}`;
                 
                 let dataToSave = formattedVoyages;
                 if (_CLIENTE_PROGETTO) {
@@ -3360,7 +3365,8 @@ const db = getFirestore(app);
                     });
                 });
 
-                const pathBase = `REPORTS/${targetFileDate}`;
+                const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
+                const pathBase = activeTenant !== 'DNR' ? `${activeTenant}/REPORTS/${targetFileDate}` : `REPORTS/${targetFileDate}`;
                 
                 // 1. Save viaggi_giornalieri_Johnson.json
                 let dataToSave = formattedVoyages;
@@ -3423,7 +3429,8 @@ const db = getFirestore(app);
             const modificati = DATA_ZONE.filter(z => z._stato === 'modificato').map(z => z.id_zona);
             // --- CONTROLLO CONFLITTI (LOCK TIMESTAMP) ---
             try {
-                const q = query(collection(db, 'clienti/DNR/viaggi ddt'), where('data_lavoro', '==', targetFileDate));
+                const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
+                const q = query(collection(db, 'clienti', activeTenant, 'viaggi ddt'), where('data_lavoro', '==', targetFileDate));
                 const snap = await getDocs(q);
                 let conflitto = false;
                 let nomeConflitto = "";
@@ -3461,7 +3468,8 @@ const db = getFirestore(app);
                     data_consegna: targetFileDate,
                     target_zones: modificati,
                     aggiorna_traffico: false,
-                    usa_or_tools: false // The magic flag!
+                    usa_or_tools: false, // The magic flag!
+                    tenant: localStorage.getItem('activeTenant') || 'DNR'
                 });
 
                 if (res.data && res.data.status === 'ok') {
@@ -3512,7 +3520,8 @@ const db = getFirestore(app);
                 const webCalcolaPercorsiFn = httpsCallable(functions, 'web_calcola_percorsi', { timeout: 540000 });
                 const res = await webCalcolaPercorsiFn({
                     data_consegna: targetFileDate,
-                    aggiorna_traffico: aggiornaTraffico
+                    aggiorna_traffico: aggiornaTraffico,
+                    tenant: localStorage.getItem('activeTenant') || 'DNR'
                 });
                 
                 console.log("[Calcolo Cloud] Risultato:", res.data);
@@ -3592,7 +3601,8 @@ const db = getFirestore(app);
                     });
                 });
                 
-                const pathBase = `REPORTS/${targetFileDate}`;
+                const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
+                const pathBase = activeTenant !== 'DNR' ? `${activeTenant}/REPORTS/${targetFileDate}` : `REPORTS/${targetFileDate}`;
                 
                 // 1. Save viaggi_giornalieri_Johnson.json
                 let dataToSave = formattedVoyages;

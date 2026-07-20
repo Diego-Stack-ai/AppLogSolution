@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.193">
+    <link rel="stylesheet" href="styles.css?v=6.194">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -532,6 +532,10 @@
             height: 55vh;
             flex: none;
             order: -1;
+        }
+
+        body.map-fullscreen #map {
+            height: 100vh !important;
         }
 
         /* Custom Marker shapes in Map */
@@ -1525,6 +1529,7 @@ const db = getFirestore(app);
                 sb.style.height = '';
                 sb.classList.add('floating');
                 document.body.style.overflow = 'visible';
+                document.body.classList.add('map-fullscreen');
                 btn.innerHTML = '<span class="material-icons-round" style="font-size: 16px;">unfold_less</span>';
                 btn.title = 'Aggancia pannello';
                 btn.classList.add('active');
@@ -1536,6 +1541,7 @@ const db = getFirestore(app);
                 sb.classList.remove('floating');
                 sb.style.left = sb.style.top = sb.style.width = sb.style.height = '';
                 document.body.style.overflow = 'hidden';
+                document.body.classList.remove('map-fullscreen');
                 btn.innerHTML = '<span class="material-icons-round" style="font-size: 16px;">unfold_more</span>';
                 btn.title = 'Sgancia pannello';
                 btn.classList.remove('active');
@@ -1642,6 +1648,7 @@ const db = getFirestore(app);
             const sb = document.getElementById('sidebar');
             sb.style.display = 'none';
             document.getElementById('btn-popup').classList.add('active');
+            document.body.classList.add('map-fullscreen');
             if (map) setTimeout(() => google.maps.event.trigger(map, 'resize'), 80);
             
             _popupChecker = setInterval(() => {
@@ -1651,6 +1658,7 @@ const db = getFirestore(app);
                     _popupChecker = null;
                     sb.style.display = '';
                     document.getElementById('btn-popup').classList.remove('active');
+                    document.body.classList.remove('map-fullscreen');
                     if (map) setTimeout(() => google.maps.event.trigger(map, 'resize'), 80);
                 }
             }, 500);

@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=6.185">
+    <link rel="stylesheet" href="styles.css?v=6.186">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .navetta-details-row {
@@ -515,13 +515,13 @@ tr.weekend:hover
         </div>
     </main>
 
-    <script src="script.js?v=6.185"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.185"></script>
+    <script src="script.js?v=6.186"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.186"></script>
     <script type="module">
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=6.185";
+        import { calculateHours } from "./firestore-service.js?v=6.186";
 
         const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
           window.db = getFirestore(app);
@@ -1213,7 +1213,7 @@ const db = getFirestore(app);
                     tr.innerHTML = `
     <td><strong>${dayName}</strong><br><span style="font-size: 0.8em; color: #6b7280;">${displayDate}</span><br>${navetteBadge}</td>
                         <td title="${rCliente.toUpperCase()}">
-                            <select class="edit-input" data-field="cliente" title="${rCliente.toUpperCase()}" disabled onchange="window.aggiornaViaggiPresenza(this.closest('tr'))">
+                            <select class="edit-input" data-field="cliente" title="${rCliente.toUpperCase()}" disabled onchange="window.aggiornaViaggiPresenza(this.closest('tr')); window.aggiornaDisponibilitaViaggiPresenze('${dateStr}');">
                                 <option value="">-</option>
                                 ${(window.appData?.lista_progetti || []).map(p => {
                                     const pNome = (p.nome || "").toUpperCase();
@@ -1239,7 +1239,7 @@ const db = getFirestore(app);
                             </select>
                         </td>
                         <td title="${rViaggio.toUpperCase()}">
-                            <select class="edit-input" data-field="viaggio" title="${rViaggio.toUpperCase()}" disabled>
+                            <select class="edit-input" data-field="viaggio" title="${rViaggio.toUpperCase()}" disabled onchange="window.aggiornaDisponibilitaViaggiPresenze('${dateStr}')">
                                 <option value="">-</option>
                                 ${rViaggio ? `<option value="${rViaggio.toUpperCase()}" selected>${rViaggio.toUpperCase()}</option>` : ''}
                             </select>
@@ -1324,6 +1324,9 @@ const db = getFirestore(app);
             allDateStrs.forEach(dateStr => {
                 if (typeof window.aggiornaDisponibilitaTarghePresenze === 'function') {
                     window.aggiornaDisponibilitaTarghePresenze(dateStr);
+                }
+                if (typeof window.aggiornaDisponibilitaViaggiPresenze === 'function') {
+                    window.aggiornaDisponibilitaViaggiPresenze(dateStr);
                 }
             });
 
@@ -1473,6 +1476,55 @@ const db = getFirestore(app);
                         
                         // Se la targa è usata nel set ED non è quella attualmente scelta in questo select
                         if (targheUsate.has(opt.value) && opt.value !== select.value) {
+                            opt.style.display = 'none';
+                            opt.disabled = true;
+                        } else {
+                            opt.style.display = '';
+                            opt.disabled = false;
+                        }
+                    });
+                }
+        };
+
+        // Gestione disponibilità viaggi (zone) per giorno e per cliente
+        window.aggiornaDisponibilitaViaggiPresenze = function(dateStr) {
+            const table = document.getElementById('presenzeTable');
+            if (!table || !dateStr) return;
+            
+            const righeDelGiorno = table.querySelectorAll(`tbody tr[data-date="${dateStr}"]`);
+            const viaggiAssegnatiPerCliente = {};
+            
+            // 1. Raccogli viaggi attualmente selezionati per ciascun cliente in questo giorno
+            righeDelGiorno.forEach(tr => {
+                const selectCliente = tr.querySelector('select[data-field="cliente"]');
+                const selectViaggio = tr.querySelector('select[data-field="viaggio"]');
+                if (selectCliente && selectViaggio && selectCliente.value && selectViaggio.value) {
+                    const clienteKey = selectCliente.value.trim().toUpperCase();
+                    const viaggioVal = selectViaggio.value.trim().toUpperCase();
+                    if (viaggioVal !== '') {
+                        if (!viaggiAssegnatiPerCliente[clienteKey]) {
+                            viaggiAssegnatiPerCliente[clienteKey] = new Set();
+                        }
+                        viaggiAssegnatiPerCliente[clienteKey].add(viaggioVal);
+                    }
+                }
+            });
+            
+            // 2. Disabilita opzioni già scelte per lo stesso cliente (tranne per se stesso)
+            righeDelGiorno.forEach(tr => {
+                const selectCliente = tr.querySelector('select[data-field="cliente"]');
+                const selectViaggio = tr.querySelector('select[data-field="viaggio"]');
+                if (selectCliente && selectViaggio) {
+                    const clienteKey = selectCliente.value.trim().toUpperCase();
+                    const setViaggi = viaggiAssegnatiPerCliente[clienteKey];
+                    
+                    Array.from(selectViaggio.options).forEach(opt => {
+                        if (!opt.value) return; // Salta opzione vuota
+                        
+                        const optVal = opt.value.trim().toUpperCase();
+                        
+                        // Se il viaggio è usato da un altro dipendente per lo stesso cliente
+                        if (setViaggi && setViaggi.has(optVal) && optVal !== selectViaggio.value.trim().toUpperCase()) {
                             opt.style.display = 'none';
                             opt.disabled = true;
                         } else {
@@ -2161,6 +2213,13 @@ const db = getFirestore(app);
                 
                 const btnSaveTutti = document.getElementById('btnSaveTutti');
                 if (btnSaveTutti) btnSaveTutti.style.display = 'inline-block';
+
+                if (typeof window.aggiornaDisponibilitaViaggiPresenze === 'function') {
+                    window.aggiornaDisponibilitaViaggiPresenze(tr.dataset.date);
+                }
+                if (typeof window.aggiornaDisponibilitaTarghePresenze === 'function') {
+                    window.aggiornaDisponibilitaTarghePresenze(tr.dataset.date);
+                }
             } else {
                 const btnAddNav = tr.querySelector('.btn-add-navetta-main');
                 if (btnAddNav) btnAddNav.style.display = 'none';
@@ -2204,6 +2263,13 @@ const db = getFirestore(app);
                     }
                 });
                 chkMagazzino.disabled = true;
+
+                if (typeof window.aggiornaDisponibilitaViaggiPresenze === 'function') {
+                    window.aggiornaDisponibilitaViaggiPresenze(tr.dataset.date);
+                }
+                if (typeof window.aggiornaDisponibilitaTarghePresenze === 'function') {
+                    window.aggiornaDisponibilitaTarghePresenze(tr.dataset.date);
+                }
 
                 btn.innerText = "✏️ Mod.";
                 btn.classList.remove('btn-cancel');
@@ -2525,7 +2591,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=6.185"></script>
+    <script type="module" src="cedolini-splitter.js?v=6.186"></script>
 
 </body>
 </html>

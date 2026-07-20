@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.191">
+    <link rel="stylesheet" href="styles.css?v=6.192">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -3003,7 +3003,12 @@ const db = getFirestore(app);
             }
 
             const subId = `${baseId}_${nextLetter}`;
-            const subColor = "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+            // Trova un colore inutilizzato dalla palette locale per garantire la differenziazione visiva
+            const coloriInUso = new Set(DATA_ZONE.map(x => (x.color || '').toLowerCase()));
+            let subColor = LOCAL_PALETTE.find(c => !coloriInUso.has(c.toLowerCase()));
+            if (!subColor) {
+                subColor = "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+            }
             
             // Remove points from source
             z.lista_punti = z.lista_punti.filter(p => !pointsToMove.includes(p));

@@ -18,7 +18,7 @@ import {
     serverTimestamp,
     Timestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { db } from "./core/firebase-init.js?v=6.209";
+import { db } from "./core/firebase-init.js";
 
 // ─── Costanti di configurazione ─────────────────────────────────────────────
 const IDB_NAME          = 'gpsLogsDB';   // Nome del database IndexedDB

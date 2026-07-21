@@ -1,5 +1,6 @@
 import { app, db, auth } from "./firebase-init.js";
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut, browserLocalPersistence, setPersistence, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { connectivityService } from "./connectivity-service.js";
 
 // ABILITAZIONE PERSISTENZA SESSIONE (localStorage)
 setPersistence(auth, browserLocalPersistence)
@@ -62,17 +63,29 @@ onAuthStateChanged(auth, async (user) => {
             const { doc, getDoc, getDocFromCache, updateDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
 
             let userDoc = null;
-            try {
-                // Tenta prima il recupero online del profilo
-                userDoc = await getDoc(doc(db, "dipendenti", user.uid));
-            } catch (fetchErr) {
-                console.warn("Auth: Connessione fallita o timeout sul server. Provo a caricare il profilo dipendente dalla cache locale...", fetchErr);
+            const isOffline = connectivityService.getStatus() === 'offline';
+            if (isOffline) {
+                console.log("Auth: Rilevato stato offline. Carico il profilo dipendente direttamente da cache...");
                 try {
                     userDoc = await getDocFromCache(doc(db, "dipendenti", user.uid));
-                    console.log("Auth: Profilo caricato correttamente dalla cache offline.");
+                    console.log("Auth: Profilo caricato correttamente da cache offline.");
                 } catch (cacheErr) {
-                    console.error("Auth: Profilo dipendente non trovato in cache locale.", cacheErr);
+                    console.error("Auth: Profilo dipendente non trovato in cache locale offline.", cacheErr);
                     throw new Error("Impossibile caricare il profilo offline. È necessario effettuare l'accesso online almeno una volta su questo dispositivo.");
+                }
+            } else {
+                try {
+                    // Tenta prima il recupero online del profilo
+                    userDoc = await getDoc(doc(db, "dipendenti", user.uid));
+                } catch (fetchErr) {
+                    console.warn("Auth: Connessione fallita o timeout sul server. Provo a caricare il profilo dipendente dalla cache locale...", fetchErr);
+                    try {
+                        userDoc = await getDocFromCache(doc(db, "dipendenti", user.uid));
+                        console.log("Auth: Profilo caricato correttamente dalla cache offline.");
+                    } catch (cacheErr) {
+                        console.error("Auth: Profilo dipendente non trovato in cache locale.", cacheErr);
+                        throw new Error("Impossibile caricare il profilo offline. È necessario effettuare l'accesso online almeno una volta su questo dispositivo.");
+                    }
                 }
             }
             
@@ -111,10 +124,24 @@ onAuthStateChanged(auth, async (user) => {
                 console.log(`Auth: Profilo caricato [${userData.nome}], Ruolo: "${role}", IsAdmin: ${isAdmin}`);
 
                 let permessiDoc = null;
-                try {
-                    permessiDoc = await getDoc(doc(db, "config", "permessi_dashboard"));
-                } catch(e) {
-                    console.warn("Auth: Impossibile scaricare permessi dashboard", e);
+                if (isOffline) {
+                    try {
+                        permessiDoc = await getDocFromCache(doc(db, "config", "permessi_dashboard"));
+                        console.log("Auth: Permessi dashboard caricati da cache offline.");
+                    } catch (e) {
+                        console.warn("Auth: Permessi dashboard non trovati in cache offline", e);
+                    }
+                } else {
+                    try {
+                        permessiDoc = await getDoc(doc(db, "config", "permessi_dashboard"));
+                    } catch(e) {
+                        console.warn("Auth: Impossibile scaricare permessi dashboard online, provo da cache...", e);
+                        try {
+                            permessiDoc = await getDocFromCache(doc(db, "config", "permessi_dashboard"));
+                        } catch (cacheErr) {
+                            console.warn("Auth: Permessi dashboard non disponibili offline", cacheErr);
+                        }
+                    }
                 }
                 
                 const permessiData = permessiDoc && permessiDoc.exists() ? permessiDoc.data() : {};

@@ -212,7 +212,7 @@
     </script>
 
     <script type="module">
-        import { db } from "./core/firebase-init.js";
+        import { db, app } from "./core/firebase-init.js";
         import { getFirestore, collection, onSnapshot, doc, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
 

@@ -34,6 +34,7 @@ window.logoutFirebase = async () => {
     isLoggingOut = true;
     try {
         window.appData.currentUser = {};
+        try { localStorage.removeItem('ls_cached_user'); } catch(e) {}
         await signOut(auth);
         console.log("Auth: Logout Firebase completato. Reindirizzamento...");
         window.location.replace('login.html');
@@ -130,6 +131,11 @@ onAuthStateChanged(auth, async (user) => {
 
                 window.appData.currentUser = { id: user.uid, email: user.email, ...userData, ruolo: role, isAdmin: isAdmin };
                 
+                // Persistenza del profilo in localStorage per il rendering immediato offline
+                try {
+                    localStorage.setItem('ls_cached_user', JSON.stringify(window.appData.currentUser));
+                } catch(e) { /* ignora errori storage */ }
+
                 console.log(`Auth: Profilo caricato [${userData.nome}], Ruolo: "${role}", IsAdmin: ${isAdmin}`);
 
                 let permessiDoc = null;

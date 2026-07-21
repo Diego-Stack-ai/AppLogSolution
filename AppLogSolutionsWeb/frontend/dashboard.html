@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.211">
+    <link rel="stylesheet" href="styles.css?v=6.212">
     <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"></noscript>
     <!-- PWA & Mobile Optimization -->
@@ -138,11 +138,15 @@
     </main>
 
 
-    <script src="script.js?v=6.211"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.211"></script>
+    <script src="script.js?v=6.212"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.212"></script>
     <script>
         // Funzione centrale di rendering della dashboard
+        let _dashRendered = false;
         function renderDashboard(user) {
+            if (_dashRendered) return; // evita doppio render
+            _dashRendered = true;
+
             const greeting = document.getElementById('userGreeting');
             if (greeting && user.nome) {
                 greeting.textContent = user.nome.charAt(0).toUpperCase() + user.nome.slice(1);
@@ -169,26 +173,41 @@
 
             const grid = document.querySelector('.dashboard-grid');
             if (grid) grid.classList.add('ready');
+            console.log('[Dashboard] Griglia mostrata per utente:', user.nome || user.email);
         }
 
-        // Callback chiamata da auth-service.js quando il profilo è caricato dal server/cache
-        window.onUserProfileLoaded = (user) => renderDashboard(user);
+        // Callback chiamata da auth-service.js quando il profilo è caricato dal server/cache Firestore
+        window.onUserProfileLoaded = (user) => {
+            _dashRendered = false; // permetti re-render con dati aggiornati da Firestore
+            renderDashboard(user);
+        };
 
-        // Early-render: se al DOMContentLoaded la sessione è già in memoria
-        // (es. ritorno da un'altra pagina offline), mostra la griglia immediatamente
+        // Early-render: al DOMContentLoaded legge il profilo da localStorage
+        // (disponibile immediatamente anche in offline/navigazione interna)
         document.addEventListener('DOMContentLoaded', () => {
-            const user = window.appData && window.appData.currentUser && window.appData.currentUser.id
+            // 1. Controlla window.appData (già in memoria dalla stessa sessione)
+            let user = window.appData && window.appData.currentUser && window.appData.currentUser.id
                 ? window.appData.currentUser
                 : null;
 
-            if (user) {
-                // Sessione già disponibile: renderizza subito
-                console.log('[Dashboard] Sessione già disponibile, renderizzazione immediata.');
+            if (!user) {
+                // 2. Prova localStorage (persiste tra navigazioni e sessioni offline)
+                try {
+                    const cached = localStorage.getItem('ls_cached_user');
+                    if (cached) {
+                        user = JSON.parse(cached);
+                        console.log('[Dashboard] Profilo caricato da localStorage:', user.nome);
+                    }
+                } catch(e) { /* ignora errori parsing */ }
+            }
+
+            if (user && user.id) {
+                console.log('[Dashboard] Rendering immediato da cache locale.');
                 renderDashboard(user);
                 return;
             }
 
-            // Fallback: polling ogni 150ms per un max di 10 secondi
+            // 3. Fallback: polling ogni 150ms per un max di 10 secondi
             let waited = 0;
             const fallbackInterval = setInterval(() => {
                 waited += 150;
@@ -200,7 +219,9 @@
                     renderDashboard(u);
                     clearInterval(fallbackInterval);
                 } else if (waited > 10000) {
-                    console.warn('[Dashboard] Timeout attesa utente. Reindirizzamento al login.');
+                    // Se dopo 10s non c'è utente, logout e login
+                    console.warn('[Dashboard] Timeout attesa utente. Pulizia e reindirizzamento al login.');
+                    try { localStorage.removeItem('ls_cached_user'); } catch(e) {}
                     clearInterval(fallbackInterval);
                     window.location.replace('login.html');
                 }

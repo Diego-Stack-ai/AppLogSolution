@@ -1,4 +1,4 @@
-const CACHE_NAME = 'log-solution-v6.203';
+const CACHE_NAME = 'log-solution-v6.204';
 const ASSETS = [
     './',
     './index.html',
@@ -112,7 +112,7 @@ self.addEventListener('fetch', (event) => {
                         </body>
                         </html>
                     `, {
-                        status: 503,
+                        status: 200,
                         headers: { 'Content-Type': 'text/html; charset=utf-8' }
                     });
                 }))

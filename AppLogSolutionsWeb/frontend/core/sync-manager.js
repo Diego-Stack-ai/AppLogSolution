@@ -466,6 +466,8 @@ class SyncManager {
                 cursor.continue();
             }
         };
+    }
+
     async bootstrapDistanceCache(onProgress) {
         try {
             if (connectivityService.getStatus() !== 'online') {

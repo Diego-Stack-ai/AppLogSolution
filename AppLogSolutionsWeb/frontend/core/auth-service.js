@@ -62,6 +62,14 @@ onAuthStateChanged(auth, async (user) => {
             // DYNAMIC IMPORT FIRESTORE ONLY IF AUTHENTICATED
             const { doc, getDoc, getDocFromCache, updateDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
 
+            // Funzione helper per evitare l'hang delle chiamate online in assenza reale di rete
+            const getDocWithTimeout = (docRef, timeoutMs = 2000) => {
+                return Promise.race([
+                    getDoc(docRef),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Firestore")), timeoutMs))
+                ]);
+            };
+
             let userDoc = null;
             const isOffline = connectivityService.getStatus() === 'offline';
             if (isOffline) {
@@ -75,8 +83,9 @@ onAuthStateChanged(auth, async (user) => {
                 }
             } else {
                 try {
-                    // Tenta prima il recupero online del profilo
-                    userDoc = await getDoc(doc(db, "dipendenti", user.uid));
+                    // Tenta prima il recupero online del profilo con timeout di 2 secondi
+                    userDoc = await getDocWithTimeout(doc(db, "dipendenti", user.uid), 2000);
+                    console.log("Auth: Profilo caricato online con successo.");
                 } catch (fetchErr) {
                     console.warn("Auth: Connessione fallita o timeout sul server. Provo a caricare il profilo dipendente dalla cache locale...", fetchErr);
                     try {
@@ -133,11 +142,14 @@ onAuthStateChanged(auth, async (user) => {
                     }
                 } else {
                     try {
-                        permessiDoc = await getDoc(doc(db, "config", "permessi_dashboard"));
+                        // Tenta recupero online con timeout di 1.5 secondi
+                        permessiDoc = await getDocWithTimeout(doc(db, "config", "permessi_dashboard"), 1500);
+                        console.log("Auth: Permessi dashboard caricati online.");
                     } catch(e) {
-                        console.warn("Auth: Impossibile scaricare permessi dashboard online, provo da cache...", e);
+                        console.warn("Auth: Impossibile scaricare permessi dashboard online (errore o timeout), provo da cache...", e);
                         try {
                             permessiDoc = await getDocFromCache(doc(db, "config", "permessi_dashboard"));
+                            console.log("Auth: Permessi dashboard caricati da cache offline.");
                         } catch (cacheErr) {
                             console.warn("Auth: Permessi dashboard non disponibili offline", cacheErr);
                         }

@@ -1,6 +1,4 @@
 import { app, db } from "../core/firebase-init.js";
-import { firebaseConfig } from "../firebase-config.js";
-import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { collection, onSnapshot, query, where, doc, updateDoc, setDoc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 // Inizializzazione Listener Realtime (Condizionali ai permessi)

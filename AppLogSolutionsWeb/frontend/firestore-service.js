@@ -13,7 +13,7 @@ import {
     deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getStorage, ref as sRef, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-import { db, auth } from "./core/firebase-init.js?v=6.199";
+import { app, db, auth } from "./core/firebase-init.js?v=6.200";
 
 /**
  * Helper to parse time string (HH:MM or decimal) into decimal hours.

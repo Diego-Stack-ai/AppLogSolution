@@ -1,4 +1,4 @@
-const CACHE_NAME = 'log-solution-v6.204';
+const CACHE_NAME = 'log-solution-v6.205';
 const ASSETS = [
     './',
     './index.html',
@@ -92,7 +92,7 @@ self.addEventListener('fetch', (event) => {
                     caches.open(CACHE_NAME).then((c) => c.put(event.request, copy));
                     return response;
                 })
-                .catch(() => caches.match(event.request).then((res) => {
+                .catch(() => caches.match(event.request, { ignoreSearch: true }).then((res) => {
                     return res || new Response(`
                         <!DOCTYPE html>
                         <html>
@@ -130,7 +130,7 @@ self.addEventListener('fetch', (event) => {
                     return response;
                 })
                 .catch(() =>
-                    caches.match(event.request).then((res) => {
+                    caches.match(event.request, { ignoreSearch: true }).then((res) => {
                         return res || new Response('', { status: 404 });
                     })
                 )
@@ -140,7 +140,7 @@ self.addEventListener('fetch', (event) => {
 
     // ─── Cache-First: immagini e altri asset statici (cambiano raramente) ───
     event.respondWith(
-        caches.match(event.request).then((cached) => {
+        caches.match(event.request, { ignoreSearch: true }).then((cached) => {
             if (cached) return cached;
             return fetch(event.request)
                 .then((response) => {

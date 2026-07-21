@@ -159,12 +159,31 @@ onAuthStateChanged(auth, async (user) => {
                 const permessiData = permessiDoc && permessiDoc.exists() ? permessiDoc.data() : {};
                 window.appData.permessiDashboard = permessiData;
 
-                if (typeof window.onUserProfileLoaded === 'function') {
-                    window.onUserProfileLoaded(window.appData.currentUser);
-                    setTimeout(() => {
-                        if (typeof window.onUserProfileLoaded === 'function') {
-                            window.onUserProfileLoaded(window.appData.currentUser);
+                const triggerUserProfileLoaded = () => {
+                    if (typeof window.onUserProfileLoaded === 'function') {
+                        window.onUserProfileLoaded(window.appData.currentUser);
+                        return true;
+                    }
+                    return false;
+                };
+
+                if (!triggerUserProfileLoaded()) {
+                    console.log("Auth: window.onUserProfileLoaded non ancora pronto, avvio polling di attesa...");
+                    let attempts = 0;
+                    const interval = setInterval(() => {
+                        attempts++;
+                        if (triggerUserProfileLoaded()) {
+                            console.log("Auth: window.onUserProfileLoaded eseguito con successo tramite polling.");
+                            clearInterval(interval);
+                        } else if (attempts > 30) {
+                            console.warn("Auth: Timeout polling window.onUserProfileLoaded.");
+                            clearInterval(interval);
                         }
+                    }, 100);
+                } else {
+                    console.log("Auth: window.onUserProfileLoaded eseguito immediatamente.");
+                    setTimeout(() => {
+                        triggerUserProfileLoaded();
                     }, 300);
                 }
 

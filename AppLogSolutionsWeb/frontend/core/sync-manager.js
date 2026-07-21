@@ -594,6 +594,24 @@ class SyncManager {
         };
     }
 
+    async getQueueItems() {
+        const idb = await this.openDB();
+        return new Promise((resolve) => {
+            const tx = idb.transaction('syncQueue', 'readonly');
+            const store = tx.objectStore('syncQueue');
+            const items = [];
+            store.openCursor().onsuccess = (e) => {
+                const cursor = e.target.result;
+                if (cursor) {
+                    items.push(cursor.value);
+                    cursor.continue();
+                } else {
+                    resolve(items);
+                }
+            };
+        });
+    }
+
     dispatchUIEvent(name, detail) {
         const event = new CustomEvent(name, { detail });
         window.dispatchEvent(event);

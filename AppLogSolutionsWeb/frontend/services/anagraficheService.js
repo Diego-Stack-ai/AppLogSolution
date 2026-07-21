@@ -11,5 +11,5 @@ import { app, db } from "../core/firebase-init.js";
  */
 export function subscribeToAnagrafica(collPath, callback, onError) {
     const q = query(collection(db, collPath));
-    return onSnapshot(q, callback, onError);
+    return onSnapshot(q, { includeMetadataChanges: true }, callback, onError);
 }

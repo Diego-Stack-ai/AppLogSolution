@@ -337,7 +337,7 @@ function startRealtimeSync(isAdmin) {
     activeListeners = [];
 
     // Listener per Clienti (Punti di Consegna DNR - Progetto Scuole)
-    const unsubCustomers = onSnapshot(collection(db, "clienti", "DNR", "raccolta clienti"), (snapshot) => {
+    const unsubCustomers = onSnapshot(collection(db, "clienti", "DNR", "raccolta clienti"), { includeMetadataChanges: true }, (snapshot) => {
         const clienti = [];
         snapshot.forEach((d) => {
             const data = d.data();
@@ -361,7 +361,7 @@ function startRealtimeSync(isAdmin) {
     activeListeners.push(unsubCustomers);
 
     // Listener per Articoli DNR - Progetto Scuole
-    const unsubArticoli = onSnapshot(collection(db, "customers", "DNR", "anagrafica_articoli"), (snapshot) => {
+    const unsubArticoli = onSnapshot(collection(db, "customers", "DNR", "anagrafica_articoli"), { includeMetadataChanges: true }, (snapshot) => {
         const articoli = [];
         snapshot.forEach((d) => {
             articoli.push({ id: d.id, ...d.data() });
@@ -374,7 +374,7 @@ function startRealtimeSync(isAdmin) {
     // Listener per Autisti/Utenti
     // Se Admin scarica tutti, altrimenti NON scarica nulla (o solo se stesso, già  fatto in Auth)
     if (isAdmin) {
-        const unsubUsers = onSnapshot(collection(db, "dipendenti"), (snapshot) => {
+        const unsubUsers = onSnapshot(collection(db, "dipendenti"), { includeMetadataChanges: true }, (snapshot) => {
             const autisti = [];
             snapshot.forEach((d) => {
                 autisti.push({ id: d.id, ...d.data() });
@@ -387,7 +387,7 @@ function startRealtimeSync(isAdmin) {
     }
 
     // Listener per Mezzi (mezzi)
-    const unsubMezzi = onSnapshot(collection(db, "mezzi"), (snapshot) => {
+    const unsubMezzi = onSnapshot(collection(db, "mezzi"), { includeMetadataChanges: true }, (snapshot) => {
         const mezzi = [];
         snapshot.forEach((d) => {
             mezzi.push({ id: d.id, ...d.data() });
@@ -400,7 +400,7 @@ function startRealtimeSync(isAdmin) {
     activeListeners.push(unsubMezzi);
 
     // Listener per Progetti (clienti con viaggi associati)
-    const unsubProgetti = onSnapshot(collection(db, "progetti"), (snapshot) => {
+    const unsubProgetti = onSnapshot(collection(db, "progetti"), { includeMetadataChanges: true }, (snapshot) => {
         const progetti = [];
         snapshot.forEach((d) => {
             progetti.push({ id: d.id, ...d.data(), isProgetto: true });
@@ -414,7 +414,7 @@ function startRealtimeSync(isAdmin) {
 
     // Listeners per le 4 liste delle Scalette Navette
     const setupScalettaListener = (tipo, globalProp) => {
-        const unsub = onSnapshot(collection(db, "clienti/DNR/" + tipo), (snapshot) => {
+        const unsub = onSnapshot(collection(db, "clienti/DNR/" + tipo), { includeMetadataChanges: true }, (snapshot) => {
             const dataList = [];
             snapshot.forEach((d) => dataList.push({ id: d.id, ...d.data() }));
             window.appData[globalProp] = dataList;
@@ -440,7 +440,7 @@ function startRealtimeSync(isAdmin) {
     setupScalettaListener('magazzini_sedi', 'lista_magazzini_sedi');
 
     // Listener per Giustificativi (Ferie, Malattia, ecc.)
-    const unsubGiustificativi = onSnapshot(collection(db, "giustificativi"), (snapshot) => {
+    const unsubGiustificativi = onSnapshot(collection(db, "giustificativi"), { includeMetadataChanges: true }, (snapshot) => {
         const giustificativi = [];
         snapshot.forEach((d) => {
             giustificativi.push({ id: d.id, ...d.data() });
@@ -458,7 +458,7 @@ function startRealtimeSync(isAdmin) {
               where("data_evento", "==", todayStr),
               where("letto_da_ufficio", "==", false)
           );
-          const unsubResi = onSnapshot(qResi, (snapshot) => {
+          const unsubResi = onSnapshot(qResi, { includeMetadataChanges: true }, (snapshot) => {
               snapshot.docChanges().forEach((change) => {
                   const data = change.doc.data();
                   if (change.type === "added") {

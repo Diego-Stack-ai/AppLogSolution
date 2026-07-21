@@ -294,7 +294,7 @@
                             }
                         }
 
-                        onSnapshot(collection(db, "clienti/DNR/raccolta clienti"), (snapshot) => {
+                        onSnapshot(collection(db, "clienti/DNR/raccolta clienti"), { includeMetadataChanges: true }, (snapshot) => {
                             console.log(`[Map] Ricevuti ${snapshot.size} punti DNR`);
                             dnrPoints = snapshot.docs.map(doc => {
                                 const d = doc.data();
@@ -313,7 +313,7 @@
                             alert("Errore accesso dati DNR: " + error.message);
                         });
 
-                        onSnapshot(collection(db, "clienti/GRAN CHEF/raccolta clienti"), (snapshot) => {
+                        onSnapshot(collection(db, "clienti/GRAN CHEF/raccolta clienti"), { includeMetadataChanges: true }, (snapshot) => {
                             console.log(`[Map] Ricevuti ${snapshot.size} punti GRAN CHEF`);
                             gcPoints = snapshot.docs.map(doc => ({
                                 ...doc.data(),
@@ -329,7 +329,7 @@
                             alert("Errore accesso dati GRAN CHEF: " + error.message);
                         });
 
-                        onSnapshot(collection(db, "clienti/CATTEL/raccolta clienti"), (snapshot) => {
+                        onSnapshot(collection(db, "clienti/CATTEL/raccolta clienti"), { includeMetadataChanges: true }, (snapshot) => {
                             console.log(`[Map] Ricevuti ${snapshot.size} punti CATTEL`);
                             cattelPoints = snapshot.docs.map(doc => ({
                                 ...doc.data(),

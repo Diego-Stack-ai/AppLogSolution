@@ -1,4 +1,4 @@
-const CACHE_NAME = 'log-solution-v6.218';
+const CACHE_NAME = 'log-solution-v6.231';
 const ASSETS = [
     './',
     './index.html',
@@ -6,6 +6,20 @@ const ASSETS = [
     './dashboard.html',
     './inserimento.html',
     './presenze.html',
+    './gestione.html',
+    './elaborazione.html',
+    './link_viaggi.html',
+    './centrale_resi.html',
+    './pianificazione.html',
+    './visualizzazione.html',
+    './fatturazione.html',
+    './gestione_mezzi.html',
+    './impostazioni.html',
+    './mappa_consegne.html',
+    './mappa_google.html',
+    './mappa_zone.html',
+    './mappa_riepilogativa.html',
+    './gestione_anomalie.html',
     './styles.css',
     './script.js',
     './firebase-config.js',
@@ -18,6 +32,13 @@ const ASSETS = [
     './core/sync-manager.js',
     './services/realtime-sync.js',
     './services/crud-service.js',
+    './services/anagraficheService.js',
+    './services/dipendentiService.js',
+    './services/fatturazioneService.js',
+    './services/viaggiService.js',
+    './ui-render.js',
+    './cedolini-splitter.js',
+    './firebase-config-env.js',
     './manifest.json',
     './img/logo.png',
     'https://fonts.googleapis.com/icon?family=Material+Icons+Round',
@@ -34,7 +55,12 @@ const ASSETS = [
 self.addEventListener('install', (event) => {
     console.log(`[SW ${CACHE_NAME}] Installazione cache...`);
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+        caches.open(CACHE_NAME).then((cache) => {
+            // Forza il bypass della cache HTTP del browser per garantire che
+            // il SW scarichi e salvi sempre l'ultimissima versione dei file dal server
+            const requests = ASSETS.map(url => new Request(url, { cache: 'no-cache' }));
+            return cache.addAll(requests);
+        })
     );
     self.skipWaiting();
 });
@@ -84,7 +110,8 @@ self.addEventListener('fetch', (event) => {
         url.includes('sentry') ||
         url.includes('localhost') ||
         url.includes('127.0.0.1') ||
-        url.includes('.json')
+        url.includes('.json') ||
+        url.includes('/__/')
     ) {
         return;
     }
@@ -144,18 +171,27 @@ self.addEventListener('fetch', (event) => {
     }
 
     // ─── Cache-First: immagini e altri asset statici (cambiano raramente) ───
-    event.respondWith(
-        caches.match(event.request, { ignoreSearch: true }).then((cached) => {
-            if (cached) return cached;
-            return fetch(event.request)
-                .then((response) => {
-                    const copy = response.clone();
-                    caches.open(CACHE_NAME).then((c) => c.put(event.request, copy));
-                    return response;
-                })
-                .catch(() => {
-                    return new Response('', { status: 404 });
-                });
-        })
-    );
+    const isStaticAsset = url.match(/\.(png|jpe?g|gif|svg|woff2?|ttf|eot|ico)(\?|$)/i);
+    if (isStaticAsset) {
+        event.respondWith(
+            caches.match(event.request, { ignoreSearch: true }).then((cached) => {
+                if (cached) return cached;
+                return fetch(event.request)
+                    .then((response) => {
+                        const copy = response.clone();
+                        caches.open(CACHE_NAME).then((c) => c.put(event.request, copy));
+                        return response;
+                    })
+                    .catch(() => {
+                        return new Response('', { status: 404 });
+                    });
+            })
+        );
+        return;
+    }
+
+    // Qualsiasi altra richiesta (API, Firebase SDK non catturate prima) passa liscia!
+    // Se siamo offline fallirà con ERR_INTERNET_DISCONNECTED puro, che permette a Firebase
+    // di gestire correttamente lo stato offline senza andare in deadlock su una finta Response 404.
+    return;
 });

@@ -18,7 +18,7 @@ export function subscribeToReportsLogistici(tenantId, callback) {
     }
     const reportsRef = collection(db, 'clienti', finalTenant, 'reports_logistici');
     const q = query(reportsRef, orderBy('created_at', 'desc'), limit(15));
-    return onSnapshot(q, finalCallback);
+    return onSnapshot(q, { includeMetadataChanges: true }, finalCallback);
 }
 
 /**
@@ -31,7 +31,7 @@ export function subscribeToReportsLogistici(tenantId, callback) {
 export function subscribeToProcessingJobs(tenantId, limitCount = 10, callback) {
     const jobsRef = collection(db, 'clienti', tenantId, 'processing_jobs');
     const q = query(jobsRef, orderBy('created_at', 'desc'), limit(limitCount));
-    return onSnapshot(q, callback);
+    return onSnapshot(q, { includeMetadataChanges: true }, callback);
 }
 
 /**

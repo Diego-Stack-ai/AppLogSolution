@@ -3,8 +3,8 @@ import { signInWithEmailAndPassword, onAuthStateChanged, signOut, browserLocalPe
 import { connectivityService } from "./connectivity-service.js";
 
 // ABILITAZIONE PERSISTENZA SESSIONE (localStorage)
-setPersistence(auth, browserLocalPersistence)
-    .catch((error) => console.error("Errore persistenza:", error));
+// [DEBUG] setPersistence rimosso per evitare deadlock offline (browserLocalPersistence è il default)
+console.log("[DEBUG TRACE] auth-service.js: saltata setPersistence esplicita per evitare timeout");
 
 // --- GESTIONE EMERGENZA (DEBUG) ---
 window.forcePasswordResetDebug = async (newPassword) => {
@@ -45,7 +45,19 @@ window.logoutFirebase = async () => {
     }
 };
 
+
+let profileAlreadyLoaded = false; // Guard: evita ri-trigger al cambio rete
+
+console.log("[DEBUG TRACE] auth-service.js: chiamo authStateReady()");
+auth.authStateReady().then(() => {
+    console.log("[DEBUG TRACE] auth-service.js: authStateReady() RISOLTO!");
+}).catch(err => {
+    console.error("[DEBUG TRACE] auth-service.js: authStateReady() ERRORE!", err);
+});
+
+console.log("[DEBUG TRACE] auth-service.js: chiamo onAuthStateChanged");
 onAuthStateChanged(auth, async (user) => {
+    console.log("[DEBUG TRACE] auth-service.js: onAuthStateChanged callback attivata!");
     if (isLoggingOut) {
         console.log("Auth Listener: Logout in corso, salto controlli.");
         return;
@@ -59,6 +71,11 @@ onAuthStateChanged(auth, async (user) => {
     console.log(`Auth Listener: Utente = ${user ? user.uid : 'NULL'}, Pagina Corrente = ${page}`);
 
     if (user) {
+        // Se il profilo è già caricato per questo utente, non rieseguire tutto il ciclo
+        if (profileAlreadyLoaded && window.appData?.currentUser?.id === user.uid) {
+            console.log("Auth Listener: Profilo già caricato per questo utente, salto ri-inizializzazione.");
+            return;
+        }
         try {
             // DYNAMIC IMPORT FIRESTORE ONLY IF AUTHENTICATED
             const { doc, getDoc, getDocFromCache, updateDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -130,6 +147,7 @@ onAuthStateChanged(auth, async (user) => {
                 const isAdmin = role === 'amministratore' || role === 'impiegata' || isDiego;
 
                 window.appData.currentUser = { id: user.uid, email: user.email, ...userData, ruolo: role, isAdmin: isAdmin };
+                profileAlreadyLoaded = true; // Segna il profilo come caricato
                 
                 // Persistenza del profilo in localStorage per il rendering immediato offline
                 try {
@@ -317,8 +335,9 @@ onAuthStateChanged(auth, async (user) => {
         }
     } else {
         window.appData.currentUser = {};
+        profileAlreadyLoaded = false; // Reset al logout
+        console.log(`Auth Listener: Utente non autenticato. Pagina corrente = ${page}`);
         if (!isPublicPage) {
-            console.log(`REDIRECT DEBUG: Utente non loggato su pagina privata [${page}] -> Redirect a login.html`);
             window.location.replace('login.html');
         }
     }

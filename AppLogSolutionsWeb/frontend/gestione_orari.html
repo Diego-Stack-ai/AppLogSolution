@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Orari Mancanti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.218">
+    <link rel="stylesheet" href="styles.css?v=6.231">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <style>
@@ -67,7 +67,7 @@
         const FIELDS = ['Codice Cliente', 'Nome', 'Indirizzo', 'Orario Mancante', 'Note'];
         let items = [];
 
-        onSnapshot(collection(db, ...COLL_PATH), (snapshot) => {
+        onSnapshot(collection(db, ...COLL_PATH), { includeMetadataChanges: true }, (snapshot) => {
             items = [];
             snapshot.forEach(d => items.push({ id: d.id, ...d.data() }));
             document.getElementById('loadingIndicator').style.display = 'none';

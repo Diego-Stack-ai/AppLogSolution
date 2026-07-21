@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anagrafiche - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.218">
+    <link rel="stylesheet" href="styles.css?v=6.231">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- Leaflet per Mappe -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -362,8 +362,8 @@
         </div>
     </div>
 
-    <script src="script.js?v=6.218"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.218"></script>
+    <script src="script.js?v=6.231"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.231"></script>
     <script type="module">
         import { db } from "./core/firebase-init.js";
         import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -374,6 +374,21 @@
 
         let currentTab = 'clienti';
         let unsubscribes = [];
+
+        // --- SISTEMA DI DEBUG OFFLINE VISUALE ---
+        window.showDebug = function(msg) {
+            let dbg = document.getElementById('offlineDebugBox');
+            if(!dbg) {
+                dbg = document.createElement('div');
+                dbg.id = 'offlineDebugBox';
+                dbg.style.cssText = 'position:fixed; bottom:0; left:0; width:100%; background:rgba(0,0,0,0.8); color:#0f0; font-family:monospace; font-size:12px; padding:10px; z-index:9999; max-height:200px; overflow-y:auto;';
+                document.body.appendChild(dbg);
+            }
+            dbg.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+        };
+        window.addEventListener('offline', () => window.showDebug("📡 OFFLINE DETECTED"));
+        window.addEventListener('online', () => window.showDebug("🟢 ONLINE DETECTED"));
+        // ----------------------------------------
 
         function clearUnsubscribes() {
             unsubscribes.forEach(unsub => { if(typeof unsub === 'function') unsub(); });
@@ -404,6 +419,7 @@
         };
 
         function loadData() {
+            console.log("[DEBUG TRACE] gestione.html: loadData() chiamata");
             clearUnsubscribes();
             document.getElementById('loading').style.display = 'block';
             document.getElementById('dataContainer').innerHTML = '';
@@ -413,7 +429,12 @@
                 let gcData = [];
                 let cattelData = [];
                 
+                console.log("[DEBUG TRACE] gestione.html: chiamo subscribeToAnagrafica per DNR");
                 const unsubDNR = subscribeToAnagrafica('clienti/DNR/raccolta clienti', (snapshot) => {
+                    const debugMsg = `DNR scattato: ${snapshot.docs.length} record. (Cache: ${snapshot.metadata.fromCache})`;
+                    console.log("[DEBUG OFFLINE]", debugMsg);
+                    if(window.showDebug) window.showDebug(debugMsg);
+
                     dnrData = snapshot.docs.map(doc => {
                         const d = doc.data();
                         return { ...d, id: doc.id, tenant: 'DNR' };
@@ -428,6 +449,10 @@
                 unsubscribes.push(unsubDNR);
                 
                 const unsubGC = subscribeToAnagrafica('clienti/GRAN CHEF/raccolta clienti', (snapshot) => {
+                    const debugMsg = `GC scattato: ${snapshot.docs.length} record. (Cache: ${snapshot.metadata.fromCache})`;
+                    console.log("[DEBUG OFFLINE]", debugMsg);
+                    if(window.showDebug) window.showDebug(debugMsg);
+
                     gcData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, tenant: 'GRAN CHEF' }));
                     window.fullData = [...dnrData, ...gcData, ...cattelData];
                     document.getElementById('loading').style.display = 'none';
@@ -439,6 +464,10 @@
                 unsubscribes.push(unsubGC);
 
                 const unsubCattel = subscribeToAnagrafica('clienti/CATTEL/raccolta clienti', (snapshot) => {
+                    const debugMsg = `CATTEL scattato: ${snapshot.docs.length} record. (Cache: ${snapshot.metadata.fromCache})`;
+                    console.log("[DEBUG OFFLINE]", debugMsg);
+                    if(window.showDebug) window.showDebug(debugMsg);
+
                     cattelData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, tenant: 'CATTEL' }));
                     window.fullData = [...dnrData, ...gcData, ...cattelData];
                     document.getElementById('loading').style.display = 'none';

@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.218">
+    <link rel="stylesheet" href="styles.css?v=6.231">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1586,8 +1586,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
         async function uploadStorageStringHelper(path, data, contentType) {
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.218");
-                const { syncManager } = await import("./core/sync-manager.js?v=6.218");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.231");
+                const { syncManager } = await import("./core/sync-manager.js?v=6.231");
                 
                 if (connectivityService.getStatus() === 'online') {
                     await uploadString(ref(storage, path), data, 'raw', { contentType });
@@ -1718,7 +1718,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
         // Popola window.appData.lista_progetti non appena Firebase è pronto,
         // in modo che getNomiViaggi() trovi sempre i dati aggiornati da Impostazioni.
         window.appData = window.appData || {};
-        onSnapshot(collection(db, "progetti"), (snap) => {
+        onSnapshot(collection(db, "progetti"), { includeMetadataChanges: true }, (snap) => {
             window.appData.lista_progetti = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             console.log(`[Mappa] Progetti caricati: ${window.appData.lista_progetti.length} voci`);
         });
@@ -3456,7 +3456,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.218");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.231");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -3836,7 +3836,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.218");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.231");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -3916,7 +3916,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.218");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.231");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 

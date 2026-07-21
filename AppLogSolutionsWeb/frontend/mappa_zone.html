@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.194">
+    <link rel="stylesheet" href="styles.css?v=6.195">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1380,6 +1380,341 @@ const db = getFirestore(app);
         const storage = getStorage(app);
         const auth = getAuth(app);
         const functions = getFunctions(app, "europe-west1");
+
+        // --- OFFLINE ROUTING FALLBACKS & CONTROLLO CONNETTIVITÀ ---
+        const DEPOT_SOMMACAMPAGNA = { lat: 45.414500, lon: 10.898500, lng: 10.898500, nome: "DEPOSITO SOMMACAMPAGNA", indirizzo: "Via Caselle 90/b, 37066 Sommacampagna (VR)" };
+        const DEPOT_CASTENEDOLO = { lat: 45.471591, lon: 10.298200, lng: 10.298200, nome: "DEPOSITO CASTENEDOLO", indirizzo: "Via Vulcania snc, 25014 Castenedolo (BS)" };
+        const DEPOT_VEGGIANO = { lat: 45.442805, lon: 11.714498, lng: 11.714498, nome: "DEPOSITO VEGGIANO", indirizzo: "Via Alessandro Volta 25/a, 35030 Veggiano (PD)" };
+
+        function getCoordKey(lat, lon) {
+            return `${Number(lat).toFixed(5)},${Number(lon).toFixed(5)}`;
+        }
+
+        function getDistanceCacheKey(p1, p2) {
+            const lat1 = p1.lat || p1.latitude || 0;
+            const lon1 = p1.lon || p1.longitude || p1.lng || 0;
+            const lat2 = p2.lat || p2.latitude || 0;
+            const lon2 = p2.lon || p2.longitude || p2.lng || 0;
+            return `${getCoordKey(lat1, lon1)}_${getCoordKey(lat2, lon2)}`;
+        }
+
+        function getLocalDistance(p1, p2) {
+            return new Promise((resolve) => {
+                const key = getDistanceCacheKey(p1, p2);
+                const revKey = getDistanceCacheKey(p2, p1);
+                
+                const request = indexedDB.open('AppLogSolutionsDB', 1);
+                request.onsuccess = (event) => {
+                    const idb = event.target.result;
+                    if (!idb.objectStoreNames.contains('distances')) {
+                        resolve(null);
+                        return;
+                    }
+                    const tx = idb.transaction('distances', 'readonly');
+                    const store = tx.objectStore('distances');
+                    
+                    const req = store.get(key);
+                    req.onsuccess = () => {
+                        if (req.result) {
+                            resolve(req.result);
+                        } else {
+                            const reqRev = store.get(revKey);
+                            reqRev.onsuccess = () => {
+                                resolve(reqRev.result || null);
+                            };
+                            reqRev.onerror = () => resolve(null);
+                        }
+                    };
+                    req.onerror = () => resolve(null);
+                };
+                request.onerror = () => resolve(null);
+            });
+        }
+
+        function haversineDistance(p1, p2) {
+            const R = 6371000;
+            const lat1 = (p1.lat || p1.latitude || 0) * Math.PI / 180;
+            const lon1 = (p1.lon || p1.longitude || p1.lng || 0) * Math.PI / 180;
+            const lat2 = (p2.lat || p2.latitude || 0) * Math.PI / 180;
+            const lon2 = (p2.lon || p2.longitude || p2.lng || 0) * Math.PI / 180;
+            
+            const dlat = lat2 - lat1;
+            const dlon = lon2 - lon1;
+            
+            const a = Math.sin(dlat/2) * Math.sin(dlat/2) +
+                      Math.cos(lat1) * Math.cos(lat2) *
+                      Math.sin(dlon/2) * Math.sin(dlon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const distMeters = R * c;
+            
+            const correctedDist = distMeters * 1.3;
+            const durationSeconds = correctedDist / 13.88;
+            
+            return {
+                dist: correctedDist,
+                dur: Math.round(durationSeconds)
+            };
+        }
+
+        function getDepotForPointsOffline(punti) {
+            if (punti.some(p => p.tipo === 'CATTEL' || p.competenza === 'CATTEL')) {
+                return DEPOT_SOMMACAMPAGNA;
+            }
+            const conteggio = { BS: 0, VR: 0, MN: 0, PD: 0, UD: 0, BL: 0, TV: 0, VI: 0, ALTRO: 0 };
+            punti.forEach(p => {
+                const provVal = String(p.provincia || p.prov || "").toUpperCase().trim();
+                if (typeof conteggio[provVal] !== 'undefined') {
+                    conteggio[provVal]++;
+                } else {
+                    const ind = String(p.indirizzo || "").toUpperCase();
+                    const m = ind.match(/\(([A-Z]{2})\)/);
+                    if (m && typeof conteggio[m[1]] !== 'undefined') {
+                        conteggio[m[1]]++;
+                    } else {
+                        conteggio.ALTRO++;
+                    }
+                }
+            });
+
+            const castenedolo_tot = conteggio.BS;
+            const sommacampagna_tot = conteggio.VR + conteggio.MN;
+            const veggiano_tot = conteggio.PD + conteggio.VI + conteggio.BL + conteggio.UD + conteggio.TV + conteggio.ALTRO;
+
+            if (castenedolo_tot > sommacampagna_tot && castenedolo_tot > veggiano_tot) {
+                return DEPOT_CASTENEDOLO;
+            } else if (sommacampagna_tot > castenedolo_tot && sommacampagna_tot > veggiano_tot) {
+                return DEPOT_SOMMACAMPAGNA;
+            } else {
+                return DEPOT_VEGGIANO;
+            }
+        }
+
+        async function optimizePointsOffline(punti, depot) {
+            const unvisited = [...punti];
+            const path = [];
+            let current = depot;
+            
+            while (unvisited.length > 0) {
+                let bestIndex = -1;
+                let bestDist = Infinity;
+                
+                for (let i = 0; i < unvisited.length; i++) {
+                    const p = unvisited[i];
+                    let res = await getLocalDistance(current, p);
+                    if (!res) res = haversineDistance(current, p);
+                    if (res.dist < bestDist) {
+                        bestDist = res.dist;
+                        bestIndex = i;
+                    }
+                }
+                
+                current = unvisited[bestIndex];
+                path.push(current);
+                unvisited.splice(bestIndex, 1);
+            }
+            return path;
+        }
+
+        async function simulateRouteOffline(punti, depot, isGrandChef) {
+            const fullPath = [depot, ...punti, depot];
+            let totalKm = 0;
+            let totalSec = 0;
+            
+            for (let i = 0; i < fullPath.length - 1; i++) {
+                const pA = fullPath[i];
+                const pB = fullPath[i+1];
+                let res = await getLocalDistance(pA, pB);
+                if (!res) res = haversineDistance(pA, pB);
+                
+                totalKm += res.dist / 1000.0;
+                totalSec += res.dur;
+            }
+            
+            let firstStopTravelSec = 0;
+            if (punti.length > 0) {
+                let res = await getLocalDistance(depot, punti[0]);
+                if (!res) res = haversineDistance(depot, punti[0]);
+                firstStopTravelSec = res.dur;
+            }
+            
+            const targetArrivalMin = 390;
+            const firstStopTravelMin = Math.round(firstStopTravelSec / 60);
+            let currentMin = targetArrivalMin - firstStopTravelMin;
+            const startMin = currentMin;
+            
+            const puntiSimulati = [];
+            for (let i = 0; i < punti.length; i++) {
+                const p = punti[i];
+                const prev = i === 0 ? depot : punti[i-1];
+                let res = await getLocalDistance(prev, p);
+                if (!res) res = haversineDistance(prev, p);
+                
+                const travelMin = Math.round(res.dur / 60);
+                currentMin += travelMin;
+                
+                const arrH = String(Math.floor(currentMin / 60) % 24).padStart(2, '0');
+                const arrM = String(Math.round(currentMin % 60)).padStart(2, '0');
+                const oraArrivo = `${arrH}:${arrM}`;
+                
+                const sostaMin = isGrandChef ? 12 : 8;
+                
+                puntiSimulati.push({
+                    ...p,
+                    ora_arrivo: oraArrivo,
+                    sosta: sostaMin
+                });
+                
+                currentMin += sostaMin;
+            }
+            
+            if (punti.length > 0) {
+                const last = punti[punti.length - 1];
+                let res = await getLocalDistance(last, depot);
+                if (!res) res = haversineDistance(last, depot);
+                currentMin += Math.round(res.dur / 60);
+            }
+            
+            const startH = String(Math.floor(startMin / 60) % 24).padStart(2, '0');
+            const startM = String(Math.round(startMin % 60)).padStart(2, '0');
+            const oraPartenza = `${startH}:${startM}`;
+            
+            return {
+                puntiSimulati,
+                totalKm: Math.round(totalKm * 10) / 10,
+                totalSec,
+                oraPartenza
+            };
+        }
+
+        async function uploadStorageStringHelper(path, data, contentType) {
+            try {
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.195");
+                const { syncManager } = await import("./core/sync-manager.js?v=6.195");
+                
+                if (connectivityService.getStatus() === 'online') {
+                    await uploadString(ref(storage, path), data, 'raw', { contentType });
+                } else {
+                    console.log(`[Offline Mappe] Accodamento file in SyncQueue: ${path}`);
+                    await syncManager.addOperation('UPLOAD_STORAGE_STRING', { path, data, contentType }, 'High');
+                }
+            } catch (e) {
+                console.warn("[Offline Mappe] Modulo offline fallito, caricamento diretto online:", e.message);
+                await uploadString(ref(storage, path), data, 'raw', { contentType });
+            }
+        }
+
+        async function localCalcolaPercorsiOffline(targetZid = null, usa_or_tools = true) {
+            console.log(`[Offline Mappe] Inizio simulazione client percorsi offline (Zona: ${targetZid}, Ottimizza: ${usa_or_tools})`);
+            
+            const tenant = localStorage.getItem('activeTenant') || 'DNR';
+            let listini = {};
+            const { getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+            try {
+                for (let cli of ["DNR", "GRAN CHEF", "CATTEL", "BAUER"]) {
+                    const snap = await getDoc(doc(db, "clienti", cli, "impostazioni", "listino"));
+                    if (snap.exists()) listini[cli] = snap.data();
+                }
+            } catch (e) {
+                console.warn("[Offline Mappe] Impossibile recuperare i listini per fatturato:", e.message);
+            }
+
+            let modificato = false;
+
+            for (let zone of DATA_ZONE) {
+                const zid = zone.id_zona;
+                if (targetZid) {
+                    if (Array.isArray(targetZid) && !targetZid.includes(zid)) continue;
+                    if (typeof targetZid === 'string' && zid !== targetZid) continue;
+                }
+
+                if (zid === "DDT_DA_INSERIRE" || zid === "PUNTI_DI_CONSEGNA") continue;
+
+                const is_bloccato = zone._bloccato || zone._stato === "bloccato";
+                const punti = zone.lista_punti || [];
+                if (punti.length === 0) continue;
+
+                const is_grand_chef = punti.some(p => String(p.tipologia_grado || "").toUpperCase().includes("GRAND") || String(p.tipologia_grado || "").toUpperCase().includes("CHEF") || String(p.zona || "").toUpperCase().includes("GRANCHEF"));
+                const is_cattel = punti.some(p => String(p.zona || "").toUpperCase().includes("CATTEL") || String(p.codice_frutta || "").toUpperCase().includes("CATTEL"));
+                const is_bauer = punti.some(p => String(p.zona || "").toUpperCase().includes("BAUER") || String(p.codice_frutta || "").toUpperCase().includes("BAUER"));
+
+                const depot = getDepotForPointsOffline(punti);
+                
+                let puntiLavorati = punti;
+                if (usa_or_tools && !is_bloccato) {
+                    puntiLavorati = await optimizePointsOffline(punti, depot);
+                }
+
+                const sim = await simulateRouteOffline(puntiLavorati, depot, is_grand_chef || is_cattel || is_bauer);
+
+                // Calcola DDT
+                let tot_ddt = 0;
+                sim.puntiSimulati.forEach(p => {
+                    (p.codici_ddt_frutta || []).forEach(c => { if (c && c !== "p00000") tot_ddt++; });
+                    (p.codici_ddt_latte || []).forEach(c => { if (c && c !== "p00000") tot_ddt++; });
+                    if (!p.codici_ddt_frutta && !p.codici_ddt_latte) {
+                        if (p.codice_frutta && p.codice_frutta !== "p00000") tot_ddt++;
+                        if (p.codice_latte && p.codice_latte !== "p00000") tot_ddt++;
+                    }
+                });
+
+                // Calcola fatturato offline
+                let fatturatoVal = 0.00;
+                if (is_grand_chef) {
+                    fatturatoVal = parseFloat(listini["GRAN CHEF"]?.tariffa_viaggio || 350.00);
+                } else if (is_cattel) {
+                    fatturatoVal = parseFloat(listini["CATTEL"]?.tariffa_patente_b || 340.00);
+                } else if (is_bauer) {
+                    fatturatoVal = parseFloat(listini["BAUER"]?.tariffa_viaggio || 390.00);
+                } else {
+                    const tariffaDdt = parseFloat(listini["DNR"]?.tariffa_ddt || 16.50);
+                    fatturatoVal = tot_ddt * tariffaDdt;
+                }
+
+                const stats = {
+                    km: sim.totalKm,
+                    t_guida: Math.round(sim.totalSec / 60),
+                    t_sosta: sim.puntiSimulati.length * (is_grand_chef ? 12 : 8),
+                    t_tot: Math.round(sim.totalSec / 60) + sim.puntiSimulati.length * (is_grand_chef ? 12 : 8),
+                    tot_ddt,
+                    fatturato: fatturatoVal.toFixed(2),
+                    depot: depot.nome,
+                    is_gc: is_grand_chef || is_cattel || is_bauer,
+                    ora_partenza: sim.oraPartenza
+                };
+
+                zone.lista_punti = sim.puntiSimulati;
+                zone._stats = stats;
+                zone._stato = "calcolato";
+                zone._polylines = [];
+
+                // Scrittura in Firestore
+                const viaggioId = `${targetFileDate}_${zid}`;
+                const docRef = doc(db, 'clienti', tenant, 'viaggi ddt', viaggioId);
+                await setDoc(docRef, {
+                    id_viaggio: viaggioId,
+                    data_consegna: targetFileDate,
+                    id_zona: zid,
+                    nome_giro: zone.nome_giro || zid,
+                    lista_punti: sim.puntiSimulati,
+                    km: sim.totalKm,
+                    t_guida: stats.t_guida,
+                    t_sosta: stats.t_sosta,
+                    t_tot: stats.t_tot,
+                    tot_ddt,
+                    fatturato: stats.fatturato,
+                    depot: depot.nome,
+                    ora_partenza: sim.oraPartenza,
+                    stato: "ottimizzato",
+                    ultimo_aggiornamento: new Date()
+                }, { merge: true });
+
+                modificato = true;
+            }
+
+            if (modificato) {
+                await window.saveToServerBackground();
+            }
+        }
 
         // --- LISTENER REALTIME PROGETTI (per modal Rinomina Giro) ---
         // Popola window.appData.lista_progetti non appena Firebase è pronto,
@@ -3120,6 +3455,31 @@ const db = getFirestore(app);
             // First save background changes so server works on latest stop list
             await window.saveToServerBackground();
 
+            // Controllo Connessione
+            let isOnline = true;
+            try {
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.195");
+                isOnline = connectivityService.getStatus() === 'online';
+            } catch (e) {}
+
+            if (!isOnline) {
+                setLoaderMsg(`Calcolo offline percorso ${z.nome_giro || zid} (Simulatore Client)...`);
+                document.getElementById('loading-overlay').style.display = 'flex';
+                document.getElementById('loading-overlay').style.opacity = '1';
+                try {
+                    await localCalcolaPercorsiOffline(zid, true);
+                    await reloadVoyageData();
+                    syncState();
+                    Swal.fire('Percorso Calcolato Offline', 'Ottimizzazione completata localmente usando la cache distanze!', 'success');
+                } catch (err) {
+                    console.error("[Calcolo Offline Singolo] Errore:", err);
+                    Swal.fire('Errore di Calcolo Offline', err.message || 'Si è verificato un errore nel calcolo del percorso offline.', 'error');
+                } finally {
+                    hideLoader();
+                }
+                return;
+            }
+
             setLoaderMsg(`Ottimizzazione percorso ${z.nome_giro || zid} (OR-Tools Cloud)...`);
             document.getElementById('loading-overlay').style.display = 'flex';
             document.getElementById('loading-overlay').style.opacity = '1';
@@ -3302,18 +3662,12 @@ const db = getFirestore(app);
                     };
                 }
                 const jsonViaggi = JSON.stringify(dataToSave, null, 2);
-                await uploadString(ref(storage, `${pathBase}/viaggi_giornalieri_Johnson.json`), jsonViaggi, 'raw', {
-                    contentType: 'application/json'
-                });
+                await uploadStorageStringHelper(`${pathBase}/viaggi_giornalieri_Johnson.json`, jsonViaggi, 'application/json');
 
                 const jsonUnificato = JSON.stringify(flatPoints, null, 2);
-                await uploadString(ref(storage, `${pathBase}/punti_consegna_unificati_Johnson.json`), jsonUnificato, 'raw', {
-                    contentType: 'application/json'
-                });
+                await uploadStorageStringHelper(`${pathBase}/punti_consegna_unificati_Johnson.json`, jsonUnificato, 'application/json');
 
-                await uploadString(ref(storage, `${pathBase}/punti_consegna.json`), jsonUnificato, 'raw', {
-                    contentType: 'application/json'
-                });
+                await uploadStorageStringHelper(`${pathBase}/punti_consegna.json`, jsonUnificato, 'application/json');
 
                 _hasUnsavedChanges = false;
                 syncState();
@@ -3407,20 +3761,14 @@ const db = getFirestore(app);
                     };
                 }
                 const jsonViaggi = JSON.stringify(dataToSave, null, 2);
-                await uploadString(ref(storage, `${pathBase}/viaggi_giornalieri_Johnson.json`), jsonViaggi, 'raw', {
-                    contentType: 'application/json'
-                });
+                await uploadStorageStringHelper(`${pathBase}/viaggi_giornalieri_Johnson.json`, jsonViaggi, 'application/json');
 
                 // 2. Save punti_consegna_unificati_Johnson.json
                 const jsonUnificato = JSON.stringify(flatPoints, null, 2);
-                await uploadString(ref(storage, `${pathBase}/punti_consegna_unificati_Johnson.json`), jsonUnificato, 'raw', {
-                    contentType: 'application/json'
-                });
+                await uploadStorageStringHelper(`${pathBase}/punti_consegna_unificati_Johnson.json`, jsonUnificato, 'application/json');
 
                 // 3. Save punti_consegna.json
-                await uploadString(ref(storage, `${pathBase}/punti_consegna.json`), jsonUnificato, 'raw', {
-                    contentType: 'application/json'
-                });
+                await uploadStorageStringHelper(`${pathBase}/punti_consegna.json`, jsonUnificato, 'application/json');
 
                 _hasUnsavedChanges = false;
                 syncState();
@@ -3487,6 +3835,31 @@ const db = getFirestore(app);
                 return;
             }
 
+            // Controllo Connessione
+            let isOnline = true;
+            try {
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.195");
+                isOnline = connectivityService.getStatus() === 'online';
+            } catch (e) {}
+
+            if (!isOnline) {
+                const overlay = document.getElementById('loading-overlay');
+                if (overlay) { overlay.style.display = 'flex'; overlay.style.opacity = '1'; }
+                setLoaderMsg("Aggiornamento modificati offline in corso... (Salto ottimizzazione)");
+                try {
+                    await localCalcolaPercorsiOffline(modificati, false);
+                    await reloadVoyageData();
+                    syncState();
+                    Swal.fire('Aggiornamento Completato Offline', `Orari e dati allineati localmente per ${modificati.length} giri.`, 'success');
+                } catch (err) {
+                    console.error("[Aggiorna Modificati Offline] Errore:", err);
+                    Swal.fire('Errore di Calcolo Offline', err.message || 'Si è verificato un errore nel calcolo del percorso offline.', 'error');
+                } finally {
+                    hideLoader();
+                }
+                return;
+            }
+
             try {
                 const overlay = document.getElementById('loading-overlay');
                 if (overlay) { overlay.style.display = 'flex'; overlay.style.opacity = '1'; }
@@ -3541,6 +3914,31 @@ const db = getFirestore(app);
             
             // First save background changes so server works on latest stop list and lock statuses
             await window.saveToServerBackground();
+
+            // Controllo Connessione
+            let isOnline = true;
+            try {
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.195");
+                isOnline = connectivityService.getStatus() === 'online';
+            } catch (e) {}
+
+            if (!isOnline) {
+                setLoaderMsg("Ottimizzazione percorsi offline in corso (Simulatore Client)...");
+                document.getElementById('loading-overlay').style.display = 'flex';
+                document.getElementById('loading-overlay').style.opacity = '1';
+                try {
+                    await localCalcolaPercorsiOffline(null, true);
+                    await reloadVoyageData();
+                    syncState();
+                    Swal.fire('Percorsi Calcolati Offline', 'Tutti i percorsi ottimizzati localmente usando la cache distanze!', 'success');
+                } catch (err) {
+                    console.error("[Calcolo Offline] Errore:", err);
+                    Swal.fire('Errore di Calcolo Offline', err.message || 'Si è verificato un errore nel calcolo dei percorsi offline.', 'error');
+                } finally {
+                    hideLoader();
+                }
+                return;
+            }
             
             setLoaderMsg("Ottimizzazione percorsi in corso (OR-Tools Cloud)...");
             document.getElementById('loading-overlay').style.display = 'flex';
@@ -3643,20 +4041,14 @@ const db = getFirestore(app);
                     };
                 }
                 const jsonViaggi = JSON.stringify(dataToSave, null, 2);
-                await uploadString(ref(storage, `${pathBase}/viaggi_giornalieri_Johnson.json`), jsonViaggi, 'raw', {
-                    contentType: 'application/json'
-                });
+                await uploadStorageStringHelper(`${pathBase}/viaggi_giornalieri_Johnson.json`, jsonViaggi, 'application/json');
                 
                 // 2. Save punti_consegna_unificati_Johnson.json
                 const jsonUnificato = JSON.stringify(flatPoints, null, 2);
-                await uploadString(ref(storage, `${pathBase}/punti_consegna_unificati_Johnson.json`), jsonUnificato, 'raw', {
-                    contentType: 'application/json'
-                });
+                await uploadStorageStringHelper(`${pathBase}/punti_consegna_unificati_Johnson.json`, jsonUnificato, 'application/json');
                 
                 // 3. Save punti_consegna.json
-                await uploadString(ref(storage, `${pathBase}/punti_consegna.json`), jsonUnificato, 'raw', {
-                    contentType: 'application/json'
-                });
+                await uploadStorageStringHelper(`${pathBase}/punti_consegna.json`, jsonUnificato, 'application/json');
                 
                 _hasUnsavedChanges = false;
                 syncState();

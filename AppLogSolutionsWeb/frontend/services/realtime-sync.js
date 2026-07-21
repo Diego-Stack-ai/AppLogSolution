@@ -1,10 +1,8 @@
-import { app } from "../core/firebase-init.js?v=6.039";
+import { app, db } from "../core/firebase-init.js?v=6.194";
 import { firebaseConfig } from "../firebase-config.js";
 import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, collection, onSnapshot, query, where, doc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-const db = getFirestore(app);
+import { collection, onSnapshot, query, where, doc, updateDoc, setDoc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 // Inizializzazione Listener Realtime (Condizionali ai permessi)
 window.activeListeners = window.activeListeners || [];
 function startRealtimeSync(isAdmin) {

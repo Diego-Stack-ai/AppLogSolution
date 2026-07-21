@@ -6,6 +6,16 @@ service firebase.storage {
       return request.auth != null;
     }
 
+    // Cartella delle cache distanze per uso offline del client
+    match /caches/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Solo backend
+    }
+    match /caches_backup/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
     // Blocca tutto di default
     match /{allPaths=**} {
       allow read, write: if false;

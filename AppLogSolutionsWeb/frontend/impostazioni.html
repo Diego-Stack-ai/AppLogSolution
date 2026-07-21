@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.194">
+    <link rel="stylesheet" href="styles.css?v=6.195">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -713,6 +713,81 @@
     </div>
 </div>
 
+    <!-- SEZIONE DIAGNOSTICA OFFLINE -->
+    <div class="glass-panel form-card" style="margin-top: 24px;">
+        <h3 style="margin-top:0; color:var(--primary); margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+            <span class="material-icons-round">offline_bolt</span> Diagnostica Offline & Sincronizzazione
+        </h3>
+        <p style="font-size:13px; color:#64748b; margin-bottom:20px;">
+            Monitora lo stato della sincronizzazione in background, controlla gli elementi in coda e forza la sincronizzazione manuale o lo scaricamento offline della cache distanze.
+        </p>
+
+        <div class="form-grid" style="margin-bottom: 20px;">
+            <div class="input-group">
+                <label style="font-weight:700; color:#64748b; font-size:12px; text-transform:uppercase;">Stato Connessione</label>
+                <div id="diagStatoConnessione" style="font-size:15px; font-weight:700; display:flex; align-items:center; gap:6px; margin-top:4px;">
+                    <span class="material-icons-round" style="font-size:18px;">cloud_queue</span> Rilevamento in corso...
+                </div>
+            </div>
+            <div class="input-group">
+                <label style="font-weight:700; color:#64748b; font-size:12px; text-transform:uppercase;">Elementi in Coda Sync</label>
+                <div id="diagElementiCoda" style="font-size:15px; font-weight:700; margin-top:4px;">0 elementi</div>
+            </div>
+            <div class="input-group">
+                <label style="font-weight:700; color:#64748b; font-size:12px; text-transform:uppercase;">Operazioni Riuscite</label>
+                <div id="diagSincroRiuscite" style="font-size:15px; font-weight:700; color:#10b981; margin-top:4px;">0</div>
+            </div>
+            <div class="input-group">
+                <label style="font-weight:700; color:#64748b; font-size:12px; text-transform:uppercase;">Operazioni Fallite</label>
+                <div id="diagSincroFallite" style="font-size:15px; font-weight:700; color:#ef4444; margin-top:4px;">0</div>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; padding-top:16px; border-top:1px solid #e2e8f0;">
+            <button type="button" class="btn-primary" id="btnDiagSincroOra" style="padding:10px 20px;">
+                <span class="material-icons-round" style="font-size:18px; margin-right:6px; vertical-align:middle;">sync</span> Sincronizza Ora
+            </button>
+            <button type="button" class="btn-secondary" id="btnDiagBootstrapCache" style="padding:10px 20px; background:#8b5cf6; color:white; border:none; box-shadow:0 4px 10px rgba(139, 92, 246, 0.2);">
+                <span class="material-icons-round" style="font-size:18px; margin-right:6px; vertical-align:middle;">download_for_offline</span> Scarica Cache Distanze
+            </button>
+            <button type="button" class="btn-secondary" id="btnDiagClearQueue" style="padding:10px 20px; color:#ef4444; border-color:#fecaca;">
+                <span class="material-icons-round" style="font-size:18px; margin-right:6px; vertical-align:middle;">delete_outline</span> Svuota Coda
+            </button>
+        </div>
+
+        <div id="diagProgressContainer" style="display:none; margin-top:16px; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0;">
+            <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:bold; margin-bottom:6px;">
+                <span id="diagProgressMsg" style="color:#475569;">Preparazione...</span>
+                <span id="diagProgressPct" style="color:var(--primary);">0%</span>
+            </div>
+            <div style="width:100%; height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden;">
+                <div id="diagProgressBar" style="width:0%; height:100%; background:var(--primary); transition: width 0.1s ease-out;"></div>
+            </div>
+        </div>
+
+        <!-- Lista Operazioni Pendenti -->
+        <div id="diagTableCodaContainer" style="margin-top:20px; display:none;">
+            <h4 style="margin-top:0; color:#334155; font-size:12px; text-transform:uppercase; margin-bottom:10px;">Dettaglio Operazioni Pendenti</h4>
+            <div style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
+                    <thead>
+                        <tr style="border-bottom:2px solid #e2e8f0; color:#64748b;">
+                            <th style="padding:8px;">ID</th>
+                            <th style="padding:8px;">Tipo</th>
+                            <th style="padding:8px;">Stato</th>
+                            <th style="padding:8px;">Priorità</th>
+                            <th style="padding:8px;">Ultimo Tentativo</th>
+                            <th style="padding:8px;">Errore</th>
+                        </tr>
+                    </thead>
+                    <tbody id="diagTableCodaBody">
+                        <!-- Popolato via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     </div>
 </main>
 
@@ -1409,8 +1484,8 @@
         window.renderLista();
     });
 </script>
-    <script src="script.js?v=6.194"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.194"></script>
+    <script src="script.js?v=6.195"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.195"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -2497,6 +2572,166 @@ const functions = getFunctions(app, "europe-west1");
         });
     }
     
+    // ─── CODICE JS GESTIONE DIAGNOSTICA OFFLINE ──────────────────────────────
+    try {
+        const { connectivityService } = await import("./core/connectivity-service.js?v=6.195");
+        const { syncManager } = await import("./core/sync-manager.js?v=6.195");
+
+        const elStato = document.getElementById("diagStatoConnessione");
+        const elCoda = document.getElementById("diagElementiCoda");
+        const elRiuscite = document.getElementById("diagSincroRiuscite");
+        const elFallite = document.getElementById("diagSincroFallite");
+        const btnSincro = document.getElementById("btnDiagSincroOra");
+        const btnBootstrap = document.getElementById("btnDiagBootstrapCache");
+        const btnClear = document.getElementById("btnDiagClearQueue");
+        const progressContainer = document.getElementById("diagProgressContainer");
+        const progressMsg = document.getElementById("diagProgressMsg");
+        const progressPct = document.getElementById("diagProgressPct");
+        const progressBar = document.getElementById("diagProgressBar");
+        const tableContainer = document.getElementById("diagTableCodaContainer");
+        const tableBody = document.getElementById("diagTableCodaBody");
+
+        function updateDiagMetrics() {
+            const tel = syncManager.telemetry;
+            if (elRiuscite) elRiuscite.textContent = tel.success;
+            if (elFallite) elFallite.textContent = tel.failure;
+        }
+
+        connectivityService.addEventListener((status) => {
+            if (!elStato) return;
+            if (status === 'online') {
+                elStato.style.color = "#10b981";
+                elStato.innerHTML = `<span class="material-icons-round" style="color:#10b981;">cloud_queue</span> Online (Connesso)`;
+                if (btnSincro) btnSincro.disabled = false;
+            } else if (status === 'offline') {
+                elStato.style.color = "#f59e0b";
+                elStato.innerHTML = `<span class="material-icons-round" style="color:#f59e0b;">cloud_off</span> Offline (Nessuna rete)`;
+                if (btnSincro) btnSincro.disabled = true;
+            } else {
+                elStato.style.color = "#ef4444";
+                elStato.innerHTML = `<span class="material-icons-round" style="color:#ef4444;">signal_cellular_connected_no_internet_4g</span> Connessione Instabile`;
+                if (btnSincro) btnSincro.disabled = false;
+            }
+        });
+
+        async function refreshQueueList() {
+            try {
+                const queue = await syncManager.getQueueItems();
+                if (elCoda) elCoda.textContent = `${queue.length} elementi`;
+
+                if (queue.length > 0) {
+                    if (tableContainer) tableContainer.style.display = "block";
+                    if (tableBody) {
+                        tableBody.innerHTML = queue.map(op => {
+                            const dateStr = op.lastAttemptAt ? new Date(op.lastAttemptAt).toLocaleTimeString() : 'Nessuno';
+                            return `
+                                <tr style="border-bottom:1px solid #e2e8f0; color:#334155;">
+                                    <td style="padding:8px; font-weight:bold;">${op.id.substring(0,8)}...</td>
+                                    <td style="padding:8px;">${op.type}</td>
+                                    <td style="padding:8px;"><span style="padding:2px 6px; border-radius:4px; font-weight:bold; font-size:10px; background:${op.status === 'uploading' ? '#dbeafe' : '#fef3c7'}; color:${op.status === 'uploading' ? '#1e40af' : '#92400e'};">${op.status}</span></td>
+                                    <td style="padding:8px;">${op.priority}</td>
+                                    <td style="padding:8px;">${dateStr}</td>
+                                    <td style="padding:8px; color:#ef4444; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${op.lastError || ''}">${op.lastError || '-'}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    }
+                } else {
+                    if (tableContainer) tableContainer.style.display = "none";
+                }
+            } catch (e) {
+                console.warn("[Diagnostics] Errore caricamento coda:", e);
+            }
+        }
+
+        setInterval(() => {
+            updateDiagMetrics();
+            refreshQueueList();
+        }, 3000);
+
+        if (btnSincro) {
+            btnSincro.addEventListener("click", async () => {
+                Swal.fire({
+                    title: 'Sincronizzazione in corso',
+                    text: 'Avvio elaborazione coda in background...',
+                    icon: 'info',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                await syncManager.processQueue();
+                refreshQueueList();
+            });
+        }
+
+        if (btnClear) {
+            btnClear.addEventListener("click", async () => {
+                const res = await Swal.fire({
+                    title: 'Sei sicuro?',
+                    text: 'Questo cancellerà tutte le operazioni offline in coda non sincronizzate!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sì, cancella coda',
+                    cancelButtonText: 'Annulla',
+                    confirmButtonColor: '#ef4444'
+                });
+                if (res.isConfirmed) {
+                    const idb = await syncManager.openDB();
+                    const tx = idb.transaction('syncQueue', 'readwrite');
+                    tx.objectStore('syncQueue').clear();
+                    await new Promise(resolve => tx.oncomplete = resolve);
+                    Swal.fire('Coda Svuotata', 'Tutti gli elementi in coda sono stati rimossi.', 'success');
+                    refreshQueueList();
+                }
+            });
+        }
+
+        if (btnBootstrap) {
+            btnBootstrap.addEventListener("click", async () => {
+                if (connectivityService.getStatus() !== 'online') {
+                    Swal.fire('Offline', 'Devi essere online per poter scaricare la cache delle distanze!', 'error');
+                    return;
+                }
+
+                if (progressContainer) progressContainer.style.display = "block";
+                btnBootstrap.disabled = true;
+
+                try {
+                    await syncManager.bootstrapDistanceCache((msg) => {
+                        if (progressMsg) progressMsg.textContent = msg;
+                        if (msg.includes('%')) {
+                            const match = msg.match(/(\d+)%/);
+                            if (match) {
+                                const pct = match[1];
+                                if (progressPct) progressPct.textContent = `${pct}%`;
+                                if (progressBar) progressBar.style.width = `${pct}%`;
+                            }
+                        } else {
+                            if (progressPct) progressPct.textContent = '...';
+                            if (progressBar) progressBar.style.width = '0%';
+                        }
+                    });
+
+                    Swal.fire('Completato', 'Cache distanze caricata con successo in IndexedDB!', 'success');
+                    if (progressBar) progressBar.style.width = '100%';
+                    if (progressPct) progressPct.textContent = '100%';
+                } catch (err) {
+                    Swal.fire('Errore', 'Errore download cache: ' + err.message, 'error');
+                } finally {
+                    setTimeout(() => {
+                        if (progressContainer) progressContainer.style.display = "none";
+                        btnBootstrap.disabled = false;
+                    }, 3000);
+                }
+            });
+        }
+
+        updateDiagMetrics();
+        refreshQueueList();
+
+    } catch (e) {
+        console.warn("[Diagnostics] Errore caricamento moduli diagnostica:", e);
+    }
+
     window.renderLista = renderLista;
     </script>
 </body>

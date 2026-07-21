@@ -1,20 +1,28 @@
-const CACHE_NAME = 'log-solution-v6.194';
+const CACHE_NAME = 'log-solution-v6.195';
 const ASSETS = [
     './',
     './index.html',
     './login.html',
     './dashboard.html',
-    './gestione.html',
     './inserimento.html',
-    './impostazioni.html',
-    './visualizzazione.html',
-    './mappa_consegne.html',
-    './mappa_google.html',
-    './elaborazione.html',
+    './presenze.html',
+    './styles.css',
+    './script.js',
     './firebase-config.js',
+    './firebase-auth-sync.js',
+    './firestore-service.js',
+    './gps-tracker.js',
+    './core/firebase-init.js',
+    './core/auth-service.js',
+    './core/connectivity-service.js',
+    './core/sync-manager.js',
+    './services/realtime-sync.js',
+    './services/crud-service.js',
     './manifest.json',
     './img/logo.png',
-    'https://fonts.googleapis.com/icon?family=Material+Icons+Round'
+    'https://fonts.googleapis.com/icon?family=Material+Icons+Round',
+    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
 ];
 
 // 1. Installazione: cache solo asset statici puri

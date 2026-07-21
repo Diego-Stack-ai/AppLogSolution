@@ -1,7 +1,5 @@
-import { app } from "./firebase-init.js?v=6.039";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, browserLocalPersistence, setPersistence, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
-const auth = getAuth(app);
+import { app, db, auth } from "./firebase-init.js?v=6.194";
+import { signInWithEmailAndPassword, onAuthStateChanged, signOut, browserLocalPersistence, setPersistence, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // ABILITAZIONE PERSISTENZA SESSIONE (localStorage)
 setPersistence(auth, browserLocalPersistence)
@@ -61,20 +59,20 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         try {
             // DYNAMIC IMPORT FIRESTORE ONLY IF AUTHENTICATED
-            const { getFirestore, doc, getDoc, updateDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-            const db = getFirestore(app);
+            const { doc, getDoc, getDocFromCache, updateDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
 
             let userDoc = null;
-            let retries = 3;
-            while (retries > 0) {
+            try {
+                // Tenta prima il recupero online del profilo
+                userDoc = await getDoc(doc(db, "dipendenti", user.uid));
+            } catch (fetchErr) {
+                console.warn("Auth: Connessione fallita o timeout sul server. Provo a caricare il profilo dipendente dalla cache locale...", fetchErr);
                 try {
-                    userDoc = await getDoc(doc(db, "dipendenti", user.uid));
-                    break;
-                } catch (fetchErr) {
-                    retries--;
-                    if (retries === 0) throw fetchErr;
-                    console.warn(`Auth: getDoc fallito, ritento... tentativi rimasti: ${retries}`, fetchErr);
-                    await new Promise(r => setTimeout(r, 1000));
+                    userDoc = await getDocFromCache(doc(db, "dipendenti", user.uid));
+                    console.log("Auth: Profilo caricato correttamente dalla cache offline.");
+                } catch (cacheErr) {
+                    console.error("Auth: Profilo dipendente non trovato in cache locale.", cacheErr);
+                    throw new Error("Impossibile caricare il profilo offline. È necessario effettuare l'accesso online almeno una volta su questo dispositivo.");
                 }
             }
             

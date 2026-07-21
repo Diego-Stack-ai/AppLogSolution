@@ -1,6 +1,4 @@
 import { 
-    initializeFirestore,
-    getFirestore, 
     collection, 
     doc, 
     addDoc, 
@@ -12,34 +10,10 @@ import {
     where, 
     orderBy, 
     serverTimestamp,
-    deleteDoc,
-    persistentLocalCache,
-    persistentMultipleTabManager
+    deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getStorage, ref as sRef, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-import { firebaseConfig } from "./firebase-config.js";
-
-const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
-
-// ─── PERSISTENZA OFFLINE (IndexedDB) ─────────────────────────────────────────
-// Nuova API Firebase 10+: FirestoreSettings.cache con persistentLocalCache.
-// Supporta più tab aperti contemporaneamente senza errori (multi-tab manager).
-let db;
-try {
-    db = initializeFirestore(app, {
-        cache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-    });
-    console.log("[Firestore] ✅ Offline persistence attiva (IndexedDB, multi-tab).");
-} catch (e) {
-    // initializeFirestore lancia un errore se Firestore è già stato inizializzato
-    // (es. da gps-tracker.js) → usiamo getFirestore() come fallback
-    db = getFirestore(app);
-    console.log("[Firestore] ✅ Firestore già inizializzato, riuso istanza esistente.");
-}
-
-const auth = getAuth(app);
+import { db, auth } from "./core/firebase-init.js?v=6.195";
 
 /**
  * Helper to parse time string (HH:MM or decimal) into decimal hours.

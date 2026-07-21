@@ -1,4 +1,4 @@
-const CACHE_NAME = 'log-solution-v6.195';
+const CACHE_NAME = 'log-solution-v6.196';
 const ASSETS = [
     './',
     './index.html',
@@ -92,12 +92,35 @@ self.addEventListener('fetch', (event) => {
                     caches.open(CACHE_NAME).then((c) => c.put(event.request, copy));
                     return response;
                 })
-                .catch(() => caches.match(event.request))
+                .catch(() => caches.match(event.request).then((res) => {
+                    return res || new Response(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="utf-8">
+                            <title>Offline - Log Solution</title>
+                            <style>
+                                body { font-family: sans-serif; text-align: center; padding: 50px; background: #f8fafc; color: #334155; }
+                                h1 { color: #0f172a; }
+                                p { color: #64748b; }
+                            </style>
+                        </head>
+                        <body>
+                            <h1>Sei offline 🔌</h1>
+                            <p>Questa pagina non è disponibile offline perché non è stata ancora visitata online.</p>
+                            <a href="dashboard.html" style="color: #3b82f6; text-decoration: none; font-weight: bold;">Torna alla Dashboard</a>
+                        </body>
+                        </html>
+                    `, {
+                        status: 503,
+                        headers: { 'Content-Type': 'text/html; charset=utf-8' }
+                    });
+                }))
         );
         return;
     }
 
-    // ? Network-First: JS e CSS (sempre freschi, fallback offline) ?
+    // ─── Network-First: JS e CSS (sempre freschi, fallback offline) ───
     if (url.match(/\.(js|css)(\?|$)/)) {
         event.respondWith(
             fetch(event.request.url, { cache: 'no-store' })
@@ -115,15 +138,19 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // ? Cache-First: immagini e altri asset statici (cambiano raramente) ?
+    // ─── Cache-First: immagini e altri asset statici (cambiano raramente) ───
     event.respondWith(
         caches.match(event.request).then((cached) => {
             if (cached) return cached;
-            return fetch(event.request).then((response) => {
-                const copy = response.clone();
-                caches.open(CACHE_NAME).then((c) => c.put(event.request, copy));
-                return response;
-            });
+            return fetch(event.request)
+                .then((response) => {
+                    const copy = response.clone();
+                    caches.open(CACHE_NAME).then((c) => c.put(event.request, copy));
+                    return response;
+                })
+                .catch(() => {
+                    return new Response('', { status: 404 });
+                });
         })
     );
 });

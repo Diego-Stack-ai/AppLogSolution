@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "6.198";
+const APP_VERSION = "6.199";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const devBanner = document.createElement("div");
         devBanner.id = "dev-env-banner";
         devBanner.innerText = "VERSIONE SVILUPPO";
-        devBanner.style.cssText = "background-color: #ef4444; color: white; text-align: center; font-weight: bold; padding: 6px 12px; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 99999;";
+        devBanner.style.cssText = "background-color: #ef4444; color: white; text-align: center; font-weight: bold; padding: 6px 12px; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.2); position: fixed; top: 0; left: 0; right: 0; z-index: 99999;";
         
         const firstChild = document.body.firstChild;
         if (firstChild) {

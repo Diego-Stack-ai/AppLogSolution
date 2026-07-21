@@ -1,4 +1,4 @@
-const CACHE_NAME = 'log-solution-v6.205';
+const CACHE_NAME = 'log-solution-v6.206';
 const ASSETS = [
     './',
     './index.html',
@@ -22,7 +22,12 @@ const ASSETS = [
     './img/logo.png',
     'https://fonts.googleapis.com/icon?family=Material+Icons+Round',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js',
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js',
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js',
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js',
+    'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js'
 ];
 
 // 1. Installazione: cache solo asset statici puri

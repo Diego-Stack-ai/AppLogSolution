@@ -1578,12 +1578,12 @@
     </script>
 
     <script type="module">
+        import { db, app } from "./core/firebase-init.js";
         import { getFirestore, collection, doc, query, where, getDocs }
             from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
         const storage = getStorage(app);
-        import { firebaseConfig } from "./firebase-config.js";
 
         const functions = getFunctions(app, "europe-west1");
 

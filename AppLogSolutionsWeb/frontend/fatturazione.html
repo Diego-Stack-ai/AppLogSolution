@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.213">
+    <link rel="stylesheet" href="styles.css?v=6.214">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -310,8 +310,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.213"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.213"></script>
+    <script src="script.js?v=6.214"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.214"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -356,7 +356,6 @@
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, writeBatch, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
 
-        const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
         const db = getFirestore(app);
 
         // Popolamento dinamico clienti da Firestore
@@ -1581,11 +1580,9 @@
     <script type="module">
         import { getFirestore, collection, doc, query, where, getDocs }
             from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
         import { firebaseConfig } from "./firebase-config.js";
 
-        const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const functions = getFunctions(app, "europe-west1");
 

@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "6.196";
+const APP_VERSION = "6.197";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -495,13 +495,23 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (err) {
                 console.error("[Auth] Errore di accesso:", err);
                 if (alertEl) {
+                    let msg = err.message;
+                    if (err.code === 'auth/invalid-credential') {
+                        msg = 'Credenziali non valide';
+                    } else if (err.code === 'auth/network-request-failed') {
+                        msg = 'Connessione assente. È necessario essere online per il primo accesso su questo dispositivo.';
+                    }
                     alertEl.style.display = 'block';
                     alertEl.style.background = '#fef2f2';
                     alertEl.style.color = '#991b1b';
                     alertEl.style.borderColor = '#fee2e2';
-                    alertEl.textContent = "Errore: " + (err.code === 'auth/invalid-credential' ? 'Credenziali non valide' : err.message);
+                    alertEl.textContent = "Errore: " + msg;
                 } else {
-                    alert("Errore Accesso: " + err.message);
+                    let msg = err.message;
+                    if (err.code === 'auth/network-request-failed') {
+                        msg = 'Connessione assente. È necessario essere online per il primo accesso su questo dispositivo.';
+                    }
+                    alert("Errore Accesso: " + msg);
                 }
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = 'Accedi ora';

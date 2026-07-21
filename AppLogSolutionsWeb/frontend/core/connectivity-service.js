@@ -6,9 +6,10 @@ class ConnectivityService {
         this.status = navigator.onLine ? 'online' : 'offline';
         this.listeners = [];
         this.pingUrl = './favicon.ico'; // Usiamo la favicon locale per il ping
-        this.pingInterval = 30000; // 30 secondi
-        this.pingTimeout = 5000;   // 5 secondi timeout
+        this.pingInterval = 10000; // 10 secondi per rilevamento reattivo
+        this.pingTimeout = 4000;   // 4 secondi timeout
         this.intervalId = null;
+        this.consecutiveFailures = 0;
 
         this.init();
     }
@@ -35,12 +36,18 @@ class ConnectivityService {
 
     async handleNetworkChange(isOnline) {
         if (!isOnline) {
+            this.consecutiveFailures = 0;
             this.updateStatus('offline');
             this.stopPingInterval();
         } else {
-            // Esegue un ping reale per accertarsi che la connessione sia attiva e non farlocca (es: captive portal)
             const actualOnline = await this.ping();
-            this.updateStatus(actualOnline ? 'online' : 'unstable');
+            if (actualOnline) {
+                this.consecutiveFailures = 0;
+                this.updateStatus('online');
+            } else {
+                this.consecutiveFailures = 1;
+                this.updateStatus('unstable');
+            }
             this.startPingInterval();
         }
     }
@@ -68,8 +75,19 @@ class ConnectivityService {
         this.intervalId = setInterval(async () => {
             if (navigator.onLine) {
                 const isOnline = await this.ping();
-                this.updateStatus(isOnline ? 'online' : 'unstable');
+                if (isOnline) {
+                    this.consecutiveFailures = 0;
+                    this.updateStatus('online');
+                } else {
+                    this.consecutiveFailures++;
+                    if (this.consecutiveFailures >= 3) {
+                        this.updateStatus('offline');
+                    } else {
+                        this.updateStatus('unstable');
+                    }
+                }
             } else {
+                this.consecutiveFailures = 0;
                 this.updateStatus('offline');
             }
         }, this.pingInterval);

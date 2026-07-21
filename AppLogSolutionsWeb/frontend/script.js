@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "6.202";
+const APP_VERSION = "6.203";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -711,7 +711,7 @@ window.caricaFotoDDT = async function(inputEl, index) {
     // Controllo Connessione
     let isOnline = true;
     try {
-        const { connectivityService } = await import("./core/connectivity-service.js?v=6.194");
+        const { connectivityService } = await import("./core/connectivity-service.js");
         isOnline = connectivityService.getStatus() === 'online';
     } catch (e) {}
 
@@ -788,7 +788,7 @@ window.caricaFotoDDT = async function(inputEl, index) {
 // --- GESTIONE CONNETTIVITÀ E FUSIONE OFFLINE (UI) ---
 document.addEventListener("DOMContentLoaded", async () => {
     try {
-        const { connectivityService } = await import("./core/connectivity-service.js?v=6.194");
+        const { connectivityService } = await import("./core/connectivity-service.js");
         
         let offlineBanner = null;
 

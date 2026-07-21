@@ -1,5 +1,5 @@
 // connectivity-service.js
-import { db } from "./firebase-init.js?v=6.194";
+import { db } from "./firebase-init.js";
 
 class ConnectivityService {
     constructor() {

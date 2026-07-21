@@ -1,4 +1,4 @@
-import { app, db, auth } from "./firebase-init.js?v=6.194";
+import { app, db, auth } from "./firebase-init.js";
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut, browserLocalPersistence, setPersistence, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // ABILITAZIONE PERSISTENZA SESSIONE (localStorage)

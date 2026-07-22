@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rientri DDT - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.194">
+    <link rel="stylesheet" href="styles.css?v=6.239">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <style>
@@ -181,19 +181,14 @@
     </div>
 
     <script type="module">
-        import { getFirestore, collection, doc, addDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { firebaseConfig } from "./firebase-config.js";
-
-        const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-
-const db  = getFirestore(app);
+        import { db } from "./core/firebase-init.js";
+        import { collection, doc, addDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // ? PATH CORRETTO
         const COLL_PATH = ['clienti', 'DNR', 'rientri ddt'];
         let items = [];
 
-        onSnapshot(collection(db, ...COLL_PATH), (snapshot) => {
+        onSnapshot(collection(db, ...COLL_PATH), { includeMetadataChanges: true }, (snapshot) => {
             items = [];
             snapshot.forEach(d => items.push({ id: d.id, ...d.data() }));
             document.getElementById('loadingIndicator').style.display = 'none';

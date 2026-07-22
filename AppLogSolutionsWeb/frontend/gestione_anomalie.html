@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anomalie - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.194">
+    <link rel="stylesheet" href="styles.css?v=6.239">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -100,24 +100,22 @@
 
     </div>
 
-    <script src="script.js?v=6.194"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.194"></script>
+    <script src="script.js?v=6.239"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.239"></script>
     <script type="module">
-        import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { db } from "./core/firebase-init.js";
         import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
 
-        const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
-const db = getFirestore(app);
 
         let masterClientiList = [];
         async function caricaMasterClienti() {
             try {
                 const [snapDNR, snapGC, snapCattel] = await Promise.all([
-                    getDocs(collection(db, 'clienti', 'DNR', 'raccolta clienti')),
-                    getDocs(collection(db, 'clienti', 'GRAN CHEF', 'raccolta clienti')),
-                    getDocs(collection(db, 'clienti', 'CATTEL', 'raccolta clienti'))
+                    window.getDocsConFallback(collection(db, 'clienti', 'DNR', 'raccolta clienti')),
+                    window.getDocsConFallback(collection(db, 'clienti', 'GRAN CHEF', 'raccolta clienti')),
+                    window.getDocsConFallback(collection(db, 'clienti', 'CATTEL', 'raccolta clienti'))
                 ]);
                 const listDNR = snapDNR.docs.map(doc => ({ id: doc.id, tenant: 'DNR', ...doc.data() }));
                 const listGC = snapGC.docs.map(doc => ({ id: doc.id, tenant: 'GRAN CHEF', ...doc.data() }));
@@ -258,7 +256,7 @@ const db = getFirestore(app);
             list.innerHTML = html;
         }
 
-        onSnapshot(collection(db, 'clienti', 'DNR', 'nuovi codici consegna'), (snapshot) => {
+        onSnapshot(collection(db, 'clienti', 'DNR', 'nuovi codici consegna'), { includeMetadataChanges: true }, (snapshot) => {
             nuoviCodiciDNR = [];
             snapshot.forEach(docSnap => {
                 nuoviCodiciDNR.push({ id: docSnap.id, ...docSnap.data() });
@@ -266,7 +264,7 @@ const db = getFirestore(app);
             renderMergedNuoviCodici();
         });
 
-        onSnapshot(collection(db, 'clienti', 'GRAN CHEF', 'nuovi codici consegna'), (snapshot) => {
+        onSnapshot(collection(db, 'clienti', 'GRAN CHEF', 'nuovi codici consegna'), { includeMetadataChanges: true }, (snapshot) => {
             nuoviCodiciGC = [];
             snapshot.forEach(docSnap => {
                 nuoviCodiciGC.push({ id: docSnap.id, ...docSnap.data() });
@@ -274,7 +272,7 @@ const db = getFirestore(app);
             renderMergedNuoviCodici();
         });
 
-        onSnapshot(collection(db, 'clienti', 'CATTEL', 'nuovi codici consegna'), (snapshot) => {
+        onSnapshot(collection(db, 'clienti', 'CATTEL', 'nuovi codici consegna'), { includeMetadataChanges: true }, (snapshot) => {
             nuoviCodiciCattel = [];
             snapshot.forEach(docSnap => {
                 nuoviCodiciCattel.push({ id: docSnap.id, ...docSnap.data() });
@@ -467,7 +465,7 @@ const db = getFirestore(app);
         };
 
         // --- GESTIONE ARTICOLI ---
-        onSnapshot(collection(db, 'clienti', 'DNR', 'nuovi articoli rilevati'), (snapshot) => {
+        onSnapshot(collection(db, 'clienti', 'DNR', 'nuovi articoli rilevati'), { includeMetadataChanges: true }, (snapshot) => {
             const list = document.getElementById('list-articoli');
             const badge = document.getElementById('badge-articoli');
             if (snapshot.empty) {
@@ -559,7 +557,7 @@ const db = getFirestore(app);
         };
 
         // --- GESTIONE ORARI ---
-        onSnapshot(collection(db, 'clienti', 'DNR', 'nuovi orari mancanti'), async (snapshot) => {
+        onSnapshot(collection(db, 'clienti', 'DNR', 'nuovi orari mancanti'), { includeMetadataChanges: true }, async (snapshot) => {
             const list = document.getElementById('list-orari');
             const badge = document.getElementById('badge-orari');
             if (snapshot.empty) {
@@ -591,13 +589,13 @@ const db = getFirestore(app);
                     const rcRef = collection(db, 'clienti', 'DNR', 'raccolta clienti');
                     const qF = query(rcRef, where("codice_frutta", "==", id));
                     const qL = query(rcRef, where("codice_latte", "==", id));
-                    let docsF = await getDocs(qF);
-                    let docsL = await getDocs(qL);
+                    let docsF = await window.getDocsConFallback(qF);
+                    let docsL = await window.getDocsConFallback(qL);
                     
                     if (!docsF.empty) { clientData = {...clientData, ...docsF.docs[0].data()}; docIdToUpdate = docsF.docs[0].id; }
                     else if (!docsL.empty) { clientData = {...clientData, ...docsL.docs[0].data()}; docIdToUpdate = docsL.docs[0].id; }
                     else {
-                        const directDoc = await getDocs(query(rcRef, where("__name__", "==", id)));
+                        const directDoc = await window.getDocsConFallback(query(rcRef, where("__name__", "==", id)));
                         if (!directDoc.empty) { clientData = {...clientData, ...directDoc.docs[0].data()}; docIdToUpdate = directDoc.docs[0].id; }
                     }
                 } catch(e) { console.error(e); }

@@ -1059,11 +1059,12 @@ select option {
   .filters-container > div {
     flex-wrap: wrap;
     justify-content: stretch;
+    gap: 8px !important;
   }
 
   .filters-container button {
     flex: 1;
-    min-width: calc(50% - 6px); /* Per mettere due bottoni affiancati */
+    min-width: calc(50% - 4px); /* Per mettere due bottoni affiancati con gap 8px */
   }
 
   .table-wrapper {
@@ -1108,9 +1109,12 @@ select option {
     padding-right: 28px !important;
   }
 
-  .btn-primary {
-    padding: 12px !important;
-    font-size: 14px !important;
+  .btn-primary,
+  .btn-elabora,
+  .btn-secondary,
+  .glass-btn {
+    padding: 10px 12px !important;
+    font-size: 13px !important;
     border-radius: 8px !important;
   }
 

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mappa Consegne - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.194">
+    <link rel="stylesheet" href="styles.css?v=6.239">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     
     <!-- PWA & Mobile Optimization -->
@@ -116,12 +116,10 @@
 
     <!-- Aggiungo Firebase -->
     <script type="module">
-        import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { db } from "./core/firebase-init.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
 
-        const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
-        const db = getFirestore(app);
 
         // Palette Colori
         const COLORI = ["#4f46e5","#10b981","#f59e0b","#ef4444","#8b5cf6","#06b6d4","#ec4899","#84cc16","#f97316","#6366f1","#14b8a6","#a855f7","#eab308","#22c55e","#3b82f6"];
@@ -182,7 +180,7 @@
 
                 const viaggiRef = collection(db, `clienti/${tenant}/viaggi ddt`);
                 const q = query(viaggiRef, where("data_lavoro", "==", dataParam));
-                const snapshot = await getDocs(q);
+                const snapshot = await window.getDocsConFallback(q);
 
                 if (snapshot.empty) {
                     alert("Nessun viaggio trovato per questa data.");
@@ -318,8 +316,8 @@
             }
         });
     </script>
-    <script src="script.js?v=6.194"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.194"></script>
+    <script src="script.js?v=6.239"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.239"></script>
 </body>
 </html>
 

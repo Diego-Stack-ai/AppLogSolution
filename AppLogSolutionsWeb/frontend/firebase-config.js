@@ -3,7 +3,7 @@
 
 const firebaseConfigProd = {
   apiKey: "AIzaSyDLnhP2Q4bz2ubYwcMLiD3-qq4c220eVKw",
-  authDomain: "log-solution-60007.firebaseapp.com",
+  authDomain: "log-solution-60007.web.app",
   projectId: "log-solution-60007",
   storageBucket: "log-solution-60007.firebasestorage.app",
   messagingSenderId: "343696844738",
@@ -12,7 +12,7 @@ const firebaseConfigProd = {
 
 const firebaseConfigDev = {
   apiKey: "AIzaSyCfM1An6ekvcO4Y3a-UooJiEi2g5JkShFQ",
-  authDomain: "log-solutions-sviluppo.firebaseapp.com",
+  authDomain: "log-solutions-sviluppo.web.app",
   projectId: "log-solutions-sviluppo",
   storageBucket: "log-solutions-sviluppo.firebasestorage.app",
   messagingSenderId: "1097538489312",

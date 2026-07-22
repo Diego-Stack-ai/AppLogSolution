@@ -1,10 +1,7 @@
-import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, query, orderBy, limit, onSnapshot, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { firebaseConfig } from "../firebase-config.js";
+import { collection, query, orderBy, limit, onSnapshot, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { app, db } from "../core/firebase-init.js";
 
 // Inizializzazione sicura di Firebase (evita l'errore "app already exists")
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
 
 /**
  * Ascolta in tempo reale la lista degli ultimi 15 Reports Logistici (DDT) del tenant.
@@ -21,7 +18,7 @@ export function subscribeToReportsLogistici(tenantId, callback) {
     }
     const reportsRef = collection(db, 'clienti', finalTenant, 'reports_logistici');
     const q = query(reportsRef, orderBy('created_at', 'desc'), limit(15));
-    return onSnapshot(q, finalCallback);
+    return onSnapshot(q, { includeMetadataChanges: true }, finalCallback);
 }
 
 /**
@@ -34,7 +31,7 @@ export function subscribeToReportsLogistici(tenantId, callback) {
 export function subscribeToProcessingJobs(tenantId, limitCount = 10, callback) {
     const jobsRef = collection(db, 'clienti', tenantId, 'processing_jobs');
     const q = query(jobsRef, orderBy('created_at', 'desc'), limit(limitCount));
-    return onSnapshot(q, callback);
+    return onSnapshot(q, { includeMetadataChanges: true }, callback);
 }
 
 /**

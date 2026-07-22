@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.194">
+    <link rel="stylesheet" href="styles.css?v=6.239">
     <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"></noscript>
     <!-- PWA & Mobile Optimization -->
@@ -138,31 +138,31 @@
     </main>
 
 
-    <script src="script.js?v=6.194"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.194"></script>
+    <script src="script.js?v=6.239"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.239"></script>
     <script>
-        // Quando il profilo e i permessi sono caricati
-        window.onUserProfileLoaded = (user) => {
+        // Funzione centrale di rendering della dashboard
+        let _dashRendered = false;
+        function renderDashboard(user) {
+            if (_dashRendered) return; // evita doppio render
+            _dashRendered = true;
+
             const greeting = document.getElementById('userGreeting');
-            if (greeting) {
-                greeting.textContent = (user.nome || "Utente").charAt(0).toUpperCase() + (user.nome || "Utente").slice(1);
+            if (greeting && user.nome) {
+                greeting.textContent = user.nome.charAt(0).toUpperCase() + user.nome.slice(1);
             }
 
-            // Nascondi le card a cui l'utente non ha accesso
             const permessi = window.appData ? window.appData.permessiDashboard : null;
             const ruolo = user.ruolo || 'autista';
-            
+
             document.querySelectorAll('.nav-card').forEach(card => {
                 const page = card.getAttribute('data-page');
                 if (page) {
                     const pageKey = page.replace('.html', '');
                     let val = undefined;
-                    
                     if (permessi && permessi[pageKey]) {
                         val = permessi[pageKey][ruolo];
                     }
-                    
-                    // Il fornitore può vedere solo la gestione mezzi
                     if (ruolo === 'fornitore' && page !== 'gestione_mezzi.html') {
                         card.style.display = 'none';
                     } else if (val === false || val === 'none') {
@@ -170,11 +170,63 @@
                     }
                 }
             });
-            
-            // Ora che abbiamo nascosto le card vietate, mostriamo la griglia
+
             const grid = document.querySelector('.dashboard-grid');
             if (grid) grid.classList.add('ready');
+            console.log('[Dashboard] Griglia mostrata per utente:', user.nome || user.email);
+        }
+
+        // Callback chiamata da auth-service.js quando il profilo è caricato dal server/cache Firestore
+        window.onUserProfileLoaded = (user) => {
+            _dashRendered = false; // permetti re-render con dati aggiornati da Firestore
+            renderDashboard(user);
         };
+
+        // Early-render: al DOMContentLoaded legge il profilo da localStorage
+        // (disponibile immediatamente anche in offline/navigazione interna)
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Controlla window.appData (già in memoria dalla stessa sessione)
+            let user = window.appData && window.appData.currentUser && window.appData.currentUser.id
+                ? window.appData.currentUser
+                : null;
+
+            if (!user) {
+                // 2. Prova localStorage (persiste tra navigazioni e sessioni offline)
+                try {
+                    const cached = localStorage.getItem('ls_cached_user');
+                    if (cached) {
+                        user = JSON.parse(cached);
+                        console.log('[Dashboard] Profilo caricato da localStorage:', user.nome);
+                    }
+                } catch(e) { /* ignora errori parsing */ }
+            }
+
+            if (user && user.id) {
+                console.log('[Dashboard] Rendering immediato da cache locale.');
+                renderDashboard(user);
+                return;
+            }
+
+            // 3. Fallback: polling ogni 150ms per un max di 10 secondi
+            let waited = 0;
+            const fallbackInterval = setInterval(() => {
+                waited += 150;
+                const u = window.appData && window.appData.currentUser && window.appData.currentUser.id
+                    ? window.appData.currentUser
+                    : null;
+                if (u) {
+                    console.log('[Dashboard] Utente rilevato tramite polling, renderizzazione.');
+                    renderDashboard(u);
+                    clearInterval(fallbackInterval);
+                } else if (waited > 10000) {
+                    // Se dopo 10s non c'è utente, logout e login
+                    console.warn('[Dashboard] Timeout attesa utente. Pulizia e reindirizzamento al login.');
+                    try { localStorage.removeItem('ls_cached_user'); } catch(e) {}
+                    clearInterval(fallbackInterval);
+                    window.location.replace('login.html');
+                }
+            }, 150);
+        });
     </script>
 </body>
 </html>

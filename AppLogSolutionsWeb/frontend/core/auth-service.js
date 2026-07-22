@@ -1,11 +1,9 @@
-import { app } from "./firebase-init.js?v=6.039";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, browserLocalPersistence, setPersistence, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
-const auth = getAuth(app);
+import { app, db, auth } from "./firebase-init.js";
+import { signInWithEmailAndPassword, onAuthStateChanged, signOut, browserLocalPersistence, setPersistence, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { connectivityService } from "./connectivity-service.js";
 
 // ABILITAZIONE PERSISTENZA SESSIONE (localStorage)
-setPersistence(auth, browserLocalPersistence)
-    .catch((error) => console.error("Errore persistenza:", error));
+// [DEBUG] setPersistence rimosso per evitare deadlock offline (browserLocalPersistence è il default)
 
 // --- GESTIONE EMERGENZA (DEBUG) ---
 window.forcePasswordResetDebug = async (newPassword) => {
@@ -35,6 +33,7 @@ window.logoutFirebase = async () => {
     isLoggingOut = true;
     try {
         window.appData.currentUser = {};
+        try { localStorage.removeItem('ls_cached_user'); } catch(e) {}
         await signOut(auth);
         console.log("Auth: Logout Firebase completato. Reindirizzamento...");
         window.location.replace('login.html');
@@ -45,7 +44,37 @@ window.logoutFirebase = async () => {
     }
 };
 
+
+let profileAlreadyLoaded = false; // Guard: evita ri-trigger al cambio rete
+
+// FALLBACK OFFLINE TIMEOUT: Se Firebase Auth tentenna a rispondere offline, usa il profilo in cache
+let authStateFired = false;
+const offlineAuthFallbackTimer = setTimeout(() => {
+    if (!authStateFired && !profileAlreadyLoaded) {
+        console.warn("[Auth Fallback Offline] onAuthStateChanged non ha risposto in 1200ms. Verifico cache locale...");
+        try {
+            const cachedUserStr = localStorage.getItem('ls_cached_user');
+            if (cachedUserStr) {
+                const cachedUser = JSON.parse(cachedUserStr);
+                console.log("[Auth Fallback Offline] ✅ Utente ripristinato da ls_cached_user:", cachedUser.email || cachedUser.id);
+                window.appData = window.appData || {};
+                window.appData.currentUser = cachedUser;
+                profileAlreadyLoaded = true;
+                if (typeof window.onUserProfileLoaded === 'function') {
+                    window.onUserProfileLoaded(cachedUser);
+                }
+            } else {
+                console.warn("[Auth Fallback Offline] Nessun utente salvato in ls_cached_user.");
+            }
+        } catch (e) {
+            console.error("[Auth Fallback Offline] Errore lettura ls_cached_user:", e);
+        }
+    }
+}, 1200);
+
 onAuthStateChanged(auth, async (user) => {
+    authStateFired = true;
+    clearTimeout(offlineAuthFallbackTimer);
     if (isLoggingOut) {
         console.log("Auth Listener: Logout in corso, salto controlli.");
         return;
@@ -59,22 +88,48 @@ onAuthStateChanged(auth, async (user) => {
     console.log(`Auth Listener: Utente = ${user ? user.uid : 'NULL'}, Pagina Corrente = ${page}`);
 
     if (user) {
+        // Se il profilo è già caricato per questo utente, non rieseguire tutto il ciclo
+        if (profileAlreadyLoaded && window.appData?.currentUser?.id === user.uid) {
+            console.log("Auth Listener: Profilo già caricato per questo utente, salto ri-inizializzazione.");
+            return;
+        }
         try {
             // DYNAMIC IMPORT FIRESTORE ONLY IF AUTHENTICATED
-            const { getFirestore, doc, getDoc, updateDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-            const db = getFirestore(app);
+            const { doc, getDoc, getDocFromCache, updateDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+
+            // Funzione helper per evitare l'hang delle chiamate online in assenza reale di rete
+            const getDocWithTimeout = (docRef, timeoutMs = 2000) => {
+                return Promise.race([
+                    getDoc(docRef),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Firestore")), timeoutMs))
+                ]);
+            };
 
             let userDoc = null;
-            let retries = 3;
-            while (retries > 0) {
+            const isOffline = connectivityService.getStatus() === 'offline';
+            if (isOffline) {
+                console.log("Auth: Rilevato stato offline. Carico il profilo dipendente direttamente da cache...");
                 try {
-                    userDoc = await getDoc(doc(db, "dipendenti", user.uid));
-                    break;
+                    userDoc = await getDocFromCache(doc(db, "dipendenti", user.uid));
+                    console.log("Auth: Profilo caricato correttamente da cache offline.");
+                } catch (cacheErr) {
+                    console.error("Auth: Profilo dipendente non trovato in cache locale offline.", cacheErr);
+                    throw new Error("Impossibile caricare il profilo offline. È necessario effettuare l'accesso online almeno una volta su questo dispositivo.");
+                }
+            } else {
+                try {
+                    // Tenta prima il recupero online del profilo con timeout di 2 secondi
+                    userDoc = await getDocWithTimeout(doc(db, "dipendenti", user.uid), 2000);
+                    console.log("Auth: Profilo caricato online con successo.");
                 } catch (fetchErr) {
-                    retries--;
-                    if (retries === 0) throw fetchErr;
-                    console.warn(`Auth: getDoc fallito, ritento... tentativi rimasti: ${retries}`, fetchErr);
-                    await new Promise(r => setTimeout(r, 1000));
+                    console.warn("Auth: Connessione fallita o timeout sul server. Provo a caricare il profilo dipendente dalla cache locale...", fetchErr);
+                    try {
+                        userDoc = await getDocFromCache(doc(db, "dipendenti", user.uid));
+                        console.log("Auth: Profilo caricato correttamente dalla cache offline.");
+                    } catch (cacheErr) {
+                        console.error("Auth: Profilo dipendente non trovato in cache locale.", cacheErr);
+                        throw new Error("Impossibile caricare il profilo offline. È necessario effettuare l'accesso online almeno una volta su questo dispositivo.");
+                    }
                 }
             }
             
@@ -109,25 +164,67 @@ onAuthStateChanged(auth, async (user) => {
                 const isAdmin = role === 'amministratore' || role === 'impiegata' || isDiego;
 
                 window.appData.currentUser = { id: user.uid, email: user.email, ...userData, ruolo: role, isAdmin: isAdmin };
+                profileAlreadyLoaded = true; // Segna il profilo come caricato
                 
+                // Persistenza del profilo in localStorage per il rendering immediato offline
+                try {
+                    localStorage.setItem('ls_cached_user', JSON.stringify(window.appData.currentUser));
+                } catch(e) { /* ignora errori storage */ }
+
                 console.log(`Auth: Profilo caricato [${userData.nome}], Ruolo: "${role}", IsAdmin: ${isAdmin}`);
 
                 let permessiDoc = null;
-                try {
-                    permessiDoc = await getDoc(doc(db, "config", "permessi_dashboard"));
-                } catch(e) {
-                    console.warn("Auth: Impossibile scaricare permessi dashboard", e);
+                if (isOffline) {
+                    try {
+                        permessiDoc = await getDocFromCache(doc(db, "config", "permessi_dashboard"));
+                        console.log("Auth: Permessi dashboard caricati da cache offline.");
+                    } catch (e) {
+                        console.warn("Auth: Permessi dashboard non trovati in cache offline", e);
+                    }
+                } else {
+                    try {
+                        // Tenta recupero online con timeout di 1.5 secondi
+                        permessiDoc = await getDocWithTimeout(doc(db, "config", "permessi_dashboard"), 1500);
+                        console.log("Auth: Permessi dashboard caricati online.");
+                    } catch(e) {
+                        console.warn("Auth: Impossibile scaricare permessi dashboard online (errore o timeout), provo da cache...", e);
+                        try {
+                            permessiDoc = await getDocFromCache(doc(db, "config", "permessi_dashboard"));
+                            console.log("Auth: Permessi dashboard caricati da cache offline.");
+                        } catch (cacheErr) {
+                            console.warn("Auth: Permessi dashboard non disponibili offline", cacheErr);
+                        }
+                    }
                 }
                 
                 const permessiData = permessiDoc && permessiDoc.exists() ? permessiDoc.data() : {};
                 window.appData.permessiDashboard = permessiData;
 
-                if (typeof window.onUserProfileLoaded === 'function') {
-                    window.onUserProfileLoaded(window.appData.currentUser);
-                    setTimeout(() => {
-                        if (typeof window.onUserProfileLoaded === 'function') {
-                            window.onUserProfileLoaded(window.appData.currentUser);
+                const triggerUserProfileLoaded = () => {
+                    if (typeof window.onUserProfileLoaded === 'function') {
+                        window.onUserProfileLoaded(window.appData.currentUser);
+                        return true;
+                    }
+                    return false;
+                };
+
+                if (!triggerUserProfileLoaded()) {
+                    console.log("Auth: window.onUserProfileLoaded non ancora pronto, avvio polling di attesa...");
+                    let attempts = 0;
+                    const interval = setInterval(() => {
+                        attempts++;
+                        if (triggerUserProfileLoaded()) {
+                            console.log("Auth: window.onUserProfileLoaded eseguito con successo tramite polling.");
+                            clearInterval(interval);
+                        } else if (attempts > 30) {
+                            console.warn("Auth: Timeout polling window.onUserProfileLoaded.");
+                            clearInterval(interval);
                         }
+                    }, 100);
+                } else {
+                    console.log("Auth: window.onUserProfileLoaded eseguito immediatamente.");
+                    setTimeout(() => {
+                        triggerUserProfileLoaded();
                     }, 300);
                 }
 
@@ -255,8 +352,9 @@ onAuthStateChanged(auth, async (user) => {
         }
     } else {
         window.appData.currentUser = {};
+        profileAlreadyLoaded = false; // Reset al logout
+        console.log(`Auth Listener: Utente non autenticato. Pagina corrente = ${page}`);
         if (!isPublicPage) {
-            console.log(`REDIRECT DEBUG: Utente non loggato su pagina privata [${page}] -> Redirect a login.html`);
             window.location.replace('login.html');
         }
     }

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Presenze - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.194">
+    <link rel="stylesheet" href="styles.css?v=6.239">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="manifest.json">
@@ -477,12 +477,12 @@
         </div>
     </div>
 
-    <script src="script.js?v=6.194"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.194"></script>
+    <script src="script.js?v=6.239"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.239"></script>
     <script type="module">
-        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=6.194";
-        import { auth } from "./firestore-service.js?v=6.194";
-        import "./gps-tracker.js?v=6.194";
+        import { saveTrip, checkPendingTrip, closeTripWithAnomaly, deleteTrip } from "./firestore-service.js?v=6.239";
+        import { auth } from "./firestore-service.js?v=6.239";
+        import "./gps-tracker.js?v=6.239";
 
         const presenzeForm = document.getElementById('presenzeForm');
         const btnStartTrip = document.getElementById('btnStartTrip');
@@ -878,6 +878,26 @@
 
                 // Salva su Firebase
                 await saveTrip(finalData);
+
+                // Se ci sono foto offline da caricare, le accodiamo in SyncManager
+                if (tripId && window.offlinePhotoBlobs && Object.keys(window.offlinePhotoBlobs).length > 0) {
+                    try {
+                        const { syncManager } = await import("./core/sync-manager.js?v=6.239");
+                        for (const index in window.offlinePhotoBlobs) {
+                            const fileBlob = window.offlinePhotoBlobs[index];
+                            const photoId = `foto_ddt_${tripId}_${index}`;
+                            const docPath = `viaggi/${tripId}`;
+                            const fieldName = `attivitaAggiuntive.${index}.fotoUrl`;
+                            
+                            console.log(`[Offline Inserimento] Accodamento foto DDT #${index} in SyncQueue...`);
+                            await syncManager.saveOfflinePhoto(photoId, fileBlob, docPath, fieldName);
+                        }
+                    } catch (syncErr) {
+                        console.error("[Offline Inserimento] Errore salvataggio foto offline:", syncErr);
+                    }
+                    // Reset blobs in memory
+                    window.offlinePhotoBlobs = {};
+                }
                 
                 sessionStorage.removeItem('currentTripId');
                 sessionStorage.removeItem('currentDraft');

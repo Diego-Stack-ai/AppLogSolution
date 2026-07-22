@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=6.194">
+    <link rel="stylesheet" href="styles.css?v=6.239">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .navetta-details-row {
@@ -587,18 +587,16 @@ tr.weekend:hover
         </div>
     </main>
 
-    <script src="script.js?v=6.194"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.194"></script>
+    <script src="script.js?v=6.239"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.239"></script>
     <script type="module">
-        import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { db, app } from "./core/firebase-init.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=6.194";
+        import { calculateHours } from "./firestore-service.js?v=6.239";
 
-        const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
           window.db = getFirestore(app);
 
-const db = getFirestore(app);
 
         // Helper per estrarre Cliente e Destinazione valida da una stringa
         function parseClienteDestinazione(stringaUnica) {
@@ -962,7 +960,7 @@ const db = getFirestore(app);
             }
 
 
-            currentUnsub = onSnapshot(q, (snapshot) => {
+            currentUnsub = onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
                 const presenzeMap = {};
                 snapshot.forEach((doc) => {
                     presenzeMap[doc.id] = doc.data();
@@ -1874,6 +1872,25 @@ const db = getFirestore(app);
             const file = inputEl.files[0];
             if (!file) return;
 
+            // Controllo Connessione
+            let isOnline = true;
+            try {
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.239");
+                isOnline = connectivityService.getStatus() === 'online';
+            } catch (e) {}
+
+            if (!isOnline) {
+                console.log("[Offline Presenze Admin] Connessione assente. Salvataggio locale della foto DDT...");
+                const localUrl = URL.createObjectURL(file);
+                currentNavetteArray[index].fotoUrl = localUrl;
+                
+                window.offlinePresenzePhotoBlobs = window.offlinePresenzePhotoBlobs || {};
+                window.offlinePresenzePhotoBlobs[index] = file;
+
+                window.renderNavetteAdminCards();
+                return;
+            }
+
             try {
                 const btnSave = document.getElementById('btnSaveNavettaAdmin');
                 btnSave.innerText = "Caricamento file in corso...";
@@ -1915,6 +1932,25 @@ const db = getFirestore(app);
                 await setDoc(doc(window.db, "presenze", docId), {
                     attivitaAggiuntive: currentNavetteArray
                 }, { merge: true });
+
+                // Accoda le foto offline
+                if (window.offlinePresenzePhotoBlobs && Object.keys(window.offlinePresenzePhotoBlobs).length > 0) {
+                    try {
+                        const { syncManager } = await import("./core/sync-manager.js?v=6.239");
+                        for (const index in window.offlinePresenzePhotoBlobs) {
+                            const fileBlob = window.offlinePresenzePhotoBlobs[index];
+                            const photoId = `foto_presenza_${docId}_${index}`;
+                            const docPath = `presenze/${docId}`;
+                            const fieldName = `attivitaAggiuntive.${index}.fotoUrl`;
+                            
+                            console.log(`[Offline Presenze] Accodamento foto DDT #${index} in SyncQueue...`);
+                            await syncManager.saveOfflinePhoto(photoId, fileBlob, docPath, fieldName);
+                        }
+                    } catch (syncErr) {
+                        console.error("[Offline Presenze] Errore salvataggio foto offline:", syncErr);
+                    }
+                    window.offlinePresenzePhotoBlobs = {};
+                }
                 
                 window.closeNavettaModal();
             } catch (err) {
@@ -2372,7 +2408,7 @@ const db = getFirestore(app);
               try {
                   const presenzeRef = collection(getFirestore(), 'presenze');
                   const q = query(presenzeRef, where('mese', '==', monthVal));
-                  const querySnapshot = await getDocs(q);
+                  const querySnapshot = await window.getDocsConFallback(q);
                   
                   const rawData = {};
                   querySnapshot.forEach(doc => {
@@ -2664,7 +2700,7 @@ const db = getFirestore(app);
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=6.194"></script>
+    <script type="module" src="cedolini-splitter.js?v=6.239"></script>
 
 </body>
 </html>

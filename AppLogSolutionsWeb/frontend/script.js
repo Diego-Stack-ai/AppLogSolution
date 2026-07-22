@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "6.194";
+const APP_VERSION = "6.239";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const devBanner = document.createElement("div");
         devBanner.id = "dev-env-banner";
         devBanner.innerText = "VERSIONE SVILUPPO";
-        devBanner.style.cssText = "background-color: #ef4444; color: white; text-align: center; font-weight: bold; padding: 6px 12px; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 99999;";
+        devBanner.style.cssText = "background-color: #ef4444; color: white; text-align: center; font-weight: bold; padding: 6px 12px; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.2); position: fixed; top: 0; left: 0; right: 0; z-index: 99999;";
         
         const firstChild = document.body.firstChild;
         if (firstChild) {
@@ -495,13 +495,23 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (err) {
                 console.error("[Auth] Errore di accesso:", err);
                 if (alertEl) {
+                    let msg = err.message;
+                    if (err.code === 'auth/invalid-credential') {
+                        msg = 'Credenziali non valide';
+                    } else if (err.code === 'auth/network-request-failed') {
+                        msg = 'Connessione assente. È necessario essere online per il primo accesso su questo dispositivo.';
+                    }
                     alertEl.style.display = 'block';
                     alertEl.style.background = '#fef2f2';
                     alertEl.style.color = '#991b1b';
                     alertEl.style.borderColor = '#fee2e2';
-                    alertEl.textContent = "Errore: " + (err.code === 'auth/invalid-credential' ? 'Credenziali non valide' : err.message);
+                    alertEl.textContent = "Errore: " + msg;
                 } else {
-                    alert("Errore Accesso: " + err.message);
+                    let msg = err.message;
+                    if (err.code === 'auth/network-request-failed') {
+                        msg = 'Connessione assente. È necessario essere online per il primo accesso su questo dispositivo.';
+                    }
+                    alert("Errore Accesso: " + msg);
                 }
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = 'Accedi ora';
@@ -698,6 +708,36 @@ window.caricaFotoDDT = async function(inputEl, index) {
     const file = inputEl.files[0];
     if (!file) return;
 
+    // Controllo Connessione
+    let isOnline = true;
+    try {
+        const { connectivityService } = await import("./core/connectivity-service.js");
+        isOnline = connectivityService.getStatus() === 'online';
+    } catch (e) {}
+
+    if (!isOnline) {
+        console.log("[Offline Inserimento] Connessione assente. Salvataggio locale della foto DDT in corso...");
+        
+        // Genera URL locale per la visualizzazione immediata
+        const localUrl = URL.createObjectURL(file);
+        window.attivitaAggiuntive[index].fotoUrl = localUrl;
+
+        // Conserviamo il blob in un oggetto temporaneo globale in attesa del submit finale del viaggio
+        window.offlinePhotoBlobs = window.offlinePhotoBlobs || {};
+        window.offlinePhotoBlobs[index] = file;
+
+        // Mostra il check visivo
+        const previewEl = document.getElementById(`previewDDT_${index}`);
+        if (previewEl) {
+            previewEl.style.display = 'block';
+            previewEl.innerHTML = `<span class="material-icons-round" style="font-size: 14px; vertical-align: middle; color: #f59e0b;">hourglass_empty</span> Foto salvata offline`;
+        }
+
+        // Salva in bozza
+        if (typeof window.saveDraft === 'function') window.saveDraft();
+        return;
+    }
+
     try {
         const storage = window.firebaseStorage || (typeof firebaseStorage !== 'undefined' ? firebaseStorage : null);
         if (!storage) {
@@ -733,6 +773,7 @@ window.caricaFotoDDT = async function(inputEl, index) {
         const previewEl = document.getElementById(`previewDDT_${index}`);
         if (previewEl) {
             previewEl.style.display = 'block';
+            previewEl.innerHTML = `<span class="material-icons-round" style="font-size: 14px; vertical-align: middle;">check_circle</span> Foto acquisita`;
         }
 
         // Salva in bozza
@@ -743,3 +784,76 @@ window.caricaFotoDDT = async function(inputEl, index) {
         alert("Errore durante il caricamento della foto: " + e.message);
     }
 };
+
+// --- GESTIONE CONNETTIVITÀ E FUSIONE OFFLINE (UI) ---
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const { connectivityService } = await import("./core/connectivity-service.js");
+        
+        let offlineBanner = null;
+
+        connectivityService.addEventListener((status) => {
+            if (status === 'offline' || status === 'unstable') {
+                if (!offlineBanner) {
+                    offlineBanner = document.createElement("div");
+                    offlineBanner.id = "network-status-banner";
+                    offlineBanner.style.cssText = "position: fixed; bottom: 0; left: 0; right: 0; background-color: #f59e0b; color: white; text-align: center; font-weight: bold; padding: 10px 16px; font-size: 13px; z-index: 99999; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); font-family: 'Outfit', sans-serif;";
+                    offlineBanner.innerHTML = `<span class="material-icons-round" style="font-size: 18px;">cloud_off</span> Sei offline. Le modifiche verranno salvate sul dispositivo e sincronizzate appena torna la connessione.`;
+                    document.body.appendChild(offlineBanner);
+                    document.body.style.paddingBottom = "45px"; // Evita sovrapposizione
+                } else {
+                    offlineBanner.style.backgroundColor = status === 'unstable' ? '#ef4444' : '#f59e0b';
+                    offlineBanner.innerHTML = status === 'unstable' 
+                        ? `<span class="material-icons-round" style="font-size: 18px;">signal_cellular_connected_no_internet_4g</span> Connessione instabile. Possibili ritardi di sincronizzazione.`
+                        : `<span class="material-icons-round" style="font-size: 18px;">cloud_off</span> Sei offline. Le modifiche verranno salvate sul dispositivo e sincronizzate appena torna la connessione.`;
+                }
+            } else {
+                if (offlineBanner) {
+                    offlineBanner.remove();
+                    offlineBanner = null;
+                    document.body.style.paddingBottom = "0px";
+                    
+                    // Mostra toast di successo
+                    showToastNotification("Connessione ripristinata. Sincronizzazione in corso...", "#10b981");
+                }
+            }
+        });
+
+        window.addEventListener('sync-completed', () => {
+            showToastNotification("Sincronizzazione completata! Dati allineati in cloud.", "#10b981");
+        });
+        
+        window.addEventListener('sync-error', (e) => {
+            showToastNotification(`Errore sincronizzazione: ${e.detail.error}`, "#ef4444");
+        });
+
+    } catch (e) {
+        console.warn("[Script.js] ConnectivityService non disponibile su questa pagina:", e.message);
+    }
+});
+
+function showToastNotification(message, bgColor) {
+    const existing = document.getElementById('network-sync-toast');
+    if (existing) existing.remove();
+
+    if (!document.getElementById('toast-animation-styles')) {
+        const style = document.createElement('style');
+        style.id = 'toast-animation-styles';
+        style.innerHTML = `
+            @keyframes slideIn { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+            @keyframes slideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100px); opacity: 0; } }
+        `;
+        document.head.appendChild(style);
+    }
+
+    const toast = document.createElement('div');
+    toast.id = 'network-sync-toast';
+    toast.style.cssText = `position: fixed; bottom: 20px; right: 20px; background-color: ${bgColor}; color: white; padding: 12px 24px; border-radius: 12px; font-weight: bold; font-size: 13px; z-index: 100000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-family: 'Outfit', sans-serif; animation: slideIn 0.3s ease-out;`;
+    toast.innerHTML = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease-in';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}

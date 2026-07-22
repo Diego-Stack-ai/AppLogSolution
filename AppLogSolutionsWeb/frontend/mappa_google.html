@@ -212,13 +212,11 @@
     </script>
 
     <script type="module">
-        import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { db, app } from "./core/firebase-init.js";
         import { getFirestore, collection, onSnapshot, doc, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
 
-        const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
-const db = getFirestore(app);
 
         let map;
         let ALL_POINTS = [];
@@ -296,7 +294,7 @@ const db = getFirestore(app);
                             }
                         }
 
-                        onSnapshot(collection(db, "clienti/DNR/raccolta clienti"), (snapshot) => {
+                        onSnapshot(collection(db, "clienti/DNR/raccolta clienti"), { includeMetadataChanges: true }, (snapshot) => {
                             console.log(`[Map] Ricevuti ${snapshot.size} punti DNR`);
                             dnrPoints = snapshot.docs.map(doc => {
                                 const d = doc.data();
@@ -315,7 +313,7 @@ const db = getFirestore(app);
                             alert("Errore accesso dati DNR: " + error.message);
                         });
 
-                        onSnapshot(collection(db, "clienti/GRAN CHEF/raccolta clienti"), (snapshot) => {
+                        onSnapshot(collection(db, "clienti/GRAN CHEF/raccolta clienti"), { includeMetadataChanges: true }, (snapshot) => {
                             console.log(`[Map] Ricevuti ${snapshot.size} punti GRAN CHEF`);
                             gcPoints = snapshot.docs.map(doc => ({
                                 ...doc.data(),
@@ -331,7 +329,7 @@ const db = getFirestore(app);
                             alert("Errore accesso dati GRAN CHEF: " + error.message);
                         });
 
-                        onSnapshot(collection(db, "clienti/CATTEL/raccolta clienti"), (snapshot) => {
+                        onSnapshot(collection(db, "clienti/CATTEL/raccolta clienti"), { includeMetadataChanges: true }, (snapshot) => {
                             console.log(`[Map] Ricevuti ${snapshot.size} punti CATTEL`);
                             cattelPoints = snapshot.docs.map(doc => ({
                                 ...doc.data(),
@@ -386,7 +384,7 @@ const db = getFirestore(app);
             const q = query(ddtRef, where('data', '==', dateVal));
             
             try {
-                const snap = await getDocs(q);
+                const snap = await window.getDocsConFallback(q);
                 DDT_POINTS = snap.docs.map(doc => doc.data());
                 console.log(`[Map] Trovate ${DDT_POINTS.length} consegne per il ${dateVal}`);
                 updateListAndMap();

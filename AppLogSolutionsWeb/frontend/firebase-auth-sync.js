@@ -1,10 +1,4 @@
-console.log("[DEBUG TRACE] 1. Inizio importazioni firebase-auth-sync.js");
 import "./core/firebase-init.js";
-console.log("[DEBUG TRACE] 2. firebase-init.js importato");
 import "./core/auth-service.js";
-console.log("[DEBUG TRACE] 3. auth-service.js importato");
 import "./services/realtime-sync.js";
-console.log("[DEBUG TRACE] 4. realtime-sync.js importato");
 import "./services/crud-service.js";
-console.log("[DEBUG TRACE] 5. crud-service.js importato");
-console.log("[DEBUG TRACE] 6. Fine firebase-auth-sync.js");

@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.231">
+    <link rel="stylesheet" href="styles.css?v=6.239">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1586,8 +1586,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
         async function uploadStorageStringHelper(path, data, contentType) {
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.231");
-                const { syncManager } = await import("./core/sync-manager.js?v=6.231");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.239");
+                const { syncManager } = await import("./core/sync-manager.js?v=6.239");
                 
                 if (connectivityService.getStatus() === 'online') {
                     await uploadString(ref(storage, path), data, 'raw', { contentType });
@@ -1825,7 +1825,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
               try {
                   const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
                   const q = query(collection(db, 'clienti', activeTenant, 'viaggi ddt'), where('data_lavoro', '==', targetFileDate));
-                  const snap = await getDocs(q);
+                  const snap = await window.getDocsConFallback(q);
                   snap.forEach(doc => {
                       const id_zona = doc.id.split('_')[1];
                       const data = doc.data();
@@ -2347,7 +2347,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
                         // 2. Load Firestore customers database for coordinate matching
                         setLoaderMsg("Lettura anagrafica clienti master...");
-                        const snap = await getDocs(collection(db, 'clienti', 'DNR', 'raccolta clienti'));
+                        const snap = await window.getDocsConFallback(collection(db, 'clienti', 'DNR', 'raccolta clienti'));
                         masterClientiList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                         console.log(`[Map] Master clienti caricato: ${masterClientiList.length} record.`);
                         
@@ -3456,7 +3456,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.231");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.239");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -3807,7 +3807,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             try {
                 const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
                 const q = query(collection(db, 'clienti', activeTenant, 'viaggi ddt'), where('data_lavoro', '==', targetFileDate));
-                const snap = await getDocs(q);
+                const snap = await window.getDocsConFallback(q);
                 let conflitto = false;
                 let nomeConflitto = "";
                 snap.forEach(doc => {
@@ -3836,7 +3836,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.231");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.239");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -3916,7 +3916,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.231");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.239");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 

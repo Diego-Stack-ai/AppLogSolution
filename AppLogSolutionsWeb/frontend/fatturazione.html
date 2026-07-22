@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.231">
+    <link rel="stylesheet" href="styles.css?v=6.239">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -310,8 +310,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.231"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.231"></script>
+    <script src="script.js?v=6.239"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.239"></script>
 
     <!-- Script sincrono: imposta data e listener UI SENZA aspettare Firebase -->
     <script>
@@ -363,7 +363,7 @@
             try {
                 const sel = document.getElementById('client-selector');
                 const val = sel.value;
-                const snap = await getDocs(collection(db, "progetti"));
+                const snap = await window.getDocsConFallback(collection(db, "progetti"));
                 if (!snap.empty) {
                     sel.innerHTML = '<option value="TUTTI">Tutti i Clienti (Solo Riepilogo)</option>';
                     snap.docs.forEach(docSnap => {
@@ -391,7 +391,7 @@
             try {
                 const { getDocs, collection, query, where } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
                 const q = query(collection(db, "progetti"), where("nome", "==", "CATTEL"));
-                const snap = await getDocs(q);
+                const snap = await window.getDocsConFallback(q);
                 if (!snap.empty) {
                     const d = snap.docs[0].data();
                     if (d.cattel_username) username = d.cattel_username;
@@ -485,7 +485,7 @@
                 // --- PULIZIA VECCHI DATI KPI DEL MESE ---
                 const targetSuffix = `-${monthVal.split('-')[1]}-${monthVal.split('-')[0]}`; // es. "-06-2026"
                 const qClean = query(viaggiRef, where("importato_da_kpi", "==", true));
-                const snapClean = await getDocs(qClean);
+                const snapClean = await window.getDocsConFallback(qClean);
                 snapClean.forEach(docSnap => {
                     const d = docSnap.data();
                     const dDate = d.data_lavoro || d.data || d.data_consegna || '';
@@ -640,7 +640,7 @@
 
             try {
                 // Leggiamo tutto dalla nuova collection "progetti" gestita in impostazioni.html
-                const progSnap = await getDocs(collection(db, "progetti"));
+                const progSnap = await window.getDocsConFallback(collection(db, "progetti"));
                 let clientNavetteMap = {};
                 progSnap.forEach(docSnap => {
                     const d = docSnap.data();
@@ -698,7 +698,7 @@
                 // Mappa targhe -> patente
                 let mezziMap = {};
                 try {
-                    const mezziSnap = await getDocs(collection(db, "mezzi"));
+                    const mezziSnap = await window.getDocsConFallback(collection(db, "mezzi"));
                     mezziSnap.forEach(doc => {
                         const data = doc.data();
                         if (data.targa) mezziMap[data.targa.toUpperCase()] = data.patente || 'B';
@@ -708,7 +708,7 @@
                 // Recuperiamo TUTTI i viaggi
                 const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
                 const viaggiRef = collection(db, 'clienti', activeTenant, 'viaggi ddt');
-                const snap = await getDocs(viaggiRef);
+                const snap = await window.getDocsConFallback(viaggiRef);
 
                 let trips = [];
                 snap.forEach(doc => {
@@ -1044,7 +1044,7 @@
             try {
                 // Leggiamo i progetti (tariffe)
                 const { getDocs, collection, query, where } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-                const progSnap = await getDocs(collection(db, "progetti"));
+                const progSnap = await window.getDocsConFallback(collection(db, "progetti"));
                 
                 let configStandard = {
                     TARIFFA_B: 0, TARIFFA_C: 0, TARIFFA_NAV1: 0, TARIFFA_NAV2: 0, TARIFFA_COLLO: 0, TARIFFA_DDT: 0, TARIFFA_FORFAIT: 0
@@ -1070,7 +1070,7 @@
                 // Mappa mezzi
                 let mezziMap = {};
                 try {
-                    const mezziSnap = await getDocs(collection(db, "mezzi"));
+                    const mezziSnap = await window.getDocsConFallback(collection(db, "mezzi"));
                     mezziSnap.forEach(d => {
                         const m = d.data();
                         if (m.targa) mezziMap[m.targa.toUpperCase()] = m.patente || 'B';
@@ -1080,7 +1080,7 @@
                 // Presenze
                 const presenzeRef = collection(db, "presenze");
                 const q = query(presenzeRef, where("mese", "==", monthVal));
-                const snap = await getDocs(q);
+                const snap = await window.getDocsConFallback(q);
 
                 let pivotData = {};
                 let tripsMock = [];
@@ -1606,7 +1606,7 @@
             let destEmail = '';
             try {
                 const q = query(collection(db, "progetti"), where("nome", "==", client));
-                const querySnapshot = await getDocs(q);
+                const querySnapshot = await window.getDocsConFallback(q);
                 if (!querySnapshot.empty) {
                     const data = querySnapshot.docs[0].data();
                     const contatti = data.contatti || [];
@@ -2423,7 +2423,7 @@
                 // Usa le variabili già importate nel modulo (collection, query, where, getDocs, db)
                 
                 const q = query(collection(db, 'presenze'), where('mese', '==', monthInput));
-                const snap = await getDocs(q);
+                const snap = await window.getDocsConFallback(q);
                 
                 window.presenzeDataCache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 

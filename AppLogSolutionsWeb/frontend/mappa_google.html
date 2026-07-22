@@ -384,7 +384,7 @@
             const q = query(ddtRef, where('data', '==', dateVal));
             
             try {
-                const snap = await getDocs(q);
+                const snap = await window.getDocsConFallback(q);
                 DDT_POINTS = snap.docs.map(doc => doc.data());
                 console.log(`[Map] Trovate ${DDT_POINTS.length} consegne per il ${dateVal}`);
                 updateListAndMap();

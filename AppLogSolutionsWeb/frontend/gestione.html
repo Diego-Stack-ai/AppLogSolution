@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anagrafiche - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.231">
+    <link rel="stylesheet" href="styles.css?v=6.239">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- Leaflet per Mappe -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -362,18 +362,23 @@
         </div>
     </div>
 
-    <script src="script.js?v=6.231"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.231"></script>
+    <script src="script.js?v=6.239"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.239"></script>
     <script type="module">
         import { db } from "./core/firebase-init.js";
-        import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, setDoc, addDoc, getDocsFromCache } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
         import { subscribeToAnagrafica } from "./services/anagraficheService.js";
+        import { connectivityService } from "./core/connectivity-service.js";
 
 
 
         let currentTab = 'clienti';
         let unsubscribes = [];
+
+        window.onUserProfileLoaded = function(user) {
+            loadData();
+        };
 
         // --- SISTEMA DI DEBUG OFFLINE VISUALE ---
         window.showDebug = function(msg) {
@@ -419,7 +424,6 @@
         };
 
         function loadData() {
-            console.log("[DEBUG TRACE] gestione.html: loadData() chiamata");
             clearUnsubscribes();
             document.getElementById('loading').style.display = 'block';
             document.getElementById('dataContainer').innerHTML = '';
@@ -429,7 +433,38 @@
                 let gcData = [];
                 let cattelData = [];
                 
-                console.log("[DEBUG TRACE] gestione.html: chiamo subscribeToAnagrafica per DNR");
+                // 1. LETTURA ISTANTANEA DA CACHE LOCAL INDEXEDDB (Cache-First per zero attese)
+                console.log("[DEBUG CACHE] Tento getDocsFromCache immediato per rendering istantaneo...");
+                getDocsFromCache(query(collection(db, 'clienti/DNR/raccolta clienti'))).then(snapshot => {
+                    if (snapshot && snapshot.docs.length > 0) {
+                        const debugMsg = `DNR letto da Direct Cache: ${snapshot.docs.length} record.`;
+                        console.log("[DEBUG CACHE DIRECT]", debugMsg);
+                        if(window.showDebug) window.showDebug(debugMsg);
+                        dnrData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, tenant: 'DNR' }));
+                        window.fullData = [...dnrData, ...gcData, ...cattelData];
+                        document.getElementById('loading').style.display = 'none';
+                        filterTable();
+                    }
+                }).catch(e => console.warn("Direct Cache DNR non pronta:", e));
+
+                getDocsFromCache(query(collection(db, 'clienti/GRAN CHEF/raccolta clienti'))).then(snapshot => {
+                    if (snapshot && snapshot.docs.length > 0) {
+                        gcData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, tenant: 'GRAN CHEF' }));
+                        window.fullData = [...dnrData, ...gcData, ...cattelData];
+                        document.getElementById('loading').style.display = 'none';
+                        filterTable();
+                    }
+                }).catch(e => console.warn("Direct Cache GC non pronta:", e));
+
+                getDocsFromCache(query(collection(db, 'clienti/CATTEL/raccolta clienti'))).then(snapshot => {
+                    if (snapshot && snapshot.docs.length > 0) {
+                        cattelData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, tenant: 'CATTEL' }));
+                        window.fullData = [...dnrData, ...gcData, ...cattelData];
+                        document.getElementById('loading').style.display = 'none';
+                        filterTable();
+                    }
+                }).catch(e => console.warn("Direct Cache CATTEL non pronta:", e));
+
                 const unsubDNR = subscribeToAnagrafica('clienti/DNR/raccolta clienti', (snapshot) => {
                     const debugMsg = `DNR scattato: ${snapshot.docs.length} record. (Cache: ${snapshot.metadata.fromCache})`;
                     console.log("[DEBUG OFFLINE]", debugMsg);
@@ -1023,7 +1058,9 @@
             }
         };
         
-        loadData();
+        if (window.appData && window.appData.currentUser && window.appData.currentUser.id) {
+            loadData();
+        }
     </script>
 </body>
 </html>

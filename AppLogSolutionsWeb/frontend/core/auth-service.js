@@ -4,7 +4,6 @@ import { connectivityService } from "./connectivity-service.js";
 
 // ABILITAZIONE PERSISTENZA SESSIONE (localStorage)
 // [DEBUG] setPersistence rimosso per evitare deadlock offline (browserLocalPersistence è il default)
-console.log("[DEBUG TRACE] auth-service.js: saltata setPersistence esplicita per evitare timeout");
 
 // --- GESTIONE EMERGENZA (DEBUG) ---
 window.forcePasswordResetDebug = async (newPassword) => {
@@ -48,16 +47,34 @@ window.logoutFirebase = async () => {
 
 let profileAlreadyLoaded = false; // Guard: evita ri-trigger al cambio rete
 
-console.log("[DEBUG TRACE] auth-service.js: chiamo authStateReady()");
-auth.authStateReady().then(() => {
-    console.log("[DEBUG TRACE] auth-service.js: authStateReady() RISOLTO!");
-}).catch(err => {
-    console.error("[DEBUG TRACE] auth-service.js: authStateReady() ERRORE!", err);
-});
+// FALLBACK OFFLINE TIMEOUT: Se Firebase Auth tentenna a rispondere offline, usa il profilo in cache
+let authStateFired = false;
+const offlineAuthFallbackTimer = setTimeout(() => {
+    if (!authStateFired && !profileAlreadyLoaded) {
+        console.warn("[Auth Fallback Offline] onAuthStateChanged non ha risposto in 1200ms. Verifico cache locale...");
+        try {
+            const cachedUserStr = localStorage.getItem('ls_cached_user');
+            if (cachedUserStr) {
+                const cachedUser = JSON.parse(cachedUserStr);
+                console.log("[Auth Fallback Offline] ✅ Utente ripristinato da ls_cached_user:", cachedUser.email || cachedUser.id);
+                window.appData = window.appData || {};
+                window.appData.currentUser = cachedUser;
+                profileAlreadyLoaded = true;
+                if (typeof window.onUserProfileLoaded === 'function') {
+                    window.onUserProfileLoaded(cachedUser);
+                }
+            } else {
+                console.warn("[Auth Fallback Offline] Nessun utente salvato in ls_cached_user.");
+            }
+        } catch (e) {
+            console.error("[Auth Fallback Offline] Errore lettura ls_cached_user:", e);
+        }
+    }
+}, 1200);
 
-console.log("[DEBUG TRACE] auth-service.js: chiamo onAuthStateChanged");
 onAuthStateChanged(auth, async (user) => {
-    console.log("[DEBUG TRACE] auth-service.js: onAuthStateChanged callback attivata!");
+    authStateFired = true;
+    clearTimeout(offlineAuthFallbackTimer);
     if (isLoggingOut) {
         console.log("Auth Listener: Logout in corso, salto controlli.");
         return;

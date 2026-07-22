@@ -8,7 +8,10 @@ NON devono essere ignorate, aggirate o modificate senza esplicita approvazione d
 
 ## PROCEDURA OBBLIGATORIA: Aggiornamento Versione
 
-Ogni volta che vengono apportate modifiche, sia al frontend che al backend (nuove funzionalita, bugfix, modifiche strutturali), l'agente DEVE SEMPRE far scattare e aggiornare la versione dell'applicazione seguendo QUESTA e SOLO questa procedura.
+Ogni volta che vengono apportate modifiche, sia al frontend che al backend (nuove funzionalita, bugfix, modifiche strutturali), l'agente DEVE SEMPRE far scattare e aggiornare la versione dell'applicazione.
+
+> [!IMPORTANT]
+> **Esecuzione tramite Script:** La descrizione e la sequenza sotto riportate illustrano la logica di funzionamento e i file interessati. **Tuttavia, l'unica procedura operativa consentita ed obbligatoria per effettuare il bump della versione è l'esecuzione dello script automatizzato `python bump_version.py`** dalla cartella radice di `AppLogSolutionsWeb`. Gli agenti non devono MAI eseguire questi passaggi a mano, al fine di prevenire errori umani o di codifica dei caratteri.
 
 ### File da modificare (ENTRAMBI, sempre insieme):
 

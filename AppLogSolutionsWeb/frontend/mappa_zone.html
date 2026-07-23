@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.251">
+    <link rel="stylesheet" href="styles.css?v=6.252">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1586,8 +1586,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
         async function uploadStorageStringHelper(path, data, contentType) {
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.251");
-                const { syncManager } = await import("./core/sync-manager.js?v=6.251");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.252");
+                const { syncManager } = await import("./core/sync-manager.js?v=6.252");
                 
                 if (connectivityService.getStatus() === 'online') {
                     await uploadString(ref(storage, path), data, 'raw', { contentType });
@@ -3456,7 +3456,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.251");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.252");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -3836,7 +3836,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.251");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.252");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -3916,7 +3916,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.251");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.252");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -4059,7 +4059,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
                 
                 const generaCompletoFn = httpsCallable(functions, 'genera_completo_giornata', { timeout: 300000 });
                 const res = await generaCompletoFn({
-                    data_consegna: targetFileDate
+                    data_consegna: targetFileDate,
+                    tenant: activeTenant
                 });
                 
                 console.log("[Generazione Cloud] Risultato:", res.data);

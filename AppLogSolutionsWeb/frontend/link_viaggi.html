@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invio Mobile Autisti — Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.251">
+    <link rel="stylesheet" href="styles.css?v=6.252">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -208,8 +208,8 @@
         <div class="viaggi-grid" id="viaggiGrid"></div>
     </main>
 
-    <script src="script.js?v=6.251"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.251"></script>
+    <script src="script.js?v=6.252"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.252"></script>
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -762,6 +762,11 @@
                 allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             for (const v of viaggi) {
+                const pts = v.punti_ottimizzati || v.punti || [];
+                if (pts.length === 0) {
+                    console.log(`[BAT5 batch] Skip viaggio vuoto: ${v.id}`);
+                    continue;
+                }
                 try {
                     const fn = httpsCallable(functions, 'genera_mappa_autista', { timeout: 120000 });
                     const res = (await fn({ viaggio_id: v.id, distinta_url: (v.distinta_light || null) })).data;

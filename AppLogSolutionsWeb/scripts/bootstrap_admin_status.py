@@ -113,6 +113,9 @@ def main():
         sys.exit(1)
 
     # 11. Controllo anomalia Diego Boschetto
+    if not found_diego:
+        print("\nERRORE CRITICO: L'account ufficiale Boschetto Diego NON e' stato rilevato nel database. Operazione interrotta.")
+        sys.exit(1)
     if found_diego and not diego_is_admin:
         print("\nERRORE CRITICO: L'utente Boschetto Diego e' stato rilevato nel database ma il suo ruolo NON e' 'amministratore'. Anomalia grave, operazione interrotta.")
         sys.exit(1)
@@ -123,7 +126,11 @@ def main():
     json_previsto = {
         'admins': admin_uids
     }
-    print(f"\nContenuto previsto per config/system_status:\n{json.dumps(json_previsto, indent=2)}")
+    
+    json_mascherato = {
+        'admins': [(uid[:3] + "..." + uid[-2:] if len(uid) > 5 else uid) for uid in admin_uids]
+    }
+    print(f"\nContenuto previsto per config/system_status:\n{json.dumps(json_mascherato, indent=2)}")
 
     if dry_run:
         print("\n[DRY-RUN] NESSUNA SCRITTURA ESEGUITA. Esegui il comando con --confirm per procedere.")

@@ -96,31 +96,49 @@ function startRealtimeSync(isAdmin) {
     });
     activeListeners.push(unsubProgetti);
 
-    // Listeners per le 4 liste delle Scalette Navette
+    // Listeners per le 4 liste delle Scalette Navette e Navette Pure (unificate con doppio flag)
+    const setupUnifiedNavettaListener = (tipo, collectionPath, listPropName, legacyAutistiProp, legacyPuraProp) => {
+        const unsub = onSnapshot(collection(db, "clienti/DNR/" + collectionPath), { includeMetadataChanges: true }, (snapshot) => {
+            const fullList = [];
+            snapshot.forEach((d) => {
+                fullList.push({ id: d.id, ...d.data() });
+            });
+            
+            // Ordina alfabeticamente
+            fullList.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
+            
+            // 1. Salva la lista unificata completa per la schermata impostazioni
+            window.appData[listPropName] = fullList;
+            
+            // 2. Filtra per la retrocompatibilità (Navetta Autisti)
+            window.appData[legacyAutistiProp] = fullList.filter(item => item.is_navetta_autisti === true);
+            
+            // 3. Filtra per la retrocompatibilità (Navetta Pura)
+            window.appData[legacyPuraProp] = fullList.filter(item => item.is_navetta === true);
+            
+            // 4. Aggiorna l'interfaccia se le funzioni di rendering sono presenti
+            if (typeof window.renderUnifiedNavetteList === 'function') {
+                window.renderUnifiedNavetteList(tipo);
+            }
+        });
+        activeListeners.push(unsub);
+    };
+
+    setupUnifiedNavettaListener('partenze', 'navette_anagrafica_partenze', 'anagrafica_partenze', 'lista_scaletta_partenze', 'lista_navetta_partenze');
+    setupUnifiedNavettaListener('carichi', 'navette_anagrafica_carichi', 'anagrafica_carichi', 'lista_scaletta_carico', 'lista_navetta_carico');
+    setupUnifiedNavettaListener('clienti', 'navette_anagrafica_clienti', 'anagrafica_clienti', 'lista_scaletta_clienti', 'lista_navetta_clienti');
+    setupUnifiedNavettaListener('destinazioni', 'navette_anagrafica_destinazioni', 'anagrafica_destinazioni', 'lista_scaletta_destinazioni_merce', 'lista_navetta_destinazioni_merce');
+
+    // Listener per la lista delle Sedi Magazzino (lasciata separata)
     const setupScalettaListener = (tipo, globalProp) => {
         const unsub = onSnapshot(collection(db, "clienti/DNR/" + tipo), { includeMetadataChanges: true }, (snapshot) => {
             const dataList = [];
             snapshot.forEach((d) => dataList.push({ id: d.id, ...d.data() }));
             window.appData[globalProp] = dataList;
-            // Aggiorna interfaccia impostazioni se aperta
             if (typeof window.renderScaletteItems === 'function') window.renderScaletteItems(tipo);
-            // Aggiornerà  interfaccia inserimento se necessario in futuro
         });
         activeListeners.push(unsub);
     };
-
-    setupScalettaListener('scaletta_partenze', 'lista_scaletta_partenze');
-    setupScalettaListener('scaletta_carico', 'lista_scaletta_carico');
-    setupScalettaListener('scaletta_clienti', 'lista_scaletta_clienti');
-    setupScalettaListener('scaletta_destinazioni_merce', 'lista_scaletta_destinazioni_merce');
-
-    // Listeners per le 4 liste della Navetta Pura
-    setupScalettaListener('navetta_partenze', 'lista_navetta_partenze');
-    setupScalettaListener('navetta_carico', 'lista_navetta_carico');
-    setupScalettaListener('navetta_clienti', 'lista_navetta_clienti');
-    setupScalettaListener('navetta_destinazioni_merce', 'lista_navetta_destinazioni_merce');
-
-    // Listener per la lista delle Sedi Magazzino
     setupScalettaListener('magazzini_sedi', 'lista_magazzini_sedi');
 
     // Listener per Giustificativi (Ferie, Malattia, ecc.)

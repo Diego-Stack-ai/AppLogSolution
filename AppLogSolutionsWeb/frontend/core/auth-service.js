@@ -59,9 +59,7 @@ const offlineAuthFallbackTimer = setTimeout(() => {
                 
                 // Ricalcolo strict in cache
                 const role = (cachedUser.ruolo || 'autista').toString().toLowerCase().trim();
-                const nomeUtente = (cachedUser.nome || '').toLowerCase();
-                const isDiego = nomeUtente.includes('boschetto diego') || nomeUtente.includes('diego boschetto');
-                cachedUser.isAdmin = role === 'amministratore' || isDiego;
+                cachedUser.isAdmin = role === 'amministratore';
                 
                 console.log("[Auth Fallback Offline] ✅ Utente ripristinato da ls_cached_user:", cachedUser.email || cachedUser.id);
                 window.appData = window.appData || {};
@@ -166,9 +164,7 @@ onAuthStateChanged(auth, async (user) => {
                 }
 
                 const role = (userData.ruolo || 'autista').toString().toLowerCase().trim();
-                const nomeUtente = (userData.nome || '').toLowerCase();
-                const isDiego = nomeUtente.includes('boschetto diego') || nomeUtente.includes('diego boschetto');
-                const isAdmin = role === 'amministratore' || isDiego;
+                const isAdmin = role === 'amministratore';
 
                 window.appData.currentUser = { id: user.uid, email: user.email, ...userData, ruolo: role, isAdmin: isAdmin };
                 profileAlreadyLoaded = true; // Segna il profilo come caricato
@@ -251,7 +247,7 @@ onAuthStateChanged(auth, async (user) => {
                     const pageKey = page.replace('.html', '');
                     window.appData.isReadOnly = false;
 
-                    if (role !== 'amministratore' && !isDiego) {
+                    if (role !== 'amministratore') {
                         let permLevel = 'none';
                         if (permessiData[pageKey] && typeof permessiData[pageKey][role] !== 'undefined') {
                             const val = permessiData[pageKey][role];

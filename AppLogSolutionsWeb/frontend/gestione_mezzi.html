@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.241">
+    <link rel="stylesheet" href="styles.css?v=6.242">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -423,8 +423,8 @@
     </div>
 </main>
 
-<script src="script.js?v=6.241"></script>
-<script type="module" src="firebase-auth-sync.js?v=6.241"></script>
+<script src="script.js?v=6.242"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.242"></script>
 
 <script type="module">
         import { db, app } from "./core/firebase-init.js";
@@ -1600,6 +1600,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 patente: isFornitore && editIndex >= 0 ? mezzi[editIndex].patente : (patenteInput.value || 'B'),
                 inUso: isFornitore && editIndex >= 0 ? (mezzi[editIndex].inUso !== false) : document.getElementById('inUsoInput').checked,
                 attivo: isFornitore && editIndex >= 0 ? mezzi[editIndex].attivo : attivoInput.checked,
+                stato: isFornitore && editIndex >= 0 ? (mezzi[editIndex].stato || 'Attivo') : (attivoInput.checked ? 'Attivo' : 'Inattivo'),
                 tipologia: isFornitore && editIndex >= 0 ? mezzi[editIndex].tipologia : tipologiaInput.value.trim(),
                 proprietario: isFornitore && editIndex >= 0 ? mezzi[editIndex].proprietario : proprietarioInput.value.trim(),
                 assicurazione: isFornitore && editIndex >= 0 ? mezzi[editIndex].assicurazione : assicInput.value.trim(),
@@ -1778,7 +1779,9 @@ document.addEventListener("DOMContentLoaded", () => {
             // Intestazione modal con targa e modello
             const title = m.modello ? `${m.targa} <span style="font-weight:400; color:#64748b; font-size:16px; margin-left:8px;">${m.modello}</span>` : m.targa;
             const patenteLabel = m.patente === 'C' ? '<span class="badge badge-yellow">CAT C</span>' : '<span class="badge badge-blue">CAT B</span>';
-            const statusBadge = (m.attivo === false || (m.stato && m.stato.toLowerCase() !== 'attivo')) ? '<span class="badge badge-gray">Non Attivo</span>' : '<span class="badge badge-green">Attivo</span>';
+            const statusBadge = (m.inUso === false) 
+                ? '<span class="badge badge-gray">Inattivo/Venduto</span>' 
+                : (m.attivo === false ? '<span class="badge badge-yellow">Fuori Pianif.</span>' : '<span class="badge badge-green">Attivo</span>');
 
             let detailsHtml = `
                 <div style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
@@ -1800,7 +1803,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="detail-item"><span class="detail-label">Tipologia</span><span class="detail-value">${m.tipologia || '-'}</span></div>
                         <div class="detail-item"><span class="detail-label">Patente</span><span class="detail-value">${m.patente === 'C' ? 'C (Camion)' : 'B (Furgone)'}</span></div>
                         <div class="detail-item"><span class="detail-label">Immatricolazione</span><span class="detail-value">${formattaData(m.immatricolazione)}</span></div>
-                        <div class="detail-item"><span class="detail-label">Stato</span><span class="detail-value">${(m.attivo===false || (m.stato && m.stato.toLowerCase() !== 'attivo')) ? 'Inattivo' : 'Attivo'}</span></div>
+                        <div class="detail-item"><span class="detail-label">Stato</span><span class="detail-value">${(m.inUso === false) ? 'Inattivo/Venduto' : (m.attivo === false ? 'Fuori Pianif.' : 'Attivo')}</span></div>
                 `;
             }
             

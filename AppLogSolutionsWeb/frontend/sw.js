@@ -1,4 +1,4 @@
-const CACHE_NAME = 'log-solution-v6.250';
+const CACHE_NAME = 'log-solution-v6.251';
 const CRITICAL_ASSETS = [
     './',
     './index.html',
@@ -8,23 +8,17 @@ const CRITICAL_ASSETS = [
     './script.js',
     './firebase-config.js',
     './firebase-auth-sync.js',
-    './firestore-service.js',
-    './gps-tracker.js',
     './core/firebase-init.js',
     './core/auth-service.js',
     './core/connectivity-service.js',
     './core/sync-manager.js',
     './services/realtime-sync.js',
     './services/crud-service.js',
-    './ui-render.js',
-    './cedolini-splitter.js',
-    './firebase-config-env.js',
     './manifest.json',
     './img/logo.png',
     'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js',
     'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js',
-    'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js',
-    'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js'
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js'
 ];
 
 const OPTIONAL_ASSETS = [
@@ -44,10 +38,15 @@ const OPTIONAL_ASSETS = [
     './mappa_zone.html',
     './mappa_riepilogativa.html',
     './gestione_anomalie.html',
+    './gps-tracker.js',
+    './firestore-service.js',
+    './ui-render.js',
+    './cedolini-splitter.js',
     './services/anagraficheService.js',
     './services/dipendentiService.js',
     './services/fatturazioneService.js',
     './services/viaggiService.js',
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js',
     'https://fonts.googleapis.com/icon?family=Material+Icons+Round',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
@@ -58,10 +57,32 @@ self.addEventListener('install', (event) => {
     console.log(`[SW ${CACHE_NAME}] Installazione cache...`);
     event.waitUntil(
         caches.open(CACHE_NAME).then(async (cache) => {
-            console.log(`[SW] Pre-caching asset critici...`);
-            // Asset critici: devono avere successo per completare l'installazione (all-or-nothing)
-            const criticalRequests = CRITICAL_ASSETS.map(url => new Request(url, { cache: 'no-cache' }));
-            await cache.addAll(criticalRequests);
+            console.log(`[SW] Pre-caching asset critici (installazione rigorosa)...`);
+            // Custom all-or-nothing validation per critici (con fallback su cache precedente per CDN Google se down)
+            for (const url of CRITICAL_ASSETS) {
+                const req = new Request(url, { cache: 'no-cache' });
+                try {
+                    const res = await fetch(req);
+                    if (!res.ok || res.status !== 200) throw new Error(`Status ${res.status}`);
+                    if (res.type !== 'basic' && res.type !== 'cors') throw new Error(`Type ${res.type}`);
+                    
+                    const ct = res.headers.get('content-type') || '';
+                    if ((url.endsWith('.js') || url.endsWith('.css')) && ct.includes('text/html')) {
+                        throw new Error('MimeType HTML per JS/CSS (Captive Portal)');
+                    }
+                    await cache.put(req, res.clone());
+                } catch (err) {
+                    console.warn(`[SW] Rete fallita per critico ${url}. Cerco fallback locale...`);
+                    const cachedRes = await caches.match(req);
+                    if (cachedRes) {
+                        console.log(`[SW] Asset critico recuperato da cache precedente: ${url}`);
+                        await cache.put(req, cachedRes);
+                    } else {
+                        console.error(`[SW] Errore IRREVERSIBILE su asset critico ${url}:`, err);
+                        throw err; // Rigetta l'intera installazione del SW
+                    }
+                }
+            }
             console.log(`[SW] ${CRITICAL_ASSETS.length} asset critici installati con successo.`);
 
             console.log(`[SW] Avvio pre-caching asset opzionali...`);

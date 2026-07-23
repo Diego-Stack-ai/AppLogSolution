@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anagrafiche - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.250">
+    <link rel="stylesheet" href="styles.css?v=6.251">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <!-- Leaflet per Mappe -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -362,8 +362,8 @@
         </div>
     </div>
 
-    <script src="script.js?v=6.250"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.250"></script>
+    <script src="script.js?v=6.251"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.251"></script>
     <script type="module">
         import { db } from "./core/firebase-init.js";
         import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, setDoc, addDoc, getDocsFromCache } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -379,21 +379,6 @@
         window.onUserProfileLoaded = function(user) {
             loadData();
         };
-
-        // --- SISTEMA DI DEBUG OFFLINE VISUALE ---
-        window.showDebug = function(msg) {
-            let dbg = document.getElementById('offlineDebugBox');
-            if(!dbg) {
-                dbg = document.createElement('div');
-                dbg.id = 'offlineDebugBox';
-                dbg.style.cssText = 'position:fixed; bottom:0; left:0; width:100%; background:rgba(0,0,0,0.8); color:#0f0; font-family:monospace; font-size:12px; padding:10px; z-index:9999; max-height:200px; overflow-y:auto;';
-                document.body.appendChild(dbg);
-            }
-            dbg.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
-        };
-        window.addEventListener('offline', () => window.showDebug("📡 OFFLINE DETECTED"));
-        window.addEventListener('online', () => window.showDebug("🟢 ONLINE DETECTED"));
-        // ----------------------------------------
 
         function clearUnsubscribes() {
             unsubscribes.forEach(unsub => { if(typeof unsub === 'function') unsub(); });
@@ -439,7 +424,7 @@
                     if (snapshot && snapshot.docs.length > 0) {
                         const debugMsg = `DNR letto da Direct Cache: ${snapshot.docs.length} record.`;
                         console.log("[DEBUG CACHE DIRECT]", debugMsg);
-                        if(window.showDebug) window.showDebug(debugMsg);
+
                         dnrData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, tenant: 'DNR' }));
                         window.fullData = [...dnrData, ...gcData, ...cattelData];
                         document.getElementById('loading').style.display = 'none';

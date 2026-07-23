@@ -4473,19 +4473,22 @@ def core_genera_completo_giornata(data_consegna, tenant="DNR"):
     # === MAPPA GENERALE con selettore giri ===
     mappa_generale_url = ""
     try:
-        # Costruisce la lista zone per la mappa riepilogativa (esclude zone speciali)
-        zone_per_mappa = [
-            {
-                "nome_giro": z.get("nome_giro", z.get("id_zona", "?")),
-                "color": z.get("color", "#4f46e5"),
-                "_polylines": z.get("_polylines", []),
-                "lista_punti": [
-                    {**p, "lat": _safe_float(p.get("lat")), "lon": _safe_float(p.get("lon", p.get("lng", 0)))}
-                    for p in z.get("lista_punti", []) if _safe_float(p.get("lat")) is not None
-                ]
-            }
-            for z in zone_list if z.get("id_zona") not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA")
-        ]
+        zone_per_mappa = []
+        for z in zone_list:
+            if z.get("id_zona") not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA"):
+                c = z.get("cliente_zona", "")
+                n = z.get("nome_giro") or z.get("id_zona", "?")
+                if c and c.upper() not in n.upper():
+                    n = f"{c.upper()} - {n}"
+                zone_per_mappa.append({
+                    "nome_giro": n,
+                    "color": z.get("color", "#4f46e5"),
+                    "_polylines": z.get("_polylines", []),
+                    "lista_punti": [
+                        {**p, "lat": _safe_float(p.get("lat")), "lon": _safe_float(p.get("lon", p.get("lng", 0)))}
+                        for p in z.get("lista_punti", []) if _safe_float(p.get("lat")) is not None
+                    ]
+                })
         html_mappa_gen = _genera_html_mappa_generale(data_consegna, zone_per_mappa)
         mappa_gen_blob = bucket.blob(f"{path_base}/MAPPA_GENERALE_{data_consegna}.html")
         mappa_gen_blob.upload_from_string(html_mappa_gen.encode("utf-8"), content_type="text/html; charset=utf-8")
@@ -4504,6 +4507,18 @@ def core_genera_completo_giornata(data_consegna, tenant="DNR"):
         "tipo": "REPORT_GENERALE"
     }
     db.collection('clienti').document(tenant).collection('reports_logistici').document(data_consegna).set(report_meta)
+
+    # === GHOST TRIP CLEANUP ===
+    try:
+        active_viaggio_ids = {f"{data_consegna}_{z.get('id_zona')}" for z in zone_list if z.get('id_zona') and z.get('id_zona') not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA")}
+        viaggi_ref = db.collection('clienti').document(tenant).collection('viaggi ddt')
+        query_viaggi = viaggi_ref.where('data_lavoro', '==', data_consegna).stream()
+        for doc in query_viaggi:
+            if doc.id not in active_viaggio_ids:
+                print(f"[Ghost Cleanup] Eliminazione viaggio svuotato/cancellato: {doc.id}")
+                doc.reference.delete()
+    except Exception as cleanup_err:
+        print(f"[Ghost Cleanup] Errore durante la pulizia dei viaggi vuoti: {cleanup_err}")
 
     elapsed = time.time() - start_time
     _registra_statistica("genera_completo_giornata", elapsed)

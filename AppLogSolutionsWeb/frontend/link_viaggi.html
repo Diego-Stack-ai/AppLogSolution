@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invio Mobile Autisti — Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.249">
+    <link rel="stylesheet" href="styles.css?v=6.250">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -208,8 +208,8 @@
         <div class="viaggi-grid" id="viaggiGrid"></div>
     </main>
 
-    <script src="script.js?v=6.249"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.249"></script>
+    <script src="script.js?v=6.250"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.250"></script>
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -754,14 +754,24 @@
             const btn2 = document.getElementById('btnGeneraTutteRecupero');
             if (btn1) btn1.disabled = true;
             if (btn2) btn2.disabled = true;
-            const tot = viaggi.length;
+            
+            // Filtro preventivo dei viaggi con punti
+            const viaggiValidi = viaggi.filter(v => (v.punti_ottimizzati || v.punti || []).length > 0);
+            const tot = viaggiValidi.length;
             let done = 0, errors = 0;
+
+            if (tot === 0) {
+                Swal.fire('Attenzione', 'Nessun viaggio con punti da generare.', 'warning');
+                if (btn1) btn1.disabled = false;
+                if (btn2) btn2.disabled = false;
+                return;
+            }
 
             Swal.fire({ title: `Generazione mappe (0/${tot})`,
                 html: 'In corso...<br><small>Attendi il completamento di tutte le zone.</small>',
                 allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            for (const v of viaggi) {
+            for (const v of viaggiValidi) {
                 try {
                     const fn = httpsCallable(functions, 'genera_mappa_autista', { timeout: 120000 });
                     const res = (await fn({ viaggio_id: v.id, distinta_url: (v.distinta_light || null) })).data;

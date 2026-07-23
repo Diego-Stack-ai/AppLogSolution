@@ -1,9 +1,33 @@
-const CACHE_NAME = 'log-solution-v6.249';
-const ASSETS = [
+const CACHE_NAME = 'log-solution-v6.250';
+const CRITICAL_ASSETS = [
     './',
     './index.html',
     './login.html',
     './dashboard.html',
+    './styles.css',
+    './script.js',
+    './firebase-config.js',
+    './firebase-auth-sync.js',
+    './firestore-service.js',
+    './gps-tracker.js',
+    './core/firebase-init.js',
+    './core/auth-service.js',
+    './core/connectivity-service.js',
+    './core/sync-manager.js',
+    './services/realtime-sync.js',
+    './services/crud-service.js',
+    './ui-render.js',
+    './cedolini-splitter.js',
+    './firebase-config-env.js',
+    './manifest.json',
+    './img/logo.png',
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js',
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js',
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js',
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js'
+];
+
+const OPTIONAL_ASSETS = [
     './inserimento.html',
     './presenze.html',
     './gestione.html',
@@ -20,59 +44,67 @@ const ASSETS = [
     './mappa_zone.html',
     './mappa_riepilogativa.html',
     './gestione_anomalie.html',
-    './styles.css',
-    './script.js',
-    './firebase-config.js',
-    './firebase-auth-sync.js',
-    './firestore-service.js',
-    './gps-tracker.js',
-    './core/firebase-init.js',
-    './core/auth-service.js',
-    './core/connectivity-service.js',
-    './core/sync-manager.js',
-    './services/realtime-sync.js',
-    './services/crud-service.js',
     './services/anagraficheService.js',
     './services/dipendentiService.js',
     './services/fatturazioneService.js',
     './services/viaggiService.js',
-    './ui-render.js',
-    './cedolini-splitter.js',
-    './firebase-config-env.js',
-    './manifest.json',
-    './img/logo.png',
     'https://fonts.googleapis.com/icon?family=Material+Icons+Round',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-    'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js',
-    'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js',
-    'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js',
-    'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js',
-    'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js'
+    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
 ];
 
-// 1. Installazione: cache solo asset statici puri
+// 1. Installazione: cache resiliente
 self.addEventListener('install', (event) => {
     console.log(`[SW ${CACHE_NAME}] Installazione cache...`);
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            // Forza il bypass della cache HTTP del browser per garantire che
-            // il SW scarichi e salvi sempre l'ultimissima versione dei file dal server
-            const requests = ASSETS.map(url => new Request(url, { cache: 'no-cache' }));
-            return cache.addAll(requests);
+        caches.open(CACHE_NAME).then(async (cache) => {
+            console.log(`[SW] Pre-caching asset critici...`);
+            // Asset critici: devono avere successo per completare l'installazione (all-or-nothing)
+            const criticalRequests = CRITICAL_ASSETS.map(url => new Request(url, { cache: 'no-cache' }));
+            await cache.addAll(criticalRequests);
+            console.log(`[SW] ${CRITICAL_ASSETS.length} asset critici installati con successo.`);
+
+            console.log(`[SW] Avvio pre-caching asset opzionali...`);
+            // Asset opzionali: tolleranza agli errori
+            let optionalsSuccess = 0;
+            let optionalsFailed = 0;
+            const optionalPromises = OPTIONAL_ASSETS.map(async (url) => {
+                try {
+                    const request = new Request(url, { cache: 'no-cache' });
+                    const response = await fetch(request);
+                    
+                    if (response.ok && response.status === 200 && (response.type === 'basic' || response.type === 'cors')) {
+                        const contentType = response.headers.get('content-type') || '';
+                        if ((url.endsWith('.js') || url.endsWith('.css')) && contentType.includes('text/html')) {
+                            throw new Error('MimeType mismatch (Possibile Captive Portal)');
+                        }
+                        
+                        await cache.put(request, response.clone());
+                        optionalsSuccess++;
+                    } else {
+                        throw new Error(`Status ${response.status} o Type ${response.type}`);
+                    }
+                } catch (err) {
+                    optionalsFailed++;
+                    console.warn(`[SW] Errore cache opzionale ${url}:`, err.message);
+                }
+            });
+            
+            await Promise.allSettled(optionalPromises);
+            console.log(`[SW] Installazione completata: ${CRITICAL_ASSETS.length} critici salvati, ${optionalsSuccess} opzionali salvati, ${optionalsFailed} opzionali falliti.`);
         })
     );
     self.skipWaiting();
 });
 
-// 2. Attivazione: elimina TUTTE le cache vecchie + claim immediato
+// 2. Attivazione: elimina cache vecchie dell'app + claim immediato
 self.addEventListener('activate', (event) => {
     console.log(`[SW ${CACHE_NAME}] Attivazione: pulizia cache vecchie...`);
     event.waitUntil(
         caches.keys().then((cacheNames) =>
             Promise.all(
                 cacheNames.map((name) => {
-                    if (name !== CACHE_NAME) {
+                    if (name.startsWith('log-solution-') && name !== CACHE_NAME) {
                         console.log('[SW] Eliminazione cache vecchia:', name);
                         return caches.delete(name);
                     }

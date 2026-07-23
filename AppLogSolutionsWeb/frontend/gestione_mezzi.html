@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Mezzi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=4.78">
+    <link rel="stylesheet" href="styles.css?v=6.249">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -423,8 +423,8 @@
     </div>
 </main>
 
-<script src="script.js?v=4.78"></script>
-<script type="module" src="firebase-auth-sync.js?v=4.78"></script>
+<script src="script.js?v=6.249"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.249"></script>
 
 <script type="module">
         import { db, app } from "./core/firebase-init.js";
@@ -1622,7 +1622,7 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
                 const storage = window.firebaseStorage || (typeof firebaseStorage !== 'undefined' ? firebaseStorage : null);
                 if (storage) {
-                    const { ref: sRef, uploadBytes, getDownloadURL, deleteObject } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js");
+                    const { ref: sRef, uploadBytes, getDownloadURL, deleteObject } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js");
                     const uploadFiles = async (inputId, arrayRef, folder) => {
                         const files = document.getElementById(inputId).files;
                         for (let i = 0; i < files.length; i++) {

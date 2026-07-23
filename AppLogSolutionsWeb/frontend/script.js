@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "6.247";
+const APP_VERSION = "6.249";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -746,7 +746,7 @@ window.caricaFotoDDT = async function(inputEl, index) {
         }
 
         // Recupera le funzioni modulari da Firebase Storage
-        const { ref: sRef, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js");
+        const { ref: sRef, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js");
 
         // Crea un nome univoco basato sulla data odierna
         const today = new Date();

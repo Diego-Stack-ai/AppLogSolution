@@ -56,6 +56,13 @@ const offlineAuthFallbackTimer = setTimeout(() => {
             const cachedUserStr = localStorage.getItem('ls_cached_user');
             if (cachedUserStr) {
                 const cachedUser = JSON.parse(cachedUserStr);
+                
+                // Ricalcolo strict in cache
+                const role = (cachedUser.ruolo || 'autista').toString().toLowerCase().trim();
+                const nomeUtente = (cachedUser.nome || '').toLowerCase();
+                const isDiego = nomeUtente.includes('boschetto diego') || nomeUtente.includes('diego boschetto');
+                cachedUser.isAdmin = role === 'amministratore' || isDiego;
+                
                 console.log("[Auth Fallback Offline] ✅ Utente ripristinato da ls_cached_user:", cachedUser.email || cachedUser.id);
                 window.appData = window.appData || {};
                 window.appData.currentUser = cachedUser;
@@ -161,7 +168,7 @@ onAuthStateChanged(auth, async (user) => {
                 const role = (userData.ruolo || 'autista').toString().toLowerCase().trim();
                 const nomeUtente = (userData.nome || '').toLowerCase();
                 const isDiego = nomeUtente.includes('boschetto diego') || nomeUtente.includes('diego boschetto');
-                const isAdmin = role === 'amministratore' || role === 'impiegata' || isDiego;
+                const isAdmin = role === 'amministratore' || isDiego;
 
                 window.appData.currentUser = { id: user.uid, email: user.email, ...userData, ruolo: role, isAdmin: isAdmin };
                 profileAlreadyLoaded = true; // Segna il profilo come caricato

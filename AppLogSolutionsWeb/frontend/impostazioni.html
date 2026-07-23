@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.244">
+    <link rel="stylesheet" href="styles.css?v=6.245">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -1385,15 +1385,30 @@
 
             try {
                 if (window.updateUser) {
+                    // Controlla se il ruolo è cambiato e deve essere aggiornato via Cloud Function
+                    const oldRole = window.appData.utenti[editIndexAutista]?.ruolo;
+                    if (oldRole && oldRole !== r) {
+                        try {
+                            const { getFunctions, httpsCallable } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js");
+                            const { app } = await import("./core/firebase-init.js");
+                            const functions = getFunctions(app, 'europe-west1');
+                            const adminUpdateRole = httpsCallable(functions, 'admin_update_role');
+                            const action = r === 'amministratore' ? 'PROMOTE_ADMIN' : 'REVOKE_ADMIN';
+                            await adminUpdateRole({ action: action, targetUid: id, targetRole: r });
+                            console.log("Ruolo aggiornato via Cloud Function.");
+                        } catch (cfErr) {
+                            alert("Errore durante l'aggiornamento del ruolo: " + cfErr.message);
+                            throw cfErr; // Interrompe il salvataggio se fallisce l'autorizzazione
+                        }
+                    }
+
                     await window.updateUser(id, { 
                         nome: n, 
                         cognome: cognome,
                         email: email,
                         emailPersonale: emailPersonale,
                         cellulare: cellulare,
-                        ruolo: r, 
                         tipoTurno: t, 
-                        canElevate: e, 
                         inRegistroPresenze: inRegistroPresenze,
                         inPianificazioneViaggi: inPianificazioneViaggi,
                         codice_fiscale: cf,
@@ -1445,8 +1460,8 @@
         }
     });
 </script>
-    <script src="script.js?v=6.244"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.244"></script>
+    <script src="script.js?v=6.245"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.245"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -2614,8 +2629,8 @@ const functions = getFunctions(app, "europe-west1");
     
     // ─── CODICE JS GESTIONE DIAGNOSTICA OFFLINE ──────────────────────────────
     try {
-        const { connectivityService } = await import("./core/connectivity-service.js?v=6.244");
-        const { syncManager } = await import("./core/sync-manager.js?v=6.244");
+        const { connectivityService } = await import("./core/connectivity-service.js?v=6.245");
+        const { syncManager } = await import("./core/sync-manager.js?v=6.245");
 
         const elStato = document.getElementById("diagStatoConnessione");
         const elCoda = document.getElementById("diagElementiCoda");

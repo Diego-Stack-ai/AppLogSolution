@@ -746,7 +746,7 @@ window.caricaFotoDDT = async function(inputEl, index) {
         }
 
         // Recupera le funzioni modulari da Firebase Storage
-        const { ref: sRef, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js");
+        const { ref: sRef, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js");
 
         // Crea un nome univoco basato sulla data odierna
         const today = new Date();

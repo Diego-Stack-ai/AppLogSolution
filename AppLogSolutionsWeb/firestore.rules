@@ -12,10 +12,10 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Funzione helper per verificare se utente e' amministratore o impiegata con privilegi elevati
+    // Funzione helper per verificare se utente e' amministratore
     function isAdmin() {
       let userData = get(/databases/$(database)/documents/dipendenti/$(request.auth.uid)).data;
-      return userData.ruolo == 'amministratore' || (userData.ruolo == 'impiegata' && userData.canElevate == true);
+      return userData.ruolo == 'amministratore';
     }
 
     // Funzione helper per verificare se utente e' impiegata base
@@ -28,10 +28,43 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/dipendenti/$(request.auth.uid)).data.ruolo == 'soel';
     }
 
+    // Helper per chiavi modificate
+    function getAffectedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // Campi anagrafici e contatto primario
+    function selfEditableFields() {
+      return ['nome', 'cognome', 'emailPersonale', 'cellulare', 'sesso', 'data_nascita', 'luogo_nascita', 'residenza'];
+    }
+
     // Regole per i dipendenti (lettura/scrittura profilo)
     match /dipendenti/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isImpiegata() || isSoel());
-      allow write: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isImpiegata());
+      
+      allow update: if isAuthenticated() && request.auth.uid == userId &&
+        getAffectedKeys().hasOnly(selfEditableFields());
+        
+      allow update: if isAuthenticated() && isAdmin() &&
+        !getAffectedKeys().hasAny(['ruolo', 'canElevate', 'uid', 'email', 'createdAt']);
+        
+      allow create: if isAuthenticated() && isAdmin() &&
+        request.resource.data.ruolo in ['autista', 'fornitore', 'impiegata', 'soel'] && 
+        request.resource.data.canElevate != true;
+        
+      allow delete: if false; 
+    }
+
+    // Protezione registro amministratori atomico
+    match /config/system_status {
+      allow read: if isAuthenticated() && isAdmin();
+      allow write: if false;
+    }
+
+    // Protezione audit logs
+    match /audit_logs_admin/{logId} {
+      allow read: if isAuthenticated() && isAdmin();
+      allow write: if false;
     }
 
     match /mezzi/{docId} {

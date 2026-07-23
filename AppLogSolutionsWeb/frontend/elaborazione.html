@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.244">
+    <link rel="stylesheet" href="styles.css?v=6.247">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -255,11 +255,15 @@
                         <span class="material-icons-round" id="lock-icon">lock_open</span>
                     </button>
                 </div>
-                <button class="glass-btn" onclick="window.navigateWithState('gestione_anomalie.html')" style="width: 100%; justify-content: center; padding: 10px 16px; border-radius: 12px; font-weight: 700; color: #ef4444; border: 2px solid #ef4444; background: white; display: flex; align-items: center; gap: 8px;" title="Risolvi clienti, articoli e orari non riconosciuti">
-                    <span class="material-icons-round">fact_check</span> GESTISCI ANOMALIE
+            <div style="display: flex; gap: 12px; width: 100%;">
+                <button class="glass-btn" onclick="window.navigateWithState('gestione_anomalie.html')" style="flex: 1; justify-content: center; padding: 10px; border-radius: 12px; font-weight: 700; color: #ef4444; border: 2px solid #ef4444; background: white; display: flex; align-items: center; gap: 8px;" title="Risolvi clienti, articoli e orari non riconosciuti">
+                    <span class="material-icons-round">fact_check</span> ANOMALIE
                 </button>
-                <button class="glass-btn" id="btn-gestione-mappa-data" style="width: 100%; justify-content: center; padding: 10px 16px; border-radius: 12px; font-weight: 700; color: white; border: none; background: linear-gradient(135deg, var(--primary), #3730a3); display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);" title="Apri la mappa interattiva per la data selezionata">
-                    <span class="material-icons-round">edit_location</span> GESTIONE MAPPA DATA SELEZIONATA
+                <button class="glass-btn" id="btn-gestione-mappa-data" style="flex: 1; justify-content: center; padding: 10px; border-radius: 12px; font-weight: 700; color: white; border: none; background: linear-gradient(135deg, var(--primary), #3730a3); display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);" title="Apri la mappa interattiva per la data selezionata">
+                    <span class="material-icons-round">edit_location</span> MAPPA
+                </button>
+                <button class="glass-btn" id="btn-elimina-giornata-data" style="flex: 1; justify-content: center; padding: 10px; border-radius: 12px; font-weight: 700; color: white; border: none; background: linear-gradient(135deg, #ef4444, #991b1b); display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);" title="Elimina completamente tutti i dati della data selezionata">
+                    <span class="material-icons-round">delete_forever</span> ELIMINA
                 </button>
             </div>
         </div>
@@ -369,8 +373,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.244"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.244"></script>
+    <script src="script.js?v=6.247"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.247"></script>
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
@@ -1128,6 +1132,39 @@
             if (!dateInput) return alert("Seleziona una data nel calendario in alto.");
             const formattedDate = dateInput.split('-').reverse().join('-');
             window.navigateWithState('mappa_zone.html?data=' + formattedDate + '&cb=' + Date.now());
+        });
+        
+        document.getElementById('btn-elimina-giornata-data').addEventListener('click', async () => {
+            const dateInput = document.getElementById('master-date-selector').value;
+            if (!dateInput) return Swal.fire('Attenzione', 'Seleziona una data nel calendario in alto.', 'warning');
+            const formattedDate = dateInput.split('-').reverse().join('-');
+            
+            const conf = await Swal.fire({
+                title: 'Sei sicuro?',
+                text: `Stai per eliminare COMPLETAMENTE e DEFINITIVAMENTE tutti i dati del ${formattedDate}. L'operazione NON può essere annullata.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Sì, elimina tutto',
+                cancelButtonText: 'Annulla'
+            });
+
+            if (conf.isConfirmed) {
+                try {
+                    Swal.fire({ title: 'Eliminazione in corso...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    const eliminaFn = httpsCallable(functions, 'elimina_giornata_logistica');
+                    const elimResult = await eliminaFn({ data_consegna: formattedDate, soft_delete: false });
+                    if (elimResult.data && elimResult.data.status === 'ok') {
+                        await Swal.fire('Eliminata!', 'La giornata è stata eliminata con successo.', 'success');
+                        location.reload();
+                    } else {
+                        Swal.fire('Errore', "Errore durante l'eliminazione: " + (elimResult.data ? elimResult.data.message : "Sconosciuto"), 'error');
+                    }
+                } catch (err) {
+                    Swal.fire('Errore', "Errore di rete o server: " + err.message, 'error');
+                }
+            }
         });
         
         const savedDate = localStorage.getItem('master_date');

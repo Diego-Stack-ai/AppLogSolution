@@ -318,7 +318,7 @@ window.addCustomer = (data) => window.updateCustomer(null, data);
 // Funzione di salvataggio/creazione per gli utenti (Solo per Admin)
 window.updateUser = async function(id, data) {
     try {
-        const { id: _, ...updateData } = data;
+        const { id: _, ruolo, canElevate, email, createdAt, uid, ...updateData } = data;
         if (id) {
             const docRef = doc(db, "dipendenti", id);
             await updateDoc(docRef, updateData);
@@ -387,6 +387,13 @@ window.updateMezzo = async function(id, data) {
 // Funzione di eliminazione generica
 window.deleteFromFirebase = async function(collectionName, id) {
     try {
+        if (collectionName === 'dipendenti') {
+            const { getFunctions, httpsCallable } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js");
+            const functions = getFunctions(app, 'europe-west1');
+            const adminUpdateRole = httpsCallable(functions, 'admin_update_role');
+            await adminUpdateRole({ action: 'DELETE_USER', targetUid: id });
+            return true;
+        }
         const docRef = doc(db, collectionName, id);
         await deleteDoc(docRef);
         return true;

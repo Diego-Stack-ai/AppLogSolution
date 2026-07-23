@@ -2217,7 +2217,7 @@ def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data
             row = df.iloc[i]
             
             codice = clean_client_code(row.iloc[0]) if len(row) > 0 else ""
-            if not codice or str(codice).lower() == 'nan':
+            if not codice or str(codice).lower() == 'nan' or str(codice).upper() == 'SOMMACAMPAGNA':
                 continue
                 
             ragione_sociale = str(row.iloc[1]).strip() if len(row) > 1 and pd.notna(row.iloc[1]) else ""
@@ -2300,7 +2300,7 @@ def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data
                 split_files[fname] = pdf_io
                 
                 # Zona logistica include targa e autista
-                zona_cod = f"CATTEL_{targa}_{autista}_{job_id}" if autista else f"CATTEL_{targa}_{job_id}"
+                zona_cod = f"CATTEL_{targa}_{autista}" if autista else f"CATTEL_{targa}"
                 
                 deliveries_list.append({
                     "codice_consegna": codice,
@@ -4751,6 +4751,32 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
                     except Exception as e:
                         print(f"[ERROR] Impossibile eliminare viaggio {v.id}: {str(e)}")
                         pass
+                
+        # 3.1 Elimina pianificazione viaggi (se esiste)
+        print(f"[INFO] Eliminazione pianificazione viaggi per la giornata {data_consegna}")
+        for tenant in ["DNR", "CATTEL", "GRAN CHEF", "BAUER"]:
+            pian_ref = db.collection('clienti').document(tenant).collection('pianificazione_viaggi')
+            # Cancellazione document based per data_lavoro o id
+            for p in pian_ref.stream():
+                data = p.to_dict()
+                should_delete = False
+                if not tipologie_da_eliminare:
+                    if data.get("data_lavoro") == data_consegna or p.id.startswith(f"{data_consegna}_"):
+                        should_delete = True
+                else:
+                    v_cliente_zona = data.get("cliente_zona", "")
+                    if data.get("data_lavoro") == data_consegna or p.id.startswith(f"{data_consegna}_"):
+                        if v_cliente_zona in cliente_zona_da_eliminare:
+                            should_delete = True
+                        elif ("PROGETTO SCUOLE" in cliente_zona_da_eliminare or "" in cliente_zona_da_eliminare) and (not v_cliente_zona or v_cliente_zona == "PROGETTO SCUOLE"):
+                            should_delete = True
+                
+                if should_delete:
+                    try:
+                        p.reference.delete()
+                    except Exception as e:
+                        pass
+
                 
         # 4. Elimina eventuali processing_jobs rimasti
         print(f"[INFO] Eliminazione processing_jobs per la giornata {data_consegna}")

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invio Mobile Autisti — Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.240">
+    <link rel="stylesheet" href="styles.css?v=6.241">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -208,8 +208,8 @@
         <div class="viaggi-grid" id="viaggiGrid"></div>
     </main>
 
-    <script src="script.js?v=6.240"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.240"></script>
+    <script src="script.js?v=6.241"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.241"></script>
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -389,15 +389,23 @@
             if (reportMeta.mappa_url) {
                 hasContent = true;
                 linksContainer.innerHTML += `
-                    <a href="${reportMeta.mappa_url}" target="_blank" style="background: #10b981; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
-                        <span class="material-icons-round" style="font-size: 18px;">map</span> APRI MAPPA GENERALE
-                    </a>
-                    <button class="btn-copia" id="copia-generale" onclick="window.copiaLink('generale','🗺️ Mappa generale percorsi: ${reportMeta.mappa_url}')" style="box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); padding: 10px 16px;">
-                        <span class="material-icons-round" style="font-size: 16px;">content_copy</span> Copia link
-                    </button>
-                    <a class="btn-wa" href="https://wa.me/?text=${encodeURIComponent('🗺️ Mappa generale percorsi: ' + reportMeta.mappa_url)}" target="_blank" style="box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2); padding: 10px 16px;">
-                        <span class="material-icons-round" style="font-size: 16px;">chat</span> WhatsApp
-                    </a>
+                    <div style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                            <a href="${reportMeta.mappa_url}" target="_blank" style="background: #10b981; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+                                <span class="material-icons-round" style="font-size: 18px;">map</span> APRI MAPPA GENERALE
+                            </a>
+                            <button class="btn-copia" id="copia-generale" onclick="window.copiaLink('generale','🗺️ Mappa generale percorsi: ${reportMeta.mappa_url}')" style="box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); padding: 10px 16px;">
+                                <span class="material-icons-round" style="font-size: 16px;">content_copy</span> Copia link
+                            </button>
+                            <a class="btn-wa" href="https://wa.me/?text=${encodeURIComponent('🗺️ Mappa generale percorsi: ' + reportMeta.mappa_url)}" target="_blank" style="box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2); padding: 10px 16px;">
+                                <span class="material-icons-round" style="font-size: 16px;">chat</span> WhatsApp
+                            </a>
+                        </div>
+                        <div class="mappa-result" id="result-generale" style="margin: 0; max-width: 100%;">
+                            <span class="material-icons-round mi">link</span>
+                            <span>${reportMeta.mappa_url}</span>
+                        </div>
+                    </div>
                 `;
             }
             

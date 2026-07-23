@@ -8,32 +8,40 @@ NON devono essere ignorate, aggirate o modificate senza esplicita approvazione d
 
 ## PROCEDURA OBBLIGATORIA: Aggiornamento Versione
 
-Ogni volta che vengono apportate modifiche, sia al frontend che al backend (nuove funzionalita, bugfix, modifiche strutturali), l'agente DEVE SEMPRE far scattare e aggiornare la versione dell'applicazione seguendo QUESTA e SOLO questa procedura.
+Ogni volta che vengono apportate modifiche, sia al frontend che al backend (nuove funzionalita, bugfix, modifiche strutturali), l'agente DEVE SEMPRE far scattare e aggiornare la versione dell'applicazione.
 
-### File da modificare (ENTRAMBI, sempre insieme):
+> [!IMPORTANT]
+> **UNICA PROCEDURA OPERATIVA AUTORIZZATA:** L'unica modalità consentita ed obbligatoria per effettuare l'aggiornamento (bump) della versione è l'esecuzione dello script automatizzato **`python bump_version.py`** dalla cartella radice di `AppLogSolutionsWeb`.
+> Gli agenti AI e gli sviluppatori **non devono MAI eseguire questi passaggi manualmente**, al fine di prevenire errori umani o di codifica dei caratteri. La procedura manuale descritta di seguito ha il solo scopo informativo di illustrare la logica interna dello script.
 
-1. `G:\Il mio Drive\App\AppLogSolutionsWeb\frontend\sw.js` RIGA 1
-   const CACHE_NAME = 'log-solution-vX.XX';
+### Dettaglio Logica Interna (Cosa fa lo script `bump_version.py` sotto il cofano):
 
-2. `G:\Il mio Drive\App\AppLogSolutionsWeb\frontend\script.js` RIGA 7
-   const APP_VERSION = "X.XX";
+1. **Aggiornamento dei File Chiave (Sempre in sincrono):**
+   - `G:\Il mio Drive\App\AppLogSolutionsWeb\frontend\sw.js` (RIGA 1): Aggiorna `const CACHE_NAME = 'log-solution-vX.XX';`
+   - `G:\Il mio Drive\App\AppLogSolutionsWeb\frontend\script.js` (RIGA 7): Aggiorna `const APP_VERSION = "X.XX";`
+
+2. **Allineamento Cache Busting:**
+   - Aggiorna i query string `?v=X.XX` nei tag `<link>` e `<script>` di **TUTTI** i file HTML del frontend per forzare i browser a scaricare i file JS/CSS aggiornati.
+
+---
 
 ### Regole TASSATIVE:
-- NON modificare mai il badge di versione hardcoded in dashboard.html o in qualsiasi altro file HTML. Il badge viene aggiornato automaticamente da script.js tramite document.querySelectorAll('.app-version-badge').
-- NON usare grep per finalitÃ  di sostituzione/modifica del numero di versione (rischio di rompere SVG o coordinate GPS). L'uso di grep Ã¨ consentito in sola lettura per le verifiche.
-- NON inventare la versione corrente. Controllare SEMPRE script.js riga 7 prima di procedere.
-- I query string ?v=X.XX nei tag <link> e <script> di TUTTI i file HTML DEVONO essere aggiornati alla nuova versione. Farlo tramite script Python (NON grep/PowerShell). Questo serve al browser per scaricare i file JS/CSS aggiornati.
-- **TASSATIVO â€” DEPLOY CI/CD:** Dopo la modifica, NON lanciare `firebase deploy --only hosting` manualmente dal terminale locale. L'Hosting viene deployato in automatico tramite GitHub Actions dal branch `main`.
+- **DIVIETO DI INTERVENTO MANUALE:** Non provare mai a modificare a mano `sw.js`, `script.js` o i parametri `?v=` nei file HTML. Usa solo ed esclusivamente `python bump_version.py`.
+- **Badge di Versione:** NON modificare mai il badge di versione hardcoded in dashboard.html o in qualsiasi altro file HTML. Il badge viene aggiornato automaticamente da script.js tramite `.app-version-badge`.
+- **Divieto di Grep per Modifica:** NON usare grep/PowerShell per finalità di sostituzione/modifica del numero di versione (rischio di rompere SVG o coordinate GPS). L'uso di grep è consentito in sola lettura per le verifiche.
+- **Controllo Versione di Partenza:** NON inventare la versione corrente. Controllare sempre script.js riga 7 prima di procedere.
+- **TASSATIVO — DEPLOY CI/CD:** Dopo la modifica, NON lanciare `firebase deploy --only hosting` manualmente dal terminale locale per la produzione. L'Hosting viene deployato in automatico tramite GitHub Actions dal branch `main`.
 
-### Sequenza Deploy Versione:
-  1. Leggi APP_VERSION attuale da script.js riga 7
-  2. Calcola la nuova versione (incremento decimale, es. 2.87 -> 2.88)
-  3. Aggiorna sw.js riga 1 con il nuovo CACHE_NAME
-  4. Aggiorna script.js riga 7 con il nuovo APP_VERSION
-  5. Allinea tutti i ?v= nei file HTML: esegui uno script Python che sostituisce la vecchia versione con la nuova in tutti i *.html del frontend (es. ?v=2.87 -> ?v=2.88). Usare sempre script Python, mai grep/PowerShell.
-  6. Verifica con grep che non rimangano riferimenti alla versione precedente nei file HTML.
-  7. Fai il `git commit` su `sviluppo` e FERMATI TASSATIVAMENTE per attendere il collaudo umano (vedi sezione Regole sul Deploy).
-  8. Solo dopo l'approvazione dell'utente, uniscilo a `main` e fai `git push origin main`. GitHub Actions eseguirÃ  automaticamente il deploy di Hosting in produzione.
+### Sequenza Operativa del Deploy:
+1. Assicurarsi di trovarsi sul branch di lavoro (es. `sviluppo`).
+2. Eseguire il bump della versione:
+   ```bash
+   python bump_version.py
+   ```
+3. Verificare tramite `git diff` che le modifiche apportate dallo script siano corrette.
+4. Eseguire il commit delle modifiche su `sviluppo` e **FERMATI TASSATIVAMENTE** per attendere il collaudo umano (vedi sezione Regole sul Deploy).
+5. Solo dopo l'approvazione dell'utente, uniscilo a `main` e fai `git push origin main`. GitHub Actions eseguirà automaticamente il deploy di Hosting in produzione.
+
 
 ---
 

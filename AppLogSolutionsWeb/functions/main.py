@@ -2690,6 +2690,35 @@ def core_genera_report_giornaliero(uid, data_consegna):
     except Exception as e_old:
         print(f"[WARN] Impossibile leggere il vecchio viaggi_giornalieri_Johnson.json: {e_old}")
 
+    # Aggiorna con i file tenant-specifici (che sono la vera 'fonte di verità' per i viaggi svuotati/cancellati)
+    for t_folder in ["CATTEL", "GRAN_CHEF", "DNR"]:
+        try:
+            blob_t = bucket.blob(f"{t_folder}/REPORTS/{data_consegna}/viaggi_giornalieri_Johnson.json")
+            if blob_t.exists():
+                t_data = json.loads(blob_t.download_as_string().decode('utf-8'))
+                t_zones = t_data.get("zone", []) if isinstance(t_data, dict) else t_data
+                
+                # Rimuovi dal globale tutti i viaggi che sembrano appartenere a questo tenant.
+                # Se sono stati svuotati dall'utente, non ci saranno nel JSON del tenant, e così evitiamo di resuscitarli!
+                keys_to_remove = []
+                for k, v in mappa_zone_esistenti.items():
+                    cz = str(v.get("cliente_zona", "")).upper()
+                    if t_folder == "CATTEL" and "CATTEL" in cz:
+                        keys_to_remove.append(k)
+                    elif t_folder == "GRAN_CHEF" and ("GRAN CHEF" in cz or "GRAND CHEF" in cz):
+                        keys_to_remove.append(k)
+                    elif t_folder == "DNR" and ("CATTEL" not in cz and "GRAN" not in cz):
+                        keys_to_remove.append(k)
+                
+                for k in keys_to_remove:
+                    mappa_zone_esistenti.pop(k, None)
+                    
+                # Aggiungi i viaggi reali e aggiornati di questo tenant
+                for z in t_zones:
+                    mappa_zone_esistenti[z.get("id_zona")] = z
+        except Exception as e_t:
+            print(f"[WARN] Impossibile leggere il JSON del tenant {t_folder}: {e_t}")
+
     # 0. Svuota le vecchie cartelle nello Storage per evitare doppioni
     try:
         data_f = data_consegna.replace('/', '-')

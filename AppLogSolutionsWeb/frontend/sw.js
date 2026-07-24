@@ -1,4 +1,11 @@
-const CACHE_NAME = 'log-solution-v6.252';
+const CACHE_NAME = 'log-solution-v6.253';
+
+const IMMUTABLE_FIREBASE_CDN_ASSETS = new Set([
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js',
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js',
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js'
+]);
+
 const CRITICAL_ASSETS = [
     './',
     './index.html',
@@ -72,13 +79,30 @@ self.addEventListener('install', (event) => {
                     }
                     await cache.put(req, res.clone());
                 } catch (err) {
-                    console.warn(`[SW] Rete fallita per critico ${url}. Cerco fallback locale...`);
-                    const cachedRes = await caches.match(req);
-                    if (cachedRes) {
-                        console.log(`[SW] Asset critico recuperato da cache precedente: ${url}`);
-                        await cache.put(req, cachedRes);
+                    if (IMMUTABLE_FIREBASE_CDN_ASSETS.has(url)) {
+                        console.warn(`[SW] Rete fallita per Firebase SDK ${url}. Cerco fallback locale...`);
+                        const cachedRes = await caches.match(req, { ignoreSearch: false });
+                        if (cachedRes) {
+                            try {
+                                if (!cachedRes.ok || cachedRes.status !== 200) throw new Error(`Cache Status ${cachedRes.status}`);
+                                if (cachedRes.type !== 'basic' && cachedRes.type !== 'cors') throw new Error(`Cache Type ${cachedRes.type}`);
+                                const ct = cachedRes.headers.get('content-type') || '';
+                                if ((url.endsWith('.js') || url.endsWith('.css')) && ct.includes('text/html')) {
+                                    throw new Error('Cache MimeType HTML (Captive Portal)');
+                                }
+                                console.log(`[SW] Firebase SDK recuperato dalla cache precedente: ${url}`);
+                                await cache.put(req, cachedRes);
+                            } catch (cacheErr) {
+                                console.error(`[SW] Installazione rigettata: Fallback Firebase non valido per ${url}`);
+                                throw cacheErr;
+                            }
+                        } else {
+                            console.error(`[SW] Installazione rigettata: Fallback Firebase assente per ${url}`);
+                            throw err;
+                        }
                     } else {
-                        console.error(`[SW] Errore IRREVERSIBILE su asset critico ${url}:`, err);
+                        console.error(`[SW] Asset locale critico fallito: ${url} - ${err.message}`);
+                        console.error(`[SW] Installazione rigettata a causa del fallimento di un asset locale critico.`);
                         throw err; // Rigetta l'intera installazione del SW
                     }
                 }

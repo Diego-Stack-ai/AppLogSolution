@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione V2 (Sviluppo) - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.261">
+    <link rel="stylesheet" href="styles.css?v=6.262">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -89,8 +89,8 @@
     </main>
 
     <!-- Inclusione script base di sistema (Navigazione, Auth, UI) -->
-    <script src="script.js?v=6.261"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.261"></script>
+    <script src="script.js?v=6.262"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.262"></script>
 
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
@@ -129,15 +129,15 @@
                             if (att.tipo === 'navettaMissione') {
                                 const tappe = att.tappe || [];
                                 tappe.forEach(t => {
-                                    if (t.destinazione_merce) {
-                                        const luogo = t.destinazione_merce.trim().toUpperCase();
+                                    if (t.carico) {
+                                        const luogo = t.carico.trim().toUpperCase();
                                         const cliente = t.cliente_merce ? t.cliente_merce.trim().toUpperCase() : '';
                                         
                                         if (!luoghiMap.has(luogo)) luoghiMap.set(luogo, luogo);
                                         
                                         if (cliente) {
-                                            const p = window.listaProgettiCache?.find(x => (x.nome||'').trim().toUpperCase() === cliente);
-                                            if (p && p.fattura_diretta_navette) {
+                                            const p = window.listaNavetteClientiCache?.find(x => (x.nome||'').trim().toUpperCase() === cliente);
+                                            if (p && p.fattura_diretta) {
                                                 const key = luogo + ' - ' + cliente;
                                                 if (!luoghiMap.has(key)) luoghiMap.set(key, key);
                                             }
@@ -178,7 +178,16 @@
                 const sel = document.getElementById('client-selector');
                 const snap = await getDocs(collection(db, "progetti"));
                 window.listaProgettiCache = [];
+                window.listaNavetteClientiCache = [];
                 sel.innerHTML = '<option value="">-- Seleziona --</option>';
+                
+                // Fetch Anagrafica Clienti e Carichi per il flag "Fattura Diretta"
+                try {
+                    const snapClienti = await getDocs(collection(db, "clienti/DNR/navette_anagrafica_clienti"));
+                    snapClienti.forEach(d => window.listaNavetteClientiCache.push({ id: d.id, ...d.data() }));
+                    const snapCarichi = await getDocs(collection(db, "clienti/DNR/navette_anagrafica_carichi"));
+                    snapCarichi.forEach(d => window.listaNavetteClientiCache.push({ id: d.id, ...d.data() }));
+                } catch(e) { console.error("Errore fetch anagrafiche", e); }
                 
                 snap.forEach(docSnap => {
                     const d = docSnap.data();
@@ -310,7 +319,7 @@
                                 d.attivitaAggiuntive.forEach((att, attIdx) => {
                                     if (att.tipo === 'navettaMissione' && att.tappe) {
                                         att.tappe.forEach((t, tIdx) => {
-                                            const luogo = (t.destinazione_merce || "").trim().toUpperCase();
+                                            const luogo = (t.carico || "").trim().toUpperCase();
                                             const cMerce = (t.cliente_merce || "").trim().toUpperCase();
                                             
                                             if (targetCliente !== '') {
@@ -328,8 +337,8 @@
                                                 // Navetta base al luogo di carico. Evitiamo di addebitarla se il cliente merce ha la spunta.
                                                 let hasSpunta = false;
                                                 if (cMerce) {
-                                                    const conf = window.listaProgettiCache?.find(x => (x.nome||'').toUpperCase() === cMerce);
-                                                    if (conf && conf.fattura_diretta_navette) hasSpunta = true;
+                                                    const conf = window.listaNavetteClientiCache?.find(x => (x.nome||'').toUpperCase() === cMerce);
+                                                    if (conf && conf.fattura_diretta) hasSpunta = true;
                                                 }
                                                 
                                                 if (luogo === targetLuogo && !hasSpunta) {

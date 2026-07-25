@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.261">
+    <link rel="stylesheet" href="styles.css?v=6.262">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -1476,8 +1476,8 @@
         }
     });
 </script>
-    <script src="script.js?v=6.261"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.261"></script>
+    <script src="script.js?v=6.262"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.262"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1583,6 +1583,17 @@ const functions = getFunctions(app, "europe-west1");
             const id = d.id;
             const isAutisti = d.is_navetta_autisti === true;
             const isNavetta = d.is_navetta === true;
+            const isFatturaDiretta = d.fattura_diretta === true;
+            
+            let fatturaDirettaHtml = '';
+            if (tipo === 'clienti' || tipo === 'carichi') {
+                fatturaDirettaHtml = `
+                    <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #b91c1c; cursor: pointer;" title="Fatturazione Diretta al Cliente/Merce per le Navette">
+                        <input type="checkbox" ${isFatturaDiretta ? 'checked' : ''} onchange="window.toggleUnifiedFlag('${collectionPath}', '${id}', 'fattura_diretta', this.checked)" style="width: 14px; height: 14px; accent-color: #b91c1c;">
+                        Fatt. Diretta
+                    </label>
+                `;
+            }
             
             return `
                 <div style="background: #fff; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
@@ -1601,6 +1612,7 @@ const functions = getFunctions(app, "europe-west1");
                             <input type="checkbox" ${isNavetta ? 'checked' : ''} onchange="window.toggleUnifiedFlag('${collectionPath}', '${id}', 'is_navetta', this.checked)" style="width: 14px; height: 14px; accent-color: #7c3aed;">
                             Navetta
                         </label>
+                        ${fatturaDirettaHtml}
                     </div>
                 </div>
             `;
@@ -2649,8 +2661,8 @@ const functions = getFunctions(app, "europe-west1");
     
     // ─── CODICE JS GESTIONE DIAGNOSTICA OFFLINE ──────────────────────────────
     try {
-        const { connectivityService } = await import("./core/connectivity-service.js?v=6.261");
-        const { syncManager } = await import("./core/sync-manager.js?v=6.261");
+        const { connectivityService } = await import("./core/connectivity-service.js?v=6.262");
+        const { syncManager } = await import("./core/sync-manager.js?v=6.262");
 
         const elStato = document.getElementById("diagStatoConnessione");
         const elCoda = document.getElementById("diagElementiCoda");

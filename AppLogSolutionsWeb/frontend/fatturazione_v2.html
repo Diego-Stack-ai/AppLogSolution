@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fatturazione V2 (Sviluppo) - Log Solution</title>
+    <link rel="stylesheet" href="styles.css?v=6.261">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <meta name="theme-color" content="#4f46e5">
+</head>
+<body>
+    <nav class="glass-nav">
+        <div class="nav-content">
+            <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
+            <button id="dashboardBtn" class="logout-btn" title="Dashboard"
+                onclick="window.navigateWithState('dashboard.html')"
+                style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
+                <span class="material-icons-round">dashboard</span>
+            </button>
+            <div class="nav-title" style="flex: 1;">Nuovo Modulo Fatturazione (V2)</div>
+            <a href="#" onclick="window.logoutFirebase(); return false;" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
+        </div>
+    </nav>
+
+    <main class="main-container">
+        <div class="filters-container glass-panel form-card">
+            <h3 style="margin-top: 0;">Parametri di Elaborazione</h3>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <div class="input-group">
+                    <label>Mese di Riferimento</label>
+                    <input type="month" id="month-selector" class="file-input">
+                </div>
+                <div class="input-group">
+                    <label>Cliente</label>
+                    <select id="client-selector" class="file-input">
+                        <option value="">Caricamento clienti...</option>
+                    </select>
+                </div>
+                <div class="input-group" id="navette-group" style="display: none;">
+                    <label style="color: #b91c1c;">Filtro Navette</label>
+                    <select id="navette-sub-selector" class="file-input" style="border-color: #b91c1c; border-width: 2px;">
+                        <option value="">Scegli Mese Prima...</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Metodo di Fatturazione</label>
+                    <select id="metodo-selector" class="file-input">
+                        <option value="PRESENZE">Da Registro Presenze</option>
+                        <option value="VIAGGI">Da Viaggi Creati</option>
+                        <option value="KPI">Da Excel KPI / Committente</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" id="btn-analizza" style="background-color: #4f46e5; border-color: #4f46e5;">
+                    <span class="material-icons-round" style="margin-right: 8px;">analytics</span>
+                    Esegui Analisi Anomalie
+                </button>
+                <button class="btn btn-primary" id="btn-salva-snapshot" style="background-color: #10b981; border-color: #10b981;" disabled>
+                    <span class="material-icons-round" style="margin-right: 8px;">save</span>
+                    Congela Fattura
+                </button>
+                <input type="file" id="kpi-file-upload" accept=".xlsx" style="display: none;">
+                <button class="btn btn-primary" id="btn-import-kpi" style="background-color: #0ea5e9; border-color: #0ea5e9;">
+                    <span class="material-icons-round" style="margin-right: 8px;">upload_file</span>
+                    Carica Excel KPI
+                </button>
+            </div>
+        </div>
+
+        <div id="risultati-container" style="display: none; margin-top: 24px;">
+            <div class="glass-panel form-card" style="border-left: 4px solid #f59e0b;">
+                <h3 style="color: #d97706; margin-top: 0;">Anomalie Rilevate</h3>
+                <div id="anomalie-list" style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Popolato dinamicamente dal JS -->
+                </div>
+            </div>
+
+            <div class="glass-panel form-card" style="margin-top: 24px;">
+                <h3 style="margin-top: 0;">Riepilogo Totali</h3>
+                <div class="summary-grid" id="riepilogo-totali-grid">
+                    <!-- Popolato dal JS -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Inclusione script base di sistema (Navigazione, Auth, UI) -->
+    <script src="script.js?v=6.261"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.261"></script>
+
+    <script type="module">
+        import { db, app } from "./core/firebase-init.js";
+        import { collection, getDocs, doc, getDoc, writeBatch, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { BillingEngine } from "./core/billing_engine.js";
+
+        // Imposta mese corrente
+        const now = new Date();
+        const y = now.getFullYear();
+        const mo = String(now.getMonth() + 1).padStart(2, '0');
+        document.getElementById('month-selector').value = `${y}-${mo}`;
+
+        const engine = new BillingEngine();
+        let currentClientData = null;
+
+        async function popolaMenuNavette() {
+            const subSel = document.getElementById('navette-sub-selector');
+            const monthStr = document.getElementById('month-selector').value;
+            subSel.innerHTML = '<option value="">Caricamento...</option>';
+            
+            if (!monthStr) {
+                subSel.innerHTML = '<option value="">Seleziona prima il mese</option>';
+                return;
+            }
+            
+            try {
+                const q = query(collection(db, "presenze"), where("mese", "==", monthStr));
+                const snap = await getDocs(q);
+                
+                const luoghiMap = new Map(); 
+                
+                snap.forEach(docSnap => {
+                    const d = docSnap.data();
+                    if (d.attivitaAggiuntive && Array.isArray(d.attivitaAggiuntive)) {
+                        d.attivitaAggiuntive.forEach(att => {
+                            if (att.tipo === 'navettaMissione') {
+                                const tappe = att.tappe || [];
+                                tappe.forEach(t => {
+                                    if (t.destinazione_merce) {
+                                        const luogo = t.destinazione_merce.trim().toUpperCase();
+                                        const cliente = t.cliente_merce ? t.cliente_merce.trim().toUpperCase() : '';
+                                        
+                                        if (!luoghiMap.has(luogo)) luoghiMap.set(luogo, luogo);
+                                        
+                                        if (cliente) {
+                                            const p = window.listaProgettiCache?.find(x => (x.nome||'').trim().toUpperCase() === cliente);
+                                            if (p && p.fattura_diretta_navette) {
+                                                const key = luogo + ' - ' + cliente;
+                                                if (!luoghiMap.has(key)) luoghiMap.set(key, key);
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+                
+                subSel.innerHTML = '<option value="">-- Seleziona Navetta --</option>';
+                const sortedKeys = Array.from(luoghiMap.keys()).sort();
+                sortedKeys.forEach(k => {
+                    const opt = document.createElement('option');
+                    opt.value = k;
+                    opt.textContent = k;
+                    subSel.appendChild(opt);
+                });
+                
+                if (sortedKeys.length === 0) {
+                    subSel.innerHTML = '<option value="">Nessuna navetta trovata</option>';
+                }
+            } catch (e) {
+                console.error("Errore popolamento navette", e);
+                subSel.innerHTML = '<option value="">Errore</option>';
+            }
+        }
+
+        document.getElementById('month-selector').addEventListener('change', () => {
+            if (document.getElementById('client-selector').value === 'NAVETTA') {
+                popolaMenuNavette();
+            }
+        });
+
+        async function caricaClienti() {
+            try {
+                const sel = document.getElementById('client-selector');
+                const snap = await getDocs(collection(db, "progetti"));
+                window.listaProgettiCache = [];
+                sel.innerHTML = '<option value="">-- Seleziona --</option>';
+                
+                snap.forEach(docSnap => {
+                    const d = docSnap.data();
+                    if (!d.nome) return;
+                    window.listaProgettiCache.push({ id: docSnap.id, ...d });
+                    
+                    const opt = document.createElement('option');
+                    opt.value = d.nome;
+                    opt.textContent = d.nome;
+                    opt.dataset.metodo = d.metodo_fatturazione || 'Non Impostato';
+                    sel.appendChild(opt);
+                });
+                
+                const optNav = document.createElement('option');
+                optNav.value = 'NAVETTA';
+                optNav.textContent = '🚛 GESTIONE NAVETTE';
+                sel.appendChild(optNav);
+
+                sel.addEventListener('change', (e) => {
+                    const option = e.target.options[e.target.selectedIndex];
+                    const metodoSelect = document.getElementById('metodo-selector');
+                    const navGroup = document.getElementById('navette-group');
+                    
+                    if (option.value === 'NAVETTA') {
+                        navGroup.style.display = 'block';
+                        metodoSelect.value = 'PRESENZE'; 
+                        popolaMenuNavette();
+                    } else {
+                        navGroup.style.display = 'none';
+                        if (option.value && option.dataset.metodo && option.dataset.metodo !== 'Non Impostato') {
+                            metodoSelect.value = option.dataset.metodo;
+                        }
+                    }
+                });
+            } catch(e) {
+                console.error("Errore caricamento clienti:", e);
+            }
+        }
+
+        document.getElementById('btn-analizza').addEventListener('click', async () => {
+            let clientName = document.getElementById('client-selector').value;
+            const month = document.getElementById('month-selector').value;
+            
+            if (clientName === 'NAVETTA') {
+                const subNav = document.getElementById('navette-sub-selector').value;
+                if (!subNav) {
+                    Swal.fire('Attenzione', 'Seleziona quale Filtro Navetta analizzare', 'warning');
+                    return;
+                }
+                clientName = 'NAVETTA::' + subNav;
+            }
+            
+            if (!clientName || !month) {
+                Swal.fire('Attenzione', 'Seleziona Cliente e Mese', 'warning');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Analisi in corso...',
+                text: 'Recupero dati in corso...',
+                didOpen: () => Swal.showLoading(),
+                allowOutsideClick: false
+            });
+
+            try {
+                // Leggiamo il metodo direttamente dalla tendina selezionata dall'utente
+                const metodo = document.getElementById('metodo-selector').value;
+
+                // 1. Fetch configurazione Cliente (per le tariffe)
+                const progSnap = await getDocs(collection(db, "progetti"));
+                
+                let realClientNameForConfig = clientName;
+                if (clientName.startsWith('NAVETTA::')) {
+                    const parts = clientName.split(' - ');
+                    if (parts.length > 1) {
+                        realClientNameForConfig = parts[1].trim(); 
+                    } else {
+                        const rawNav = clientName.split('::')[1];
+                        realClientNameForConfig = rawNav.trim();
+                    }
+                }
+                
+                let clientConfig = { nome: realClientNameForConfig, metodo_fatturazione: metodo };
+                progSnap.forEach(docSnap => {
+                    const d = docSnap.data();
+                    if ((d.nome || "").toUpperCase() === realClientNameForConfig.toUpperCase()) {
+                        clientConfig = { ...clientConfig, ...d };
+                    }
+                });
+
+                // 2. Fetch mappa mezzi (Targa -> Patente)
+                let mezziMap = {};
+                try {
+                    const mezziSnap = await getDocs(collection(db, "mezzi"));
+                    mezziSnap.forEach(d => {
+                        const m = d.data();
+                        if (m.targa) mezziMap[m.targa.toUpperCase()] = m.patente || 'B';
+                    });
+                } catch(e) {}
+
+                const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
+                let datiSorgente = [];
+
+                if (metodo === 'PRESENZE') {
+                    // Fetch presenze: filtriamo lato server per mese, in memoria per cliente
+                    const q = query(collection(db, 'presenze'), where('mese', '==', month));
+                    const snap = await getDocs(q);
+                    
+                    const isNavettaDirect = clientName.startsWith('NAVETTA::');
+                    let targetLuogo = '';
+                    let targetCliente = '';
+                    
+                    if (isNavettaDirect) {
+                        const rawNav = clientName.split('::')[1];
+                        if (rawNav.includes(' - ')) {
+                            const p = rawNav.split(' - ');
+                            targetLuogo = p[0].trim().toUpperCase();
+                            targetCliente = p[1].trim().toUpperCase();
+                        } else {
+                            targetLuogo = rawNav.trim().toUpperCase();
+                        }
+                    }
+
+                    snap.forEach(docSnap => {
+                        const d = docSnap.data();
+                        
+                        if (isNavettaDirect) {
+                            if (d.attivitaAggiuntive && Array.isArray(d.attivitaAggiuntive)) {
+                                d.attivitaAggiuntive.forEach((att, attIdx) => {
+                                    if (att.tipo === 'navettaMissione' && att.tappe) {
+                                        att.tappe.forEach((t, tIdx) => {
+                                            const luogo = (t.destinazione_merce || "").trim().toUpperCase();
+                                            const cMerce = (t.cliente_merce || "").trim().toUpperCase();
+                                            
+                                            if (targetCliente !== '') {
+                                                // Spunta "Fattura Diretta" per questo cliente (es. Cattel)
+                                                if (luogo === targetLuogo && cMerce === targetCliente) {
+                                                    datiSorgente.push({
+                                                        id: docSnap.id + '_nav_' + attIdx + '_' + tIdx,
+                                                        data: d.data,
+                                                        targa: d.targa,
+                                                        viaggio: luogo,
+                                                        ...d
+                                                    });
+                                                }
+                                            } else {
+                                                // Navetta base al luogo di carico. Evitiamo di addebitarla se il cliente merce ha la spunta.
+                                                let hasSpunta = false;
+                                                if (cMerce) {
+                                                    const conf = window.listaProgettiCache?.find(x => (x.nome||'').toUpperCase() === cMerce);
+                                                    if (conf && conf.fattura_diretta_navette) hasSpunta = true;
+                                                }
+                                                
+                                                if (luogo === targetLuogo && !hasSpunta) {
+                                                    datiSorgente.push({
+                                                        id: docSnap.id + '_nav_' + attIdx + '_' + tIdx,
+                                                        data: d.data,
+                                                        targa: d.targa,
+                                                        viaggio: luogo,
+                                                        ...d
+                                                    });
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        } else {
+                            if (d.cliente && d.cliente.toUpperCase() === clientName.toUpperCase()) {
+                                datiSorgente.push({ id: docSnap.id, ...d });
+                            }
+                        }
+                    });
+                } 
+                else if (metodo === 'VIAGGI') {
+                    // Fetch viaggi ddt: filtriamo in memoria come nel vecchio sistema per max compatibilità
+                    const viaggiRef = collection(db, 'clienti', activeTenant, 'viaggi ddt');
+                    const snap = await getDocs(viaggiRef);
+                    const targetSuffix = `-${month.split('-')[1]}-${month.split('-')[0]}`; // es. -07-2026
+                    snap.forEach(docSnap => {
+                        const d = docSnap.data();
+                        const dDate = d.data_lavoro || d.data_consegna || d.data || '';
+                        
+                        // Ignoriamo quelli importati dal vecchio sistema KPI per pura pulizia
+                        if (d.importato_da_kpi) return;
+                        
+                        // Nei viaggi ddt, il cliente corrisponde al tenant in cui ci troviamo (activeTenant)
+                        if ((dDate.includes(targetSuffix) || dDate.startsWith(month)) && 
+                            activeTenant.toUpperCase() === clientName.toUpperCase()) {
+                            datiSorgente.push({ id: docSnap.id, ...d });
+                        }
+                    });
+                } 
+                else if (metodo === 'KPI') {
+                    // Fetch KPI isolati
+                    const q = query(collection(db, 'clienti', activeTenant, 'kpi_isolati'), 
+                                    where("cliente", "==", clientName),
+                                    where("mese_riferimento", "==", month));
+                    const snap = await getDocs(q);
+                    snap.forEach(docSnap => {
+                        datiSorgente.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                }
+
+                const risultati = engine.elaboraMese(clientConfig, month, datiSorgente, mezziMap);
+                
+                document.getElementById('risultati-container').style.display = 'block';
+                
+                // Niente più controllo incrociato anomalie
+                document.getElementById('anomalie-list').parentElement.style.display = 'none';
+
+                const totaliContainer = document.getElementById('riepilogo-totali-grid');
+                let htmlTotali = `<div style="padding: 15px; background: #f8fafc; border-radius: 8px; margin-bottom: 20px;">
+                    <h3 style="margin-top: 0;">Riepilogo</h3>
+                    <strong>Metodo Utilizzato:</strong> ${risultati.metodo_utilizzato} <br>
+                    <strong>Elementi Processati:</strong> ${risultati.totali.conteggio_elementi} <br>
+                    <strong>Importo Totale Calcolato:</strong> <span style="color: var(--primary); font-size: 1.2em;">€ ${risultati.totali.importo_totale.toFixed(2)}</span>
+                </div>
+                <h4>Dettaglio Giornaliero</h4>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Data / Chiave</th>
+                            <th>N. Elementi</th>
+                            <th>Importo</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                
+                for (const [data, info] of Object.entries(risultati.totali.dettaglio_giornaliero)) {
+                    htmlTotali += `<tr>
+                        <td>${data}</td>
+                        <td>${info.elementi}</td>
+                        <td>€ ${info.importo_giornaliero.toFixed(2)}</td>
+                    </tr>`;
+                }
+
+                htmlTotali += `</tbody></table>`;
+                totaliContainer.innerHTML = htmlTotali;
+
+                document.getElementById('btn-salva-snapshot').disabled = false;
+                Swal.close();
+            } catch(e) {
+                Swal.fire('Errore', e.message, 'error');
+            }
+        });
+
+        caricaClienti();
+
+        document.getElementById('btn-import-kpi').addEventListener('click', () => {
+            document.getElementById('kpi-file-upload').click();
+        });
+
+        document.getElementById('kpi-file-upload').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const clientName = document.getElementById('client-selector').value;
+            const monthVal = document.getElementById('month-selector').value;
+            if (!clientName || !monthVal) {
+                Swal.fire('Errore', 'Seleziona un Cliente e un Mese di riferimento prima di caricare il KPI.', 'error');
+                e.target.value = '';
+                return;
+            }
+
+            Swal.fire({
+                title: 'Elaborazione KPI...',
+                text: 'Lettura file Excel in corso per ' + clientName + '...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                const data = await file.arrayBuffer();
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+                const batch = writeBatch(db);
+                const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
+                const kpiRef = collection(db, 'clienti', activeTenant, 'kpi_isolati');
+                
+                // --- PULIZIA VECCHI DATI KPI DEL MESE E CLIENTE ---
+                const targetSuffix = `-${monthVal.split('-')[1]}-${monthVal.split('-')[0]}`; // es. "-06-2026"
+                const qClean = query(kpiRef, where("cliente", "==", clientName));
+                const snapClean = await getDocs(qClean);
+                let cancellati = 0;
+                snapClean.forEach(docSnap => {
+                    const dataDoc = docSnap.data().data_lavoro || '';
+                    if (dataDoc.endsWith(targetSuffix) || dataDoc.includes(monthVal)) {
+                        batch.delete(docSnap.ref);
+                        cancellati++;
+                    }
+                });
+
+                // --- INSERIMENTO NUOVI DATI ---
+                let aggiunti = 0;
+                for (const row of jsonData) {
+                    const newDocRef = doc(kpiRef);
+                    batch.set(newDocRef, {
+                        ...row,
+                        cliente: clientName,
+                        mese_riferimento: monthVal,
+                        importato_il: new Date().toISOString()
+                    });
+                    aggiunti++;
+                }
+
+                await batch.commit();
+
+                Swal.fire(
+                    'Importazione Completata!', 
+                    `Puliti ${cancellati} vecchi record KPI.<br>Importati ${aggiunti} nuovi record KPI in un'area isolata, senza sovrascrivere viaggi o presenze.`, 
+                    'success'
+                );
+            } catch(error) {
+                console.error("Errore importazione:", error);
+                Swal.fire('Errore importazione', error.message, 'error');
+            }
+            
+            e.target.value = ''; // Reset input
+        });
+    </script>
+</body>
+</html>

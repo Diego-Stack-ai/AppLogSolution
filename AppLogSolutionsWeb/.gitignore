@@ -123,3 +123,15 @@ update_version.py
 prod_key.json
 dev_key.json
 *key.json
+# Playwright E2E Tests
+e2e-tests/node_modules/
+e2e-tests/test-results/
+e2e-tests/playwright-report/
+e2e-tests/.auth/
+e2e-tests/.env
+
+e2e-tests/.profiles/
+e2e-tests/.qa-state.json
+e2e-tests/.qa-backups/
+
+e2e-tests/.qa-recovery/

@@ -1,185 +1,227 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
-const { execSync } = require('child_process');
-
-const STATE_FILE = 'e2e-tests/.qa-state.json';
-const BACKUP_PATH = 'e2e-tests/.qa-backups/sw.js.qa-baseline.backup';
-const SW_PATH = 'frontend/sw.js';
-
-function getHash(filePath) {
-    const fileBuffer = fs.readFileSync(filePath);
-    const hashSum = crypto.createHash('sha256');
-    hashSum.update(fileBuffer);
-    return hashSum.digest('hex');
-}
 
 (async () => {
+    let browser;
     try {
-        console.log("=== INIZIO FASE 1: BASELINE ===");
+        console.log("=== INIZIO FASE 1: BASELINE CDP (DRY-RUN) ===");
         
-        if (!fs.existsSync('e2e-tests/.qa-backups')) fs.mkdirSync('e2e-tests/.qa-backups', { recursive: true });
-        
-        const userDataDir = path.join(__dirname, '../.profiles/pwa-update');
-        let browser = await chromium.launchPersistentContext(userDataDir, { headless: true });
-        let page = browser.pages().length > 0 ? browser.pages()[0] : await browser.newPage();
-        
-        console.log("Navigazione su sviluppo per installare la baseline...");
-        await page.goto('https://log-solutions-sviluppo.web.app/');
-        
-        try {
-            await page.waitForNavigation({ waitUntil: 'networkidle', timeout: 8000 });
-        } catch (e) {
-            await page.waitForTimeout(5000);
+        const userDataDir = path.join(__dirname, '../.profiles/pwa-cdp');
+        if (fs.existsSync(userDataDir)) {
+            try {
+                fs.rmSync(userDataDir, { recursive: true, force: true });
+                console.log("Profilo QA precedente rimosso con successo.");
+            } catch(e) {
+                console.log("Impossibile rimuovere completamente il profilo (file in uso), verrà riutilizzato.");
+            }
         }
         
-        let cacheData = { keys: [], v6Cache: null, hasApp: true, hasFirestore: true, hasAuth: true };
-        try {
-            cacheData = await page.evaluate(async () => {
-                const keys = await caches.keys();
-                const v6Cache = keys.find(k => k.includes('log-solution-v6'));
-                let hasAuth = false, hasFirestore = false, hasApp = false;
-                if (v6Cache) {
-                    const cache = await caches.open(v6Cache);
-                    const reqs = await cache.keys();
-                    const cachedUrls = reqs.map(r => r.url);
-                    hasApp = cachedUrls.some(url => url.includes('firebase-app.js'));
-                    hasFirestore = cachedUrls.some(url => url.includes('firebase-firestore.js'));
-                    hasAuth = cachedUrls.some(url => url.includes('firebase-auth.js'));
-                }
-                return { keys, v6Cache, hasApp, hasFirestore, hasAuth };
-            });
-        } catch (e) {
-            console.error("Errore page evaluate:", e);
-        }
+        browser = await chromium.launchPersistentContext(userDataDir, { 
+            channel: 'chrome',
+            headless: false
+        });
         
-        console.log("Cache baseline trovata:", cacheData.v6Cache);
+        const page = browser.pages().length > 0 ? browser.pages()[0] : await browser.newPage();
         
-        await browser.close();
-        
-        const sourceHash = getHash(SW_PATH);
-        const swContent = fs.readFileSync(SW_PATH, 'utf8');
-        fs.writeFileSync(BACKUP_PATH, swContent);
-        const backupHash = getHash(BACKUP_PATH);
-        const backupSize = fs.statSync(BACKUP_PATH).size;
-        
-        if (backupSize === 0 || sourceHash !== backupHash || !swContent.includes('CACHE_NAME') || !swContent.includes('CRITICAL_ASSETS')) {
-            console.error("ERRORE BACKUP NON VALIDO"); 
-            process.exit(1);
-        }
-        console.log(`Backup immutabile creato: ${BACKUP_PATH}, Hash: ${backupHash}`);
-        
-        const commit = execSync('git log -1 --format="%H"').toString().trim();
-        const baseVersion = swContent.match(/log-solution-v(6\.\d+)/)[1];
-        
-        let state = {
-            baseline_version: baseVersion,
-            test8_version: null,
-            test9_version: null,
-            backup_path: BACKUP_PATH,
-            backup_size_bytes: backupSize,
-            source_sw_path: SW_PATH,
-            source_sw_hash: sourceHash,
-            backup_hash: backupHash,
-            baseline_cache_name: cacheData.v6Cache,
-            baseline_commit: commit,
-            current_branch: "sviluppo",
-            firebase_project: "log-solutions-sviluppo",
-            phase: "BASELINE_BACKUP_CREATED",
-            updated_at: new Date().toISOString()
-        };
-        fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
+        const client = await page.context().newCDPSession(page);
 
-        console.log("\n=== FASE 2: VERSIONE TEMPORANEA ===");
-        execSync('python bump_version.py', { stdio: 'inherit' });
+        let swTargetId = null;
+        let swSessionId = null;
+        let swUrl = null;
+        let swLogs = [];
+        let isActivated = false;
         
-        const scriptJs = fs.readFileSync('frontend/script.js', 'utf8');
-        const match = scriptJs.match(/APP_VERSION\s*=\s*"([^"]+)"/);
-        const newVersion = match ? match[1] : null;
-        
-        state.test8_version = newVersion;
-        console.log(`Nuova versione temporanea generata: ${newVersion}`);
-        
-        // ESECUZIONE REALE DEPLOY COME RICHIESTO
-        console.log("Esecuzione deploy su Hosting log-solutions-sviluppo...");
-        try {
-            execSync('firebase deploy --only hosting --project log-solutions-sviluppo', { stdio: 'inherit' });
-        } catch (e) {
-            console.log("Firebase deploy ha fallito, potrebbe mancare l'auth CI. Provo a continuare il test locale come simulazione.");
-        }
-        
-        state.phase = "TEST8_DEPLOYED";
-        fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
-
-        console.log("\n=== FASE 3: ESECUZIONE CDP (TEST 8) ===");
-        browser = await chromium.launchPersistentContext(userDataDir, { headless: true });
-        
-        const client = await browser.newBrowserCDPSession();
-        await client.send('Target.setAutoAttach', { autoAttach: true, waitForDebuggerOnStart: false, flatten: false });
-
-        const requests = new Map();
-        let logs = [];
-        let loadingFailed = [];
-
         client.on('Target.attachedToTarget', async (event) => {
             if (event.targetInfo.type === 'service_worker') {
-                const swSessionId = event.sessionId;
-                await client.send('Target.sendMessageToTarget', { sessionId: swSessionId, message: JSON.stringify({id: 1, method: 'Network.enable', params: {}}) });
-                await client.send('Target.sendMessageToTarget', { sessionId: swSessionId, message: JSON.stringify({id: 2, method: 'Runtime.enable', params: {}}) });
-                await client.send('Target.sendMessageToTarget', { sessionId: swSessionId, message: JSON.stringify({id: 3, method: 'Network.setBlockedURLs', params: { urls: ['*www.gstatic.com/firebasejs/10.8.0*']}}) });
+                swTargetId = event.targetInfo.targetId;
+                swSessionId = event.sessionId;
+                swUrl = event.targetInfo.url;
+                console.log(`[CDP] Target Service Worker rilevato: ${swUrl}`);
+                
+                try {
+                    await client.send('Target.sendMessageToTarget', {
+                        sessionId: swSessionId,
+                        message: JSON.stringify({id: 1, method: 'Runtime.enable', params: {}})
+                    });
+                } catch(e) {}
             }
         });
 
         client.on('Target.receivedMessageFromTarget', (event) => {
-            const msg = JSON.parse(event.message);
-            if (msg.method === 'Network.requestWillBeSent') {
-                requests.set(msg.params.requestId, msg.params.request.url);
-            } else if (msg.method === 'Network.loadingFailed') {
-                const url = requests.get(msg.params.requestId);
-                if (url && url.includes('firebase')) loadingFailed.push({ reqId: msg.params.requestId, url });
-            } else if (msg.method === 'Runtime.consoleAPICalled') {
-                const msgText = msg.params.args.map(a => a.value).join(' ');
-                if (msgText.includes('recuperato') || msgText.includes('Rete fallita')) {
-                    logs.push(msgText);
+            if (event.sessionId === swSessionId) {
+                const msg = JSON.parse(event.message);
+                if (msg.method === 'Runtime.consoleAPICalled') {
+                    const txt = msg.params.args.map(a => (a.value || a.description || '')).join(' ');
+                    swLogs.push(txt);
+                    console.log(`[SW LOG] ${txt}`);
+                    if (txt.toLowerCase().includes('attivato') || txt.toLowerCase().includes('activate') || txt.toLowerCase().includes('completata')) {
+                        isActivated = true;
+                    }
                 }
             }
         });
 
-        page = browser.pages().length > 0 ? browser.pages()[0] : await browser.newPage();
-        await page.goto('https://log-solutions-sviluppo.web.app/');
-        
-        try {
-            await page.waitForNavigation({ waitUntil: 'networkidle', timeout: 10000 });
-        } catch (e) {
-            await page.waitForTimeout(5000);
-        }
-
-        const finalCacheData = await page.evaluate(async () => {
-            return await caches.keys();
+        await client.send('Target.setAutoAttach', {
+            autoAttach: true,
+            waitForDebuggerOnStart: false,
+            flatten: false
         });
 
-        console.log("\nLoading Failed SDKs:", loadingFailed);
-        console.log("Log Recupero Cache Fallback:");
-        logs.forEach(l => console.log(l));
-        console.log("Caches Presenti Alla Fine:", finalCacheData);
-
-        await browser.close();
+        console.log("Navigazione diretta su login.html...");
+        await page.goto('https://log-solutions-sviluppo.web.app/login.html');
         
-        const testPassed = loadingFailed.length >= 3 && logs.some(l => l.includes('recuperato'));
-        if (testPassed) {
-            state.phase = "TEST8_PASSED";
-            fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
-            console.log("\n=== TEST 8 SUPERATO ===");
-        } else {
-            console.log("\n=== ERRORE TEST 8 ===");
+        console.log("Attendendo installazione completa SW...");
+        let waitLoops = 0;
+        while(waitLoops < 40) {
+            if (isActivated) {
+                console.log("Attivazione SW intercettata nei log!");
+                break;
+            }
+            await page.waitForTimeout(500);
+            waitLoops++;
+        }
+        await page.waitForTimeout(4000); 
+        
+        const securityOrigin = 'https://log-solutions-sviluppo.web.app';
+        let cacheNamesRes;
+        try {
+            cacheNamesRes = await client.send('CacheStorage.requestCacheNames', { securityOrigin });
+        } catch (e) {
+            const frameTree = await client.send('Page.getResourceTree');
+            const frameId = frameTree.frameTree.frame.id;
+            const storageKeyRes = await client.send('Storage.getStorageKeyForFrame', { frameId });
+            cacheNamesRes = await client.send('CacheStorage.requestCacheNames', { storageKey: storageKeyRes.storageKey });
+        }
+        
+        const cachesFound = cacheNamesRes.caches.map(c => c.cacheName);
+        console.log(`[CDP] Nomi Cache rilevati:`, cachesFound);
+
+        let allEntries = [];
+        const v6Cache = cacheNamesRes.caches.find(c => c.cacheName.includes('log-solution-v6.256'));
+        
+        const checkSdk = async (url) => {
+            try {
+                const res = await client.send('CacheStorage.requestCachedResponse', {
+                    cacheId: v6Cache.cacheId,
+                    requestURL: url,
+                    requestHeaders: []
+                });
+                let ct = 'Sconosciuto';
+                if (res.response && res.response.headers) {
+                    const ctHeader = res.response.headers.find(h => h.name.toLowerCase() === 'content-type');
+                    if (ctHeader) ct = ctHeader.value;
+                }
+                return { 
+                    found: true, 
+                    url, 
+                    status: res.response.statusCode,
+                    responseType: res.response.responseType,
+                    contentType: ct
+                };
+            } catch(e) {
+                return { found: false, url };
+            }
+        };
+
+        let sdkChecks = [];
+        let localChecks = {};
+
+        if (v6Cache) {
+            let skipCount = 0;
+            const pageSize = 100;
+            let hasMore = true;
+            while(hasMore) {
+                const entriesRes = await client.send('CacheStorage.requestEntries', {
+                    cacheId: v6Cache.cacheId,
+                    skipCount: skipCount,
+                    pageSize: pageSize
+                });
+                if (entriesRes.cacheDataEntries && entriesRes.cacheDataEntries.length > 0) {
+                    allEntries.push(...entriesRes.cacheDataEntries);
+                    skipCount += entriesRes.cacheDataEntries.length;
+                    if (entriesRes.returnCount < pageSize) hasMore = false;
+                } else {
+                    hasMore = false;
+                }
+            }
+            
+            console.log(`[CDP] Trovate ${allEntries.length} entries totali nella cache ${v6Cache.cacheName}`);
+
+            const sdksToFind = [
+                'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js',
+                'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js',
+                'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js'
+            ];
+            
+            for (const sdk of sdksToFind) {
+                sdkChecks.push(await checkSdk(sdk));
+            }
+            
+            const localAssetsToFind = [
+                '/login.html',
+                '/dashboard.html',
+                '/script.js',
+                '/core/firebase-init.js',
+                '/core/auth-service.js'
+            ];
+            
+            const cacheKeysStrings = allEntries.map(e => {
+                try {
+                    return new URL(e.requestURL).pathname;
+                } catch(err) {
+                    return e.requestURL;
+                }
+            });
+            
+            for (const asset of localAssetsToFind) {
+                localChecks[asset] = cacheKeysStrings.some(p => p.endsWith(asset));
+            }
         }
 
-        // Restore pulito
-        console.log("Ripristino versione pulita...");
-        execSync('python e2e-tests/scripts/restore-clean.py', { stdio: 'inherit' });
+        const missingSdks = sdkChecks.some(c => !c.found);
+        const missingLocals = Object.values(localChecks).some(v => !v);
+        const hasRejection = swLogs.some(l => l.toLowerCase().includes('fail') || l.toLowerCase().includes('error'));
+
+        const isValid = v6Cache && isActivated && !missingSdks && !missingLocals && !hasRejection;
+
+        console.log("\n=== REPORT DRY-RUN BASELINE 6.256 ===");
+        console.log(`Versione Browser: ${(await browser.browser().version())}`);
+        console.log(`URL Worker: ${swUrl || 'Nessuno'}`);
+        console.log(`Stato install/activate: ${isActivated ? 'Attivato' : 'Non Attivato (o log mancanti)'}`);
+        console.log(`Log SW completi:`);
+        swLogs.forEach(l => console.log(`  - ${l}`));
         
+        console.log(`Nome e cacheId: ${v6Cache ? v6Cache.cacheName + ' (ID: ' + v6Cache.cacheId + ')' : 'NON TROVATA'}`);
+        console.log(`Numero totale entry: ${allEntries.length}`);
+        
+        console.log(`Risultato ricerche Firebase:`);
+        sdkChecks.forEach(c => {
+            console.log(`  - ${c.url}`);
+            console.log(`    Trovato: ${c.found}`);
+            if (c.found) {
+                console.log(`    Status: ${c.status}`);
+                console.log(`    ResponseType: ${c.responseType}`);
+                console.log(`    Content-Type: ${c.contentType}`);
+            }
+        });
+        
+        console.log(`Asset locali verificati:`);
+        for (const [asset, found] of Object.entries(localChecks)) {
+            console.log(`  - ${asset}: ${found ? 'Trovato' : 'Mancante'}`);
+        }
+        
+        if (isValid) {
+            console.log("\n=== BASELINE 6.256: VALIDA ===");
+        } else {
+            console.log("\n=== BASELINE 6.256: NON VALIDA ===");
+        }
+
+        await browser.close();
+
     } catch (e) {
         console.error("Eccezione catturata:", e);
+        if (browser) await browser.close();
+        process.exit(1);
     }
 })();

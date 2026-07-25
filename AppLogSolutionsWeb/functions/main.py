@@ -2582,7 +2582,7 @@ def _ordina_job_ids_gc(job_ids, tenant="GRAN CHEF"):
     jobs_info.sort(key=lambda x: x[1])
     return [x[0] for x in jobs_info]
 
-def core_genera_report_giornaliero(uid, data_consegna):
+def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=None):
     """
     Implementa gli step 2, 3 e 4 del workflow locale con logica a blocchi:
     - Identifica fornitori da sovrascrivere (quelli presenti in split_ddt)
@@ -2600,7 +2600,10 @@ def core_genera_report_giornaliero(uid, data_consegna):
     
     # 1. Recupera i DDT scansionando la cartella dello Storage
     ddt_list = []
-    prefix_search = f"split_ddt/{data_consegna}/"
+    if tipologie_da_elaborare:
+        prefixes_search = [f"split_ddt/{data_consegna}/{t.upper()}/" for t in tipologie_da_elaborare]
+    else:
+        prefixes_search = [f"split_ddt/{data_consegna}/"]
     print(f"[INFO] Scansione Storage per data {data_consegna}...")
     
     tenant_con_ddt = set()
@@ -2617,35 +2620,36 @@ def core_genera_report_giornaliero(uid, data_consegna):
                 if cf and cf != 'p00000' and cf != 'nan': db_mappati[cf] = d
                 if cl and cl != 'p00000' and cl != 'nan': db_mappati[cl] = d
 
-        blobs = bucket.list_blobs(prefix=prefix_search)
-        for blob in blobs:
-            if "ddt_estratti" in blob.name and blob.name.endswith(".json"):
-                print(f"[INFO] Leggo file: {blob.name}")
-                
-                # Identifica tenant dal path
-                if "/CATTEL/" in blob.name: tenant_con_ddt.add("CATTEL")
-                elif "/GRAND_CHEF/" in blob.name: tenant_con_ddt.add("GRAN_CHEF")
-                elif "/FRUTTA/" in blob.name or "/LATTE/" in blob.name: tenant_con_ddt.add("DNR")
-                
-                try:
-                    import json
-                    meta_data = json.loads(blob.download_as_string())
-                    job_competenza = meta_data.get("competenza") or meta_data.get("tipo", "FRUTTA").upper()
-                    if job_competenza in ("GRAND_CHEF", "GRAND CHEF", "GRAN CHEF"):
-                        job_competenza = "GRAN_CHEF"
-                    for ddt in meta_data.get("deliveries", []):
-                        cod = ddt.get("codice_consegna")
-                        cod_l = str(cod).strip().lower()
-                        cliente_info = db_mappati.get(cod_l)
-                        
-                        if cliente_info:
-                            ddt["nome"] = cliente_info.get('cliente') or cliente_info.get('nome_consegna') or cod
-                        else:
-                            ddt["nome"] = cod
-                        ddt["competenza"] = ddt.get("competenza") or job_competenza
-                        ddt_list.append(ddt)
-                except Exception as e_read:
-                    print(f"[ERROR] Impossibile leggere {blob.name}: {e_read}")
+        for pref in prefixes_search:
+            blobs = bucket.list_blobs(prefix=pref)
+            for blob in blobs:
+                if "ddt_estratti" in blob.name and blob.name.endswith(".json"):
+                    print(f"[INFO] Leggo file: {blob.name}")
+                    
+                    # Identifica tenant dal path
+                    if "/CATTEL/" in blob.name: tenant_con_ddt.add("CATTEL")
+                    elif "/GRAND_CHEF/" in blob.name: tenant_con_ddt.add("GRAN_CHEF")
+                    elif "/FRUTTA/" in blob.name or "/LATTE/" in blob.name: tenant_con_ddt.add("DNR")
+                    
+                    try:
+                        import json
+                        meta_data = json.loads(blob.download_as_string())
+                        job_competenza = meta_data.get("competenza") or meta_data.get("tipo", "FRUTTA").upper()
+                        if job_competenza in ("GRAND_CHEF", "GRAND CHEF", "GRAN CHEF"):
+                            job_competenza = "GRAN_CHEF"
+                        for ddt in meta_data.get("deliveries", []):
+                            cod = ddt.get("codice_consegna")
+                            cod_l = str(cod).strip().lower()
+                            cliente_info = db_mappati.get(cod_l)
+                            
+                            if cliente_info:
+                                ddt["nome"] = cliente_info.get('cliente') or cliente_info.get('nome_consegna') or cod
+                            else:
+                                ddt["nome"] = cod
+                            ddt["competenza"] = ddt.get("competenza") or job_competenza
+                            ddt_list.append(ddt)
+                    except Exception as e_read:
+                        print(f"[ERROR] Impossibile leggere {blob.name}: {e_read}")
     except Exception as e_list:
         print(f"[ERROR] Errore scansione storage: {e_list}")
 
@@ -2957,7 +2961,7 @@ def core_genera_report_giornaliero(uid, data_consegna):
         if not cz: return "DNR"
         cz = cz.upper().strip()
         if cz == "CATTEL": return "CATTEL"
-        if cz == "GRAN CHEF": return "GRAN_CHEF"
+        if cz in ("GRAN CHEF", "GRAND_CHEF", "GRAN_CHEF", "GRAND CHEF"): return "GRAN_CHEF"
         return "DNR"
 
     for zid, old_z in mappa_zone_esistenti.items():
@@ -4679,10 +4683,12 @@ def chiudi_giornata(req: https_fn.CallableRequest):
 def genera_report_giornaliero(req: https_fn.CallableRequest):
     try:
         data_consegna = req.data.get("data_consegna") if isinstance(req.data, dict) else None
+        tipologie_da_elaborare = req.data.get("tipologie_da_elaborare", []) if isinstance(req.data, dict) else []
         azioni = req.data.get("azioni", {}) if isinstance(req.data, dict) else {}
         return core_genera_report_giornaliero(
             req.auth.uid if req.auth else None,
-            data_consegna
+            data_consegna,
+            tipologie_da_elaborare
         )
     except Exception as e:
         import traceback
@@ -4950,7 +4956,7 @@ def get_tenant_from_cz(cz):
     if not cz: return "DNR"
     cz = cz.upper().strip()
     if cz == "CATTEL": return "CATTEL"
-    if cz == "GRAN CHEF": return "GRAN_CHEF"
+    if cz in ("GRAN CHEF", "GRAND_CHEF", "GRAN_CHEF", "GRAND CHEF"): return "GRAN_CHEF"
     return "DNR"
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.MB_256, timeout_sec=60,
@@ -5003,7 +5009,7 @@ def preflight_elaborazione_mappe(req: https_fn.CallableRequest):
             if not cz: return "DNR"
             cz = cz.upper().strip()
             if cz == "CATTEL": return "CATTEL"
-            if cz == "GRAN CHEF": return "GRAN_CHEF"
+            if cz in ("GRAN CHEF", "GRAND_CHEF", "GRAN_CHEF", "GRAND CHEF"): return "GRAN_CHEF"
             return "DNR"
         
         try:

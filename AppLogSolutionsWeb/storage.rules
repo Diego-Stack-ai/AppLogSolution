@@ -73,6 +73,12 @@ service firebase.storage {
       allow write: if isAuthenticated();
     }
 
+    // Cartella Mezzi per upload foto libretti/danni
+    match /MEZZI/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
     // Cartella foto resi (upload da autisti non autenticati)
     match /RESI/{allPaths=**} {
       allow read: if isAuthenticated();

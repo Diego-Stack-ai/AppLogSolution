@@ -31,12 +31,13 @@ def main():
     with open(STATE_FILE, 'r') as f:
         state = json.load(f)
         
-    if state.get("phase") != "TEST_8_COMPLETED":
-        print("ERRORE: Test 8 non concluso nel qa-state.")
+    if state.get("phase") not in ["TEST_8_COMPLETED", "BASELINE_BACKUP_CREATED"]:
+        print("ERRORE: Test 8 / Baseline non concluso nel qa-state.")
         sys.exit(1)
         
-    if not os.path.exists(BASELINE_BACKUP) or get_sha256(BASELINE_BACKUP) != state["baseline_hash"]:
-        print("ERRORE: Backup baseline corrotto o inesistente.")
+    BASELINE_BACKUP_PATH = os.path.join('e2e-tests', '.qa-backups', BASELINE_BACKUP)
+    if not os.path.exists(BASELINE_BACKUP_PATH) or get_sha256(BASELINE_BACKUP_PATH).lower() != state.get("sw_js_hash", state.get("baseline_hash", "")).lower():
+        print(f"ERRORE: Backup baseline corrotto o inesistente. ({BASELINE_BACKUP_PATH})")
         sys.exit(1)
         
     sw_path = os.path.join('frontend', 'sw.js')

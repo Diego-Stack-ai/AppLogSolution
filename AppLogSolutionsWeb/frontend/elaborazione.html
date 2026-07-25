@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elaborazione Distinte - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.254">
+    <link rel="stylesheet" href="styles.css?v=6.257">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -373,8 +373,8 @@
         </div>
     </main>
 
-    <script src="script.js?v=6.254"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.254"></script>
+    <script src="script.js?v=6.257"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.257"></script>
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
         import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
@@ -932,7 +932,10 @@
             
             try {
                 const generaReportFn = httpsCallable(functions, 'genera_report_giornaliero', { timeout: 300000 });
-                const result = await generaReportFn({ data_consegna: formattedDate });
+                const result = await generaReportFn({ 
+                    data_consegna: formattedDate,
+                    tipologie_da_elaborare: window.ultime_tipologie_caricate || [] 
+                });
                 
                 if (result.data.status === 'ok') {
                     console.log("Report generato con successo!");
@@ -1218,6 +1221,7 @@
             const dateFormatted = dateInput.split('-').reverse().join('-');
             let loadedClients = [];
             let tipologie_caricate = [];
+            window.ultime_tipologie_caricate = tipologie_caricate;
             let tenant_caricati = [];
             let cliente_zona_caricati = [];
             
@@ -1236,7 +1240,7 @@
             if (filesChef.length > 0) {
                 loadedClients.push('Gran Chef');
                 tipologie_caricate.push('GRAND_CHEF');
-                tenant_caricati.push('GRAND_CHEF');
+                tenant_caricati.push('GRAN CHEF');
                 cliente_zona_caricati.push('GRAN CHEF');
             }
             if (filesCattel.length > 0) {
@@ -1279,7 +1283,20 @@
             const statText = document.getElementById('progress-status-text');
 
             try {
-                console.log('[Upload] Inizio upload in modalità solo append. Nessuna pulizia preventiva.');
+                // 1. PULIZIA PREVENTIVA SELETTIVA
+                statText.textContent = `Pulizia preventiva dei vecchi dati (${clientsStr})...`;
+                console.log('[Upload] Inizio pulizia preventiva per:', tipologie_caricate);
+                const eliminaGiornataFn = httpsCallable(functions, 'elimina_giornata_logistica', { timeout: 120000 });
+                
+                await eliminaGiornataFn({
+                    data_consegna: dateFormatted,
+                    soft_delete: false,
+                    tipologie_da_eliminare: tipologie_caricate,
+                    tenant_da_eliminare: tenant_caricati,
+                    cliente_zona_da_eliminare: cliente_zona_caricati
+                });
+
+                console.log('[Upload] Pulizia completata. Inizio caricamento file.');
 
                 // Upload Frutta
                 for (let file of filesFrutta) {

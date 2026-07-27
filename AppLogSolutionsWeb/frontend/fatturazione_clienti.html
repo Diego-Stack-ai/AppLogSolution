@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione Clienti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.269">
+    <link rel="stylesheet" href="styles.css?v=6.270">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -129,31 +129,31 @@
                 
                 <div id="referentiList" style="display: flex; flex-direction: column; gap: 8px; min-height: 10px; margin-bottom: 16px;"></div>
                 
-                <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px;">
-                    <label style="font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 12px; display: block;">+ Aggiungi Nuovo Referente</label>
-                    <div class="form-grid" style="margin-bottom: 12px;">
-                        <div class="input-group">
-                            <label>Nome Referente *</label>
-                            <input type="text" id="refNome" placeholder="es. Mario Rossi">
+                <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 8px;">
+                    <label style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 8px; display: block;">+ Aggiungi Nuovo Referente</label>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 8px;">
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label style="font-size:10px; margin-bottom:2px;">Nome Referente *</label>
+                            <input type="text" id="refNome" placeholder="es. Mario Rossi" style="padding:4px 8px; font-size:11px; height:28px;">
                         </div>
-                        <div class="input-group">
-                            <label>Ruolo / Reparto</label>
-                            <input type="text" id="refRuolo" placeholder="es. Amministrazione">
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label style="font-size:10px; margin-bottom:2px;">Ruolo / Reparto</label>
+                            <input type="text" id="refRuolo" placeholder="es. Amministrazione" style="padding:4px 8px; font-size:11px; height:28px;">
                         </div>
-                        <div class="input-group">
-                            <label>E-mail</label>
-                            <input type="email" id="refEmail" placeholder="es. admin@azienda.it">
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label style="font-size:10px; margin-bottom:2px;">E-mail</label>
+                            <input type="email" id="refEmail" placeholder="es. admin@azienda.it" style="padding:4px 8px; font-size:11px; height:28px;">
                         </div>
-                        <div class="input-group">
-                            <label>Telefono Fisso</label>
-                            <input type="tel" id="refFisso" placeholder="es. 045123456">
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label style="font-size:10px; margin-bottom:2px;">Telefono Fisso</label>
+                            <input type="tel" id="refFisso" placeholder="es. 045123456" style="padding:4px 8px; font-size:11px; height:28px;">
                         </div>
-                        <div class="input-group">
-                            <label>Cellulare</label>
-                            <input type="tel" id="refCell" placeholder="es. 3401234567">
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label style="font-size:10px; margin-bottom:2px;">Cellulare</label>
+                            <input type="tel" id="refCell" placeholder="es. 3401234567" style="padding:4px 8px; font-size:11px; height:28px;">
                         </div>
                     </div>
-                    <button type="button" onclick="aggiungiReferente()" class="btn-primary" style="width: auto; padding: 8px 14px; font-size: 12px; background: #10b981; border: none;">Aggiungi in Rubrica</button>
+                    <button type="button" onclick="aggiungiReferente()" class="btn-primary" style="width: auto; padding: 4px 12px; font-size: 11px; background: #10b981; border: none; height: 26px; line-height: 1;">Aggiungi in Rubrica</button>
                 </div>
             </div>
 

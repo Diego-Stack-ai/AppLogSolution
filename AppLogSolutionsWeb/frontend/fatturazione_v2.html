@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione V2 (Sviluppo) - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.278">
+    <link rel="stylesheet" href="styles.css?v=6.279">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -89,8 +89,8 @@
     </main>
 
     <!-- Inclusione script base di sistema (Navigazione, Auth, UI) -->
-    <script src="script.js?v=6.278"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.278"></script>
+    <script src="script.js?v=6.279"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.279"></script>
 
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
@@ -405,56 +405,132 @@
                     <strong>Metodo Utilizzato:</strong> ${risultati.metodo_utilizzato} <br>
                     <strong>Elementi Processati:</strong> ${risultati.totali.conteggio_elementi} <br>
                 </div>
-                <h4>Dettaglio Giornaliero</h4>
-                <table class="data-table" style="font-size: 13px;">
+                <h4>Matrice Mensile</h4>
+                <div style="overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 8px; max-height: 70vh;">
+                <table class="data-table" style="font-size: 11px; white-space: nowrap; text-align: center; border-collapse: separate; border-spacing: 0;">
                     <thead>
                         <tr>
-                            <th>Data</th>
-                            <th>Viaggio / Zona</th>
-                            <th>Importo Unitario</th>
-                            <th>Totale Giornata</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-                
-                for (const [data, info] of Object.entries(risultati.totali.dettaglio_giornaliero)) {
-                    if (!info.voci || info.voci.length === 0) continue;
-                    const rowSpan = info.voci.length;
-                    
-                    info.voci.forEach((v, index) => {
-                        htmlTotali += `<tr>`;
-                        if (index === 0) {
-                            htmlTotali += `<td rowspan="${rowSpan}" style="vertical-align: middle; font-weight: bold; background: #f8fafc; border-bottom: 2px solid #cbd5e1;">${data}</td>`;
-                        }
-                        
-                        let stringaImporto = `€ ${v.importo.toFixed(2)}`;
-                        if (v.tipo === 'ERRORE: Prezzo Mancante') {
-                            stringaImporto = `<span style="color:#ef4444; font-weight:bold; font-size:11px;">VALORE MANCANTE</span>`;
-                        } else if (v.tipo === 'ZONA NON TROVATA') {
-                            stringaImporto = `<span style="color:#f59e0b; font-weight:bold; font-size:11px;">ZONA NON CONFIGURATA</span>`;
-                        }
+                            <th style="text-align: left; position: sticky; left: 0; background: #f8fafc; z-index: 2; border-bottom: 2px solid #cbd5e1; border-right: 2px solid #cbd5e1; min-width: 150px;">Viaggio / Zona</th>`;
 
-                        htmlTotali += `
-                            <td style="${index === rowSpan - 1 ? 'border-bottom: 2px solid #cbd5e1;' : ''}">${v.viaggio}</td>
-                            <td style="${index === rowSpan - 1 ? 'border-bottom: 2px solid #cbd5e1;' : ''}">${stringaImporto}</td>
-                        `;
+                const [yStr, mStr] = month.split('-');
+                const daysInMonth = new Date(yStr, mStr, 0).getDate();
+                
+                // Calcolo occorrenze massime giornaliere per ogni viaggio
+                const maxOccurrences = {};
+                for (const info of Object.values(risultati.totali.dettaglio_giornaliero)) {
+                    if (info.voci) {
+                        const countsThisDay = {};
+                        info.voci.forEach(v => {
+                            countsThisDay[v.viaggio] = (countsThisDay[v.viaggio] || 0) + 1;
+                        });
+                        for (const [viaggio, count] of Object.entries(countsThisDay)) {
+                            if (!maxOccurrences[viaggio] || count > maxOccurrences[viaggio]) {
+                                maxOccurrences[viaggio] = count;
+                            }
+                        }
+                    }
+                }
+                
+                const viaggiRows = [];
+                const baseViaggi = Object.keys(maxOccurrences).sort();
+                baseViaggi.forEach(viaggio => {
+                    for (let i = 0; i < maxOccurrences[viaggio]; i++) {
+                        viaggiRows.push({
+                            nomeReale: viaggio,
+                            indexReale: i,
+                            label: i === 0 ? viaggio : `${viaggio} (Anomalia)`
+                        });
+                    }
+                });
+
+                const dayTotals = new Array(daysInMonth).fill(0);
+                const tripTotals = new Array(viaggiRows.length).fill(0);
+
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const dayDate = new Date(yStr, mStr - 1, d);
+                    const dayOfWeek = dayDate.getDay();
+                    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                    const dayLabel = dayOfWeek === 0 ? 'D' : (dayOfWeek === 6 ? 'S' : d);
+                    
+                    const dateStr = `${yStr}-${mStr}-${String(d).padStart(2, '0')}`;
+                    const info = risultati.totali.dettaglio_giornaliero[dateStr];
+                    const hasData = info && info.voci && info.voci.length > 0;
+                    
+                    const colStyle = (!hasData || isWeekend) ? `width: 25px; min-width: 25px; max-width: 25px; padding: 4px; background: ${isWeekend ? '#e2e8f0' : '#f8fafc'}; color: ${isWeekend ? '#64748b' : 'inherit'}; border-bottom: 2px solid #cbd5e1; border-right: 1px solid #e2e8f0;` : `min-width: 45px; border-bottom: 2px solid #cbd5e1; border-right: 1px solid #e2e8f0;`;
+                    
+                    htmlTotali += `<th style="${colStyle}">${dayLabel}</th>`;
+                }
+                htmlTotali += `<th style="background: #f8fafc; border-bottom: 2px solid #cbd5e1; border-left: 2px solid #cbd5e1;">Tot. Mese</th></tr></thead><tbody>`;
+
+                viaggiRows.forEach((row, rIdx) => {
+                    const isAnomalia = row.indexReale > 0;
+                    const rowLabelStyle = isAnomalia ? `color: #ef4444; font-style: italic; background: #fce7f3;` : `color: inherit; background: #ffffff;`;
+                    
+                    htmlTotali += `<tr>
+                        <td style="text-align: left; font-weight: bold; position: sticky; left: 0; z-index: 1; border-bottom: 1px solid #e2e8f0; border-right: 2px solid #cbd5e1; ${rowLabelStyle}">${row.label}</td>`;
+                    
+                    for (let d = 1; d <= daysInMonth; d++) {
+                        const dateStr = `${yStr}-${mStr}-${String(d).padStart(2, '0')}`;
+                        const dayDate = new Date(yStr, mStr - 1, d);
+                        const dayOfWeek = dayDate.getDay();
+                        const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                        const info = risultati.totali.dettaglio_giornaliero[dateStr];
                         
-                        if (index === 0) {
-                            htmlTotali += `<td rowspan="${rowSpan}" style="vertical-align: middle; font-weight: bold; color: var(--primary); background: #f8fafc; border-bottom: 2px solid #cbd5e1;">€ ${info.importo_giornaliero.toFixed(2)}</td>`;
+                        let cellContent = '';
+                        let cellStyle = isWeekend ? `background: #f8fafc; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;` : `border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;`;
+                        
+                        if (info && info.voci) {
+                            const vociMatch = info.voci.filter(v => v.viaggio === row.nomeReale);
+                            const v = vociMatch[row.indexReale];
+                            
+                            if (v) {
+                                let errorHtml = '';
+                                if (v.tipo === 'ERRORE: Prezzo Mancante' || v.tipo === 'ZONA NON TROVATA') {
+                                    errorHtml = `<span style="color:#ef4444; font-weight:bold; font-size:14px; cursor:help;" title="${v.tipo}">[!]</span>`;
+                                }
+                                
+                                if (errorHtml) {
+                                    cellContent = errorHtml;
+                                } else {
+                                    cellContent = v.importo.toFixed(2);
+                                    tripTotals[rIdx] += v.importo;
+                                    dayTotals[d - 1] += v.importo;
+                                }
+                                cellStyle += ` font-weight: bold; color: ${isAnomalia ? '#9f1239' : '#0f172a'};`;
+                                if (isAnomalia) {
+                                    cellStyle += ` background: #fce7f3;`; // rosa per la cella anomala
+                                }
+                            }
                         }
                         
-                        htmlTotali += `</tr>`;
-                    });
+                        const hasDataDay = info && info.voci && info.voci.length > 0;
+                        if (!hasDataDay || isWeekend) {
+                            cellStyle += ` padding: 4px;`;
+                        }
+                        
+                        htmlTotali += `<td style="${cellStyle}">${cellContent}</td>`;
+                    }
+                    htmlTotali += `<td style="font-weight: bold; color: var(--primary); background: #f8fafc; border-bottom: 1px solid #e2e8f0; border-left: 2px solid #cbd5e1;">€ ${tripTotals[rIdx].toFixed(2)}</td></tr>`;
+                });
+
+                htmlTotali += `</tbody><tfoot><tr>
+                    <td style="text-align: right; font-weight: bold; position: sticky; left: 0; background: #f8fafc; z-index: 2; border-top: 2px solid #cbd5e1; border-right: 2px solid #cbd5e1; padding: 8px;">Totale GG</td>`;
+
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const dayDate = new Date(yStr, mStr - 1, d);
+                    const dayOfWeek = dayDate.getDay();
+                    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                    const dateStr = `${yStr}-${mStr}-${String(d).padStart(2, '0')}`;
+                    const info = risultati.totali.dettaglio_giornaliero[dateStr];
+                    const hasData = info && info.voci && info.voci.length > 0;
+                    
+                    let t = dayTotals[d - 1];
+                    let cellStyle = (!hasData || isWeekend) ? `padding: 4px; background: ${isWeekend ? '#e2e8f0' : '#f8fafc'}; border-top: 2px solid #cbd5e1; border-right: 1px solid #e2e8f0;` : `font-weight: bold; border-top: 2px solid #cbd5e1; border-right: 1px solid #e2e8f0;`;
+                    htmlTotali += `<td style="${cellStyle}">${t > 0 ? t.toFixed(0) : ''}</td>`;
                 }
 
-                htmlTotali += `</tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="3" style="text-align: right; font-weight: bold; font-size: 16px; padding: 12px;">TOTALE MESE:</td>
-                            <td style="font-weight: bold; font-size: 18px; color: #10b981; padding: 12px; background: #ecfdf5;">€ ${risultati.totali.importo_totale.toFixed(2)}</td>
-                        </tr>
-                    </tfoot>
-                </table>`;
+                htmlTotali += `<td style="font-weight: bold; font-size: 14px; color: #10b981; background: #ecfdf5; border-top: 2px solid #cbd5e1; border-left: 2px solid #cbd5e1;">€ ${risultati.totali.importo_totale.toFixed(2)}</td>
+                    </tr></tfoot></table></div>`;
                 totaliContainer.innerHTML = htmlTotali;
 
                 document.getElementById('btn-salva-snapshot').disabled = false;

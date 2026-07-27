@@ -25,73 +25,116 @@ export class BillingEngine {
 
         const metodo = clienteData.metodo_fatturazione || 'PRESENZE';
 
-        // Estrazione tariffe cliente (con fallback a 0)
+        // Estrazione tariffe legacy cliente (con fallback a 0) per retrocompatibilità
         const t_patB = parseFloat(clienteData.patente_b) || 0;
         const t_patC = parseFloat(clienteData.patente_c) || 0;
         const navetteCustom = clienteData.navette_personalizzate || [];
         const t_collo = parseFloat(clienteData.cattel_collo) || 0;
         const t_forfait = parseFloat(clienteData.viaggio_forfait) || 0;
 
+        // Nuova struttura V2 (Rubrica)
+        const zoneFatturazione = clienteData.zone_fatturazione || [];
+
         datiSorgente.forEach(item => {
             let dateKey = '';
             let importoItem = 0;
+            let tipoTariffa = 'Non Definito';
+            let nomeViaggioOut = '';
             
             if (metodo === 'PRESENZE') {
                 dateKey = item.data;
                 const targa = (item.targa || "").toUpperCase();
-                const viaggioStr = (item.viaggio || "").toUpperCase();
-                const patente = mezziMap[targa] || 'B';
+                const viaggioStr = (item.viaggio || "").trim().toUpperCase();
+                nomeViaggioOut = viaggioStr || targa;
                 
-                importoItem = patente === 'C' ? t_patC : t_patB;
+                // 1) Cerchiamo match esatto nella nuova rubrica V2
+                const matchedZona = zoneFatturazione.find(z => (z.nome_zona || "").toUpperCase() === viaggioStr);
                 
-                // Controlla se  una navetta custom
-                if (navetteCustom && navetteCustom.length > 0) {
-                    const nav = navetteCustom.find(n => viaggioStr.includes((n.nome || "").toUpperCase()));
-                    if (nav && parseFloat(nav.tariffa)) {
-                        importoItem = parseFloat(nav.tariffa);
+                if (matchedZona) {
+                    if (matchedZona.tipo_calcolo === 'viaggio') {
+                        importoItem = parseFloat(matchedZona.prezzo_viaggio) || 0;
+                        tipoTariffa = 'A Viaggio';
+                    } else if (matchedZona.tipo_calcolo === 'ddt') {
+                        // Al momento le logiche DDT dal registro presenze non sono attive, forza a 0 (o implementa la quantita)
+                        importoItem = 0; 
+                        tipoTariffa = 'A DDT (Attualmente 0)';
+                    } else if (matchedZona.is_mensile) {
+                        importoItem = 0;
+                        tipoTariffa = 'Mensile (Quota Fissa)';
+                    } else {
+                        importoItem = 0;
+                        tipoTariffa = 'Nessun Tipo Configurato';
+                    }
+                } else {
+                    // Fallback a logiche legacy se non c'è match nella rubrica V2
+                    const patente = mezziMap[targa] || 'B';
+                    importoItem = patente === 'C' ? t_patC : t_patB;
+                    tipoTariffa = 'Legacy (Patente ' + patente + ')';
+                    
+                    if (navetteCustom && navetteCustom.length > 0) {
+                        const nav = navetteCustom.find(n => viaggioStr.includes((n.nome || "").toUpperCase()));
+                        if (nav && parseFloat(nav.tariffa)) {
+                            importoItem = parseFloat(nav.tariffa);
+                            tipoTariffa = 'Legacy (Navetta Custom)';
+                        }
                     }
                 }
             } 
             else if (metodo === 'VIAGGI') {
                 dateKey = item.data_lavoro || item.data_consegna || item.data;
+                nomeViaggioOut = 'DDT/Giro';
                 
                 if (t_forfait > 0) {
                     importoItem = t_forfait;
+                    tipoTariffa = 'Legacy Forfait';
                 } else {
                     const targa = (item.targa || "").toUpperCase();
                     const patente = mezziMap[targa] || 'B';
                     importoItem = patente === 'C' ? t_patC : t_patB;
+                    tipoTariffa = 'Legacy (Patente ' + patente + ')';
                 }
                 
-                // Eventuale costo a collo (se presente nei viaggi ddt)
                 if (t_collo > 0 && item.colli) {
                     const numColli = parseInt(item.colli) || 0;
                     importoItem = numColli * t_collo; 
+                    tipoTariffa = 'Legacy Collo';
                 }
             } 
             else if (metodo === 'KPI') {
                 dateKey = item.data_lavoro || item.Data || item.data;
-                // Ipotizziamo che il KPI abbia gi un importo, o usiamo un forfait, o conteggiamo colli
+                nomeViaggioOut = item.cliente || 'KPI';
                 const importoKpi = parseFloat(item.Importo) || parseFloat(item.importo) || 0;
                 importoItem = importoKpi;
-                // Se non c' importo ma ci sono colli e abbiamo la tariffa collo:
+                tipoTariffa = 'Importo Fisso KPI';
                 if (importoItem === 0 && t_collo > 0 && item.Colli) {
                     importoItem = (parseInt(item.Colli) || 0) * t_collo;
+                    tipoTariffa = 'KPI Colli x Tariffa';
                 }
             }
 
             if (dateKey) {
                 if (!totali.dettaglio_giornaliero[dateKey]) {
                     totali.dettaglio_giornaliero[dateKey] = {
-                        elementi: 0,
+                        voci: [],
                         importo_giornaliero: 0
                     };
                 }
-                totali.dettaglio_giornaliero[dateKey].elementi++;
+                totali.dettaglio_giornaliero[dateKey].voci.push({
+                    viaggio: nomeViaggioOut,
+                    tipo: tipoTariffa,
+                    importo: importoItem
+                });
                 totali.dettaglio_giornaliero[dateKey].importo_giornaliero += importoItem;
                 totali.importo_totale += importoItem;
             }
         });
+
+        // Ordiniamo le date in modo crescente prima di restituire
+        const sortedDettaglio = {};
+        Object.keys(totali.dettaglio_giornaliero).sort().forEach(k => {
+            sortedDettaglio[k] = totali.dettaglio_giornaliero[k];
+        });
+        totali.dettaglio_giornaliero = sortedDettaglio;
 
         return {
             cliente: clienteData.nome,

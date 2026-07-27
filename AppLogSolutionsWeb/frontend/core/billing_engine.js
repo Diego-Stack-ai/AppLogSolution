@@ -52,11 +52,17 @@ export class BillingEngine {
                 
                 if (matchedZona) {
                     if (matchedZona.tipo_calcolo === 'viaggio') {
-                        importoItem = parseFloat(matchedZona.prezzo_viaggio || matchedZona.prezzo) || 0;
-                        tipoTariffa = 'A Viaggio';
+                        let p = parseFloat(matchedZona.prezzo_viaggio);
+                        if (isNaN(p)) {
+                            importoItem = 0;
+                            tipoTariffa = 'ERRORE: Prezzo Mancante';
+                        } else {
+                            importoItem = p;
+                            tipoTariffa = 'A Viaggio';
+                        }
                     } else if (matchedZona.tipo_calcolo === 'ddt') {
                         // Al momento le logiche DDT dal registro presenze non sono attive, forza a 0 (o implementa la quantita)
-                        importoItem = parseFloat(matchedZona.prezzo_ddt || matchedZona.prezzo) || 0; 
+                        importoItem = 0; 
                         tipoTariffa = 'A DDT (Attualmente 0)';
                     } else if (matchedZona.is_mensile) {
                         importoItem = 0;
@@ -66,18 +72,9 @@ export class BillingEngine {
                         tipoTariffa = 'Nessun Tipo Configurato';
                     }
                 } else {
-                    // Fallback a logiche legacy se non c'è match nella rubrica V2
-                    const patente = mezziMap[targa] || 'B';
-                    importoItem = patente === 'C' ? t_patC : t_patB;
-                    tipoTariffa = 'Nessuna Tariffa Specifica';
-                    
-                    if (navetteCustom && navetteCustom.length > 0) {
-                        const nav = navetteCustom.find(n => viaggioStr.includes((n.nome || "").trim().toUpperCase()));
-                        if (nav && parseFloat(nav.tariffa)) {
-                            importoItem = parseFloat(nav.tariffa);
-                            tipoTariffa = 'Navetta Custom';
-                        }
-                    }
+                    // Nessun match esatto nella rubrica V2 per questa zona
+                    importoItem = 0;
+                    tipoTariffa = 'ZONA NON TROVATA';
                 }
             } 
             else if (metodo === 'VIAGGI') {

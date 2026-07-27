@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione V2 (Sviluppo) - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.276">
+    <link rel="stylesheet" href="styles.css?v=6.277">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -89,8 +89,8 @@
     </main>
 
     <!-- Inclusione script base di sistema (Navigazione, Auth, UI) -->
-    <script src="script.js?v=6.276"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.276"></script>
+    <script src="script.js?v=6.277"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.277"></script>
 
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
@@ -427,9 +427,16 @@
                             htmlTotali += `<td rowspan="${rowSpan}" style="vertical-align: middle; font-weight: bold; background: #f8fafc; border-bottom: 2px solid #cbd5e1;">${data}</td>`;
                         }
                         
+                        let stringaImporto = `€ ${v.importo.toFixed(2)}`;
+                        if (v.tipo === 'ERRORE: Prezzo Mancante') {
+                            stringaImporto = `<span style="color:#ef4444; font-weight:bold; font-size:11px;">VALORE MANCANTE</span>`;
+                        } else if (v.tipo === 'ZONA NON TROVATA') {
+                            stringaImporto = `<span style="color:#f59e0b; font-weight:bold; font-size:11px;">ZONA NON CONFIGURATA</span>`;
+                        }
+
                         htmlTotali += `
                             <td style="${index === rowSpan - 1 ? 'border-bottom: 2px solid #cbd5e1;' : ''}">${v.viaggio}</td>
-                            <td style="${index === rowSpan - 1 ? 'border-bottom: 2px solid #cbd5e1;' : ''}">€ ${v.importo.toFixed(2)}</td>
+                            <td style="${index === rowSpan - 1 ? 'border-bottom: 2px solid #cbd5e1;' : ''}">${stringaImporto}</td>
                         `;
                         
                         if (index === 0) {

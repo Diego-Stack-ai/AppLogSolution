@@ -48,15 +48,15 @@ export class BillingEngine {
                 nomeViaggioOut = viaggioStr || targa;
                 
                 // 1) Cerchiamo match esatto nella nuova rubrica V2
-                const matchedZona = zoneFatturazione.find(z => (z.nome_zona || "").toUpperCase() === viaggioStr);
+                const matchedZona = zoneFatturazione.find(z => (z.nome_zona || "").trim().toUpperCase() === viaggioStr);
                 
                 if (matchedZona) {
                     if (matchedZona.tipo_calcolo === 'viaggio') {
-                        importoItem = parseFloat(matchedZona.prezzo_viaggio) || 0;
+                        importoItem = parseFloat(matchedZona.prezzo_viaggio || matchedZona.prezzo) || 0;
                         tipoTariffa = 'A Viaggio';
                     } else if (matchedZona.tipo_calcolo === 'ddt') {
                         // Al momento le logiche DDT dal registro presenze non sono attive, forza a 0 (o implementa la quantita)
-                        importoItem = 0; 
+                        importoItem = parseFloat(matchedZona.prezzo_ddt || matchedZona.prezzo) || 0; 
                         tipoTariffa = 'A DDT (Attualmente 0)';
                     } else if (matchedZona.is_mensile) {
                         importoItem = 0;
@@ -69,13 +69,13 @@ export class BillingEngine {
                     // Fallback a logiche legacy se non c'è match nella rubrica V2
                     const patente = mezziMap[targa] || 'B';
                     importoItem = patente === 'C' ? t_patC : t_patB;
-                    tipoTariffa = 'Legacy (Patente ' + patente + ')';
+                    tipoTariffa = 'Nessuna Tariffa Specifica';
                     
                     if (navetteCustom && navetteCustom.length > 0) {
-                        const nav = navetteCustom.find(n => viaggioStr.includes((n.nome || "").toUpperCase()));
+                        const nav = navetteCustom.find(n => viaggioStr.includes((n.nome || "").trim().toUpperCase()));
                         if (nav && parseFloat(nav.tariffa)) {
                             importoItem = parseFloat(nav.tariffa);
-                            tipoTariffa = 'Legacy (Navetta Custom)';
+                            tipoTariffa = 'Navetta Custom';
                         }
                     }
                 }

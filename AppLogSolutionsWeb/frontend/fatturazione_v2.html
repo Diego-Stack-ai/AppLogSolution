@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione V2 (Sviluppo) - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.275">
+    <link rel="stylesheet" href="styles.css?v=6.276">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -89,8 +89,8 @@
     </main>
 
     <!-- Inclusione script base di sistema (Navigazione, Auth, UI) -->
-    <script src="script.js?v=6.275"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.275"></script>
+    <script src="script.js?v=6.276"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.276"></script>
 
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
@@ -411,7 +411,6 @@
                         <tr>
                             <th>Data</th>
                             <th>Viaggio / Zona</th>
-                            <th>Tipologia Tariffa</th>
                             <th>Importo Unitario</th>
                             <th>Totale Giornata</th>
                         </tr>
@@ -430,7 +429,6 @@
                         
                         htmlTotali += `
                             <td style="${index === rowSpan - 1 ? 'border-bottom: 2px solid #cbd5e1;' : ''}">${v.viaggio}</td>
-                            <td style="${index === rowSpan - 1 ? 'border-bottom: 2px solid #cbd5e1;' : ''}"><span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 11px;">${v.tipo}</span></td>
                             <td style="${index === rowSpan - 1 ? 'border-bottom: 2px solid #cbd5e1;' : ''}">€ ${v.importo.toFixed(2)}</td>
                         `;
                         
@@ -445,7 +443,7 @@
                 htmlTotali += `</tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="4" style="text-align: right; font-weight: bold; font-size: 16px; padding: 12px;">TOTALE MESE:</td>
+                            <td colspan="3" style="text-align: right; font-weight: bold; font-size: 16px; padding: 12px;">TOTALE MESE:</td>
                             <td style="font-weight: bold; font-size: 18px; color: #10b981; padding: 12px; background: #ecfdf5;">€ ${risultati.totali.importo_totale.toFixed(2)}</td>
                         </tr>
                     </tfoot>

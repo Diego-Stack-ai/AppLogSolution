@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=6.258">
+    <link rel="stylesheet" href="styles.css?v=6.265">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .navetta-details-row {
@@ -587,13 +587,13 @@ tr.weekend:hover
         </div>
     </main>
 
-    <script src="script.js?v=6.258"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.258"></script>
+    <script src="script.js?v=6.265"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.265"></script>
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=6.258";
+        import { calculateHours } from "./firestore-service.js?v=6.265";
 
           window.db = getFirestore(app);
 
@@ -1540,7 +1540,9 @@ tr.weekend:hover
             // 1. Raccogli targhe attualmente selezionate per questo giorno
             righeDelGiorno.forEach(tr => {
                 const select = tr.querySelector('select[data-field="targa"]');
-                if (select && select.value && select.value.trim() !== '') {
+                const selectCliente = tr.querySelector('select[data-field="cliente"]');
+                const clienteKey = selectCliente && selectCliente.value ? selectCliente.value.trim().toUpperCase() : '';
+                if (clienteKey !== 'NAVETTA' && select && select.value && select.value.trim() !== '') {
                     targheUsate.add(select.value.trim().toUpperCase());
                 }
             });
@@ -1548,7 +1550,18 @@ tr.weekend:hover
             // 2. Disabilita opzioni già scelte (tranne per se stesso)
             righeDelGiorno.forEach(tr => {
                 const select = tr.querySelector('select[data-field="targa"]');
+                const selectCliente = tr.querySelector('select[data-field="cliente"]');
+                const clienteKey = selectCliente && selectCliente.value ? selectCliente.value.trim().toUpperCase() : '';
+                
                 if (select) {
+                    if (clienteKey === 'NAVETTA') {
+                        Array.from(select.options).forEach(opt => {
+                            opt.style.display = '';
+                            opt.disabled = false;
+                        });
+                        return;
+                    }
+                    
                     Array.from(select.options).forEach(opt => {
                         if (!opt.value) return; // Salta opzione vuota
                         
@@ -1580,7 +1593,7 @@ tr.weekend:hover
                 if (selectCliente && selectViaggio && selectCliente.value && selectViaggio.value) {
                     const clienteKey = selectCliente.value.trim().toUpperCase();
                     const viaggioVal = selectViaggio.value.trim().toUpperCase();
-                    if (viaggioVal !== '') {
+                    if (viaggioVal !== '' && clienteKey !== 'NAVETTA') {
                         if (!viaggiAssegnatiPerCliente[clienteKey]) {
                             viaggiAssegnatiPerCliente[clienteKey] = new Set();
                         }
@@ -1883,7 +1896,7 @@ tr.weekend:hover
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.258");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.265");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -1944,7 +1957,7 @@ tr.weekend:hover
                 // Accoda le foto offline
                 if (window.offlinePresenzePhotoBlobs && Object.keys(window.offlinePresenzePhotoBlobs).length > 0) {
                     try {
-                        const { syncManager } = await import("./core/sync-manager.js?v=6.258");
+                        const { syncManager } = await import("./core/sync-manager.js?v=6.265");
                         for (const index in window.offlinePresenzePhotoBlobs) {
                             const fileBlob = window.offlinePresenzePhotoBlobs[index];
                             const photoId = `foto_presenza_${docId}_${index}`;
@@ -2708,8 +2721,9 @@ tr.weekend:hover
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=6.258"></script>
+    <script type="module" src="cedolini-splitter.js?v=6.265"></script>
 
 </body>
 </html>
+
 

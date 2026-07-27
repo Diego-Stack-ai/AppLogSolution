@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione Clienti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.272">
+    <link rel="stylesheet" href="styles.css?v=6.273">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -299,7 +299,8 @@
             id_dom: 'zona_' + Date.now() + '_' + Math.floor(Math.random()*1000),
             is_mensile: false,
             tipo_calcolo: '', // 'viaggio' o 'ddt'
-            prezzo: ''
+            prezzo_viaggio: '',
+            prezzo_ddt: ''
         });
         document.getElementById('nuovaZonaInput').value = '';
         renderZone();
@@ -312,12 +313,9 @@
 
     // Quando un flag cambia, aggiorno il JSON in memoria
     window.updateZonaField = (index, field, value) => {
+        currentZone[index][field] = value;
         if(field === 'tipo_calcolo') {
-            currentZone[index].tipo_calcolo = value;
-            // Se cambio tipo calcolo, resetto il prezzo per pulizia (o lo tengo, ma aggiorno UI)
-            renderZone(); // Ridisegna per mostrare/nascondere input prezzo corretto
-        } else {
-            currentZone[index][field] = value;
+            renderZone(); // Ridisegna per mostrare i colori aggiornati
         }
     };
 
@@ -350,9 +348,9 @@
                     <label class="option-row" style="cursor:pointer; background: ${z.tipo_calcolo==='viaggio' ? '#e0e7ff' : '#ffffff'}; border-color: ${z.tipo_calcolo==='viaggio' ? '#818cf8' : '#e2e8f0'};">
                         <input type="radio" name="tipo_${uid}" value="viaggio" onchange="updateZonaField(${i}, 'tipo_calcolo', this.value)" ${z.tipo_calcolo === 'viaggio' ? 'checked' : ''} style="width:16px; height:16px;">
                         <span style="font-size:13px; font-weight:600; color:#334155;">Fatturazione a Viaggio (Giro Intero)</span>
-                        <div class="price-container" style="display: ${z.tipo_calcolo === 'viaggio' ? 'flex' : 'none'};">
+                        <div class="price-container" style="display: flex;">
                             <span style="font-size:12px; font-weight:700; color:#4f46e5;">Tariffa €</span>
-                            <input type="number" step="0.01" class="price-input" placeholder="es. 400.00" value="${z.tipo_calcolo==='viaggio' ? z.prezzo : ''}" oninput="updateZonaField(${i}, 'prezzo', this.value)">
+                            <input type="number" step="0.01" class="price-input" placeholder="es. 400.00" value="${z.prezzo_viaggio || ''}" oninput="updateZonaField(${i}, 'prezzo_viaggio', this.value)">
                         </div>
                     </label>
 
@@ -360,9 +358,9 @@
                     <label class="option-row" style="cursor:pointer; background: ${z.tipo_calcolo==='ddt' ? '#fce7f3' : '#ffffff'}; border-color: ${z.tipo_calcolo==='ddt' ? '#f472b6' : '#e2e8f0'};">
                         <input type="radio" name="tipo_${uid}" value="ddt" onchange="updateZonaField(${i}, 'tipo_calcolo', this.value)" ${z.tipo_calcolo === 'ddt' ? 'checked' : ''} style="width:16px; height:16px;">
                         <span style="font-size:13px; font-weight:600; color:#334155;">Fatturazione a DDT (Singolo Punto)</span>
-                        <div class="price-container" style="display: ${z.tipo_calcolo === 'ddt' ? 'flex' : 'none'};">
+                        <div class="price-container" style="display: flex;">
                             <span style="font-size:12px; font-weight:700; color:#db2777;">Tariffa Cad. €</span>
-                            <input type="number" step="0.01" class="price-input" placeholder="es. 15.00" value="${z.tipo_calcolo==='ddt' ? z.prezzo : ''}" oninput="updateZonaField(${i}, 'prezzo', this.value)">
+                            <input type="number" step="0.01" class="price-input" placeholder="es. 15.00" value="${z.prezzo_ddt || ''}" oninput="updateZonaField(${i}, 'prezzo_ddt', this.value)">
                         </div>
                     </label>
                 </div>
@@ -378,8 +376,11 @@
 
         // Validazione zone
         for(let z of currentZone) {
-            if (z.tipo_calcolo && (!z.prezzo || parseFloat(z.prezzo) < 0)) {
-                return Swal.fire('Errore', `La zona ${z.nome_zona} ha un tipo di calcolo ma manca la tariffa.`, 'error');
+            if (z.tipo_calcolo === 'viaggio' && (!z.prezzo_viaggio || parseFloat(z.prezzo_viaggio) < 0)) {
+                return Swal.fire('Errore', `La zona ${z.nome_zona} ha impostato 'A Viaggio' ma manca la tariffa corrispondente.`, 'error');
+            }
+            if (z.tipo_calcolo === 'ddt' && (!z.prezzo_ddt || parseFloat(z.prezzo_ddt) < 0)) {
+                return Swal.fire('Errore', `La zona ${z.nome_zona} ha impostato 'A DDT' ma manca la tariffa corrispondente.`, 'error');
             }
         }
 
@@ -390,7 +391,8 @@
                 nome_zona: z.nome_zona,
                 is_mensile: z.is_mensile,
                 tipo_calcolo: z.tipo_calcolo,
-                prezzo: z.prezzo ? parseFloat(z.prezzo) : null
+                prezzo_viaggio: z.prezzo_viaggio ? parseFloat(z.prezzo_viaggio) : null,
+                prezzo_ddt: z.prezzo_ddt ? parseFloat(z.prezzo_ddt) : null
             })),
             updatedAt: new Date().toISOString()
         };
@@ -446,8 +448,8 @@
             if(numZone > 0) {
                 zoneHtml = (c.zone_fatturazione).map(z => {
                     let calc = z.is_mensile ? 'Mensile' : '';
-                    if(z.tipo_calcolo === 'viaggio') calc += (calc?', ':'') + 'Viaggio (€'+z.prezzo+')';
-                    if(z.tipo_calcolo === 'ddt') calc += (calc?', ':'') + 'DDT (€'+z.prezzo+')';
+                    if(z.tipo_calcolo === 'viaggio') calc += (calc?', ':'') + 'Viaggio (€'+(z.prezzo_viaggio||0)+')';
+                    if(z.tipo_calcolo === 'ddt') calc += (calc?', ':'') + 'DDT (€'+(z.prezzo_ddt||0)+')';
                     return `<div style="font-size:12px; color:#475569; padding:4px 0; border-bottom:1px solid #f1f5f9;">
                         <b>${z.nome_zona}</b>: ${calc}
                     </div>`;

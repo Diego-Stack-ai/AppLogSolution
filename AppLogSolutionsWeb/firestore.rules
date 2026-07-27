@@ -75,6 +75,10 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
+    match /clienti_fatturazione/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
     match /giustificativi/{docId} {
       allow read, write: if isAuthenticated();
     }

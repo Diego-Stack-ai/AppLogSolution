@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fatturazione Clienti - Log Solution</title>
+    <link rel="stylesheet" href="styles.css?v=6.265">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .list-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+        .list-row:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.05);
+        }
+        .zone-card {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+        .zone-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+        .zone-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .option-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #ffffff;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .price-input {
+            width: 100px;
+            padding: 6px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .price-container {
+            display: none;
+            margin-left: auto;
+            align-items: center;
+            gap: 8px;
+        }
+        .remove-btn {
+            background: none;
+            border: none;
+            color: #ef4444;
+            font-size: 20px;
+            cursor: pointer;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body>
+<nav class="glass-nav">
+    <div class="nav-content">
+        <img src="img/logo.png" alt="LS" style="height: 32px; width: auto; margin-right: 8px;">
+        <button id="dashboardBtn" class="logout-btn" title="Dashboard"
+            onclick="window.navigateWithState('dashboard.html')"
+            style="border:none; background:none; cursor:pointer; margin-right:8px; display:flex;">
+            <span class="material-icons-round">dashboard</span>
+        </button>
+        <div class="nav-title" style="flex: 1;">Fatturazione Clienti (Motore Dinamico)</div>
+        <a href="#" onclick="window.logoutFirebase(); return false;" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
+    </div>
+</nav>
+
+<main class="main-container">
+    <div class="glass-panel form-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+            <h2 style="margin: 0; color: var(--primary);">Gestione Clienti e Fatturazione</h2>
+            <button type="button" class="btn-primary" style="width:auto; font-size:13px; padding:10px 16px;" onclick="mostraFormNuovoCliente()">
+                <span class="material-icons-round" style="font-size:18px; vertical-align:middle; margin-right:6px;">add_circle</span>Nuovo Cliente
+            </button>
+        </div>
+
+        <div id="listaClientiContainer" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Lista dei clienti esistenti popolata via JS -->
+        </div>
+
+        <!-- Form Inserimento/Modifica Cliente -->
+        <div id="formClienteContainer" style="display: none; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-top:24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="margin:0; color:#334155; font-size:16px;" id="formTitle">Nuovo Cliente</h3>
+                <button type="button" onclick="nascondiFormCliente()" style="background:none; border:none; color:#94a3b8; cursor:pointer;"><span class="material-icons-round">close</span></button>
+            </div>
+
+            <!-- NOME CLIENTE -->
+            <div class="form-grid" style="margin-bottom: 24px;">
+                <div class="input-group" style="grid-column: 1 / -1;">
+                    <label for="clienteNomeInput">Nome Cliente / Progetto *</label>
+                    <input type="text" id="clienteNomeInput" placeholder="es. CATTEL o GRAN_CHEF" style="text-transform: uppercase;">
+                </div>
+            </div>
+
+            <!-- RUBRICA REFERENTI -->
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+                <label style="font-size: 14px; font-weight: 700; color: #475569; display: block; margin-bottom: 12px;">
+                    <span class="material-icons-round" style="font-size:18px; vertical-align:middle; color:var(--primary);">contacts</span> 
+                    Rubrica Referenti o Reparti
+                </label>
+                
+                <div id="referentiList" style="display: flex; flex-direction: column; gap: 8px; min-height: 10px; margin-bottom: 16px;"></div>
+                
+                <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 12px; display: block;">+ Aggiungi Nuovo Referente</label>
+                    <div class="form-grid" style="margin-bottom: 12px;">
+                        <div class="input-group">
+                            <label>Nome Referente *</label>
+                            <input type="text" id="refNome" placeholder="es. Mario Rossi">
+                        </div>
+                        <div class="input-group">
+                            <label>Ruolo / Reparto</label>
+                            <input type="text" id="refRuolo" placeholder="es. Amministrazione">
+                        </div>
+                        <div class="input-group">
+                            <label>E-mail</label>
+                            <input type="email" id="refEmail" placeholder="es. admin@azienda.it">
+                        </div>
+                        <div class="input-group">
+                            <label>Telefono Fisso</label>
+                            <input type="tel" id="refFisso" placeholder="es. 045123456">
+                        </div>
+                        <div class="input-group">
+                            <label>Cellulare</label>
+                            <input type="tel" id="refCell" placeholder="es. 3401234567">
+                        </div>
+                    </div>
+                    <button type="button" onclick="aggiungiReferente()" class="btn-primary" style="width: auto; padding: 8px 14px; font-size: 12px; background: #10b981; border: none;">Aggiungi in Rubrica</button>
+                </div>
+            </div>
+
+            <!-- GESTIONE ZONE E FATTURAZIONE -->
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+                <label style="font-size: 14px; font-weight: 700; color: #475569; display: block; margin-bottom: 12px;">
+                    <span class="material-icons-round" style="font-size:18px; vertical-align:middle; color:var(--primary);">map</span> 
+                    Tariffe Viaggi e Tariffe DDT (Gestione Zone)
+                </label>
+                <p style="font-size:12px; color:#64748b; margin-bottom:16px;">Definisci qui le zone di competenza per questo cliente e le relative regole di fatturazione (Mensile, a Viaggio o a DDT).</p>
+
+                <!-- Elenco delle Zone Create -->
+                <div id="zoneListContainer" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;"></div>
+
+                <!-- Aggiunta Nuova Zona -->
+                <div style="display: flex; gap: 8px; align-items: flex-end; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 12px; font-weight: 700; color:#334155;">Nome Nuova Zona *</label>
+                        <input type="text" id="nuovaZonaInput" placeholder="Es. LAGO SIRMIONE, MANTOVA, BELLUNO..." style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; margin-top: 4px; text-transform: uppercase;">
+                    </div>
+                    <button type="button" onclick="aggiungiZona()" class="btn-primary" style="width: auto; padding: 10px 16px; font-size: 13px; height: 42px;">+ Crea Zona</button>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <button type="button" id="btnSalvaCliente" class="btn-primary" style="flex: 1;" onclick="salvaClienteFatturazione()">Salva Configurazione Cliente</button>
+                <button type="button" class="btn-primary" style="flex: 1; background:#f1f5f9; color:#334155; box-shadow:none;" onclick="nascondiFormCliente()">Annulla</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Logica di Base (Firebase sarà caricato via module o globale, per ora mettiamo la struttura JS) -->
+<script type="module">
+    import { db } from './script.js';
+    import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    let currentReferenti = [];
+    let currentZone = [];
+    let editingClientId = null;
+
+    // ----- UI Form -----
+    window.mostraFormNuovoCliente = () => {
+        editingClientId = null;
+        document.getElementById('formTitle').innerText = 'Nuovo Cliente';
+        document.getElementById('clienteNomeInput').value = '';
+        currentReferenti = [];
+        currentZone = [];
+        renderReferenti();
+        renderZone();
+        document.getElementById('formClienteContainer').style.display = 'block';
+        document.getElementById('listaClientiContainer').style.display = 'none';
+    };
+
+    window.nascondiFormCliente = () => {
+        document.getElementById('formClienteContainer').style.display = 'none';
+        document.getElementById('listaClientiContainer').style.display = 'flex';
+    };
+
+    // ----- Referenti -----
+    window.aggiungiReferente = () => {
+        const nome = document.getElementById('refNome').value.trim();
+        if (!nome) return alert('Il Nome Referente è obbligatorio.');
+        currentReferenti.push({
+            nome: nome,
+            ruolo: document.getElementById('refRuolo').value.trim(),
+            email: document.getElementById('refEmail').value.trim(),
+            fisso: document.getElementById('refFisso').value.trim(),
+            cellulare: document.getElementById('refCell').value.trim()
+        });
+        document.getElementById('refNome').value = '';
+        document.getElementById('refRuolo').value = '';
+        document.getElementById('refEmail').value = '';
+        document.getElementById('refFisso').value = '';
+        document.getElementById('refCell').value = '';
+        renderReferenti();
+    };
+
+    window.rimuoviReferente = (index) => {
+        currentReferenti.splice(index, 1);
+        renderReferenti();
+    };
+
+    function renderReferenti() {
+        const list = document.getElementById('referentiList');
+        list.innerHTML = '';
+        if(currentReferenti.length === 0) {
+            list.innerHTML = '<span style="font-size:12px;color:#94a3b8;">Nessun referente.</span>';
+            return;
+        }
+        currentReferenti.forEach((r, i) => {
+            list.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#f1f5f9; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <div>
+                        <div style="font-weight:700; font-size:13px; color:#334155;">${r.nome} <span style="font-weight:400; color:#64748b;">${r.ruolo ? '('+r.ruolo+')' : ''}</span></div>
+                        <div style="font-size:11px; color:#64748b;">${r.email ? 'Email: '+r.email : ''} ${r.cellulare ? '| Cell: '+r.cellulare : ''}</div>
+                    </div>
+                    <button type="button" onclick="rimuoviReferente(${i})" class="remove-btn">&times;</button>
+                </div>
+            `;
+        });
+    }
+
+    // ----- Zone e Fatturazione -----
+    window.aggiungiZona = () => {
+        const nomeZona = document.getElementById('nuovaZonaInput').value.trim().toUpperCase();
+        if (!nomeZona) return alert('Inserisci il nome della zona.');
+        
+        currentZone.push({
+            nome_zona: nomeZona,
+            id_dom: 'zona_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+            is_mensile: false,
+            tipo_calcolo: '', // 'viaggio' o 'ddt'
+            prezzo: ''
+        });
+        document.getElementById('nuovaZonaInput').value = '';
+        renderZone();
+    };
+
+    window.rimuoviZona = (index) => {
+        currentZone.splice(index, 1);
+        renderZone();
+    };
+
+    // Quando un flag cambia, aggiorno il JSON in memoria
+    window.updateZonaField = (index, field, value) => {
+        if(field === 'tipo_calcolo') {
+            currentZone[index].tipo_calcolo = value;
+            // Se cambio tipo calcolo, resetto il prezzo per pulizia (o lo tengo, ma aggiorno UI)
+            renderZone(); // Ridisegna per mostrare/nascondere input prezzo corretto
+        } else {
+            currentZone[index][field] = value;
+        }
+    };
+
+    function renderZone() {
+        const container = document.getElementById('zoneListContainer');
+        container.innerHTML = '';
+        if(currentZone.length === 0) {
+            container.innerHTML = '<span style="font-size:12px;color:#94a3b8;">Nessuna zona creata per questo cliente.</span>';
+            return;
+        }
+
+        currentZone.forEach((z, i) => {
+            const uid = z.id_dom;
+            // HTML per la card della Zona
+            const card = document.createElement('div');
+            card.className = 'zone-card';
+            card.innerHTML = `
+                <div class="zone-title">
+                    <span><span class="material-icons-round" style="font-size:16px; vertical-align:middle; color:var(--primary); margin-right:4px;">place</span> ${z.nome_zona}</span>
+                    <button type="button" onclick="rimuoviZona(${i})" class="remove-btn" title="Elimina Zona">&times;</button>
+                </div>
+                <div class="zone-options">
+                    <!-- Fatturazione Mensile -->
+                    <label class="option-row" style="cursor:pointer;">
+                        <input type="checkbox" onchange="updateZonaField(${i}, 'is_mensile', this.checked)" ${z.is_mensile ? 'checked' : ''} style="width:16px; height:16px;">
+                        <span style="font-size:13px; font-weight:600; color:#334155;">Fatturazione Mensile (Fine Mese)</span>
+                    </label>
+
+                    <!-- Fatturazione a Viaggio -->
+                    <label class="option-row" style="cursor:pointer; background: ${z.tipo_calcolo==='viaggio' ? '#e0e7ff' : '#ffffff'}; border-color: ${z.tipo_calcolo==='viaggio' ? '#818cf8' : '#e2e8f0'};">
+                        <input type="radio" name="tipo_${uid}" value="viaggio" onchange="updateZonaField(${i}, 'tipo_calcolo', this.value)" ${z.tipo_calcolo === 'viaggio' ? 'checked' : ''} style="width:16px; height:16px;">
+                        <span style="font-size:13px; font-weight:600; color:#334155;">Fatturazione a Viaggio (Giro Intero)</span>
+                        <div class="price-container" style="display: ${z.tipo_calcolo === 'viaggio' ? 'flex' : 'none'};">
+                            <span style="font-size:12px; font-weight:700; color:#4f46e5;">Tariffa €</span>
+                            <input type="number" step="0.01" class="price-input" placeholder="es. 400.00" value="${z.tipo_calcolo==='viaggio' ? z.prezzo : ''}" oninput="updateZonaField(${i}, 'prezzo', this.value)">
+                        </div>
+                    </label>
+
+                    <!-- Fatturazione a DDT -->
+                    <label class="option-row" style="cursor:pointer; background: ${z.tipo_calcolo==='ddt' ? '#fce7f3' : '#ffffff'}; border-color: ${z.tipo_calcolo==='ddt' ? '#f472b6' : '#e2e8f0'};">
+                        <input type="radio" name="tipo_${uid}" value="ddt" onchange="updateZonaField(${i}, 'tipo_calcolo', this.value)" ${z.tipo_calcolo === 'ddt' ? 'checked' : ''} style="width:16px; height:16px;">
+                        <span style="font-size:13px; font-weight:600; color:#334155;">Fatturazione a DDT (Singolo Punto)</span>
+                        <div class="price-container" style="display: ${z.tipo_calcolo === 'ddt' ? 'flex' : 'none'};">
+                            <span style="font-size:12px; font-weight:700; color:#db2777;">Tariffa Cad. €</span>
+                            <input type="number" step="0.01" class="price-input" placeholder="es. 15.00" value="${z.tipo_calcolo==='ddt' ? z.prezzo : ''}" oninput="updateZonaField(${i}, 'prezzo', this.value)">
+                        </div>
+                    </label>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    // ----- Salvataggio Firestore -----
+    window.salvaClienteFatturazione = async () => {
+        const nome = document.getElementById('clienteNomeInput').value.trim().toUpperCase();
+        if (!nome) return Swal.fire('Errore', 'Inserire il nome del cliente.', 'error');
+
+        // Validazione zone
+        for(let z of currentZone) {
+            if (z.tipo_calcolo && (!z.prezzo || parseFloat(z.prezzo) < 0)) {
+                return Swal.fire('Errore', \`La zona \${z.nome_zona} ha un tipo di calcolo ma manca la tariffa.\`, 'error');
+            }
+        }
+
+        const data = {
+            nome: nome,
+            referenti: currentReferenti,
+            zone_fatturazione: currentZone.map(z => ({
+                nome_zona: z.nome_zona,
+                is_mensile: z.is_mensile,
+                tipo_calcolo: z.tipo_calcolo,
+                prezzo: z.prezzo ? parseFloat(z.prezzo) : null
+            })),
+            updatedAt: new Date().toISOString()
+        };
+
+        const btn = document.getElementById('btnSalvaCliente');
+        btn.disabled = true; btn.textContent = 'Salvataggio...';
+
+        try {
+            if (editingClientId) {
+                await updateDoc(doc(db, "clienti_fatturazione", editingClientId), data);
+            } else {
+                await addDoc(collection(db, "clienti_fatturazione"), data);
+            }
+            Swal.fire('Salvato!', 'Configurazione cliente salvata con successo.', 'success');
+            nascondiFormCliente();
+        } catch(e) {
+            console.error(e);
+            Swal.fire('Errore', 'Impossibile salvare: ' + e.message, 'error');
+        } finally {
+            btn.disabled = false; btn.textContent = 'Salva Configurazione Cliente';
+        }
+    };
+
+    // ----- Lettura Dati da Firestore -----
+    onSnapshot(collection(db, "clienti_fatturazione"), (snap) => {
+        const container = document.getElementById('listaClientiContainer');
+        container.innerHTML = '';
+        if (snap.empty) {
+            container.innerHTML = '<div style="padding:20px; text-align:center; color:#64748b;">Nessun cliente configurato per la fatturazione.</div>';
+            return;
+        }
+
+        snap.docs.forEach(docSnap => {
+            const c = docSnap.data();
+            const cid = docSnap.id;
+            
+            const numZone = (c.zone_fatturazione || []).length;
+            const numRef = (c.referenti || []).length;
+
+            const row = document.createElement('div');
+            row.className = 'list-row';
+            row.innerHTML = `
+                <div>
+                    <div style="font-weight: 700; color: #1e293b; font-size: 15px;">${c.nome}</div>
+                    <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+                        <span style="background:#f1f5f9; padding:2px 8px; border-radius:12px;">Zone: <b>${numZone}</b></span>
+                        <span style="background:#f1f5f9; padding:2px 8px; border-radius:12px; margin-left:6px;">Referenti: <b>${numRef}</b></span>
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button class="action-btn" onclick="modificaCliente('${cid}')"><span class="material-icons-round">edit</span></button>
+                    <button class="action-btn delete-btn" onclick="eliminaCliente('${cid}')"><span class="material-icons-round">delete</span></button>
+                </div>
+            `;
+            container.appendChild(row);
+        });
+    });
+
+    window.modificaCliente = async (id) => {
+        // Lettura veloce, potremmo usare cache ma semplifichiamo leggendo on demand
+        // per evitare complessità.
+        import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js").then(async ({ getDoc, doc }) => {
+            const d = await getDoc(doc(db, "clienti_fatturazione", id));
+            if(!d.exists()) return;
+            const c = d.data();
+            editingClientId = id;
+            document.getElementById('formTitle').innerText = 'Modifica Cliente: ' + c.nome;
+            document.getElementById('clienteNomeInput').value = c.nome;
+            currentReferenti = c.referenti || [];
+            currentZone = (c.zone_fatturazione || []).map(z => ({
+                ...z,
+                id_dom: 'zona_' + Date.now() + '_' + Math.floor(Math.random()*1000)
+            }));
+            
+            renderReferenti();
+            renderZone();
+            document.getElementById('formClienteContainer').style.display = 'block';
+            document.getElementById('listaClientiContainer').style.display = 'none';
+        });
+    };
+
+    window.eliminaCliente = (id) => {
+        Swal.fire({
+            title: 'Sei sicuro?',
+            text: "Vuoi davvero eliminare questo cliente dalla fatturazione?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sì, elimina'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                await deleteDoc(doc(db, "clienti_fatturazione", id));
+            }
+        });
+    };
+</script>
+</body>
+</html>

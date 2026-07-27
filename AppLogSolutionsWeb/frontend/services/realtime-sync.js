@@ -85,7 +85,7 @@ function startRealtimeSync(isAdmin) {
     });
     activeListeners.push(unsubMezzi);
 
-    // Listener per Progetti (clienti con viaggi associati)
+    // Listener per Progetti (vecchi clienti con viaggi associati, mantenuto per compatibilità impostazioni)
     const unsubProgetti = onSnapshot(collection(db, "progetti"), { includeMetadataChanges: true }, (snapshot) => {
         const progetti = [];
         snapshot.forEach((d) => {
@@ -94,9 +94,19 @@ function startRealtimeSync(isAdmin) {
         window.appData.lista_progetti = progetti;
         if (typeof window.renderProgettiInserimento === 'function') window.renderProgettiInserimento();
         if (typeof window.renderProgettiImpostazioni === 'function') window.renderProgettiImpostazioni();
-        if (typeof window.renderProgetti === 'function') window.renderProgetti();
     });
     activeListeners.push(unsubProgetti);
+
+    // Listener per Clienti Fatturazione (Nuova Rubrica V2, usato per presenze operative)
+    const unsubClientiFatturazione = onSnapshot(collection(db, "clienti_fatturazione"), { includeMetadataChanges: true }, (snapshot) => {
+        const clientiFat = [];
+        snapshot.forEach((d) => {
+            clientiFat.push({ id: d.id, ...d.data(), isProgetto: true });
+        });
+        window.appData.lista_clienti_fatturazione = clientiFat;
+        if (typeof window.renderProgetti === 'function') window.renderProgetti();
+    });
+    activeListeners.push(unsubClientiFatturazione);
 
     // Listeners per le 4 liste delle Scalette Navette e Navette Pure (unificate con doppio flag)
     const setupUnifiedNavettaListener = (tipo, collectionPath, listPropName, legacyAutistiProp, legacyPuraProp) => {

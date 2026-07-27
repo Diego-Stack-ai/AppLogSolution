@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione Clienti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.268">
+    <link rel="stylesheet" href="styles.css?v=6.269">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -349,7 +349,7 @@
         // Validazione zone
         for(let z of currentZone) {
             if (z.tipo_calcolo && (!z.prezzo || parseFloat(z.prezzo) < 0)) {
-                return Swal.fire('Errore', \`La zona \${z.nome_zona} ha un tipo di calcolo ma manca la tariffa.\`, 'error');
+                return Swal.fire('Errore', `La zona ${z.nome_zona} ha un tipo di calcolo ma manca la tariffa.`, 'error');
             }
         }
 

@@ -188,8 +188,8 @@
 
 <!-- Logica di Base (Firebase sarà caricato via module o globale, per ora mettiamo la struttura JS) -->
 <script type="module">
-    import { db } from './script.js';
-    import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { db } from './core/firebase-init.js';
+    import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     let currentReferenti = [];
     let currentZone = [];
@@ -420,7 +420,7 @@
     window.modificaCliente = async (id) => {
         // Lettura veloce, potremmo usare cache ma semplifichiamo leggendo on demand
         // per evitare complessità.
-        import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js").then(async ({ getDoc, doc }) => {
+        import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js").then(async ({ getDoc, doc }) => {
             const d = await getDoc(doc(db, "clienti_fatturazione", id));
             if(!d.exists()) return;
             const c = d.data();

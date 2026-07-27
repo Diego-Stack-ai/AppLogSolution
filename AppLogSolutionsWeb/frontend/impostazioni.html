@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.271">
+    <link rel="stylesheet" href="styles.css?v=6.272">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -1476,8 +1476,8 @@
         }
     });
 </script>
-    <script src="script.js?v=6.271"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.271"></script>
+    <script src="script.js?v=6.272"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.272"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1962,7 +1962,6 @@ const functions = getFunctions(app, "europe-west1");
             document.getElementById('progettoPatB').value = p.patente_b ?? '';
             document.getElementById('progettoPatC').value = p.patente_c ?? '';
             if (document.getElementById('progettoCollo')) document.getElementById('progettoCollo').value = p.cattel_collo ?? '';
-            document.getElementById('progettoCollo').value = p.cattel_collo ?? '';
             document.getElementById('cattelLimKmB').value = p.cattel_lim_km_b ?? '';
             document.getElementById('cattelLimKmC').value = p.cattel_lim_km_c ?? '';
             document.getElementById('cattelLimPesoB').value = p.cattel_lim_peso_b ?? '';
@@ -2661,8 +2660,8 @@ const functions = getFunctions(app, "europe-west1");
     
     // ─── CODICE JS GESTIONE DIAGNOSTICA OFFLINE ──────────────────────────────
     try {
-        const { connectivityService } = await import("./core/connectivity-service.js?v=6.271");
-        const { syncManager } = await import("./core/sync-manager.js?v=6.271");
+        const { connectivityService } = await import("./core/connectivity-service.js?v=6.272");
+        const { syncManager } = await import("./core/sync-manager.js?v=6.272");
 
         const elStato = document.getElementById("diagStatoConnessione");
         const elCoda = document.getElementById("diagElementiCoda");

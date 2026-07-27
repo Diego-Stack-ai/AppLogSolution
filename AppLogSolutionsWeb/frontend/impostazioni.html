@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.264">
+    <link rel="stylesheet" href="styles.css?v=6.258">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -367,10 +367,6 @@
                 <div class="input-group" style="grid-column: 1 / -1;">
                     <label for="progettoNomeInput">Nome Cliente / Progetto *</label>
                     <input type="text" id="progettoNomeInput" placeholder="es. PROGETTO SCUOLE" style="text-transform: uppercase;">
-                </div>
-                <div class="input-group" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin-top: 8px;">
-                    <input type="checkbox" id="progettoFatturaDiretta" style="width: 18px; height: 18px; cursor: pointer;">
-                    <label for="progettoFatturaDiretta" style="margin: 0; cursor: pointer; color: #b91c1c; font-weight: 700;">Fattura Diretta (Navette addebitate direttamente a questo cliente anziché al luogo di carico)</label>
                 </div>
             </div>
 
@@ -1476,8 +1472,8 @@
         }
     });
 </script>
-    <script src="script.js?v=6.264"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.264"></script>
+    <script src="script.js?v=6.258"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.258"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1583,17 +1579,6 @@ const functions = getFunctions(app, "europe-west1");
             const id = d.id;
             const isAutisti = d.is_navetta_autisti === true;
             const isNavetta = d.is_navetta === true;
-            const isFatturaDiretta = d.fattura_diretta === true;
-            
-            let fatturaDirettaHtml = '';
-            if (tipo === 'clienti' || tipo === 'carichi') {
-                fatturaDirettaHtml = `
-                    <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #b91c1c; cursor: pointer;" title="Fatturazione Diretta al Cliente/Merce per le Navette">
-                        <input type="checkbox" ${isFatturaDiretta ? 'checked' : ''} onchange="window.toggleUnifiedFlag('${collectionPath}', '${id}', 'fattura_diretta', this.checked)" style="width: 14px; height: 14px; accent-color: #b91c1c;">
-                        Fatt. Diretta
-                    </label>
-                `;
-            }
             
             return `
                 <div style="background: #fff; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
@@ -1612,7 +1597,6 @@ const functions = getFunctions(app, "europe-west1");
                             <input type="checkbox" ${isNavetta ? 'checked' : ''} onchange="window.toggleUnifiedFlag('${collectionPath}', '${id}', 'is_navetta', this.checked)" style="width: 14px; height: 14px; accent-color: #7c3aed;">
                             Navetta
                         </label>
-                        ${fatturaDirettaHtml}
                     </div>
                 </div>
             `;
@@ -1862,7 +1846,6 @@ const functions = getFunctions(app, "europe-west1");
             const nome = nomeInput.value.trim().toUpperCase();
             if (!nome) return alert('Inserire il nome del cliente.');
             btnSalva.disabled = true; btnSalva.textContent = 'Salvataggio...';
-            const fatturaDirettaNavette = document.getElementById('progettoFatturaDiretta') ? document.getElementById('progettoFatturaDiretta').checked : false;
             const patB = document.getElementById('progettoPatB').value;
             const patC = document.getElementById('progettoPatC').value;
             // Manteniamo il check di vecchi campi per salvataggio ibrido
@@ -1885,7 +1868,6 @@ const functions = getFunctions(app, "europe-west1");
                     viaggi: currentViaggi,
                     contatti: currentContatti,
                     navette_personalizzate: currentNavette,
-                    fattura_diretta_navette: fatturaDirettaNavette,
                     patente_b: patB ? parseFloat(patB) : null,
                     patente_c: patC ? parseFloat(patC) : null,
                     // Manteniamo navetta_sommacampagna e navetta_cerea per compatibilità temporanea per chi non ha ancora resalvato
@@ -1915,7 +1897,6 @@ const functions = getFunctions(app, "europe-west1");
 
         function resetForm() {
             editId = null; window.lastOpenedProject = null; currentViaggi = []; currentContatti = []; currentNavette = []; nomeInput.value = ''; 
-            if(document.getElementById('progettoFatturaDiretta')) document.getElementById('progettoFatturaDiretta').checked = false;
             nuovoContattoNome.value = ''; nuovoContattoRuolo.value = ''; nuovoContattoEmail.value = ''; nuovoContattoFisso.value = ''; nuovoContattoCellulare.value = ''; nuovoContattoReport.checked = false;
             renderTagList(); renderContattiTagList(); renderNavetteTagList();
             window.lastOpenedProject = null;
@@ -1938,7 +1919,6 @@ const functions = getFunctions(app, "europe-west1");
             const p = progettiCache.find(x => x.id === id);
             if (!p) return;
             editId = id; 
-            if(document.getElementById('progettoFatturaDiretta')) document.getElementById('progettoFatturaDiretta').checked = p.fattura_diretta_navette || false;
             nomeInput.value = p.nome || ''; 
             currentViaggi = [...(p.viaggi || [])];
             currentNavette = [...(p.navette_personalizzate || [])];
@@ -2661,8 +2641,8 @@ const functions = getFunctions(app, "europe-west1");
     
     // ─── CODICE JS GESTIONE DIAGNOSTICA OFFLINE ──────────────────────────────
     try {
-        const { connectivityService } = await import("./core/connectivity-service.js?v=6.264");
-        const { syncManager } = await import("./core/sync-manager.js?v=6.264");
+        const { connectivityService } = await import("./core/connectivity-service.js?v=6.258");
+        const { syncManager } = await import("./core/sync-manager.js?v=6.258");
 
         const elStato = document.getElementById("diagStatoConnessione");
         const elCoda = document.getElementById("diagElementiCoda");
@@ -2823,4 +2803,3 @@ const functions = getFunctions(app, "europe-west1");
     </script>
 </body>
 </html>
-

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.264">
+    <link rel="stylesheet" href="styles.css?v=6.258">
     <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"></noscript>
     <!-- PWA & Mobile Optimization -->
@@ -117,15 +117,6 @@
                 <p>Calcolo fatturato viaggi (Gran Chef, Cattel, Bauer) e visualizzazione report.</p>
             </a>
 
-            <!-- Fatturazione V2 -->
-            <a href="javascript:void(0)" onclick="window.navigateWithState('fatturazione_v2.html')" class="nav-card theme-rose" data-page="fatturazione_v2.html">
-                <div class="icon-circle" style="background: rgba(244,63,94,0.15); color: #f43f5e;">
-                    <span class="material-icons-round" style="font-size: 32px;">account_balance_wallet</span>
-                </div>
-                <h3 style="color: #f43f5e;">Fatturazione V2 (Beta)</h3>
-                <p>Nuovo sistema modulare isolato per test presenze e viaggi.</p>
-            </a>
-
             <!-- Gestione Mezzi -->
             <a href="javascript:void(0)" onclick="window.navigateWithState('gestione_mezzi.html')" class="nav-card theme-blue" data-page="gestione_mezzi.html">
                 <div class="icon-circle">
@@ -147,8 +138,8 @@
     </main>
 
 
-    <script src="script.js?v=6.264"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.264"></script>
+    <script src="script.js?v=6.258"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.258"></script>
     <script>
         // Funzione centrale di rendering della dashboard
         let _dashRendered = false;
@@ -239,5 +230,4 @@
     </script>
 </body>
 </html>
-
 

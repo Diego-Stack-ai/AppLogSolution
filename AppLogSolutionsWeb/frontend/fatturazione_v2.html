@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione V2 (Sviluppo) - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.286">
+    <link rel="stylesheet" href="styles.css?v=6.287">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -111,8 +111,8 @@
     </div>
 
     <!-- Inclusione script base di sistema (Navigazione, Auth, UI) -->
-    <script src="script.js?v=6.286"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.286"></script>
+    <script src="script.js?v=6.287"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.287"></script>
 
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
@@ -506,7 +506,7 @@
                         const info = risultati.totali.dettaglio_giornaliero[dateStr];
                         
                         let cellContent = '';
-                        let cellStyle = isWeekend ? `background: #f8fafc; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;` : `border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;`;
+                        let cellStyle = isWeekend ? `background: #e2e8f0; border-right: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;` : `border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;`;
                         
                         if (info && info.voci) {
                             const vociMatch = info.voci.filter(v => v.viaggio === row.nomeReale);
@@ -660,15 +660,26 @@
               const pdfContainer = document.getElementById('matrice-pdf-export');
               if (!pdfContainer) return;
               
+              const formCard = pdfContainer.closest('.form-card');
+              const tableResp = pdfContainer.querySelector('.table-responsive');
+              const oldFormCardOverflow = formCard ? formCard.style.overflow : '';
+              const oldTableRespOverflow = tableResp ? tableResp.style.overflowX : '';
+              
+              if (formCard) formCard.style.overflow = 'visible';
+              if (tableResp) tableResp.style.overflowX = 'visible';
+              
               const opt = {
                 margin:       0.2,
                 filename:     `Matrice_${window.currentMatrixData.clientName}_${window.currentMatrixData.month}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
+                html2canvas:  { scale: 2, useCORS: true, windowWidth: pdfContainer.scrollWidth },
                 jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
               };
               
-              html2pdf().set(opt).from(pdfContainer).save();
+              html2pdf().set(opt).from(pdfContainer).save().then(() => {
+                  if (formCard) formCard.style.overflow = oldFormCardOverflow;
+                  if (tableResp) tableResp.style.overflowX = oldTableRespOverflow;
+              });
           });
 
           document.getElementById('btn-export-excel').addEventListener('click', () => {
@@ -722,6 +733,10 @@
                   
                   for (let d = 1; d <= mData.daysInMonth; d++) {
                       const dateStr = `${mData.month}-${String(d).padStart(2, '0')}`;
+                      const [y, m] = mData.month.split('-');
+                      const dObj = new Date(y, m - 1, d);
+                      const isWeekend = dObj.getDay() === 0 || dObj.getDay() === 6;
+                      
                       const info = mData.dettaglio_giornaliero[dateStr];
                       let cellVal = ''; 
                       if (info && info.voci) {
@@ -729,7 +744,8 @@
                           const v = vociMatch[row.indexReale];
                           if (v && typeof v.importo === 'number') cellVal = v.importo;
                       }
-                      rowData.push({ v: cellVal, t: (typeof cellVal === 'number' ? 'n' : 's'), s: borderStyle });
+                      const activeStyle = isWeekend ? { ...borderStyle, fill: {fgColor: {rgb: "E2E8F0"}} } : borderStyle;
+                      rowData.push({ v: cellVal, t: (typeof cellVal === 'number' ? 'n' : 's'), s: activeStyle });
                   }
                   
                   rowData.push({ t: 'n', f: `SUM(${firstDayCol}${rowNum}:${lastDayCol}${rowNum})`, s: { ...borderStyle, font: {bold: true}, fill: {fgColor: {rgb: "F1F5F9"}} } });

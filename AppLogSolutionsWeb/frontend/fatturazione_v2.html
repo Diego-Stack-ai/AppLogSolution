@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione V2 (Sviluppo) - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.280">
+    <link rel="stylesheet" href="styles.css?v=6.281">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -24,7 +24,7 @@
         </div>
     </nav>
 
-    <main class="main-container">
+    <main class="main-container" style="padding-bottom: 24px !important;">
         <div class="filters-container glass-panel form-card">
             <h3 style="margin-top: 0;">Parametri di Elaborazione</h3>
             <div style="display: flex; gap: 15px; flex-wrap: wrap;">
@@ -88,7 +88,7 @@
         </div>
     </main>
 
-    <div id="matrice-container" style="display: none; padding: 24px; padding-bottom: 120px; width: 100%; box-sizing: border-box; max-width: 100vw;">
+    <div id="matrice-container" style="display: none; padding: 0 24px 120px 24px; width: 100%; box-sizing: border-box; max-width: 100vw;">
         <div class="glass-panel form-card" style="width: 100%; max-width: 100%; overflow: hidden;">
             <h3 style="margin-top: 0; margin-bottom: 24px;">Matrice Mensile</h3>
             <div id="matrice-grid">
@@ -98,8 +98,8 @@
     </div>
 
     <!-- Inclusione script base di sistema (Navigazione, Auth, UI) -->
-    <script src="script.js?v=6.280"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.280"></script>
+    <script src="script.js?v=6.281"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.281"></script>
 
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
@@ -413,12 +413,13 @@
                 const matriceContainer = document.getElementById('matrice-grid');
 
                 let htmlRiepilogo = `<div style="padding: 15px; background: #f8fafc; border-radius: 8px;">
+                    <strong>Mese di Riferimento:</strong> ${month} <br>
                     <strong>Metodo Utilizzato:</strong> ${risultati.metodo_utilizzato} <br>
                     <strong>Elementi Processati:</strong> ${risultati.totali.conteggio_elementi} <br>
                 </div>`;
                 totaliContainer.innerHTML = htmlRiepilogo;
 
-                let htmlMatrice = `<div style="overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 8px; max-height: 70vh;">
+                let htmlMatrice = `<div style="overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 8px; max-height: 70vh; padding-top: 5px;">
                 <table class="data-table" style="font-size: 11px; white-space: nowrap; text-align: center; border-collapse: separate; border-spacing: 0; width: 100%;">
                     <thead>
                         <tr>

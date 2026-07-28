@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invio Mobile Autisti — Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.295">
+    <link rel="stylesheet" href="styles.css?v=6.296">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -208,8 +208,8 @@
         <div class="viaggi-grid" id="viaggiGrid"></div>
     </main>
 
-    <script src="script.js?v=6.295"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.295"></script>
+    <script src="script.js?v=6.296"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.296"></script>
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -408,7 +408,26 @@
                     </div>
                 `;
             }
-            
+
+            if (reportMeta.riepiloghi_urls && Object.keys(reportMeta.riepiloghi_urls).length > 0) {
+                hasContent = true;
+                let riepiloghiHtml = '<div style="width: 100%; display: flex; flex-direction: column; gap: 12px; margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 16px;"><h4 style="margin:0; font-size: 14px; color: #475569;">Riepiloghi Aziendali (PDF Uniti)</h4><div style="display: flex; gap: 12px; flex-wrap: wrap;">';
+                
+                for (const [azienda, url] of Object.entries(reportMeta.riepiloghi_urls)) {
+                    riepiloghiHtml += `
+                    <a href="${url}" target="_blank" style="background: #ef4444; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
+                        <span class="material-icons-round" style="font-size: 18px;">picture_as_pdf</span> RIEPILOGO ${azienda}
+                    </a>
+                    <button class="btn-copia" onclick="window.copiaLink('riepilogo-${azienda}','📄 Riepilogo PDF ${azienda}: ${url}')" style="box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); padding: 10px 16px;">
+                        <span class="material-icons-round" style="font-size: 16px;">content_copy</span> Copia link
+                    </button>
+                    `;
+                }
+                
+                riepiloghiHtml += '</div></div>';
+                linksContainer.innerHTML += riepiloghiHtml;
+            }
+
             container.style.display = hasContent ? 'block' : 'none';
         }
 

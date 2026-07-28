@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione V2 (Sviluppo) - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.287">
+    <link rel="stylesheet" href="styles.css?v=6.288">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -111,8 +111,8 @@
     </div>
 
     <!-- Inclusione script base di sistema (Navigazione, Auth, UI) -->
-    <script src="script.js?v=6.287"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.287"></script>
+    <script src="script.js?v=6.288"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.288"></script>
 
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
@@ -661,24 +661,36 @@
               if (!pdfContainer) return;
               
               const formCard = pdfContainer.closest('.form-card');
-              const tableResp = pdfContainer.querySelector('.table-responsive');
+              const matContainer = document.getElementById('matrice-container');
+              const tableWrapper = pdfContainer.querySelector('div[style*="overflow-x"]');
+              
               const oldFormCardOverflow = formCard ? formCard.style.overflow : '';
-              const oldTableRespOverflow = tableResp ? tableResp.style.overflowX : '';
+              const oldMatContainerMaxWidth = matContainer ? matContainer.style.maxWidth : '';
+              const oldTableWrapperOverflow = tableWrapper ? tableWrapper.style.overflowX : '';
+              const oldTableWrapperMaxHeight = tableWrapper ? tableWrapper.style.maxHeight : '';
               
               if (formCard) formCard.style.overflow = 'visible';
-              if (tableResp) tableResp.style.overflowX = 'visible';
+              if (matContainer) matContainer.style.maxWidth = 'none';
+              if (tableWrapper) {
+                  tableWrapper.style.overflowX = 'visible';
+                  tableWrapper.style.maxHeight = 'none';
+              }
               
               const opt = {
                 margin:       0.2,
                 filename:     `Matrice_${window.currentMatrixData.clientName}_${window.currentMatrixData.month}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, windowWidth: pdfContainer.scrollWidth },
+                html2canvas:  { scale: 2, useCORS: true },
                 jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
               };
               
               html2pdf().set(opt).from(pdfContainer).save().then(() => {
                   if (formCard) formCard.style.overflow = oldFormCardOverflow;
-                  if (tableResp) tableResp.style.overflowX = oldTableRespOverflow;
+                  if (matContainer) matContainer.style.maxWidth = oldMatContainerMaxWidth;
+                  if (tableWrapper) {
+                      tableWrapper.style.overflowX = oldTableWrapperOverflow;
+                      tableWrapper.style.maxHeight = oldTableWrapperMaxHeight;
+                  }
               });
           });
 

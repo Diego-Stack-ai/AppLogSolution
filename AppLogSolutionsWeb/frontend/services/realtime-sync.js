@@ -136,10 +136,10 @@ function startRealtimeSync(isAdmin) {
         activeListeners.push(unsub);
     };
 
-    setupUnifiedNavettaListener('partenze', 'navette_anagrafica_partenze', 'anagrafica_partenze', 'lista_scaletta_partenze', 'lista_navetta_partenze');
-    setupUnifiedNavettaListener('carichi', 'navette_anagrafica_carichi', 'anagrafica_carichi', 'lista_scaletta_carico', 'lista_navetta_carico');
-    setupUnifiedNavettaListener('clienti', 'navette_anagrafica_clienti', 'anagrafica_clienti', 'lista_scaletta_clienti', 'lista_navetta_clienti');
-    setupUnifiedNavettaListener('destinazioni', 'navette_anagrafica_destinazioni', 'anagrafica_destinazioni', 'lista_scaletta_destinazioni_merce', 'lista_navetta_destinazioni_merce');
+    setupUnifiedNavettaListener('partenze', 'fatturazione_navette_partenze', 'anagrafica_partenze', 'lista_scaletta_partenze', 'lista_navetta_partenze');
+    setupUnifiedNavettaListener('carichi', 'fatturazione_navette_carichi', 'anagrafica_carichi', 'lista_scaletta_carico', 'lista_navetta_carico');
+    setupUnifiedNavettaListener('clienti', 'fatturazione_navette_clienti', 'anagrafica_clienti', 'lista_scaletta_clienti', 'lista_navetta_clienti');
+    setupUnifiedNavettaListener('destinazioni', 'fatturazione_navette_destinazioni', 'anagrafica_destinazioni', 'lista_scaletta_destinazioni_merce', 'lista_navetta_destinazioni_merce');
 
     // Listener per la lista delle Sedi Magazzino (lasciata separata)
     const setupScalettaListener = (tipo, globalProp) => {
@@ -151,7 +151,7 @@ function startRealtimeSync(isAdmin) {
         });
         activeListeners.push(unsub);
     };
-    setupScalettaListener('magazzini_sedi', 'lista_magazzini_sedi');
+    setupScalettaListener('fatturazione_magazzini_sedi', 'lista_magazzini_sedi');
 
     // Listener per Giustificativi (Ferie, Malattia, ecc.)
     const unsubGiustificativi = onSnapshot(collection(db, "giustificativi"), { includeMetadataChanges: true }, (snapshot) => {

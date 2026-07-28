@@ -656,7 +656,12 @@ select option {
     }
     .print-header {
         display: block !important;
-        margin-bottom: 20px !important;
+        margin-bottom: 5px !important;
+    }
+    .print-header h1 {
+        font-size: 16px !important;
+        margin: 0 !important;
+        padding-bottom: 5px !important;
     }
     .glass-table {
         width: 100% !important;
@@ -665,10 +670,14 @@ select option {
     }
     .glass-table th, .glass-table td {
         border: 1px solid #ccc !important;
-        padding: 6px !important;
-        font-size: 11px !important;
+        padding: 3px 4px !important;
+        font-size: 9px !important;
         color: black !important;
-        vertical-align: top !important;
+        vertical-align: middle !important;
+        line-height: 1.1 !important;
+    }
+    .glass-table tr {
+        page-break-inside: avoid !important;
     }
     .glass-table th:nth-child(1), .glass-table td:nth-child(1),
     .glass-table th:nth-child(6), .glass-table td:nth-child(6),

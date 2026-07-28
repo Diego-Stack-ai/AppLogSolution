@@ -10,28 +10,48 @@ from firebase_admin import credentials, firestore
 
 def copia_collezione(source_collection_ref, target_collection_ref, prefisso=""):
     """
-    Funzione ricorsiva che copia tutti i documenti di una collezione e 
+    Funzione ricorsiva che copia tutti i documenti di una collezione (con paginazione) e 
     cerca automaticamente eventuali sottocollezioni all'interno di ogni documento.
     """
-    documenti = source_collection_ref.stream()
     conteggio = 0
+    batch_size = 500
+    last_doc = None
 
-    for doc in documenti:
-        doc_data = doc.to_dict() or {}
-        # Copia il documento corrente
-        target_collection_ref.document(doc.id).set(doc_data)
-        conteggio += 1
-        
-        # Cerca sottocollezioni all'interno di questo documento
-        sottocollezioni = doc.reference.collections()
-        for sub_coll in sottocollezioni:
-            print(f"{prefisso}  ↳ Trovata sottocollezione '{sub_coll.id}' in '{doc.id}', avvio copia...")
-            copia_collezione(
-                source_collection_ref=sub_coll,
-                target_collection_ref=target_collection_ref.document(doc.id).collection(sub_coll.id),
-                prefisso=prefisso + "    "
-            )
+    while True:
+        query = source_collection_ref.limit(batch_size)
+        if last_doc:
+            query = query.start_after(last_doc)
             
+        try:
+            documenti = list(query.stream(timeout=120))
+        except Exception as e:
+            print(f"{prefisso}  [!] Errore durante il recupero dei documenti: {e}")
+            break
+
+        if not documenti:
+            break
+
+        for doc in documenti:
+            doc_data = doc.to_dict() or {}
+            # Copia il documento corrente
+            target_collection_ref.document(doc.id).set(doc_data)
+            conteggio += 1
+            
+            # Cerca sottocollezioni all'interno di questo documento
+            try:
+                sottocollezioni = list(doc.reference.collections(timeout=60))
+                for sub_coll in sottocollezioni:
+                    print(f"{prefisso}  ↳ Trovata sottocollezione '{sub_coll.id}' in '{doc.id}', avvio copia...")
+                    copia_collezione(
+                        source_collection_ref=sub_coll,
+                        target_collection_ref=target_collection_ref.document(doc.id).collection(sub_coll.id),
+                        prefisso=prefisso + "    "
+                    )
+            except Exception as e:
+                print(f"{prefisso}  [!] Errore nel fetch delle sottocollezioni per {doc.id}: {e}")
+
+        last_doc = documenti[-1]
+
     if conteggio > 0:
         print(f"{prefisso}✔ Copiati {conteggio} documenti in '{source_collection_ref.id}'")
 
@@ -57,8 +77,9 @@ def main():
     print("a seconda della dimensione dello storico aziendale.")
     print("=====================================================\n")
 
-    # Ottieni tutte le collezioni radice (root collections) del database di produzione
-    collezioni_radice = db_prod.collections()
+    # Evitiamo db_prod.collections() che causa Timeout 504
+    # e puntiamo direttamente alla root collection 'clienti'
+    collezioni_radice = [db_prod.collection('clienti')]
     
     for collezione in collezioni_radice:
         print(f"Analisi Collezione Radice: [{collezione.id}]")

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.294">
+    <link rel="stylesheet" href="styles.css?v=6.295">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -295,9 +295,10 @@
             resto = resto.replace(/\s+/g, " ");
 
             // Valida la destinazione confrontandola con le impostazioni del cliente
-            const progetti = window.appData?.lista_progetti || [];
+            const progetti = (window.appData?.lista_clienti_fatturazione?.length > 0) ? window.appData.lista_clienti_fatturazione : (window.appData?.lista_progetti || []);
             const proj = progetti.find(p => (p.nome || "").toUpperCase() === clienteTrovato);
-            const viaggiConfigurati = proj ? (proj.viaggi || []).map(v => v.toUpperCase()) : [];
+            const sourceArray = proj ? (proj.zone_fatturazione ? proj.zone_fatturazione.map(z => z.nome_zona) : (proj.viaggi || proj.destinazioni || [])) : [];
+            const viaggiConfigurati = sourceArray.map(v => String(v).toUpperCase());
 
             if (viaggiConfigurati.includes(resto)) {
                 return { cliente: clienteTrovato, viaggio: resto };
@@ -545,7 +546,7 @@
 
         window.renderProgetti = function() {
             console.log("Pianificazione: renderProgetti() chiamato, aggiornamento menu clienti...");
-            const progetti = window.appData?.lista_progetti || [];
+            const progetti = (window.appData?.lista_clienti_fatturazione?.length > 0) ? window.appData.lista_clienti_fatturazione : (window.appData?.lista_progetti || []);
             
             const selects = document.querySelectorAll('.in-cliente');
             selects.forEach(select => {
@@ -629,9 +630,9 @@
             } else if (clienteSelezionato === 'MAGAZZINO') {
                 viaggiConfigurati = (window.appData?.lista_magazzini_sedi || []).map(s => s.nome);
             } else {
-                const progetti = window.appData?.lista_progetti || [];
+                const progetti = (window.appData?.lista_clienti_fatturazione?.length > 0) ? window.appData.lista_clienti_fatturazione : (window.appData?.lista_progetti || []);
                 const proj = progetti.find(p => (p.nome || "").toUpperCase() === clienteSelezionato);
-                viaggiConfigurati = proj ? (proj.viaggi || []) : [];
+                viaggiConfigurati = proj ? (proj.zone_fatturazione ? proj.zone_fatturazione.map(z => z.nome_zona) : (proj.viaggi || proj.destinazioni || [])) : [];
             }
             viaggiConfigurati.forEach(v => {
                 if(!v) return;
@@ -771,7 +772,7 @@
             
             // Datalist Globale Clienti censiti nelle impostazioni
             html += `<datalist id="clienti_globali">`;
-            const progetti = window.appData?.lista_progetti || [];
+            const progetti = (window.appData?.lista_clienti_fatturazione?.length > 0) ? window.appData.lista_clienti_fatturazione : (window.appData?.lista_progetti || []);
             progetti.forEach(p => {
                 if (!p.nome) return;
                 html += `<option value="${p.nome.toUpperCase()}">${p.nome}</option>`;
@@ -800,7 +801,7 @@
             tbody.innerHTML = '';
             
             // Carica la lista progetti corrente per popolare il select cliente
-            const progetti = window.appData?.lista_progetti || [];
+            const progetti = (window.appData?.lista_clienti_fatturazione?.length > 0) ? window.appData.lista_clienti_fatturazione : (window.appData?.lista_progetti || []);
             let opzioniClientiHtml = progetti.map(p => {
                 const nome = (p.nome || "").trim().toUpperCase();
                 return `<option value="${nome}">${nome}</option>`;
@@ -1206,8 +1207,8 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=6.294"></script>
-    <script src="script.js?v=6.294"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.295"></script>
+    <script src="script.js?v=6.295"></script>
 </body>
 </html>
 

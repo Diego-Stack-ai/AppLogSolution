@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione Clienti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.290">
+    <link rel="stylesheet" href="styles.css?v=6.292">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -166,10 +166,9 @@
                     <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: block;">1. Partenza / Rientro</label>
                     <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
                         <div style="display:flex; gap:8px;">
-                            <input type="text" id="nuovaNavettaPartenza" placeholder="es. Deposito" style="text-transform: uppercase; width: 60%; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
-                            <input type="number" step="0.01" id="nuovaNavettaPartenzaPrezzo" placeholder="€ (Tariffa)" style="width: 40%; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                            <input type="text" id="nuovaNavettaPartenza" placeholder="es. Deposito" style="text-transform: uppercase; width: 100%; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
                         </div>
-                        <button type="button" class="btn-primary" style="padding: 8px; font-size: 13px; border-radius: 6px; width: 100%; justify-content: center; background:#7c3aed; border-color:#7c3aed;" onclick="window.aggiungiNuovaAnagraficaNavetta('partenze', 'fatturazione_navette_partenze', 'nuovaNavettaPartenza', 'nuovaNavettaPartenzaPrezzo')"><span class="material-icons-round" style="font-size:16px; vertical-align:middle; margin-right:4px;">add</span>Aggiungi</button>
+                        <button type="button" class="btn-primary" style="padding: 8px; font-size: 13px; border-radius: 6px; width: 100%; justify-content: center; background:#7c3aed; border-color:#7c3aed;" onclick="window.aggiungiNuovaAnagraficaNavetta('partenze', 'fatturazione_navette_partenze', 'nuovaNavettaPartenza', '')"><span class="material-icons-round" style="font-size:16px; vertical-align:middle; margin-right:4px;">add</span>Aggiungi</button>
                     </div>
                     <div id="listaAnagraficaPartenze" style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; max-height: 250px; overflow-y: auto;"></div>
                 </div>
@@ -205,10 +204,9 @@
                     <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin-bottom: 8px; display: block;">4. Destinazione Merce</label>
                     <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
                         <div style="display:flex; gap:8px;">
-                            <input type="text" id="nuovaNavettaDestinazioni" placeholder="es. Punto Scarico B" style="text-transform: uppercase; width: 60%; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
-                            <input type="number" step="0.01" id="nuovaNavettaDestinazioniPrezzo" placeholder="€ (Tariffa)" style="width: 40%; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                            <input type="text" id="nuovaNavettaDestinazioni" placeholder="es. Punto Scarico B" style="text-transform: uppercase; width: 100%; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
                         </div>
-                        <button type="button" class="btn-primary" style="padding: 8px; font-size: 13px; border-radius: 6px; width: 100%; justify-content: center; background:#7c3aed; border-color:#7c3aed;" onclick="window.aggiungiNuovaAnagraficaNavetta('destinazioni', 'fatturazione_navette_destinazioni', 'nuovaNavettaDestinazioni', 'nuovaNavettaDestinazioniPrezzo')"><span class="material-icons-round" style="font-size:16px; vertical-align:middle; margin-right:4px;">add</span>Aggiungi</button>
+                        <button type="button" class="btn-primary" style="padding: 8px; font-size: 13px; border-radius: 6px; width: 100%; justify-content: center; background:#7c3aed; border-color:#7c3aed;" onclick="window.aggiungiNuovaAnagraficaNavetta('destinazioni', 'fatturazione_navette_destinazioni', 'nuovaNavettaDestinazioni', '')"><span class="material-icons-round" style="font-size:16px; vertical-align:middle; margin-right:4px;">add</span>Aggiungi</button>
                     </div>
                     <div id="listaAnagraficaDestinazioni" style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; max-height: 250px; overflow-y: auto;"></div>
                 </div>
@@ -699,25 +697,31 @@
             const isAutisti = d.is_navetta_autisti === true;
             const isNavetta = d.is_navetta === true;
             const isFatturaDiretta = d.fattura_diretta === true;
-            const prezzo = d.prezzo ? '€' + d.prezzo : '€0.00';
+            const prezzo = d.prezzo ? '€' + parseFloat(d.prezzo).toFixed(2) : '€0.00';
             
             let fatturaDirettaHtml = '';
             if (tipo === 'clienti' || tipo === 'carichi') {
                 fatturaDirettaHtml = `
-                    <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #b91c1c; cursor: pointer;" title="Fatturazione Diretta al Cliente/Merce per le Navette">
-                        <input type="checkbox" ${isFatturaDiretta ? 'checked' : ''} onchange="window.toggleUnifiedFlag('${collectionPath}', '${id}', 'fattura_diretta', this.checked)" style="width: 14px; height: 14px; accent-color: #b91c1c;">
-                        Fatt. Diretta
-                    </label>
-                `;
+                    <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #475569; cursor: pointer; border-left:1px solid #cbd5e1; padding-left:10px; margin-left:5px;">
+                        <input type="checkbox" ${isFatturaDiretta ? 'checked' : ''} onchange="window.toggleUnifiedFlag('${collectionPath}', '${id}', 'fattura_diretta', this.checked)" style="width: 14px; height: 14px; accent-color: #d946ef;">
+                        Fattura Diretta
+                    </label>`;
             }
-            
+
+            const isNoPrezzo = (tipo === 'destinazioni' || tipo === 'partenze');
+
             return `
                 <div style="background: #fff; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-weight: 700; color: #1e293b; font-size: 13px; text-transform: uppercase;">${d.nome} <span style="color:#059669; font-weight:500; font-size:12px;">(${prezzo})</span></span>
-                        <button type="button" style="background: none; border: none; color: #ef4444; padding: 2px; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="Elimina" onclick="window.eliminaAnagrafica('clienti/DNR/${collectionPath}', '${id}', '${d.nome.replace(/'/g, "\\'")}')">
-                            <span class="material-icons-round" style="font-size: 18px;">delete_outline</span>
-                        </button>
+                        <span style="font-weight: 700; color: #1e293b; font-size: 13px; text-transform: uppercase;">${d.nome} ${!isNoPrezzo ? `<span style="color:#059669; font-weight:500; font-size:12px;">(${prezzo})</span>` : ''}</span>
+                        <div style="display: flex; gap: 4px;">
+                            <button type="button" style="background: none; border: none; color: #3b82f6; padding: 2px; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="Modifica" onclick="window.modificaAnagraficaNavetta('${collectionPath}', '${id}', '${d.nome.replace(/'/g, "\\'")}', '${d.prezzo || ''}', ${!isNoPrezzo})">
+                                <span class="material-icons-round" style="font-size: 18px;">edit</span>
+                            </button>
+                            <button type="button" style="background: none; border: none; color: #ef4444; padding: 2px; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="Elimina" onclick="window.eliminaAnagrafica('clienti/DNR/${collectionPath}', '${id}', '${d.nome.replace(/'/g, "\\'")}')">
+                                <span class="material-icons-round" style="font-size: 18px;">delete_outline</span>
+                            </button>
+                        </div>
                     </div>
                     <div style="display: flex; gap: 14px; border-top: 1px dashed #f1f5f9; padding-top: 6px; flex-wrap: wrap;">
                         <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #475569; cursor: pointer;">
@@ -726,13 +730,52 @@
                         </label>
                         <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #475569; cursor: pointer;">
                             <input type="checkbox" ${isNavetta ? 'checked' : ''} onchange="window.toggleUnifiedFlag('${collectionPath}', '${id}', 'is_navetta', this.checked)" style="width: 14px; height: 14px; accent-color: #7c3aed;">
-                            Navetta
+                            Navetta Esterna
                         </label>
                         ${fatturaDirettaHtml}
                     </div>
                 </div>
             `;
         }).join('');
+    };
+
+    window.modificaAnagraficaNavetta = async (collectionPath, id, oldNome, oldPrezzo, hasPrezzo) => {
+        let htmlForm = `<input id="swal-input-nome" class="swal2-input" placeholder="Nome" value="${oldNome}" style="text-transform: uppercase;">`;
+        if (hasPrezzo) {
+            htmlForm += `<input id="swal-input-prezzo" type="number" step="0.01" class="swal2-input" placeholder="Tariffa €" value="${oldPrezzo}">`;
+        }
+        
+        const { value: formValues } = await Swal.fire({
+            title: 'Modifica Anagrafica',
+            html: htmlForm,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Salva',
+            cancelButtonText: 'Annulla',
+            preConfirm: () => {
+                const nome = document.getElementById('swal-input-nome').value.trim().toUpperCase();
+                const prezzo = hasPrezzo ? document.getElementById('swal-input-prezzo').value : '';
+                if (!nome) {
+                    Swal.showValidationMessage('Il nome è obbligatorio');
+                }
+                return { nome, prezzo };
+            }
+        });
+
+        if (formValues) {
+            try {
+                let dataToUpdate = { nome: formValues.nome };
+                if (hasPrezzo && formValues.prezzo !== "") {
+                    dataToUpdate.prezzo = parseFloat(formValues.prezzo);
+                } else if (hasPrezzo) {
+                    dataToUpdate.prezzo = null;
+                }
+                await updateDoc(doc(db, "clienti/DNR/" + collectionPath, id), dataToUpdate);
+                Swal.fire({ title: 'Salvato', icon: 'success', timer: 1000, showConfirmButton: false });
+            } catch (error) {
+                alert("Errore modifica: " + error.message);
+            }
+        }
     };
 
     window.aggiungiNuovaAnagraficaNavetta = async (tipo, collectionPath, inputNomeId, inputPrezzoId) => {

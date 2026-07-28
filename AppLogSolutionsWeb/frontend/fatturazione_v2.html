@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione V2 (Sviluppo) - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.283">
+    <link rel="stylesheet" href="styles.css?v=6.284">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <meta name="theme-color" content="#4f46e5">
 </head>
@@ -109,8 +109,8 @@
     </div>
 
     <!-- Inclusione script base di sistema (Navigazione, Auth, UI) -->
-    <script src="script.js?v=6.283"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.283"></script>
+    <script src="script.js?v=6.284"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.284"></script>
 
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
@@ -659,12 +659,17 @@
               const tempDiv = document.createElement('div');
               tempDiv.style.padding = '20px';
               tempDiv.style.backgroundColor = '#ffffff';
+              tempDiv.style.position = 'absolute';
+              tempDiv.style.left = '-9999px';
+              tempDiv.style.top = '0';
+              tempDiv.style.width = '1600px'; 
               tempDiv.innerHTML = `
                   <h2 style="font-family: sans-serif; color: #333; margin-bottom: 20px;">
                       ${window.currentMatrixData.clientName} - Mese: ${window.currentMatrixData.month}
                   </h2>
                   ${matrixGrid.innerHTML}
               `;
+              document.body.appendChild(tempDiv);
               
               const opt = {
                 margin:       0.2,
@@ -674,7 +679,9 @@
                 jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
               };
               
-              html2pdf().set(opt).from(tempDiv).save();
+              html2pdf().set(opt).from(tempDiv).save().then(() => {
+                  document.body.removeChild(tempDiv);
+              });
           });
 
           document.getElementById('btn-export-excel').addEventListener('click', () => {
@@ -684,11 +691,25 @@
               const wb = XLSX.utils.book_new();
               const wsData = [];
               
-              const headerRow = ["Viaggio / Zona"];
+              const headerStyle = {
+                  font: { bold: true, color: { rgb: "FFFFFF" } },
+                  fill: { fgColor: { rgb: "4F46E5" } },
+                  alignment: { horizontal: "center", vertical: "center" },
+                  border: { top: {style: 'thin', color: {rgb: "CBD5E1"}}, bottom: {style: 'thin', color: {rgb: "CBD5E1"}}, left: {style: 'thin', color: {rgb: "CBD5E1"}}, right: {style: 'thin', color: {rgb: "CBD5E1"}} }
+              };
+              const borderStyle = { border: { top: {style: 'thin', color: {rgb: "E2E8F0"}}, bottom: {style: 'thin', color: {rgb: "E2E8F0"}}, left: {style: 'thin', color: {rgb: "E2E8F0"}}, right: {style: 'thin', color: {rgb: "E2E8F0"}} } };
+              const footerStyle = {
+                  font: { bold: true },
+                  fill: { fgColor: { rgb: "F8FAFC" } },
+                  border: { top: {style: 'medium', color: {rgb: "94A3B8"}}, bottom: {style: 'medium', color: {rgb: "94A3B8"}}, left: {style: 'thin', color: {rgb: "E2E8F0"}}, right: {style: 'thin', color: {rgb: "E2E8F0"}} }
+              };
+              const boldRightBorder = { ...borderStyle, font: { bold: true }, border: { ...borderStyle.border, right: {style: 'medium', color: {rgb: "94A3B8"}} } };
+              
+              const headerRow = [{ v: "Viaggio / Zona", t: 's', s: headerStyle }];
               for(let d=1; d<=mData.daysInMonth; d++) {
-                  headerRow.push(d); 
+                  headerRow.push({ v: d, t: 'n', s: headerStyle }); 
               }
-              headerRow.push("Tot. Mese");
+              headerRow.push({ v: "Tot. Mese", t: 's', s: headerStyle });
               wsData.push(headerRow);
               
               const getColLetter = (colIdx) => {
@@ -701,9 +722,10 @@
               };
               
               mData.viaggiRows.forEach((row, rIdx) => {
-                  const rowData = [row.label];
+                  const rowData = [];
                   const rowNum = rIdx + 2; 
                   
+                  rowData.push({ v: row.label, t: 's', s: boldRightBorder });
                   const firstDayCol = getColLetter(1);
                   const lastDayCol = getColLetter(mData.daysInMonth);
                   
@@ -711,31 +733,35 @@
                       const dateStr = `${mData.month}-${String(d).padStart(2, '0')}`;
                       const info = mData.dettaglio_giornaliero[dateStr];
                       let cellVal = ''; 
-                      
                       if (info && info.voci) {
                           const vociMatch = info.voci.filter(v => v.viaggio === row.nomeReale);
                           const v = vociMatch[row.indexReale];
                           if (v && typeof v.importo === 'number') cellVal = v.importo;
                       }
-                      rowData.push(cellVal);
+                      rowData.push({ v: cellVal, t: (typeof cellVal === 'number' ? 'n' : 's'), s: borderStyle });
                   }
                   
-                  rowData.push({ t: 'n', f: `SUM(${firstDayCol}${rowNum}:${lastDayCol}${rowNum})` });
+                  rowData.push({ t: 'n', f: `SUM(${firstDayCol}${rowNum}:${lastDayCol}${rowNum})`, s: { ...borderStyle, font: {bold: true}, fill: {fgColor: {rgb: "F1F5F9"}} } });
                   wsData.push(rowData);
               });
               
-              const footerRow = ["Totale GG"];
+              const footerRow = [{ v: "Totale GG", t: 's', s: footerStyle }];
               const lastRowNum = wsData.length + 1; 
               for (let d = 1; d <= mData.daysInMonth; d++) {
                   const colLetter = getColLetter(d);
-                  footerRow.push({ t: 'n', f: `SUM(${colLetter}2:${colLetter}${lastRowNum - 1})` });
+                  footerRow.push({ t: 'n', f: `SUM(${colLetter}2:${colLetter}${lastRowNum - 1})`, s: footerStyle });
               }
               const totColLetter = getColLetter(mData.daysInMonth + 1);
-              footerRow.push({ t: 'n', f: `SUM(${totColLetter}2:${totColLetter}${lastRowNum - 1})` });
+              footerRow.push({ t: 'n', f: `SUM(${totColLetter}2:${totColLetter}${lastRowNum - 1})`, s: { ...footerStyle, fill: {fgColor: {rgb: "ECFDF5"}}, font: {bold: true, color: {rgb: "10B981"}} } });
               
               wsData.push(footerRow);
               
               const ws = XLSX.utils.aoa_to_sheet(wsData);
+              const cols = [{wch: 30}]; 
+              for(let d=1; d<=mData.daysInMonth; d++) cols.push({wch: 6}); 
+              cols.push({wch: 12}); 
+              ws['!cols'] = cols;
+              
               XLSX.utils.book_append_sheet(wb, ws, "Matrice");
               XLSX.writeFile(wb, `Matrice_${mData.clientName}_${mData.month}.xlsx`);
           });

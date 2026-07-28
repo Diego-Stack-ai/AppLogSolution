@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione V2 (Sviluppo) - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.294">
+    <link rel="stylesheet" href="styles.css?v=6.297">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -111,8 +111,8 @@
     </div>
 
     <!-- Inclusione script base di sistema (Navigazione, Auth, UI) -->
-    <script src="script.js?v=6.294"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.294"></script>
+    <script src="script.js?v=6.297"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.297"></script>
 
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
@@ -352,6 +352,7 @@
                                                         data: d.data,
                                                         targa: d.targa,
                                                         viaggio: luogo,
+                                                        tappa_navetta: t,
                                                         ...d
                                                     });
                                                 }
@@ -369,6 +370,7 @@
                                                         data: d.data,
                                                         targa: d.targa,
                                                         viaggio: luogo,
+                                                        tappa_navetta: t,
                                                         ...d
                                                     });
                                                 }
@@ -421,6 +423,64 @@
                 
                 // Niente più controllo incrociato anomalie
                 document.getElementById('anomalie-list').parentElement.style.display = 'none';
+
+                // --- NEW CODE: Tabella Dettaglio Navette ---
+                let containerNavette = document.getElementById('navette-dettaglio-container');
+                if (!containerNavette) {
+                    containerNavette = document.createElement('div');
+                    containerNavette.id = 'navette-dettaglio-container';
+                    containerNavette.className = 'glass-panel form-card';
+                    containerNavette.style.marginTop = '24px';
+                    document.getElementById('risultati-container').insertBefore(containerNavette, document.getElementById('riepilogo-totali-grid').parentElement);
+                }
+                
+                if (clientName.startsWith('NAVETTA::')) {
+                    // Ordiniamo per data
+                    const navetteOrdinate = [...datiSorgente].sort((a, b) => (a.data || '').localeCompare(b.data || ''));
+                    
+                    let htmlNavette = `<h3 style="margin-top: 0; color: #4f46e5;"><span class="material-icons-round" style="vertical-align: middle;">local_shipping</span> Dettaglio Navette Effettuate (${navetteOrdinate.length})</h3>
+                    <div style="overflow-x: auto; max-height: 400px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 20px;">
+                        <table class="data-table" style="width: 100%; text-align: left; font-size: 13px; border-collapse: collapse;">
+                            <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                <tr>
+                                    <th style="padding: 10px; border-bottom: 2px solid #cbd5e1;">Data</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #cbd5e1;">Autista</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #cbd5e1;">Mezzo (Targa)</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #cbd5e1;">Luogo Carico</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #cbd5e1;">Luogo Scarico</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+                    
+                    if (navetteOrdinate.length === 0) {
+                        htmlNavette += `<tr><td colspan="5" style="text-align:center; padding:12px;">Nessuna navetta trovata</td></tr>`;
+                    } else {
+                        navetteOrdinate.forEach(n => {
+                            let mezzoInfo = n.targa || '-';
+                            if (n.tappa_navetta) {
+                                if (n.tappa_navetta.mezzo) {
+                                    mezzoInfo += ` (${n.tappa_navetta.mezzo})`;
+                                } else if (n.tappa_navetta.motrice || n.tappa_navetta.rimorchio) {
+                                    mezzoInfo += ` (M:${n.tappa_navetta.motrice || '-'} R:${n.tappa_navetta.rimorchio || '-'})`;
+                                }
+                            }
+                            
+                            htmlNavette += `<tr style="border-bottom: 1px solid #e2e8f0;">
+                                <td style="padding: 10px;"><strong>${n.data || '-'}</strong></td>
+                                <td style="padding: 10px;">${n.autistaNome || '-'}</td>
+                                <td style="padding: 10px;">${mezzoInfo}</td>
+                                <td style="padding: 10px;">${n.tappa_navetta?.carico || n.viaggio || '-'}</td>
+                                <td style="padding: 10px;">${n.tappa_navetta?.scarico || '-'}</td>
+                            </tr>`;
+                        });
+                    }
+                    htmlNavette += `</tbody></table></div>`;
+                    containerNavette.innerHTML = htmlNavette;
+                    containerNavette.style.display = 'block';
+                } else {
+                    containerNavette.style.display = 'none';
+                }
+                // --- END NEW CODE ---
 
                 const totaliContainer = document.getElementById('riepilogo-totali-grid');
                 const matriceContainer = document.getElementById('matrice-grid');

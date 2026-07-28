@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.294">
+    <link rel="stylesheet" href="styles.css?v=6.297">
     <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"></noscript>
     <!-- PWA & Mobile Optimization -->
@@ -98,6 +98,14 @@
                 <p>Accedi alla pagina per registrare un nuovo turno o viaggio</p>
             </a>
 
+            <!-- Centro Costi -->
+            <a href="javascript:void(0)" onclick="window.navigateWithState('centro_costi.html')" class="nav-card theme-purple" data-page="centro_costi.html">
+                <div class="icon-circle">
+                    <span class="material-icons-round" style="font-size: 32px;">attach_money</span>
+                </div>
+                <h3>Centro Costi</h3>
+                <p>Importa il PDF costi mensili e analizza il costo orario del personale.</p>
+            </a>
 
             <!-- Presenze Dipendenti -->
             <a href="javascript:void(0)" onclick="window.navigateWithState('presenze.html')" class="nav-card theme-green" data-page="presenze.html">
@@ -156,8 +164,8 @@
     </main>
 
 
-    <script src="script.js?v=6.294"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.294"></script>
+    <script src="script.js?v=6.297"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.297"></script>
     <script>
         // Funzione centrale di rendering della dashboard
         let _dashRendered = false;

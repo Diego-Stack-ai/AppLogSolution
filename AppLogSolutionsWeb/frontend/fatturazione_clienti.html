@@ -622,7 +622,7 @@
     window.renderScaletteItems = function(tipo) {
         let items = [];
         let containerId = '';
-        if (tipo === 'magazzini_sedi') { items = window.appData?.lista_magazzini_sedi || []; containerId = 'listaMagazziniSedi'; }
+        if (tipo === 'fatturazione_magazzini_sedi' || tipo === 'magazzini_sedi') { items = window.appData?.lista_magazzini_sedi || []; containerId = 'listaMagazziniSedi'; }
         else { return; }
 
         const container = document.getElementById(containerId);

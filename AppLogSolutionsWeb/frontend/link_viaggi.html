@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invio Mobile Autisti — Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.296">
+    <link rel="stylesheet" href="styles.css?v=6.308">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -189,6 +189,7 @@
                 Torna all'elaborazione
             </button>
         </div>
+
         <div id="documentiGenerali" style="display:none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
                 <h2 style="margin:0; font-size: 18px; display: flex; align-items: center; gap: 8px; color: #1e293b;">
@@ -200,16 +201,17 @@
                 </button>
             </div>
             
-            <div id="generalLinksContainer" style="display: flex; flex-wrap: wrap; gap: 12px;">
+            <div id="generalLinksContainer" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
                 <!-- Link verranno iniettati via JS -->
             </div>
+            <div id="riepiloghiAziendaliContainer" style="margin-bottom: 24px;"></div>
         </div>
 
         <div class="viaggi-grid" id="viaggiGrid"></div>
     </main>
 
-    <script src="script.js?v=6.296"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.296"></script>
+    <script src="script.js?v=6.308"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.308"></script>
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -377,17 +379,20 @@
         function renderDocumentiGenerali(reportMeta) {
             const container = document.getElementById('documentiGenerali');
             const linksContainer = document.getElementById('generalLinksContainer');
-            linksContainer.innerHTML = '';
+            const riepiloghiContainer = document.getElementById('riepiloghiAziendaliContainer');
+            if (linksContainer) linksContainer.innerHTML = '';
+            if (riepiloghiContainer) riepiloghiContainer.innerHTML = '';
             
             if (!reportMeta) {
-                container.style.display = 'none';
+                if (container) container.style.display = 'none';
                 return;
             }
             
-            let hasContent = false;
+            let hasMappa = false;
+            let hasRiepiloghi = false;
             
             if (reportMeta.mappa_url) {
-                hasContent = true;
+                hasMappa = true;
                 linksContainer.innerHTML += `
                     <div style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
                         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
@@ -410,25 +415,22 @@
             }
 
             if (reportMeta.riepiloghi_urls && Object.keys(reportMeta.riepiloghi_urls).length > 0) {
-                hasContent = true;
-                let riepiloghiHtml = '<div style="width: 100%; display: flex; flex-direction: column; gap: 12px; margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 16px;"><h4 style="margin:0; font-size: 14px; color: #475569;">Riepiloghi Aziendali (PDF Uniti)</h4><div style="display: flex; gap: 12px; flex-wrap: wrap;">';
+                hasRiepiloghi = true;
+                let riepiloghiHtml = '<div style="display: flex; flex-wrap: wrap; gap: 12px;">';
                 
                 for (const [azienda, url] of Object.entries(reportMeta.riepiloghi_urls)) {
                     riepiloghiHtml += `
-                    <a href="${url}" target="_blank" style="background: #ef4444; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
-                        <span class="material-icons-round" style="font-size: 18px;">picture_as_pdf</span> RIEPILOGO ${azienda}
-                    </a>
-                    <button class="btn-copia" onclick="window.copiaLink('riepilogo-${azienda}','📄 Riepilogo PDF ${azienda}: ${url}')" style="box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); padding: 10px 16px;">
-                        <span class="material-icons-round" style="font-size: 16px;">content_copy</span> Copia link
-                    </button>
+                        <a href="${url}" target="_blank" style="background: #ef4444; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
+                            <span class="material-icons-round" style="font-size: 18px;">picture_as_pdf</span> DISTINTE ${azienda}
+                        </a>
                     `;
                 }
                 
-                riepiloghiHtml += '</div></div>';
-                linksContainer.innerHTML += riepiloghiHtml;
+                riepiloghiHtml += '</div>';
+                if (riepiloghiContainer) riepiloghiContainer.innerHTML = riepiloghiHtml;
             }
 
-            container.style.display = hasContent ? 'block' : 'none';
+            if (container) container.style.display = (hasMappa || hasRiepiloghi) ? 'block' : 'none';
         }
 
         window.generaRiepiloghiAziendali = async function() {

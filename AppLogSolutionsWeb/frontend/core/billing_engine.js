@@ -73,8 +73,13 @@ export class BillingEngine {
                     }
                 } else {
                     // Nessun match esatto nella rubrica V2 per questa zona
-                    importoItem = 0;
-                    tipoTariffa = 'ZONA NON TROVATA';
+                    if (clienteData.is_navetta && clienteData.prezzo_navetta !== undefined) {
+                        importoItem = parseFloat(clienteData.prezzo_navetta) || 0;
+                        tipoTariffa = 'Tariffa Navetta (Fissa)';
+                    } else {
+                        importoItem = 0;
+                        tipoTariffa = 'ZONA NON TROVATA';
+                    }
                 }
             } 
             else if (metodo === 'VIAGGI') {

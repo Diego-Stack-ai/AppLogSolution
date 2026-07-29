@@ -148,7 +148,7 @@
                     const d = docSnap.data();
                     if (d.attivitaAggiuntive && Array.isArray(d.attivitaAggiuntive)) {
                         d.attivitaAggiuntive.forEach(att => {
-                            if (att.tipo === 'navettaMissione') {
+                            if (att.tipo === 'navettaMissione' || att.tipo === 'navetta') {
                                 const tappe = att.tappe || [];
                                 tappe.forEach(t => {
                                     if (t.carico) {
@@ -339,7 +339,7 @@
                         if (isNavettaDirect) {
                             if (d.attivitaAggiuntive && Array.isArray(d.attivitaAggiuntive)) {
                                 d.attivitaAggiuntive.forEach((att, attIdx) => {
-                                    if (att.tipo === 'navettaMissione' && att.tappe) {
+                                    if ((att.tipo === 'navettaMissione' || att.tipo === 'navetta') && att.tappe) {
                                         att.tappe.forEach((t, tIdx) => {
                                             const luogo = (t.carico || "").trim().toUpperCase();
                                             const cMerce = (t.cliente_merce || "").trim().toUpperCase();

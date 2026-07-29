@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione V2 (Sviluppo) - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.296">
+    <link rel="stylesheet" href="styles.css?v=6.308">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -88,10 +88,23 @@
                 </div>
             </div>
 
-            <div class="glass-panel form-card" style="margin-top: 24px;">
-                <h3 style="margin-top: 0;">Riepilogo Generale</h3>
+            <div class="glass-panel form-card" style="margin-top: 24px;" id="riepilogo-pdf-export">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0;">Riepilogo Generale</h3>
+                    <div style="display: flex; gap: 8px;" class="hide-on-print">
+                        <button class="btn btn-primary" id="btn-print-riepilogo" style="background-color: #64748b; border-color: #64748b; padding: 4px 12px; font-size: 12px; height: auto;">
+                            <span class="material-icons-round" style="font-size: 16px; margin-right: 4px;">print</span>Stampa
+                        </button>
+                        <button class="btn btn-primary" id="btn-pdf-riepilogo" style="background-color: #dc2626; border-color: #dc2626; padding: 4px 12px; font-size: 12px; height: auto;">
+                            <span class="material-icons-round" style="font-size: 16px; margin-right: 4px;">picture_as_pdf</span>PDF
+                        </button>
+                    </div>
+                </div>
                 <div class="summary-grid" id="riepilogo-totali-grid">
                     <!-- Popolato dal JS -->
+                </div>
+                <div id="dettaglio-navette-grid" style="margin-top: 20px; display: none; width: 100%;">
+                    <!-- Popolato dal JS in caso di Navette -->
                 </div>
             </div>
         </div>
@@ -111,8 +124,8 @@
     </div>
 
     <!-- Inclusione script base di sistema (Navigazione, Auth, UI) -->
-    <script src="script.js?v=6.296"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.296"></script>
+    <script src="script.js?v=6.308"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.308"></script>
 
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
@@ -148,22 +161,12 @@
                     const d = docSnap.data();
                     if (d.attivitaAggiuntive && Array.isArray(d.attivitaAggiuntive)) {
                         d.attivitaAggiuntive.forEach(att => {
-                            if (att.tipo === 'navettaMissione') {
+                            if (att.tipo === 'navettaMissione' || att.tipo === 'navetta') {
                                 const tappe = att.tappe || [];
                                 tappe.forEach(t => {
                                     if (t.carico) {
                                         const luogo = t.carico.trim().toUpperCase();
-                                        const cliente = t.cliente_merce ? t.cliente_merce.trim().toUpperCase() : '';
-                                        
                                         if (!luoghiMap.has(luogo)) luoghiMap.set(luogo, luogo);
-                                        
-                                        if (cliente) {
-                                            const p = window.listaNavetteClientiCache?.find(x => (x.nome||'').trim().toUpperCase() === cliente);
-                                            if (p && p.fattura_diretta) {
-                                                const key = luogo + ' - ' + cliente;
-                                                if (!luoghiMap.has(key)) luoghiMap.set(key, key);
-                                            }
-                                        }
                                     }
                                 });
                             }
@@ -205,10 +208,10 @@
                 
                 // Fetch Anagrafica Clienti e Carichi per il flag "Fattura Diretta"
                 try {
-                    const snapClienti = await getDocs(collection(db, "clienti/DNR/navette_anagrafica_clienti"));
-                    snapClienti.forEach(d => window.listaNavetteClientiCache.push({ id: d.id, ...d.data() }));
-                    const snapCarichi = await getDocs(collection(db, "clienti/DNR/navette_anagrafica_carichi"));
-                    snapCarichi.forEach(d => window.listaNavetteClientiCache.push({ id: d.id, ...d.data() }));
+                    const snapClienti = await getDocs(collection(db, "clienti/DNR/fatturazione_navette_clienti"));
+            snapClienti.forEach(d => window.listaNavetteClientiCache.push({ id: d.id, ...d.data() }));
+            const snapCarichi = await getDocs(collection(db, "clienti/DNR/fatturazione_navette_carichi"));
+            snapCarichi.forEach(d => window.listaNavetteClientiCache.push({ id: d.id, ...d.data() }));
                 } catch(e) { console.error("Errore fetch anagrafiche", e); }
                 
                 snap.forEach(docSnap => {
@@ -300,6 +303,15 @@
                     }
                 });
 
+                // Se è una navetta, estraiamo il prezzo configurato dalla cache lista navette
+                if (clientName.startsWith('NAVETTA::')) {
+                    const navConf = window.listaNavetteClientiCache?.find(x => (x.nome||'').toUpperCase() === realClientNameForConfig.toUpperCase());
+                    if (navConf) {
+                        clientConfig.is_navetta = true;
+                        clientConfig.prezzo_navetta = navConf.prezzo;
+                    }
+                }
+
                 // 2. Fetch mappa mezzi (Targa -> Patente)
                 let mezziMap = {};
                 try {
@@ -339,47 +351,23 @@
                         if (isNavettaDirect) {
                             if (d.attivitaAggiuntive && Array.isArray(d.attivitaAggiuntive)) {
                                 d.attivitaAggiuntive.forEach((att, attIdx) => {
-                                    if (att.tipo === 'navettaMissione' && att.tappe) {
+                                    if ((att.tipo === 'navettaMissione' || att.tipo === 'navetta') && att.tappe) {
                                         att.tappe.forEach((t, tIdx) => {
                                             const luogo = (t.carico || "").trim().toUpperCase();
-                                            const cMerce = (t.cliente_merce || "").trim().toUpperCase();
-                                            
-                                            if (targetCliente !== '') {
-                                                // Spunta "Fattura Diretta" per questo cliente (es. Cattel)
-                                                if (luogo === targetLuogo && cMerce === targetCliente) {
-                                                    datiSorgente.push({
-                                                        id: docSnap.id + '_nav_' + attIdx + '_' + tIdx,
-                                                        data: d.data,
-                                                        targa: d.targa,
-                                                        autista: d.autista || d.dipendente || '',
-                                                        mezzo: d.mezzo || d.veicolo || '',
-                                                        cliente_merce: t.cliente_merce || '',
-                                                        destinazione_merce: t.destinazione_merce || '',
-                                                        viaggio: luogo,
-                                                        ...d
-                                                    });
-                                                }
-                                            } else {
-                                                // Navetta base al luogo di carico. Evitiamo di addebitarla se il cliente merce ha la spunta.
-                                                let hasSpunta = false;
-                                                if (cMerce) {
-                                                    const conf = window.listaNavetteClientiCache?.find(x => (x.nome||'').toUpperCase() === cMerce);
-                                                    if (conf && conf.fattura_diretta) hasSpunta = true;
-                                                }
-                                                
-                                                if (luogo === targetLuogo && !hasSpunta) {
-                                                    datiSorgente.push({
-                                                        id: docSnap.id + '_nav_' + attIdx + '_' + tIdx,
-                                                        data: d.data,
-                                                        targa: d.targa,
-                                                        autista: d.autista || d.dipendente || '',
-                                                        mezzo: d.mezzo || d.veicolo || '',
-                                                        cliente_merce: t.cliente_merce || '',
-                                                        destinazione_merce: t.destinazione_merce || '',
-                                                        viaggio: luogo,
-                                                        ...d
-                                                    });
-                                                }
+                                            if (luogo === targetLuogo) {
+                                                datiSorgente.push({
+                                                    id: docSnap.id + '_nav_' + attIdx + '_' + tIdx,
+                                                    data: d.data,
+                                                    targa: d.targa,
+                                                    autista: d.autista || d.dipendente || '',
+                                                    mezzo: d.mezzo || d.veicolo || '',
+                                                    cliente_merce: t.cliente_merce || '',
+                                                    destinazione_merce: t.destinazione_merce || '',
+                                                    luogo_carico: luogo,
+                                                    partenza_originale: att.partenza || d.viaggio || '',
+                                                    ...d,
+                                                    viaggio: att.partenza || d.viaggio || ''
+                                                });
                                             }
                                         });
                                     }
@@ -441,7 +429,56 @@
                     <strong>Metodo Utilizzato:</strong> ${risultati.metodo_utilizzato} <br>
                     <strong>Elementi Processati:</strong> ${risultati.totali.conteggio_elementi} <br>
                 </div>`;
+                
+                let htmlDettaglio = '';
+                if (clientName.startsWith('NAVETTA::') && datiSorgente.length > 0) {
+                    htmlDettaglio = `
+                    <div style="overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 8px;">
+                        <h4 style="margin: 0; padding: 10px; background: #f1f5f9; border-bottom: 1px solid #cbd5e1;">Dettaglio Righe Navetta</h4>
+                        <table class="data-table" style="width: 100%; font-size: 11px; text-align: left; border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th style="padding: 8px; border-bottom: 2px solid #cbd5e1;">Data</th>
+                                    <th style="padding: 8px; border-bottom: 2px solid #cbd5e1;">Partenza</th>
+                                    <th style="padding: 8px; border-bottom: 2px solid #cbd5e1;">Luogo di Carico</th>
+                                    <th style="padding: 8px; border-bottom: 2px solid #cbd5e1;">Prezzo (Carico)</th>
+                                    <th style="padding: 8px; border-bottom: 2px solid #cbd5e1;">Cliente / Merce</th>
+                                    <th style="padding: 8px; border-bottom: 2px solid #cbd5e1;">Prezzo (Merce)</th>
+                                    <th style="padding: 8px; border-bottom: 2px solid #cbd5e1;">Destinazione</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${datiSorgente.map(item => {
+                                    const caricoConf = window.listaNavetteClientiCache?.find(x => (x.nome||'').toUpperCase() === (item.luogo_carico||'').toUpperCase());
+                                    const merceConf = window.listaNavetteClientiCache?.find(x => (x.nome||'').toUpperCase() === (item.cliente_merce||'').toUpperCase());
+                                    
+                                    const pCarico = (caricoConf && caricoConf.prezzo !== undefined && caricoConf.prezzo !== null) ? '€ ' + parseFloat(caricoConf.prezzo).toFixed(2) : '€ 0.00';
+                                    const pMerce = (merceConf && merceConf.prezzo !== undefined && merceConf.prezzo !== null) ? '€ ' + parseFloat(merceConf.prezzo).toFixed(2) : '€ 0.00';
+
+                                    return `
+                                    <tr>
+                                        <td style="padding: 6px; border-bottom: 1px solid #e2e8f0;">${item.data || ''}</td>
+                                        <td style="padding: 6px; border-bottom: 1px solid #e2e8f0;">${item.partenza_originale || ''}</td>
+                                        <td style="padding: 6px; border-bottom: 1px solid #e2e8f0;">${item.luogo_carico || ''}</td>
+                                        <td style="padding: 6px; border-bottom: 1px solid #e2e8f0; font-weight: 500; color: #0f172a;">${pCarico}</td>
+                                        <td style="padding: 6px; border-bottom: 1px solid #e2e8f0;">${item.cliente_merce || ''}</td>
+                                        <td style="padding: 6px; border-bottom: 1px solid #e2e8f0; font-weight: 500; color: #0f172a;">${pMerce}</td>
+                                        <td style="padding: 6px; border-bottom: 1px solid #e2e8f0;">${item.destinazione_merce || ''}</td>
+                                    </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>`;
+                }
+                
                 totaliContainer.innerHTML = htmlRiepilogo;
+                
+                const navetteContainer = document.getElementById('dettaglio-navette-grid');
+                if (navetteContainer) {
+                    navetteContainer.innerHTML = htmlDettaglio;
+                    navetteContainer.style.display = htmlDettaglio ? 'block' : 'none';
+                }
 
                 let htmlMatrice = `<div style="overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 8px; max-height: 70vh; padding-top: 5px;">
                 <table class="data-table" style="font-size: 11px; white-space: nowrap; text-align: center; border-collapse: separate; border-spacing: 0; width: 100%;">
@@ -514,7 +551,7 @@
                         const info = risultati.totali.dettaglio_giornaliero[dateStr];
                         
                         let cellContent = '';
-                        let cellStyle = isWeekend ? `background: #e2e8f0; border-right: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;` : `border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;`;
+                        let cellStyle = isWeekend ? `background: #e2e8f0; border-right: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;` : `border-right: 1px solid #e2e8f0; border-bottom: 1px solid #cbd5e1;`;
                         
                         if (info && info.voci) {
                             const vociMatch = info.voci.filter(v => v.viaggio === row.nomeReale);
@@ -700,6 +737,64 @@
                       tableWrapper.style.maxHeight = oldTableWrapperMaxHeight;
                   }
               });
+          });
+
+          document.getElementById('btn-print-riepilogo').addEventListener('click', () => {
+            const style = document.createElement('style');
+            style.innerHTML = `
+            @media print {
+              @page { size: landscape; margin: 10mm 15mm; }
+              body * { visibility: hidden; }
+              #riepilogo-pdf-export, #riepilogo-pdf-export * { visibility: visible; }
+              
+              body, html, main, #risultati-container {
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  width: 100% !important;
+                  max-width: none !important;
+                  position: static !important;
+              }
+              
+              #riepilogo-pdf-export { 
+                  position: absolute; 
+                  left: 0; 
+                  top: 0; 
+                  width: 100%; 
+                  margin: 0; 
+                  padding: 0; 
+                  box-shadow: none; 
+                  border: none; 
+              }
+              
+              .hide-on-print { display: none !important; }
+            }
+            `;
+            document.head.appendChild(style);
+            window.print();
+            document.head.removeChild(style);
+          });
+
+          document.getElementById('btn-pdf-riepilogo').addEventListener('click', () => {
+            const pdfContainer = document.getElementById('riepilogo-pdf-export');
+            if (!pdfContainer) return;
+
+            const hideOnPrint = pdfContainer.querySelector('.hide-on-print');
+            if (hideOnPrint) hideOnPrint.style.display = 'none';
+
+            const clientName = document.getElementById('client-selector').value || 'Generale';
+            const month = document.getElementById('month-selector').value || 'Mese';
+
+            const opt = {
+              margin:       0.2,
+              filename:     `Riepilogo_${clientName}_${month}.pdf`,
+              image:        { type: 'jpeg', quality: 0.98 },
+              html2canvas:  { scale: 2, useCORS: true },
+              jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
+            };
+
+            html2pdf().set(opt).from(pdfContainer).save().then(() => {
+              if (hideOnPrint) hideOnPrint.style.display = 'flex';
+            });
           });
 
           document.getElementById('btn-export-excel').addEventListener('click', () => {

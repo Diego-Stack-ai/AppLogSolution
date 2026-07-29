@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Analisi Navette Luglio 2026</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #f8fafc; color: #1e293b; }
+        h1 { color: #3b82f6; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+        th { background: #f1f5f9; font-weight: bold; }
+        tr:nth-child(even) { background: #f8fafc; }
+    </style>
+</head>
+<body>
+    <h1>Analisi Navette - Luglio 2026 (Produzione)</h1>
+    <div id="status">Connessione al database in corso...</div>
+    <table id="navetteTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Partenza</th>
+                <th>Rientro</th>
+                <th>Luogo di Carico</th>
+                <th>Cliente/Merce</th>
+                <th>Destinazione</th>
+                <th>Prezzo Fatturazione</th>
+            </tr>
+        </thead>
+        <tbody id="navetteBody"></tbody>
+    </table>
+
+    <script type="module">
+        import { firebaseConfig } from './firebase-config.js';
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import { getFirestore, collection, getDocs, doc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function fetchLuglioNavette() {
+            try {
+                const reportsRef = collection(db, 'clienti', 'DNR', 'reports_logistici');
+                const snapshot = await getDocs(reportsRef);
+                const tbody = document.getElementById('navetteBody');
+                let count = 0;
+
+                snapshot.forEach(docSnap => {
+                    const dataId = docSnap.id;
+                    // Controlla se la data contiene '-07-' (luglio)
+                    if (dataId.includes('-07-')) {
+                        const data = docSnap.data();
+                        if (data.navette && data.navette.length > 0) {
+                            data.navette.forEach(nav => {
+                                count++;
+                                const tr = document.createElement('tr');
+                                tr.innerHTML = `
+                                    <td>${dataId}</td>
+                                    <td>${nav.partenza || ''}</td>
+                                    <td>${nav.rientro || ''}</td>
+                                    <td>${nav.luogo_di_carico || ''}</td>
+                                    <td>${nav.cliente_merce || ''} ${nav.merce || ''}</td>
+                                    <td>${nav.destinazione_merce || ''}</td>
+                                    <td style="font-weight:bold; color:#10b981;">${nav.importo || 'N/D'} €</td>
+                                `;
+                                tbody.appendChild(tr);
+                            });
+                        }
+                    }
+                });
+
+                document.getElementById('status').innerText = `Trovate ${count} navette nel mese di luglio.`;
+                document.getElementById('navetteTable').style.display = 'table';
+            } catch (error) {
+                document.getElementById('status').innerText = 'Errore durante il recupero dei dati: ' + error.message;
+            }
+        }
+
+        fetchLuglioNavette();
+    </script>
+</body>
+</html>

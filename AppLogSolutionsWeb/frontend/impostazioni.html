@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.308">
+    <link rel="stylesheet" href="styles.css?v=6.315">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -299,8 +299,15 @@
                     <input type="text" id="progettoNomeInput" placeholder="es. PROGETTO SCUOLE" style="text-transform: uppercase;">
                 </div>
                 <div class="input-group" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin-top: 8px;">
-                    <input type="checkbox" id="progettoFatturaDiretta" style="width: 18px; height: 18px; cursor: pointer;">
+                    <input type="checkbox" id="progettoFatturaDiretta" style="width: 18px; height: 18px; cursor: pointer;" onchange="toggleIntestatarioSelect()">
                     <label for="progettoFatturaDiretta" style="margin: 0; cursor: pointer; color: #b91c1c; font-weight: 700;">Fattura Diretta (Navette addebitate direttamente a questo cliente anziché al luogo di carico)</label>
+                </div>
+                <div class="input-group" id="containerIntestatario" style="grid-column: 1 / -1; display: none; align-items: center; gap: 8px; margin-top: 8px; padding-left: 26px;">
+                    <label for="progettoIntestatarioFatturaDiretta" style="margin: 0; font-weight: 600; font-size: 13px; color: #475569;">Intestatario Fattura:</label>
+                    <select id="progettoIntestatarioFatturaDiretta" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; max-width: 300px;">
+                        <option value="">-- Seleziona --</option>
+                    </select>
+                    <span style="font-size: 11px; color: #64748b;">(Il cliente a cui verrà fatturato questo viaggio)</span>
                 </div>
             </div>
 
@@ -1406,8 +1413,8 @@
         }
     });
 </script>
-    <script src="script.js?v=6.308"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.308"></script>
+    <script src="script.js?v=6.315"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.315"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -1620,6 +1627,13 @@ const functions = getFunctions(app, "europe-west1");
             if (!nome) return alert('Inserire il nome del cliente.');
             btnSalva.disabled = true; btnSalva.textContent = 'Salvataggio...';
             const fatturaDirettaNavette = document.getElementById('progettoFatturaDiretta') ? document.getElementById('progettoFatturaDiretta').checked : false;
+            const intestatarioFattura = (fatturaDirettaNavette && document.getElementById('progettoIntestatarioFatturaDiretta')) ? document.getElementById('progettoIntestatarioFatturaDiretta').value : "";
+
+            if (fatturaDirettaNavette && !intestatarioFattura) {
+                alert("Seleziona un Intestatario Fattura se abiliti la Fatturazione Diretta.");
+                btnSalva.disabled = false; btnSalva.textContent = editId ? 'Aggiorna Cliente' : 'Salva Cliente';
+                return;
+            }
             const patB = document.getElementById('progettoPatB').value;
             const patC = document.getElementById('progettoPatC').value;
             // Manteniamo il check di vecchi campi per salvataggio ibrido
@@ -1643,6 +1657,7 @@ const functions = getFunctions(app, "europe-west1");
                     contatti: currentContatti,
                     navette_personalizzate: currentNavette,
                     fattura_diretta_navette: fatturaDirettaNavette,
+                    intestatario_fattura_diretta: intestatarioFattura,
                     patente_b: patB ? parseFloat(patB) : null,
                     patente_c: patC ? parseFloat(patC) : null,
                     // Manteniamo navetta_sommacampagna e navetta_cerea per compatibilità temporanea per chi non ha ancora resalvato
@@ -1672,7 +1687,11 @@ const functions = getFunctions(app, "europe-west1");
 
         function resetForm() {
             editId = null; window.lastOpenedProject = null; currentViaggi = []; currentContatti = []; currentNavette = []; nomeInput.value = ''; 
-            if(document.getElementById('progettoFatturaDiretta')) document.getElementById('progettoFatturaDiretta').checked = false;
+            if(document.getElementById('progettoFatturaDiretta')) {
+                document.getElementById('progettoFatturaDiretta').checked = false;
+                window.toggleIntestatarioSelect();
+            }
+            if(document.getElementById('progettoIntestatarioFatturaDiretta')) document.getElementById('progettoIntestatarioFatturaDiretta').value = "";
             nuovoContattoNome.value = ''; nuovoContattoRuolo.value = ''; nuovoContattoEmail.value = ''; nuovoContattoFisso.value = ''; nuovoContattoCellulare.value = ''; nuovoContattoReport.checked = false;
             renderTagList(); renderContattiTagList(); renderNavetteTagList();
             window.lastOpenedProject = null;
@@ -1698,7 +1717,13 @@ const functions = getFunctions(app, "europe-west1");
             const p = progettiCache.find(x => x.id === id);
             if (!p) return;
             editId = id; 
-            if(document.getElementById('progettoFatturaDiretta')) document.getElementById('progettoFatturaDiretta').checked = p.fattura_diretta_navette || false;
+            if(document.getElementById('progettoFatturaDiretta')) {
+                document.getElementById('progettoFatturaDiretta').checked = p.fattura_diretta_navette || false;
+                window.toggleIntestatarioSelect();
+            }
+            if(document.getElementById('progettoIntestatarioFatturaDiretta')) {
+                document.getElementById('progettoIntestatarioFatturaDiretta').value = p.intestatario_fattura_diretta || "";
+            }
             nomeInput.value = p.nome || ''; 
             currentViaggi = [...(p.viaggi || [])];
             currentNavette = [...(p.navette_personalizzate || [])];
@@ -2420,8 +2445,8 @@ const functions = getFunctions(app, "europe-west1");
     
     // ─── CODICE JS GESTIONE DIAGNOSTICA OFFLINE ──────────────────────────────
     try {
-        const { connectivityService } = await import("./core/connectivity-service.js?v=6.308");
-        const { syncManager } = await import("./core/sync-manager.js?v=6.308");
+        const { connectivityService } = await import("./core/connectivity-service.js?v=6.315");
+        const { syncManager } = await import("./core/sync-manager.js?v=6.315");
 
         const elStato = document.getElementById("diagStatoConnessione");
         const elCoda = document.getElementById("diagElementiCoda");

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione V2 (Sviluppo) - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.296">
+    <link rel="stylesheet" href="styles.css?v=6.315">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -111,8 +111,8 @@
     </div>
 
     <!-- Inclusione script base di sistema (Navigazione, Auth, UI) -->
-    <script src="script.js?v=6.296"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.296"></script>
+    <script src="script.js?v=6.315"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.315"></script>
 
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
@@ -130,58 +130,34 @@
 
         async function popolaMenuNavette() {
             const subSel = document.getElementById('navette-sub-selector');
-            const monthStr = document.getElementById('month-selector').value;
             subSel.innerHTML = '<option value="">Caricamento...</option>';
             
-            if (!monthStr) {
-                subSel.innerHTML = '<option value="">Seleziona prima il mese</option>';
-                return;
-            }
-            
             try {
-                const q = query(collection(db, "presenze"), where("mese", "==", monthStr));
-                const snap = await getDocs(q);
+                // Preleva direttamente e unicamente dalla tabella Luoghi di Carico dell'Anagrafica
+                const snap = await getDocs(collection(db, "clienti/DNR/fatturazione_navette_carichi"));
                 
-                const luoghiMap = new Map(); 
+                subSel.innerHTML = '<option value="">-- Seleziona Navetta --</option>';
+                const luoghi = [];
                 
-                snap.forEach(docSnap => {
-                    const d = docSnap.data();
-                    if (d.attivitaAggiuntive && Array.isArray(d.attivitaAggiuntive)) {
-                        d.attivitaAggiuntive.forEach(att => {
-                            if (att.tipo === 'navettaMissione' || att.tipo === 'navetta') {
-                                const tappe = att.tappe || [];
-                                tappe.forEach(t => {
-                                    if (t.carico) {
-                                        const luogo = t.carico.trim().toUpperCase();
-                                        const cliente = t.cliente_merce ? t.cliente_merce.trim().toUpperCase() : '';
-                                        
-                                        if (!luoghiMap.has(luogo)) luoghiMap.set(luogo, luogo);
-                                        
-                                        if (cliente) {
-                                            const p = window.listaNavetteClientiCache?.find(x => (x.nome||'').trim().toUpperCase() === cliente);
-                                            if (p && p.fattura_diretta) {
-                                                const key = luogo + ' - ' + cliente;
-                                                if (!luoghiMap.has(key)) luoghiMap.set(key, key);
-                                            }
-                                        }
-                                    }
-                                });
-                            }
-                        });
+                snap.forEach(d => {
+                    const data = d.data();
+                    if (data.nome) {
+                        luoghi.push(data.nome.trim().toUpperCase());
                     }
                 });
                 
-                subSel.innerHTML = '<option value="">-- Seleziona Navetta --</option>';
-                const sortedKeys = Array.from(luoghiMap.keys()).sort();
-                sortedKeys.forEach(k => {
+                // Rimuovi eventuali duplicati (sebbene non dovrebbero esserci) e ordina
+                const uniqueLuoghi = [...new Set(luoghi)].sort();
+                
+                uniqueLuoghi.forEach(k => {
                     const opt = document.createElement('option');
                     opt.value = k;
                     opt.textContent = k;
                     subSel.appendChild(opt);
                 });
                 
-                if (sortedKeys.length === 0) {
-                    subSel.innerHTML = '<option value="">Nessuna navetta trovata</option>';
+                if (uniqueLuoghi.length === 0) {
+                    subSel.innerHTML = '<option value="">Nessuna navetta in anagrafica</option>';
                 }
             } catch (e) {
                 console.error("Errore popolamento navette", e);
@@ -205,9 +181,9 @@
                 
                 // Fetch Anagrafica Clienti e Carichi per il flag "Fattura Diretta"
                 try {
-                    const snapClienti = await getDocs(collection(db, "clienti/DNR/navette_anagrafica_clienti"));
+                    const snapClienti = await getDocs(collection(db, "clienti/DNR/fatturazione_navette_clienti"));
                     snapClienti.forEach(d => window.listaNavetteClientiCache.push({ id: d.id, ...d.data() }));
-                    const snapCarichi = await getDocs(collection(db, "clienti/DNR/navette_anagrafica_carichi"));
+                    const snapCarichi = await getDocs(collection(db, "clienti/DNR/fatturazione_navette_carichi"));
                     snapCarichi.forEach(d => window.listaNavetteClientiCache.push({ id: d.id, ...d.data() }));
                 } catch(e) { console.error("Errore fetch anagrafiche", e); }
                 
@@ -324,13 +300,7 @@
                     
                     if (isNavettaDirect) {
                         const rawNav = clientName.split('::')[1];
-                        if (rawNav.includes(' - ')) {
-                            const p = rawNav.split(' - ');
-                            targetLuogo = p[0].trim().toUpperCase();
-                            targetCliente = p[1].trim().toUpperCase();
-                        } else {
-                            targetLuogo = rawNav.trim().toUpperCase();
-                        }
+                        targetLuogo = rawNav.trim().toUpperCase();
                     }
 
                     snap.forEach(docSnap => {
@@ -344,45 +314,41 @@
                                             const luogo = (t.carico || "").trim().toUpperCase();
                                             const cMerce = (t.cliente_merce || "").trim().toUpperCase();
                                             
-                                            if (targetCliente !== '') {
-                                                // Spunta "Fattura Diretta" per questo cliente (es. Cattel)
-                                                if (luogo === targetLuogo && cMerce === targetCliente) {
-                                                    datiSorgente.push({
-                                                        id: docSnap.id + '_nav_' + attIdx + '_' + tIdx,
-                                                        data: d.data,
-                                                        targa: d.targa,
-                                                        autista: d.autista || d.dipendente || '',
-                                                        mezzo: d.mezzo || d.veicolo || '',
-                                                        cliente_merce: t.cliente_merce || '',
-                                                        destinazione_merce: t.destinazione_merce || '',
-                                                        viaggio: luogo,
-                                                        tappa_navetta: t,
-                                                        ...d
-                                                    });
-                                                }
-                                            } else {
-                                                // Navetta base al luogo di carico. Evitiamo di addebitarla se il cliente merce ha la spunta.
-                                                let hasSpunta = false;
-                                                if (cMerce) {
-                                                    const conf = window.listaNavetteClientiCache?.find(x => (x.nome||'').toUpperCase() === cMerce);
-                                                    if (conf && conf.fattura_diretta) hasSpunta = true;
-                                                }
-                                                
-                                                if (luogo === targetLuogo && !hasSpunta) {
-                                                    datiSorgente.push({
-                                                        id: docSnap.id + '_nav_' + attIdx + '_' + tIdx,
-                                                        data: d.data,
-                                                        targa: d.targa,
-                                                        autista: d.autista || d.dipendente || '',
-                                                        mezzo: d.mezzo || d.veicolo || '',
-                                                        cliente_merce: t.cliente_merce || '',
-                                                        destinazione_merce: t.destinazione_merce || '',
-                                                        viaggio: luogo,
-                                                        tappa_navetta: t,
-                                                        ...d
-                                                    });
+                                            // Analisi del Luogo di Carico
+                                            // Logica V2: Fatturazione Diretta e Override Prezzo
+                                            let owner = luogo; // Di default il viaggio è a carico del Luogo di Carico
+                                            let prezzoSpecifico = null;
+                                            
+                                            if (cMerce) {
+                                                const conf = window.listaNavetteClientiCache?.find(x => (x.nome||'').trim().toUpperCase() === cMerce);
+                                                if (conf) {
+                                                    // Regola 2: Fatturazione Diretta
+                                                    if (conf.fattura_diretta && conf.intestatario_fattura_diretta) {
+                                                        owner = conf.intestatario_fattura_diretta.trim().toUpperCase();
+                                                    }
+                                                    // Regola 1: Override Prezzo
+                                                    if (conf.prezzo !== undefined && conf.prezzo !== null && conf.prezzo !== "") {
+                                                        prezzoSpecifico = parseFloat(conf.prezzo);
+                                                    }
                                                 }
                                             }
+                                                
+                                                // Aggiungiamo il viaggio solo se l'owner calcolato corrisponde al cliente che stiamo analizzando
+                                                if (owner === targetLuogo) {
+                                                    datiSorgente.push({
+                                                        id: docSnap.id + '_nav_' + attIdx + '_' + tIdx,
+                                                        data: d.data,
+                                                        targa: d.targa,
+                                                        autista: d.autista || d.dipendente || '',
+                                                        mezzo: d.mezzo || d.veicolo || '',
+                                                        cliente_merce: t.cliente_merce || '',
+                                                        destinazione_merce: t.destinazione_merce || '',
+                                                        viaggio: cMerce || luogo, // Usiamo cMerce come nome viaggio se presente per maggiore dettaglio
+                                                        tappa_navetta: t,
+                                                        prezzo_override: prezzoSpecifico,
+                                                        ...d
+                                                    });
+                                                }
                                         });
                                     }
                                 });
@@ -455,13 +421,16 @@
                                     <th style="padding: 10px; border-bottom: 2px solid #cbd5e1;">Autista</th>
                                     <th style="padding: 10px; border-bottom: 2px solid #cbd5e1;">Mezzo (Targa)</th>
                                     <th style="padding: 10px; border-bottom: 2px solid #cbd5e1;">Luogo Carico</th>
-                                    <th style="padding: 10px; border-bottom: 2px solid #cbd5e1;">Luogo Scarico</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #cbd5e1;">Tariffa (Carico)</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #cbd5e1;">Cliente / Merce</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #cbd5e1;">Tariffa (Merce)</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #cbd5e1;">Destinazione Merce</th>
                                 </tr>
                             </thead>
                             <tbody>`;
                     
                     if (navetteOrdinate.length === 0) {
-                        htmlNavette += `<tr><td colspan="5" style="text-align:center; padding:12px;">Nessuna navetta trovata</td></tr>`;
+                        htmlNavette += `<tr><td colspan="8" style="text-align:center; padding:12px;">Nessuna navetta trovata</td></tr>`;
                     } else {
                         navetteOrdinate.forEach(n => {
                             let mezzoInfo = n.targa || '-';
@@ -473,12 +442,48 @@
                                 }
                             }
                             
+                            let carico = n.tappa_navetta?.carico || n.tappa_navetta?.luogo || '-';
+                            let clienteMerce = n.tappa_navetta?.cliente_merce || '-';
+                            let destinazione = n.tappa_navetta?.destinazione_merce || n.tappa_navetta?.scarico || '-';
+                            
+                            let prezzoCarico = '-';
+                            let prezzoMerce = '-';
+                            let hasOverride = false;
+                            
+                            if (clienteMerce !== '-') {
+                                const confMerce = window.listaNavetteClientiCache?.find(x => (x.nome||'').trim().toUpperCase() === clienteMerce.trim().toUpperCase());
+                                if (confMerce && confMerce.prezzo !== undefined && confMerce.prezzo !== null && confMerce.prezzo !== "") {
+                                    prezzoMerce = `€ ${parseFloat(confMerce.prezzo).toFixed(2)}`;
+                                    hasOverride = true; // La logica V2 vince sempre se c'è un prezzo merce
+                                }
+                            }
+                            
+                            if (carico !== '-') {
+                                const confCarico = window.listaNavetteClientiCache?.find(x => (x.nome||'').trim().toUpperCase() === carico.trim().toUpperCase());
+                                if (confCarico && confCarico.prezzo !== undefined && confCarico.prezzo !== null && confCarico.prezzo !== "") {
+                                    prezzoCarico = `€ ${parseFloat(confCarico.prezzo).toFixed(2)}`;
+                                }
+                            }
+                            
+                            // Logica colori: verde per l'importo che vince
+                            let htmlPrezzoCarico = prezzoCarico;
+                            let htmlPrezzoMerce = prezzoMerce;
+                            
+                            if (hasOverride) {
+                                htmlPrezzoMerce = `<span style="color:#059669; font-weight:bold;">${prezzoMerce}</span>`;
+                            } else if (prezzoCarico !== '-') {
+                                htmlPrezzoCarico = `<span style="color:#059669; font-weight:bold;">${prezzoCarico}</span>`;
+                            }
+
                             htmlNavette += `<tr style="border-bottom: 1px solid #e2e8f0;">
                                 <td style="padding: 10px;"><strong>${n.data || '-'}</strong></td>
-                                <td style="padding: 10px;">${n.autistaNome || '-'}</td>
+                                <td style="padding: 10px;">${n.autistaNome || n.autista || '-'}</td>
                                 <td style="padding: 10px;">${mezzoInfo}</td>
-                                <td style="padding: 10px;">${n.tappa_navetta?.carico || n.viaggio || '-'}</td>
-                                <td style="padding: 10px;">${n.tappa_navetta?.scarico || '-'}</td>
+                                <td style="padding: 10px;">${carico}</td>
+                                <td style="padding: 10px;">${htmlPrezzoCarico}</td>
+                                <td style="padding: 10px;">${clienteMerce}</td>
+                                <td style="padding: 10px;">${htmlPrezzoMerce}</td>
+                                <td style="padding: 10px;">${destinazione}</td>
                             </tr>`;
                         });
                     }

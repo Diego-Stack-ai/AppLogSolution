@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione Clienti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.308">
+    <link rel="stylesheet" href="styles.css?v=6.315">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -504,6 +504,9 @@
     onSnapshot(collection(db, "clienti_fatturazione"), (snap) => {
         const container = document.getElementById('listaClientiContainer');
         container.innerHTML = '';
+        window.appData = window.appData || {};
+        window.appData.lista_clienti_fatturazione = [];
+        
         if (snap.empty) {
             container.innerHTML = '<div style="padding:20px; text-align:center; color:#64748b;">Nessun cliente configurato per la fatturazione.</div>';
             return;
@@ -512,6 +515,7 @@
         snap.docs.forEach(docSnap => {
             const c = docSnap.data();
             const cid = docSnap.id;
+            window.appData.lista_clienti_fatturazione.push({ id: cid, nome: c.nome });
             
             const numZone = (c.zone_fatturazione || []).length;
             const numRef = (c.referenti || []).length;
@@ -701,11 +705,24 @@
             
             let fatturaDirettaHtml = '';
             if (tipo === 'clienti' || tipo === 'carichi') {
+                const clientiPrincipali = window.appData?.lista_clienti_fatturazione || [];
+                const intestatarioCorrente = d.intestatario_fattura_diretta || '';
+                
+                let selectOptions = '<option value="">-- Seleziona --</option>';
+                clientiPrincipali.sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).forEach(cp => {
+                    selectOptions += `<option value="${cp.nome}" ${intestatarioCorrente === cp.nome ? 'selected' : ''}>${cp.nome}</option>`;
+                });
+
                 fatturaDirettaHtml = `
-                    <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #475569; cursor: pointer; border-left:1px solid #cbd5e1; padding-left:10px; margin-left:5px;">
-                        <input type="checkbox" ${isFatturaDiretta ? 'checked' : ''} onchange="window.toggleUnifiedFlag('${collectionPath}', '${id}', 'fattura_diretta', this.checked)" style="width: 14px; height: 14px; accent-color: #d946ef;">
-                        Fattura Diretta
-                    </label>`;
+                    <div style="display: flex; align-items: center; border-left:1px solid #cbd5e1; padding-left:10px; margin-left:5px;">
+                        <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #475569; cursor: pointer;">
+                            <input type="checkbox" ${isFatturaDiretta ? 'checked' : ''} onchange="window.toggleUnifiedFlag('${collectionPath}', '${id}', 'fattura_diretta', this.checked); document.getElementById('select_intestatario_${id}').style.display = this.checked ? 'block' : 'none';" style="width: 14px; height: 14px; accent-color: #d946ef;">
+                            Fattura Diretta
+                        </label>
+                        <select id="select_intestatario_${id}" onchange="window.toggleUnifiedFlag('${collectionPath}', '${id}', 'intestatario_fattura_diretta', this.value)" style="display: ${isFatturaDiretta ? 'block' : 'none'}; margin-left: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 11px; max-width: 150px;">
+                            ${selectOptions}
+                        </select>
+                    </div>`;
             }
 
             const isNoPrezzo = (tipo === 'destinazioni' || tipo === 'partenze');

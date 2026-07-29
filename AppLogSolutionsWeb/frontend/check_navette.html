@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Analisi Navette - Luglio 2026</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f8fafc; }
+        #output { white-space: pre-wrap; background: #1e293b; color: #10b981; padding: 20px; border-radius: 8px; font-family: monospace; font-size: 13px; max-height: 80vh; overflow-y: auto; }
+        .btn { padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+    <h2>Strumento Analisi Navette (Luglio 2026)</h2>
+    <p>Questo script legge le presenze di Luglio e incrocia i nomi esatti con i valori salvati in Anagrafica.</p>
+    <button class="btn" id="startBtn">Avvia Analisi</button>
+    <hr>
+    <div id="output">In attesa...</div>
+
+    <script type="module">
+        import { db } from "./core/firebase-init.js";
+        import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        document.getElementById('startBtn').addEventListener('click', async () => {
+            const out = document.getElementById('output');
+            out.innerHTML = "Caricamento in corso...\n";
+            
+            try {
+                const anagraficaCarichi = {};
+                const anagraficaClienti = {};
+                
+                let dumpCarichi = [];
+                let dumpClienti = [];
+                
+                const snapCarichi = await getDocs(collection(db, "clienti/DNR/navette_anagrafica_carichi"));
+                snapCarichi.forEach(d => {
+                    const data = d.data();
+                    const n = data.nome || '';
+                    dumpCarichi.push(`"${n}"`);
+                    anagraficaCarichi[n.trim().toUpperCase()] = data;
+                });
+                
+                const snapClienti = await getDocs(collection(db, "clienti/DNR/navette_anagrafica_clienti"));
+                snapClienti.forEach(d => {
+                    const data = d.data();
+                    const n = data.nome || '';
+                    dumpClienti.push(`"${n}"`);
+                    anagraficaClienti[n.trim().toUpperCase()] = data;
+                });
+                
+                out.innerHTML += "\n--- CHIAVI PRESENTI NEL DATABASE ANAGRAFICA ---";
+                out.innerHTML += "\nLUOGHI DI CARICO TROVATI NEL DB:\n" + dumpCarichi.join(", ");
+                out.innerHTML += "\n\nCLIENTI/MERCE TROVATI NEL DB:\n" + dumpClienti.join(", ") + "\n";
+                out.innerHTML += "--------------------------------------------------------\n\n";
+                
+                const q = query(collection(db, "presenze"), where("mese", "==", "2026-07"));
+                const snapPresenze = await getDocs(q);
+                
+                out.innerHTML += "--- INIZIO REPORT ---\n\n";
+                
+                let count = 0;
+                
+                snapPresenze.forEach(docSnap => {
+                    const pres = docSnap.data();
+                    const autista = pres.autistaNome || pres.autista;
+                    const dataStr = pres.data;
+                    
+                    if (pres.attivitaAggiuntive && Array.isArray(pres.attivitaAggiuntive)) {
+                        pres.attivitaAggiuntive.forEach(att => {
+                            if (att.tipo === 'navetta' || att.tipo === 'navettaMissione') {
+                                const tipoNav = att.tipo === 'navetta' ? 'Navetta Pura' : 'Navetta Autisti';
+                                const partenza = att.partenza || '-';
+                                
+                                if (att.tappe && Array.isArray(att.tappe)) {
+                                    att.tappe.forEach((t, idx) => {
+                                        count++;
+                                        const carico = (t.carico || t.luogo || '').trim();
+                                        const cMerce = (t.cliente_merce || '').trim();
+                                        const dest = (t.destinazione_merce || t.scarico || '').trim();
+                                        
+                                        let valCarico = 'NON ESISTE IN ANAGRAFICA';
+                                        let valMerce = 'NON ESISTE IN ANAGRAFICA';
+                                        
+                                        if (carico && carico !== '-') {
+                                            const conf = anagraficaCarichi[carico.toUpperCase()];
+                                            if (conf) valCarico = conf.prezzo !== undefined ? String(conf.prezzo) : 'CAMPO PREZZO VUOTO (undefined)';
+                                        } else { valCarico = 'N/A'; }
+                                        
+                                        if (cMerce && cMerce !== '-') {
+                                            const conf = anagraficaClienti[cMerce.toUpperCase()];
+                                            if (conf) valMerce = conf.prezzo !== undefined ? String(conf.prezzo) : 'CAMPO PREZZO VUOTO (undefined)';
+                                        } else { valMerce = 'N/A'; }
+                                        
+                                        out.innerHTML += `[${dataStr}] - Autista: ${autista}\n`;
+                                        out.innerHTML += `    - Luogo di Carico: "${carico}"  ==> In Tabella: [${valCarico}]\n`;
+                                        out.innerHTML += `    - Cliente/Merce  : "${cMerce}"  ==> In Tabella: [${valMerce}]\n`;
+                                        out.innerHTML += `--------------------------------------------------------\n`;
+                                    });
+                                }
+                            }
+                        });
+                    }
+                });
+                
+                out.innerHTML += `\n--- FINE REPORT ---\n`;
+                
+            } catch (err) {
+                out.innerHTML += `\nERRORE:\n${err.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

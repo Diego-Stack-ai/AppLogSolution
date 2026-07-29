@@ -47,20 +47,26 @@ export class BillingEngine {
                 const viaggioStr = (item.viaggio || "").trim().toUpperCase();
                 nomeViaggioOut = viaggioStr || targa;
                 
+                // 0) Controllo Override Prezzo (Regola V2 Fatturazione Navette)
+                if (item.prezzo_override !== undefined && item.prezzo_override !== null) {
+                    importoItem = parseFloat(item.prezzo_override) || 0;
+                    tipoTariffa = 'Tariffa Specifica (Override)';
+                }
                 // 1) Cerchiamo match esatto nella nuova rubrica V2
-                const matchedZona = zoneFatturazione.find(z => (z.nome_zona || "").trim().toUpperCase() === viaggioStr);
-                
-                if (matchedZona) {
-                    if (matchedZona.tipo_calcolo === 'viaggio') {
-                        let p = parseFloat(matchedZona.prezzo_viaggio);
-                        if (isNaN(p)) {
-                            importoItem = 0;
-                            tipoTariffa = 'ERRORE: Prezzo Mancante';
-                        } else {
-                            importoItem = p;
-                            tipoTariffa = 'A Viaggio';
-                        }
-                    } else if (matchedZona.tipo_calcolo === 'ddt') {
+                else {
+                    const matchedZona = zoneFatturazione.find(z => (z.nome_zona || "").trim().toUpperCase() === viaggioStr);
+                    
+                    if (matchedZona) {
+                        if (matchedZona.tipo_calcolo === 'viaggio') {
+                            let p = parseFloat(matchedZona.prezzo_viaggio);
+                            if (isNaN(p)) {
+                                importoItem = 0;
+                                tipoTariffa = 'ERRORE: Prezzo Mancante';
+                            } else {
+                                importoItem = p;
+                                tipoTariffa = 'A Viaggio';
+                            }
+                        } else if (matchedZona.tipo_calcolo === 'ddt') {
                         // Al momento le logiche DDT dal registro presenze non sono attive, forza a 0 (o implementa la quantita)
                         importoItem = 0; 
                         tipoTariffa = 'A DDT (Attualmente 0)';
@@ -77,8 +83,9 @@ export class BillingEngine {
                         importoItem = parseFloat(clienteData.prezzo_navetta) || 0;
                         tipoTariffa = 'Tariffa Navetta (Fissa)';
                     } else {
-                        importoItem = 0;
-                        tipoTariffa = 'ZONA NON TROVATA';
+                            importoItem = 0;
+                            tipoTariffa = 'ZONA NON TROVATA';
+                        }
                     }
                 }
             } 

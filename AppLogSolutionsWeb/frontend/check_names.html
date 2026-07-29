@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Check Nomi</title>
+</head>
+<body>
+    <h1>Report: Luoghi vs Clienti</h1>
+    <button id="btn" style="padding:10px; font-size:16px;">Analizza</button>
+    <pre id="out"></pre>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Fetch config from environment or use a generic one if we are just reading public data.
+        // Actually, since I'm just running this on Firebase Hosting, it would use the local config if it was part of the app, but I'll inject a generic one:
+        fetch('/__/firebase/init.json').then(async response => {
+            const firebaseConfig = await response.json();
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+
+            document.getElementById('btn').addEventListener('click', async () => {
+                const out = document.getElementById('out');
+                out.textContent = "Caricamento...\n";
+                try {
+                    const luoghiSnap = await getDocs(collection(db, "clienti/DNR/fatturazione_navette_carichi"));
+                    const luoghi = new Set();
+                    luoghiSnap.forEach(d => { if(d.data().nome) luoghi.add(d.data().nome.trim().toUpperCase()); });
+
+                    const clientiSnap = await getDocs(collection(db, "clienti_fatturazione"));
+                    const clienti = new Set();
+                    clientiSnap.forEach(d => { if(d.data().nome) clienti.add(d.data().nome.trim().toUpperCase()); });
+
+                    let text = "--- LUOGHI DI CARICO (fatturazione_navette_carichi) ---\n";
+                    text += `Totale elementi: ${luoghi.size}\n`;
+                    Array.from(luoghi).sort().forEach(n => text += `- ${n}\n`);
+                    
+                    text += "\n--- CLIENTI FATTURAZIONE (clienti_fatturazione) ---\n";
+                    text += `Totale elementi: ${clienti.size}\n`;
+                    Array.from(clienti).sort().forEach(n => text += `- ${n}\n`);
+
+                    const soloLuoghi = Array.from(luoghi).filter(x => !clienti.has(x)).sort();
+                    const soloClienti = Array.from(clienti).filter(x => !luoghi.has(x)).sort();
+                    const inEntrambi = Array.from(luoghi).filter(x => clienti.has(x)).sort();
+
+                    text += `\n--- CONFRONTO ---\n`;
+                    text += `\nPresenti in LUOGHI DI CARICO ma NON in CLIENTI FATTURAZIONE (${soloLuoghi.length}):\n`;
+                    soloLuoghi.forEach(n => text += `- ${n}\n`);
+
+                    text += `\nPresenti in CLIENTI FATTURAZIONE ma NON in LUOGHI DI CARICO (${soloClienti.length}):\n`;
+                    soloClienti.forEach(n => text += `- ${n}\n`);
+
+                    text += `\nPresenti in ENTRAMBI (${inEntrambi.length}):\n`;
+                    inEntrambi.forEach(n => text += `- ${n}\n`);
+
+                    out.textContent = text;
+                } catch(e) {
+                    out.textContent = "Errore: " + e;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

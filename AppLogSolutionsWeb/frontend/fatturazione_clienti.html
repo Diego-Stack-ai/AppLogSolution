@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione Clienti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.315">
+    <link rel="stylesheet" href="styles.css?v=6.335">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -225,11 +225,17 @@
                 <button type="button" onclick="nascondiFormCliente()" style="background:none; border:none; color:#94a3b8; cursor:pointer;"><span class="material-icons-round">close</span></button>
             </div>
 
-            <!-- NOME CLIENTE -->
-            <div class="form-grid" style="margin-bottom: 24px;">
-                <div class="input-group" style="grid-column: 1 / -1;">
+            <!-- NOME E VISIBILITA CLIENTE -->
+            <div class="form-grid" style="margin-bottom: 24px; display: grid; grid-template-columns: 1fr auto; gap: 15px; align-items: end;">
+                <div class="input-group" style="margin-bottom: 0;">
                     <label for="clienteNomeInput">Nome Cliente / Progetto *</label>
                     <input type="text" id="clienteNomeInput" placeholder="es. CATTEL o GRAN_CHEF" style="text-transform: uppercase;">
+                </div>
+                <div style="padding-bottom: 8px;">
+                    <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #475569; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="clienteVisibileInput" checked style="width: 16px; height: 16px; accent-color: #d946ef;">
+                        Visibile in Presenze
+                    </label>
                 </div>
             </div>
 
@@ -316,6 +322,7 @@
         editingClientId = null;
         document.getElementById('formTitle').innerText = 'Nuovo Cliente';
         document.getElementById('clienteNomeInput').value = '';
+        document.getElementById('clienteVisibileInput').checked = true; // Default true per i nuovi
         currentReferenti = [];
         currentZone = [];
         renderReferenti();
@@ -456,6 +463,7 @@
     // ----- Salvataggio Firestore -----
     window.salvaClienteFatturazione = async () => {
         const nome = document.getElementById('clienteNomeInput').value.trim().toUpperCase();
+        const visibile = document.getElementById('clienteVisibileInput').checked;
         if (!nome) return Swal.fire('Errore', 'Inserire il nome del cliente.', 'error');
 
         // Validazione zone
@@ -470,6 +478,7 @@
 
         const data = {
             nome: nome,
+            visibile_presenze: visibile,
             referenti: currentReferenti,
             zone_fatturazione: currentZone.map(z => ({
                 nome_zona: z.nome_zona,
@@ -560,7 +569,11 @@
                             <span style="background:#f1f5f9; padding:2px 8px; border-radius:12px; margin-left:6px;">Referenti: <b>${numRef}</b></span>
                         </div>
                     </div>
-                    <div style="display:flex; gap:8px;" onclick="event.stopPropagation()">
+                    <div style="display:flex; gap:12px; align-items:center;" onclick="event.stopPropagation()">
+                        <label style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:#475569; cursor:pointer;" title="Visibile nel menù a tendina del Registro Presenze">
+                            <input type="checkbox" ${c.visibile_presenze !== false ? 'checked' : ''} onchange="window.toggleClientVisibility('${cid}', this.checked)" style="width:14px; height:14px; accent-color:#d946ef;">
+                            Visibile in Presenze
+                        </label>
                         <button class="action-btn" onclick="modificaCliente('${cid}')" title="Modifica"><span class="material-icons-round">edit</span></button>
                         <button class="action-btn delete-btn" onclick="eliminaCliente('${cid}')" title="Elimina"><span class="material-icons-round">delete</span></button>
                         <button class="action-btn" style="pointer-events:none;"><span class="material-icons-round">expand_more</span></button>
@@ -593,6 +606,7 @@
             editingClientId = id;
             document.getElementById('formTitle').innerText = 'Modifica Cliente: ' + c.nome;
             document.getElementById('clienteNomeInput').value = c.nome;
+            document.getElementById('clienteVisibileInput').checked = (c.visibile_presenze !== false); // Default true per i vecchi
             currentReferenti = c.referenti || [];
             currentZone = (c.zone_fatturazione || []).map(z => ({
                 ...z,
@@ -621,6 +635,18 @@
             }
         });
     };
+
+    window.toggleClientVisibility = async (id, checked) => {
+        try {
+            await updateDoc(doc(db, "clienti_fatturazione", id), {
+                visibile_presenze: checked
+            });
+        } catch (error) {
+            console.error("Errore aggiornamento visibilità:", error);
+            alert("Errore: " + error.message);
+        }
+    };
+
     // --- GESTIONE MAGAZZINI ---
     window.renderScaletteItems = function(tipo) {
         let items = [];
@@ -708,21 +734,34 @@
                 const clientiPrincipali = window.appData?.lista_clienti_fatturazione || [];
                 const intestatarioCorrente = d.intestatario_fattura_diretta || '';
                 
-                let selectOptions = '<option value="">-- Seleziona --</option>';
+                let selectOptions = tipo === 'carichi' ? '<option value="">-- SELEZIONE OBBLIGATORIA --</option>' : '<option value="">-- Seleziona --</option>';
                 clientiPrincipali.sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).forEach(cp => {
                     selectOptions += `<option value="${cp.nome}" ${intestatarioCorrente === cp.nome ? 'selected' : ''}>${cp.nome}</option>`;
                 });
 
-                fatturaDirettaHtml = `
-                    <div style="display: flex; align-items: center; border-left:1px solid #cbd5e1; padding-left:10px; margin-left:5px;">
-                        <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #475569; cursor: pointer;">
-                            <input type="checkbox" ${isFatturaDiretta ? 'checked' : ''} onchange="window.toggleUnifiedFlag('${collectionPath}', '${id}', 'fattura_diretta', this.checked); document.getElementById('select_intestatario_${id}').style.display = this.checked ? 'block' : 'none';" style="width: 14px; height: 14px; accent-color: #d946ef;">
-                            Fattura Diretta
-                        </label>
-                        <select id="select_intestatario_${id}" onchange="window.toggleUnifiedFlag('${collectionPath}', '${id}', 'intestatario_fattura_diretta', this.value)" style="display: ${isFatturaDiretta ? 'block' : 'none'}; margin-left: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 11px; max-width: 150px;">
-                            ${selectOptions}
-                        </select>
-                    </div>`;
+                if (tipo === 'carichi') {
+                    const warningStyle = !intestatarioCorrente ? 'border: 2px solid #ef4444; background-color: #fee2e2;' : 'background-color: #f8fafc;';
+                    fatturaDirettaHtml = `
+                        <div style="display: flex; align-items: center; border-left:1px solid #cbd5e1; padding-left:10px; margin-left:5px;">
+                            <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #ef4444;">
+                                Assegna a Cliente:
+                            </label>
+                            <select id="select_intestatario_${id}" onchange="window.toggleUnifiedFlag('${collectionPath}', '${id}', 'intestatario_fattura_diretta', this.value)" style="margin-left: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 11px; max-width: 150px; outline: none; ${warningStyle}">
+                                ${selectOptions}
+                            </select>
+                        </div>`;
+                } else {
+                    fatturaDirettaHtml = `
+                        <div style="display: flex; align-items: center; border-left:1px solid #cbd5e1; padding-left:10px; margin-left:5px;">
+                            <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #475569; cursor: pointer;">
+                                <input type="checkbox" ${isFatturaDiretta ? 'checked' : ''} onchange="window.toggleUnifiedFlag('${collectionPath}', '${id}', 'fattura_diretta', this.checked); document.getElementById('select_intestatario_${id}').style.display = this.checked ? 'block' : 'none';" style="width: 14px; height: 14px; accent-color: #d946ef;">
+                                Fattura Diretta
+                            </label>
+                            <select id="select_intestatario_${id}" onchange="window.toggleUnifiedFlag('${collectionPath}', '${id}', 'intestatario_fattura_diretta', this.value)" style="display: ${isFatturaDiretta ? 'block' : 'none'}; margin-left: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 11px; max-width: 150px;">
+                                ${selectOptions}
+                            </select>
+                        </div>`;
+                }
             }
 
             const isNoPrezzo = (tipo === 'destinazioni' || tipo === 'partenze');
@@ -808,12 +847,16 @@
         }
         
         try {
-            await addDoc(collection(db, "clienti/DNR/" + collectionPath), {
+            const payload = {
                 nome: nome,
                 prezzo: prezzo,
                 is_navetta_autisti: true,
                 is_navetta: true
-            });
+            };
+            if (tipo === 'carichi') {
+                payload.fattura_diretta = true;
+            }
+            await addDoc(collection(db, "clienti/DNR/" + collectionPath), payload);
             inputNome.value = '';
             inputPrezzo.value = '';
             Swal.fire({ title: 'Aggiunto', icon: 'success', timer: 1000, showConfirmButton: false });

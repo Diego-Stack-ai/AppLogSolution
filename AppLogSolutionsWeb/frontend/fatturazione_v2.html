@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione V2 (Sviluppo) - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.335">
+    <link rel="stylesheet" href="styles.css?v=6.340">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -138,8 +138,8 @@
     </main>
 
     <!-- Inclusione script base di sistema (Navigazione, Auth, UI) -->
-    <script src="script.js?v=6.335"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.335"></script>
+    <script src="script.js?v=6.340"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.340"></script>
 
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
@@ -415,7 +415,7 @@
                                                     ...d,
                                                     id: docSnap.id + '_nav_inj_' + attIdx + '_' + tIdx,
                                                     cliente: clientName.toUpperCase(),
-                                                    viaggio: 'NAVETTA ' + (cMerce || luogo), // Diventerà la riga nella matrice
+                                                    viaggio: (cMerce || luogo) || 'NAVETTA SCONOSCIUTA', // Diventerà la riga nella matrice
                                                     data: d.data, // Per la colonna del giorno
                                                     targa: d.targa,
                                                     autista: d.autista || d.dipendente || '',
@@ -586,26 +586,35 @@
                         <tr>
                             <th style="text-align: left; position: sticky; left: 0; background: #f8fafc; z-index: 2; border-bottom: 2px solid #cbd5e1; border-right: 2px solid #cbd5e1; min-width: 150px;">Viaggio / Zona</th>`;
 
-                const mappingNavette = {
-                    'NAVETTA': ['NAVETTA CATTEL SOMMA CAMPAGNA', 'NAVETTA CATTEL SOMMACAMPAGNA', 'NAVETTA SOMMACAMPAGNA', 'NAVETTA SOMMA CAMPAGNA'],
-                    'BENCARNI': ['NAVETTA CATTEL NAVETTA SEDE', 'NAVETTA CATTEL SEDE'],
-                    'SURGELATO': ['NAVETTA CATTEL NAVETTA SEDE PLUS', 'NAVETTA CATTEL SEDE PLUS'],
-                    'CENTRO CARNI': ['NAVETTA CENTRO CARNI']
-                };
-
                 const [yStr, mStr] = month.split('-');
                 const daysInMonth = new Date(yStr, mStr, 0).getDate();
                 
-                // Helper to get mapped navetta name
                 const getMappedViaggio = (originalName) => {
-                    if (originalName.toUpperCase().startsWith('NAVETTA')) {
-                        let vname = originalName.toUpperCase().replace(/\s*-\s*/g, ' ').trim();
-                        for (const [key, aliases] of Object.entries(mappingNavette)) {
-                            if (aliases.includes(vname)) return key;
-                        }
-                    }
-                    return originalName;
+                    // Removed the startsWith check so ALL trips are properly trimmed
+                    return originalName.toUpperCase().replace(/\s*-\s*/g, ' ').trim();
                 };
+
+                // Trova le navette attive nel mese e crea la lista colonne dinamicamente (Spostato in alto per usarlo in entrambi i moduli)
+                const activeNavetteNames = [];
+                const navPrices = {};
+                
+                Object.values(risultati.totali.dettaglio_giornaliero).forEach(info => {
+                    if (info && info.voci) {
+                        info.voci.forEach(v => {
+                            if (v.is_navetta_injected || v.viaggio.toUpperCase().startsWith('NAVETTA')) {
+                                let mappedKey = v.viaggio.toUpperCase().replace(/\s*-\s*/g, ' ').trim();
+                                
+                                if (!activeNavetteNames.includes(mappedKey)) {
+                                    activeNavetteNames.push(mappedKey);
+                                    navPrices[mappedKey] = 0;
+                                }
+                                if (v.importo > 0) {
+                                    navPrices[mappedKey] = v.importo;
+                                }
+                            }
+                        });
+                    }
+                });
 
                 // Calcolo occorrenze massime giornaliere per ogni viaggio (con nomi unificati per Navette)
                 const maxOccurrences = {};
@@ -626,8 +635,8 @@
                 
                 const viaggiRows = [];
                 const baseViaggi = Object.keys(maxOccurrences).sort((a, b) => {
-                    const aIsNavetta = a === 'NAVETTA' || a === 'BENCARNI' || a === 'SURGELATO' || a === 'CENTRO CARNI' || a.startsWith('NAVETTA');
-                    const bIsNavetta = b === 'NAVETTA' || b === 'BENCARNI' || b === 'SURGELATO' || b === 'CENTRO CARNI' || b.startsWith('NAVETTA');
+                    const aIsNavetta = activeNavetteNames.includes(a);
+                    const bIsNavetta = activeNavetteNames.includes(b);
                     if (aIsNavetta && !bIsNavetta) return 1;
                     if (!aIsNavetta && bIsNavetta) return -1;
                     return a.localeCompare(b);
@@ -737,35 +746,7 @@
 
                 // --- INIZIO NUOVO MODULO VERTICALE ---
 
-                // Trova le navette attive nel mese e crea la lista colonne dinamicamente
-                const activeNavetteNames = [];
-                const navPrices = {};
-                
-                Object.values(risultati.totali.dettaglio_giornaliero).forEach(info => {
-                    if (info && info.voci) {
-                        info.voci.forEach(v => {
-                            if (v.viaggio.toUpperCase().startsWith('NAVETTA')) {
-                                let vname = v.viaggio.toUpperCase().replace(/\s*-\s*/g, ' ').trim();
-                                let mappedKey = null;
-                                for (const [key, aliases] of Object.entries(mappingNavette)) {
-                                    if (aliases.includes(vname)) {
-                                        mappedKey = key;
-                                        break;
-                                    }
-                                }
-                                if (!mappedKey) mappedKey = vname; // Fallback se non mappata
-                                
-                                if (!activeNavetteNames.includes(mappedKey)) {
-                                    activeNavetteNames.push(mappedKey);
-                                    navPrices[mappedKey] = 0;
-                                }
-                                if (v.importo > 0) {
-                                    navPrices[mappedKey] = v.importo;
-                                }
-                            }
-                        });
-                    }
-                });
+                // activeNavetteNames generato in alto
 
                 let totalGiriB = 0;
                 let totalMeseEuro = 0;
@@ -805,13 +786,8 @@
 
                     if (info && info.voci) {
                         info.voci.forEach(v => {
-                            if (v.viaggio.toUpperCase().startsWith('NAVETTA')) {
-                                let vname = v.viaggio.toUpperCase().replace(/\s*-\s*/g, ' ').trim();
-                                let mappedKey = null;
-                                for (const [key, aliases] of Object.entries(mappingNavette)) {
-                                    if (aliases.includes(vname)) { mappedKey = key; break; }
-                                }
-                                if (!mappedKey) mappedKey = vname;
+                            if (v.is_navetta_injected || v.viaggio.toUpperCase().startsWith('NAVETTA')) {
+                                let mappedKey = v.viaggio.toUpperCase().replace(/\s*-\s*/g, ' ').trim();
                                 
                                 if (activeNavetteNames.includes(mappedKey)) {
                                     dailyNavCount[mappedKey]++;
@@ -1175,13 +1151,6 @@
               const boldMoneyStyle = { ...moneyStyle, font: { bold: true } };
               const boldStyle = { ...borderStyle, font: { bold: true } };
               
-              const mappingNavette = {
-                  'NAVETTA': ['NAVETTA CATTEL SOMMA CAMPAGNA', 'NAVETTA CATTEL SOMMACAMPAGNA', 'NAVETTA SOMMACAMPAGNA', 'NAVETTA SOMMA CAMPAGNA'],
-                  'BENCARNI': ['NAVETTA CATTEL NAVETTA SEDE', 'NAVETTA CATTEL SEDE'],
-                  'SURGELATO': ['NAVETTA CATTEL NAVETTA SEDE PLUS', 'NAVETTA CATTEL SEDE PLUS'],
-                  'CENTRO CARNI': ['NAVETTA CENTRO CARNI']
-              };
-
               // 1. Identify active navette
               const activeNavetteNames = [];
               const navPrices = {};
@@ -1189,13 +1158,8 @@
               Object.values(mData.dettaglio_giornaliero).forEach(info => {
                   if (info && info.voci) {
                       info.voci.forEach(v => {
-                          if (v.viaggio.toUpperCase().startsWith('NAVETTA')) {
-                              let vname = v.viaggio.toUpperCase().replace(/\s*-\s*/g, ' ').trim();
-                              let mappedKey = null;
-                              for (const [key, aliases] of Object.entries(mappingNavette)) {
-                                  if (aliases.includes(vname)) { mappedKey = key; break; }
-                              }
-                              if (!mappedKey) mappedKey = vname; 
+                          if (v.is_navetta_injected || v.viaggio.toUpperCase().startsWith('NAVETTA')) {
+                              let mappedKey = v.viaggio.toUpperCase().replace(/\s*-\s*/g, ' ').trim();
                               
                               if (!activeNavetteNames.includes(mappedKey)) {
                                   activeNavetteNames.push(mappedKey);
@@ -1245,13 +1209,8 @@
                   
                   if (info && info.voci) {
                       info.voci.forEach(v => {
-                          if (v.viaggio.toUpperCase().startsWith('NAVETTA')) {
-                              let vname = v.viaggio.toUpperCase().replace(/\s*-\s*/g, ' ').trim();
-                              let mappedKey = null;
-                              for (const [key, aliases] of Object.entries(mappingNavette)) {
-                                  if (aliases.includes(vname)) { mappedKey = key; break; }
-                              }
-                              if (!mappedKey) mappedKey = vname;
+                          if (v.is_navetta_injected || v.viaggio.toUpperCase().startsWith('NAVETTA')) {
+                              let mappedKey = v.viaggio.toUpperCase().replace(/\s*-\s*/g, ' ').trim();
                               
                               if (activeNavetteNames.includes(mappedKey)) {
                                   dailyNavCount[mappedKey]++;

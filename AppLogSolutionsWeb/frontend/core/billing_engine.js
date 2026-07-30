@@ -131,7 +131,8 @@ export class BillingEngine {
                 totali.dettaglio_giornaliero[dateKey].voci.push({
                     viaggio: nomeViaggioOut,
                     tipo: tipoTariffa,
-                    importo: importoItem
+                    importo: importoItem,
+                    is_navetta_injected: item.is_navetta_injected || false
                 });
                 totali.dettaglio_giornaliero[dateKey].importo_giornaliero += importoItem;
                 totali.importo_totale += importoItem;

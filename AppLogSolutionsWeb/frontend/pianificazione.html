@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pianificazione Viaggi - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.340">
+    <link rel="stylesheet" href="styles.css?v=6.353">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -70,6 +70,10 @@
                     <span class="material-icons-round">picture_as_pdf</span>
                     Scarica PDF
                 </button>
+                <button id="btnEsporta" class="btn-primary" style="background-color: #8b5cf6; width: auto; padding: 10px 16px;" onclick="window.esportaInPresenze()">
+                    <span class="material-icons-round">publish</span>
+                    Esporta in Presenze
+                </button>
                 <button id="btnOrdina" class="btn-primary" style="background-color: #3b82f6; width: auto; padding: 10px 16px;" onclick="window.ordinaPerCliente()">
                     <span class="material-icons-round">sort_by_alpha</span>
                     Ordina
@@ -124,6 +128,7 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        window.db = db;
 
         // Variabili globali per l'intelligenza logistica
         window.appState = {
@@ -1188,6 +1193,100 @@
         });
 
         // Avvio
+        window.esportaInPresenze = async function() {
+            const dataIso = document.getElementById('dataPianificazione').value;
+            if (!dataIso) return Swal.fire('Attenzione', 'Seleziona una data per la pianificazione.', 'warning');
+
+            const confirm = await Swal.fire({
+                title: 'Esporta in Presenze',
+                text: 'Attenzione: i dati presenti nella pianificazione viaggi sovrascriveranno qualsiasi dato presente in Presenze Dipendenti per questa giornata. Solo per i dipendenti valorizzati in questa pianificazione. Procedere?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sì, Esporta',
+                cancelButtonText: 'Annulla'
+            });
+
+            if (!confirm.isConfirmed) return;
+
+            const btnEsporta = document.getElementById('btnEsporta');
+            const originalHTML = btnEsporta.innerHTML;
+            btnEsporta.disabled = true;
+            btnEsporta.innerHTML = '<span class="material-icons-round" style="animation: spin 1s linear infinite;">autorenew</span> Esportazione...';
+
+            try {
+                // Raccogliamo solo i dipendenti che hanno qualcosa assegnato (cliente, viaggio, o targa)
+                const assegnazioniDaEsportare = [];
+                document.querySelectorAll('#planningTable tbody tr').forEach(tr => {
+                    const id = tr.getAttribute('data-id');
+                    if (!id) return;
+                    
+                    const cliente = tr.querySelector('.in-cliente').value.trim();
+                    const viaggio = tr.querySelector('.in-viaggio').value.trim();
+                    const targa = tr.querySelector('.in-targa').value.trim();
+                    const autistaNome = tr.querySelector('.driver-name').textContent.trim();
+
+                    if (cliente || viaggio || targa) {
+                        assegnazioniDaEsportare.push({
+                            dipendenteId: id,
+                            autistaNome: autistaNome,
+                            cliente: cliente,
+                            viaggio: viaggio,
+                            targa: targa
+                        });
+                    }
+                });
+
+                if (assegnazioniDaEsportare.length === 0) {
+                    Swal.fire('Attenzione', 'Nessun dipendente assegnato in questa pianificazione.', 'info');
+                    return;
+                }
+
+                const { doc, writeBatch } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                const batch = writeBatch(window.db);
+                
+                const mese = dataIso.substring(0, 7); // formato YYYY-MM, allineato a presenze.html
+                const dt = new Date(dataIso);
+                const giorniSettimana = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+                const giornoSettimana = giorniSettimana[dt.getDay()];
+                const timestamp = new Date().toISOString();
+
+                assegnazioniDaEsportare.forEach(ass => {
+                    // Formato ID presenze: dipendenteId_dataIso
+                    const presenzaRef = doc(window.db, 'presenze', `${ass.dipendenteId}_${dataIso}`);
+                    batch.set(presenzaRef, {
+                        cliente: ass.cliente,
+                        viaggio: ass.viaggio,
+                        targa: ass.targa,
+                        data: dataIso,
+                        mese: mese,
+                        giornoSettimana: giornoSettimana,
+                        autistaId: ass.dipendenteId,
+                        autistaNome: ass.autistaNome,
+                        dipendenteId: ass.dipendenteId, // Mantenuto per compatibilità
+                        timestamp: timestamp
+                    }, { merge: true });
+                });
+
+                await batch.commit();
+
+                Swal.fire({
+                    title: 'Esportato!',
+                    text: `Sono stati aggiornati/sovrascritti i dati di ${assegnazioniDaEsportare.length} dipendenti in Presenze.`,
+                    icon: 'success',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+
+            } catch (err) {
+                console.error("Errore esportazione:", err);
+                Swal.fire('Errore', 'Impossibile esportare in presenze: ' + err.message, 'error');
+            } finally {
+                btnEsporta.disabled = false;
+                btnEsporta.innerHTML = originalHTML;
+            }
+        };
+
+        // Eventi Iniziali
         document.addEventListener("DOMContentLoaded", () => {
             // Event Delegation per evitare eventi inline e migliorare le prestazioni
             document.getElementById('planningTable').addEventListener('change', (e) => {
@@ -1207,8 +1306,8 @@
         });
 
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=6.340"></script>
-    <script src="script.js?v=6.340"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.353"></script>
+    <script src="script.js?v=6.353"></script>
 </body>
 </html>
 

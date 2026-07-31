@@ -16,7 +16,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <link rel="stylesheet" href="styles.css?v=6.340">
+    <link rel="stylesheet" href="styles.css?v=6.353">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         .navetta-details-row {
@@ -587,13 +587,13 @@ tr.weekend:hover
         </div>
     </main>
 
-    <script src="script.js?v=6.340"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.340"></script>
+    <script src="script.js?v=6.353"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.353"></script>
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
         import { getFirestore, collection, doc, setDoc, query, where, onSnapshot, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
-        import { calculateHours } from "./firestore-service.js?v=6.340";
+        import { calculateHours } from "./firestore-service.js?v=6.353";
 
           window.db = getFirestore(app);
 
@@ -1907,7 +1907,7 @@ tr.weekend:hover
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.340");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.353");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -1956,6 +1956,13 @@ tr.weekend:hover
             const docId = document.getElementById('navettaDocId').value;
             
             if (!docId) return;
+
+            // Salvataggio preventivo delle righe modificate in background
+            const pendingEdits = Array.from(document.querySelectorAll('#tableBody tr .btn-cancel'));
+            if (pendingEdits.length > 0) {
+                console.log("[Navetta] Rilevate righe modificate. Salvataggio preventivo in corso...");
+                await window.saveAllEdits(true);
+            }
             
             try {
                 btn.disabled = true;
@@ -1968,7 +1975,7 @@ tr.weekend:hover
                 // Accoda le foto offline
                 if (window.offlinePresenzePhotoBlobs && Object.keys(window.offlinePresenzePhotoBlobs).length > 0) {
                     try {
-                        const { syncManager } = await import("./core/sync-manager.js?v=6.340");
+                        const { syncManager } = await import("./core/sync-manager.js?v=6.353");
                         for (const index in window.offlinePresenzePhotoBlobs) {
                             const fileBlob = window.offlinePresenzePhotoBlobs[index];
                             const photoId = `foto_presenza_${docId}_${index}`;
@@ -2147,10 +2154,10 @@ tr.weekend:hover
             if (btnSaveTutti) btnSaveTutti.style.display = unlock ? 'inline-block' : 'none';
         };
 
-        window.saveAllEdits = async function() {
+        window.saveAllEdits = async function(silent = false) {
             const saveBtns = Array.from(document.querySelectorAll('#tableBody tr .btn-cancel'));
             if (saveBtns.length === 0) {
-                alert('Nessuna riga da salvare. Seleziona almeno una riga modificata.');
+                if (!silent) alert('Nessuna riga da salvare. Seleziona almeno una riga modificata.');
                 return;
             }
             const btnSaveTutti = document.getElementById('btnSaveTutti');
@@ -2182,15 +2189,17 @@ tr.weekend:hover
                 if (btnSaveTutti) btnSaveTutti.style.display = 'none';
                 
                 if (errors > 0) {
-                    alert(`Salvataggio completato con ${errors} errore/i. Controlla la console.`);
+                    if (!silent) alert(`Salvataggio completato con ${errors} errore/i. Controlla la console.`);
                 } else {
-                    setTimeout(() => {
-                        alert("Tutte le righe modificate sono state salvate correttamente!");
-                    }, 500);
+                    if (!silent) {
+                        setTimeout(() => {
+                            alert("Tutte le righe modificate sono state salvate correttamente!");
+                        }, 500);
+                    }
                 }
             } catch(globalError) {
                 console.error("Errore irreversibile durante il batch:", globalError);
-                alert("Errore critico durante il salvataggio multiplo: " + globalError.message);
+                if (!silent) alert("Errore critico durante il salvataggio multiplo: " + globalError.message);
                 if (btnSaveTutti) { btnSaveTutti.disabled = false; btnSaveTutti.textContent = '✅ Salva Tutto'; }
             }
         };
@@ -2732,7 +2741,7 @@ tr.weekend:hover
             </div>
         </div>
     </div>
-    <script type="module" src="cedolini-splitter.js?v=6.340"></script>
+    <script type="module" src="cedolini-splitter.js?v=6.353"></script>
 
 </body>
 </html>

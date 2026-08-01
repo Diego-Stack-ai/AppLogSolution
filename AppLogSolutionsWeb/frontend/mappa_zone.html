@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.361">
+    <link rel="stylesheet" href="styles.css?v=6.366">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1487,10 +1487,10 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             }
         }
 
-        async function optimizePointsOffline(punti, depot) {
+        async function optimizePointsOffline(punti, depot_partenza, depot_arrivo) {
             const unvisited = [...punti];
             const path = [];
-            let current = depot;
+            let current = depot_partenza;
             
             while (unvisited.length > 0) {
                 let bestIndex = -1;
@@ -1513,8 +1513,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             return path;
         }
 
-        async function simulateRouteOffline(punti, depot, isGrandChef) {
-            const fullPath = [depot, ...punti, depot];
+        async function simulateRouteOffline(punti, depot_partenza, depot_arrivo, isGrandChef) {
+            const fullPath = [depot_partenza, ...punti, depot_arrivo];
             let totalKm = 0;
             let totalSec = 0;
             
@@ -1530,8 +1530,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             
             let firstStopTravelSec = 0;
             if (punti.length > 0) {
-                let res = await getLocalDistance(depot, punti[0]);
-                if (!res) res = haversineDistance(depot, punti[0]);
+                let res = await getLocalDistance(depot_partenza, punti[0]);
+                if (!res) res = haversineDistance(depot_partenza, punti[0]);
                 firstStopTravelSec = res.dur;
             }
             
@@ -1543,7 +1543,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             const puntiSimulati = [];
             for (let i = 0; i < punti.length; i++) {
                 const p = punti[i];
-                const prev = i === 0 ? depot : punti[i-1];
+                const prev = i === 0 ? depot_partenza : punti[i-1];
                 let res = await getLocalDistance(prev, p);
                 if (!res) res = haversineDistance(prev, p);
                 
@@ -1567,8 +1567,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             
             if (punti.length > 0) {
                 const last = punti[punti.length - 1];
-                let res = await getLocalDistance(last, depot);
-                if (!res) res = haversineDistance(last, depot);
+                let res = await getLocalDistance(last, depot_arrivo);
+                if (!res) res = haversineDistance(last, depot_arrivo);
                 currentMin += Math.round(res.dur / 60);
             }
             
@@ -1586,8 +1586,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
         async function uploadStorageStringHelper(path, data, contentType) {
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.361");
-                const { syncManager } = await import("./core/sync-manager.js?v=6.361");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.366");
+                const { syncManager } = await import("./core/sync-manager.js?v=6.366");
                 
                 if (connectivityService.getStatus() === 'online') {
                     await uploadString(ref(storage, path), data, 'raw', { contentType });
@@ -1635,14 +1635,26 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
                 const is_cattel = punti.some(p => String(p.zona || "").toUpperCase().includes("CATTEL") || String(p.codice_frutta || "").toUpperCase().includes("CATTEL"));
                 const is_bauer = punti.some(p => String(p.zona || "").toUpperCase().includes("BAUER") || String(p.codice_frutta || "").toUpperCase().includes("BAUER"));
 
-                const depot = getDepotForPointsOffline(punti);
+                let depot_partenza = getDepotForPointsOffline(punti);
+                let depot_arrivo = depot_partenza;
+                
+                const magP = zone._magazzino_partenza_id;
+                if (magP && window.MASTER_MAGAZZINI) {
+                    const m = window.MASTER_MAGAZZINI.find(x => x.id === magP);
+                    if (m) depot_partenza = { nome: m.nome, lat: parseFloat(m.lat), lon: parseFloat(m.lon) };
+                }
+                const magA = zone._magazzino_arrivo_id;
+                if (magA && window.MASTER_MAGAZZINI) {
+                    const m = window.MASTER_MAGAZZINI.find(x => x.id === magA);
+                    if (m) depot_arrivo = { nome: m.nome, lat: parseFloat(m.lat), lon: parseFloat(m.lon) };
+                }
                 
                 let puntiLavorati = punti;
                 if (usa_or_tools && !is_bloccato) {
-                    puntiLavorati = await optimizePointsOffline(punti, depot);
+                    puntiLavorati = await optimizePointsOffline(punti, depot_partenza, depot_arrivo);
                 }
 
-                const sim = await simulateRouteOffline(puntiLavorati, depot, is_grand_chef || is_cattel || is_bauer);
+                const sim = await simulateRouteOffline(puntiLavorati, depot_partenza, depot_arrivo, is_grand_chef || is_cattel || is_bauer);
 
                 // Calcola DDT
                 let tot_ddt = 0;
@@ -1675,7 +1687,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
                     t_tot: Math.round(sim.totalSec / 60) + sim.puntiSimulati.length * (is_grand_chef ? 12 : 8),
                     tot_ddt,
                     fatturato: fatturatoVal.toFixed(2),
-                    depot: depot.nome,
+                    depot: depot_partenza.nome,
                     is_gc: is_grand_chef || is_cattel || is_bauer,
                     ora_partenza: sim.oraPartenza
                 };
@@ -2330,6 +2342,27 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
                     // Update UI date badge
                     document.getElementById('data-giorno-badge').textContent = targetFileDate;
 
+                    // Lettura magazzini clienti (Serve sia in mappa che in popup)
+                    setLoaderMsg("Lettura magazzini clienti...");
+                    const snapMag = await window.getDocsConFallback(collection(db, 'clienti_fatturazione'));
+                    window.MASTER_MAGAZZINI = [];
+                    snapMag.docs.forEach(d => {
+                        const c = d.data();
+                        if (c.magazzini && c.magazzini.length > 0) {
+                            c.magazzini.forEach((m, idx) => {
+                                window.MASTER_MAGAZZINI.push({
+                                    id: `${d.id}_${idx}`,
+                                    nome_cliente: c.nome,
+                                    nome: m.nome,
+                                    lat: m.lat,
+                                    lon: m.lon,
+                                    indirizzo: m.indirizzo
+                                });
+                            });
+                        }
+                    });
+                    console.log(`[Map] Magazzini caricati: ${window.MASTER_MAGAZZINI.length} record.`);
+
                     if (!IS_POPUP) {
                         // 1. Wait for Google Maps and set local map ref
                         setLoaderMsg("Inizializzazione Google Maps SDK...");
@@ -2954,6 +2987,47 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             }
         };
 
+        window.rimuoviFermataDaZona = (zid, idx) => {
+            const z = DATA_ZONE.find(x => x.id_zona === zid);
+            if (!z) return;
+            Swal.fire({
+                title: 'Eliminare Fermata?',
+                text: "Sei sicuro di voler rimuovere questo punto di consegna dal viaggio?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Sì, Rimuovi'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    z.lista_punti.splice(idx, 1);
+                    if (z._stats) {
+                        z._stats.km = 0;
+                        z._stats.t_guida = 0;
+                        z._stats.t_tot = 0;
+                    }
+                    z.lista_punti.forEach(p => {
+                        p.ora_arrivo = '';
+                        p.ora_ripartenza = '';
+                        p.ritardo = false;
+                    });
+                    z._stato = 'modificato';
+                    window.renderSidebar();
+                    window.renderMap();
+                    window.saveToServerBackground();
+                }
+            });
+        };
+
+        window.updateMagazzinoZid = (zid, tipo, val) => {
+            const z = DATA_ZONE.find(x => x.id_zona === zid);
+            if (!z) return;
+            if (tipo === 'partenza') z._magazzino_partenza_id = val;
+            if (tipo === 'arrivo') z._magazzino_arrivo_id = val;
+            z._stato = 'modificato';
+            window.saveToServerBackground();
+        };
+
         // Render Sidebar Zones and Points List
         window.renderSidebar = () => {
             const listContainer = document.getElementById('zone-list');
@@ -3077,6 +3151,26 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
                                 ` : ''}
                             </div>
                         </div>
+                        
+                        ${!isSpeciale ? `
+                        <div class="magazzini-selettori" style="display:flex; flex-direction:column; gap:4px; padding: 6px 10px; background: #f8fafc; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;" onclick="event.stopPropagation()">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span class="material-icons-round" style="font-size:14px; color:#10b981;">flag</span>
+                                <select title="Magazzino di Partenza" onchange="window.updateMagazzinoZid('${z.id_zona}', 'partenza', this.value)" style="flex:1; font-size:11px; padding:2px; border:1px solid #cbd5e1; border-radius:4px; max-width: 250px;">
+                                    <option value="">-- Seleziona Partenza --</option>
+                                    ${(window.MASTER_MAGAZZINI || []).map(m => `<option value="${m.id}" ${z._magazzino_partenza_id === m.id ? 'selected' : ''}>[${m.nome_cliente}] ${m.nome}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span class="material-icons-round" style="font-size:14px; color:#ef4444;">sports_score</span>
+                                <select title="Magazzino di Arrivo" onchange="window.updateMagazzinoZid('${z.id_zona}', 'arrivo', this.value)" style="flex:1; font-size:11px; padding:2px; border:1px solid #cbd5e1; border-radius:4px; max-width: 250px;">
+                                    <option value="">-- Seleziona Arrivo --</option>
+                                    ${(window.MASTER_MAGAZZINI || []).map(m => `<option value="${m.id}" ${z._magazzino_arrivo_id === m.id ? 'selected' : ''}>[${m.nome_cliente}] ${m.nome}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        ` : ''}
+                        
                         ${_fasePills}
                         ${cardBtns}
                         ${statsBar}
@@ -3184,6 +3278,12 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
                                             </div>
                                             
                                             ${noteHtml}
+
+                                            ${(!isBloccato && !activeAction && !isSpeciale) ? `
+                                                <button type="button" class="btn-trash-stop" title="Rimuovi fermata dal viaggio" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:4px; margin-left:auto; display:flex; align-items:center; justify-content:center; border-radius:4px; transition:0.2s;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'" onclick="event.stopPropagation(); window.rimuoviFermataDaZona('${z.id_zona}', ${idx})">
+                                                    <span class="material-icons-round" style="font-size:18px;">delete</span>
+                                                </button>
+                                            ` : ''}
                                         </div>
                                     `;
                                 }).join('')}
@@ -3457,13 +3557,25 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             
             if (!result.isConfirmed) return;
             
+            // Validazione Magazzini
+            if (z.id_zona !== 'DDT_DA_INSERIRE') {
+                if (!z._magazzino_partenza_id || !z._magazzino_arrivo_id) {
+                    Swal.fire({
+                        title: 'Magazzini Mancanti',
+                        text: 'Devi selezionare sia il Magazzino di Partenza che il Magazzino di Arrivo per poter ottimizzare il percorso di questo viaggio.',
+                        icon: 'error'
+                    });
+                    return;
+                }
+            }
+            
             // First save background changes so server works on latest stop list
             await window.saveToServerBackground();
 
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.361");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.366");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -3843,7 +3955,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.361");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.366");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -3923,7 +4035,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.361");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.366");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 

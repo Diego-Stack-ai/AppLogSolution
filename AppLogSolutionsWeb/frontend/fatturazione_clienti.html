@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione Clienti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.361">
+    <link rel="stylesheet" href="styles.css?v=6.366">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -265,6 +265,35 @@
                 </div>
             </div>
 
+            <!-- MAGAZZINI (PARTENZA / ARRIVO) -->
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+                <label style="font-size: 14px; font-weight: 700; color: #475569; display: block; margin-bottom: 12px;">
+                    <span class="material-icons-round" style="font-size:18px; vertical-align:middle; color:var(--primary);">warehouse</span> 
+                    Magazzini del Cliente (Partenze e Arrivi)
+                </label>
+                <p style="font-size:12px; color:#64748b; margin-bottom:16px;">I magazzini inseriti qui compariranno nelle tendine Partenza/Arrivo nella Pianificazione Viaggi.</p>
+                
+                <div id="magazziniClienteList" style="display: flex; flex-direction: column; gap: 8px; min-height: 10px; margin-bottom: 16px;"></div>
+                
+                <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 8px;">
+                    <label style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 8px; display: block;">+ Aggiungi Nuovo Magazzino</label>
+                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-bottom: 8px;">
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label style="font-size:10px; margin-bottom:2px;">Nome (es. Sede Centrale) *</label>
+                            <input type="text" id="magNome" placeholder="Nome Magazzino" style="padding:4px 8px; font-size:11px; height:28px; text-transform: uppercase;">
+                        </div>
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label style="font-size:10px; margin-bottom:2px;">Indirizzo (con autocompletamento) *</label>
+                            <input type="text" id="magIndirizzo" placeholder="Inizia a digitare l'indirizzo..." style="padding:4px 8px; font-size:11px; height:28px;">
+                        </div>
+                    </div>
+                    <!-- Hidden fields per Lat e Lon -->
+                    <input type="hidden" id="magLat">
+                    <input type="hidden" id="magLon">
+                    <button type="button" onclick="aggiungiMagazzinoCliente()" class="btn-primary" style="width: auto; padding: 4px 12px; font-size: 11px; background: #3b82f6; border: none; height: 26px; line-height: 1;">Salva Magazzino</button>
+                </div>
+            </div>
+
             <!-- RUBRICA REFERENTI -->
             <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
                 <label style="font-size: 14px; font-weight: 700; color: #475569; display: block; margin-bottom: 12px;">
@@ -331,6 +360,33 @@
     </div>
 </main>
 
+<script type="module">
+    import { GOOGLE_MAPS_API_KEY } from './firebase-config.js';
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMapsAutocomplete`;
+    script.async = true;
+    script.defer = true;
+    
+    window.initMapsAutocomplete = function() {
+        const input = document.getElementById('magIndirizzo');
+        if(input) {
+            const autocomplete = new google.maps.places.Autocomplete(input, { types: ['geocode', 'establishment'] });
+            autocomplete.addListener('place_changed', function() {
+                const place = autocomplete.getPlace();
+                if (place.geometry && place.geometry.location) {
+                    document.getElementById('magLat').value = place.geometry.location.lat();
+                    document.getElementById('magLon').value = place.geometry.location.lng();
+                }
+            });
+            input.addEventListener('input', function() {
+                document.getElementById('magLat').value = '';
+                document.getElementById('magLon').value = '';
+            });
+        }
+    };
+    document.head.appendChild(script);
+</script>
+
 <script src="script.js"></script>
 <script type="module" src="firebase-auth-sync.js"></script>
 
@@ -341,6 +397,7 @@
 
     let currentReferenti = [];
     let currentZone = [];
+    let currentMagazziniCliente = [];
     let editingClientId = null;
 
     // ----- UI Form -----
@@ -351,8 +408,10 @@
         document.getElementById('clienteVisibileInput').checked = true; // Default true per i nuovi
         currentReferenti = [];
         currentZone = [];
+        currentMagazziniCliente = [];
         renderReferenti();
         renderZone();
+        renderMagazziniCliente();
         document.getElementById('formClienteContainer').style.display = 'block';
         document.getElementById('listaClientiContainer').style.display = 'none';
     };
@@ -401,6 +460,54 @@
                         <div style="font-size:11px; color:#64748b;">${r.email ? 'Email: '+r.email : ''} ${r.cellulare ? '| Cell: '+r.cellulare : ''}</div>
                     </div>
                     <button type="button" onclick="rimuoviReferente(${i})" class="remove-btn">&times;</button>
+                </div>
+            `;
+        });
+    }
+
+    // ----- Magazzini Cliente -----
+    window.aggiungiMagazzinoCliente = () => {
+        const nome = document.getElementById('magNome').value.trim().toUpperCase();
+        const indirizzo = document.getElementById('magIndirizzo').value.trim();
+        const lat = document.getElementById('magLat').value;
+        const lon = document.getElementById('magLon').value;
+        
+        if (!nome || !indirizzo) return alert('Nome e Indirizzo del magazzino sono obbligatori.');
+        
+        currentMagazziniCliente.push({
+            nome: nome,
+            indirizzo: indirizzo,
+            lat: lat ? parseFloat(lat) : null,
+            lon: lon ? parseFloat(lon) : null
+        });
+        
+        document.getElementById('magNome').value = '';
+        document.getElementById('magIndirizzo').value = '';
+        document.getElementById('magLat').value = '';
+        document.getElementById('magLon').value = '';
+        renderMagazziniCliente();
+    };
+
+    window.rimuoviMagazzinoCliente = (index) => {
+        currentMagazziniCliente.splice(index, 1);
+        renderMagazziniCliente();
+    };
+
+    function renderMagazziniCliente() {
+        const list = document.getElementById('magazziniClienteList');
+        list.innerHTML = '';
+        if(currentMagazziniCliente.length === 0) {
+            list.innerHTML = '<span style="font-size:12px;color:#94a3b8;">Nessun magazzino configurato.</span>';
+            return;
+        }
+        currentMagazziniCliente.forEach((m, i) => {
+            list.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#f1f5f9; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <div>
+                        <div style="font-weight:700; font-size:13px; color:#334155;">${m.nome}</div>
+                        <div style="font-size:11px; color:#64748b;">${m.indirizzo} ${m.lat ? '(GPS OK)' : ''}</div>
+                    </div>
+                    <button type="button" onclick="rimuoviMagazzinoCliente(${i})" class="remove-btn">&times;</button>
                 </div>
             `;
         });
@@ -506,6 +613,7 @@
             nome: nome,
             visibile_presenze: visibile,
             referenti: currentReferenti,
+            magazzini: currentMagazziniCliente,
             zone_fatturazione: currentZone.map(z => ({
                 nome_zona: z.nome_zona,
                 is_mensile: z.is_mensile,
@@ -634,6 +742,7 @@
             document.getElementById('clienteNomeInput').value = c.nome;
             document.getElementById('clienteVisibileInput').checked = (c.visibile_presenze !== false); // Default true per i vecchi
             currentReferenti = c.referenti || [];
+            currentMagazziniCliente = c.magazzini || [];
             currentZone = (c.zone_fatturazione || []).map(z => ({
                 ...z,
                 id_dom: 'zona_' + Date.now() + '_' + Math.floor(Math.random()*1000)
@@ -641,6 +750,7 @@
             
             renderReferenti();
             renderZone();
+            renderMagazziniCliente();
             document.getElementById('formClienteContainer').style.display = 'block';
             document.getElementById('listaClientiContainer').style.display = 'none';
         });
@@ -985,6 +1095,6 @@
         }, 500);
     });
 </script>
-<script type="module" src="firebase-auth-sync.js?v=6.361"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.366"></script>
 </body>
 </html>

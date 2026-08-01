@@ -322,8 +322,8 @@ def _get_depot_for_points_cloud(punti):
 
     return DEPOT_SOMMACAMPAGNA
 
-def _get_directions_and_simulate_cloud(percorso, depot, is_grand_chef, data_consegna, aggiorna_traffico, target_arr_time_min=390):
-    punti_pieni = [depot] + percorso + [depot]
+def _get_directions_and_simulate_cloud(percorso, depot_partenza, depot_arrivo, is_grand_chef, data_consegna, aggiorna_traffico, target_arr_time_min=390):
+    punti_pieni = [depot_partenza] + percorso + [depot_arrivo]
     
     _dir_key = _route_key(punti_pieni)
     _dir_cached = _leggi_percorsi_cache(_dir_key)

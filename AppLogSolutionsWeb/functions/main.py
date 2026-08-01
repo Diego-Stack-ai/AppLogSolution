@@ -2936,6 +2936,12 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
         if ddt.get("orario_max"): oM_val = str(ddt["orario_max"]).strip()
         if ddt.get("note"): note_val = str(ddt["note"]).strip()
 
+        # Usa la zona assegnata dal ddt (se proveniente da un Excel che l'ha già generata)
+        raw_zona = str(ddt.get('zona') or '').strip()
+        if not raw_zona:
+            # Fallback per PDF (DNR) che usano l'Anagrafica Clienti
+            raw_zona = str((cliente_info.get('codice_zona') or cliente_info.get('zona') or '0000') if cliente_info else '0000').strip()
+
         if chiave not in punti_map:
             punti_map[chiave] = {
                 "nome": nome,
@@ -2947,7 +2953,7 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
                 "codice_latte": cl_val,
                 "codici_ddt_frutta": [],
                 "codici_ddt_latte": [],
-                "zona": ddt.get('zona') or ((cliente_info.get('codice_zona') or cliente_info.get('zona') or '0000') if cliente_info else '0000'),
+                "zona": raw_zona,
                 "lat": float(cliente_info.get('lat', 0)) if cliente_info and cliente_info.get('lat') else 0,
                 "lon": float(cliente_info.get('lon', 0)) if cliente_info and cliente_info.get('lon') else 0,
                 "rientri_alert": [],
@@ -3107,51 +3113,61 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
         if not z_id: z_id = "0000"
         zone_dict[z_id].append(p)
 
-    # Costruisci Zone Normali
-    dnr_keys = sorted([k for k in zone_dict.keys() if k not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA", "0000", "SENZA_ZONA") and not k.startswith("GC_") and not k.startswith("CATTEL_") and not k.startswith("BAUER_") and not k.startswith("DAC_")])
-    cattel_keys = sorted([k for k in zone_dict.keys() if k.startswith("CATTEL_")])
-    bauer_keys = sorted([k for k in zone_dict.keys() if k.startswith("BAUER_")])
-    gc_keys = [k for k in zone_dict.keys() if k.startswith("GC_")]
-    dac_keys = sorted([k for k in zone_dict.keys() if k.startswith("DAC_")])
+    # Costruisci Zone Normali senza usare i prefissi hardcoded
+    normal_keys = [k for k in zone_dict.keys() if k not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA", "0000", "SENZA_ZONA")]
     
-    gc_job_ids = [k[3:] for k in gc_keys]
-    sorted_job_ids = _ordina_job_ids_gc(gc_job_ids)
-    sorted_gc_keys = [f"GC_{jid}" for jid in sorted_job_ids]
+    # Ordiniamo le zone per nome in modo deterministico
+    normal_keys = sorted(normal_keys)
     
-    for idx_dnr, zid in enumerate(dnr_keys, start=1):
-        zone_finali.append({
-            "id_zona": zid, "nome_giro": f"V{idx_dnr:02d}", "color": palette[color_index % len(palette)],
-            "lista_punti": zone_dict[zid], "cliente_zona": "PROGETTO SCUOLE"
-        })
-        color_index += 1
+    tenant_counters = {}
+    
+    for zid in normal_keys:
+        punti = zone_dict[zid]
+        if not punti:
+            continue
+            
+        # Determina la competenza/tenant del giro prendendola nativamente dal primo punto
+        primo_punto = punti[0]
+        comp_lista = primo_punto.get("competenze", [])
+        tenant = comp_lista[0] if comp_lista else (primo_punto.get("tipo") or "DNR")
         
-    for idx_cattel, zid in enumerate(cattel_keys, start=1):
-        parts = zid.split('_')
-        targa_label = parts[1] if len(parts) > 2 else f"Viaggio {idx_cattel}"
-        zone_finali.append({
-            "id_zona": zid, "nome_giro": f"Cattel {targa_label}", "color": palette[color_index % len(palette)],
-            "lista_punti": zone_dict[zid], "cliente_zona": "CATTEL"
-        })
-        color_index += 1
-
-    for idx_bauer, zid in enumerate(bauer_keys, start=1):
-        zone_finali.append({
-            "id_zona": zid, "nome_giro": f"Bauer {idx_bauer:02d}", "color": palette[color_index % len(palette)],
-            "lista_punti": zone_dict[zid], "cliente_zona": "BAUER"
-        })
-        color_index += 1
+        # Normalizzazione estetica per la UI (Card dei Viaggi)
+        if tenant in ("GRAND_CHEF", "GRAND CHEF", "GRAN_CHEF"):
+            tenant = "GRAN CHEF"
+        elif tenant in ("FRUTTA", "LATTE"):
+            tenant = "DNR"
+            
+        if tenant not in tenant_counters:
+            tenant_counters[tenant] = 1
+        else:
+            tenant_counters[tenant] += 1
+            
+        idx = tenant_counters[tenant]
         
-    for idx_dac, zid in enumerate(dac_keys, start=1):
+        # (La logica fine di rinomina sarà affidata all'AI futura, per ora manteniamo retro-compatibilità
+        # pulendo i vecchi prefissi se l'estrattore li ha inseriti)
+        nome_giro = zid
+        if tenant == "CATTEL" and zid.startswith("CATTEL_"):
+            parts = zid.split('_')
+            nome_giro = f"Cattel {parts[1]}" if len(parts) > 1 else f"Cattel {idx}"
+        elif tenant == "GRAN CHEF" and zid.startswith("GC_"):
+            nome_giro = f"Gran Chef {idx:02d}"
+        elif tenant == "DAC" and zid.startswith("DAC_"):
+            parts = zid.split('_', 1)
+            dac_label = parts[1] if len(parts) > 1 and parts[1] != "0000" else f"{idx:02d}"
+            nome_giro = f"DAC {dac_label}"
+        elif tenant == "BAUER" and zid.startswith("BAUER_"):
+            nome_giro = f"Bauer {idx:02d}"
+        elif tenant == "DNR":
+            nome_giro = f"V{idx:02d}"
+            tenant = "PROGETTO SCUOLE" # Fallback visivo richiesto per DNR
+            
         zone_finali.append({
-            "id_zona": zid, "nome_giro": f"DAC {idx_dac:02d}", "color": palette[color_index % len(palette)],
-            "lista_punti": zone_dict[zid], "cliente_zona": "DAC"
-        })
-        color_index += 1
-        
-    for idx_gc, zid in enumerate(sorted_gc_keys, start=1):
-        zone_finali.append({
-            "id_zona": zid, "nome_giro": f"Gran Chef {idx_gc:02d}", "color": palette[color_index % len(palette)],
-            "lista_punti": zone_dict[zid], "cliente_zona": "GRAN CHEF"
+            "id_zona": zid,
+            "nome_giro": nome_giro,
+            "color": palette[color_index % len(palette)],
+            "lista_punti": punti,
+            "cliente_zona": tenant
         })
         color_index += 1
         
@@ -3553,7 +3569,7 @@ UNITA_QTY = r"(Confezioni|Confezione|confezioni|confezione|Colli|Collo|colli|col
 SCAD_RE = re.compile(r"Scad\.\s*min\.\s*(\d{2}/\d{2}/\d{4})", re.I)
 
 
-def _ottimizza_singolo_viaggio_cloud(punti, depot, use_time_windows):
+def _ottimizza_singolo_viaggio_cloud(punti, depot_partenza, depot_arrivo, use_time_windows):
     try:
         from ortools.constraint_solver import routing_enums_pb2
         from ortools.constraint_solver import pywrapcp
@@ -3561,13 +3577,13 @@ def _ottimizza_singolo_viaggio_cloud(punti, depot, use_time_windows):
         print("[OR-Tools] ortools non installato, ottimizzazione saltata.")
         return punti
 
-    all_locs = [depot] + punti
+    all_locs = [depot_partenza, depot_arrivo] + punti
     n = len(all_locs)
     
     errori_lista = []
     distance_matrix = _crea_matrice_distanze_cloud(all_locs, errori_lista)
 
-    manager = pywrapcp.RoutingIndexManager(n, 1, 0)
+    manager = pywrapcp.RoutingIndexManager(n, 1, [0], [1])
     routing = pywrapcp.RoutingModel(manager)
 
     def distance_callback(from_index, to_index):
@@ -3628,7 +3644,7 @@ def _ottimizza_singolo_viaggio_cloud(punti, depot, use_time_windows):
         search_parameters = pywrapcp.DefaultRoutingSearchParameters()
         search_parameters.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
         search_parameters.time_limit.seconds = 10
-        manager2 = pywrapcp.RoutingIndexManager(n, 1, 0)
+        manager2 = pywrapcp.RoutingIndexManager(n, 1, [0], [1])
         routing2 = pywrapcp.RoutingModel(manager2)
         def distance_callback_fallback(from_index, to_index):
             return distance_matrix[manager2.IndexToNode(from_index)][manager2.IndexToNode(to_index)]
@@ -3642,8 +3658,8 @@ def _ottimizza_singolo_viaggio_cloud(punti, depot, use_time_windows):
         index = routing.Start(0)
         while not routing.IsEnd(index):
             node_index = manager.IndexToNode(index)
-            if node_index != 0:
-                percorso_ottimizzato.append(punti[node_index - 1])
+            if node_index != 0 and node_index != 1:
+                percorso_ottimizzato.append(punti[node_index - 2])
             index = solution.Value(routing.NextVar(index))
         return percorso_ottimizzato
 
@@ -3687,6 +3703,17 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
                 listini[cli] = doc.to_dict()
     except Exception as e:
         print(f"Errore lettura listini: {e}")
+        
+    magazzini_cache = {}
+    try:
+        mag_docs = db.collection("clienti_fatturazione").get()
+        for d in mag_docs:
+            c = d.to_dict()
+            if "magazzini" in c:
+                for idx, m in enumerate(c["magazzini"]):
+                    magazzini_cache[f"{d.id}_{idx}"] = m
+    except Exception as e:
+        print(f"Errore lettura magazzini_cache: {e}")
     
     for zone in zone_list:
         zid = zone.get("id_zona")
@@ -3710,10 +3737,21 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
         is_bauer = any("BAUER" in str(p.get("zona") or "").upper() or "BAUER" in str(p.get("codice_frutta") or "").upper() for p in punti)
         is_dac = any("DAC" in str(p.get("zona") or "").upper() or "DAC" in str(p.get("codice_frutta") or "").upper() for p in punti)
         
-        depot = _get_depot_for_points_cloud(punti)
+        depot_partenza = _get_depot_for_points_cloud(punti)
+        depot_arrivo = depot_partenza
+        
+        mag_p_id = zone.get("_magazzino_partenza_id")
+        if mag_p_id and mag_p_id in magazzini_cache:
+            m = magazzini_cache[mag_p_id]
+            depot_partenza = {"nome": m.get("nome", "Magazzino"), "lat": float(m.get("lat", 0)), "lon": float(m.get("lon", 0))}
+            
+        mag_a_id = zone.get("_magazzino_arrivo_id")
+        if mag_a_id and mag_a_id in magazzini_cache:
+            m = magazzini_cache[mag_a_id]
+            depot_arrivo = {"nome": m.get("nome", "Magazzino"), "lat": float(m.get("lat", 0)), "lon": float(m.get("lon", 0))}
         
         if usa_or_tools and not is_bloccato:
-            punti_ottimizzati = _ottimizza_singolo_viaggio_cloud(punti, depot, is_grand_chef or is_cattel or is_bauer or is_dac)
+            punti_ottimizzati = _ottimizza_singolo_viaggio_cloud(punti, depot_partenza, depot_arrivo, is_grand_chef or is_cattel or is_bauer or is_dac)
         else:
             punti_ottimizzati = punti
         
@@ -3735,7 +3773,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
             else:
                 target_arr_time_min = 390
                 
-        km, sec_guida, polylines, punti_simulati, ora_partenza_calc = _get_directions_and_simulate_cloud(punti_pieni, depot, is_grand_chef, data_consegna, aggiorna_traffico, target_arr_time_min)
+        km, sec_guida, polylines, punti_simulati, ora_partenza_calc = _get_directions_and_simulate_cloud(punti_pieni, depot_partenza, depot_arrivo, is_grand_chef, data_consegna, aggiorna_traffico, target_arr_time_min)
         
         tot_ddt = 0
         for p in punti_simulati:
@@ -3770,7 +3808,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
             "t_tot": (sec_guida // 60) + len(punti_simulati) * (12 if is_grand_chef else 8),
             "tot_ddt": tot_ddt,
             "fatturato": fatturato_str,
-            "depot": depot["nome"],
+            "depot": depot_partenza["nome"],
             "is_gc": is_grand_chef,
             "ora_partenza": ora_partenza_calc
         }

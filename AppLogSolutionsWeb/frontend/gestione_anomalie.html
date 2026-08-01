@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anomalie - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.361">
+    <link rel="stylesheet" href="styles.css?v=6.366">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -100,9 +100,11 @@
 
     </div>
 
-    <script src="script.js?v=6.361"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.361"></script>
+    <script src="script.js?v=6.366"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.366"></script>
     <script type="module">
+        const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
+
         import { db } from "./core/firebase-init.js";
         import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { firebaseConfig } from "./firebase-config.js";
@@ -113,7 +115,7 @@
         async function caricaMasterClienti() {
             try {
                 const [snapDNR, snapGC, snapCattel, snapDac] = await Promise.all([
-                    window.getDocsConFallback(collection(db, 'clienti', 'DNR', 'raccolta clienti')),
+                    window.getDocsConFallback(collection(db, 'clienti', activeTenant, 'raccolta clienti')),
                     window.getDocsConFallback(collection(db, 'clienti', 'GRAN CHEF', 'raccolta clienti')),
                     window.getDocsConFallback(collection(db, 'clienti', 'CATTEL', 'raccolta clienti')),
                     window.getDocsConFallback(collection(db, 'clienti', 'DAC', 'raccolta clienti'))
@@ -222,7 +224,7 @@
                             </div>
                             
                             <div class="section-title">Codici di Consegna</div>
-                            <div class="input-group"><label>Codice Frutta</label><input type="text" id="cli-${id}-codF" value="${(d.tipo === 'FRUTTA' || d.tipo === 'GRAND CHEF' || tenant === 'GRAN CHEF' || d.tipo === 'CATTEL' || tenant === 'CATTEL') ? id : 'p00000'}"></div>
+                            <div class="input-group"><label>Codice Frutta</label><input type="text" id="cli-${id}-codF" value="${(d.tipo === 'FRUTTA' || d.tipo === 'GRAND CHEF' || tenant === 'GRAN CHEF' || d.tipo === 'CATTEL' || tenant === 'CATTEL' || d.tipo === 'DAC' || tenant === 'DAC') ? id : 'p00000'}"></div>
                             <div class="input-group"><label>Codice Latte</label><input type="text" id="cli-${id}-codL" value="${d.tipo === 'LATTE' ? id : 'p00000'}"></div>
                             
                             <div class="section-title">Orari di Consegna (Frutta)</div>
@@ -260,7 +262,7 @@
             list.innerHTML = html;
         }
 
-        onSnapshot(collection(db, 'clienti', 'DNR', 'nuovi codici consegna'), { includeMetadataChanges: true }, (snapshot) => {
+        onSnapshot(collection(db, 'clienti', activeTenant, 'nuovi codici consegna'), { includeMetadataChanges: true }, (snapshot) => {
             nuoviCodiciDNR = [];
             snapshot.forEach(docSnap => {
                 nuoviCodiciDNR.push({ id: docSnap.id, ...docSnap.data() });
@@ -430,7 +432,7 @@
             }
         };
 
-        window.salvaNuovoCliente = async (id, tenant = 'DNR') => {
+        window.salvaNuovoCliente = async (id, tenant = activeTenant) => {
             let dataToSave = {
                 cliente: document.getElementById(`cli-${id}-cliente`).value,
                 indirizzo: document.getElementById(`cli-${id}-ind`).value,
@@ -439,7 +441,7 @@
                 provincia: document.getElementById(`cli-${id}-prov`).value,
                 lat: parseFloat(document.getElementById(`cli-${id}-lat`).value) || null,
                 lon: parseFloat(document.getElementById(`cli-${id}-lon`).value) || null,
-                tipologia_grado: (window.defaultAnomalyData && window.defaultAnomalyData[id]) ? window.defaultAnomalyData[id].tipo : 'DNR',
+                tipologia_grado: (window.defaultAnomalyData && window.defaultAnomalyData[id]) ? window.defaultAnomalyData[id].tipo : activeTenant,
                 codice_frutta: document.getElementById(`cli-${id}-codF`).value,
                 codice_latte: document.getElementById(`cli-${id}-codL`).value,
                 orario_min_frutta: document.getElementById(`cli-${id}-omF`).value,
@@ -477,7 +479,7 @@
         };
 
         // --- GESTIONE ARTICOLI ---
-        onSnapshot(collection(db, 'clienti', 'DNR', 'nuovi articoli rilevati'), { includeMetadataChanges: true }, (snapshot) => {
+        onSnapshot(collection(db, 'clienti', activeTenant, 'nuovi articoli rilevati'), { includeMetadataChanges: true }, (snapshot) => {
             const list = document.getElementById('list-articoli');
             const badge = document.getElementById('badge-articoli');
             if (snapshot.empty) {
@@ -558,9 +560,9 @@
             };
             
             try {
-                await setDoc(doc(db, 'clienti', 'DNR', 'codici articoli', newCode), dataToSave, { merge: true });
+                await setDoc(doc(db, 'clienti', activeTenant, 'codici articoli', newCode), dataToSave, { merge: true });
                 // Elimina l'originale dalla sala d'attesa (anche se ha cambiato codice, scartiamo la notifica)
-                await deleteDoc(doc(db, 'clienti', 'DNR', 'nuovi articoli rilevati', originalId));
+                await deleteDoc(doc(db, 'clienti', activeTenant, 'nuovi articoli rilevati', originalId));
                 Swal.fire({icon: 'success', title: 'Articolo Salvato!', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000});
             } catch (e) {
                 console.error(e);
@@ -569,7 +571,7 @@
         };
 
         // --- GESTIONE ORARI ---
-        onSnapshot(collection(db, 'clienti', 'DNR', 'nuovi orari mancanti'), { includeMetadataChanges: true }, async (snapshot) => {
+        onSnapshot(collection(db, 'clienti', activeTenant, 'nuovi orari mancanti'), { includeMetadataChanges: true }, async (snapshot) => {
             const list = document.getElementById('list-orari');
             const badge = document.getElementById('badge-orari');
             if (snapshot.empty) {
@@ -598,7 +600,7 @@
                 let docIdToUpdate = id;
 
                 try {
-                    const rcRef = collection(db, 'clienti', 'DNR', 'raccolta clienti');
+                    const rcRef = collection(db, 'clienti', activeTenant, 'raccolta clienti');
                     const qF = query(rcRef, where("codice_frutta", "==", id));
                     const qL = query(rcRef, where("codice_latte", "==", id));
                     let docsF = await window.getDocsConFallback(qF);
@@ -701,9 +703,9 @@
 
             try {
                 // Aggiorniamo interamente il documento del cliente
-                await setDoc(doc(db, 'clienti', 'DNR', 'raccolta clienti', docIdToUpdate), dataToSave, { merge: true });
+                await setDoc(doc(db, 'clienti', activeTenant, 'raccolta clienti', docIdToUpdate), dataToSave, { merge: true });
                 // Rimuoviamo l'anomalia
-                await deleteDoc(doc(db, 'clienti', 'DNR', 'nuovi orari mancanti', idFromPdf));
+                await deleteDoc(doc(db, 'clienti', activeTenant, 'nuovi orari mancanti', idFromPdf));
                 Swal.fire({icon: 'success', title: 'Cliente Aggiornato!', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000});
             } catch (e) {
                 console.error(e);
@@ -711,7 +713,7 @@
             }
         };
 
-        window.eliminaAnomalia = async (collectionName, id, tenant = 'DNR') => {
+        window.eliminaAnomalia = async (collectionName, id, tenant = activeTenant) => {
             if (confirm("Sei sicuro di voler scartare questa segnalazione?")) {
                 try {
                     await deleteDoc(doc(db, 'clienti', tenant, collectionName, id));

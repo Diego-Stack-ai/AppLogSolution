@@ -178,7 +178,7 @@ flowchart TD
 
 ### 7.1 Frontend (`frontend/`)
 * **Tecnologia**: Single Page / Multi-Page App costruita in HTML5, JavaScript ES6 e CSS3 Vanilla.
-* **Inizializzazione**: `frontend/core/firebase-init.js` seleziona la configurazione Dev (`log-solutions-sviluppo`) o Prod (`log-solution-60007`) leggendo l'hostname via `frontend/firebase-config.js`.
+* **Inizializzazione**: `frontend/core/firebase-init.js` seleziona la configurazione Dev (`log-solutions-cantiere`) o Prod (`log-solution-60007`) leggendo l'hostname via `frontend/firebase-config.js`.
 * **Moduli Principali**:
   * `elaborazione.html` / `js/elaborazione.js`: Caricamento PDF/Excel, split DDT, merge Frutta/Latte, pianificazione.
   * `link_viaggi.html` / `js/link_viaggi.js`: Centrale operativa dual-mode (Viaggi attivi 60gg vs Archivio R&D).
@@ -347,7 +347,7 @@ Firestore Root
 ## 20. CLOUD STORAGE ARCHITECTURE `[DEBITO TECNICO]`
 
 ```text
-Storage Bucket (log-solutions-sviluppo / log-solution-60007)
+Storage Bucket (log-solutions-cantiere / log-solution-60007)
 │
 ├── split_ddt/{data}/          [PDF estratti dai job DNR]
 ├── REPORTS/{data}/            [Report fisici DNR (Asimmetria Legacy)]
@@ -362,7 +362,7 @@ Storage Bucket (log-solutions-sviluppo / log-solution-60007)
 
 ## 21. SECURITY, AUTENTICAZIONE E AMBIENTI `[STATO ATTUALE CONFERMATO]`
 
-* **Ambiente Sviluppo**: `log-solutions-sviluppo`
+* **Ambiente Sviluppo**: `log-solutions-cantiere`
 * **Ambiente Produzione**: `log-solution-60007`
 * **Governance Deploy**: Disciplinata nel documento vincolante [`AGENTS.md`](file:///H:/Il%20mio%20Drive/App/AppLogSolutionsWeb/AGENTS.md).
 

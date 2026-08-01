@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.356">
+    <link rel="stylesheet" href="styles.css?v=6.360">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1586,8 +1586,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
         async function uploadStorageStringHelper(path, data, contentType) {
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.356");
-                const { syncManager } = await import("./core/sync-manager.js?v=6.356");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.360");
+                const { syncManager } = await import("./core/sync-manager.js?v=6.360");
                 
                 if (connectivityService.getStatus() === 'online') {
                     await uploadString(ref(storage, path), data, 'raw', { contentType });
@@ -2347,7 +2347,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
                         // 2. Load Firestore customers database for coordinate matching
                         setLoaderMsg("Lettura anagrafica clienti master...");
-                        const snap = await window.getDocsConFallback(collection(db, 'clienti', 'DNR', 'raccolta clienti'));
+                        const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
+                        const snap = await window.getDocsConFallback(collection(db, 'clienti', activeTenant, 'raccolta clienti'));
                         masterClientiList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                         console.log(`[Map] Master clienti caricato: ${masterClientiList.length} record.`);
                         
@@ -2565,6 +2566,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
                         channel = 'CATTEL';
                     } else if (nomeLower.includes('bauer') || codFLower.includes('bauer') || codLLower.includes('bauer')) {
                         channel = 'BAUER';
+                    } else if (nomeLower.includes('dac') || codFLower.includes('dac') || codLLower.includes('dac') || (window.localStorage.getItem('activeTenant') === 'DAC')) {
+                        channel = 'DAC';
                     }
 
                     // Layer overlap detection to prevent markers from drawing directly over each other
@@ -2602,8 +2605,9 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
                     const isCattel = (channel === 'CATTEL') || (p.tipo === 'CATTEL') || (p.competenze && p.competenze.includes('CATTEL'));
                     const isBauer = (channel === 'BAUER') || (p.tipo === 'BAUER') || (p.competenze && p.competenze.includes('BAUER'));
+                    const isDac = (channel === 'DAC') || (p.tipo === 'DAC') || (p.competenze && p.competenze.includes('DAC'));
                     
-                    if (isGC || isCattel || isBauer) {
+                    if (isGC || isCattel || isBauer || isDac) {
                         // Special layout: circle (or drop) with emoji + sequence badge below
                         const circle = document.createElement('div');
                         circle.style.width = '28px';
@@ -2639,6 +2643,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
                             emojiSpan.innerHTML = '&#x1F69A;'; // Truck emoji
                         } else if (isBauer) {
                             emojiSpan.innerHTML = '&#x1F42E;'; // Cow emoji
+                        } else if (isDac) {
+                            emojiSpan.innerHTML = '&#x1F4E6;'; // Package emoji
                         }
                         circle.appendChild(emojiSpan);
                         
@@ -2855,7 +2861,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
                 if (matchedClient) {
                     const docId = matchedClient.id;
-                    const clientRef = doc(db, 'clienti', 'DNR', 'raccolta clienti', docId);
+                    const activeTenant = localStorage.getItem('activeTenant') || 'DNR';
+                    const clientRef = doc(db, 'clienti', activeTenant, 'raccolta clienti', docId);
                     
                     // Atomic update to Firestore
                     await setDoc(clientRef, {
@@ -3456,7 +3463,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.356");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.360");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -3836,7 +3843,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.356");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.360");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -3916,7 +3923,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.356");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.360");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 

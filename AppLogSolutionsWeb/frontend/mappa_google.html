@@ -276,73 +276,49 @@
                     if (user) {
                         console.log("[Map] Utente autenticato, avvio listener Firestore...");
                         
-                        let dnrPoints = [];
-                        let gcPoints = [];
-                        let cattelPoints = [];
-                        let loadedDNR = false;
-                        let loadedGC = false;
-                        let loadedCattel = false;
+                        const TENANTS = ['DNR', 'GRAN CHEF', 'CATTEL', 'DAC'];
+                        const loadedTenants = new Set();
+                        let allPointsDict = {}; // tenant -> array of points
 
                         function mergeAndRender() {
-                            ALL_POINTS = [...dnrPoints, ...gcPoints, ...cattelPoints];
-                            console.log(`[Map] Totale clienti caricati: ${ALL_POINTS.length} (DNR: ${dnrPoints.length}, GC: ${gcPoints.length}, CATTEL: ${cattelPoints.length})`);
+                            ALL_POINTS = [];
+                            TENANTS.forEach(t => {
+                                if (allPointsDict[t]) {
+                                    ALL_POINTS = ALL_POINTS.concat(allPointsDict[t]);
+                                }
+                            });
+                            
+                            console.log(`[Map] Totale clienti caricati: ${ALL_POINTS.length} (Tenants: ${Array.from(loadedTenants).join(', ')})`);
                             initFilters();
                             updateListAndMap();
-                            if (loadedDNR && loadedGC && loadedCattel) {
+                            
+                            if (loadedTenants.size === TENANTS.length) {
                                 clearTimeout(loadingTimeout);
                                 document.getElementById('loading-overlay').style.display = 'none';
                             }
                         }
 
-                        onSnapshot(collection(db, "clienti/DNR/raccolta clienti"), { includeMetadataChanges: true }, (snapshot) => {
-                            console.log(`[Map] Ricevuti ${snapshot.size} punti DNR`);
-                            dnrPoints = snapshot.docs.map(doc => {
-                                const d = doc.data();
-                                return {
-                                    ...d,
-                                    id: doc.id,
-                                    tenant: 'DNR',
-                                    lat: parseFloat(d.lat) || 0,
-                                    lon: parseFloat(d.lon) || 0
-                                };
+                        TENANTS.forEach(tenant => {
+                            onSnapshot(collection(db, `clienti/${tenant}/raccolta clienti`), { includeMetadataChanges: true }, (snapshot) => {
+                                console.log(`[Map] Ricevuti ${snapshot.size} punti ${tenant}`);
+                                allPointsDict[tenant] = snapshot.docs.map(doc => {
+                                    const d = doc.data();
+                                    return {
+                                        ...d,
+                                        id: doc.id,
+                                        tenant: tenant,
+                                        lat: parseFloat(d.lat) || 0,
+                                        lon: parseFloat(d.lon) || 0
+                                    };
+                                });
+                                loadedTenants.add(tenant);
+                                mergeAndRender();
+                            }, (error) => {
+                                console.error(`[Map] Errore Firestore ${tenant}:`, error);
+                                // Non mostriamo alert bloccanti per ogni singolo tenant, ma logghiamo l'errore
+                                loadedTenants.add(tenant); // segniamo come caricato anche se fallito, altrimenti blocca il caricamento
+                                mergeAndRender();
                             });
-                            loadedDNR = true;
-                            mergeAndRender();
-                        }, (error) => {
-                            console.error("[Map] Errore Firestore DNR:", error);
-                            alert("Errore accesso dati DNR: " + error.message);
-                        });
-
-                        onSnapshot(collection(db, "clienti/GRAN CHEF/raccolta clienti"), { includeMetadataChanges: true }, (snapshot) => {
-                            console.log(`[Map] Ricevuti ${snapshot.size} punti GRAN CHEF`);
-                            gcPoints = snapshot.docs.map(doc => ({
-                                ...doc.data(),
-                                id: doc.id,
-                                tenant: 'GRAN CHEF',
-                                lat: parseFloat(doc.data().lat) || 0,
-                                lon: parseFloat(doc.data().lon) || 0
-                            }));
-                            loadedGC = true;
-                            mergeAndRender();
-                        }, (error) => {
-                            console.error("[Map] Errore Firestore GRAN CHEF:", error);
-                            alert("Errore accesso dati GRAN CHEF: " + error.message);
-                        });
-
-                        onSnapshot(collection(db, "clienti/CATTEL/raccolta clienti"), { includeMetadataChanges: true }, (snapshot) => {
-                            console.log(`[Map] Ricevuti ${snapshot.size} punti CATTEL`);
-                            cattelPoints = snapshot.docs.map(doc => ({
-                                ...doc.data(),
-                                id: doc.id,
-                                tenant: 'CATTEL',
-                                lat: parseFloat(doc.data().lat) || 0,
-                                lon: parseFloat(doc.data().lon) || 0
-                            }));
-                            loadedCattel = true;
-                            mergeAndRender();
-                        }, (error) => {
-                            console.error("[Map] Errore Firestore CATTEL:", error);
-                            alert("Errore accesso dati CATTEL: " + error.message);
                         });
                     } else {
                         console.warn("[Map] Utente non autenticato, reindirizzamento...");

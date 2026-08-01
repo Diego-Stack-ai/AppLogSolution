@@ -266,7 +266,7 @@ Un viaggio operativo finale potrà in futuro contenere consegne di committenti d
 ## 3. SEPARAZIONE DEV/PRODUZIONE
 
 ```text
-SVILUPPO  : log-solutions-sviluppo   (Database, Storage, Auth, Functions, Hosting)
+SVILUPPO  : log-solutions-cantiere   (Database, Storage, Auth, Functions, Hosting)
 PRODUZIONE: log-solution-60007       (Database, Storage, Auth, Functions, Hosting)
 ```
 
@@ -274,7 +274,7 @@ PRODUZIONE: log-solution-60007       (Database, Storage, Auth, Functions, Hostin
 2. **Codice Sorgente Comune**: Il codice locale e `functions/main.py` sono comuni a entrambi gli ambienti.
 3. **Principio di Impatto**:
    * Modificare il codice locale non modifica nessun ambiente.
-   * Il deploy Dev modifica solo Dev (`log-solutions-sviluppo`).
+   * Il deploy Dev modifica solo Dev (`log-solutions-cantiere`).
    * Il deploy Prod modifica solo Prod (`log-solution-60007`).
 
 > [!CAUTION]
@@ -310,7 +310,7 @@ L'agente AI deve operare selezionando esplicitamente una delle 5 modalità segue
   ```
 
 ### 4.4 MODALITÀ 4 — COLLAUDO DEV (Dev Deploy & Testing)
-* **Consentito**: Deploy selettivo **esclusivamente su Sviluppo** (`log-solutions-sviluppo`), test su Firebase Dev, collaudo Hosting e Functions Dev.
+* **Consentito**: Deploy selettivo **esclusivamente su Sviluppo** (`log-solutions-cantiere`), test su Firebase Dev, collaudo Hosting e Functions Dev.
 * **Vietato**: Operazioni su Produzione, push su `main`, script con credenziali Prod.
 
 ### 4.5 MODALITÀ 5 — RILASCIO PRODUZIONE (Prod Deploy)
@@ -452,22 +452,22 @@ I concetti di **bump versione**, **commit**, **push** e **deploy** sono **QUATTR
 
 ## 12. DEPLOY SELETTIVO DEV
 
-Il deploy completo `firebase deploy --project log-solutions-sviluppo` è classificato come **OPERAZIONE ECCEZIONALE AD ALTO RISCHIO**.
+Il deploy completo `firebase deploy --project log-solutions-cantiere` è classificato come **OPERAZIONE ECCEZIONALE AD ALTO RISCHIO**.
 
 La procedura standard per lo sviluppo utilizza **esclusivamente deploy selettivi**:
 
 ```bash
 # Frontend Sviluppo
-firebase deploy --only hosting --project log-solutions-sviluppo
+firebase deploy --only hosting --project log-solutions-cantiere
 
 # Backend Cloud Functions Sviluppo
-firebase deploy --only functions --project log-solutions-sviluppo
+firebase deploy --only functions --project log-solutions-cantiere
 
 # Firestore Rules Sviluppo
-firebase deploy --only firestore:rules --project log-solutions-sviluppo
+firebase deploy --only firestore:rules --project log-solutions-cantiere
 
 # Storage Rules Sviluppo
-firebase deploy --only storage --project log-solutions-sviluppo
+firebase deploy --only storage --project log-solutions-cantiere
 ```
 
 ---
@@ -504,7 +504,7 @@ Il comando `firebase deploy --project <PROJECT_ID>` senza `--only` è consentito
 
 ```text
 Riconfigurazione Motore Cloud Functions:
-firebase deploy --only functions --project log-solutions-sviluppo
+firebase deploy --only functions --project log-solutions-cantiere
 firebase deploy --only functions --project log-solution-60007
 ```
 
@@ -512,7 +512,7 @@ firebase deploy --only functions --project log-solution-60007
 
 ## 15. SCRIPT CON ACCESSO ALLA PRODUZIONE
 
-Durante qualsiasi lavoro sull'ambiente di Sviluppo è **TASSATIVAMENTE VIETATO** eseguire:
+Durante qualsiasi lavoro sull'ambiente di Cantiere è **TASSATIVAMENTE VIETATO** eseguire:
 * Script che caricano `prod_key.json`;
 * Script che inizializzano Sviluppo e Produzione contemporaneamente;
 * Script di sincronizzazione (`sincronizza_sviluppo.py`, `sincronizza_totale.py`, `sincronizza_cache_distanze.py`);
@@ -561,13 +561,13 @@ SCHEDA OPERATIVA
 ==================================================
 MODALITÀ:               [ ANALISI / PIANIFICAZIONE / IMPLEMENTAZIONE / COLLAUDO / RILASCIO ]
 OBIETTIVO:              [ Descrizione sintetica task ]
-AMBIENTE:               [ Sviluppo / Produzione ]
-PROJECT ID:             [ log-solutions-sviluppo / log-solution-60007 ]
+AMBIENTE:               [ Cantiere / Produzione ]
+PROJECT ID:             [ log-solutions-cantiere / log-solution-60007 ]
 BRANCH:                 [ dev / feature-... / main ]
 VERSIONE:               [ vX.XXX ]
 FILE COINVOLTI:         [ elenco file ]
 COMPONENTI FIREBASE:    [ hosting / functions / firestore:rules / storage ]
-DATABASE:               [ Firestore Sviluppo / Firestore Produzione ]
+DATABASE:               [ Firestore Cantiere / Firestore Produzione ]
 STORAGE BUCKET:         [ valore letto dalla configurazione effettiva ]
 RULES:                  [ Invariate / Modificate ]
 SCRIPT:                 [ Elenco script eseguiti ]
@@ -611,11 +611,11 @@ AUTORIZZAZIONE RICHESTA: [ descrivere autorizzazione necessaria ]
 
 ## 21. ALLEGATO COMANDI AUTORIZZATI
 
-### Sviluppo (`log-solutions-sviluppo`):
-* `firebase deploy --only hosting --project log-solutions-sviluppo`
-* `firebase deploy --only functions --project log-solutions-sviluppo`
-* `firebase deploy --only firestore:rules --project log-solutions-sviluppo`
-* `firebase deploy --only storage --project log-solutions-sviluppo`
+### Sviluppo (`log-solutions-cantiere`):
+* `firebase deploy --only hosting --project log-solutions-cantiere`
+* `firebase deploy --only functions --project log-solutions-cantiere`
+* `firebase deploy --only firestore:rules --project log-solutions-cantiere`
+* `firebase deploy --only storage --project log-solutions-cantiere`
 
 ### Produzione (`log-solution-60007`):
 * `firebase deploy --only hosting --project log-solution-60007`

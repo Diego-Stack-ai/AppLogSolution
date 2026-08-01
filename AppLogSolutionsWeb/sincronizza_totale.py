@@ -1,9 +1,21 @@
 import os
+import ssl
+import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
+# Bypass "Nucleare" per requests (usato da Google Auth)
+old_request = requests.Session.request
+def new_request(*args, **kwargs):
+    kwargs['verify'] = False
+    return old_request(*args, **kwargs)
+requests.Session.request = new_request
+
 import firebase_admin
 from firebase_admin import credentials, firestore
 
 # ==============================================================================
-# SCRIPT DI SINCRONIZZAZIONE TOTALE (PRODUZIONE -> SVILUPPO)
+# SCRIPT DI SINCRONIZZAZIONE TOTALE (PRODUZIONE -> CANTIERE)
 # Attenzione: Questo script copia l'INTERO database (tutte le collezioni, 
 # documenti, sottocollezioni, storico logistico, ecc.)
 # ==============================================================================
@@ -56,8 +68,8 @@ def copia_collezione(source_collection_ref, target_collection_ref, prefisso=""):
         print(f"{prefisso}✔ Copiati {conteggio} documenti in '{source_collection_ref.id}'")
 
 def main():
-    if not os.path.exists("prod_key.json") or not os.path.exists("dev_key.json"):
-        print("ERRORE: Mancano i file delle chiavi (prod_key.json o dev_key.json).")
+    if not os.path.exists("prod_key.json") or not os.path.exists("cantiere_key.json"):
+        print("ERRORE: Mancano i file delle chiavi (prod_key.json o cantiere_key.json).")
         return
 
     print("Inizializzazione connessioni...")
@@ -66,13 +78,13 @@ def main():
     app_prod = firebase_admin.initialize_app(cred_prod, name='prod_full')
     db_prod = firestore.client(app=app_prod)
 
-    # Inizializza Sviluppo
-    cred_dev = credentials.Certificate("dev_key.json")
-    app_dev = firebase_admin.initialize_app(cred_dev, name='dev_full')
-    db_dev = firestore.client(app=app_dev)
+    # Inizializza Cantiere
+    cred_cantiere = credentials.Certificate("cantiere_key.json")
+    app_cantiere = firebase_admin.initialize_app(cred_cantiere, name='cantiere_full')
+    db_cantiere = firestore.client(app=app_cantiere)
 
     print("=====================================================")
-    print("INIZIO COPIA TOTALE: DA PRODUZIONE A SVILUPPO")
+    print("INIZIO COPIA TOTALE: DA PRODUZIONE A CANTIERE")
     print("Nota: Questa operazione potrebbe richiedere diversi minuti")
     print("a seconda della dimensione dello storico aziendale.")
     print("=====================================================\n")
@@ -85,13 +97,13 @@ def main():
         print(f"Analisi Collezione Radice: [{collezione.id}]")
         copia_collezione(
             source_collection_ref=collezione,
-            target_collection_ref=db_dev.collection(collezione.id),
+            target_collection_ref=db_cantiere.collection(collezione.id),
             prefisso=""
         )
 
     print("\n=====================================================")
     print("SINCRONIZZAZIONE TOTALE COMPLETATA CON SUCCESSO!")
-    print("Ora l'app di sviluppo è una copia carbone di quella di produzione.")
+    print("Ora l'app di Cantiere è una copia carbone di quella di Produzione.")
     print("=====================================================")
 
 if __name__ == "__main__":

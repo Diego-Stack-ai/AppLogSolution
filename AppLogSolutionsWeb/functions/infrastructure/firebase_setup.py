@@ -25,8 +25,8 @@ def get_dynamic_project_id():
 
 PROJECT_ID = get_dynamic_project_id()
 
-if PROJECT_ID == "log-solutions-sviluppo":
-    BUCKET_NAME = "log-solutions-sviluppo.firebasestorage.app"
+if PROJECT_ID == "log-solutions-cantiere":
+    BUCKET_NAME = "log-solutions-cantiere.firebasestorage.app"
 else:
     BUCKET_NAME = f"{PROJECT_ID}.firebasestorage.app"
 

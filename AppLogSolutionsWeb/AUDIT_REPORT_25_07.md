@@ -84,7 +84,7 @@ In Sviluppo sono presenti i seguenti Title Locks attivi (che potrebbero aver blo
 
 ### FASE 25 — VALUTAZIONE DI PRONTEZZA DEV
 **C. DEV NON PRONTO — REGRESSIONI DATI**
-L'ambiente di Sviluppo evidenzia conteggi inferiori sia nei viaggi che nei punti aggregati totali. Questo significa che alcune consegne che in Produzione vengono inviate agli autisti, in DEV si stanno perdendo (drop silently) tra il processing job e la creazione di `viaggi ddt`.
+L'ambiente di Cantiere evidenzia conteggi inferiori sia nei viaggi che nei punti aggregati totali. Questo significa che alcune consegne che in Produzione vengono inviate agli autisti, in DEV si stanno perdendo (drop silently) tra il processing job e la creazione di `viaggi ddt`.
 
 **Conferma esecuzione Read-Only:**
 Confermo che tutte le attività sono state condotte tramite chiamate API di tipo `get()` (eseguite localmente tramite script Python). Non è stata effettuata nessuna scrittura, aggiornamento, cancellazione o modifica strutturale. I Database di Produzione e Sviluppo sono invariati.

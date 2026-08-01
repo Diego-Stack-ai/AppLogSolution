@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Anomalie - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.356">
+    <link rel="stylesheet" href="styles.css?v=6.360">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="theme-color" content="#4f46e5">
@@ -100,8 +100,8 @@
 
     </div>
 
-    <script src="script.js?v=6.356"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.356"></script>
+    <script src="script.js?v=6.360"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.360"></script>
     <script type="module">
         import { db } from "./core/firebase-init.js";
         import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -112,16 +112,18 @@
         let masterClientiList = [];
         async function caricaMasterClienti() {
             try {
-                const [snapDNR, snapGC, snapCattel] = await Promise.all([
+                const [snapDNR, snapGC, snapCattel, snapDac] = await Promise.all([
                     window.getDocsConFallback(collection(db, 'clienti', 'DNR', 'raccolta clienti')),
                     window.getDocsConFallback(collection(db, 'clienti', 'GRAN CHEF', 'raccolta clienti')),
-                    window.getDocsConFallback(collection(db, 'clienti', 'CATTEL', 'raccolta clienti'))
+                    window.getDocsConFallback(collection(db, 'clienti', 'CATTEL', 'raccolta clienti')),
+                    window.getDocsConFallback(collection(db, 'clienti', 'DAC', 'raccolta clienti'))
                 ]);
                 const listDNR = snapDNR.docs.map(doc => ({ id: doc.id, tenant: 'DNR', ...doc.data() }));
                 const listGC = snapGC.docs.map(doc => ({ id: doc.id, tenant: 'GRAN CHEF', ...doc.data() }));
                 const listCattel = snapCattel.docs.map(doc => ({ id: doc.id, tenant: 'CATTEL', ...doc.data() }));
-                masterClientiList = [...listDNR, ...listGC, ...listCattel];
-                console.log("Database Master Clienti caricato (DNR + GRAN CHEF + CATTEL):", masterClientiList.length);
+                const listDac = snapDac.docs.map(doc => ({ id: doc.id, tenant: 'DAC', ...doc.data() }));
+                masterClientiList = [...listDNR, ...listGC, ...listCattel, ...listDac];
+                console.log("Database Master Clienti caricato (DNR + GRAN CHEF + CATTEL + DAC):", masterClientiList.length);
             } catch (error) {
                 console.error("Errore durante il caricamento dei clienti master:", error);
             }
@@ -139,6 +141,7 @@
         let nuoviCodiciDNR = [];
         let nuoviCodiciGC = [];
         let nuoviCodiciCattel = [];
+        let nuoviCodiciDac = [];
 
         function renderMergedNuoviCodici() {
             const list = document.getElementById('list-clienti');
@@ -148,6 +151,7 @@
             nuoviCodiciDNR.forEach(item => merged.push({ ...item, tenant: 'DNR' }));
             nuoviCodiciGC.forEach(item => merged.push({ ...item, tenant: 'GRAN CHEF' }));
             nuoviCodiciCattel.forEach(item => merged.push({ ...item, tenant: 'CATTEL' }));
+            nuoviCodiciDac.forEach(item => merged.push({ ...item, tenant: 'DAC' }));
             
             if (merged.length === 0) {
                 list.innerHTML = `<div style="text-align:center; padding:40px; color:#10b981;"><span class="material-icons-round" style="font-size:48px;">check_circle</span><br>Nessun nuovo cliente in attesa!</div>`;
@@ -177,7 +181,7 @@
                     tenant: tenant
                 };
 
-                const badgeColor = tenant === 'GRAN CHEF' ? '#f59e0b' : (tenant === 'CATTEL' ? '#0284c7' : '#4f46e5');
+                const badgeColor = tenant === 'GRAN CHEF' ? '#f59e0b' : (tenant === 'CATTEL' ? '#0284c7' : (tenant === 'DAC' ? '#8b5cf6' : '#4f46e5'));
                 const suggestedClass = d.stato_suggerito === 'giallo' ? 'suggested-giallo' : (d.stato_suggerito === 'rosso' ? 'suggested-rosso' : '');
                 
                 let matchBadge = '';
@@ -276,6 +280,14 @@
             nuoviCodiciCattel = [];
             snapshot.forEach(docSnap => {
                 nuoviCodiciCattel.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            renderMergedNuoviCodici();
+        });
+
+        onSnapshot(collection(db, 'clienti', 'DAC', 'nuovi codici consegna'), { includeMetadataChanges: true }, (snapshot) => {
+            nuoviCodiciDac = [];
+            snapshot.forEach(docSnap => {
+                nuoviCodiciDac.push({ id: docSnap.id, ...docSnap.data() });
             });
             renderMergedNuoviCodici();
         });
@@ -409,7 +421,7 @@
                 document.getElementById(`cli-${idAnomalia}-prov`).value = def.prov;
                 document.getElementById(`cli-${idAnomalia}-lat`).value = '';
                 document.getElementById(`cli-${idAnomalia}-lon`).value = '';
-                document.getElementById(`cli-${idAnomalia}-codF`).value = (def.tipo === 'FRUTTA' || def.tipo === 'GRAND CHEF' || def.tipo === 'CATTEL') ? idAnomalia : 'p00000';
+                document.getElementById(`cli-${idAnomalia}-codF`).value = (def.tipo === 'FRUTTA' || def.tipo === 'GRAND CHEF' || def.tipo === 'CATTEL' || def.tipo === 'DAC') ? idAnomalia : 'p00000';
                 document.getElementById(`cli-${idAnomalia}-codL`).value = def.tipo === 'LATTE' ? idAnomalia : 'p00000';
                 document.getElementById(`cli-${idAnomalia}-omF`).value = def.tipo === 'FRUTTA' ? def.om : '';
                 document.getElementById(`cli-${idAnomalia}-oMF`).value = def.tipo === 'FRUTTA' ? def.oM : '';
@@ -577,7 +589,7 @@
                 
                 let clientData = {
                     cliente: d.cliente || '', indirizzo: '', citta: '', cap: '', provincia: '',
-                    codice_frutta: (d.tipo === 'FRUTTA' || d.tipo === 'GRAND CHEF' || d.tipo === 'CATTEL') ? id : 'p00000',
+                    codice_frutta: (d.tipo === 'FRUTTA' || d.tipo === 'GRAND CHEF' || d.tipo === 'CATTEL' || d.tipo === 'DAC') ? id : 'p00000',
                     codice_latte: d.tipo === 'LATTE' ? id : 'p00000',
                     orario_min_frutta: '', orario_max_frutta: '',
                     orario_min_latte: '', orario_max_latte: '',

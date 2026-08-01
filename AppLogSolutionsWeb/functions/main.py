@@ -411,28 +411,32 @@ def core_check_giornaliero(uid):
     print("[INFO] Start check_giornaliero")
     db = get_db()
     
-    # 1. DDT nuovi non assegnati
-    ddts = list(db.collection('clienti').document('DNR').collection('ddt').stream())
-    ddt_non_assegnati = sum(1 for d in ddts if d.to_dict().get('stato') != 'assegnato')
-
-    # 2. Clienti senza coordinate
-    clienti = list(db.collection('clienti').document('DNR').collection('raccolta clienti').stream())
+    tenants = ['DNR', 'GRAN CHEF', 'CATTEL', 'DAC']
+    ddt_non_assegnati = 0
     clienti_senza_coordinate = 0
-    for c in clienti:
-        data = c.to_dict()
-        lat, lon = data.get('lat'), data.get('lon')
-        if not lat or not lon or lat == '0' or lat == '0.0':
-            clienti_senza_coordinate += 1
-
-    # 3. Viaggi incompleti (senza ddt o non completati)
-    viaggi = list(db.collection('clienti').document('DNR').collection('viaggi ddt').stream())
     viaggi_non_validi = 0
-    for v in viaggi:
-        data = v.to_dict()
-        ddt_ids = data.get('ddt_ids', [])
-        stato = data.get('status', 'bozza')
-        if not ddt_ids or stato == 'bozza':
-            viaggi_non_validi += 1
+
+    for t in tenants:
+        # 1. DDT nuovi non assegnati
+        ddts = list(db.collection('clienti').document(t).collection('ddt').stream())
+        ddt_non_assegnati += sum(1 for d in ddts if d.to_dict().get('stato') != 'assegnato')
+
+        # 2. Clienti senza coordinate
+        clienti = list(db.collection('clienti').document(t).collection('raccolta clienti').stream())
+        for c in clienti:
+            data = c.to_dict()
+            lat, lon = data.get('lat'), data.get('lon')
+            if not lat or not lon or lat == '0' or lat == '0.0':
+                clienti_senza_coordinate += 1
+
+        # 3. Viaggi incompleti (senza ddt o non completati)
+        viaggi = list(db.collection('clienti').document(t).collection('viaggi ddt').stream())
+        for v in viaggi:
+            data = v.to_dict()
+            ddt_ids = data.get('ddt_ids', [])
+            stato = data.get('status', 'bozza')
+            if not ddt_ids or stato == 'bozza':
+                viaggi_non_validi += 1
 
     status_code = "ok" if (ddt_non_assegnati == 0 and clienti_senza_coordinate == 0 and viaggi_non_validi == 0) else "attenzione"
     
@@ -469,8 +473,12 @@ def core_chiudi_giornata(uid):
     print("[INFO] Tentativo chiusura giornata")
     db = get_db()
     
-    ddts = list(db.collection('clienti').document('DNR').collection('ddt').stream())
-    ddt_non_assegnati = sum(1 for d in ddts if d.to_dict().get('stato') != 'assegnato')
+    tenants = ['DNR', 'GRAN CHEF', 'CATTEL', 'DAC']
+    ddt_non_assegnati = 0
+    
+    for t in tenants:
+        ddts = list(db.collection('clienti').document(t).collection('ddt').stream())
+        ddt_non_assegnati += sum(1 for d in ddts if d.to_dict().get('stato') != 'assegnato')
     
     if ddt_non_assegnati > 0:
         return {
@@ -1682,12 +1690,12 @@ async function applicaESalvaRiordino() {{
 </body></html>"""
 
 
-def core_genera_mappa_autista(viaggio_id, distinta_url=None):
+def core_genera_mappa_autista(viaggio_id, distinta_url=None, tenant=None):
     start_time = time.time()
     if not viaggio_id:
         return {"status": "errore", "message": "viaggio_id mancante", "errori": ["viaggio_id mancante"], "data": {}}
 
-    tenant_viaggio = get_tenant_from_viaggio_id(viaggio_id)
+    tenant_viaggio = tenant or get_tenant_from_viaggio_id(viaggio_id)
     doc_ref = get_db().collection('clienti').document(tenant_viaggio).collection('viaggi ddt').document(viaggio_id)
     doc_viaggio = doc_ref.get()
     if not doc_viaggio.exists:
@@ -2163,6 +2171,101 @@ def _genera_pdf_placeholder_cattel_io(codice: str, nome: str, ind: str, cit: str
     out_stream.seek(0)
     return out_stream
 
+def _processa_excel_dac_core_logic(excel_bytes: bytes, db_mappati: dict, data_consegna: str, job_id: str) -> dict:
+    import pandas as pd
+    
+    nuovi_dati = {}
+    split_files = {}
+    deliveries_list = []
+    
+    f_io = io.BytesIO(excel_bytes)
+    df = pd.read_excel(f_io, sheet_name=0)
+    df_clean = df.dropna(how='all')
+    
+    def _str_val(val):
+        return str(val).strip() if pd.notna(val) and str(val).strip() not in ("", "nan") else ""
+
+    for idx, row in df_clean.iterrows():
+        # Map columns by name if possible, otherwise skip
+        if 'Codice' not in row:
+            continue
+            
+        codice = clean_client_code(_str_val(row.get('Codice', '')))
+        if not codice:
+            continue
+            
+        ragione_sociale = _str_val(row.get('Ragione Sociale', ''))
+        indirizzo = _str_val(row.get('Indirizzo', ''))
+        cap = _str_val(row.get('CAP', ''))
+        localita = _str_val(row.get('Città', ''))
+        provincia = _str_val(row.get('Provincia', ''))
+        
+        # Parse orari
+        ap_mat = _str_val(row.get('Apertura Mattina', ''))
+        ch_mat = _str_val(row.get('Chiusura Mattina', ''))
+        ap_pom = _str_val(row.get('Apertura Pomeriggio', ''))
+        ch_pom = _str_val(row.get('Chiusura Pomeriggio', ''))
+        
+        orario_min = ap_mat if ap_mat else (ap_pom if ap_pom else "")
+        orario_max = ch_pom if ch_pom else (ch_mat if ch_mat else "")
+        if not orario_max and (orario_min != ""):
+            orario_max = "18:00" # fallback
+            
+        note = _str_val(row.get('Giorno Chiusura', ''))
+        colli = _str_val(row.get('Colli', ''))
+        peso_kg = _str_val(row.get('Peso', ''))
+        
+        codice_l = codice.lower()
+        # Se è il magazzino, va comunque aggiunto come "consegna" per creare il giro
+        if codice_l not in db_mappati:
+            nuovi_dati[codice] = {
+                "dest": ragione_sociale,
+                "ind": indirizzo,
+                "cap": cap,
+                "cit": localita,
+                "prov": provincia,
+                "om": orario_min,
+                "oM": orario_max,
+                "tipo": "DAC"
+            }
+        else:
+            # Crea placeholder PDF
+            fname = f"{codice}_{data_consegna}.pdf"
+            pdf_io = _genera_pdf_placeholder_grand_chef_io(
+                codice, ragione_sociale, indirizzo,
+                localita, provincia, note, orario_min, orario_max, data_consegna
+            )
+            split_files[fname] = pdf_io
+            
+            deliveries_list.append({
+                "codice_consegna": codice,
+                "data": data_consegna,
+                "num_ddt": f"DAC_{codice}",
+                "ragsoc": ragione_sociale,
+                "ind": indirizzo,
+                "loc": localita,
+                "prv": provincia,
+                "cap": cap,
+                "colli": colli,
+                "peso": peso_kg,
+                "bancali": "",
+                "note": note,
+                "orari": f"{orario_min} - {orario_max}" if (orario_min or orario_max) else "",
+                "om": orario_min,
+                "oM": orario_max,
+                "pdf_url": "", 
+                "storage_path": f"split_ddt/{data_consegna}/{fname}",
+                "job_id": job_id
+            })
+            
+    return {
+        "split_files": split_files,
+        "nuovi_dati": nuovi_dati,
+        "nuovi_orari": {},
+        "nuovi_articoli": {},
+        "deliveries": deliveries_list
+    }
+
 def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data_consegna: str, job_id: str) -> dict:
     import pandas as pd
     import re
@@ -2441,9 +2544,9 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
         etichetta = data.get("type", "FRUTTA").upper()
         is_excel = data.get("is_excel", False) or etichetta == "GRAND_CHEF"
         
-        # 1. Carica Mappatura da DNR, GRAN CHEF e CATTEL per supportare viaggi misti
+        # 1. Carica Mappatura da DNR, GRAN CHEF, CATTEL e DAC per supportare viaggi misti
         db_mappati = {}
-        for current_tenant in ['DNR', 'GRAN CHEF', 'CATTEL']:
+        for current_tenant in ['DNR', 'GRAN CHEF', 'CATTEL', 'DAC']:
             clienti_ref = db.collection('clienti').document(current_tenant).collection('raccolta clienti')
             for doc in clienti_ref.stream():
                 d = doc.to_dict()
@@ -2464,6 +2567,8 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
             data_elab = data_lavoro_forzata or datetime.now().strftime("%d-%m-%Y")
             if competenza == "CATTEL":
                 risultato = _processa_excel_cattel_core_logic(file_bytes, db_mappati, data_elab, job_id)
+            elif competenza == "DAC":
+                risultato = _processa_excel_dac_core_logic(file_bytes, db_mappati, data_elab, job_id)
             else:
                 risultato = _processa_excel_chef_core_logic(file_bytes, db_mappati, data_elab, job_id)
         else:
@@ -2609,9 +2714,9 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
     tenant_con_ddt = set()
     
     try:
-        # Caricamento bulk clienti da DNR, GRAN CHEF e CATTEL
+        # Caricamento bulk clienti da DNR, GRAN CHEF, CATTEL e DAC
         db_mappati = {}
-        for current_tenant in ['DNR', 'GRAN CHEF', 'CATTEL']:
+        for current_tenant in ['DNR', 'GRAN CHEF', 'CATTEL', 'DAC']:
             clienti_ref = db.collection('clienti').document(current_tenant).collection('raccolta clienti')
             for doc in clienti_ref.stream():
                 d = doc.to_dict()
@@ -2629,6 +2734,7 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
                     # Identifica tenant dal path
                     if "/CATTEL/" in blob.name: tenant_con_ddt.add("CATTEL")
                     elif "/GRAND_CHEF/" in blob.name: tenant_con_ddt.add("GRAN_CHEF")
+                    elif "/DAC/" in blob.name: tenant_con_ddt.add("DAC")
                     elif "/FRUTTA/" in blob.name or "/LATTE/" in blob.name: tenant_con_ddt.add("DNR")
                     
                     try:
@@ -2637,6 +2743,8 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
                         job_competenza = meta_data.get("competenza") or meta_data.get("tipo", "FRUTTA").upper()
                         if job_competenza in ("GRAND_CHEF", "GRAND CHEF", "GRAN CHEF"):
                             job_competenza = "GRAN_CHEF"
+                        if job_competenza == "DAC":
+                            job_competenza = "DAC"
                         for ddt in meta_data.get("deliveries", []):
                             cod = ddt.get("codice_consegna")
                             cod_l = str(cod).strip().lower()
@@ -2673,8 +2781,9 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
     if tenant_con_ddt:
         try:
             for t_sov in tenant_con_ddt:
-                tenant_folder = "GRAN CHEF" if t_sov == "GRAN_CHEF" else t_sov
-                viaggi_ref = db.collection('clienti').document(tenant_folder).collection('viaggi ddt')
+                tenant = "GRAN CHEF" if t_sov == "GRAN_CHEF" else t_sov
+                if t_sov == "DAC": tenant = "DAC"
+                viaggi_ref = db.collection('clienti').document(tenant).collection('viaggi ddt')
                 viaggi = viaggi_ref.where("data_lavoro", "==", data_consegna).stream()
                 for v in viaggi:
                     v.reference.delete()
@@ -2695,7 +2804,7 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
         print(f"[WARN] Impossibile leggere il vecchio viaggi_giornalieri_Johnson.json: {e_old}")
 
     # Aggiorna con i file tenant-specifici (che sono la vera 'fonte di verità' per i viaggi svuotati/cancellati)
-    for t_folder in ["CATTEL", "GRAN_CHEF", "DNR"]:
+    for t_folder in ["CATTEL", "GRAN_CHEF", "DNR", "DAC"]:
         try:
             blob_t = bucket.blob(f"{t_folder}/REPORTS/{data_consegna}/viaggi_giornalieri_Johnson.json")
             if blob_t.exists():
@@ -2711,7 +2820,9 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
                         keys_to_remove.append(k)
                     elif t_folder == "GRAN_CHEF" and ("GRAN CHEF" in cz or "GRAND CHEF" in cz):
                         keys_to_remove.append(k)
-                    elif t_folder == "DNR" and ("CATTEL" not in cz and "GRAN" not in cz):
+                    elif t_folder == "DAC" and "DAC" in cz:
+                        keys_to_remove.append(k)
+                    elif t_folder == "DNR" and ("CATTEL" not in cz and "GRAN" not in cz and "DAC" not in cz):
                         keys_to_remove.append(k)
                 
                 for k in keys_to_remove:
@@ -2962,6 +3073,7 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
         cz = cz.upper().strip()
         if cz == "CATTEL": return "CATTEL"
         if cz in ("GRAN CHEF", "GRAND_CHEF", "GRAN_CHEF", "GRAND CHEF"): return "GRAN_CHEF"
+        if cz == "DAC": return "DAC"
         return "DNR"
 
     for zid, old_z in mappa_zone_esistenti.items():
@@ -2997,10 +3109,11 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
         zone_dict[z_id].append(p)
 
     # Costruisci Zone Normali
-    dnr_keys = sorted([k for k in zone_dict.keys() if k not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA", "0000", "SENZA_ZONA") and not k.startswith("GC_") and not k.startswith("CATTEL_") and not k.startswith("BAUER_")])
+    dnr_keys = sorted([k for k in zone_dict.keys() if k not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA", "0000", "SENZA_ZONA") and not k.startswith("GC_") and not k.startswith("CATTEL_") and not k.startswith("BAUER_") and not k.startswith("DAC_")])
     cattel_keys = sorted([k for k in zone_dict.keys() if k.startswith("CATTEL_")])
     bauer_keys = sorted([k for k in zone_dict.keys() if k.startswith("BAUER_")])
     gc_keys = [k for k in zone_dict.keys() if k.startswith("GC_")]
+    dac_keys = sorted([k for k in zone_dict.keys() if k.startswith("DAC_")])
     
     gc_job_ids = [k[3:] for k in gc_keys]
     sorted_job_ids = _ordina_job_ids_gc(gc_job_ids)
@@ -3026,6 +3139,13 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
         zone_finali.append({
             "id_zona": zid, "nome_giro": f"Bauer {idx_bauer:02d}", "color": palette[color_index % len(palette)],
             "lista_punti": zone_dict[zid], "cliente_zona": "BAUER"
+        })
+        color_index += 1
+        
+    for idx_dac, zid in enumerate(dac_keys, start=1):
+        zone_finali.append({
+            "id_zona": zid, "nome_giro": f"DAC {idx_dac:02d}", "color": palette[color_index % len(palette)],
+            "lista_punti": zone_dict[zid], "cliente_zona": "DAC"
         })
         color_index += 1
         
@@ -3084,7 +3204,7 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
     tenants_con_viaggi = set()
     for z in master_json:
         cz = z.get('cliente_zona') or ''
-        tenant_v = "CATTEL" if cz.upper() == "CATTEL" else ("GRAN CHEF" if cz.upper() in ("GRAN CHEF", "GRAND CHEF", "GRANCHEF") else ("BAUER" if cz.upper() == "BAUER" else "DNR"))
+        tenant_v = "CATTEL" if cz.upper() == "CATTEL" else ("GRAN CHEF" if cz.upper() in ("GRAN CHEF", "GRAND CHEF", "GRANCHEF") else ("BAUER" if cz.upper() == "BAUER" else ("DAC" if cz.upper() == "DAC" else "DNR")))
         tenants_con_viaggi.add(tenant_v)
         
     for t_v in tenants_con_viaggi:
@@ -3092,7 +3212,7 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
         master_json_t = []
         for z in master_json:
             cz_z = z.get('cliente_zona') or ''
-            t_z = "CATTEL" if cz_z.upper() == "CATTEL" else ("GRAN CHEF" if cz_z.upper() in ("GRAN CHEF", "GRAND CHEF", "GRANCHEF") else ("BAUER" if cz_z.upper() == "BAUER" else "DNR"))
+            t_z = "CATTEL" if cz_z.upper() == "CATTEL" else ("GRAN CHEF" if cz_z.upper() in ("GRAN CHEF", "GRAND CHEF", "GRANCHEF") else ("BAUER" if cz_z.upper() == "BAUER" else ("DAC" if cz_z.upper() == "DAC" else "DNR")))
             if t_z == t_v:
                 master_json_t.append(z)
                 
@@ -3105,7 +3225,7 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
     for z in master_json:
         doc_id = f"{data_consegna}_{z['id_zona']}"
         cz = z.get('cliente_zona') or ''
-        tenant_viaggio = "CATTEL" if cz.upper() == "CATTEL" else ("GRAN CHEF" if cz.upper() in ("GRAN CHEF", "GRAND CHEF", "GRANCHEF") else ("BAUER" if cz.upper() == "BAUER" else "DNR"))
+        tenant_viaggio = "CATTEL" if cz.upper() == "CATTEL" else ("GRAN CHEF" if cz.upper() in ("GRAN CHEF", "GRAND CHEF", "GRANCHEF") else ("BAUER" if cz.upper() == "BAUER" else ("DAC" if cz.upper() == "DAC" else "DNR")))
         viaggio_ref = db.collection('clienti').document(tenant_viaggio).collection('viaggi ddt').document(doc_id)
         
         # Manteniamo t_guida_min, t_tot_min, km_reali, autista se erano presenti nella cassaforte
@@ -3562,7 +3682,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
     
     listini = {}
     try:
-        for cli in ["DNR", "GRAN CHEF", "CATTEL", "BAUER"]:
+        for cli in ["DNR", "GRAN CHEF", "CATTEL", "BAUER", "DAC"]:
             doc = db.collection("clienti").document(cli).collection("impostazioni").document("listino").get()
             if doc.exists:
                 listini[cli] = doc.to_dict()
@@ -3589,11 +3709,12 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
         is_grand_chef = any("GRAND" in str(p.get("tipologia_grado") or "").upper() or "CHEF" in str(p.get("tipologia_grado") or "").upper() or "GRANCHEF" in str(p.get("zona") or "").upper() for p in punti)
         is_cattel = any("CATTEL" in str(p.get("zona") or "").upper() or "CATTEL" in str(p.get("codice_frutta") or "").upper() for p in punti)
         is_bauer = any("BAUER" in str(p.get("zona") or "").upper() or "BAUER" in str(p.get("codice_frutta") or "").upper() for p in punti)
+        is_dac = any("DAC" in str(p.get("zona") or "").upper() or "DAC" in str(p.get("codice_frutta") or "").upper() for p in punti)
         
         depot = _get_depot_for_points_cloud(punti)
         
         if usa_or_tools and not is_bloccato:
-            punti_ottimizzati = _ottimizza_singolo_viaggio_cloud(punti, depot, is_grand_chef or is_cattel or is_bauer)
+            punti_ottimizzati = _ottimizza_singolo_viaggio_cloud(punti, depot, is_grand_chef or is_cattel or is_bauer or is_dac)
         else:
             punti_ottimizzati = punti
         
@@ -3630,12 +3751,13 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
             fatturato_val = float(listini.get("GRAN CHEF", {}).get("tariffa_viaggio", 350.00))
             fatturato_str = f"{fatturato_val:.2f}"
         elif is_cattel:
-            # Cattel: non avendo la patente al momento del calcolo, mettiamo la tariffa base o lasciamo un placeholder?
-            # Mettiamo un valore base o stringa "Da calcolare (Patente)"
             fatturato_val = float(listini.get("CATTEL", {}).get("tariffa_patente_b", 340.00))
             fatturato_str = f"{fatturato_val:.2f}"
         elif is_bauer:
             fatturato_val = float(listini.get("BAUER", {}).get("tariffa_viaggio", 390.00))
+            fatturato_str = f"{fatturato_val:.2f}"
+        elif is_dac:
+            fatturato_val = float(listini.get("DAC", {}).get("tariffa_viaggio", 350.00))
             fatturato_str = f"{fatturato_val:.2f}"
         else:
             # DNR / Progetto Scuole (Default)
@@ -4353,7 +4475,7 @@ def core_genera_completo_giornata(data_consegna, tenant="DNR"):
                         match = next((d for d in deliveries_all if str(d.get("codice_consegna")).strip().lower() == cf and str(d.get("num_ddt")).strip() == str(num)), None)
                         if match: ddt_trovati.append(match)
                 else:
-                    match = next((d for d in deliveries_all if str(d.get("codice_consegna")).strip().lower() == cf and d.get("tipo") in ("FRUTTA", "GRAND_CHEF")), None)
+                    match = next((d for d in deliveries_all if str(d.get("codice_consegna")).strip().lower() == cf and d.get("tipo") in ("FRUTTA", "GRAND_CHEF", "DAC")), None)
                     if match: ddt_trovati.append(match)
                     
             if cl and cl != "p00000":
@@ -4362,7 +4484,7 @@ def core_genera_completo_giornata(data_consegna, tenant="DNR"):
                         match = next((d for d in deliveries_all if str(d.get("codice_consegna")).strip().lower() == cl and str(d.get("num_ddt")).strip() == str(num)), None)
                         if match: ddt_trovati.append(match)
                 else:
-                    match = next((d for d in deliveries_all if str(d.get("codice_consegna")).strip().lower() == cl and d.get("tipo") in ("LATTE", "GRAND_CHEF")), None)
+                    match = next((d for d in deliveries_all if str(d.get("codice_consegna")).strip().lower() == cl and d.get("tipo") in ("LATTE", "GRAND_CHEF", "DAC")), None)
                     if match: ddt_trovati.append(match)
 
             for ddt in ddt_trovati:
@@ -4609,7 +4731,7 @@ def ottimizza_viaggio(req: https_fn.CallableRequest):
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
 def genera_mappa_autista(req: https_fn.CallableRequest):
-    return core_genera_mappa_autista(req.data.get("viaggio_id"), req.data.get("distinta_url"))
+    return core_genera_mappa_autista(req.data.get("viaggio_id"), req.data.get("distinta_url"), req.data.get("tenant"))
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
     cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
@@ -4634,7 +4756,7 @@ def pulisci_cartelle_elaborazione(req: https_fn.CallableRequest):
     """Pulisce le cartelle di storage e i job Firestore per la giornata selezionata prima di caricare i nuovi file."""
     try:
         data_consegna = req.data.get("data_consegna")
-        tipologie = req.data.get("tipologie", ["FRUTTA", "LATTE", "GRAND_CHEF"])
+        tipologie = req.data.get("tipologie", ["FRUTTA", "LATTE", "GRAND_CHEF", "DAC"])
         if not data_consegna:
             return {"status": "errore", "message": "Data non fornita"}
             
@@ -4650,7 +4772,7 @@ def pulisci_cartelle_elaborazione(req: https_fn.CallableRequest):
                 except Exception:
                     pass
                     
-            tenant = "GRAN CHEF" if t.upper() == "GRAND_CHEF" else ("CATTEL" if t.upper() == "CATTEL" else "DNR")
+            tenant = "GRAN CHEF" if t.upper() == "GRAND_CHEF" else ("CATTEL" if t.upper() == "CATTEL" else ("DAC" if t.upper() == "DAC" else "DNR"))
             jobs_ref = db.collection('clienti').document(tenant).collection('processing_jobs')
             old_jobs = jobs_ref.where('data_lavoro', '==', data_consegna).stream()
             for oj in old_jobs:
@@ -4721,7 +4843,7 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
     if soft_delete:
         print(f"[INFO] Richiesta Soft Delete (pulizia UI) per la giornata {data_consegna}")
         try:
-            for tenant in ["DNR", "CATTEL", "GRAN CHEF", "BAUER"]:
+            for tenant in ["DNR", "CATTEL", "GRAN CHEF", "BAUER", "DAC"]:
                 doc_ref = db.collection('clienti').document(tenant).collection('reports_logistici').document(data_consegna)
                 if doc_ref.get().exists:
                     doc_ref.update({"archiviato_ui": True, "archiviato_at": datetime.now().isoformat()})
@@ -4756,7 +4878,7 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
                 f"REPORTS/{data_consegna}/",
                 f"CONSEGNE/CONSEGNE_{data_f}/"
             ]
-            for tenant in ["CATTEL", "GRAN CHEF", "BAUER"]:
+            for tenant in ["CATTEL", "GRAN CHEF", "BAUER", "DAC"]:
                 prefixes_to_clean.append(f"{tenant}/REPORTS/{data_consegna}/")
                 prefixes_to_clean.append(f"{tenant}/CONSEGNE/CONSEGNE_{data_f}/")
         
@@ -4771,13 +4893,13 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
         # 2. Elimina record da Firestore (SOLO se eliminiamo tutta la giornata)
         if not tipologie_da_eliminare:
             print(f"[INFO] Eliminazione report logistico principale per {data_consegna}")
-            for tenant in ["DNR", "CATTEL", "GRAN CHEF", "BAUER"]:
+            for tenant in ["DNR", "CATTEL", "GRAN CHEF", "BAUER", "DAC"]:
                 doc_ref = db.collection('clienti').document(tenant).collection('reports_logistici').document(data_consegna)
                 doc_ref.delete()
         
         # 3. Elimina i viaggi ddt
         print(f"[INFO] Eliminazione viaggi ddt per la giornata {data_consegna}")
-        for tenant in ["DNR", "CATTEL", "GRAN CHEF", "BAUER"]:
+        for tenant in ["DNR", "CATTEL", "GRAN CHEF", "BAUER", "DAC"]:
             viaggi_ref = db.collection('clienti').document(tenant).collection('viaggi ddt')
             viaggi_da_eliminare = viaggi_ref.where("data_lavoro", "==", data_consegna).stream()
             for v in viaggi_da_eliminare:
@@ -4804,7 +4926,7 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
                 
         # 3.1 Elimina pianificazione viaggi (se esiste)
         print(f"[INFO] Eliminazione pianificazione viaggi per la giornata {data_consegna}")
-        for tenant in ["DNR", "CATTEL", "GRAN CHEF", "BAUER"]:
+        for tenant in ["DNR", "CATTEL", "GRAN CHEF", "BAUER", "DAC"]:
             pian_ref = db.collection('clienti').document(tenant).collection('pianificazione_viaggi')
             # Cancellazione document based per data_lavoro o id
             for p in pian_ref.stream():
@@ -4830,7 +4952,7 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
                 
         # 4. Elimina eventuali processing_jobs rimasti
         print(f"[INFO] Eliminazione processing_jobs per la giornata {data_consegna}")
-        tenants_to_clean = tenant_da_eliminare if tenant_da_eliminare else ["GRAND_CHEF", "CATTEL", "DNR"]
+        tenants_to_clean = tenant_da_eliminare if tenant_da_eliminare else ["GRAND_CHEF", "CATTEL", "DNR", "DAC"]
         for t in tenants_to_clean:
             tenant = "GRAN CHEF" if t == "GRAND_CHEF" else t
             jobs_ref = db.collection('clienti').document(tenant).collection('processing_jobs')
@@ -4954,9 +5076,10 @@ def aggiorna_traffico_serale(req: https_fn.CallableRequest):
 
 def get_tenant_from_cz(cz):
     if not cz: return "DNR"
-    cz = cz.upper().strip()
-    if cz == "CATTEL": return "CATTEL"
+    cz = str(cz).strip().upper()
     if cz in ("GRAN CHEF", "GRAND_CHEF", "GRAN_CHEF", "GRAND CHEF"): return "GRAN_CHEF"
+    if cz == "DAC": return "DAC"
+    if "CATTEL" in cz: return "CATTEL"
     return "DNR"
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.MB_256, timeout_sec=60,
@@ -4979,6 +5102,7 @@ def preflight_elaborazione_mappe(req: https_fn.CallableRequest):
         in_elaborazione = {
             "CATTEL": False,
             "GRAN_CHEF": False,
+            "DAC": False,
             "DNR": False
         }
         
@@ -4990,27 +5114,21 @@ def preflight_elaborazione_mappe(req: https_fn.CallableRequest):
         if list(bucket.list_blobs(prefix=f"split_ddt/{data_consegna}/GRAND_CHEF/ddt_estratti")):
             in_elaborazione["GRAN_CHEF"] = True
             
+        # Controlliamo DAC
+        if list(bucket.list_blobs(prefix=f"split_ddt/{data_consegna}/DAC/ddt_estratti")):
+            in_elaborazione["DAC"] = True
+            
         # Controlliamo DNR (FRUTTA o LATTE)
         if list(bucket.list_blobs(prefix=f"split_ddt/{data_consegna}/FRUTTA/ddt_estratti")) or \
            list(bucket.list_blobs(prefix=f"split_ddt/{data_consegna}/LATTE/ddt_estratti")):
             in_elaborazione["DNR"] = True
             
         # Troviamo quali file ddt_estratti causano l'elaborazione per usarli nel calcolo contaminazione
-        ddt_presenti = []
-        for k, v in in_elaborazione.items():
-            if v:
-                ddt_presenti.append(k)
+        ddt_presenti = [k for k, v in in_elaborazione.items() if v]
 
         # Adesso leggiamo i viaggi vecchi (cassaforte) per vedere se ci sono viaggi contaminati
-        elaborati_esistenti = {"CATTEL": False, "GRAN_CHEF": False, "DNR": False}
+        elaborati_esistenti = {"CATTEL": False, "GRAN_CHEF": False, "DAC": False, "DNR": False}
         contaminati = False
-        
-        def get_tenant_from_cz(cz):
-            if not cz: return "DNR"
-            cz = cz.upper().strip()
-            if cz == "CATTEL": return "CATTEL"
-            if cz in ("GRAN CHEF", "GRAND_CHEF", "GRAN_CHEF", "GRAND CHEF"): return "GRAN_CHEF"
-            return "DNR"
         
         try:
             blob_old_json = bucket.blob(f"REPORTS/{data_consegna}/viaggi_giornalieri_Johnson.json")
@@ -5968,7 +6086,7 @@ def elabora_centro_costi(req: https_fn.CallableRequest) -> typing.Any:
                 cf = None
                 nome = None
                 for line in text.split('\n'):
-                    match = re.search(r'([A-Z\s']+?)\s+([A-Z0-9]{16})\b', line)
+                    match = re.search(r"([A-Z\s']+?)\s+([A-Z0-9]{16})\b", line)
                     if match:
                         nome = match.group(1).strip()
                         cf = match.group(2)

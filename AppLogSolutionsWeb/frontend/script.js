@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "6.356";
+const APP_VERSION = "6.360";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -27,24 +27,33 @@ window.addEventListener("load", () => {
     };
 });
 
-// --- BANNER MEMORIA "VERSIONE SVILUPPO" ---
+// --- BANNER AMBIENTE CANTIERE ---
 document.addEventListener("DOMContentLoaded", () => {
     const hostname = window.location.hostname;
-    if (hostname.includes('log-solutions-sviluppo') || hostname.includes('--sviluppo') || hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+    // Attivazione su localhost, cantiere o test
+    if (hostname.includes('cantiere') || hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
         const devBanner = document.createElement("div");
         devBanner.id = "dev-env-banner";
-        devBanner.innerText = "VERSIONE SVILUPPO";
-        devBanner.style.cssText = "background-color: #ef4444; color: white; text-align: center; font-weight: bold; padding: 6px 12px; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.2); position: fixed; top: 0; left: 0; right: 0; z-index: 99999;";
+        devBanner.innerText = "🚧 AMBIENTE DI CANTIERE 🚧";
         
-        const firstChild = document.body.firstChild;
-        if (firstChild) {
-            document.body.insertBefore(devBanner, firstChild);
+        const loginCard = document.querySelector('.login-card');
+        
+        if (loginCard) {
+            // Se siamo nel login, lo mettiamo dentro la card
+            devBanner.style.cssText = "background-color: #ef4444; color: white; text-align: center; font-weight: 800; padding: 8px 12px; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); border: 2px dashed #fca5a5;";
+            const loginHeader = document.querySelector('.login-header');
+            if (loginHeader) {
+                loginHeader.parentNode.insertBefore(devBanner, loginHeader);
+            } else {
+                loginCard.prepend(devBanner);
+            }
         } else {
-            document.body.appendChild(devBanner);
+            // Se siamo nell'app normale, lo mettiamo fisso in alto
+            devBanner.style.cssText = "background-color: #ef4444; color: white; text-align: center; font-weight: 800; padding: 6px 12px; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4); position: fixed; top: 0; left: 0; right: 0; z-index: 99999; border-bottom: 2px dashed #fca5a5;";
+            document.body.prepend(devBanner);
         }
     }
 });
-
 
 // --- STATO GLOBALE ---
 window.appData = window.appData || {

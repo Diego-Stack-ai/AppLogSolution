@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invio Mobile Autisti — Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.356">
+    <link rel="stylesheet" href="styles.css?v=6.360">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -210,8 +210,8 @@
         <div class="viaggi-grid" id="viaggiGrid"></div>
     </main>
 
-    <script src="script.js?v=6.356"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.356"></script>
+    <script src="script.js?v=6.360"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.360"></script>
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -299,8 +299,9 @@
                 });
 
                 // Integrazione manifest PDF (distinte_light) dal bucket Storage
+                const storagePathPrefix = activeTenant !== 'DNR' ? `${activeTenant}/REPORTS` : 'REPORTS';
                 try {
-                    const sRef = storageRef(storage, `REPORTS/${dataLavoro}/manifest_link_viaggi.json`);
+                    const sRef = storageRef(storage, `${storagePathPrefix}/${dataLavoro}/manifest_link_viaggi.json`);
                     const downloadUrl = await Promise.race([
                         getDownloadURL(sRef),
                         new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout_Storage")), 2500))
@@ -360,7 +361,7 @@
                 let reportMeta = null;
                 try {
                     const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-                    const reportRef = doc(db, 'clienti', 'DNR', 'reports_logistici', dataLavoro);
+                    const reportRef = doc(db, 'clienti', activeTenant, 'reports_logistici', dataLavoro);
                     const reportSnap = await window.getDocConFallback(reportRef);
                     if (reportSnap.exists()) {
                         reportMeta = reportSnap.data();
@@ -603,7 +604,7 @@
             const selectMese = document.getElementById('selectMeseOrdinario');
             if (!selectMese) return;
             try {
-                const qRep = query(collection(db, 'clienti', 'DNR', 'reports_logistici'));
+                const qRep = query(collection(db, 'clienti', activeTenant, 'reports_logistici'));
                 const snap = await window.getDocsConFallback(qRep);
                 const mesiSet = new Set();
                 snap.forEach(doc => {
@@ -741,7 +742,7 @@
 
             try {
                 const fn = httpsCallable(functions, 'genera_mappa_autista', { timeout: 120000 });
-                const res = (await fn({ viaggio_id: viaggioId, distinta_url: d_url })).data;
+                const res = (await fn({ viaggio_id: viaggioId, distinta_url: d_url, tenant: activeTenant })).data;
 
                 if (res.status === 'errore') throw new Error(res.message);
 
@@ -790,7 +791,7 @@
                 }
                 try {
                     const fn = httpsCallable(functions, 'genera_mappa_autista', { timeout: 120000 });
-                    const res = (await fn({ viaggio_id: v.id, distinta_url: (v.distinta_light || null) })).data;
+                    const res = (await fn({ viaggio_id: v.id, distinta_url: (v.distinta_light || null), tenant: activeTenant })).data;
                     if (res.status === 'errore') throw new Error(res.message);
                     v.mappa_url = res.data.mappa_url;
                     v.km_reali  = res.data.km_reali;

@@ -11,17 +11,18 @@ const firebaseConfigProd = {
 };
 
 const firebaseConfigDev = {
-  apiKey: "AIzaSyCfM1An6ekvcO4Y3a-UooJiEi2g5JkShFQ",
-  authDomain: "log-solutions-sviluppo.web.app",
-  projectId: "log-solutions-sviluppo",
-  storageBucket: "log-solutions-sviluppo.firebasestorage.app",
-  messagingSenderId: "1097538489312",
-  appId: "1:1097538489312:web:03390d3823f80f9c367985"
+  apiKey: "AIzaSyD6kcBZyrPi9Pe_NZenbQzhP1Q6otYh8Ew",
+  authDomain: "log-solutions-cantiere.firebaseapp.com",
+  projectId: "log-solutions-cantiere",
+  storageBucket: "log-solutions-cantiere.firebasestorage.app",
+  messagingSenderId: "646843725221",
+  appId: "1:646843725221:web:e56143098e6e6dcfb8e44c",
+  measurementId: "G-BQWBPK7HZM"
 };
 
 // Riconosciamo l'ambiente dall'URL o se stiamo girando in locale
-const isDevEnvironment = window.location.hostname.includes('log-solutions-sviluppo') || 
-                         window.location.hostname.includes('--sviluppo') ||
+const isDevEnvironment = window.location.hostname.includes('log-solutions-cantiere') || 
+                         window.location.hostname.includes('--cantiere') ||
                          window.location.hostname === 'localhost' || 
                          window.location.hostname === '127.0.0.1';
 

@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.367">
+    <link rel="stylesheet" href="styles.css?v=6.368">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1586,8 +1586,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
         async function uploadStorageStringHelper(path, data, contentType) {
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.367");
-                const { syncManager } = await import("./core/sync-manager.js?v=6.367");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.368");
+                const { syncManager } = await import("./core/sync-manager.js?v=6.368");
                 
                 if (connectivityService.getStatus() === 'online') {
                     await uploadString(ref(storage, path), data, 'raw', { contentType });
@@ -2028,11 +2028,9 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
         // --- GESTIONE MODAL RINOMINA GIRO (MATITA) ---
         let modalZid = null;
 
-        // Fallback statici (usati se Firestore non ha ancora caricato i progetti)
+        // Fallback generici (usati se Firestore non ha ancora caricato i progetti)
         const NOMI_DNR_FALLBACK = [
-            "BS", "FUORI BS", "LAGO BS 1", "LAGO BS 2", "LAGO BS 3",
-            "VR", "FUORI VR", "MN", "VR MN",
-            "LAGO VR 1", "LAGO VR 2", "LAGO VR 3"
+            "Zona 1", "Zona 2", "Zona 3", "Zona 4", "Zona 5"
         ];
         const NOMI_GC_FALLBACK = NOMI_DNR_FALLBACK.map(n => 'GranChef ' + n);
 
@@ -2044,6 +2042,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             if (z && z.is_bauer) return 'BAUER';
             if (id.includes('cattel')) return 'CATTEL';
             if (id.includes('bauer')) return 'BAUER';
+            if (id.includes('dac')) return 'DAC';
             if (z && z._stats && z._stats.is_gc === true) return 'GRAN CHEF';
             if (id.includes('granchef') || nome.includes('granchef') || nome.includes('gran chef')) return 'GRAN CHEF';
             return _CLIENTE_PROGETTO || 'PROGETTO SCUOLE';
@@ -3575,7 +3574,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.367");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.368");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -3955,7 +3954,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.367");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.368");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -4035,7 +4034,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.367");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.368");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 

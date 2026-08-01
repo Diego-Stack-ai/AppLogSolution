@@ -29,7 +29,7 @@ const isDevEnvironment = window.location.hostname.includes('log-solutions-cantie
 export const firebaseConfig = isDevEnvironment ? firebaseConfigDev : firebaseConfigProd;
 
 if (isDevEnvironment) {
-    console.log("[Firebase Config] ATTENZIONE: Connesso all'AMBIENTE DI SVILUPPO (log-solutions-sviluppo)");
+    console.log("[Firebase Config] ATTENZIONE: Connesso all'AMBIENTE CANTIERE (log-solutions-cantiere)");
 } else {
     console.log("[Firebase Config] Connesso alla PRODUZIONE PRINCIPALE (log-solution-60007)");
 }

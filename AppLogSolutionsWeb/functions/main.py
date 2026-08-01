@@ -2544,18 +2544,17 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
         etichetta = data.get("type", "FRUTTA").upper()
         is_excel = data.get("is_excel", False) or etichetta == "GRAND_CHEF"
         
-        # 1. Carica Mappatura da DNR, GRAN CHEF, CATTEL e DAC per supportare viaggi misti
+        # 1. Carica Mappatura dal tenant corretto per isolare i dati
         db_mappati = {}
-        for current_tenant in ['DNR', 'GRAN CHEF', 'CATTEL', 'DAC']:
-            clienti_ref = db.collection('clienti').document(current_tenant).collection('raccolta clienti')
-            for doc in clienti_ref.stream():
-                d = doc.to_dict()
-                cf = str(d.get('codice_frutta') or '').strip().lower()
-                cl = str(d.get('codice_latte') or '').strip().lower()
-                if cf and cf != 'p00000' and cf != 'nan': db_mappati[cf] = d
-                if cl and cl != 'p00000' and cl != 'nan': db_mappati[cl] = d
+        clienti_ref = db.collection('clienti').document(tenant).collection('raccolta clienti')
+        for doc in clienti_ref.stream():
+            d = doc.to_dict()
+            cf = str(d.get('codice_frutta') or '').strip().lower()
+            cl = str(d.get('codice_latte') or '').strip().lower()
+            if cf and cf != 'p00000' and cf != 'nan': db_mappati[cf] = d
+            if cl and cl != 'p00000' and cl != 'nan': db_mappati[cl] = d
         
-        articoli_ref = db.collection('clienti').document('DNR').collection('codici articoli')
+        articoli_ref = db.collection('clienti').document(tenant).collection('codici articoli')
         db_articoli = {doc.id: doc.to_dict() for doc in articoli_ref.stream()}
         
         # 2. Download

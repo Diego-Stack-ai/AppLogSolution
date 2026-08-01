@@ -2255,7 +2255,9 @@ def _processa_excel_dac_core_logic(excel_bytes: bytes, db_mappati: dict, data_co
                 "oM": orario_max,
                 "pdf_url": "", 
                 "storage_path": f"split_ddt/{data_consegna}/{fname}",
-                "job_id": job_id
+                "job_id": job_id,
+                "tipo": "DAC",
+                "zona": f"DAC_{job_id}"
             })
             
     return {

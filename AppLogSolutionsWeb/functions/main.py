@@ -2171,7 +2171,7 @@ def _genera_pdf_placeholder_cattel_io(codice: str, nome: str, ind: str, cit: str
     out_stream.seek(0)
     return out_stream
 
-def _processa_excel_dac_core_logic(excel_bytes: bytes, db_mappati: dict, data_consegna: str, job_id: str) -> dict:
+def _processa_excel_dac_core_logic(excel_bytes: bytes, db_mappati: dict, data_consegna: str, job_id: str, tenant_name: str) -> dict:
     import pandas as pd
     
     nuovi_dati = {}
@@ -2226,7 +2226,7 @@ def _processa_excel_dac_core_logic(excel_bytes: bytes, db_mappati: dict, data_co
                 "prov": provincia,
                 "om": orario_min,
                 "oM": orario_max,
-                "tipo": "DAC"
+                "tipo": tenant_name
             }
         else:
             # Crea placeholder PDF
@@ -2240,7 +2240,7 @@ def _processa_excel_dac_core_logic(excel_bytes: bytes, db_mappati: dict, data_co
             deliveries_list.append({
                 "codice_consegna": codice,
                 "data": data_consegna,
-                "num_ddt": f"DAC_{codice}",
+                "num_ddt": f"{tenant_name}_{codice}",
                 "ragsoc": ragione_sociale,
                 "ind": indirizzo,
                 "loc": localita,
@@ -2256,8 +2256,8 @@ def _processa_excel_dac_core_logic(excel_bytes: bytes, db_mappati: dict, data_co
                 "pdf_url": "", 
                 "storage_path": f"split_ddt/{data_consegna}/{fname}",
                 "job_id": job_id,
-                "tipo": "DAC",
-                "zona": f"DAC_{job_id}"
+                "tipo": tenant_name,
+                "zona": f"{tenant_name}_{job_id}"
             })
             
     return {
@@ -2268,7 +2268,7 @@ def _processa_excel_dac_core_logic(excel_bytes: bytes, db_mappati: dict, data_co
         "deliveries": deliveries_list
     }
 
-def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data_consegna: str, job_id: str) -> dict:
+def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data_consegna: str, job_id: str, tenant_name: str) -> dict:
     import pandas as pd
     import re
     
@@ -2367,7 +2367,7 @@ def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data
                             "prov": matched_cust.get("prov") or matched_cust.get("provincia") or provincia,
                             "om": matched_cust.get("om") or orario_min,
                             "oM": matched_cust.get("oM") or orario_max,
-                            "tipo": "CATTEL",
+                            "tipo": tenant_name,
                             "lat": matched_cust.get("lat"),
                             "lon": matched_cust.get("lon"),
                             "stato_suggerito": "giallo",
@@ -2383,7 +2383,7 @@ def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data
                             "prov": provincia,
                             "om": orario_min,
                             "oM": orario_max,
-                            "tipo": "CATTEL",
+                            "tipo": tenant_name,
                             "stato_suggerito": "rosso",
                             "codice_frutta": codice,
                             "codice_latte": "p00000"
@@ -2404,15 +2404,15 @@ def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data
                 )
                 split_files[fname] = pdf_io
                 
-                # Zona logistica include targa e autista
-                zona_cod = f"CATTEL_{targa}_{autista}" if autista else f"CATTEL_{targa}"
+                # Zona logistica include solo targa per Cattel (rimosso autista come richiesto)
+                zona_cod = f"{tenant_name}_{targa}"
                 
                 deliveries_list.append({
                     "codice_consegna": codice,
                     "data": data_consegna,
-                    "num_ddt": f"CATTEL_{codice}",
+                    "num_ddt": f"{tenant_name}_{codice}",
                     "pdf_name": fname,
-                    "tipo": "CATTEL",
+                    "tipo": tenant_name,
                     "zona": zona_cod,
                     "gc_colli": colli,
                     "gc_peso_kg": "",
@@ -2429,7 +2429,7 @@ def _processa_excel_cattel_core_logic(excel_bytes: bytes, db_mappati: dict, data
         "deliveries": deliveries_list
     }
 
-def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_consegna: str, job_id: str) -> dict:
+def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_consegna: str, job_id: str, tenant_name: str) -> dict:
     import pandas as pd
     
     nuovi_dati = {}
@@ -2489,7 +2489,7 @@ def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_c
                     "prov": provincia,
                     "om": orario_min,
                     "oM": orario_max,
-                    "tipo": "GRAND CHEF"
+                    "tipo": tenant_name
                 }
             else:
                 fname = f"{codice}_{data_consegna}.pdf"
@@ -2502,10 +2502,10 @@ def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_c
                 deliveries_list.append({
                     "codice_consegna": codice,
                     "data": data_consegna,
-                    "num_ddt": f"GC_{codice}",
+                    "num_ddt": f"{tenant_name}_{codice}",
                     "pdf_name": fname,
-                    "tipo": "GRAND_CHEF",
-                    "zona": f"GC_{job_id}",
+                    "tipo": tenant_name,
+                    "zona": f"{tenant_name}_{job_id}",
                     "gc_colli": colli,
                     "gc_peso_kg": peso_kg,
                     "gc_num_cartone": num_cartone,
@@ -2567,11 +2567,11 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
         if is_excel:
             data_elab = data_lavoro_forzata or datetime.now().strftime("%d-%m-%Y")
             if competenza == "CATTEL":
-                risultato = _processa_excel_cattel_core_logic(file_bytes, db_mappati, data_elab, job_id)
+                risultato = _processa_excel_cattel_core_logic(file_bytes, db_mappati, data_elab, job_id, competenza)
             elif competenza == "DAC":
-                risultato = _processa_excel_dac_core_logic(file_bytes, db_mappati, data_elab, job_id)
+                risultato = _processa_excel_dac_core_logic(file_bytes, db_mappati, data_elab, job_id, competenza)
             else:
-                risultato = _processa_excel_chef_core_logic(file_bytes, db_mappati, data_elab, job_id)
+                risultato = _processa_excel_chef_core_logic(file_bytes, db_mappati, data_elab, job_id, competenza)
         else:
             risultato = _processa_pdf_core_logic(file_bytes, etichetta, db_mappati, db_articoli)
         
@@ -3148,26 +3148,20 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
         
         # (La logica fine di rinomina sarà affidata all'AI futura, per ora manteniamo retro-compatibilità
         # pulendo i vecchi prefissi se l'estrattore li ha inseriti)
+        # Logica di rinomina dinamica per QUALSIASI tenant basato su file (es. DAC, GRAND CHEF, PINCO PALLO)
+        # Se la zona creata nel parser inizia col nome del tenant (es. "Pinco Pallo_8xY3b..."), rinominiamo il giro in modo pulito.
         nome_giro = zid
-        if tenant == "CATTEL" and zid.startswith("CATTEL_"):
-            parts = zid.split('_')
-            nome_giro = f"Cattel {parts[1]}" if len(parts) > 1 else f"Cattel {idx}"
+        if tenant == "DNR":
+            # DNR usa zone geografiche reali, non prefissi file
+            nome_giro = zid if zid != "0000" else f"V{idx:02d}"
+            tenant = "PROGETTO SCUOLE" # Fallback visivo richiesto storicamente per DNR
+        elif zid.startswith(f"{tenant}_"):
+            parts = zid.split('_', 1)
+            label = parts[1] if len(parts) > 1 and parts[1] != "0000" else f"{idx:02d}"
+            nome_giro = f"{tenant} {label}"
         elif tenant == "GRAN CHEF" and zid.startswith("GC_"):
+            # Gestione dei vecchi job GRAN CHEF (retrocompatibilità)
             nome_giro = f"Gran Chef {idx:02d}"
-        elif tenant == "DAC":
-            if zid.startswith("DAC_"):
-                parts = zid.split('_', 1)
-                dac_label = parts[1] if len(parts) > 1 and parts[1] != "0000" else f"{idx:02d}"
-                nome_giro = f"DAC {dac_label}"
-            elif zid != "0000":
-                nome_giro = f"DAC {zid}"
-            else:
-                nome_giro = f"DAC {idx:02d}"
-        elif tenant == "BAUER" and zid.startswith("BAUER_"):
-            nome_giro = f"Bauer {idx:02d}"
-        elif tenant == "DNR":
-            nome_giro = f"V{idx:02d}"
-            tenant = "PROGETTO SCUOLE" # Fallback visivo richiesto per DNR
             
         zone_finali.append({
             "id_zona": zid,

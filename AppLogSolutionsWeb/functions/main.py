@@ -3152,10 +3152,15 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
             nome_giro = f"Cattel {parts[1]}" if len(parts) > 1 else f"Cattel {idx}"
         elif tenant == "GRAN CHEF" and zid.startswith("GC_"):
             nome_giro = f"Gran Chef {idx:02d}"
-        elif tenant == "DAC" and zid.startswith("DAC_"):
-            parts = zid.split('_', 1)
-            dac_label = parts[1] if len(parts) > 1 and parts[1] != "0000" else f"{idx:02d}"
-            nome_giro = f"DAC {dac_label}"
+        elif tenant == "DAC":
+            if zid.startswith("DAC_"):
+                parts = zid.split('_', 1)
+                dac_label = parts[1] if len(parts) > 1 and parts[1] != "0000" else f"{idx:02d}"
+                nome_giro = f"DAC {dac_label}"
+            elif zid != "0000":
+                nome_giro = f"DAC {zid}"
+            else:
+                nome_giro = f"DAC {idx:02d}"
         elif tenant == "BAUER" and zid.startswith("BAUER_"):
             nome_giro = f"Bauer {idx:02d}"
         elif tenant == "DNR":

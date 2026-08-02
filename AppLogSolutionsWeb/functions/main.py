@@ -2528,14 +2528,28 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
     start_time = time.time()
     db = get_db()
     job_ref = db.collection('clienti').document(tenant).collection('processing_jobs').document(job_id)
-    job_doc = job_ref.get()
     
-    if not job_doc.exists: return {"status": "errore", "message": "Job non trovato"}
-    data = job_doc.to_dict()
-    data_lavoro_forzata = data.get('data_lavoro')
+    @firestore.transactional
+    def acquire_job(transaction, ref):
+        snapshot = ref.get(transaction=transaction)
+        if not snapshot.exists:
+            return None
+        doc_data = snapshot.to_dict()
+        if doc_data.get("status") != "uploaded":
+            return doc_data
+        transaction.update(ref, {
+            "status": "processing",
+            "updated_at": firestore.SERVER_TIMESTAMP,
+            "started_at": firestore.SERVER_TIMESTAMP
+        })
+        return doc_data
+
+    transaction = db.transaction()
+    data = acquire_job(transaction, job_ref)
+    
+    if not data: return {"status": "errore", "message": "Job non trovato"}
     if data.get("status") != "uploaded": return {"status": "errore", "message": "Stato job non valido per elaborazione"}
-    
-    job_ref.update({"status": "processing", "updated_at": firestore.SERVER_TIMESTAMP, "started_at": firestore.SERVER_TIMESTAMP})
+    data_lavoro_forzata = data.get('data_lavoro')
     
     competenza = data.get("competenza") or data.get("type", "FRUTTA").upper()
     if competenza in ("GRAND_CHEF", "GRAND CHEF", "GRAN CHEF"):

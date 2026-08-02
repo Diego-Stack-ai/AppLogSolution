@@ -62,13 +62,13 @@ def _route_key(punti_pieni):
     return hashlib.md5(seq.encode()).hexdigest()
 
 def _leggi_percorsi_cache(key):
-    cache = load_storage_cache("directions_cache.json")
+    cache = load_storage_cache("directions_cache_v2.json")
     return cache.get(key)
 
 def _scrivi_percorsi_cache(key, data):
-    cache = load_storage_cache("directions_cache.json")
+    cache = load_storage_cache("directions_cache_v2.json")
     cache[key] = data
-    save_storage_cache("directions_cache.json")
+    save_storage_cache("directions_cache_v2.json")
 
 def _leggi_cache_completa_firestore(p1, p2):
     cache = load_storage_cache("distanze_reali_cache.json")
@@ -256,10 +256,17 @@ def _get_directions_data(percorso_punti, depot=None):
             sub = punti_pieni[i:i + CHUNK + 1]
             origin = f"{sub[0]['lat']},{sub[0]['lon']}"
             dest   = f"{sub[-1]['lat']},{sub[-1]['lon']}"
-            waypts = "|".join([f"{p['lat']},{p['lon']}" for p in sub[1:-1]])
+            
             url = (f"https://maps.googleapis.com/maps/api/directions/json"
-                   f"?origin={origin}&destination={dest}"
-                   f"&waypoints={waypts}&key={GOOGLE_MAPS_API_KEY}")
+                   f"?origin={origin}&destination={dest}")
+                   
+            waypts_list = [f"{p['lat']},{p['lon']}" for p in sub[1:-1]]
+            if waypts_list:
+                waypts = "|".join(waypts_list)
+                url += f"&waypoints={waypts}"
+                
+            url += f"&key={GOOGLE_MAPS_API_KEY}"
+            
             r = requests.get(url, timeout=8).json()
             if r.get("status") == "OK":
                 route = r["routes"][0]

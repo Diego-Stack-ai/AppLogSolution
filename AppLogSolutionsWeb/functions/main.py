@@ -4006,7 +4006,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
             html_path = f"CONSEGNE/CONSEGNE_{data_viaggio_str}/MAPPE_AUTISTI/{viaggio_id}.html"
             html_mappa = _genera_html_mappa(
                 titolo_giro, punti_simulati, km, sec_guida, polylines,
-                depot=depot, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc, actual_viaggio_id=viaggio_id
+                depot=depot_partenza, distinta_url=distinta_url, ora_partenza_dep=ora_partenza_calc, actual_viaggio_id=viaggio_id
             )
             html_blob = bucket.blob(html_path)
             html_blob.upload_from_string(html_mappa.encode("utf-8"), content_type="text/html; charset=utf-8")

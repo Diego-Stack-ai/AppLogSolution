@@ -199,7 +199,9 @@ def _processa_pdf_core_logic(pdf_bytes: bytes, etichetta: str, db_mappati: dict,
             pg = pdf.pages[i]
             text = pg.extract_text() or ""
             d, l, num_ddt, zona = _estrai_data_luogo(text)
-            if not d or not l: continue
+            if not d or not l:
+                print(f"[WARN] Pagina {i+1} saltata. Data estratta: {d or 'MANCANTE'}, Codice estratto: {l or 'MANCANTE'}. Motivo: Elementi identificativi assenti.")
+                continue
             
             chiave = (l, d, num_ddt)
             if chiave not in chiave_zona and zona:
@@ -2254,7 +2256,7 @@ def _processa_excel_dac_core_logic(excel_bytes: bytes, db_mappati: dict, data_co
                 "om": orario_min,
                 "oM": orario_max,
                 "pdf_url": "", 
-                "storage_path": f"split_ddt/{data_consegna}/{fname}",
+                "storage_path": f"split_ddt/{data_consegna}/{tenant_name}/{fname}",
                 "job_id": job_id,
                 "tipo": tenant_name,
                 "zona": f"{tenant_name}_{job_id}"
@@ -2533,7 +2535,7 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
     data_lavoro_forzata = data.get('data_lavoro')
     if data.get("status") != "uploaded": return {"status": "errore", "message": "Stato job non valido per elaborazione"}
     
-    job_ref.update({"status": "processing", "updated_at": firestore.SERVER_TIMESTAMP})
+    job_ref.update({"status": "processing", "updated_at": firestore.SERVER_TIMESTAMP, "started_at": firestore.SERVER_TIMESTAMP})
     
     competenza = data.get("competenza") or data.get("type", "FRUTTA").upper()
     if competenza in ("GRAND_CHEF", "GRAND CHEF", "GRAN CHEF"):
@@ -2595,6 +2597,7 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
         if not deliveries:
             job_ref.update({
                 "status": "completed", 
+                "completed_at": firestore.SERVER_TIMESTAMP,
                 "message": "Nessun DDT trovato (Clienti da mappare?)",
                 "nuovi_clienti": len(nuovi_dati),
                 "nuovi_articoli": len(nuovi_articoli),
@@ -2646,6 +2649,7 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
         elapsed = time.time() - start_time
         job_ref.update({
             "status": "completed",
+            "completed_at": firestore.SERVER_TIMESTAMP,
             "data_rilevata": data_elab,
             "meta_path_json": meta_path,
             "pdf_generati": len(split_files),
@@ -2662,7 +2666,7 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
         return {"status": "ok", "pdf_generati": len(split_files), "tempo_sec": round(elapsed, 2)}
         
     except Exception as e:
-        job_ref.update({"status": "error", "error_message": str(e), "updated_at": firestore.SERVER_TIMESTAMP})
+        job_ref.update({"status": "error", "error_message": str(e), "updated_at": firestore.SERVER_TIMESTAMP, "failed_at": firestore.SERVER_TIMESTAMP})
         return {"status": "errore", "message": str(e)}
 
 def _ordina_job_ids_gc(job_ids, tenant="GRAN CHEF"):

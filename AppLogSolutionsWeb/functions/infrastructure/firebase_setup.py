@@ -40,6 +40,7 @@ def get_bucket():
 _LOCAL_STORAGE_CACHES = {
     "distanze_reali_cache.json": None,
     "directions_cache.json": None,
+    "directions_cache_v2.json": None,
     "distanze_traffico_cache.json": None
 }
 _INITIAL_CACHE_COUNTS = {}

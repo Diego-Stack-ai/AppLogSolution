@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.376">
+    <link rel="stylesheet" href="styles.css?v=6.377">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1586,8 +1586,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
         async function uploadStorageStringHelper(path, data, contentType) {
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.376");
-                const { syncManager } = await import("./core/sync-manager.js?v=6.376");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.377");
+                const { syncManager } = await import("./core/sync-manager.js?v=6.377");
                 
                 if (connectivityService.getStatus() === 'online') {
                     await uploadString(ref(storage, path), data, 'raw', { contentType });
@@ -2041,13 +2041,17 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             return _CLIENTE_PROGETTO || 'PROGETTO SCUOLE';
         }
 
-        // Recupera la lista nomi viaggi dinamicamente da Firestore (lista_progetti).
+        // Recupera la lista nomi viaggi dinamicamente da Firestore (Fatturazione Clienti V2 o lista_progetti fallback).
         function getNomiViaggi(z, zid) {
-            const progetti = (window.appData && window.appData.lista_progetti) || [];
+            const progettiV2 = (window.appData && window.appData.lista_clienti_fatturazione) || [];
+            const progettiLegacy = (window.appData && window.appData.lista_progetti) || [];
+            
+            // Uniamo le sorgenti dando priorità alla V2
+            const progetti = (progettiV2.length > 0) ? progettiV2 : progettiLegacy;
+            
             let progetto = null;
             const cliente = getClienteZona(z, zid);
             const isGC = cliente === 'GRAN CHEF';
-
             const clienteUpper = cliente.toUpperCase();
             
             // Ricerca esatta o alias
@@ -2073,8 +2077,16 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
                 }
             }
 
-            if (progetto && progetto.viaggi && progetto.viaggi.length > 0) {
-                return progetto.viaggi;
+            if (progetto) {
+                // Se è un progetto V2 (Fatturazione), le zone sono in zone_fatturazione (array di oggetti)
+                if (progetto.zone_fatturazione && Array.isArray(progetto.zone_fatturazione)) {
+                    const zone = progetto.zone_fatturazione.map(z => (z.nome_zona || "").trim()).filter(n => n !== "");
+                    if (zone.length > 0) return zone;
+                }
+                // Fallback a array piatto "viaggi" (Legacy)
+                if (progetto.viaggi && Array.isArray(progetto.viaggi) && progetto.viaggi.length > 0) {
+                    return progetto.viaggi;
+                }
             }
             
             // Nessun fallback hardcoded, se non trova niente torna un array vuoto
@@ -3569,7 +3581,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.376");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.377");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -3949,7 +3961,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.376");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.377");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -4029,7 +4041,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.376");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.377");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 

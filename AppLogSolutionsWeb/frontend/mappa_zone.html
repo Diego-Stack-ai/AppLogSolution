@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.377">
+    <link rel="stylesheet" href="styles.css?v=6.378">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1586,8 +1586,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
         async function uploadStorageStringHelper(path, data, contentType) {
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.377");
-                const { syncManager } = await import("./core/sync-manager.js?v=6.377");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.378");
+                const { syncManager } = await import("./core/sync-manager.js?v=6.378");
                 
                 if (connectivityService.getStatus() === 'online') {
                     await uploadString(ref(storage, path), data, 'raw', { contentType });
@@ -1733,6 +1733,12 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
         onSnapshot(collection(db, "progetti"), { includeMetadataChanges: true }, (snap) => {
             window.appData.lista_progetti = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             console.log(`[Mappa] Progetti caricati: ${window.appData.lista_progetti.length} voci`);
+        });
+        
+        // Listener per Fatturazione Clienti V2
+        onSnapshot(collection(db, "clienti_fatturazione"), { includeMetadataChanges: true }, (snap) => {
+            window.appData.lista_clienti_fatturazione = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            console.log(`[Mappa] Clienti Fatturazione V2 caricati: ${window.appData.lista_clienti_fatturazione.length} voci`);
         });
 
 
@@ -3581,7 +3587,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.377");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.378");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -3961,7 +3967,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.377");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.378");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -4041,7 +4047,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.377");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.378");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 

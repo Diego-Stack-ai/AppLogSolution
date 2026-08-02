@@ -3703,10 +3703,13 @@ def _ottimizza_singolo_viaggio_cloud(punti, depot_partenza, depot_arrivo, use_ti
     routing = pywrapcp.RoutingModel(manager)
 
     def distance_callback(from_index, to_index):
-        return distance_matrix[manager.IndexToNode(from_index)][manager.IndexToNode(to_index)]
+        return int(distance_matrix[manager.IndexToNode(from_index)][manager.IndexToNode(to_index)])
 
     transit_callback_index = routing.RegisterTransitCallback(distance_callback)
     routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
+    
+    # Mantieni vive le callback in Python (anti-GC)
+    routing._distance_callback = distance_callback
 
     solution = None
     if use_time_windows:
@@ -3720,6 +3723,8 @@ def _ottimizza_singolo_viaggio_cloud(punti, depot_partenza, depot_arrivo, use_ti
                 return int(travel_time + service_time)
 
             time_callback_index = routing.RegisterTransitCallback(time_callback)
+            routing._time_callback = time_callback
+            
             routing.AddDimension(
                 time_callback_index,
                 30,
@@ -3745,7 +3750,8 @@ def _ottimizza_singolo_viaggio_cloud(punti, depot_partenza, depot_arrivo, use_ti
                 max_min = parse_time_to_minutes(_oM, 1140)
                 if min_min > max_min:
                     continue
-                node_index = manager.NodeToIndex(i + 1)
+                # FIX LOGICA: i punti ottimizzabili iniziano all'indice 2 (dopo depot_partenza e depot_arrivo)
+                node_index = manager.NodeToIndex(i + 2)
                 time_dimension.CumulVar(node_index).SetRange(min_min, max_min)
 
             search_parameters = pywrapcp.DefaultRoutingSearchParameters()
@@ -3763,8 +3769,9 @@ def _ottimizza_singolo_viaggio_cloud(punti, depot_partenza, depot_arrivo, use_ti
         manager2 = pywrapcp.RoutingIndexManager(n, 1, [0], [1])
         routing2 = pywrapcp.RoutingModel(manager2)
         def distance_callback_fallback(from_index, to_index):
-            return distance_matrix[manager2.IndexToNode(from_index)][manager2.IndexToNode(to_index)]
+            return int(distance_matrix[manager2.IndexToNode(from_index)][manager2.IndexToNode(to_index)])
         cb2 = routing2.RegisterTransitCallback(distance_callback_fallback)
+        routing2._distance_callback_fallback = distance_callback_fallback
         routing2.SetArcCostEvaluatorOfAllVehicles(cb2)
         solution = routing2.SolveWithParameters(search_parameters)
         manager, routing = manager2, routing2

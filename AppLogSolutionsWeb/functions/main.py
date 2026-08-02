@@ -3842,6 +3842,10 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
         if zid in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA"):
             continue
             
+        cliente_zona = zone.get("cliente_zona", tenant)
+        nome_giro = zone.get("nome_giro", "") or zone.get("nome_zona", "Senza Nome")
+        titolo_giro = f"{cliente_zona.upper()} - {nome_giro}" if cliente_zona else f"Giro {nome_giro}"
+            
         is_bloccato = zone.get("_bloccato") or zone.get("_stato") == "bloccato"
             
         punti = zone.get("lista_punti", [])

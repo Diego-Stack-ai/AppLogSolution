@@ -2524,6 +2524,89 @@ def _processa_excel_chef_core_logic(excel_bytes: bytes, db_mappati: dict, data_c
         "deliveries": deliveries_list
     }
 
+import re
+
+def enrich_delivery_with_canonical_schema(
+    legacy_delivery,
+    tenant,
+    competenza,
+    job_id,
+    delivery_index,
+    data_elab,
+    etichetta
+):
+    enriched = dict(legacy_delivery)
+    
+    # Costruisci l'identificativo univoco
+    base_id = f"{tenant}_{competenza}_{job_id}_{delivery_index:04d}"
+    sanitized_id = re.sub(r'[^a-zA-Z0-9_\-]', '', base_id)
+    
+    # Document storage path
+    pdf_name = legacy_delivery.get("pdf_name", "")
+    storage_path = legacy_delivery.get("storage_path", "")
+    if not storage_path and pdf_name:
+        storage_path = f"split_ddt/{data_elab}/{etichetta}/{pdf_name}"
+        
+    # Logistics handling
+    colli = legacy_delivery.get("colli")
+    if colli in (None, ""):
+        colli = legacy_delivery.get("gc_colli")
+        
+    peso_kg = legacy_delivery.get("peso")
+    if peso_kg in (None, ""):
+        peso_kg = legacy_delivery.get("gc_peso_kg")
+        
+    # Time windows
+    time_windows = []
+    start = legacy_delivery.get("orario_min") or legacy_delivery.get("om") or ""
+    end = legacy_delivery.get("orario_max") or legacy_delivery.get("oM") or ""
+    if start or end:
+        time_windows.append({
+            "start": start,
+            "end": end
+        })
+        
+    # Aggiungi campi canonici
+    enriched["schema_version"] = "1.0"
+    enriched["delivery_id"] = sanitized_id
+    
+    enriched["source"] = {
+        "tenant": tenant,
+        "competenza": competenza,
+        "job_id": job_id,
+        "parser_type": etichetta
+    }
+    
+    enriched["customer"] = {
+        "codice_originale": legacy_delivery.get("codice_consegna", ""),
+        "ragione_sociale": legacy_delivery.get("ragsoc", ""),
+        "indirizzo": legacy_delivery.get("ind", ""),
+        "cap": legacy_delivery.get("cap", ""),
+        "citta": legacy_delivery.get("loc", ""),
+        "provincia": legacy_delivery.get("prv", "")
+    }
+    
+    enriched["document"] = {
+        "numero_ddt": legacy_delivery.get("num_ddt", ""),
+        "data": legacy_delivery.get("data", data_elab),
+        "pdf_name": pdf_name,
+        "storage_path": storage_path
+    }
+    
+    enriched["logistics"] = {
+        "colli": colli,
+        "peso_kg": peso_kg,
+        "cartoni": legacy_delivery.get("gc_num_cartone"),
+        "bancali": legacy_delivery.get("bancali"),
+        "targa": legacy_delivery.get("cattel_zona_viaggio", ""),
+        "autista": legacy_delivery.get("autista", ""),
+        "zona_origine": legacy_delivery.get("zona", "")
+    }
+    
+    enriched["time_windows"] = time_windows
+    
+    return enriched
+
 def core_processa_job_pdf(job_id, tenant="DNR"):
     start_time = time.time()
     db = get_db()
@@ -2593,6 +2676,20 @@ def core_processa_job_pdf(job_id, tenant="DNR"):
         
         split_files = risultato["split_files"]
         deliveries = risultato["deliveries"]
+        
+        deliveries = [
+            enrich_delivery_with_canonical_schema(
+                legacy_delivery=delivery,
+                tenant=tenant,
+                competenza=competenza,
+                job_id=job_id,
+                delivery_index=index,
+                data_elab=data_elab,
+                etichetta=etichetta
+            )
+            for index, delivery in enumerate(deliveries)
+        ]
+        
         nuovi_dati = risultato["nuovi_dati"]
         nuovi_orari = risultato.get("nuovi_orari", {})
         nuovi_articoli = risultato.get("nuovi_articoli", {})

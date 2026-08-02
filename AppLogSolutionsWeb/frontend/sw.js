@@ -1,4 +1,4 @@
-const CACHE_NAME = 'log-solution-v6.371';
+const CACHE_NAME = 'log-solution-v6.372';
 
 const IMMUTABLE_FIREBASE_CDN_ASSETS = new Set([
     'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js',

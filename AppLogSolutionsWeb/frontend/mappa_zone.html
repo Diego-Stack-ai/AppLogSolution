@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.378">
+    <link rel="stylesheet" href="styles.css?v=6.379">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1586,8 +1586,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
         async function uploadStorageStringHelper(path, data, contentType) {
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.378");
-                const { syncManager } = await import("./core/sync-manager.js?v=6.378");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.379");
+                const { syncManager } = await import("./core/sync-manager.js?v=6.379");
                 
                 if (connectivityService.getStatus() === 'online') {
                     await uploadString(ref(storage, path), data, 'raw', { contentType });
@@ -2044,6 +2044,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             if (id.includes('bauer')) return 'BAUER';
             if (z && z._stats && z._stats.is_gc === true) return 'GRAN CHEF';
             if (id.includes('granchef') || nome.includes('granchef') || nome.includes('gran chef')) return 'GRAN CHEF';
+            if (id.includes('dac') || nome.includes('dac') || (z && z.cliente_zona && z.cliente_zona.toUpperCase().includes('DAC'))) return 'DAC';
             return _CLIENTE_PROGETTO || 'PROGETTO SCUOLE';
         }
 
@@ -3587,7 +3588,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.378");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.379");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -3967,7 +3968,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.378");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.379");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -4047,7 +4048,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.378");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.379");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 

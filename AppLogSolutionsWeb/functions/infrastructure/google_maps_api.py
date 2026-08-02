@@ -382,7 +382,7 @@ def _get_directions_and_simulate_cloud(percorso, depot_partenza, depot_arrivo, i
         return f"{minutes // 60:02d}:{minutes % 60:02d}"
 
     for idx, p in enumerate(percorso):
-        p_precedente = percorso[idx - 1] if idx > 0 else depot
+        p_precedente = percorso[idx - 1] if idx > 0 else depot_partenza
         durata_guida_sec = 0
         
         cached = _leggi_cache_completa_firestore(p_precedente, p)

@@ -1996,7 +1996,7 @@ def core_riepilogo_fatturazione(mese: str, anno: str = "2026"):
         dnr_doc = db.collection("clienti").document("DNR").collection("impostazioni").document("listino").get()
         if dnr_doc.exists:
             listino_dnr = dnr_doc.to_dict()
-            VALORE_DDT_STANDARD = float(listino_dnr.get("tariffa_ddt", 16.50))
+            VALORE_DDT_STANDARD = _safe_float(listino_dnr.get("tariffa_ddt", 16.50)) or 16.50
             VALORE_DDT_SPECIALE = VALORE_DDT_STANDARD
     except Exception as e:
         print(f"Errore lettura listino DNR: {e}")
@@ -3744,12 +3744,12 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
         mag_p_id = zone.get("_magazzino_partenza_id")
         if mag_p_id and mag_p_id in magazzini_cache:
             m = magazzini_cache[mag_p_id]
-            depot_partenza = {"nome": m.get("nome", "Magazzino"), "lat": float(m.get("lat", 0)), "lon": float(m.get("lon", 0))}
+            depot_partenza = {"nome": m.get("nome", "Magazzino"), "lat": _safe_float(m.get("lat", 0)) or 0.0, "lon": _safe_float(m.get("lon", 0)) or 0.0}
             
         mag_a_id = zone.get("_magazzino_arrivo_id")
         if mag_a_id and mag_a_id in magazzini_cache:
             m = magazzini_cache[mag_a_id]
-            depot_arrivo = {"nome": m.get("nome", "Magazzino"), "lat": float(m.get("lat", 0)), "lon": float(m.get("lon", 0))}
+            depot_arrivo = {"nome": m.get("nome", "Magazzino"), "lat": _safe_float(m.get("lat", 0)) or 0.0, "lon": _safe_float(m.get("lon", 0)) or 0.0}
         
         if usa_or_tools and not is_bloccato:
             punti_ottimizzati = _ottimizza_singolo_viaggio_cloud(punti, depot_partenza, depot_arrivo, is_grand_chef or is_cattel or is_bauer or is_dac)
@@ -3786,20 +3786,20 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
                 
         # Calcolo fatturato in base ai listini
         if is_grand_chef:
-            fatturato_val = float(listini.get("GRAN CHEF", {}).get("tariffa_viaggio", 350.00))
+            fatturato_val = _safe_float(listini.get("GRAN CHEF", {}).get("tariffa_viaggio", 350.00)) or 350.00
             fatturato_str = f"{fatturato_val:.2f}"
         elif is_cattel:
-            fatturato_val = float(listini.get("CATTEL", {}).get("tariffa_patente_b", 340.00))
+            fatturato_val = _safe_float(listini.get("CATTEL", {}).get("tariffa_patente_b", 340.00)) or 340.00
             fatturato_str = f"{fatturato_val:.2f}"
         elif is_bauer:
-            fatturato_val = float(listini.get("BAUER", {}).get("tariffa_viaggio", 390.00))
+            fatturato_val = _safe_float(listini.get("BAUER", {}).get("tariffa_viaggio", 390.00)) or 390.00
             fatturato_str = f"{fatturato_val:.2f}"
         elif is_dac:
-            fatturato_val = float(listini.get("DAC", {}).get("tariffa_viaggio", 350.00))
+            fatturato_val = _safe_float(listini.get("DAC", {}).get("tariffa_viaggio", 350.00)) or 350.00
             fatturato_str = f"{fatturato_val:.2f}"
         else:
             # DNR / Progetto Scuole (Default)
-            tariffa_ddt = float(listini.get("DNR", {}).get("tariffa_ddt", 16.50))
+            tariffa_ddt = _safe_float(listini.get("DNR", {}).get("tariffa_ddt", 16.50)) or 16.50
             fatturato_str = f"{tot_ddt * tariffa_ddt:.2f}"
             
         stats = {

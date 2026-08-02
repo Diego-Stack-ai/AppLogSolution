@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.379">
+    <link rel="stylesheet" href="styles.css?v=6.380">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -1586,8 +1586,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
         async function uploadStorageStringHelper(path, data, contentType) {
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.379");
-                const { syncManager } = await import("./core/sync-manager.js?v=6.379");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.380");
+                const { syncManager } = await import("./core/sync-manager.js?v=6.380");
                 
                 if (connectivityService.getStatus() === 'online') {
                     await uploadString(ref(storage, path), data, 'raw', { contentType });
@@ -2032,19 +2032,38 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
         };
 
         // --- GESTIONE MODAL RINOMINA GIRO (MATITA) ---
-        let modalZid = null;
-
-        function getClienteZona(z, zid) {
-            const id = (zid || (z && z.id_zona) || '').toLowerCase();
-            const nome = (z && z.nome_giro || '').toLowerCase();
+        let modalZid = null;        function getClienteZona(z, zid) {
+            const id = (zid || (z && z.id_zona) || '').toUpperCase();
+            const nome = (z && z.nome_giro || '').toUpperCase();
+            
+            // 1. Dati Espliciti (Fase 2 Backend o flag storici)
             if (z && z.cliente_zona) return z.cliente_zona;
             if (z && z.is_cattel) return 'CATTEL';
             if (z && z.is_bauer) return 'BAUER';
-            if (id.includes('cattel')) return 'CATTEL';
-            if (id.includes('bauer')) return 'BAUER';
             if (z && z._stats && z._stats.is_gc === true) return 'GRAN CHEF';
-            if (id.includes('granchef') || nome.includes('granchef') || nome.includes('gran chef')) return 'GRAN CHEF';
-            if (id.includes('dac') || nome.includes('dac') || (z && z.cliente_zona && z.cliente_zona.toUpperCase().includes('DAC'))) return 'DAC';
+            
+            // 2. Match Dinamico (Doppia Codifica) usando Fatturazione Clienti V2
+            const clientiFatturazione = window.appData?.lista_clienti_fatturazione || [];
+            if (clientiFatturazione.length > 0) {
+                // Ordiniamo i nomi dei clienti per lunghezza decrescente per matchare prima quelli più specifici
+                const nomiClienti = clientiFatturazione.map(c => (c.nome || '').toUpperCase()).sort((a,b) => b.length - a.length);
+                for (const nomeCliente of nomiClienti) {
+                    if (!nomeCliente) continue;
+                    if (id.includes(nomeCliente) || nome.includes(nomeCliente)) {
+                        return nomeCliente; // Trovata la codifica del Tenant nel nome del giro!
+                    }
+                    // Alias storici per GRAN CHEF
+                    if (nomeCliente === 'GRAN CHEF' && (id.includes('GRANCHEF') || nome.includes('GRANCHEF'))) return 'GRAN CHEF';
+                }
+            }
+
+            // 3. Fallback storico hardcoded (interviene solo se i nomi dei file usano abbreviazioni diverse dal nome Tenant)
+            if (id.includes('CATTEL')) return 'CATTEL';
+            if (id.includes('BAUER')) return 'BAUER';
+            if (id.includes('GRANCHEF') || nome.includes('GRANCHEF') || nome.includes('GRAN CHEF')) return 'GRAN CHEF';
+            if (id.includes('DAC') || nome.includes('DAC')) return 'DAC';
+            
+            // 4. Default Assoluto
             return _CLIENTE_PROGETTO || 'PROGETTO SCUOLE';
         }
 
@@ -3588,7 +3607,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.379");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.380");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -3968,7 +3987,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.379");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.380");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -4048,7 +4067,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.379");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.380");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 

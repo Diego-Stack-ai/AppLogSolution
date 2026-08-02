@@ -344,10 +344,17 @@ def _get_directions_and_simulate_cloud(percorso, depot_partenza, depot_arrivo, i
                     sub = punti_pieni[i:i + CHUNK + 1]
                     origin = f"{sub[0]['lat']},{sub[0]['lon']}"
                     dest = f"{sub[-1]['lat']},{sub[-1]['lon']}"
-                    waypts = "|".join([f"{p['lat']},{p['lon']}" for p in sub[1:-1]])
+                    
                     url = (f"https://maps.googleapis.com/maps/api/directions/json"
-                           f"?origin={origin}&destination={dest}"
-                           f"&waypoints={waypts}&key={GOOGLE_MAPS_API_KEY}")
+                           f"?origin={origin}&destination={dest}")
+                    
+                    waypts_list = [f"{p['lat']},{p['lon']}" for p in sub[1:-1]]
+                    if waypts_list:
+                        waypts = "|".join(waypts_list)
+                        url += f"&waypoints={waypts}"
+                        
+                    url += f"&key={GOOGLE_MAPS_API_KEY}"
+                    
                     r = requests.get(url, timeout=10).json()
                     if r.get("status") == "OK":
                         route = r["routes"][0]
@@ -359,6 +366,8 @@ def _get_directions_and_simulate_cloud(percorso, depot_partenza, depot_arrivo, i
                             for idx_l, leg in enumerate(legs):
                                 key = _cache_key(sub[idx_l], sub[idx_l + 1])
                                 _scrivi_cache_firestore([(key, leg["distance"]["value"], leg["duration"]["value"])])
+                    else:
+                        print(f"[DIRECTIONS] Errore API Google: Status={r.get('status')} Msg={r.get('error_message')}")
             except Exception as e:
                 print(f"[DIRECTIONS] Errore: {e}")
                 

@@ -59,7 +59,7 @@ const offlineAuthFallbackTimer = setTimeout(() => {
                 
                 // Ricalcolo strict in cache
                 const role = (cachedUser.ruolo || 'autista').toString().toLowerCase().trim();
-                cachedUser.isAdmin = role === 'amministratore';
+                cachedUser.isAdmin = role === 'amministratore' || role === 'impiegata';
                 
                 console.log("[Auth Fallback Offline] ✅ Utente ripristinato da ls_cached_user:", cachedUser.email || cachedUser.id);
                 window.appData = window.appData || {};
@@ -164,7 +164,7 @@ onAuthStateChanged(auth, async (user) => {
                 }
 
                 const role = (userData.ruolo || 'autista').toString().toLowerCase().trim();
-                const isAdmin = role === 'amministratore';
+                const isAdmin = role === 'amministratore' || role === 'impiegata';
 
                 window.appData.currentUser = { id: user.uid, email: user.email, ...userData, ruolo: role, isAdmin: isAdmin };
                 profileAlreadyLoaded = true; // Segna il profilo come caricato

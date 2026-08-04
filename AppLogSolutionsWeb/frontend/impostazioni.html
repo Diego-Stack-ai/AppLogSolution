@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impostazioni - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.408">
+    <link rel="stylesheet" href="styles.css?v=6.409">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -290,9 +290,9 @@
             </div>
         </div>
 
-        <!-- Sezione Gestione Clienti & Viaggi -->
+        <!-- Sezione Gestione Clienti & Viaggi (Nascosta in favore di Fatturazione Clienti) -->
         <div id="toggleProgettiBtn"
-            style="display: flex; justify-content: space-between; align-items: center; margin: 32px 0 0 0; cursor: pointer; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            style="display: none !important; justify-content: space-between; align-items: center; margin: 32px 0 0 0; cursor: pointer; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
             <h3 class="section-title" style="margin: 0;">📦 Gestione Clienti &amp; Viaggi</h3>
             <span class="material-icons-round" id="toggleProgettiIcon" style="color: var(--primary); transition: transform 0.3s ease;">expand_more</span>
         </div>
@@ -1430,8 +1430,8 @@
         }
     });
 </script>
-    <script src="script.js?v=6.408"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.408"></script>
+    <script src="script.js?v=6.409"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.409"></script>
 
     <script type="module">
     // ─── GESTIONE CLIENTI & VIAGGI (PROGETTI) — modulo autonomo ─────────────
@@ -2462,8 +2462,8 @@ const functions = getFunctions(app, "europe-west1");
     
     // ─── CODICE JS GESTIONE DIAGNOSTICA OFFLINE ──────────────────────────────
     try {
-        const { connectivityService } = await import("./core/connectivity-service.js?v=6.408");
-        const { syncManager } = await import("./core/sync-manager.js?v=6.408");
+        const { connectivityService } = await import("./core/connectivity-service.js?v=6.409");
+        const { syncManager } = await import("./core/sync-manager.js?v=6.409");
 
         const elStato = document.getElementById("diagStatoConnessione");
         const elCoda = document.getElementById("diagElementiCoda");

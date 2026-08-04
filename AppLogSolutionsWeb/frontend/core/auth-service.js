@@ -280,11 +280,16 @@ onAuthStateChanged(auth, async (user) => {
                     if (window.appData.isReadOnly) {
                         const applyReadOnlyShield = () => {
                             document.querySelectorAll('input:not([id*="search" i]):not([class*="search" i]):not([id*="filter" i]):not([class*="filter" i]), select:not([id*="search" i]):not([class*="search" i]):not([id*="filter" i]):not([class*="filter" i]), textarea').forEach(el => {
+                                if (el.closest('#impostazioniLockScreen')) return; // Escludi sblocco sicurezza
                                 el.disabled = true;
                                 el.style.backgroundColor = '#f8fafc';
                             });
                             document.querySelectorAll('button[type="submit"], .btn-primary, .btn-success, .btn-delete, .btn-add, .delete-btn, .btn-edit, #btnSalva, #updateBtn').forEach(btn => {
                                 if (btn.title && btn.title.toLowerCase().includes('mappa')) return;
+                                if (btn.id && btn.id.toLowerCase().includes('unlock')) return; // Escludi sblocco sicurezza
+                                if (btn.closest('#impostazioniLockScreen')) return; // Escludi sblocco sicurezza
+                                const btnText = (btn.textContent || '').toLowerCase().trim();
+                                if (btnText.includes('annulla') || btnText.includes('chiudi') || btnText.includes('indietro') || btnText.includes('cancel') || btnText.includes('close')) return; // Consenti navigazione/chiusura
                                 if (!btn.className.toLowerCase().includes('search') && !btn.id.toLowerCase().includes('search') && !btn.className.toLowerCase().includes('tab')) {
                                     btn.style.display = 'none';
                                 }

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione V2 (Sviluppo) - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.389">
+    <link rel="stylesheet" href="styles.css?v=6.407">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -37,6 +37,9 @@
                 <span class="material-icons-round">dashboard</span>
             </button>
             <div class="nav-title" style="flex: 1;">Nuovo Modulo Fatturazione (V2)</div>
+            <button class="glass-btn" onclick="window.navigateWithState('fatturazione_clienti.html')" style="margin-right: 12px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 8px; color: var(--primary); border: 1.5px solid var(--primary); cursor: pointer; background: white; outline: none; transition: all 0.2s;">
+                <span class="material-icons-round" style="font-size: 18px; vertical-align: middle;">people</span> Fatturazione Clienti
+            </button>
             <a href="#" onclick="window.logoutFirebase(); return false;" class="logout-btn" title="Esci"><span class="material-icons-round">logout</span></a>
         </div>
     </nav>
@@ -138,8 +141,8 @@
     </main>
 
     <!-- Inclusione script base di sistema (Navigazione, Auth, UI) -->
-    <script src="script.js?v=6.389"></script>
-    <script type="module" src="firebase-auth-sync.js?v=6.389"></script>
+    <script src="script.js?v=6.407"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.407"></script>
 
     <script type="module">
         import { db, app } from "./core/firebase-init.js";
@@ -1317,7 +1320,7 @@
               XLSX.writeFile(wb, `Matrice_Verticale_${mData.clientName}_${mData.month}.xlsx`);
           });
     </script>
-    <script type="module" src="firebase-auth-sync.js?v=6.389"></script>
-    <script src="script.js?v=6.389"></script>
+    <script type="module" src="firebase-auth-sync.js?v=6.407"></script>
+    <script src="script.js?v=6.407"></script>
 </body>
 </html>

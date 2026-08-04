@@ -6,7 +6,7 @@
     <title>Mappa Zone Interattiva - AppLogSolutionsWeb</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.389">
+    <link rel="stylesheet" href="styles.css?v=6.408">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
@@ -24,15 +24,15 @@
         }
 
         body {
+            font-family: 'Outfit', sans-serif;
             margin: 0;
             padding: 0;
-            font-family: 'Outfit', sans-serif;
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             background-color: var(--bg-dark);
             color: #1e293b;
-            overflow-x: hidden;
+            overflow: hidden;
         }
 
         /* Sidebar Glassmorphism */
@@ -43,13 +43,14 @@
             background: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
+            border-top: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             z-index: 1000;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
             transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
+            min-height: 0;
         }
 
         #header {
@@ -58,6 +59,8 @@
             color: white;
             position: relative;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+            z-index: 10;
         }
 
         .header-title-row {
@@ -189,6 +192,9 @@
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: 16px;
             align-items: start;
+            overflow-y: auto;
+            min-height: 0;
+            padding-bottom: 40px;
         }
 
         /* Zone Card Style */
@@ -529,8 +535,8 @@
 
         #map {
             width: 100%;
-            height: 55vh;
-            flex: none;
+            height: 45vh;
+            flex-shrink: 0;
             order: -1;
         }
 
@@ -1586,8 +1592,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
         async function uploadStorageStringHelper(path, data, contentType) {
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.389");
-                const { syncManager } = await import("./core/sync-manager.js?v=6.389");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.408");
+                const { syncManager } = await import("./core/sync-manager.js?v=6.408");
                 
                 if (connectivityService.getStatus() === 'online') {
                     await uploadString(ref(storage, path), data, 'raw', { contentType });
@@ -3607,7 +3613,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.389");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.408");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -3987,7 +3993,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.389");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.408");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 
@@ -4067,7 +4073,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
             // Controllo Connessione
             let isOnline = true;
             try {
-                const { connectivityService } = await import("./core/connectivity-service.js?v=6.389");
+                const { connectivityService } = await import("./core/connectivity-service.js?v=6.408");
                 isOnline = connectivityService.getStatus() === 'online';
             } catch (e) {}
 

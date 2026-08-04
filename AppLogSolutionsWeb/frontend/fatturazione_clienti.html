@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fatturazione Clienti - Log Solution</title>
-    <link rel="stylesheet" href="styles.css?v=6.389">
+    <link rel="stylesheet" href="styles.css?v=6.408">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -352,16 +352,72 @@
                 </div>
             </div>
 
+            <!-- SEZIONE CREDENZIALI PORTALE CATTEL (Conditional) -->
+            <div id="cattelCredentialsContainer" style="display: none; background: #ffffff; border: 1.5px solid #10b981; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+                <label style="font-size: 14px; font-weight: 700; color: #10b981; display: block; margin-bottom: 12px;">
+                    <span class="material-icons-round" style="font-size:18px; vertical-align:middle;">vpn_key</span> 
+                    Credenziali Portale CATTEL (Integrazione)
+                </label>
+                <p style="font-size:12px; color:#64748b; margin-bottom:16px;">Queste credenziali vengono usate nella pagina di Elaborazione per accedere automaticamente al portale Cattel e scaricare i DDT.</p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                    <div class="input-group" style="margin-bottom:0;">
+                        <label style="font-size:11px; margin-bottom:4px; font-weight:600;">Cattel Username</label>
+                        <input type="text" id="cattelUsername" placeholder="Username" style="width:100%; padding:8px 12px; font-size:13px; border-radius:8px; border:1px solid #cbd5e1;">
+                    </div>
+                    <div class="input-group" style="margin-bottom:0;">
+                        <label style="font-size:11px; margin-bottom:4px; font-weight:600;">Cattel Password</label>
+                        <input type="password" id="cattelPassword" placeholder="Password" style="width:100%; padding:8px 12px; font-size:13px; border-radius:8px; border:1px solid #cbd5e1;">
+                    </div>
+                    <div class="input-group" style="grid-column: 1 / -1; margin-bottom:0;">
+                        <label style="font-size:11px; margin-bottom:4px; font-weight:600;">Cattel URL Portale</label>
+                        <input type="text" id="cattelUrl" placeholder="https://..." style="width:100%; padding:8px 12px; font-size:13px; border-radius:8px; border:1px solid #cbd5e1;">
+                    </div>
+                </div>
+            </div>
+
             <div style="display: flex; gap: 12px;">
                 <button type="button" id="btnSalvaCliente" class="btn-primary" style="flex: 1;" onclick="salvaClienteFatturazione()">Salva Configurazione Cliente</button>
                 <button type="button" class="btn-primary" style="flex: 1; background:#f1f5f9; color:#334155; box-shadow:none;" onclick="nascondiFormCliente()">Annulla</button>
             </div>
         </div>
     </div>
+    <!-- Modal Geolocation Magazzino -->
+    <div id="geoloc-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:1050; align-items:center; justify-content:center; padding:16px;">
+        <div style="background:white; border-radius:16px; width:100%; max-width:800px; height:80vh; display:flex; flex-direction:column; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); overflow:hidden;">
+            <!-- Header -->
+            <div style="padding:16px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:#f8fafc;">
+                <div>
+                    <h3 style="margin:0; font-size:18px; font-weight:700; color:#0f172a;" id="geoloc-title">Verifica Posizione Magazzino</h3>
+                    <p style="margin:4px 0 0 0; font-size:13px; color:#64748b;" id="geoloc-subtitle">Trascina il marcatore sul punto esatto del cancello logistico</p>
+                </div>
+                <button onclick="window.chiudiGeolocalizzatoreMappa()" style="background:none; border:none; color:#94a3b8; cursor:pointer; padding:4px; border-radius:6px; display:flex; align-items:center; transition:all 0.2s;" onmouseover="this.style.color='#0f172a'; this.style.background='#f1f5f9';" onmouseout="this.style.color='#94a3b8'; this.style.background='none';">
+                    <span class="material-icons-round" style="font-size:24px;">close</span>
+                </button>
+            </div>
+            <!-- Body -->
+            <div style="flex:1; display:flex; flex-direction:column; padding:20px; gap:16px; min-height:0; overflow:hidden;">
+                <!-- Map Container -->
+                <div id="geoloc-map-container" style="flex:1; border-radius:12px; border:1px solid #cbd5e1; position:relative; overflow:hidden; box-shadow:inset 0 2px 4px rgba(0,0,0,0.05);">
+                    <div id="geoloc-map" style="width:100%; height:100%;"></div>
+                </div>
+                <!-- Coordinates / Display -->
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; flex-shrink:0;">
+                    <div style="display:flex; gap:16px; font-size:13px; color:#334155;">
+                        <div>Latitudine: <b id="geoloc-val-lat" style="font-family:monospace; color:#0f172a;">-</b></div>
+                        <div>Longitudine: <b id="geoloc-val-lon" style="font-family:monospace; color:#0f172a;">-</b></div>
+                    </div>
+                    <button onclick="window.confermaGeolocMagazzino()" style="background:#10b981; color:white; border:none; border-radius:8px; padding:10px 24px; font-weight:700; font-size:14px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:background 0.2s; box-shadow:0 4px 6px rgba(16,185,129,0.2);" onmouseover="this.style.background='#059669';" onmouseout="this.style.background='#10b981';">
+                        <span class="material-icons-round" style="font-size:20px;">check_circle</span>
+                        Conferma Nuova Posizione
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </main>
 
 <script type="module">
-    import { GOOGLE_MAPS_API_KEY } from './firebase-config.js';
+    const GOOGLE_MAPS_API_KEY = "AIzaSyAHQ3HjuEEIS8bn5KMh6N3UoM6kZ2MYGL4";
     const script = document.createElement('script');
     script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMapsAutocomplete`;
     script.async = true;
@@ -370,6 +426,8 @@
     window.initMapsAutocomplete = function() {
         const input = document.getElementById('magIndirizzo');
         if(input) {
+            // L'API Legacy Autocomplete è disabilitata per i nuovi account, usiamo il Geocoder al salvataggio
+            /*
             const autocomplete = new google.maps.places.Autocomplete(input, { types: ['geocode', 'establishment'] });
             autocomplete.addListener('place_changed', function() {
                 const place = autocomplete.getPlace();
@@ -378,6 +436,7 @@
                     document.getElementById('magLon').value = place.geometry.location.lng();
                 }
             });
+            */
             input.addEventListener('input', function() {
                 document.getElementById('magLat').value = '';
                 document.getElementById('magLon').value = '';
@@ -412,6 +471,10 @@
         renderReferenti();
         renderZone();
         renderMagazziniCliente();
+        document.getElementById('cattelCredentialsContainer').style.display = 'none';
+        document.getElementById('cattelUsername').value = '';
+        document.getElementById('cattelPassword').value = '';
+        document.getElementById('cattelUrl').value = '';
         document.getElementById('formClienteContainer').style.display = 'block';
         document.getElementById('listaClientiContainer').style.display = 'none';
     };
@@ -469,23 +532,43 @@
     window.aggiungiMagazzinoCliente = () => {
         const nome = document.getElementById('magNome').value.trim().toUpperCase();
         const indirizzo = document.getElementById('magIndirizzo').value.trim();
-        const lat = document.getElementById('magLat').value;
-        const lon = document.getElementById('magLon').value;
+        let lat = document.getElementById('magLat').value;
+        let lon = document.getElementById('magLon').value;
         
         if (!nome || !indirizzo) return alert('Nome e Indirizzo del magazzino sono obbligatori.');
         
-        currentMagazziniCliente.push({
-            nome: nome,
-            indirizzo: indirizzo,
-            lat: lat ? parseFloat(lat) : null,
-            lon: lon ? parseFloat(lon) : null
-        });
-        
-        document.getElementById('magNome').value = '';
-        document.getElementById('magIndirizzo').value = '';
-        document.getElementById('magLat').value = '';
-        document.getElementById('magLon').value = '';
-        renderMagazziniCliente();
+        const salvaMagazzinoFinal = (n, ind, lt, ln) => {
+            currentMagazziniCliente.push({
+                nome: n,
+                indirizzo: ind,
+                lat: parseFloat(lt),
+                lon: parseFloat(ln)
+            });
+            document.getElementById('magNome').value = '';
+            document.getElementById('magIndirizzo').value = '';
+            document.getElementById('magLat').value = '';
+            document.getElementById('magLon').value = '';
+            renderMagazziniCliente();
+        };
+
+        if (!lat || !lon) {
+            Swal.fire({ title: 'Ricerca Coordinate...', text: 'Sto cercando la posizione esatta...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address: indirizzo }, (results, status) => {
+                if (status === 'OK' && results[0]) {
+                    Swal.close();
+                    salvaMagazzinoFinal(nome, results[0].formatted_address, results[0].geometry.location.lat(), results[0].geometry.location.lng());
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Indirizzo non trovato',
+                        text: 'Impossibile trovare le coordinate per questo indirizzo. Per favore, specifica città e provincia.'
+                    });
+                }
+            });
+        } else {
+            salvaMagazzinoFinal(nome, indirizzo, lat, lon);
+        }
     };
 
     window.rimuoviMagazzinoCliente = (index) => {
@@ -507,11 +590,73 @@
                         <div style="font-weight:700; font-size:13px; color:#334155;">${m.nome}</div>
                         <div style="font-size:11px; color:#64748b;">${m.indirizzo} ${m.lat ? '(GPS OK)' : ''}</div>
                     </div>
-                    <button type="button" onclick="rimuoviMagazzinoCliente(${i})" class="remove-btn">&times;</button>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" onclick="window.apriMappaMagazzino(${i})" style="background:none; border:none; color:#3b82f6; cursor:pointer;" title="Controlla Mappa">
+                            <span class="material-icons-round" style="font-size:20px;">map</span>
+                        </button>
+                        <button type="button" onclick="rimuoviMagazzinoCliente(${i})" class="remove-btn" title="Rimuovi">&times;</button>
+                    </div>
                 </div>
             `;
         });
     }
+
+    // ----- Controllo su Mappa -----
+    let geolocMap = null;
+    let geolocMarker = null;
+    let geolocEditingIndex = null;
+
+    window.apriMappaMagazzino = (index) => {
+        geolocEditingIndex = index;
+        const mag = currentMagazziniCliente[index];
+        document.getElementById('geoloc-modal').style.display = 'flex';
+        
+        let lat = mag.lat || 45.438; // Default
+        let lon = mag.lon || 10.991;
+        
+        document.getElementById('geoloc-val-lat').innerText = lat.toFixed(6);
+        document.getElementById('geoloc-val-lon').innerText = lon.toFixed(6);
+
+        if (!geolocMap) {
+            geolocMap = new google.maps.Map(document.getElementById('geoloc-map'), {
+                center: { lat: lat, lng: lon },
+                zoom: 18,
+                mapTypeId: 'hybrid'
+            });
+            geolocMarker = new google.maps.Marker({
+                position: { lat: lat, lng: lon },
+                map: geolocMap,
+                draggable: true,
+                animation: google.maps.Animation.DROP
+            });
+            geolocMarker.addListener('dragend', () => {
+                const pos = geolocMarker.getPosition();
+                document.getElementById('geoloc-val-lat').innerText = pos.lat().toFixed(6);
+                document.getElementById('geoloc-val-lon').innerText = pos.lng().toFixed(6);
+            });
+        } else {
+            const pos = new google.maps.LatLng(lat, lon);
+            geolocMap.setCenter(pos);
+            geolocMarker.setPosition(pos);
+            // Forza ridimensionamento nel caso fosse nascosta
+            setTimeout(() => { google.maps.event.trigger(geolocMap, 'resize'); geolocMap.setCenter(pos); }, 100);
+        }
+    };
+
+    window.chiudiGeolocalizzatoreMappa = () => {
+        document.getElementById('geoloc-modal').style.display = 'none';
+        geolocEditingIndex = null;
+    };
+
+    window.confermaGeolocMagazzino = () => {
+        if (geolocEditingIndex !== null && geolocMarker) {
+            const pos = geolocMarker.getPosition();
+            currentMagazziniCliente[geolocEditingIndex].lat = pos.lat();
+            currentMagazziniCliente[geolocEditingIndex].lon = pos.lng();
+            renderMagazziniCliente();
+            window.chiudiGeolocalizzatoreMappa();
+        }
+    };
 
     // ----- Zone e Fatturazione -----
     window.aggiungiZona = () => {
@@ -623,6 +768,12 @@
             })),
             updatedAt: new Date().toISOString()
         };
+
+        if (nome === 'CATTEL') {
+            data.cattel_username = document.getElementById('cattelUsername').value.trim();
+            data.cattel_password = document.getElementById('cattelPassword').value.trim();
+            data.cattel_url = document.getElementById('cattelUrl').value.trim();
+        }
 
         const btn = document.getElementById('btnSalvaCliente');
         btn.disabled = true; btn.textContent = 'Salvataggio...';
@@ -751,6 +902,13 @@
             renderReferenti();
             renderZone();
             renderMagazziniCliente();
+            
+            const isCattel = (c.nome || '').toUpperCase() === 'CATTEL';
+            document.getElementById('cattelCredentialsContainer').style.display = isCattel ? 'block' : 'none';
+            document.getElementById('cattelUsername').value = c.cattel_username || '';
+            document.getElementById('cattelPassword').value = c.cattel_password || '';
+            document.getElementById('cattelUrl').value = c.cattel_url || '';
+            
             document.getElementById('formClienteContainer').style.display = 'block';
             document.getElementById('listaClientiContainer').style.display = 'none';
         });
@@ -1050,6 +1208,15 @@
         const passwordInput = document.getElementById('impostazioniUnlockPassword');
         const lockScreen = document.getElementById('impostazioniLockScreen');
         
+        const nameInput = document.getElementById('clienteNomeInput');
+        if (nameInput) {
+            nameInput.addEventListener('input', (e) => {
+                const isCattel = e.target.value.trim().toUpperCase() === 'CATTEL';
+                const cont = document.getElementById('cattelCredentialsContainer');
+                if (cont) cont.style.display = isCattel ? 'block' : 'none';
+            });
+        }
+        
         async function tryUnlock() {
             const pwd = passwordInput.value;
             if (!pwd) return;
@@ -1095,6 +1262,6 @@
         }, 500);
     });
 </script>
-<script type="module" src="firebase-auth-sync.js?v=6.389"></script>
+<script type="module" src="firebase-auth-sync.js?v=6.408"></script>
 </body>
 </html>

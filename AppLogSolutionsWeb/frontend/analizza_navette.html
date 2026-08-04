@@ -40,7 +40,7 @@
 
         async function fetchLuglioNavette() {
             try {
-                const reportsRef = collection(db, 'clienti', 'DNR', 'reports_logistici');
+                const reportsRef = collection(db, 'clienti', 'report_logistici', 'giornate');
                 const snapshot = await getDocs(reportsRef);
                 const tbody = document.getElementById('navetteBody');
                 let count = 0;

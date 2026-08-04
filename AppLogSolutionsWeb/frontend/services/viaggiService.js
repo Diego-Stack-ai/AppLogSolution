@@ -10,13 +10,11 @@ import { app, db } from "../core/firebase-init.js";
  * @returns {function} unsubscribe - Funzione per fermare l'ascolto.
  */
 export function subscribeToReportsLogistici(tenantId, callback) {
-    let finalTenant = tenantId;
     let finalCallback = callback;
     if (typeof tenantId === 'function') {
         finalCallback = tenantId;
-        finalTenant = 'DNR';
     }
-    const reportsRef = collection(db, 'clienti', finalTenant, 'reports_logistici');
+    const reportsRef = collection(db, 'clienti', 'report_logistici', 'giornate');
     const q = query(reportsRef, orderBy('created_at', 'desc'), limit(15));
     return onSnapshot(q, { includeMetadataChanges: true }, finalCallback);
 }

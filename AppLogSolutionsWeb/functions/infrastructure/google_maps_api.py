@@ -333,7 +333,7 @@ def _get_directions_and_simulate_cloud(percorso, depot_partenza, depot_arrivo, i
     punti_pieni = [depot_partenza] + percorso + [depot_arrivo]
     
     _dir_key = _route_key(punti_pieni)
-    _dir_cached = _leggi_percorsi_cache(_dir_key)
+    _dir_cached = None # BYPASS CACHE PER FORZARE RICALCOLO
     
     if _dir_cached:
         km_tot = _dir_cached["km"]

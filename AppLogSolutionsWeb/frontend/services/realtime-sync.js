@@ -85,26 +85,28 @@ function startRealtimeSync(isAdmin) {
     });
     activeListeners.push(unsubMezzi);
 
-    // Listener per Progetti (vecchi clienti con viaggi associati, mantenuto per compatibilità impostazioni)
-    const unsubProgetti = onSnapshot(collection(db, "progetti"), { includeMetadataChanges: true }, (snapshot) => {
-        const progetti = [];
-        snapshot.forEach((d) => {
-            progetti.push({ id: d.id, ...d.data(), isProgetto: true });
-        });
-        window.appData.lista_progetti = progetti;
-        if (typeof window.renderProgettiInserimento === 'function') window.renderProgettiInserimento();
-        if (typeof window.renderProgettiImpostazioni === 'function') window.renderProgettiImpostazioni();
-    });
-    activeListeners.push(unsubProgetti);
-
-    // Listener per Clienti Fatturazione (Nuova Rubrica V2, usato per presenze operative)
+    // Listener per Clienti Fatturazione (Nuova Rubrica V2, usato per presenze operative e registrazioni turno)
     const unsubClientiFatturazione = onSnapshot(collection(db, "clienti_fatturazione"), { includeMetadataChanges: true }, (snapshot) => {
         const clientiFat = [];
+        const progettiMapped = [];
         snapshot.forEach((d) => {
-            clientiFat.push({ id: d.id, ...d.data(), isProgetto: true });
+            const data = d.data();
+            clientiFat.push({ id: d.id, ...data, isProgetto: true });
+            
+            // Mappatura per retrocompatibilità con la Registrazione Turno (script.js)
+            progettiMapped.push({
+                id: d.id,
+                nome: data.nome,
+                viaggi: (data.zone_fatturazione || []).map(z => z.nome_zona || ''),
+                isProgetto: true
+            });
         });
         window.appData.lista_clienti_fatturazione = clientiFat;
+        window.appData.lista_progetti = progettiMapped;
+        
         if (typeof window.renderProgetti === 'function') window.renderProgetti();
+        if (typeof window.renderProgettiInserimento === 'function') window.renderProgettiInserimento();
+        if (typeof window.renderProgettiImpostazioni === 'function') window.renderProgettiImpostazioni();
     });
     activeListeners.push(unsubClientiFatturazione);
 

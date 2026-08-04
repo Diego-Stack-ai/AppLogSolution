@@ -22,13 +22,34 @@ from infrastructure.firebase_setup import (
 def get_tenant_from_viaggio_id(viaggio_id):
     if not viaggio_id:
         return "DNR"
-    viaggio_id_upper = str(viaggio_id).upper()
-    if "CATTEL" in viaggio_id_upper:
-        return "CATTEL"
-    if "_GC_" in viaggio_id_upper or "GRAND_CHEF" in viaggio_id_upper or "GRAN_CHEF" in viaggio_id_upper:
-        return "GRAN CHEF"
-    if "BAUER" in viaggio_id_upper:
-        return "BAUER"
+        
+    db = get_db()
+    
+    # 1. Cerca il viaggio in modo dinamico tramite Collection Group Query
+    try:
+        docs = db.collection_group('viaggi ddt').where(firestore.FieldPath.document_id(), '==', viaggio_id).limit(1).get()
+        if docs:
+            path_parts = docs[0].reference.path.split('/')
+            if len(path_parts) >= 2:
+                return path_parts[1]
+    except Exception as e:
+        print(f"[get_tenant_from_viaggio_id] Errore Collection Group Query: {e}")
+        
+    # 2. Fallback dinamico basato sui tenant registrati su Firestore
+    try:
+        viaggio_id_upper = str(viaggio_id).upper()
+        tenants = [doc.id for doc in db.collection('clienti').list_documents()]
+        for t in tenants:
+            t_upper = t.upper()
+            if t_upper == "GRAN CHEF":
+                if "GRAN_CHEF" in viaggio_id_upper or "GRAND_CHEF" in viaggio_id_upper or "_GC_" in viaggio_id_upper or "GRANCHEF" in viaggio_id_upper:
+                    return t
+            if t_upper in viaggio_id_upper.replace("_", " "):
+                return t
+    except Exception as e:
+        print(f"[get_tenant_from_viaggio_id] Errore caricamento tenant da Firestore: {e}")
+        
+    # 3. Fallback assoluto storicamente tollerato
     return "DNR"
 
 from infrastructure.google_maps_api import (
@@ -413,7 +434,11 @@ def core_check_giornaliero(uid):
     print("[INFO] Start check_giornaliero")
     db = get_db()
     
-    tenants = ['DNR', 'GRAN CHEF', 'CATTEL', 'DAC']
+    try:
+        tenants = [doc.id for doc in db.collection('clienti').list_documents()]
+    except Exception as e:
+        print(f"[check_giornaliero] Errore lookup tenant: {e}")
+        tenants = ['DNR', 'GRAN CHEF', 'CATTEL', 'DAC']
     ddt_non_assegnati = 0
     clienti_senza_coordinate = 0
     viaggi_non_validi = 0
@@ -475,7 +500,11 @@ def core_chiudi_giornata(uid):
     print("[INFO] Tentativo chiusura giornata")
     db = get_db()
     
-    tenants = ['DNR', 'GRAN CHEF', 'CATTEL', 'DAC']
+    try:
+        tenants = [doc.id for doc in db.collection('clienti').list_documents()]
+    except Exception as e:
+        print(f"[chiudi_giornata] Errore lookup tenant: {e}")
+        tenants = ['DNR', 'GRAN CHEF', 'CATTEL', 'DAC']
     ddt_non_assegnati = 0
     
     for t in tenants:
@@ -698,6 +727,30 @@ def _salva_nuovo_cliente_tripla_chiave(cod_f: str, cod_l: str, nome: str, extra:
 
 
 
+def _get_viaggio_doc_self_healing(viaggio_id, tenant=None):
+    db = get_db()
+    tenant_viaggio = get_tenant_from_viaggio_id(viaggio_id) or tenant or "DNR"
+    doc_ref = db.collection('clienti').document(tenant_viaggio).collection('viaggi ddt').document(viaggio_id)
+    doc_viaggio = doc_ref.get()
+    
+    if tenant_viaggio != "DNR" and (not doc_viaggio.exists or not doc_viaggio.to_dict().get('punti')):
+        # Cerca se esiste la versione completa in DNR
+        doc_dnr_ref = db.collection('clienti').document('DNR').collection('viaggi ddt').document(viaggio_id)
+        doc_dnr = doc_dnr_ref.get()
+        if doc_dnr.exists and doc_dnr.to_dict().get('punti'):
+            print(f"[MIGRAZIONE AUTO-RISANANTE] Migrazione viaggio {viaggio_id} da DNR a {tenant_viaggio}")
+            dnr_data = doc_dnr.to_dict()
+            target_data = doc_viaggio.to_dict() if doc_viaggio.exists else {}
+            merged_data = {**dnr_data, **target_data}
+            doc_ref.set(merged_data)
+            doc_viaggio = doc_ref.get()
+            try:
+                doc_dnr_ref.delete()
+            except Exception as e_del:
+                print(f"[WARN] Impossibile eliminare duplicato in DNR: {e_del}")
+                
+    return doc_ref, doc_viaggio, tenant_viaggio
+
 def core_ottimizza_viaggio(viaggio_id):
     start_time = time.time()
     print("[INFO] Start ottimizza_viaggio")
@@ -706,9 +759,7 @@ def core_ottimizza_viaggio(viaggio_id):
         return {"status": "errore", "message": "viaggio_id mancante", "errori": ["viaggio_id mancante"], "data": {}}
         
         
-    tenant_viaggio = get_tenant_from_viaggio_id(viaggio_id)
-    doc_ref = get_db().collection('clienti').document(tenant_viaggio).collection('viaggi ddt').document(viaggio_id)
-    doc_viaggio = doc_ref.get()
+    doc_ref, doc_viaggio, tenant_viaggio = _get_viaggio_doc_self_healing(viaggio_id)
     if not doc_viaggio.exists:
         return {"status": "errore", "message": "Viaggio non trovato", "errori": ["Viaggio non trovato"], "data": {}}
     viaggio = doc_viaggio.to_dict()
@@ -804,9 +855,7 @@ def core_genera_distinta_viaggio(viaggio_id):
     if not viaggio_id:
         return {"status": "errore", "message": "viaggio_id mancante", "errori": ["viaggio_id mancante"], "data": {}}
 
-    tenant_viaggio = get_tenant_from_viaggio_id(viaggio_id)
-    doc_ref = get_db().collection('clienti').document(tenant_viaggio).collection('viaggi ddt').document(viaggio_id)
-    doc_viaggio = doc_ref.get()
+    doc_ref, doc_viaggio, tenant_viaggio = _get_viaggio_doc_self_healing(viaggio_id)
     if not doc_viaggio.exists:
         return {"status": "errore", "message": "Viaggio non trovato", "errori": ["Viaggio non trovato"], "data": {}}
     viaggio = doc_viaggio.to_dict()
@@ -1697,9 +1746,7 @@ def core_genera_mappa_autista(viaggio_id, distinta_url=None, tenant=None):
     if not viaggio_id:
         return {"status": "errore", "message": "viaggio_id mancante", "errori": ["viaggio_id mancante"], "data": {}}
 
-    tenant_viaggio = tenant or get_tenant_from_viaggio_id(viaggio_id)
-    doc_ref = get_db().collection('clienti').document(tenant_viaggio).collection('viaggi ddt').document(viaggio_id)
-    doc_viaggio = doc_ref.get()
+    doc_ref, doc_viaggio, tenant_viaggio = _get_viaggio_doc_self_healing(viaggio_id, tenant)
     if not doc_viaggio.exists:
         return {"status": "errore", "message": "Viaggio non trovato", "errori": ["Viaggio non trovato"], "data": {}}
 
@@ -2830,9 +2877,15 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
     tenant_con_ddt = set()
     
     try:
-        # Caricamento bulk clienti da DNR, GRAN CHEF, CATTEL e DAC
+        # Caricamento bulk clienti da tutti i tenant dinamici
         db_mappati = {}
-        for current_tenant in ['DNR', 'GRAN CHEF', 'CATTEL', 'DAC']:
+        try:
+            tenants = [doc.id for doc in db.collection('clienti').list_documents()]
+        except Exception as e:
+            print(f"[genera_completo_giornata] Errore lookup tenant: {e}")
+            tenants = ['DNR', 'GRAN CHEF', 'CATTEL', 'DAC']
+            
+        for current_tenant in tenants:
             clienti_ref = db.collection('clienti').document(current_tenant).collection('raccolta clienti')
             for doc in clienti_ref.stream():
                 d = doc.to_dict()
@@ -2920,7 +2973,14 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
         print(f"[WARN] Impossibile leggere il vecchio viaggi_giornalieri_Johnson.json: {e_old}")
 
     # Aggiorna con i file tenant-specifici (che sono la vera 'fonte di verità' per i viaggi svuotati/cancellati)
-    for t_folder in ["CATTEL", "GRAN_CHEF", "DNR", "DAC"]:
+    try:
+        tenants = [doc.id for doc in db.collection('clienti').list_documents()]
+    except Exception as e:
+        print(f"[genera_completo_giornata] Errore lookup tenant per file JSON: {e}")
+        tenants = ["CATTEL", "GRAN CHEF", "DNR", "DAC"]
+        
+    for t in tenants:
+        t_folder = t.upper().replace(" ", "_")
         try:
             blob_t = bucket.blob(f"{t_folder}/REPORTS/{data_consegna}/viaggi_giornalieri_Johnson.json")
             if blob_t.exists():
@@ -3119,70 +3179,77 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
             punti_map[chiave]["competenze"].append(competenza)
 
     # --- INTEGRAZIONE RIENTRI DDT ---
-    try:
-        rientri_ref = db.collection('clienti').document('DNR').collection('rientri ddt')
-        for r_doc in rientri_ref.stream():
-            r_data = r_doc.to_dict() or {}
-            stato = str(r_data.get('stato') or r_data.get('Stato') or '').strip().lower()
-            if 'allegato' in stato and data_consegna not in stato: continue
-                
-            r_cod = str(r_data.get('codice_consegna') or r_data.get('Codice consegna') or '').strip()
-            if not r_cod: continue
-            r_data_ddt = r_data.get('data_ddt') or r_data.get('Data e Num DDT') or ''
-            r_cod_l = r_cod.lower()
-            
-            chiave_esistente = None
-            for k in punti_map.keys():
-                if str(k).strip().lower() == r_cod_l:
-                    chiave_esistente = k
-                    break
+    # Esegui esclusivamente quando è coinvolto il tenant DNR
+    is_dnr = True
+    if tipologie_da_elaborare:
+        non_dnr_tenants = ['DAC', 'CATTEL', 'GRAN CHEF', 'GRAND_CHEF']
+        is_dnr = any(str(t).upper().strip() not in non_dnr_tenants for t in tipologie_da_elaborare)
+        
+    if is_dnr:
+        try:
+            rientri_ref = db.collection('clienti').document('DNR').collection('rientri ddt')
+            for r_doc in rientri_ref.stream():
+                r_data = r_doc.to_dict() or {}
+                stato = str(r_data.get('stato') or r_data.get('Stato') or '').strip().lower()
+                if 'allegato' in stato and data_consegna not in stato: continue
                     
-            stato_attuale = str(r_data.get('stato') or r_data.get('Stato') or '')
-            nuovo_stato = ""
-            tipo_val = str(r_data.get('Tipo') or r_data.get('tipo') or '').lower().strip()
-            is_parz = bool(r_data.get('is_parziale') or False) or (tipo_val == 'parziale')
-            note_val = str(r_data.get('note') or r_data.get('Note') or r_data.get('nota_integrativa') or '').strip()
-            
-            rientro_obj = {
-                "codice": r_cod,
-                "status": "red",
-                "data_ddt": r_data_ddt,
-                "is_parziale": is_parz,
-                "nota_integrativa": note_val
-            }
-            
-            if chiave_esistente:
-                punti_map[chiave_esistente]['rientri_alert'].append(rientro_obj)
-                nuovo_stato = f"allegato DDT {data_consegna}"
-            else:
-                cliente_info = db_mappati.get(r_cod_l)
-                if r_cod not in punti_map:
-                    punti_map[r_cod] = {
-                        "nome": (cliente_info.get('cliente') or cliente_info.get('nome_consegna') or r_cod) if cliente_info else r_cod,
-                        "indirizzo": cliente_info.get('indirizzo', '') if cliente_info else '',
-                        "codice_frutta": cliente_info.get('codice_frutta', 'p00000') if cliente_info else 'p00000',
-                        "codice_latte": cliente_info.get('codice_latte', 'p00000') if cliente_info else 'p00000',
-                        "codici_ddt_frutta": [],
-                        "codici_ddt_latte": [],
-                        "zona": "PUNTI_DI_CONSEGNA",
-                        "lat": float(cliente_info.get('lat', 0)) if cliente_info and cliente_info.get('lat') else 0,
-                        "lon": float(cliente_info.get('lon', 0)) if cliente_info and cliente_info.get('lon') else 0,
-                        "rientri_alert": [],
-                        "_is_rientro_speciale": True
-                    }
-                punti_map[r_cod]['rientri_alert'].append(rientro_obj)
-                nuovo_stato = "In lavorazione"
+                r_cod = str(r_data.get('codice_consegna') or r_data.get('Codice consegna') or '').strip()
+                if not r_cod: continue
+                r_data_ddt = r_data.get('data_ddt') or r_data.get('Data e Num DDT') or ''
+                r_cod_l = r_cod.lower()
                 
-            if stato_attuale != nuovo_stato:
-                try:
-                    db.collection('clienti').document('DNR').collection('rientri ddt').document(r_doc.id).update({
-                        'Stato': nuovo_stato,
-                        'stato': firestore.DELETE_FIELD
-                    })
-                except Exception as e_up:
-                    print(f"[WARN] Impossibile aggiornare stato rientro {r_doc.id}: {e_up}")
-    except Exception as e_r:
-        print(f"[ERROR] Errore integrazione rientri: {e_r}")
+                chiave_esistente = None
+                for k in punti_map.keys():
+                    if str(k).strip().lower() == r_cod_l:
+                        chiave_esistente = k
+                        break
+                        
+                stato_attuale = str(r_data.get('stato') or r_data.get('Stato') or '')
+                nuovo_stato = ""
+                tipo_val = str(r_data.get('Tipo') or r_data.get('tipo') or '').lower().strip()
+                is_parz = bool(r_data.get('is_parziale') or False) or (tipo_val == 'parziale')
+                note_val = str(r_data.get('note') or r_data.get('Note') or r_data.get('nota_integrativa') or '').strip()
+                
+                rientro_obj = {
+                    "codice": r_cod,
+                    "status": "red",
+                    "data_ddt": r_data_ddt,
+                    "is_parziale": is_parz,
+                    "nota_integrativa": note_val
+                }
+                
+                if chiave_esistente:
+                    punti_map[chiave_esistente]['rientri_alert'].append(rientro_obj)
+                    nuovo_stato = f"allegato DDT {data_consegna}"
+                else:
+                    cliente_info = db_mappati.get(r_cod_l)
+                    if r_cod not in punti_map:
+                        punti_map[r_cod] = {
+                            "nome": (cliente_info.get('cliente') or cliente_info.get('nome_consegna') or r_cod) if cliente_info else r_cod,
+                            "indirizzo": cliente_info.get('indirizzo', '') if cliente_info else '',
+                            "codice_frutta": cliente_info.get('codice_frutta', 'p00000') if cliente_info else 'p00000',
+                            "codice_latte": cliente_info.get('codice_latte', 'p00000') if cliente_info else 'p00000',
+                            "codici_ddt_frutta": [],
+                            "codici_ddt_latte": [],
+                            "zona": "PUNTI_DI_CONSEGNA",
+                            "lat": float(cliente_info.get('lat', 0)) if cliente_info and cliente_info.get('lat') else 0,
+                            "lon": float(cliente_info.get('lon', 0)) if cliente_info and cliente_info.get('lon') else 0,
+                            "rientri_alert": [],
+                            "_is_rientro_speciale": True
+                        }
+                    punti_map[r_cod]['rientri_alert'].append(rientro_obj)
+                    nuovo_stato = "In lavorazione"
+                    
+                if stato_attuale != nuovo_stato:
+                    try:
+                        db.collection('clienti').document('DNR').collection('rientri ddt').document(r_doc.id).update({
+                            'Stato': nuovo_stato,
+                            'stato': firestore.DELETE_FIELD
+                        })
+                    except Exception as e_up:
+                        print(f"[WARN] Impossibile aggiornare stato rientro {r_doc.id}: {e_up}")
+        except Exception as e_r:
+            print(f"[ERROR] Errore integrazione rientri: {e_r}")
 
     # 3. Organizza per Zone (Step 4 locale)
     zone_finali = []
@@ -3334,16 +3401,16 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
     
     tenants_con_viaggi = set()
     for z in master_json:
-        cz = z.get('cliente_zona') or ''
-        tenant_v = "CATTEL" if cz.upper() == "CATTEL" else ("GRAN CHEF" if cz.upper() in ("GRAN CHEF", "GRAND CHEF", "GRANCHEF") else ("BAUER" if cz.upper() == "BAUER" else ("DAC" if cz.upper() == "DAC" else "DNR")))
+        doc_id_z = f"{data_consegna}_{z['id_zona']}"
+        tenant_v = get_tenant_from_viaggio_id(doc_id_z)
         tenants_con_viaggi.add(tenant_v)
         
     for t_v in tenants_con_viaggi:
         # Filtriamo le zone di competenza di questo tenant
         master_json_t = []
         for z in master_json:
-            cz_z = z.get('cliente_zona') or ''
-            t_z = "CATTEL" if cz_z.upper() == "CATTEL" else ("GRAN CHEF" if cz_z.upper() in ("GRAN CHEF", "GRAND CHEF", "GRANCHEF") else ("BAUER" if cz_z.upper() == "BAUER" else ("DAC" if cz_z.upper() == "DAC" else "DNR")))
+            doc_id_z = f"{data_consegna}_{z['id_zona']}"
+            t_z = get_tenant_from_viaggio_id(doc_id_z)
             if t_z == t_v:
                 master_json_t.append(z)
                 
@@ -3355,8 +3422,7 @@ def core_genera_report_giornaliero(uid, data_consegna, tipologie_da_elaborare=No
     # Scrittura su Firestore (Salvataggio Viaggi divisi per Tenant)
     for z in master_json:
         doc_id = f"{data_consegna}_{z['id_zona']}"
-        cz = z.get('cliente_zona') or ''
-        tenant_viaggio = "CATTEL" if cz.upper() == "CATTEL" else ("GRAN CHEF" if cz.upper() in ("GRAN CHEF", "GRAND CHEF", "GRANCHEF") else ("BAUER" if cz.upper() == "BAUER" else ("DAC" if cz.upper() == "DAC" else "DNR")))
+        tenant_viaggio = get_tenant_from_viaggio_id(doc_id)
         viaggio_ref = db.collection('clienti').document(tenant_viaggio).collection('viaggi ddt').document(doc_id)
         
         # Manteniamo t_guida_min, t_tot_min, km_reali, autista se erano presenti nella cassaforte
@@ -3820,7 +3886,13 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
     
     listini = {}
     try:
-        for cli in ["DNR", "GRAN CHEF", "CATTEL", "BAUER", "DAC"]:
+        try:
+            tenants = [doc.id for doc in db.collection("clienti").list_documents()]
+        except Exception as e:
+            print(f"[calcola_percorsi] Errore lookup tenant per listini: {e}")
+            tenants = ["DNR", "GRAN CHEF", "CATTEL", "BAUER", "DAC"]
+            
+        for cli in tenants:
             doc = db.collection("clienti").document(cli).collection("impostazioni").document("listino").get()
             if doc.exists:
                 listini[cli] = doc.to_dict()
@@ -3958,7 +4030,8 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
                     if c_latte and c_latte != "p00000":
                         ddt_ids.append(f"{data_consegna}_{c_latte}")
             
-            doc_ref = db.collection('clienti').document(tenant).collection('viaggi ddt').document(viaggio_id)
+            tenant_viaggio = get_tenant_from_viaggio_id(viaggio_id) or tenant
+            doc_ref = db.collection('clienti').document(tenant_viaggio).collection('viaggi ddt').document(viaggio_id)
             
             # Preserva lo stato esistente (es. se è già completato/stampato) e i link
             existing_doc = doc_ref.get()
@@ -4204,6 +4277,16 @@ def _consolida_quantita_cloud(codice, lista_qty):
 def _genera_url_storage_token(blob):
     import uuid
     from urllib.parse import quote
+    
+    # Prova a recuperare il token esistente dai metadati per evitare di invalidare vecchi link
+    try:
+        blob.reload()
+        if blob.metadata and "firebaseStorageDownloadTokens" in blob.metadata:
+            token = blob.metadata["firebaseStorageDownloadTokens"]
+            return f"https://firebasestorage.googleapis.com/v0/b/{BUCKET_NAME}/o/{quote(blob.name, safe='')}?alt=media&token={token}"
+    except Exception as e_meta:
+        print(f"[WARN] Impossibile leggere metadati esistenti per token: {e_meta}")
+        
     token = str(uuid.uuid4())
     blob.metadata = {"firebaseStorageDownloadTokens": token}
     blob.patch()
@@ -4555,11 +4638,13 @@ def _genera_distinta_pdf_cloud(viaggio, articoli_viaggio, data_ddt, pdf_ddt_stre
         except: pass
 
 def core_genera_completo_giornata(data_consegna, tenant="DNR"):
+    if not tenant or not isinstance(tenant, str):
+        raise ValueError("Tenant mancante o non valido in core_genera_completo_giornata")
     start_time = time.time()
     db = get_db()
     bucket = storage.bucket(name=BUCKET_NAME)
     
-    path_base = f"{tenant}/REPORTS/{data_consegna}" if tenant != "DNR" else f"REPORTS/{data_consegna}"
+    path_base = f"REPORTS/{data_consegna}"
     blob_json = bucket.blob(f"{path_base}/viaggi_giornalieri_Johnson.json")
     if not blob_json.exists():
         return {"status": "errore", "message": f"Nessun file viaggi_giornalieri_Johnson.json trovato per il {data_consegna}."}
@@ -4683,21 +4768,24 @@ def core_genera_completo_giornata(data_consegna, tenant="DNR"):
 
         full_stream, light_stream = _genera_distinta_pdf_cloud(zone, articoli_viaggio, data_consegna, pdf_ddt_streams, rientri_giro, pdf_non_trovati_giro)
         
-        full_blob = bucket.blob(f"REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_{nome_giro}.pdf")
+        viaggio_id = f"{data_consegna}_{zid}"
+        tenant_viaggio = get_tenant_from_viaggio_id(viaggio_id) or tenant
+        tenant_folder = tenant_viaggio.upper().replace(" ", "_")
+        
+        full_blob = bucket.blob(f"{tenant_folder}/REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_{nome_giro}.pdf")
         if full_blob.exists():
             full_blob.delete()
         full_blob.upload_from_file(full_stream, content_type="application/pdf")
         distinta_completa_url = _genera_url_storage_token(full_blob)
         
-        light_blob = bucket.blob(f"REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_LIGHT_{nome_giro}.pdf")
+        light_blob = bucket.blob(f"{tenant_folder}/REPORTS/{data_consegna}/DISTINTE_VIAGGIO/DISTINTA_LIGHT_{nome_giro}.pdf")
         if light_blob.exists():
             light_blob.delete()
         light_blob.upload_from_file(light_stream, content_type="application/pdf")
         distinta_light_url = _genera_url_storage_token(light_blob)
 
         # Salva i link direttamente nel documento del viaggio
-        viaggio_id = f"{data_consegna}_{zid}"
-        doc_ref = get_db().collection('clienti').document('DNR').collection('viaggi ddt').document(viaggio_id)
+        doc_ref = get_db().collection('clienti').document(tenant_viaggio).collection('viaggi ddt').document(viaggio_id)
         try:
             doc_ref.set({
                 "distinta_light": distinta_light_url,
@@ -4825,17 +4913,22 @@ def core_genera_completo_giornata(data_consegna, tenant="DNR"):
         "created_at": firestore.SERVER_TIMESTAMP,
         "tipo": "REPORT_GENERALE"
     }
-    db.collection('clienti').document(tenant).collection('reports_logistici').document(data_consegna).set(report_meta)
+    db.collection('clienti').document('report_logistici').collection('giornate').document(data_consegna).set(report_meta)
 
     # === GHOST TRIP CLEANUP ===
     try:
         active_viaggio_ids = {f"{data_consegna}_{z.get('id_zona')}" for z in zone_list if z.get('id_zona') and z.get('id_zona') not in ("DDT_DA_INSERIRE", "PUNTI_DI_CONSEGNA")}
-        viaggi_ref = db.collection('clienti').document(tenant).collection('viaggi ddt')
-        query_viaggi = viaggi_ref.where('data_lavoro', '==', data_consegna).stream()
-        for doc in query_viaggi:
-            if doc.id not in active_viaggio_ids:
-                print(f"[Ghost Cleanup] Eliminazione viaggio svuotato/cancellato: {doc.id}")
-                doc.reference.delete()
+        try:
+            tenants = [doc.id for doc in db.collection('clienti').list_documents() if doc.id != "report_logistici"]
+        except:
+            tenants = ["DNR", "CATTEL", "GRAN CHEF", "BAUER", "DAC"]
+        for t in tenants:
+            viaggi_ref = db.collection('clienti').document(t).collection('viaggi ddt')
+            query_viaggi = viaggi_ref.where('data_lavoro', '==', data_consegna).stream()
+            for doc in query_viaggi:
+                if doc.id not in active_viaggio_ids:
+                    print(f"[Ghost Cleanup] Eliminazione viaggio svuotato/cancellato da {t}: {doc.id}")
+                    doc.reference.delete()
     except Exception as cleanup_err:
         print(f"[Ghost Cleanup] Errore durante la pulizia dei viaggi vuoti: {cleanup_err}")
 
@@ -4848,6 +4941,55 @@ def core_genera_completo_giornata(data_consegna, tenant="DNR"):
         "tempo_sec": elapsed,
         "giri": zone_totali
     }
+
+@https_fn.on_call(region="europe-west1", memory=options.MemoryOption.MB_256, timeout_sec=60,
+    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def risolvi_tenant_consegna(req: https_fn.CallableRequest):
+    """
+    Risolve il tenant logistico in base al codice consegna cercando
+    dinamicamente su tutte le anagrafiche.
+    Ritorna:
+      - {"status": "ok", "tenant": "NOME"} (se univoco)
+      - {"status": "error", "message": "CODICE_NON_TROVATO"}
+      - {"status": "error", "message": "CODICE_AMBIGUO"}
+    """
+    codice = str(req.data.get("codice_consegna", "")).strip().lower()
+    if not codice:
+        return {"status": "error", "message": "CODICE_NON_TROVATO"}
+        
+    db = get_db()
+    tenants_list = [doc.id for doc in db.collection('clienti').list_documents()]
+    
+    matches = []
+    
+    for t in tenants_list:
+        coll_ref = db.collection('clienti').document(t).collection('raccolta clienti')
+        # Prova lookup diretto su ID document
+        doc_snap = coll_ref.document(codice).get()
+        if doc_snap.exists:
+            matches.append(t)
+            continue
+            
+        # Ricerca per codice frutta
+        frutta_snap = coll_ref.where('codice_frutta', '==', codice).limit(1).get()
+        if len(frutta_snap) > 0:
+            matches.append(t)
+            continue
+            
+        # Ricerca per codice latte
+        latte_snap = coll_ref.where('codice_latte', '==', codice).limit(1).get()
+        if len(latte_snap) > 0:
+            matches.append(t)
+            continue
+            
+    matches = list(set(matches))
+    
+    if len(matches) == 0:
+        return {"status": "error", "message": "CODICE_NON_TROVATO"}
+    elif len(matches) == 1:
+        return {"status": "ok", "tenant": matches[0]}
+    else:
+        return {"status": "error", "message": "CODICE_AMBIGUO"}
 
 # --- ENDPOINTS HTTP ---
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=540,
@@ -5007,11 +5149,17 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
     if soft_delete:
         print(f"[INFO] Richiesta Soft Delete (pulizia UI) per la giornata {data_consegna}")
         try:
-            for tenant in ["DNR", "CATTEL", "GRAN CHEF", "BAUER", "DAC"]:
-                doc_ref = db.collection('clienti').document(tenant).collection('reports_logistici').document(data_consegna)
-                if doc_ref.get().exists:
-                    doc_ref.update({"archiviato_ui": True, "archiviato_at": datetime.now().isoformat()})
+            try:
+                tenants = [doc.id for doc in db.collection('clienti').list_documents() if doc.id != "report_logistici"]
+            except:
+                tenants = ["DNR", "CATTEL", "GRAN CHEF", "BAUER", "DAC"]
+            
+            # Aggiorna il report logistico globale
+            doc_ref = db.collection('clienti').document('report_logistici').collection('giornate').document(data_consegna)
+            if doc_ref.get().exists:
+                doc_ref.update({"archiviato_ui": True, "archiviato_at": datetime.now().isoformat()})
                 
+            for tenant in tenants:
                 # Aggiorna anche i viaggi ddt per coerenza
                 viaggi_ref = db.collection('clienti').document(tenant).collection('viaggi ddt')
                 viaggi = viaggi_ref.where("data_lavoro", "==", data_consegna).stream()
@@ -5042,9 +5190,18 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
                 f"REPORTS/{data_consegna}/",
                 f"CONSEGNE/CONSEGNE_{data_f}/"
             ]
-            for tenant in ["CATTEL", "GRAN CHEF", "BAUER", "DAC"]:
-                prefixes_to_clean.append(f"{tenant}/REPORTS/{data_consegna}/")
-                prefixes_to_clean.append(f"{tenant}/CONSEGNE/CONSEGNE_{data_f}/")
+            try:
+                tenants = [doc.id for doc in db.collection('clienti').list_documents()]
+            except Exception as e:
+                print(f"[elimina_giornata] Errore lookup tenant per storage: {e}")
+                tenants = ["CATTEL", "GRAN CHEF", "BAUER", "DAC"]
+                
+            for tenant in tenants:
+                if tenant == "DNR":
+                    continue # Già pulito nella root REPORTS/
+                tenant_folder = tenant.upper().replace(" ", "_")
+                prefixes_to_clean.append(f"{tenant_folder}/REPORTS/{data_consegna}/")
+                prefixes_to_clean.append(f"{tenant_folder}/CONSEGNE/CONSEGNE_{data_f}/")
         
         for pref in prefixes_to_clean:
             blobs = bucket.list_blobs(prefix=pref)
@@ -5057,13 +5214,15 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
         # 2. Elimina record da Firestore (SOLO se eliminiamo tutta la giornata)
         if not tipologie_da_eliminare:
             print(f"[INFO] Eliminazione report logistico principale per {data_consegna}")
-            for tenant in ["DNR", "CATTEL", "GRAN CHEF", "BAUER", "DAC"]:
-                doc_ref = db.collection('clienti').document(tenant).collection('reports_logistici').document(data_consegna)
-                doc_ref.delete()
+            db.collection('clienti').document('report_logistici').collection('giornate').document(data_consegna).delete()
         
         # 3. Elimina i viaggi ddt
         print(f"[INFO] Eliminazione viaggi ddt per la giornata {data_consegna}")
-        for tenant in ["DNR", "CATTEL", "GRAN CHEF", "BAUER", "DAC"]:
+        try:
+            tenants = [doc.id for doc in db.collection('clienti').list_documents()]
+        except:
+            tenants = ["DNR", "CATTEL", "GRAN CHEF", "BAUER", "DAC"]
+        for tenant in tenants:
             viaggi_ref = db.collection('clienti').document(tenant).collection('viaggi ddt')
             viaggi_da_eliminare = viaggi_ref.where("data_lavoro", "==", data_consegna).stream()
             for v in viaggi_da_eliminare:
@@ -5090,7 +5249,11 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
                 
         # 3.1 Elimina pianificazione viaggi (se esiste)
         print(f"[INFO] Eliminazione pianificazione viaggi per la giornata {data_consegna}")
-        for tenant in ["DNR", "CATTEL", "GRAN CHEF", "BAUER", "DAC"]:
+        try:
+            tenants = [doc.id for doc in db.collection('clienti').list_documents()]
+        except:
+            tenants = ["DNR", "CATTEL", "GRAN CHEF", "BAUER", "DAC"]
+        for tenant in tenants:
             pian_ref = db.collection('clienti').document(tenant).collection('pianificazione_viaggi')
             # Cancellazione document based per data_lavoro o id
             for p in pian_ref.stream():
@@ -5419,10 +5582,14 @@ def gestisci_archiviazione_mensile(req: https_fn.CallableRequest):
     
     try:
         now = datetime.now()
-        reports_ref = db.collection('clienti').document('DNR').collection('reports_logistici')
-        viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
+        reports_ref = db.collection('clienti').document('report_logistici').collection('giornate')
         
         reports = list(reports_ref.stream())
+        
+        try:
+            tenants = [doc.id for doc in db.collection('clienti').list_documents() if doc.id != "report_logistici"]
+        except:
+            tenants = ["DNR", "CATTEL", "GRAN CHEF", "BAUER", "DAC"]
         
         for rep in reports:
             data_consegna = rep.id
@@ -5447,8 +5614,15 @@ def gestisci_archiviazione_mensile(req: https_fn.CallableRequest):
                 blob_rep = bucket.blob(f"{pref_dest}/firestore_report.json")
                 blob_rep.upload_from_string(json.dumps(rep_data, default=str), content_type="application/json")
                 
-                # Salvataggio di tutti i viaggi ddt associati
-                viaggi_snap = list(viaggi_ref.where("data_lavoro", "==", data_consegna).stream())
+                # Salvataggio di tutti i viaggi ddt associati da tutti i tenant
+                viaggi_snap = []
+                viaggi_tenants = {}
+                for t in tenants:
+                    t_viaggi = list(db.collection('clienti').document(t).collection('viaggi ddt').where("data_lavoro", "==", data_consegna).stream())
+                    for v in t_viaggi:
+                        viaggi_snap.append(v)
+                        viaggi_tenants[v.id] = t
+                        
                 viaggi_count = 0
                 for v in viaggi_snap:
                     v_blob = bucket.blob(f"{pref_dest}/viaggi_ddt/{v.id}.json")
@@ -5499,7 +5673,8 @@ def gestisci_archiviazione_mensile(req: https_fn.CallableRequest):
                     
                     # Rimuovi record attivi di viaggi ddt per liberare spazio
                     for v in viaggi_snap:
-                        viaggi_ref.document(v.id).delete()
+                        t_competenza = viaggi_tenants.get(v.id, "DNR")
+                        db.collection('clienti').document(t_competenza).collection('viaggi ddt').document(v.id).delete()
                         
                     giornate_archiviate.append(data_consegna)
                 else:
@@ -5563,21 +5738,20 @@ def recupera_viaggio_storico(req: https_fn.CallableRequest):
             return {"status": "errore", "message": "Mese o data mancante per il ripristino"}
             
         print(f"[R&D RECUPERO] Avvio ripristino sandbox per {data_consegna} ({mese})...")
-        pref_base = f"ARCHIVIO_STORICO_RD/{mese}/{data_consegna}"
+        pref_dest = f"ARCHIVIO_STORICO_RD/{mese}/{data_consegna}"
         
         try:
             # 1. Ripristina report logistico (se necessario)
-            rep_blob = bucket.blob(f"{pref_base}/firestore_report.json")
+            rep_blob = bucket.blob(f"{pref_dest}/firestore_report.json")
             if rep_blob.exists():
                 rep_data = json.loads(rep_blob.download_as_string().decode('utf-8'))
                 rep_data["is_recupero_rd"] = True
                 rep_data["archiviato_ui"] = False
-                db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna).set(rep_data)
+                db.collection('clienti').document('report_logistici').collection('giornate').document(data_consegna).set(rep_data)
                 
-            # 2. Ripristina tutti i viaggi ddt associati
-            viaggi_pref = f"{pref_base}/viaggi_ddt/"
+            # 2. Ripristina tutti i viaggi ddt associati sotto i rispettivi tenant
+            viaggi_pref = f"{pref_dest}/viaggi_ddt/"
             blobs = bucket.list_blobs(prefix=viaggi_pref)
-            viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
             
             count = 0
             for b in blobs:
@@ -5587,7 +5761,8 @@ def recupera_viaggio_storico(req: https_fn.CallableRequest):
                     v_data["archiviato_ui"] = False
                     # Ricava l'id del documento dal nome file
                     doc_id = b.name.split('/')[-1].replace('.json', '')
-                    viaggi_ref.document(doc_id).set(v_data)
+                    t_viaggio = get_tenant_from_viaggio_id(doc_id) or "DNR"
+                    db.collection('clienti').document(t_viaggio).collection('viaggi ddt').document(doc_id).set(v_data)
                     count += 1
                     
             print(f"[R&D RECUPERO] ✓ Ripristino completato per {data_consegna}. {count} viaggi ddt ripristinati in sandbox.")
@@ -5616,18 +5791,24 @@ def rilascia_recupero_storico(req: https_fn.CallableRequest):
     
     try:
         # Elimina da reports_logistici se is_recupero_rd == True
-        rep_ref = db.collection('clienti').document('DNR').collection('reports_logistici').document(data_consegna)
+        rep_ref = db.collection('clienti').document('report_logistici').collection('giornate').document(data_consegna)
         doc = rep_ref.get()
         if doc.exists and doc.to_dict().get("is_recupero_rd", False):
             rep_ref.delete()
             
-        # Elimina da viaggi ddt
-        viaggi_ref = db.collection('clienti').document('DNR').collection('viaggi ddt')
-        viaggi = viaggi_ref.where("data_lavoro", "==", data_consegna).where("is_recupero_rd", "==", True).stream()
+        # Elimina da viaggi ddt in tutti i tenant
+        try:
+            tenants = [doc.id for doc in db.collection('clienti').list_documents() if doc.id != "report_logistici"]
+        except:
+            tenants = ["DNR", "CATTEL", "GRAN CHEF", "BAUER", "DAC"]
+            
         count = 0
-        for v in viaggi:
-            viaggi_ref.document(v.id).delete()
-            count += 1
+        for t in tenants:
+            viaggi_ref = db.collection('clienti').document(t).collection('viaggi ddt')
+            viaggi = viaggi_ref.where("data_lavoro", "==", data_consegna).where("is_recupero_rd", "==", True).stream()
+            for v in viaggi:
+                viaggi_ref.document(v.id).delete()
+                count += 1
             
         print(f"[R&D RILASCIO] ✓ Pulizia completata per {data_consegna}. {count} record eliminati.")
         return {"status": "ok", "message": f"Sessione di studio per il {data_consegna} conclusa e ripulita con successo."}
@@ -5993,12 +6174,38 @@ def genera_riepiloghi_aziendali_light(req: https_fn.CallableRequest) -> typing.A
         db = get_db()
         bucket = storage.bucket(name=BUCKET_NAME)
         
-        # Recupera viaggi del giorno
-        viaggi_ref = db.collection("clienti").document(tenant).collection("viaggi ddt")
-        docs = viaggi_ref.where("data_lavoro", "==", data_consegna).get()
-        
+        # Recupera viaggi di tutti i tenant registrati per avere una visione globale unificata
+        try:
+            tenants = [doc.id for doc in db.collection('clienti').list_documents()]
+        except Exception as e_tenants:
+            print(f"[genera_riepiloghi_aziendali_light] Errore lookup tenant: {e_tenants}")
+            tenants = ["DNR", "CATTEL", "GRAN CHEF", "BAUER", "DAC"]
+            
+        docs = []
+        for t in tenants:
+            try:
+                t_docs = db.collection("clienti").document(t).collection("viaggi ddt").where("data_lavoro", "==", data_consegna).get()
+                docs.extend(t_docs)
+            except Exception as e_query:
+                print(f"[genera_riepiloghi_aziendali_light] Errore query tenant {t}: {e_query}")
+                
         if not docs:
             return {"status": "errore", "message": f"Nessun viaggio trovato per il {data_consegna}"}
+            
+        # De-duplicazione dando priorità assoluta ai viaggi salvati nel proprio tenant di competenza
+        viaggi_mappati = {}
+        for doc in docs:
+            v_id = doc.id
+            path_parts = doc.reference.path.split('/')
+            if len(path_parts) >= 2:
+                tenant_di_salvataggio = path_parts[1]
+                real_tenant = get_tenant_from_viaggio_id(v_id)
+                is_correct_path = (tenant_di_salvataggio == real_tenant)
+                
+                if v_id not in viaggi_mappati or is_correct_path:
+                    viaggi_mappati[v_id] = (doc, is_correct_path)
+                    
+        docs = [item[0] for item in viaggi_mappati.values()]
             
         # Per unire i PDF, usiamo pypdf (già presente in requirements.txt)
         from pypdf import PdfReader, PdfWriter
@@ -6008,13 +6215,8 @@ def genera_riepiloghi_aziendali_light(req: https_fn.CallableRequest) -> typing.A
         # Ordiniamo i documenti per id viaggio
         docs = sorted(docs, key=lambda d: d.id)
         
-        # Gruppi per azienda
-        gruppi = {
-            "DNR": [],
-            "CATTEL": [],
-            "GRANCHEF": [],
-            "BAUER": []
-        }
+        # Gruppi per azienda (Dinamico)
+        gruppi = {}
         
         for doc in docs:
             v_data = doc.to_dict()
@@ -6024,15 +6226,25 @@ def genera_riepiloghi_aziendali_light(req: https_fn.CallableRequest) -> typing.A
                 
             cz = (v_data.get("cliente_zona") or "").upper().strip()
             
-            if v_data.get("is_cattel") or cz == "CATTEL":
-                gruppi["CATTEL"].append(url_light)
-            elif v_data.get("is_gc") or cz in ("GRAN CHEF", "GRAN_CHEF", "GRANCHEF"):
-                gruppi["GRANCHEF"].append(url_light)
-            elif v_data.get("is_bauer") or cz == "BAUER":
-                gruppi["BAUER"].append(url_light)
+            # Determina l'azienda/tenant del viaggio
+            if v_data.get("is_cattel") or "CATTEL" in cz:
+                azienda = "CATTEL"
+            elif v_data.get("is_gc") or cz in ("GRAN CHEF", "GRAN_CHEF", "GRANCHEF") or "GRAN CHEF" in cz or "GRANCHEF" in cz:
+                azienda = "GRANCHEF"
+            elif v_data.get("is_bauer") or "BAUER" in cz:
+                azienda = "BAUER"
+            elif v_data.get("is_dac") or "DAC" in cz:
+                azienda = "DAC"
+            elif cz:
+                # Se c'è un altro cliente_zona (es. nuovo tenant dinamico), lo usiamo come nome azienda
+                azienda = cz
             else:
-                # Progetto Scuole / DNR
-                gruppi["DNR"].append(url_light)
+                # Default a DNR
+                azienda = "DNR"
+                
+            if azienda not in gruppi:
+                gruppi[azienda] = []
+            gruppi[azienda].append(url_light)
                 
         risultati_urls = {}
         tot_uniti = 0
@@ -6072,7 +6284,7 @@ def genera_riepiloghi_aziendali_light(req: https_fn.CallableRequest) -> typing.A
             return {"status": "errore", "message": "Nessuna distinta light trovata da unire per le aziende."}
             
         # Salva le URL generate nel documento generale della giornata
-        report_ref = db.collection("clienti").document(tenant).collection("reports_logistici").document(data_consegna)
+        report_ref = db.collection("clienti").document("report_logistici").collection("giornate").document(data_consegna)
         if report_ref.get().exists:
             report_ref.update({"riepiloghi_urls": risultati_urls})
         else:

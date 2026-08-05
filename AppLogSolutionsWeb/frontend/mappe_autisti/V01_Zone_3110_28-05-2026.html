@@ -334,6 +334,22 @@
             appId: "1:343696844738:web:b8d4e10c71fb2c67bc7d20"
         };
         const app = initializeApp(firebaseConfig);
+        
+        // --- APP CHECK INJECTION ---
+        try {
+            import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js").then(({ initializeAppCheck, ReCaptchaV3Provider }) => {
+                if (!window._appCheckInitialized) {
+                    initializeAppCheck(app, {
+                        provider: new ReCaptchaV3Provider('6Le5gHYtAAAAAH5-SEiNqDtvnvOPC9HkLLAD-9U9'),
+                        isTokenAutoRefreshEnabled: true
+                    });
+                    window._appCheckInitialized = true;
+                    console.log("AppCheck init successful.");
+                }
+            });
+        } catch(e) { console.warn("AppCheck init failed", e); }
+        // ---------------------------
+
 
 const db = getFirestore(app);
 

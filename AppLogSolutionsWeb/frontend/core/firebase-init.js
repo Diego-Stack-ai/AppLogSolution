@@ -11,6 +11,21 @@ import { firebaseConfig } from "../firebase-config.js";
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
+// --- APP CHECK INJECTION ---
+try {
+    import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js").then(({ initializeAppCheck, ReCaptchaV3Provider }) => {
+        if (!window._appCheckInitialized) {
+            initializeAppCheck(app, {
+                provider: new ReCaptchaV3Provider('6Le5gHYtAAAAAH5-SEiNqDtvnvOPC9HkLLAD-9U9'),
+                isTokenAutoRefreshEnabled: true
+            });
+            window._appCheckInitialized = true;
+            console.log("AppCheck init successful in core module.");
+        }
+    });
+} catch(e) { console.warn("AppCheck init failed", e); }
+// ---------------------------
+
 let db;
 try {
     db = initializeFirestore(app, {

@@ -19,6 +19,16 @@ from infrastructure.firebase_setup import (
     load_storage_cache, save_storage_cache
 )
 
+import os
+_project_id = os.environ.get("GCP_PROJECT", "log-solution-60007")
+ALLOWED_ORIGINS = [
+    f"https://{_project_id}.web.app",
+    f"https://{_project_id}.firebaseapp.com",
+    "http://localhost:5000",
+    "http://127.0.0.1:5000",
+    "http://localhost:3000"
+]
+
 def get_tenant_from_viaggio_id(viaggio_id):
     if not viaggio_id:
         return "DNR"
@@ -4943,7 +4953,7 @@ def core_genera_completo_giornata(data_consegna, tenant="DNR"):
     }
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.MB_256, timeout_sec=60,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def risolvi_tenant_consegna(req: https_fn.CallableRequest):
     """
     Risolve il tenant logistico in base al codice consegna cercando
@@ -4993,7 +5003,7 @@ def risolvi_tenant_consegna(req: https_fn.CallableRequest):
 
 # --- ENDPOINTS HTTP ---
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=540,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def web_calcola_percorsi(req: https_fn.CallableRequest):
     try:
         data_consegna = req.data.get("data_consegna")
@@ -5008,7 +5018,7 @@ def web_calcola_percorsi(req: https_fn.CallableRequest):
         return {"status": "errore", "message": f"Global exception: {str(e)}"}
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_2, timeout_sec=540,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def genera_completo_giornata(req: https_fn.CallableRequest):
     try:
         data_consegna = req.data.get("data_consegna")
@@ -5020,27 +5030,27 @@ def genera_completo_giornata(req: https_fn.CallableRequest):
         return {"status": "errore", "message": f"Global exception: {str(e)}"}
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=540,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def processa_job_pdf(req: https_fn.CallableRequest):
     return core_processa_job_pdf(req.data.get("job_id"), req.data.get("tenant", "DNR"))
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def genera_distinta_viaggio(req: https_fn.CallableRequest):
     return core_genera_distinta_viaggio(req.data.get("viaggio_id"))
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def ottimizza_viaggio(req: https_fn.CallableRequest):
     return core_ottimizza_viaggio(req.data.get("viaggio_id"))
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def genera_mappa_autista(req: https_fn.CallableRequest):
     return core_genera_mappa_autista(req.data.get("viaggio_id"), req.data.get("distinta_url"), req.data.get("tenant"))
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def ricalcola_percorso(req: https_fn.CallableRequest):
     return core_ricalcola_percorso(
         req.data.get("viaggio_id"),
@@ -5049,7 +5059,7 @@ def ricalcola_percorso(req: https_fn.CallableRequest):
     )
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=540,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def riepilogo_fatturazione(req: https_fn.CallableRequest):
     return core_riepilogo_fatturazione(
         req.data.get("mese", ""),
@@ -5057,7 +5067,7 @@ def riepilogo_fatturazione(req: https_fn.CallableRequest):
     )
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=120,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def pulisci_cartelle_elaborazione(req: https_fn.CallableRequest):
     """Pulisce le cartelle di storage e i job Firestore per la giornata selezionata prima di caricare i nuovi file."""
     try:
@@ -5092,22 +5102,22 @@ def pulisci_cartelle_elaborazione(req: https_fn.CallableRequest):
         return {"status": "errore", "message": str(e)}
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=60,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def check_giornaliero(req: https_fn.CallableRequest):
     return core_check_giornaliero(req.auth.uid if req.auth else None)
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=60,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def stats_giornaliere(req: https_fn.CallableRequest):
     return core_stats_giornaliere(req.auth.uid if req.auth else None)
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=60,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def chiudi_giornata(req: https_fn.CallableRequest):
     return core_chiudi_giornata(req.auth.uid if req.auth else None)
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def genera_report_giornaliero(req: https_fn.CallableRequest):
     try:
         data_consegna = req.data.get("data_consegna") if isinstance(req.data, dict) else None
@@ -5125,7 +5135,7 @@ def genera_report_giornaliero(req: https_fn.CallableRequest):
 
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.MB_256, timeout_sec=120,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def elimina_giornata_logistica(req: https_fn.CallableRequest):
     """
     Funzione di Tabula Rasa o Soft Delete:
@@ -5302,7 +5312,7 @@ def elimina_giornata_logistica(req: https_fn.CallableRequest):
 # ─── CLOUD FUNCTION ALIAS PER CALCOLA PERCORSI ────────────────────────────────
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=540,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def calcola_percorsi_zone(req: https_fn.CallableRequest):
     """Alias compatibile con mappa_percorsi.html che reindirizza al core_web_calcola_percorsi."""
     try:
@@ -5391,7 +5401,7 @@ def core_aggiorna_traffico_serale(data_consegna):
 
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=300,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def aggiorna_traffico_serale(req: https_fn.CallableRequest):
     try:
         data_consegna = req.data.get("data_consegna")
@@ -5410,7 +5420,7 @@ def get_tenant_from_cz(cz):
     return "DNR"
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.MB_256, timeout_sec=60,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def preflight_elaborazione_mappe(req: https_fn.CallableRequest):
     """
     Pre-flight check per l'elaborazione mappe.
@@ -5503,7 +5513,7 @@ def preflight_elaborazione_mappe(req: https_fn.CallableRequest):
 # ─── GESTIONE E RIPRISTINO BACKUP CACHE DISTANZE (R&D / SICUREZZA) ─────────────
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.MB_256, timeout_sec=60,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def ripristina_cache_backup(req: https_fn.CallableRequest):
     """
     Gestione backup cache:
@@ -5566,7 +5576,7 @@ def ripristina_cache_backup(req: https_fn.CallableRequest):
 # ─── ARCHIVIAZIONE A FREDDO E RECUPERO R&D (PUNTO 2) ───────────────────────────
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=540,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def gestisci_archiviazione_mensile(req: https_fn.CallableRequest):
     """
     Esegue il backup automatico a inizio del 3° mese.
@@ -5695,7 +5705,7 @@ def gestisci_archiviazione_mensile(req: https_fn.CallableRequest):
 
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.MB_512, timeout_sec=120,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def recupera_viaggio_storico(req: https_fn.CallableRequest):
     """
     Gestisce il pannello R&D in Link Viaggi:
@@ -5777,7 +5787,7 @@ def recupera_viaggio_storico(req: https_fn.CallableRequest):
 
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.MB_256, timeout_sec=60,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def rilascia_recupero_storico(req: https_fn.CallableRequest):
     """
     Elimina i record temporanei creati per l'R&D in viaggi ddt e reports_logistici.
@@ -5904,7 +5914,7 @@ def send_and_save_email(smtp_host, smtp_port, imap_host, imap_port, email_user, 
 
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.MB_512, timeout_sec=120,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def invia_email_fattura(req: https_fn.CallableRequest):
     """
     Spedisce l'email con allegati e la inserisce nella cartella Posta Inviata IMAP.
@@ -6012,7 +6022,7 @@ def invia_email_fattura(req: https_fn.CallableRequest):
     return {"status": "errore", "message": "Azione non riconosciuta"}
 
 @https_fn.on_request(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=60,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post", "options"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post", "options"]))
 def autista_aggiorna_sequenza(req: https_fn.Request) -> https_fn.Response:
     try:
         data = req.get_json()
@@ -6107,7 +6117,7 @@ def autista_aggiorna_sequenza(req: https_fn.Request) -> https_fn.Response:
         return https_fn.Response(json.dumps({"status": "errore", "message": str(e)}), status=500, headers={'Content-Type': 'application/json'})
 
 @https_fn.on_request(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=60,
-    cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post", "options"]))
+    cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post", "options"]))
 def autista_salva_reso(req: https_fn.Request) -> https_fn.Response:
     try:
         data = req.get_json()

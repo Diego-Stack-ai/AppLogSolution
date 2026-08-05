@@ -37,7 +37,6 @@ const OPTIONAL_ASSETS = [
     './centrale_resi.html',
     './pianificazione.html',
     './visualizzazione.html',
-    './fatturazione.html',
     './gestione_mezzi.html',
     './impostazioni.html',
     './mappa_consegne.html',

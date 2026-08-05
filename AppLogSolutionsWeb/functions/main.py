@@ -3863,7 +3863,7 @@ def core_web_calcola_percorsi(data_consegna, id_zona=None, aggiorna_traffico=Fal
     db = get_db()
     bucket = storage.bucket(name=BUCKET_NAME)
     
-    path_base = f"{tenant}/REPORTS/{data_consegna}" if tenant != "DNR" else f"REPORTS/{data_consegna}"
+    path_base = f"{tenant}/REPORTS/{data_consegna}"
     blob_json = bucket.blob(f"{path_base}/viaggi_giornalieri_Johnson.json")
     if not blob_json.exists():
         return {"status": "errore", "message": f"Nessun file viaggi_giornalieri_Johnson.json trovato per il {data_consegna}."}

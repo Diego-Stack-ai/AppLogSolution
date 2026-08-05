@@ -24,7 +24,7 @@ test.describe.serial('Collaudo PWA Autenticato (Test 2, 3, 4)', () => {
 
     test('Test 2 - Login e Dashboard Online', async () => {
         checkCreds();
-        const context = await chromium.launchPersistentContext(userDataDir, { baseURL: 'https://log-solutions-sviluppo.web.app' });
+        const context = await chromium.launchPersistentContext(userDataDir, { baseURL: 'https://log-solutions-cantiere.web.app' });
         const page = await context.pages()[0] || await context.newPage();
         
         await page.goto('/login.html');
@@ -45,7 +45,7 @@ test.describe.serial('Collaudo PWA Autenticato (Test 2, 3, 4)', () => {
 
     test('Test 3 - Dashboard e Opzionale Offline', async () => {
         checkCreds();
-        const context = await chromium.launchPersistentContext(userDataDir, { baseURL: 'https://log-solutions-sviluppo.web.app' });
+        const context = await chromium.launchPersistentContext(userDataDir, { baseURL: 'https://log-solutions-cantiere.web.app' });
         const page = await context.pages()[0] || await context.newPage();
         
         await page.goto('/dashboard.html');
@@ -63,7 +63,7 @@ test.describe.serial('Collaudo PWA Autenticato (Test 2, 3, 4)', () => {
 
     test('Test 4 - Riapertura Completa Offline', async () => {
         checkCreds();
-        const context = await chromium.launchPersistentContext(userDataDir, { baseURL: 'https://log-solutions-sviluppo.web.app' });
+        const context = await chromium.launchPersistentContext(userDataDir, { baseURL: 'https://log-solutions-cantiere.web.app' });
         await context.setOffline(true);
         const page = await context.pages()[0] || await context.newPage();
         

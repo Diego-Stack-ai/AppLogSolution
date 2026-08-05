@@ -8,7 +8,7 @@ from firebase_admin import credentials, firestore
 # 1. Vai sulla console Firebase del progetto PRINCIPALE (log-solution-60007).
 # 2. Vai su Impostazioni Progetto (ingranaggio in alto a sinistra) -> Account di Servizio.
 # 3. Clicca su "Genera nuova chiave privata", rinomina il file scaricato in "prod_key.json" e mettilo in questa cartella.
-# 4. Fai la stessa identica cosa sul nuovo progetto SVILUPPO (log-solutions-sviluppo).
+# 4. Fai la stessa identica cosa sul nuovo progetto SVILUPPO (log-solutions-cantiere).
 # 5. Rinomina la chiave scaricata in "dev_key.json" e mettila in questa cartella.
 # 6. Apri il terminale in questa cartella e lancia: python sincronizza_sviluppo.py
 # ==============================================================================

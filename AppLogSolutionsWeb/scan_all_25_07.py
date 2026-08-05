@@ -5,7 +5,7 @@ os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'dev_key.json'
 import firebase_admin
 from firebase_admin import firestore, storage
 
-app = firebase_admin.initialize_app(None, {'storageBucket': 'log-solutions-sviluppo.firebasestorage.app'})
+app = firebase_admin.initialize_app(None, {'storageBucket': 'log-solutions-cantiere.firebasestorage.app'})
 db = firestore.client(app=app)
 bucket = storage.bucket(app=app)
 

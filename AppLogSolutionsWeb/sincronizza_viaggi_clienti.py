@@ -37,10 +37,10 @@ def main():
     db_prod = firestore.client(app=app_prod)
     bucket_prod = storage.bucket(app=app_prod)
 
-    print("Inizializzazione Sviluppo (log-solutions-sviluppo)...")
+    print("Inizializzazione Sviluppo (log-solutions-cantiere)...")
     cred_dev = credentials.Certificate("dev_key.json")
     app_dev = firebase_admin.initialize_app(cred_dev, name='dev_mirata', options={
-        'storageBucket': 'log-solutions-sviluppo.appspot.com'
+        'storageBucket': 'log-solutions-cantiere.appspot.com'
     })
     db_dev = firestore.client(app=app_dev)
     bucket_dev = storage.bucket(app=app_dev)

@@ -49,7 +49,7 @@ test.describe.serial('Collaudo PWA Pubblico (Nessuna Credenziale Richiesta)', ()
     });
 
     test('Test 1 - Aggiornamento Normale', async () => {
-        const context = await chromium.launchPersistentContext(userDataDir, { baseURL: 'https://log-solutions-sviluppo.web.app' });
+        const context = await chromium.launchPersistentContext(userDataDir, { baseURL: 'https://log-solutions-cantiere.web.app' });
         const page = await context.pages()[0] || await context.newPage();
         
         let swLogs = [];
@@ -74,7 +74,7 @@ test.describe.serial('Collaudo PWA Pubblico (Nessuna Credenziale Richiesta)', ()
         const fs = require('fs');
         fs.rmSync(userDataDir, { recursive: true, force: true });
 
-        const context = await chromium.launchPersistentContext(userDataDir, { baseURL: 'https://log-solutions-sviluppo.web.app' });
+        const context = await chromium.launchPersistentContext(userDataDir, { baseURL: 'https://log-solutions-cantiere.web.app' });
         await context.route('**/*leaflet*', route => route.abort());
         const page = await context.pages()[0] || await context.newPage();
         
@@ -100,7 +100,7 @@ test.describe.serial('Collaudo PWA Pubblico (Nessuna Credenziale Richiesta)', ()
         const fs = require('fs');
         fs.rmSync(userDataDir, { recursive: true, force: true });
 
-        const context = await chromium.launchPersistentContext(userDataDir, { baseURL: 'https://log-solutions-sviluppo.web.app' });
+        const context = await chromium.launchPersistentContext(userDataDir, { baseURL: 'https://log-solutions-cantiere.web.app' });
         await context.route('**/*fonts.googleapis.com*', route => route.abort());
         const page = await context.pages()[0] || await context.newPage();
         
@@ -126,7 +126,7 @@ test.describe.serial('Collaudo PWA Pubblico (Nessuna Credenziale Richiesta)', ()
         const fs = require('fs');
         fs.rmSync(userDataDir, { recursive: true, force: true });
 
-        const context = await chromium.launchPersistentContext(userDataDir, { baseURL: 'https://log-solutions-sviluppo.web.app' });
+        const context = await chromium.launchPersistentContext(userDataDir, { baseURL: 'https://log-solutions-cantiere.web.app' });
         await context.route('**/*www.gstatic.com/firebasejs/10.8.0*', route => route.abort());
         const page = await context.pages()[0] || await context.newPage();
         

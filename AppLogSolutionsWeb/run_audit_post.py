@@ -12,14 +12,14 @@ import firebase_admin
 from firebase_admin import firestore, storage
 
 # Initialize
-app = firebase_admin.initialize_app(None, {'storageBucket': 'log-solutions-sviluppo.firebasestorage.app'})
+app = firebase_admin.initialize_app(None, {'storageBucket': 'log-solutions-cantiere.firebasestorage.app'})
 db = firestore.client(app=app)
 bucket = storage.bucket(app=app)
 
 PROJECT_ID = app.project_id
 BUCKET_NAME = bucket.name
 
-if PROJECT_ID != "log-solutions-sviluppo" or BUCKET_NAME != "log-solutions-sviluppo.firebasestorage.app":
+if PROJECT_ID != "log-solutions-cantiere" or BUCKET_NAME != "log-solutions-cantiere.firebasestorage.app":
     print("ERRORE CRITICO: Ambiente non corrispondente. ARRESTO.")
     sys.exit(1)
 

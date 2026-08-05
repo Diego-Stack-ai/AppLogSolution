@@ -21,7 +21,7 @@ def sync_caches():
         app_dev = firebase_admin.get_app('dev_sync')
 
     bucket_prod = storage.bucket(name="log-solution-60007.firebasestorage.app", app=app_prod)
-    bucket_dev = storage.bucket(name="log-solutions-sviluppo.firebasestorage.app", app=app_dev)
+    bucket_dev = storage.bucket(name="log-solutions-cantiere.firebasestorage.app", app=app_dev)
 
     # 2. Sincronizzazione cartella 'caches/'
     print("\n[*] Ricerca file di cache nel server di Produzione...")

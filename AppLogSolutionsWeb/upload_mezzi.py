@@ -9,7 +9,7 @@ import time
 cred = credentials.Certificate(r"G:\Il mio Drive\App\AppLogSolutionsWeb\dev_key.json")
 try:
     firebase_admin.initialize_app(cred, {
-        'storageBucket': 'log-solutions-sviluppo.firebasestorage.app'
+        'storageBucket': 'log-solutions-cantiere.firebasestorage.app'
     })
 except Exception as e:
     print("Initialization err:", e)

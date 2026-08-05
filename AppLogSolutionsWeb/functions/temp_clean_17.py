@@ -6,7 +6,7 @@ try:
 except ValueError:
     cred = credentials.Certificate('../dev_key.json')
     app = firebase_admin.initialize_app(cred, {
-        'storageBucket': 'log-solutions-sviluppo.firebasestorage.app'
+        'storageBucket': 'log-solutions-cantiere.firebasestorage.app'
     })
 
 db = firestore.client()
@@ -18,7 +18,7 @@ db._client_info.client_library_version = 'google-cloud-firestore'
 project_id = cred.project_id
 print(f"Project ID from credentials: {project_id}")
 
-bucket = storage.bucket('log-solutions-sviluppo.firebasestorage.app')
+bucket = storage.bucket('log-solutions-cantiere.firebasestorage.app')
 
 data_da_cancellare = "17-07-2026"
 data_f = data_da_cancellare.replace('/', '-')

@@ -69,7 +69,7 @@ const path = require('path');
         });
 
         console.log("Navigazione diretta su login.html...");
-        await page.goto('https://log-solutions-sviluppo.web.app/login.html');
+        await page.goto('https://log-solutions-cantiere.web.app/login.html');
         
         console.log("Attendendo installazione completa SW...");
         let waitLoops = 0;
@@ -83,7 +83,7 @@ const path = require('path');
         }
         await page.waitForTimeout(4000); 
         
-        const securityOrigin = 'https://log-solutions-sviluppo.web.app';
+        const securityOrigin = 'https://log-solutions-cantiere.web.app';
         let cacheNamesRes;
         try {
             cacheNamesRes = await client.send('CacheStorage.requestCacheNames', { securityOrigin });

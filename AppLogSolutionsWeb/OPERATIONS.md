@@ -21,7 +21,7 @@
 ## 1. GOVERNANCE DEI DEPLOY E AMBIENTI
 
 ### 1.1 Ambienti Firebase
-* **SVILUPPO**: Project ID `log-solutions-sviluppo`
+* **SVILUPPO**: Project ID `log-solutions-cantiere`
 * **PRODUZIONE**: Project ID `log-solution-60007`
 
 ### 1.2 Regola Inviolabile dei Deploy Selettivi
@@ -29,10 +29,10 @@
 
 #### Deploy Sviluppo:
 ```bash
-firebase deploy --only hosting --project log-solutions-sviluppo
-firebase deploy --only functions --project log-solutions-sviluppo
-firebase deploy --only firestore:rules --project log-solutions-sviluppo
-firebase deploy --only storage --project log-solutions-sviluppo
+firebase deploy --only hosting --project log-solutions-cantiere
+firebase deploy --only functions --project log-solutions-cantiere
+firebase deploy --only firestore:rules --project log-solutions-cantiere
+firebase deploy --only storage --project log-solutions-cantiere
 ```
 
 #### Deploy Produzione (Solo previa autorizzazione contenente "Produzione" e Project ID):

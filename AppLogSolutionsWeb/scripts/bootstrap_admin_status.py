@@ -63,8 +63,8 @@ def main():
         print(f"Impossibile determinare il project ID dall'app inizializzata: {e}")
         sys.exit(1)
 
-    if project_id not in ['log-solutions-sviluppo', 'log-solution-60007']:
-        print(f"ERRORE CRITICO: Il project_id rilevato e' '{project_id}'. Questo script PUO' ESSERE ESEGUITO SOLO SU 'log-solutions-sviluppo'.")
+    if project_id not in ['log-solutions-cantiere', 'log-solution-60007']:
+        print(f"ERRORE CRITICO: Il project_id rilevato e' '{project_id}'. Questo script PUO' ESSERE ESEGUITO SOLO SU 'log-solutions-cantiere'.")
         sys.exit(1)
 
     # 5. Creazione client e stampa connessione

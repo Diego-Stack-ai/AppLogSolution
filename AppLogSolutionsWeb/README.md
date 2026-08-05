@@ -55,9 +55,9 @@ Da consultare **SOLO DOPO** la lettura completa dei 5 documenti Core:
 
 ## ⚡ GUIDA RAPIDA DI DEPLOY E AMBIENTI
 
-* **SVILUPPO**: `log-solutions-sviluppo`
-  * Frontend: `firebase deploy --only hosting --project log-solutions-sviluppo`
-  * Backend: `firebase deploy --only functions --project log-solutions-sviluppo`
+* **SVILUPPO**: `log-solutions-cantiere`
+  * Frontend: `firebase deploy --only hosting --project log-solutions-cantiere`
+  * Backend: `firebase deploy --only functions --project log-solutions-cantiere`
 * **PRODUZIONE**: `log-solution-60007` (Consultare la sezione 13 di [`AGENTS.md`](file:///H:/Il%20mio%20Drive/App/AppLogSolutionsWeb/AGENTS.md)).
 
 

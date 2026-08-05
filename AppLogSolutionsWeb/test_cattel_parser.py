@@ -14,7 +14,7 @@ else:
     app = firebase_admin.get_app()
 
 db = firestore.client(app=app)
-bucket = storage.bucket('log-solutions-sviluppo.appspot.com')
+bucket = storage.bucket('log-solutions-cantiere.appspot.com')
 
 with open('CATTEL_25-07-2026_ReportPianificazione.xlsx', 'rb') as f:
     excel_bytes = f.read()

@@ -276,48 +276,60 @@
                     if (user) {
                         console.log("[Map] Utente autenticato, avvio listener Firestore...");
                         
-                        const TENANTS = ['DNR', 'GRAN CHEF', 'CATTEL', 'DAC'];
-                        const loadedTenants = new Set();
-                        let allPointsDict = {}; // tenant -> array of points
-
-                        function mergeAndRender() {
-                            ALL_POINTS = [];
-                            TENANTS.forEach(t => {
-                                if (allPointsDict[t]) {
-                                    ALL_POINTS = ALL_POINTS.concat(allPointsDict[t]);
-                                }
-                            });
+                        onSnapshot(collection(db, "clienti_fatturazione"), (snapTenants) => {
+                            const TENANTS = snapTenants.docs.map(doc => doc.data().nome || doc.id);
+                            const loadedTenants = new Set();
+                            let allPointsDict = {};
                             
-                            console.log(`[Map] Totale clienti caricati: ${ALL_POINTS.length} (Tenants: ${Array.from(loadedTenants).join(', ')})`);
-                            initFilters();
-                            updateListAndMap();
                             
-                            if (loadedTenants.size === TENANTS.length) {
-                                clearTimeout(loadingTimeout);
-                                document.getElementById('loading-overlay').style.display = 'none';
-                            }
-                        }
 
-                        TENANTS.forEach(tenant => {
-                            onSnapshot(collection(db, `clienti/${tenant}/raccolta clienti`), { includeMetadataChanges: true }, (snapshot) => {
-                                console.log(`[Map] Ricevuti ${snapshot.size} punti ${tenant}`);
-                                allPointsDict[tenant] = snapshot.docs.map(doc => {
-                                    const d = doc.data();
-                                    return {
-                                        ...d,
-                                        id: doc.id,
-                                        tenant: tenant,
-                                        lat: parseFloat(d.lat) || 0,
-                                        lon: parseFloat(d.lon) || 0
-                                    };
+                            function mergeAndRender() {
+                                ALL_POINTS = [];
+                                const activeTenants = [];
+                                TENANTS.forEach(t => {
+                                    if (allPointsDict[t] && allPointsDict[t].length > 0) {
+                                        ALL_POINTS = ALL_POINTS.concat(allPointsDict[t]);
+                                        activeTenants.push(t);
+                                    }
                                 });
-                                loadedTenants.add(tenant);
-                                mergeAndRender();
-                            }, (error) => {
-                                console.error(`[Map] Errore Firestore ${tenant}:`, error);
-                                // Non mostriamo alert bloccanti per ogni singolo tenant, ma logghiamo l'errore
-                                loadedTenants.add(tenant); // segniamo come caricato anche se fallito, altrimenti blocca il caricamento
-                                mergeAndRender();
+                                
+                                const selCanale = document.getElementById('sel-canale');
+                                if(selCanale) {
+                                    const curr = selCanale.value;
+                                    selCanale.innerHTML = '<option value="tutti">Tutti</option>' + activeTenants.map(t => '<option value="'+t+'">'+t+'</option>').join('');
+                                    selCanale.value = curr;
+                                }
+                                
+                                console.log(`[Map] Totale clienti caricati: ${ALL_POINTS.length} (Tenants: ${Array.from(loadedTenants).join(', ')})`);
+                                initFilters();
+                                updateListAndMap();
+                                
+                                if (loadedTenants.size === TENANTS.length) {
+                                    clearTimeout(loadingTimeout);
+                                    document.getElementById('loading-overlay').style.display = 'none';
+                                }
+                            }
+
+                            TENANTS.forEach(tenant => {
+                                onSnapshot(collection(db, `clienti/${tenant}/raccolta clienti`), { includeMetadataChanges: true }, (snapshot) => {
+                                    console.log(`[Map] Ricevuti ${snapshot.size} punti ${tenant}`);
+                                    allPointsDict[tenant] = snapshot.docs.map(doc => {
+                                        const d = doc.data();
+                                        return {
+                                            ...d,
+                                            id: doc.id,
+                                            tenant: tenant,
+                                            lat: parseFloat(d.lat) || 0,
+                                            lon: parseFloat(d.lon) || 0
+                                        };
+                                    });
+                                    loadedTenants.add(tenant);
+                                    mergeAndRender();
+                                }, (error) => {
+                                    console.error(`[Map] Errore Firestore ${tenant}:`, error);
+                                    loadedTenants.add(tenant); 
+                                    mergeAndRender();
+                                });
                             });
                         });
                     } else {

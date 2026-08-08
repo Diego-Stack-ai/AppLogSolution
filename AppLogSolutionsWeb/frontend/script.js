@@ -4,7 +4,7 @@
  * Logica di persistenza spostata su firestore-service.js
  */
 
-const APP_VERSION = "6.415";
+const APP_VERSION = "6.427";
 
 // Esposta su window per lettura globale (es. da qualsiasi pagina o modulo)
 window.APP_VERSION = APP_VERSION;
@@ -451,9 +451,36 @@ window.updateViaggi = async function() {
 
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
-    // 0. Aggiorna dinamicamente tutti i badge di versione nella UI
+    // 0. Aggiorna dinamicamente il badge di versione della UI (Frontend)
     document.querySelectorAll('.app-version-badge').forEach(el => {
-        el.textContent = 'v' + APP_VERSION;
+        el.textContent = 'App v' + APP_VERSION;
+        
+        // Creiamo il secondo badge per l'API se non esiste già
+        if (!el.nextElementSibling || !el.nextElementSibling.classList.contains('api-version-badge')) {
+            const apiBadge = document.createElement('span');
+            apiBadge.className = 'api-version-badge';
+            // Stile simile a quello dell'app, ma leggermente diverso (colore secondario o verde) per distinguerli
+            apiBadge.style.cssText = "font-size: 11px; background: rgba(16, 185, 129, 0.1); color: #10B981; padding: 2px 8px; border-radius: 20px; margin-left: 8px; font-weight: 600; vertical-align: middle;";
+            // Inizialmente invisibile o vuoto finché non arriva il dato
+            apiBadge.style.display = 'none'; 
+            el.parentNode.insertBefore(apiBadge, el.nextSibling);
+        }
+    });
+
+    // Fetch API Version
+    fetch('https://europe-west1-log-solutions-cantiere.cloudfunctions.net/get_backend_version', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: {} })
+    }).then(r => r.json()).then(res => {
+        if(res.result && res.result.version) {
+            document.querySelectorAll('.api-version-badge').forEach(badge => {
+                badge.textContent = 'API v' + res.result.version;
+                badge.style.display = 'inline-block';
+            });
+        }
+    }).catch(e => {
+        console.log("Impossibile recuperare versione API", e);
     });
 
     // 1. Gestione Login

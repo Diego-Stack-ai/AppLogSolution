@@ -51,6 +51,18 @@
         "firebase-debug.*.log",
         "*.local"
       ]
+    },
+    {
+      "source": "functions_ai",
+      "codebase": "ai",
+      "runtime": "python312",
+      "ignore": [
+        "venv",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
     }
   ],
   "firestore": {

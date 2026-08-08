@@ -3,9 +3,9 @@ import glob
 import re
 import sys
 
-NEW_VERSION = "6.250"
+NEW_VERSION = "6.422"
 
-frontend_dir = r"G:\Il mio Drive\App\AppLogSolutionsWeb\frontend"
+frontend_dir = r"H:\Il mio Drive\App\AppLogSolutionsWeb\frontend"
 html_files = glob.glob(os.path.join(frontend_dir, "*.html"))
 
 for file_path in html_files:

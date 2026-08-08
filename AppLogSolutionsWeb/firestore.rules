@@ -87,6 +87,14 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
+    match /costi_carburante/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /costi_personale/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
     // Regole per il nuovo sistema Tenant (DNR)
     match /customers/{tenant}/{collection=**} {
       allow read, write: if isAuthenticated();

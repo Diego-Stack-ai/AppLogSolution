@@ -30,6 +30,12 @@ service firebase.storage {
       allow write: if isAuthenticated();
     }
 
+    // Upload temporanei per l'elaborazione Cloud Functions (Costi personale)
+    match /imports/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
     // Mappe degli autisti (accesso pubblico tramite link)
     match /CONSEGNE/{cartellaData}/MAPPE_AUTISTI/{fileName} {
       allow read: if true;

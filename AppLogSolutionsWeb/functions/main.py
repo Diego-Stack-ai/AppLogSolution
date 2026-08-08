@@ -428,53 +428,7 @@ def _registra_statistica(tipo_operazione, tempo_sec, errori=0):
 
 # --- CORE LOGIC FUNCTIONS ---
 
-def core_check_giornaliero(uid):
-    print("[INFO] Start check_giornaliero")
-    db = get_db()
-    
-    try:
-        tenants = [doc.id for doc in db.collection('clienti').list_documents()]
-    except Exception as e:
-        print(f"[check_giornaliero] Errore lookup tenant: {e}")
-        tenants = ['DNR', 'GRAN CHEF', 'CATTEL', 'DAC']
-    ddt_non_assegnati = 0
-    clienti_senza_coordinate = 0
-    viaggi_non_validi = 0
 
-    for t in tenants:
-        # 1. DDT nuovi non assegnati
-        ddts = list(db.collection('clienti').document(t).collection('ddt').stream())
-        ddt_non_assegnati += sum(1 for d in ddts if d.to_dict().get('stato') != 'assegnato')
-
-        # 2. Clienti senza coordinate
-        clienti = list(db.collection('clienti').document(t).collection('raccolta clienti').stream())
-        for c in clienti:
-            data = c.to_dict()
-            lat, lon = data.get('lat'), data.get('lon')
-            if not lat or not lon or lat == '0' or lat == '0.0':
-                clienti_senza_coordinate += 1
-
-        # 3. Viaggi incompleti (senza ddt o non completati)
-        viaggi = list(db.collection('clienti').document(t).collection('viaggi ddt').stream())
-        for v in viaggi:
-            data = v.to_dict()
-            ddt_ids = data.get('ddt_ids', [])
-            stato = data.get('status', 'bozza')
-            if not ddt_ids or stato == 'bozza':
-                viaggi_non_validi += 1
-
-    status_code = "ok" if (ddt_non_assegnati == 0 and clienti_senza_coordinate == 0 and viaggi_non_validi == 0) else "attenzione"
-    
-    return {
-        "status": status_code,
-        "message": "Check completato",
-        "errori": [],
-        "data": {
-            "ddt_non_assegnati": ddt_non_assegnati,
-            "clienti_senza_coordinate": clienti_senza_coordinate,
-            "viaggi_non_validi": viaggi_non_validi
-        }
-    }
 
 def core_chiudi_giornata(uid):
     print("[INFO] Tentativo chiusura giornata")
@@ -4973,7 +4927,8 @@ def pulisci_cartelle_elaborazione(req: https_fn.CallableRequest):
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=60,
     cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def check_giornaliero(req: https_fn.CallableRequest):
-    return core_check_giornaliero(req.auth.uid if req.auth else None)
+    from services.monitoring_service import handle_check_giornaliero
+    return handle_check_giornaliero(req)
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=60,
     cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))

@@ -2,6 +2,8 @@ from firebase_admin import firestore
 from firebase_functions import https_fn
 from infrastructure.firebase_setup import get_db
 import typing
+import json
+from firebase_admin import storage
 
 def handle_rilascia_recupero_storico(req: https_fn.CallableRequest) -> typing.Any:
     """
@@ -42,4 +44,80 @@ def handle_rilascia_recupero_storico(req: https_fn.CallableRequest) -> typing.An
         import traceback
         traceback.print_exc()
         return {"status": "errore", "message": f"Errore rilascio sandbox: {str(e)}"}
+
+
+def handle_recupera_viaggio_storico(req: https_fn.CallableRequest, tenant_resolver, bucket_name) -> typing.Any:
+    azione = req.data.get("azione", "lista_mesi")
+    mese = req.data.get("mese")
+    data_consegna = req.data.get("data_consegna")
+    
+    db = get_db()
+    bucket = storage.bucket(name=bucket_name)
+    
+    if azione == "lista_mesi":
+        # Trova i mesi disponibili analizzando i prefissi
+        blobs = bucket.list_blobs(prefix="ARCHIVIO_STORICO_RD/")
+        mesi_set = set()
+        for b in blobs:
+            parts = b.name.split('/')
+            if len(parts) > 1 and parts[1]:
+                mesi_set.add(parts[1])
+        mesi_list = sorted(list(mesi_set), reverse=True)
+        return {"status": "ok", "mesi": mesi_list}
+        
+    elif azione == "lista_giornate":
+        if not mese:
+            return {"status": "errore", "message": "Mese non specificato"}
+        blobs = bucket.list_blobs(prefix=f"ARCHIVIO_STORICO_RD/{mese}/")
+        date_set = set()
+        for b in blobs:
+            parts = b.name.split('/')
+            if len(parts) > 2 and parts[2]:
+                date_set.add(parts[2])
+        date_list = sorted(list(date_set), reverse=True)
+        return {"status": "ok", "giornate": date_list}
+        
+    elif azione == "recupera":
+        if not mese or not data_consegna:
+            return {"status": "errore", "message": "Mese o data mancante per il ripristino"}
+            
+        print(f"[R&D RECUPERO] Avvio ripristino sandbox per {data_consegna} ({mese})...")
+        pref_dest = f"ARCHIVIO_STORICO_RD/{mese}/{data_consegna}"
+        
+        try:
+            # 1. Ripristina report logistico (se necessario)
+            rep_blob = bucket.blob(f"{pref_dest}/firestore_report.json")
+            if rep_blob.exists():
+                rep_data = json.loads(rep_blob.download_as_string().decode('utf-8'))
+                rep_data["is_recupero_rd"] = True
+                rep_data["archiviato_ui"] = False
+                db.collection('clienti').document('report_logistici').collection('giornate').document(data_consegna).set(rep_data)
+                
+            # 2. Ripristina tutti i viaggi ddt associati sotto i rispettivi tenant
+            viaggi_pref = f"{pref_dest}/viaggi_ddt/"
+            blobs = bucket.list_blobs(prefix=viaggi_pref)
+            
+            count = 0
+            for b in blobs:
+                if b.name.endswith(".json"):
+                    v_data = json.loads(b.download_as_string().decode('utf-8'))
+                    v_data["is_recupero_rd"] = True
+                    v_data["archiviato_ui"] = False
+                    # Ricava l'id del documento dal nome file
+                    doc_id = b.name.split('/')[-1].replace('.json', '')
+                    t_viaggio = tenant_resolver(doc_id) or "DNR"
+                    db.collection('clienti').document(t_viaggio).collection('viaggi ddt').document(doc_id).set(v_data)
+                    count += 1
+                    
+            print(f"[R&D RECUPERO] ✓ Ripristino completato per {data_consegna}. {count} viaggi ddt ripristinati in sandbox.")
+            return {"status": "ok", "message": f"Viaggio {data_consegna} ripristinato in Sandbox R&D ({count} zone attive).", "viaggi_ripristinati": count}
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return {"status": "errore", "message": f"Errore ripristino sandbox: {str(e)}"}
+            
+    return {"status": "errore", "message": "Azione non riconosciuta"}
+
+
 

@@ -476,24 +476,6 @@ def core_check_giornaliero(uid):
         }
     }
 
-def core_stats_giornaliere(uid):
-    oggi = str(date.today())
-    stats_doc = get_db().collection('stats_operative').document(oggi).get()
-    if stats_doc.exists:
-        data = stats_doc.to_dict()
-        return {
-            "status": "ok",
-            "message": "Stats caricate",
-            "errori": [],
-            "data": {
-                "ddt_elaborati_oggi": data.get('count_elabora_pdf', 0),
-                "viaggi_creati_oggi": data.get('count_ottimizza_viaggio', 0),
-                "errori_giornata": data.get('errori_totali', 0),
-                "tempo_medio_sec": data.get('tempo_medio', 0)
-            }
-        }
-    return {"status": "ok", "message": "Nessuna operazione oggi", "errori": [], "data": {"ddt_elaborati_oggi": 0, "viaggi_creati_oggi": 0, "errori_giornata": 0, "tempo_medio_sec": 0}}
-
 def core_chiudi_giornata(uid):
     print("[INFO] Tentativo chiusura giornata")
     db = get_db()
@@ -4996,7 +4978,8 @@ def check_giornaliero(req: https_fn.CallableRequest):
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=60,
     cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))
 def stats_giornaliere(req: https_fn.CallableRequest):
-    return core_stats_giornaliere(req.auth.uid if req.auth else None)
+    from services.monitoring_service import handle_stats_giornaliere
+    return handle_stats_giornaliere(req)
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=60,
     cors=options.CorsOptions(cors_origins=ALLOWED_ORIGINS, cors_methods=["get", "post"]))

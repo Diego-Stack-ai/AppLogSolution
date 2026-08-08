@@ -4752,7 +4752,8 @@ def riepilogo_fatturazione(req: https_fn.CallableRequest):
         mese=mese,
         anno=anno,
         bucket_name=BUCKET_NAME,
-        stats_callback=_registra_statistica
+        stats_callback=_registra_statistica,
+        auth_context=req.auth
     )
 
 @https_fn.on_call(region="europe-west1", memory=options.MemoryOption.GB_1, timeout_sec=120,

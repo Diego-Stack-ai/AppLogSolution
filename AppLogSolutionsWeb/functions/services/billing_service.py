@@ -4,6 +4,7 @@ import io
 from firebase_admin import storage
 from infrastructure.firebase_setup import get_db
 from core.utils import _safe_float
+from firebase_functions import https_fn
 
 AREA_RE_CLOUD = re.compile(r'(?:conto di|ordine e conto di)\s+[A-Z](\d{4,5})', re.I)
 AREE_SPECIALI_FRUTTA = {"3198", "3199"}
@@ -23,7 +24,7 @@ def _estrai_area_da_storage(blob):
         pass
     return None
 
-def handle_riepilogo_fatturazione(mese: str, anno: str, bucket_name: str, stats_callback=None):
+def handle_riepilogo_fatturazione(mese: str, anno: str, bucket_name: str, stats_callback=None, auth_context=None):
     """
     Scansiona tutti i DDT su Firebase Storage per il mese indicato.
     Restituisce i 4 contatori per la fatturazione:
@@ -32,6 +33,12 @@ def handle_riepilogo_fatturazione(mese: str, anno: str, bucket_name: str, stats_
       3. Latte Standard    (tutti i DDT latte tranne 4199)
       4. Latte Speciale    (DDT latte con area 4199)
     """
+    if not auth_context:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.UNAUTHENTICATED,
+            message="Non autorizzato."
+        )
+
     start_time = time.time()
 
     if not mese or len(mese) != 2:

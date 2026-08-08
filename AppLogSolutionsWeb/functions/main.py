@@ -17,6 +17,9 @@ from infrastructure.firebase_setup import (
     get_dynamic_project_id, PROJECT_ID, BUCKET_NAME, get_db, get_bucket,
     load_storage_cache, save_storage_cache
 )
+from core.utils import (
+    normalize_code, _build_tripla_chiave, _extract_phone, clean_client_code, _safe_float
+)
 
 import os
 _project_id = os.environ.get("GCP_PROJECT", "log-solution-60007")
@@ -333,23 +336,7 @@ def _processa_pdf_core_logic(pdf_bytes: bytes, etichetta: str, db_mappati: dict,
         "deliveries": deliveries_list
     }
 
-def normalize_code(raw, articoli_noti):
-    righe = [l.strip() for l in str(raw).split('\n') if l.strip() and not l.strip().startswith("Codice:")]
-    if not righe: return "", ""
-    code_base, idx_base = "", -1
-    for i, r in enumerate(righe):
-        if r.upper() in articoli_noti:
-            code_base, idx_base = r, i
-            break
-        for prefix in articoli_noti:
-            if prefix.endswith('-') and r.upper().startswith(prefix):
-                code_base, idx_base = r, i
-                break
-    if not code_base: code_base, idx_base = righe[0], 0
-    variant = " ".join(righe[idx_base + 1:]).strip()
-    variant = re.sub(r'\s+', ' ', variant)
-    variant = re.sub(r'-{2,}', '-', variant).strip('-').strip()
-    return code_base, variant
+
 
 def consolidate_qty(codice, lista_qty, config):
     c = config.get(codice.lower()) or config.get(codice.upper()) or config.get(codice)
@@ -671,15 +658,7 @@ def admin_reset_password(req: https_fn.CallableRequest) -> dict:
 
 # ─── PUNTO #4: PROTEZIONE TRIPLA CHIAVE ────────────────────────────────────────
 
-def _build_tripla_chiave(cod_f: str, cod_l: str, nome: str) -> str:
-    """
-    Costruisce la chiave univoca: COD_F|COD_L|NOME (normalizzati lowercase).
-    Questa chiave identifica univocamente il cliente anche se ha p00000 come codice.
-    """
-    cf = str(cod_f).strip().lower()
-    cl = str(cod_l).strip().lower()
-    n  = str(nome).strip().lower()
-    return f"{cf}|{cl}|{n}"
+
 
 
 def _cerca_cliente_cloud(codice: str):
@@ -1017,17 +996,9 @@ TIME_PER_STOP_MIN = 8
 
 
 
-_PHONE_RE = re.compile(r'(?:\+39)?[\s\-]?(?:0\d{1,4}[\s\-]?\d{4,8}|3\d{2}[\s\-]?\d{6,7})')
 
-def _extract_phone(p):
-    """Estrae e normalizza un numero di telefono dal punto di consegna."""
-    tel = str(p.get('telefono', p.get('tel', p.get('phone', ''))) or '').strip()
-    if not tel:
-        note_text = str(p.get('note', p.get('nota_integrativa', p.get('Note', ''))) or '')
-        m = _PHONE_RE.search(note_text)
-        if m:
-            tel = m.group(0).strip()
-    return re.sub(r'[\s\-]', '', tel) if tel else ''
+
+
 
 def _genera_html_mappa(viaggio_id, punti, km, sec_guida, polylines, depot=None, distinta_url=None, ora_partenza_dep="07:00", actual_viaggio_id=None):
     """Genera HTML mappa mobile-first con polyline strade vere."""
@@ -2102,13 +2073,7 @@ def core_riepilogo_fatturazione(mese: str, anno: str = "2026"):
     }
 
 
-def clean_client_code(code_val):
-    if code_val is None or (hasattr(code_val, "isna") and code_val.isna()):
-        return ""
-    code_str = str(code_val).strip()
-    if code_str.endswith(".0"):
-        code_str = code_str[:-2]
-    return code_str
+
 
 def parse_fascia_oraria(val):
     if val is None or (hasattr(val, "isna") and val.isna()) or val == "":
@@ -3490,16 +3455,7 @@ def _genera_kml_zone(data, zone_list):
     kml.append('</Document></kml>')
     return "\n".join(kml)
 
-def _safe_float(val):
-    try:
-        if val is None:
-            return None
-        s = str(val).strip().replace(",", ".")
-        if not s:
-            return None
-        return float(s)
-    except (ValueError, TypeError):
-        return None
+
 
 def _genera_html_mappa_generale(data, zone_list):
     """Template della mappa generale con selettore a tendina per il giro"""
